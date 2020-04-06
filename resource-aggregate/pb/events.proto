@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package ocf.cloud.resourceaggregate.pb;
+
+import "github.com/go-ocf/ocf-cloud/resource-aggregate/pb/resources.proto";
+
+option go_package = "github.com/go-ocf/ocf-cloud/resource-aggregate/pb;pb";
+
+message AuditContext {
+    string user_id = 1;
+    string device_id = 2;
+    string correlation_id = 3;
+}
+
+message EventMetadata {
+   uint64 version = 1;
+   uint64 timestamp_ms = 2;
+   string connection_id = 3;
+   uint64 sequence = 4;
+}
+
+// https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml#L106
+message ResourcePublished {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    Resource resource = 2; // Resource publish is atomic. The CoAP-Gateway is responsible for the transaction.
+    int32 time_to_live = 3;
+    AuditContext audit_context = 4;
+    EventMetadata event_metadata = 5;
+}
+
+// https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml #Specification CR needed
+message ResourceUnpublished {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    AuditContext audit_context = 2;
+    EventMetadata event_metadata = 3;
+}
+
+message ResourceChanged {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    Content content = 2;
+    AuditContext audit_context = 3;
+    EventMetadata event_metadata = 4;
+    Status status = 5;
+}
+
+message ResourceUpdatePending {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    string resource_interface = 2;
+    Content content = 4;
+    AuditContext audit_context = 5;
+    EventMetadata event_metadata = 6;
+}
+
+message ResourceUpdated {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    Status status = 2;
+    Content content = 3;
+    AuditContext audit_context = 4;
+    EventMetadata event_metadata = 5;
+}
+
+message ResourceRetrievePending {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    string resource_interface = 2;
+    AuditContext audit_context = 3;
+    EventMetadata event_metadata = 4;
+}
+
+message ResourceRetrieved {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    Status status = 2;
+    Content content = 3;
+    AuditContext audit_context = 4;
+    EventMetadata event_metadata = 5;
+}
+
+message ResourceStateSnapshotTaken {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    Resource resource = 2;
+    ResourceChanged  latest_resource_change = 3;
+    uint32 pending_requests_count = 4;
+    int32 time_to_live = 5;
+    bool is_published = 6;
+    EventMetadata event_metadata = 7;  
+}

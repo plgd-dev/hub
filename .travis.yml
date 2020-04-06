@@ -1,0 +1,18 @@
+language: minimal
+
+services:
+  - docker
+
+jobs:
+  include:
+    - stage: "Test"
+      if: type = pull_request
+      script:
+        - make test
+    - stage: "Test & Publish"
+      if: branch = master AND type != pull_request
+      script:
+        - make test
+        - bash <(curl -s https://codecov.io/bash)
+        - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+        - make push
