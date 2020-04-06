@@ -8,7 +8,7 @@ import (
 	"sync"
 	"syscall"
 
-	pbAS "github.com/go-ocf/authorization/pb"
+	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
 	cqrsEventBus "github.com/go-ocf/cqrs/eventbus"
 	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	cqrsMaintenance "github.com/go-ocf/cqrs/eventstore/maintenance"

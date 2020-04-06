@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	pbAS "github.com/go-ocf/authorization/pb"
+	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventbus/nats"

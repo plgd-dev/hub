@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	pbAS "github.com/go-ocf/authorization/pb"
+	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
 	cqrs "github.com/go-ocf/cqrs"
 	cqrsEvent "github.com/go-ocf/cqrs/event"
 	cqrsEventBus "github.com/go-ocf/cqrs/eventbus"

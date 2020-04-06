@@ -1,0 +1,25 @@
+cmd/authorization-web/authorization-web
+cmd/authorization-sevice/authorization-sevice
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# go CLI
+*.test
+coverage.txt
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# IDE
+.vscode/
+debug
+
+# Dep's guards against upstream overwrites
+# https://golang.github.io/dep/docs/FAQ.html#should-i-commit-my-vendor-directory
+vendor/
+

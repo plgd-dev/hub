@@ -24,12 +24,7 @@ push: build-servicecontainer
 	docker push ocfcloud/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
-	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf --gogofaster_out=${GOPATH}/src pb/commands.proto
-	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf --gogofaster_out=${GOPATH}/src pb/events.proto
-	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf --gogofaster_out=${GOPATH}/src pb/resources.proto
-
-	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/gogo/protobuf/protobuf --go_out=plugins=grpc:${GOPATH}/src pb/service.proto
-	goderive ./...
+	protoc -I=. -I=${GOPATH}/src -I=./pb --gogofaster_out=${GOPATH}/src pb/auth.proto
+	protoc -I=. -I=${GOPATH}/src -I=./pb --go_out=plugins=grpc:${GOPATH}/src pb/service.proto
 
 .PHONY: build-servicecontainer build push clean proto/generate
-

@@ -1,6 +1,9 @@
 SHELL = /bin/bash
 
-SUBDIRS := resource-aggregate
+SUBDIRS := resource-aggregate authorization
+.PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca ocf-cloud-build
+
+default: build
 
 ocf-cloud-build:
 	docker build \
@@ -68,9 +71,8 @@ test: env
 		go test -p 1 -v ./... -covermode=atomic -coverprofile=/shared/coverage.txt
 
 build: ocf-cloud-build $(SUBDIRS)
-	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-clean: $(SUBDIRS)
+clean:
 	docker rm -f step-ca-test || true
 	docker rm -f mongo || true
 	docker rm -f nats || true
@@ -82,5 +84,3 @@ push: $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
-
-.PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca ocf-cloud-build 
