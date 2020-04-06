@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ocf.cloud.resource.shadow.pb;
+
+import "github.com/go-ocf/ocf-cloud/resource-aggregate/pb/resources.proto";
+import "github.com/go-ocf/ocf-cloud/resource-aggregate/pb/commands.proto";
+
+
+option go_package = "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow;resource-shadow";
+
+message RetrieveResourcesValuesRequest {
+  ocf.cloud.resourceaggregate.pb.AuthorizationContext authorization_context = 1;
+  repeated string resource_ids_filter = 2;
+  repeated string device_ids_filter = 3;
+  repeated string type_filter = 4;
+}
+
+message ResourceValue {
+  string resource_id = 1;
+  string device_id = 2;
+  string href = 3;
+  repeated string types = 4;
+  ocf.cloud.resourceaggregate.pb.Content content = 5;
+  ocf.cloud.resourceaggregate.pb.Status  status = 6;
+}

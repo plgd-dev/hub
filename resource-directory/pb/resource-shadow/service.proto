@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ocf.cloud.resource.shadow.pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow/queries.proto";
+
+option go_package = "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow;resource-shadow";
+
+service ResourceShadow {
+  rpc RetrieveResourcesValues(RetrieveResourcesValuesRequest) returns (stream ResourceValue) {}
+}

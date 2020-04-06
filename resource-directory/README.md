@@ -1,12 +1,9 @@
-[![Build Status](https://travis-ci.com/go-ocf/resource-aggregate.svg?branch=master)](https://travis-ci.com/go-ocf/resource-aggregate)
-[![codecov](https://codecov.io/gh/go-ocf/resource-aggregate/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/resource-aggregate)
-[![Go Report](https://goreportcard.com/badge/github.com/go-ocf/ocf-cloud/resource-aggregate)](https://goreportcard.com/report/github.com/go-ocf/ocf-cloud/resource-aggregate)
+[![Build Status](https://travis-ci.com/go-ocf/resource-directory.svg?branch=master)](https://travis-ci.com/go-ocf/resource-directory)
+[![codecov](https://codecov.io/gh/go-ocf/resource-directory/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/resource-directory)
+[![Go Report](https://goreportcard.com/badge/github.com/go-ocf/ocf-cloud/resource-directory)](https://goreportcard.com/report/github.com/go-ocf/ocf-cloud/resource-directory)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-# resource - aggregate
-
-## service initialization
-Service can be initialized with different Databases(EventStore) or Message systems(Publisher) via function `New`. For example `cmd/service` it uses mongodb/kafka. To initialize package with other eventstore/publisher it must satisfy interfaces:
+# resource-directory
 
 # Build
 
@@ -25,10 +22,11 @@ go build ./cmd/coap-gateway-service/
 ## Configuration
 | Option | ENV variable | Type | Description | Default |
 | ------ | --------- | ----------- | ------- | ------- |
-| `-` | `ADDRESS` | string | tbd | `"0.0.0.0:9100"` |
+| `-` | `ADDRESS` | string | tbd | `"0.0.0.0:5684"` |
+| `-` | `FQDN` | string | tbd | `"coap-gw.ocf.cloud"` |
 | `-` | `AUTH_SERVER_ADDRESS` | string | tbd | `"127.0.0.1:9100"` |
-| `-` | `SNAPSHOT_THRESHOLD` | int | tbd | `128` |
-| `-` | `OCC_MAX_RETRY` | int | tbd | `8` |
+| `-` | `GOROUTINE_POOL_SIZE` | int | tbd | `16` |
+| `-` | `CACHE_EXPIRATION` | string | tbd | `"30s"` |
 | `-` | `NATS_URL` | string | tbd | `"nats://localhost:4222"` |
 | `-` | `MONGODB_URI` | string | tbd | `"mongodb://localhost:27017"` |
 | `-` | `MONGODB_DATABASE` | string | tbd | `"eventstore"` |

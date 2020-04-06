@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ocf.cloud.resource.directory.pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory/queries.proto";
+
+option go_package = "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory;resource-directory";
+
+service ResourceDirectory {
+  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ResourceLink) {}
+}
