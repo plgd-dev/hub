@@ -14,6 +14,7 @@ require (
 	github.com/golang/protobuf v1.3.5
 	github.com/golang/snappy v0.0.2-0.20190904063534-ff6b7dc882cf
 	github.com/google/go-github v17.0.0+incompatible
+	github.com/gorilla/mux v1.7.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kelseyhightower/envconfig v1.4.0

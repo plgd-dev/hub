@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 
-SUBDIRS := resource-aggregate authorization resource-directory
+SUBDIRS := resource-aggregate authorization resource-directory openapi-connector
 .PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca ocf-cloud-build
 
 default: build
