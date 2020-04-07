@@ -23,11 +23,11 @@ require (
 	github.com/nats-io/nats.go v1.9.2
 	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/smallstep/assert v0.0.0-20200103212524-b99dc1097b15
+	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.5.1
 	github.com/valyala/fasthttp v1.9.0
 	go.mongodb.org/mongo-driver v1.3.1
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
-	google.golang.org/grpc v1.28.0
+	google.golang.org/grpc v1.28.1
 )

@@ -5,8 +5,7 @@
 *.so
 *.dylib
 debug
-step-ca
-mongo
+.tmp/
 authsvc.db
 
 # Test binary, build with `go test -c`

@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-ocf/kit/security/certManager"
 	oapiConStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	"github.com/smallstep/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
 	"github.com/go-ocf/ocf-cloud/openapi-gateway/store"

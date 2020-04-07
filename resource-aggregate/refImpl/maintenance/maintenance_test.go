@@ -15,7 +15,7 @@ import (
 	kitCqrsPb "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
 	"github.com/golang/snappy"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/smallstep/assert"
+	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/stretchr/testify/require"
