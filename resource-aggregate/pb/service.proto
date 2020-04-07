@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ocf.cloud.resourceaggregate.pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/go-ocf/cloud/resource-aggregate/pb/commands.proto";
+
+option go_package = "github.com/go-ocf/cloud/resource-aggregate/pb;pb";
+
+service ResourceAggregate {
+  rpc PublishResource (PublishResourceRequest) returns (PublishResourceResponse) {}
+  rpc UnpublishResource (UnpublishResourceRequest) returns (UnpublishResourceResponse) {}
+  rpc NotifyResourceChanged (NotifyResourceChangedRequest) returns (NotifyResourceChangedResponse){}
+  rpc UpdateResource (UpdateResourceRequest) returns (UpdateResourceResponse) {}
+  rpc ConfirmResourceUpdate (ConfirmResourceUpdateRequest) returns (ConfirmResourceUpdateResponse) {}
+  rpc RetrieveResource (RetrieveResourceRequest) returns (RetrieveResourceResponse) {}
+  rpc ConfirmResourceRetrieve (ConfirmResourceRetrieveRequest) returns (ConfirmResourceRetrieveResponse) {}
+}

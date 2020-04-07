@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ocf.cloud.resource.directory.pb;
+
+import "github.com/go-ocf/cloud/resource-aggregate/pb/resources.proto";
+import "github.com/go-ocf/cloud/resource-aggregate/pb/commands.proto";
+
+
+option go_package = "github.com/go-ocf/cloud/resource-directory/pb/resource-directory;resource-directory";
+
+message GetResourceLinksRequest {
+  ocf.cloud.resourceaggregate.pb.AuthorizationContext authorization_context = 1;
+  repeated string type_filter = 2;
+  repeated string device_ids_filter = 3;
+}
+
+message ResourceLink {
+  ocf.cloud.resourceaggregate.pb.Resource resource = 1;
+}

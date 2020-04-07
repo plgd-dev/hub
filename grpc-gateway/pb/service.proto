@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ocf.cloud.grpcgateway.pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/go-ocf/cloud/grpc-gateway/pb/devices.proto";
+
+option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb;pb";
+
+service GrpcGateway {
+  // Get all devices
+  rpc GetDevices (GetDevicesRequest) returns (stream Device) {}
+  // Get resource links of devices.
+  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ResourceLink) {}
+
+  rpc RetrieveResourceFromDevice(RetrieveResourceFromDeviceRequest) returns (RetrieveResourceFromDeviceResponse) {}
+
+  // Retrieve resources values from resource shadow
+  rpc RetrieveResourcesValues(RetrieveResourcesValuesRequest) returns (stream ResourceValue) {}
+  // Update resource values
+  rpc UpdateResourcesValues(UpdateResourceValuesRequest) returns (UpdateResourceValuesResponse) {}
+
+  // Subscribe to events
+  rpc SubscribeForEvents(stream ocf.cloud.grpcgateway.pb.SubscribeForEvents) returns (stream Event) {}
+}

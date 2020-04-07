@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package ocf.cloud.grpcgateway.pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb;pb";
+
+message GetDevicesRequest {
+  enum Status {
+    ONLINE = 0;
+    OFFLINE = 1;
+  }
+
+  repeated string type_filter = 1;
+  repeated Status status_filter = 2;
+  repeated string device_ids_filter = 3;
+}
+
+message GetResourceLinksRequest {
+  repeated string type_filter = 1;
+  repeated string device_ids_filter = 2;
+}
+
+message ResourceId {
+  string device_id = 1;
+  string resource_link_href = 2;
+}
+
+// RetrieveResourceFromDeviceRequest retrieve value from device
+message RetrieveResourceFromDeviceRequest {
+  ResourceId resource_id = 1;
+  string resource_interface = 2;
+}
+
+message RetrieveResourceFromDeviceResponse {
+  Content content = 1;
+}
+
+// RetrieveResourcesValuesRequest get values from resource-shadow
+message RetrieveResourcesValuesRequest {
+  repeated ResourceId resource_ids_filter = 1;
+  repeated string device_ids_filter = 2;
+  repeated string type_filter = 3;
+}
+
+message ResourceValue {
+  ResourceId resource_id = 1;
+  repeated string types = 2;
+  Content content = 3;
+}
+
+message UpdateResourceValuesRequest {
+  ResourceId resource_id = 1;
+  Content content = 2;
+  string resource_interface = 3;
+}
+
+message UpdateResourceValuesResponse {
+  Content content = 1;
+}
+
+message SubscribeForEvents {
+  message DevicesEventFilter {
+    enum Event {
+      REGISTERED = 0;
+      UNREGISTERED = 1;
+      ONLINE = 2;
+      OFFLINE = 3;
+    }
+    repeated Event filter_events = 1;
+  }
+  message DeviceEventFilter {
+    string device_id = 1;
+    enum Event {
+      RESOURCE_PUBLISHED = 0;
+      RESOURCE_UNPUBLISHED = 1;
+    }
+    repeated Event filter_events = 2;
+  }
+  message ResourceEventFilter {
+    ResourceId resource_id = 1;
+    enum Event {
+      CONTENT_CHANGED = 0;
+    }
+    repeated Event filter_events = 2;
+  }
+  message CancelSubscription {
+    string subscription_id = 1;
+  }
+  oneof filter_by {
+    DevicesEventFilter devices_event = 1;
+    DeviceEventFilter device_event = 2;
+    ResourceEventFilter resource_event = 3;
+    CancelSubscription cancel_subscription = 5;
+  }
+  string token = 101; // for pairing request SubscribeForEvents with Event.OperationProcessed
+}
+
+message Event {
+  message DeviceRegistered {
+    string device_id = 1;
+  }
+  message DeviceUnregistered {
+    string device_id = 1;
+  }
+  message DeviceOnline {
+    string device_id = 1;
+  }
+  message DeviceOffline {
+    string device_id = 1;
+  }
+  message ResourcePublished {
+    ResourceLink link = 1;
+  }
+  message ResourceUnpublished {
+    ResourceLink link = 2;
+  }
+  message ResourceChanged {
+    ResourceId resource_id = 1;
+    Content content = 2;
+  }
+  message OperationProcessed {
+    message ErrorStatus {
+      enum Code {
+        OK = 0;
+        ERROR = 1;
+        NOT_FOUND = 2;
+      }
+      Code code  = 1;
+      string message = 2;
+    }
+    string token = 1;
+    ErrorStatus error_status = 2;
+  }
+  message SubscriptionCanceled {
+    string reason = 2;
+  }
+
+  string subscription_id = 1; // subscription id provided by grpc
+  oneof type {
+    DeviceRegistered device_registered = 3;
+    DeviceUnregistered device_unregistered = 4;
+    DeviceOnline device_online = 5;
+    DeviceOffline device_offline = 6;
+    ResourcePublished resource_published = 7;
+    ResourceUnpublished resource_unpublished = 8;
+    ResourceChanged resource_content_changed = 9;
+    OperationProcessed operation_processed = 10;
+    SubscriptionCanceled subscription_canceled = 11;
+  }
+
+}
+
+message LocalizedString {
+	string language = 1;
+	string value = 2;
+}
+
+message Device {
+  string id = 1;
+  repeated string types = 2;
+  string name = 3;
+  bool is_online = 4;
+  repeated LocalizedString manufacturer_name = 5;
+  string model_number = 6;
+}
+
+message ResourceLink {
+  string href = 1;
+  repeated string types = 2;
+  repeated string interfaces = 3;
+  string device_id = 4;
+}
+
+message Content {
+  string content_type = 1;
+  bytes data = 2;
+}

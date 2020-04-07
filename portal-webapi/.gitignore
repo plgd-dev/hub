@@ -5,8 +5,7 @@
 *.so
 *.dylib
 debug
-.tmp/
-authsvc.db
+step-ca
 
 # Test binary, build with `go test -c`
 *.test

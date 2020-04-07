@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ocf.cloud.resourceaggregate.pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option go_package = "github.com/go-ocf/cloud/resource-aggregate/pb;pb";
+
+// https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.oic-link-schema.json
+message Resource {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    string href = 2 [(gogoproto.jsontag)="href"];
+    repeated string resource_types = 3 [(gogoproto.jsontag)="rt"];
+    repeated string interfaces = 4 [(gogoproto.jsontag)="if"];
+    string device_id = 5 [(gogoproto.jsontag)="di"];
+    int64 instance_id = 6 [(gogoproto.jsontag)="ins"];
+    string anchor = 7; 
+    Policies policies = 8 [(gogoproto.jsontag)="p"];
+    string title = 9;
+    repeated string supported_content_types = 10 [(gogoproto.jsontag)="type"];
+    repeated EndpointInformation endpoint_informations = 11 [(gogoproto.jsontag)="eps"];
+}
+
+message Policies {
+  int32 bit_flags = 1 [(gogoproto.jsontag)="bm"];
+}
+
+message Content {
+    bytes data = 1;
+    string content_type = 2;
+    int32 coap_content_format = 3; // -1 means content-format was not provided
+}
+
+message EndpointInformation {
+    string endpoint = 1 [(gogoproto.jsontag)="ep"];
+    int64 priority = 2 [(gogoproto.jsontag)="pri"];
+}
+
+enum Status {
+  UNKNOWN = 0;
+  OK = 1;
+  BAD_REQUEST = 2;
+  UNAUTHORIZED = 3;
+  FORBIDDEN = 4;
+  NOT_FOUND = 5;
+  UNAVAILABLE = 6;
+  NOT_IMPLEMENTED = 7;
+  ACCEPTED = 8;
+}

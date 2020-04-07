@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ocf.cloud.auth.pb;
+
+import "auth.proto";
+
+option go_package = "github.com/go-ocf/cloud/authorization/pb;pb";
+
+service AuthorizationService {
+  rpc SignUp (SignUpRequest) returns (SignUpResponse) {}
+	rpc SignOff (SignOffRequest) returns (SignOffResponse) {}
+
+	rpc SignIn (SignInRequest) returns (SignInResponse) {}
+	rpc SignOut (SignOutRequest) returns (SignOutResponse) {}
+
+	rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse) {}
+
+	rpc GetUserDevices (GetUserDevicesRequest) returns (stream UserDevice) {}
+
+	rpc AddDevice(AddDeviceRequest) returns (AddDeviceResponse) {}
+	rpc RemoveDevice(RemoveDeviceRequest) returns (RemoveDeviceResponse) {}
+}

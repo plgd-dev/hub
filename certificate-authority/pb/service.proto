@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ocf.cloud.certificateauthority.pb;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/go-ocf/cloud/certificate-authority/pb/cert.proto";
+
+option go_package = "github.com/go-ocf/cloud/certificate-authority/pb;pb";
+
+service CertificateAuthority {
+  // SignIdentityCertificate sends a Identity Certificate Signing Request to the certificate authority 
+  // and obtains a signed certificate. Both in the PEM format. It adds EKU: '1.3.6.1.4.1.44924.1.6' .
+  rpc SignIdentityCertificate(SignCertificateRequest) returns (SignCertificateResponse) {}
+  
+  // SignCertificate sends a Certificate Signing Request to the certificate authority 
+  // and obtains a signed certificate. Both in the PEM format.
+  rpc SignCertificate(SignCertificateRequest) returns (SignCertificateResponse) {}
+}

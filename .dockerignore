@@ -1,0 +1,9 @@
+.git
+.github
+.gitignore
+.travis.yml
+Makefile
+Dockerfile
+README.md
+LICENSE
+renovate.json

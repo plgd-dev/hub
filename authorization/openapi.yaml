@@ -1,0 +1,25 @@
+openapi: 3.0.0
+info:
+  description: >
+    DRAFT:
+    This is a KiConnect Authorization Service API.
+  version: 1.0.0
+  title: Authorization Service
+paths:
+  /api/signup:
+    post:
+      summary: TODO
+      description: >
+        TODO
+      requestBody:
+        content:
+          POST:
+            schema:
+              $ref: 'https://github.com/go-ocf/cloud/authorization/blob/master/protobuf/auth/auth.proto#/SignUpRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            ocf.cloud.auth:
+              schema:
+                $ref: 'https://github.com/go-ocf/cloud/authorization/blob/master/protobuf/auth/auth.proto#/SignUpResponse'

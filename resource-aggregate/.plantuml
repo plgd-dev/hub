@@ -1,0 +1,116 @@
+@startuml
+
+title "Publish / Unpublish Resources"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+
+Server -> Gateway : [UPDATE] '/oic/rd'
+activate Server
+activate Gateway
+Gateway -> ResourceAggregate : PublishResourceRequest
+activate ResourceAggregate
+ResourceAggregate -> Gateway : PublishResourceResponse
+deactivate Gateway
+ResourceAggregate -> Bus : ResourcePublished
+deactivate ResourceAggregate
+Gateway <- Bus: ResourcePublished
+activate Gateway
+Gateway -> Server : OK
+deactivate Gateway
+deactivate Server
+
+@enduml
+
+@startuml
+
+title "Resource content changed (e.g. temperature changed)"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+
+Server -> Gateway : [NOTIFY] 'oic.r.temperature' changed
+activate Gateway
+Gateway -> ResourceAggregate : NotifyResourceChangedRequest
+activate ResourceAggregate
+ResourceAggregate -> Gateway : NotifyResourceChangedResponse
+deactivate Gateway
+ResourceAggregate --> Bus : ResourceChanged
+deactivate ResourceAggregate
+
+@enduml
+
+@startuml
+
+title "Update Resource"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+
+Client -> ResourceAggregate : UpdateResourceRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate -> Client : UpdateResourceResponse
+ResourceAggregate --> Bus : ResourceUpdatePending
+deactivate ResourceAggregate
+Bus --> Gateway : ResourceUpdatePending
+activate Gateway
+Gateway -> Server: [UPDATE] 'oic.r.temperature'
+activate Server
+Server -> Gateway : OK
+deactivate Server
+Gateway -> ResourceAggregate : ConfirmResourceUpdateRequest
+activate ResourceAggregate
+ResourceAggregate -> Gateway : ConfirmResourceUpdateResponse
+deactivate Gateway
+ResourceAggregate --> Bus : ResourceUpdated
+deactivate ResourceAggregate
+Bus --> Client : ResourceUpdated
+deactivate Client
+
+== Resource content changed ==
+
+Server -> Gateway : [NOTIFY] 'oic.r.temperature' changed
+
+
+@enduml
+
+@startuml
+
+title "Retrieve Resource"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+
+Client -> ResourceAggregate : RetrieveResourceRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate -> Client : RetrieveResourceResponse
+ResourceAggregate --> Bus : ResourceRetrievePending
+deactivate ResourceAggregate
+Bus --> Gateway : ResourceRetrievePending
+activate Gateway
+Gateway -> Server: [RETRIEVE] '/oic/d'
+activate Server
+Server -> Gateway : OK
+deactivate Server
+Gateway -> ResourceAggregate : ConfirmResourceRetrieveRequest
+activate ResourceAggregate
+ResourceAggregate -> Gateway : ConfirmResourceRetrieveResponse
+deactivate Gateway
+ResourceAggregate --> Bus : ResourceRetrieved
+deactivate ResourceAggregate
+Bus --> Client : ResourceRetrieved
+deactivate Client
+
+@enduml
