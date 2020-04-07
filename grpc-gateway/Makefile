@@ -11,6 +11,7 @@ define build-docker-image
 		--tag ocfcloud/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag ocfcloud/$(SERVICE_NAME):$(LATEST_TAG) \
 		--target $(1) \
+		--file Dockerfile \
 		.
 endef
 
