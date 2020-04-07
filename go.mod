@@ -6,6 +6,7 @@ require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
+	github.com/go-chi/chi v4.0.3-0.20191003102842-906b567ebae8+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap v0.0.0-20200406073902-cf923db524db
 	github.com/go-ocf/kit v0.0.0-20200326124037-40a7509422e3
@@ -25,6 +26,8 @@ require (
 	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/satori/go.uuid v1.2.0
+	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
+	github.com/smallstep/nosql v0.1.1-0.20191009043502-4b26d8029e61
 	github.com/stretchr/testify v1.5.1
 	github.com/valyala/fasthttp v1.9.0
 	go.mongodb.org/mongo-driver v1.3.1
