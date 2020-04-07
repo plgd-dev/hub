@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/pb"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/log"
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 )
 
 type deviceSubscription struct {

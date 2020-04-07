@@ -10,10 +10,10 @@ import (
 	coap "github.com/go-ocf/go-coap"
 	"github.com/ugorji/go/codec"
 
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	pbRS "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow"
+	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/valyala/fasthttp"
 )
 

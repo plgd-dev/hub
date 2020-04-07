@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/gofrs/uuid"
 	"github.com/golang/snappy"
 )

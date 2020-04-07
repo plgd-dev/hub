@@ -7,9 +7,9 @@ import (
 
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security/certManager"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventbus/nats"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"

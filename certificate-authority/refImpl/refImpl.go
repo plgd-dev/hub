@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-ocf/kit/security/certManager"
 
-	"github.com/go-ocf/ocf-cloud/certificate-authority/pb"
-	"github.com/go-ocf/ocf-cloud/certificate-authority/service"
+	"github.com/go-ocf/cloud/certificate-authority/pb"
+	"github.com/go-ocf/cloud/certificate-authority/service"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc"

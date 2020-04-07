@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/events"
 	"github.com/gorilla/mux"
 )
 

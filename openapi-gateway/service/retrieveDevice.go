@@ -13,10 +13,10 @@ import (
 	"github.com/go-ocf/sdk/schema"
 
 	coap "github.com/go-ocf/go-coap"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 )
 
 func toEndpoint(s *pbRA.EndpointInformation) schema.Endpoint {

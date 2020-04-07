@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/store"
 	"github.com/gofrs/uuid"
 
 	"github.com/go-ocf/kit/codec/json"

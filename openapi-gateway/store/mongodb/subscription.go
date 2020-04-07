@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	oapiConStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	"github.com/go-ocf/ocf-cloud/openapi-gateway/store"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	oapiConStore "github.com/go-ocf/cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-gateway/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 

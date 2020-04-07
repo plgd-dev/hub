@@ -4,7 +4,7 @@ package ocf.cloud.certificateauthority.pb;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-option go_package = "github.com/go-ocf/ocf-cloud/certificate-authority/pb;pb";
+option go_package = "github.com/go-ocf/cloud/certificate-authority/pb;pb";
 
 message SignCertificateRequest {
     bytes certificate_signing_request = 1; // PEM format

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/pb"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/log"
-	cqrsRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
+	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 )
 
 type subscription struct {

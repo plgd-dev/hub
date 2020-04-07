@@ -7,7 +7,7 @@ Provides a simple docker cloud image for **testing purpose**.
 ## Features
 - [OCF Native Cloud](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.1.0.pdf)
 - OAUTH Athorization code is not verified
-- [GRPC](https://github.com/go-ocf/grpc-gateway/blob/master/pb/service.proto)
+- [GRPC](https://github.com/go-ocf/cloud/blob/master/grpc-gateway/pb/service.proto)
 
 ## Supported clients
 - [iotivity v2+](https://github.com/iotivity/iotivity)

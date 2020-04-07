@@ -4,7 +4,7 @@ package ocf.cloud.grpcgateway.pb;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-option go_package = "github.com/go-ocf/ocf-cloud/grpc-gateway/pb;pb";
+option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb;pb";
 
 message GetDevicesRequest {
   enum Status {

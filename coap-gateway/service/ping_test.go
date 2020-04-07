@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/ocf-cloud/coap-gateway/uri"
+	"github.com/go-ocf/cloud/coap-gateway/uri"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/go-ocf/kit/codec/cbor"

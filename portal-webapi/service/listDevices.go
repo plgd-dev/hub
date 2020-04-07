@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/go-ocf/kit/log"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/ocf-cloud/resource-directory/pb/device-directory"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	"github.com/valyala/fasthttp"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )

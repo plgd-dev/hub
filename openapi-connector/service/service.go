@@ -12,12 +12,12 @@ import (
 	"github.com/go-ocf/cqrs/eventbus"
 	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
-	connectorStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
+	connectorStore "github.com/go-ocf/cloud/openapi-connector/store"
 	"google.golang.org/grpc/credentials"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 //Server handle HTTP request

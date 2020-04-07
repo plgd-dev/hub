@@ -13,7 +13,7 @@ import (
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security/jwt"
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/service"
+	"github.com/go-ocf/cloud/grpc-gateway/service"
 	"google.golang.org/grpc/credentials"
 )
 

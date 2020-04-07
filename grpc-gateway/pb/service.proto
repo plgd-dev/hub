@@ -3,9 +3,9 @@ syntax = "proto3";
 package ocf.cloud.grpcgateway.pb;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "github.com/go-ocf/ocf-cloud/grpc-gateway/pb/devices.proto";
+import "github.com/go-ocf/cloud/grpc-gateway/pb/devices.proto";
 
-option go_package = "github.com/go-ocf/ocf-cloud/grpc-gateway/pb;pb";
+option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb;pb";
 
 service GrpcGateway {
   // Get all devices

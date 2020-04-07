@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/security/certManager"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/service"
-	storeMongodb "github.com/go-ocf/ocf-cloud/openapi-connector/store/mongodb"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/go-ocf/cloud/openapi-connector/service"
+	storeMongodb "github.com/go-ocf/cloud/openapi-connector/store/mongodb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/panjf2000/ants"
 )
 

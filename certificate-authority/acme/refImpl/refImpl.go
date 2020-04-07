@@ -16,7 +16,7 @@ import (
 
 	kitNet "github.com/go-ocf/kit/net"
 	"github.com/go-ocf/kit/security/generateCertificate"
-	"github.com/go-ocf/ocf-cloud/certificate-authority/acme/service"
+	"github.com/go-ocf/cloud/certificate-authority/acme/service"
 
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/security"

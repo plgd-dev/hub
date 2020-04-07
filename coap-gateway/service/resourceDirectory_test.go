@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	oauthTest "github.com/go-ocf/ocf-cloud/authorization/provider"
-	"github.com/go-ocf/ocf-cloud/coap-gateway/uri"
+	oauthTest "github.com/go-ocf/cloud/authorization/provider"
+	"github.com/go-ocf/cloud/coap-gateway/uri"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/kelseyhightower/envconfig"

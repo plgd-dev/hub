@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/authorization/provider"
+	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/provider"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

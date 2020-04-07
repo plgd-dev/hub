@@ -7,8 +7,8 @@ import (
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore"
 	httpUtils "github.com/go-ocf/kit/net/http"
-	raEvents "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type resourceCtx struct {

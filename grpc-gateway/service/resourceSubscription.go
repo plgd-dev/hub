@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/pb"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/log"
-	cqrsRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type resourceSubscription struct {

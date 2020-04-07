@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/refImpl"
+	"github.com/go-ocf/cloud/grpc-gateway/refImpl"
 	"github.com/stretchr/testify/require"
 )
 

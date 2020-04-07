@@ -3,7 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"github.com/go-ocf/ocf-cloud/authorization/persistence"
+	"github.com/go-ocf/cloud/authorization/persistence"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

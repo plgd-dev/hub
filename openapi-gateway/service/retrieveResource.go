@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	kitNetHttp "github.com/go-ocf/kit/net/http"
-	cqrsRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID string, encoder responseWriterEncoderFunc) (int, error) {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-connector/store"
 
 	"github.com/go-ocf/kit/net/grpc"
 )

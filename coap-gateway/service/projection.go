@@ -10,8 +10,8 @@ import (
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/http"
 
-	raEvents "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type resourceCtx struct {

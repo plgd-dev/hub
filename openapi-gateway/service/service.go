@@ -11,19 +11,19 @@ import (
 	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
 
-	oapiStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	"github.com/go-ocf/ocf-cloud/openapi-gateway/store"
+	oapiStore "github.com/go-ocf/cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-gateway/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
-	raCqrs "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/notification"
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/ocf-cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow"
+	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 )
 
 //Server handle HTTP request

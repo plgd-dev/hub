@@ -15,12 +15,12 @@ import (
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/store"
 
-	raEvents "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type resourceCtx struct {

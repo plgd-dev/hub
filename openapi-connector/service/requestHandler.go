@@ -8,15 +8,15 @@ import (
 	"github.com/patrickmn/go-cache"
 
 	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/uri"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-connector/uri"
 
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	router "github.com/gorilla/mux"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 const linkedCloudIdKey = "linkedCloudId"

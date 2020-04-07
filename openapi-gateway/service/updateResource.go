@@ -9,14 +9,14 @@ import (
 
 	"github.com/go-ocf/go-coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/events"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 
-	cqrsRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	raEvents "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 const checkAgain = http.StatusPreconditionRequired

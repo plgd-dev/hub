@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/ocf-cloud/portal-webapi/uri"
+	"github.com/go-ocf/cloud/portal-webapi/uri"
 	"github.com/ugorji/go/codec"
 	"github.com/valyala/fasthttp"
 
 	router "github.com/buaazp/fasthttprouter"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/ocf-cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 )
 
 //RequestHandler for handling incoming request

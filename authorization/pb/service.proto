@@ -4,7 +4,7 @@ package ocf.cloud.auth.pb;
 
 import "auth.proto";
 
-option go_package = "github.com/go-ocf/ocf-cloud/authorization/pb;pb";
+option go_package = "github.com/go-ocf/cloud/authorization/pb;pb";
 
 service AuthorizationService {
   rpc SignUp (SignUpRequest) returns (SignUpResponse) {}

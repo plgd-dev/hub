@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/events"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-connector/store"
 )
 
 type SubscriptionQuery struct {

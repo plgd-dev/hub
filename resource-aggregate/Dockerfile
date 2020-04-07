@@ -1,5 +1,5 @@
-FROM ocf-cloud-build AS build
-WORKDIR $GOPATH/src/github.com/go-ocf/ocf-cloud/resource-aggregate
+FROM cloud-build AS build
+WORKDIR $GOPATH/src/github.com/go-ocf/cloud/resource-aggregate
 RUN go build -o /go/bin/service ./cmd/service
 
 FROM alpine:3.11 as service

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc"
 

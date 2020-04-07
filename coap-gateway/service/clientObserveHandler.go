@@ -5,14 +5,14 @@ import (
 	"io"
 	"time"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/coap-gateway/coapconv"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"google.golang.org/grpc/status"
 )
 

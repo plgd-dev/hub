@@ -9,14 +9,14 @@ import (
 
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	oapiStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	"github.com/go-ocf/ocf-cloud/openapi-gateway/store"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	oapiStore "github.com/go-ocf/cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-gateway/store"
 	"github.com/gofrs/uuid"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
-	cqrsRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/gorilla/mux"
 )
 

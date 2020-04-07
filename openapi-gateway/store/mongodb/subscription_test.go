@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/go-ocf/kit/security/certManager"
-	oapiConStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
+	oapiConStore "github.com/go-ocf/cloud/openapi-connector/store"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	"github.com/go-ocf/ocf-cloud/openapi-gateway/store"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-gateway/store"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )

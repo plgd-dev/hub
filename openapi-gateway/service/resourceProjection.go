@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/events"
 
 	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -17,10 +17,10 @@ import (
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/http"
 
-	raCqrs "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	raEvents "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/notification"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type resourceCtx struct {

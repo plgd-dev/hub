@@ -3,7 +3,7 @@ package notification
 import (
 	"sync"
 
-	raEvents "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 )
 
 type UpdateNotificationContainer struct {

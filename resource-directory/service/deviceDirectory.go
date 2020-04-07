@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	pbDD "github.com/go-ocf/ocf-cloud/resource-directory/pb/device-directory"
+	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	"github.com/go-ocf/sdk/schema/cloud"
 
 	coap "github.com/go-ocf/go-coap"
@@ -13,8 +13,8 @@ import (
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
 
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 // hasMatchingStatus returns true for matching a device state.

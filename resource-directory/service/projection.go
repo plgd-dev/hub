@@ -8,7 +8,7 @@ import (
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/strings"
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	cache "github.com/patrickmn/go-cache"
 )
 

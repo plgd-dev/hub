@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/authorization/service"
-	testService "github.com/go-ocf/ocf-cloud/authorization/test/service"
+	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/service"
+	testService "github.com/go-ocf/cloud/authorization/test/service"
 
 	_ "github.com/mattn/go-sqlite3" // sql driver
 )

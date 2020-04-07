@@ -8,14 +8,14 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	cqrs "github.com/go-ocf/cqrs"
 	cqrsEvent "github.com/go-ocf/cqrs/event"
 	cqrsEventBus "github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	cqrsUtils "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 )
 

@@ -8,11 +8,11 @@ import (
 
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	raCqrs "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/store"
+	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 func (s *SubscribeManager) subscribeToResource(ctx context.Context, l store.LinkedAccount, correlationID, signingSecret, deviceID, resourceHrefLink string) (string, error) {

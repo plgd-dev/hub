@@ -10,7 +10,7 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	kitSync "github.com/go-ocf/kit/sync"
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"google.golang.org/grpc/status"
 )
 

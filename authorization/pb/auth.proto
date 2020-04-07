@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.auth.pb;
 
-option go_package = "github.com/go-ocf/ocf-cloud/authorization/pb;pb";
+option go_package = "github.com/go-ocf/cloud/authorization/pb;pb";
 
 // https://github.com/openconnectivityfoundation/security/blob/master/oic.r.account.raml#L27
 message SignUpRequest {

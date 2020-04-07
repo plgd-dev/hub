@@ -6,9 +6,9 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 
 	gocoap "github.com/go-ocf/go-coap"
-	cqrsRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 

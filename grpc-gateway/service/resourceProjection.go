@@ -11,10 +11,10 @@ import (
 	"github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/sdk/schema/cloud"
 
-	cqrsRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	raEvents "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/notification"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type resourceCtx struct {

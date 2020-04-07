@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/kit/log"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"

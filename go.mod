@@ -1,4 +1,4 @@
-module github.com/go-ocf/ocf-cloud
+module github.com/go-ocf/cloud
 
 go 1.13
 

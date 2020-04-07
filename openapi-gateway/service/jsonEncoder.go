@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/events"
 )
 
 func jsonResponseWriterEncoder(w http.ResponseWriter, v interface{}) error {

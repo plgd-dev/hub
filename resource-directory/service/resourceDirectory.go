@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/go-ocf/kit/strings"
-	pbRD "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 )
 
 func toResourceLink(model *resourceCtx) pbRD.ResourceLink {

@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-ocf/kit/security/certManager"
 
-	"github.com/go-ocf/ocf-cloud/authorization/uri"
+	"github.com/go-ocf/cloud/authorization/uri"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -20,9 +20,9 @@ import (
 	"github.com/valyala/fasthttp"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/authorization/persistence"
-	"github.com/go-ocf/ocf-cloud/authorization/provider"
+	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/persistence"
+	"github.com/go-ocf/cloud/authorization/provider"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
 

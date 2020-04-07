@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-ocf/ocf-cloud/authorization/persistence/mongodb"
-	"github.com/go-ocf/ocf-cloud/authorization/provider"
-	"github.com/go-ocf/ocf-cloud/authorization/service"
+	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
+	"github.com/go-ocf/cloud/authorization/provider"
+	"github.com/go-ocf/cloud/authorization/service"
 	"github.com/go-ocf/kit/security/certManager"
 )
 

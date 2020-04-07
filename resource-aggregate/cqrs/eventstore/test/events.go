@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-ocf/cqrs/event"
 	httpUtils "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/events"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 func MakeResourcePublishedEvent(resource pb.Resource, eventMetadata pb.EventMetadata) event.EventUnmarshaler {

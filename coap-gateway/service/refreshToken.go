@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/coap-gateway/coapconv"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/go-ocf/kit/codec/cbor"

@@ -6,11 +6,11 @@ import (
 	"io"
 	"net/http"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	oapiStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	"github.com/go-ocf/ocf-cloud/openapi-gateway/store"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	oapiStore "github.com/go-ocf/cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-gateway/store"
 	"google.golang.org/grpc/status"
 )
 

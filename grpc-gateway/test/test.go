@@ -32,25 +32,25 @@ import (
 	"github.com/go-ocf/sdk/schema"
 	"github.com/go-ocf/sdk/schema/cloud"
 
-	coapgwService "github.com/go-ocf/ocf-cloud/coap-gateway/test/service"
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/pb"
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/refImpl"
-	"github.com/go-ocf/ocf-cloud/grpc-gateway/service"
-	ra "github.com/go-ocf/ocf-cloud/resource-aggregate/refImpl"
-	raService "github.com/go-ocf/ocf-cloud/resource-aggregate/test/service"
-	rd "github.com/go-ocf/ocf-cloud/resource-directory/refImpl"
-	rdService "github.com/go-ocf/ocf-cloud/resource-directory/test/service"
+	coapgwService "github.com/go-ocf/cloud/coap-gateway/test/service"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/go-ocf/cloud/grpc-gateway/refImpl"
+	"github.com/go-ocf/cloud/grpc-gateway/service"
+	ra "github.com/go-ocf/cloud/resource-aggregate/refImpl"
+	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
+	rd "github.com/go-ocf/cloud/resource-directory/refImpl"
+	rdService "github.com/go-ocf/cloud/resource-directory/test/service"
 	"github.com/go-ocf/sdk/local/core"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	authConfig "github.com/go-ocf/ocf-cloud/authorization/service"
-	authService "github.com/go-ocf/ocf-cloud/authorization/test/service"
+	authConfig "github.com/go-ocf/cloud/authorization/service"
+	authService "github.com/go-ocf/cloud/authorization/test/service"
 
-	coapGW "github.com/go-ocf/ocf-cloud/coap-gateway/refImpl"
+	coapGW "github.com/go-ocf/cloud/coap-gateway/refImpl"
 
-	"github.com/go-ocf/ocf-cloud/authorization/provider"
+	"github.com/go-ocf/cloud/authorization/provider"
 )
 
 const AUTH_HOST = "localhost:7005"

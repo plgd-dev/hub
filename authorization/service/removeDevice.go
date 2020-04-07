@@ -5,7 +5,7 @@ import (
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

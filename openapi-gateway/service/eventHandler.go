@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	oapiStore "github.com/go-ocf/ocf-cloud/openapi-connector/store"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	oapiStore "github.com/go-ocf/cloud/openapi-connector/store"
 
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/ocf-cloud/openapi-gateway/store"
+	"github.com/go-ocf/cloud/openapi-gateway/store"
 	"github.com/go-ocf/sdk/schema"
 )
 

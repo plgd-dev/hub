@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/security/certManager"
-	"github.com/go-ocf/ocf-cloud/portal-webapi/service"
+	"github.com/go-ocf/cloud/portal-webapi/service"
 )
 
 type Config struct {

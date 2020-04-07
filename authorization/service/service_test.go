@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/ocf-cloud/authorization/persistence"
+	"github.com/go-ocf/cloud/authorization/persistence"
 	"github.com/go-ocf/kit/security/certManager"
 
-	"github.com/go-ocf/ocf-cloud/authorization/persistence/mongodb"
-	oauthProvider "github.com/go-ocf/ocf-cloud/authorization/provider"
+	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
+	oauthProvider "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/kelseyhightower/envconfig"
 	_ "github.com/mattn/go-sqlite3" // sql driver
 	"github.com/stretchr/testify/assert"

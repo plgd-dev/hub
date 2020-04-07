@@ -6,8 +6,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/authorization/persistence"
+	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/persistence"
 )
 
 // RefreshToken renews AccessToken using RefreshToken.

@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/go-ocf/ocf-cloud/authorization?status.svg)](https://godoc.org/github.com/go-ocf/ocf-cloud/authorization)
+[![GoDoc](https://godoc.org/github.com/go-ocf/cloud/authorization?status.svg)](https://godoc.org/github.com/go-ocf/cloud/authorization)
 [![Go Report Card](https://goreportcard.com/badge/go-ocf/authorization)](https://goreportcard.com/report/go-ocf/authorization)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 

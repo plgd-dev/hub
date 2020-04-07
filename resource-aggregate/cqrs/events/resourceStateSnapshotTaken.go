@@ -16,8 +16,8 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/net/http"
-	cqrsUtils "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type VerifyAccessFunc func(deviceId, resourceId string) error

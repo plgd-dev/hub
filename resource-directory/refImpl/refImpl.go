@@ -12,13 +12,13 @@ import (
 
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	pbDD "github.com/go-ocf/ocf-cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow"
-	"github.com/go-ocf/ocf-cloud/resource-directory/service"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"github.com/go-ocf/cloud/resource-directory/service"
 	"github.com/panjf2000/ants"
 )
 

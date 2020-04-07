@@ -5,7 +5,7 @@ package resource_shadow
 
 import (
 	fmt "fmt"
-	pb "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pb "github.com/go-ocf/cloud/resource-aggregate/pb"
 	proto "github.com/gogo/protobuf/proto"
 	io "io"
 	math "math"

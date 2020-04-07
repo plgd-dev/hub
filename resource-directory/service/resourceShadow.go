@@ -7,7 +7,7 @@ import (
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
 
-	pbRS "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-shadow"
+	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 )
 
 func toResourceValue(m *resourceCtx) pbRS.ResourceValue {

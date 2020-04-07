@@ -1,6 +1,6 @@
 package service
 
-import "github.com/go-ocf/ocf-cloud/openapi-connector/store"
+import "github.com/go-ocf/cloud/openapi-connector/store"
 
 type LinkedAccountData struct {
 	originCloud   store.LinkedCloud

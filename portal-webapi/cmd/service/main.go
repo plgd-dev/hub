@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/go-ocf/ocf-cloud/portal-webapi/refImpl"
+	"github.com/go-ocf/cloud/portal-webapi/refImpl"
 )
 
 func main() {

@@ -2,7 +2,7 @@ package events
 
 import (
 	"github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type ResourceUpdated struct {

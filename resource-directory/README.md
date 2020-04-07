@@ -1,4 +1,4 @@
-[![Go Report](https://goreportcard.com/badge/github.com/go-ocf/ocf-cloud/resource-directory)](https://goreportcard.com/report/github.com/go-ocf/ocf-cloud/resource-directory)
+[![Go Report](https://goreportcard.com/badge/github.com/go-ocf/cloud/resource-directory)](https://goreportcard.com/report/github.com/go-ocf/cloud/resource-directory)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 # resource-directory

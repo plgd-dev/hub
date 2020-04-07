@@ -5,7 +5,7 @@ package device_directory
 
 import (
 	fmt "fmt"
-	pb "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pb "github.com/go-ocf/cloud/resource-aggregate/pb"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	io "io"

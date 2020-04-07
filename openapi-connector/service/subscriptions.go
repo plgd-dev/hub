@@ -10,14 +10,14 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/patrickmn/go-cache"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/log"
 	kitHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/store"
-	projectionRA "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/projection"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/store"
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 const AuthorizationHeader string = "Authorization"

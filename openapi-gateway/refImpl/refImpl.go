@@ -12,10 +12,10 @@ import (
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/kit/security/certManager"
-	"github.com/go-ocf/ocf-cloud/openapi-gateway/service"
-	storeMongodb "github.com/go-ocf/ocf-cloud/openapi-gateway/store/mongodb"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/go-ocf/cloud/openapi-gateway/service"
+	storeMongodb "github.com/go-ocf/cloud/openapi-gateway/store/mongodb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 )
 
 type Config struct {

@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/log"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/ocf-cloud/resource-directory/pb/resource-directory"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	"github.com/valyala/fasthttp"
 )
 

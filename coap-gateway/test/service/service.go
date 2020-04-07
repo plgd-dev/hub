@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-ocf/ocf-cloud/coap-gateway/refImpl"
+	"github.com/go-ocf/cloud/coap-gateway/refImpl"
 	"github.com/stretchr/testify/require"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/go-ocf/ocf-cloud/certificate-authority/refImpl"
+	"github.com/go-ocf/cloud/certificate-authority/refImpl"
 	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 )

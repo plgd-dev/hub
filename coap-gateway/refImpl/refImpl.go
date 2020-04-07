@@ -8,13 +8,13 @@ import (
 
 	"github.com/go-ocf/kit/security/certManager"
 
-	"github.com/go-ocf/ocf-cloud/coap-gateway/service"
-	"github.com/go-ocf/ocf-cloud/coap-gateway/uri"
+	"github.com/go-ocf/cloud/coap-gateway/service"
+	"github.com/go-ocf/cloud/coap-gateway/uri"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/panjf2000/ants"
 )
 

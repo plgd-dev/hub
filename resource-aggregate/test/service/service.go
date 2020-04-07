@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/refImpl"
+	"github.com/go-ocf/cloud/resource-aggregate/refImpl"
 	"github.com/stretchr/testify/require"
 )
 

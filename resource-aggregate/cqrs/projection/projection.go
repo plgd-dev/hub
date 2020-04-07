@@ -9,7 +9,7 @@ import (
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
 
-	raCqrsUtils "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
+	raCqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 )
 
 // Projection projects events from resource aggregate.

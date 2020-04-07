@@ -3,9 +3,9 @@ syntax = "proto3";
 package ocf.cloud.certificateauthority.pb;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "github.com/go-ocf/ocf-cloud/certificate-authority/pb/cert.proto";
+import "github.com/go-ocf/cloud/certificate-authority/pb/cert.proto";
 
-option go_package = "github.com/go-ocf/ocf-cloud/certificate-authority/pb;pb";
+option go_package = "github.com/go-ocf/cloud/certificate-authority/pb;pb";
 
 service CertificateAuthority {
   // SignIdentityCertificate sends a Identity Certificate Signing Request to the certificate authority 

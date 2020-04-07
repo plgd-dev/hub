@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/authorization/provider"
+	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/kit/net/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"

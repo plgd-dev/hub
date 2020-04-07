@@ -31,7 +31,7 @@ import (
 	"github.com/go-ocf/cqrs/eventstore"
 	cqrsMongodb "github.com/go-ocf/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/kit/log"
-	cqrsUtils "github.com/go-ocf/ocf-cloud/resource-aggregate/cqrs"
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 )
 
 const instanceIdsCollection = "instanceIds"

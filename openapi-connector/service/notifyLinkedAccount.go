@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/ocf-cloud/openapi-connector/events"
+	"github.com/go-ocf/cloud/openapi-connector/events"
 )
 
 func (rh *RequestHandler) notifyLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {

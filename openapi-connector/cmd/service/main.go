@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/ocf-cloud/openapi-connector/refImpl"
+	"github.com/go-ocf/cloud/openapi-connector/refImpl"
 	"github.com/kelseyhightower/envconfig"
 )
 

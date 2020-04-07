@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-ocf/ocf-cloud/authorization/persistence/mongodb"
-	"github.com/go-ocf/ocf-cloud/authorization/provider"
+	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
+	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/security/certManager"
 )

@@ -6,8 +6,8 @@ import (
 
 	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/go-coap/codes"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 func StatusToCoapCode(status pbRA.Status, cmdCode codes.Code) codes.Code {

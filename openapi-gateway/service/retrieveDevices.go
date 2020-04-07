@@ -9,8 +9,8 @@ import (
 
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
-	pbCQRS "github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/ocf-cloud/resource-directory/pb/device-directory"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	"github.com/go-ocf/sdk/schema"
 	"github.com/gorilla/mux"
 )

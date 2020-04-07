@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-ocf/kit/log"
 
-	"github.com/go-ocf/ocf-cloud/authorization/pb"
-	"github.com/go-ocf/ocf-cloud/authorization/persistence"
+	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/persistence"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

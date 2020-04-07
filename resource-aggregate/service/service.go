@@ -8,13 +8,13 @@ import (
 	"sync"
 	"syscall"
 
-	pbAS "github.com/go-ocf/ocf-cloud/authorization/pb"
+	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	cqrsEventBus "github.com/go-ocf/cqrs/eventbus"
 	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	cqrsMaintenance "github.com/go-ocf/cqrs/eventstore/maintenance"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/ocf-cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
