@@ -1,6 +1,7 @@
 SHELL = /bin/bash
+SIMULATOR_NAME_SUFFIX ?= $(shell hostname)
 
-SUBDIRS := resource-aggregate authorization resource-directory openapi-connector openapi-gateway coap-gateway
+SUBDIRS := resource-aggregate authorization resource-directory openapi-connector openapi-gateway coap-gateway grpc-gateway
 .PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca ocf-cloud-build
 
 default: build
@@ -55,6 +56,8 @@ make-mongo:
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile certs/mongo/mongo.key
 
 env: clean make-ca make-nats make-mongo
+	docker build ./device-simulator --network=host -t device-simulator --target service
+	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
 test: env ocf-cloud-build
 	docker run \
@@ -65,6 +68,7 @@ test: env ocf-cloud-build
 		-e DIAL_ACME_DIRECTORY_URL="https://localhost:10443/acme/acme/directory" \
 		-e LISTEN_ACME_CA_POOL=/root_ca.crt \
 		-e LISTEN_ACME_DOMAINS="localhost" \
+		-e LISTEN_ACME_DEVICE_ID="adebc667-1f2b-41e3-bf5c-6d6eabc68cc6" \
 		-e LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/acme/directory" \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/ocf.gw/directory" \
 		--mount type=bind,source="$(shell pwd)",target=/shared \
@@ -77,6 +81,7 @@ clean:
 	docker rm -f step-ca-test || true
 	docker rm -f mongo || true
 	docker rm -f nats || true
+	docker rm -f devsim || true
 	rm -rf ./.tmp/step-ca || true
 	rm -rf ./.tmp/mongo || true
 

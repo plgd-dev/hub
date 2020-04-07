@@ -23,5 +23,6 @@ push: build-servicecontainer
 	docker push ocfcloud/$(SERVICE_NAME):$(VERSION_TAG)
 	docker push ocfcloud/$(SERVICE_NAME):$(LATEST_TAG)
 
+proto/generate:
 
-.PHONY: build-servicecontainer build push
+.PHONY: build-servicecontainer build push proto/generate

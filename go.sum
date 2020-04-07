@@ -52,6 +52,7 @@ github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fxamacker/cbor/v2 v2.2.0 h1:6eXqdDDe588rSYAi1HfZKbx6YYQO4mxQ9eC6xYpU/JQ=
 github.com/fxamacker/cbor/v2 v2.2.0/go.mod h1:TA1xS00nchWmaBnEIxPSE5oHLuJBAVvqrtAnWBwBCVo=
+github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8 h1:DujepqpGd1hyOd7aW59XpK7Qymp8iy83xq74fLr21is=
 github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
 github.com/go-acme/lego v2.7.2+incompatible h1:ThhpPBgf6oa9X/vRd0kEmWOsX7+vmYdckmGZSb+FEp0=
 github.com/go-acme/lego v2.7.2+incompatible/go.mod h1:yzMNe9CasVUhkquNvti5nAtPmG94USbYxYrZfTkIn0M=
@@ -65,12 +66,14 @@ github.com/go-ocf/authorization v0.0.0-20200102120905-44194ad01b6b/go.mod h1:sCs
 github.com/go-ocf/authorization v0.0.0-20200127150932-76f9ee40d6c6/go.mod h1:Ku446n9HbFWHXWhaYyHGIaPFQ3oG0baxhYbl+iS3lM4=
 github.com/go-ocf/authorization v0.0.0-20200206133225-884a7e831bb1/go.mod h1:m8D+8OgOfpgA5/e5UvH+oGk4EaUUSUgp4c5s8ARoMCs=
 github.com/go-ocf/authorization v0.0.0-20200317083801-219f66279a5a/go.mod h1:r5zz7XS2uqc+avRsPpdv7aZS3ABNbtGdkfrJBY/AifA=
+github.com/go-ocf/authorization v0.0.0-20200318102231-7b6f2c3de1f8 h1:CQTRxQh55EsZPSH/MkMfIfsjAnKWER4EgMHWBXCbYF8=
 github.com/go-ocf/authorization v0.0.0-20200318102231-7b6f2c3de1f8/go.mod h1:r5zz7XS2uqc+avRsPpdv7aZS3ABNbtGdkfrJBY/AifA=
 github.com/go-ocf/certificate-authority v0.0.0-20200306090447-ff501f1cf29a/go.mod h1:0z120kuRIORuPujXrjGafXXpCgX3chBrevVd+WZFF4M=
 github.com/go-ocf/coap-gateway v0.0.0-20191029135134-f6d64e927f2d/go.mod h1:nATrHRzqOGUkWP99R/66FoXGIVOIAuC6NiGW/5OoIQ8=
 github.com/go-ocf/coap-gateway v0.0.0-20191128113433-bf8268a9145d/go.mod h1:jgZuHpW4wW0kdrOa0jy/AgtA5otvkBMGxfraUruQ5gE=
 github.com/go-ocf/coap-gateway v0.0.0-20200206135044-4d6d04bae45e/go.mod h1:v0nWSD3MofMRfuIhjj6FQdp7Etc74qhfnDMDy5iMT/0=
 github.com/go-ocf/coap-gateway v0.0.0-20200317094312-c095f634133e/go.mod h1:ANFvRv1xaSory80DCyfID+f68DvwE3CUO2F84ArblgM=
+github.com/go-ocf/coap-gateway v0.0.0-20200323122545-250f26f53c6c h1:wgQgGczzzIkDAZ/KLzfsrkOZMmBSduUQlj4EDGo3vOU=
 github.com/go-ocf/coap-gateway v0.0.0-20200323122545-250f26f53c6c/go.mod h1:puyYbXqf0IlhVf9lChu4wIJ6/17TErZGohLSVz5Vbg8=
 github.com/go-ocf/cqrs v0.0.0-20190925123934-fc3dcec96e06/go.mod h1:kV/m0T0vn3lWBZTx2u/PVmXO/uRKSHmzWfQL2Us1Vv0=
 github.com/go-ocf/cqrs v0.0.0-20191107150148-d3546606da81/go.mod h1:+clS9NgOOp6PvrgH5yJ/paxggQnS4bhgIajH7Zq4mTA=
@@ -95,6 +98,7 @@ github.com/go-ocf/grpc-gateway v0.0.0-20191128115804-9c2e8f77af08/go.mod h1:XBVe
 github.com/go-ocf/grpc-gateway v0.0.0-20200206140756-f2e98d630ed6/go.mod h1:UmskFCqe00ISEBHTZJbWIeyvvHcIuVsS/5c5FFEHF8s=
 github.com/go-ocf/grpc-gateway v0.0.0-20200319123843-760c721614a6/go.mod h1:MrWS8kkt/2owxXBeF1iS3Phv/d+FpzJ2Q9dw8tAlPnM=
 github.com/go-ocf/grpc-gateway v0.0.0-20200319135410-983e3720b65d/go.mod h1:G4Axmfc2431jBj/gJU4RtKnHTsnPUrccuLet9HS/3H0=
+github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79 h1:bB+5V1yzRCO0a8V4lMV2hoQVwySFcNrl9kB8O8kXco0=
 github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79/go.mod h1:G2jLNVvag68GNQVuRvDIohEe7R4TDKg49faDJzWPSy0=
 github.com/go-ocf/kit v0.0.0-20190627123507-31d82dceaba0/go.mod h1:cP9tDuWo0oq30mYGOSvpVJ6mDSUiOUCuisMnPN/AmvQ=
 github.com/go-ocf/kit v0.0.0-20191028131320-a13f1309c964/go.mod h1:cP9tDuWo0oq30mYGOSvpVJ6mDSUiOUCuisMnPN/AmvQ=
@@ -129,12 +133,14 @@ github.com/go-ocf/resource-aggregate v0.0.0-20200206134526-98a7e94bdd4d/go.mod h
 github.com/go-ocf/resource-aggregate v0.0.0-20200317084442-61d838e69238/go.mod h1:ncd3pGRu9/uik/poxKhOXswVU5wE26NipVM3sVHWFNs=
 github.com/go-ocf/resource-aggregate v0.0.0-20200323093600-690f73062315/go.mod h1:ncd3pGRu9/uik/poxKhOXswVU5wE26NipVM3sVHWFNs=
 github.com/go-ocf/resource-aggregate v0.0.0-20200324145835-165be0b7b6ca/go.mod h1:HyXMWeWV3hiqEfTAtBQZhUZLneD2JgxCJzzQrVLCVtY=
+github.com/go-ocf/resource-aggregate v0.0.0-20200326125438-8ab650abf05f h1:zMQoHaLlwDcj45cpCnsN6867OG4w9mtPdmTIl416dD4=
 github.com/go-ocf/resource-aggregate v0.0.0-20200326125438-8ab650abf05f/go.mod h1:p4rWYNZ/lcTp3KdEOPY7zdvZfbuyXBlxXBKq4F8qo8M=
 github.com/go-ocf/resource-directory v0.0.0-20191029084211-59afab3faf54/go.mod h1:AyZwgRfDRRg9vQMxW66NUq5/O5vwd1+gOgPAtVA7xdc=
 github.com/go-ocf/resource-directory v0.0.0-20191029134203-3e2a985c36e2/go.mod h1:AyZwgRfDRRg9vQMxW66NUq5/O5vwd1+gOgPAtVA7xdc=
 github.com/go-ocf/resource-directory v0.0.0-20191122211635-a96a97864227/go.mod h1:HbLJmgwxFnBg+ehdMiuiQla3MEmXxFXwjN4LXKKZVJY=
 github.com/go-ocf/resource-directory v0.0.0-20200127170709-a4bef91c57a2/go.mod h1:uHaGgiMoLjvsNwMyd1F5mMxfaB/oL9K8lIADP/nR2d4=
 github.com/go-ocf/resource-directory v0.0.0-20200206134042-b65dd1895c5d/go.mod h1:Fp3pOkNC1EWoa/TaYGOLsNeXEc5JakGIauufi6c+KBM=
+github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726 h1:8pqqiIGExabOE3YLJ5+o3fEe/yKsIUe4luwMx1LACys=
 github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726/go.mod h1:Nm3ZojlZ3REemNMfnHtBalCR6OsdrxpOV2SoJFzya9U=
 github.com/go-ocf/sdk v0.0.0-20190926135508-aa0190036e50/go.mod h1:CK33PRv54Esvk2TLNvixJTcwwBwGnGuIAZr5LwchnMo=
 github.com/go-ocf/sdk v0.0.0-20191014110911-e42b567505f4/go.mod h1:CK33PRv54Esvk2TLNvixJTcwwBwGnGuIAZr5LwchnMo=
@@ -387,8 +393,9 @@ go.mongodb.org/mongo-driver v1.3.0/go.mod h1:MSWZXKOynuguX+JSvwP8i+58jYCXxbia8HS
 go.mongodb.org/mongo-driver v1.3.1 h1:op56IfTQiaY2679w922KVWa3qcHdml2K/Io8ayAOUEQ=
 go.mongodb.org/mongo-driver v1.3.1/go.mod h1:MSWZXKOynuguX+JSvwP8i+58jYCXxbia8HS3gZBapIE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
-go.uber.org/atomic v1.5.0 h1:OI5t8sDa1Or+q8AeE+yKeB/SDYioSHAgcVljj9JIETY=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
+go.uber.org/atomic v1.6.0 h1:Ezj3JGmsOnG1MoRWQkPBsKLe9DwWD9QeXzTRzzldNVk=
+go.uber.org/atomic v1.6.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
 go.uber.org/multierr v1.2.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
 go.uber.org/multierr v1.3.0 h1:sFPn2GLc3poCkfrpIXGhBD2X0CMIo4Q/zSULXrj/+uc=

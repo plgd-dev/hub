@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap v0.0.0-20200406073902-cf923db524db
 	github.com/go-ocf/kit v0.0.0-20200326124037-40a7509422e3
@@ -27,6 +28,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/valyala/fasthttp v1.9.0
 	go.mongodb.org/mongo-driver v1.3.1
+	go.uber.org/atomic v1.6.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	google.golang.org/grpc v1.28.1
