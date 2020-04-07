@@ -1,0 +1,7 @@
+.git
+.github
+.gitignore
+.travis.yml
+.gitlab-ci.yml
+Makefile
+vendor

@@ -21,7 +21,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type SignCertificateRequest struct {
 	CertificateSigningRequest []byte `protobuf:"bytes,1,opt,name=certificate_signing_request,json=certificateSigningRequest,proto3" json:"certificate_signing_request,omitempty"`
@@ -41,7 +41,7 @@ func (m *SignCertificateRequest) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return xxx_messageInfo_SignCertificateRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +85,7 @@ func (m *SignCertificateResponse) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return xxx_messageInfo_SignCertificateResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func init() {
 func init() { proto.RegisterFile("pb/cert.proto", fileDescriptor_490d2f57cafd3ca8) }
 
 var fileDescriptor_490d2f57cafd3ca8 = []byte{
-	// 229 bytes of a gzipped FileDescriptorProto
+	// 237 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0x48, 0xd2, 0x4f,
 	0x4e, 0x2d, 0x2a, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x52, 0xcc, 0x4f, 0x4e, 0xd3, 0x4b,
 	0xce, 0xc9, 0x2f, 0x4d, 0xd1, 0x03, 0x89, 0x66, 0xa6, 0x65, 0x26, 0x27, 0x96, 0xa4, 0x26, 0x96,
@@ -130,17 +130,17 @@ var fileDescriptor_490d2f57cafd3ca8 = []byte{
 	0x1d, 0xf1, 0xc5, 0x99, 0xe9, 0x79, 0x99, 0x79, 0xe9, 0xf1, 0x45, 0x10, 0x69, 0x09, 0x46, 0x05,
 	0x46, 0x0d, 0x9e, 0x20, 0x49, 0x24, 0x25, 0xc1, 0x10, 0x15, 0x50, 0xfd, 0x4a, 0xd6, 0x5c, 0xe2,
 	0x18, 0x26, 0x17, 0x17, 0xe4, 0xe7, 0x15, 0xa7, 0x0a, 0x29, 0x70, 0x71, 0x23, 0xe9, 0x83, 0x1a,
-	0x85, 0x2c, 0xe4, 0xe4, 0x7e, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9,
-	0x31, 0x4e, 0x78, 0x2c, 0xc7, 0x70, 0xe1, 0xb1, 0x1c, 0xc3, 0x8d, 0xc7, 0x72, 0x0c, 0x51, 0xa8,
-	0xfe, 0xd3, 0xcd, 0x4f, 0x4e, 0xd3, 0x47, 0xd2, 0xa8, 0x0b, 0x0f, 0x0b, 0xfd, 0x82, 0x24, 0xeb,
-	0x82, 0xa4, 0x24, 0x36, 0xb0, 0x37, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x05, 0x2e, 0x6a,
-	0x7c, 0x49, 0x01, 0x00, 0x00,
+	0x85, 0x2c, 0xe4, 0x14, 0x78, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9,
+	0x31, 0x4e, 0x78, 0x2c, 0xc7, 0x70, 0xe1, 0xb1, 0x1c, 0xc3, 0x8d, 0xc7, 0x72, 0x0c, 0x51, 0xe6,
+	0x28, 0xfe, 0xd3, 0xcd, 0x4f, 0x4e, 0xd3, 0xcf, 0x4f, 0x4e, 0xd3, 0x05, 0x07, 0x8a, 0x3e, 0x92,
+	0x11, 0xba, 0xf0, 0x50, 0xd1, 0x2f, 0x48, 0xb2, 0x2e, 0x48, 0x4a, 0x62, 0x03, 0x7b, 0xd8, 0x18,
+	0x10, 0x00, 0x00, 0xff, 0xff, 0x6c, 0x99, 0x06, 0xfe, 0x53, 0x01, 0x00, 0x00,
 }
 
 func (m *SignCertificateRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -148,23 +148,29 @@ func (m *SignCertificateRequest) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *SignCertificateRequest) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignCertificateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	if len(m.CertificateSigningRequest) > 0 {
-		dAtA[i] = 0xa
-		i++
+		i -= len(m.CertificateSigningRequest)
+		copy(dAtA[i:], m.CertificateSigningRequest)
 		i = encodeVarintCert(dAtA, i, uint64(len(m.CertificateSigningRequest)))
-		i += copy(dAtA[i:], m.CertificateSigningRequest)
+		i--
+		dAtA[i] = 0xa
 	}
-	return i, nil
+	return len(dAtA) - i, nil
 }
 
 func (m *SignCertificateResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -172,27 +178,35 @@ func (m *SignCertificateResponse) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *SignCertificateResponse) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignCertificateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	if len(m.Certificate) > 0 {
-		dAtA[i] = 0xa
-		i++
+		i -= len(m.Certificate)
+		copy(dAtA[i:], m.Certificate)
 		i = encodeVarintCert(dAtA, i, uint64(len(m.Certificate)))
-		i += copy(dAtA[i:], m.Certificate)
+		i--
+		dAtA[i] = 0xa
 	}
-	return i, nil
+	return len(dAtA) - i, nil
 }
 
 func encodeVarintCert(dAtA []byte, offset int, v uint64) int {
+	offset -= sovCert(v)
+	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return offset + 1
+	return base
 }
 func (m *SignCertificateRequest) Size() (n int) {
 	if m == nil {
@@ -403,6 +417,7 @@ func (m *SignCertificateResponse) Unmarshal(dAtA []byte) error {
 func skipCert(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
+	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -434,10 +449,8 @@ func skipCert(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
-			return iNdEx, nil
 		case 1:
 			iNdEx += 8
-			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -458,55 +471,30 @@ func skipCert(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthCert
 			}
 			iNdEx += length
-			if iNdEx < 0 {
-				return 0, ErrInvalidLengthCert
-			}
-			return iNdEx, nil
 		case 3:
-			for {
-				var innerWire uint64
-				var start int = iNdEx
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return 0, ErrIntOverflowCert
-					}
-					if iNdEx >= l {
-						return 0, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					innerWire |= (uint64(b) & 0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				innerWireType := int(innerWire & 0x7)
-				if innerWireType == 4 {
-					break
-				}
-				next, err := skipCert(dAtA[start:])
-				if err != nil {
-					return 0, err
-				}
-				iNdEx = start + next
-				if iNdEx < 0 {
-					return 0, ErrInvalidLengthCert
-				}
-			}
-			return iNdEx, nil
+			depth++
 		case 4:
-			return iNdEx, nil
+			if depth == 0 {
+				return 0, ErrUnexpectedEndOfGroupCert
+			}
+			depth--
 		case 5:
 			iNdEx += 4
-			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
+		if iNdEx < 0 {
+			return 0, ErrInvalidLengthCert
+		}
+		if depth == 0 {
+			return iNdEx, nil
+		}
 	}
-	panic("unreachable")
+	return 0, io.ErrUnexpectedEOF
 }
 
 var (
-	ErrInvalidLengthCert = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowCert   = fmt.Errorf("proto: integer overflow")
+	ErrInvalidLengthCert        = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowCert          = fmt.Errorf("proto: integer overflow")
+	ErrUnexpectedEndOfGroupCert = fmt.Errorf("proto: unexpected end of group")
 )
