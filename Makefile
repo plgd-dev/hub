@@ -2,15 +2,9 @@ SHELL = /bin/bash
 SIMULATOR_NAME_SUFFIX ?= $(shell hostname)
 
 SUBDIRS := resource-aggregate authorization resource-directory openapi-connector openapi-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle
-.PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca cloud-build
+.PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca test-build
 
 default: build
-
-cloud-build:
-	docker build \
-		--network=host \
-		--tag cloud-build \
-		.
 
 make-ca:
 	docker pull ocfcloud/step-ca:vnext
@@ -59,7 +53,13 @@ env: clean make-ca make-nats make-mongo
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
-test: env cloud-build
+test-build:
+	docker build \
+		--network=host \
+		--tag test-build \
+		.
+
+test: env test-build
 	docker run \
 		--network=host \
 		-v $(shell pwd)/.tmp/step-ca/data/certs/root_ca.crt:/root_ca.crt \
@@ -72,10 +72,10 @@ test: env cloud-build
 		-e LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/acme/directory" \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/ocf.gw/directory" \
 		--mount type=bind,source="$(shell pwd)",target=/shared \
-		cloud-build \
+		test-build \
 		go test -p 1 -v ./... -covermode=atomic -coverprofile=/shared/coverage.txt
 
-build: cloud-build $(SUBDIRS)
+build: $(SUBDIRS)
 
 clean:
 	docker rm -f step-ca-test || true
