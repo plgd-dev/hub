@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/go-ocf/authorization.svg?branch=master)](https://travis-ci.com/go-ocf/authorization)
-[![Coverage Status](https://codecov.io/gh/go-ocf/authorization/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/authorization)
 [![GoDoc](https://godoc.org/github.com/go-ocf/ocf-cloud/authorization?status.svg)](https://godoc.org/github.com/go-ocf/ocf-cloud/authorization)
 [![Go Report Card](https://goreportcard.com/badge/go-ocf/authorization)](https://goreportcard.com/report/go-ocf/authorization)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)

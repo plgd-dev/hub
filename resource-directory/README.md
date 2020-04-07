@@ -1,23 +1,7 @@
-[![Build Status](https://travis-ci.com/go-ocf/resource-directory.svg?branch=master)](https://travis-ci.com/go-ocf/resource-directory)
-[![codecov](https://codecov.io/gh/go-ocf/resource-directory/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/resource-directory)
 [![Go Report](https://goreportcard.com/badge/github.com/go-ocf/ocf-cloud/resource-directory)](https://goreportcard.com/report/github.com/go-ocf/ocf-cloud/resource-directory)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 # resource-directory
-
-# Build
-
-## Docker
-
-```sh
-make build-servicecontainer
-```
-## Local machine
-
-```sh
-dep ensure -v --vendor-only
-go build ./cmd/coap-gateway-service/
-```
 
 ## Configuration
 | Option | ENV variable | Type | Description | Default |

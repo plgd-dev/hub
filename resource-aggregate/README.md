@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/go-ocf/resource-aggregate.svg?branch=master)](https://travis-ci.com/go-ocf/resource-aggregate)
-[![codecov](https://codecov.io/gh/go-ocf/resource-aggregate/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/resource-aggregate)
 [![Go Report](https://goreportcard.com/badge/github.com/go-ocf/ocf-cloud/resource-aggregate)](https://goreportcard.com/report/github.com/go-ocf/ocf-cloud/resource-aggregate)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 

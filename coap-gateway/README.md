@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/go-ocf/coap-gateway.svg?branch=master)](https://travis-ci.com/go-ocf/coap-gateway)
-[![codecov](https://codecov.io/gh/go-ocf/coap-gateway/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/coap-gateway)
 [![Go Report](https://goreportcard.com/badge/github.com/go-ocf/ocf-cloud/coap-gateway)](https://goreportcard.com/report/github.com/go-ocf/ocf-cloud/coap-gateway)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
