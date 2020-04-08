@@ -1,9 +1,4 @@
-FROM golang:1.13.5-alpine3.10 AS build
-RUN apk add --no-cache curl git build-base
-WORKDIR $GOPATH/src/github.com/go-ocf/cloud
-COPY . .
-RUN go mod download
-
+FROM cloud-build AS build
 ARG root_directory=$GOPATH/src/github.com/go-ocf/cloud
 
 #coap-gateway

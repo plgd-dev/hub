@@ -1,8 +1,5 @@
-FROM golang:1.13.5-alpine3.10 AS build
-RUN apk add --no-cache curl git build-base
+FROM cloud-build AS build
 WORKDIR $GOPATH/src/github.com/go-ocf/cloud/openapi-connector
-COPY . .
-RUN go mod download
 RUN go build -o /go/bin/service ./cmd/service
 
 FROM alpine:3.11 as service
