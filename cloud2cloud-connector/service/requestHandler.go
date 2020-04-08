@@ -7,10 +7,10 @@ import (
 
 	"github.com/patrickmn/go-cache"
 
-	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/uri"
+	"github.com/go-ocf/kit/log"
 
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	router "github.com/gorilla/mux"

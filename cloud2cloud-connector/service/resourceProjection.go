@@ -12,11 +12,11 @@ import (
 	"github.com/go-ocf/cqrs/eventstore"
 	coap "github.com/go-ocf/go-coap"
 
+	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
@@ -131,7 +131,7 @@ func updateDeviceResource(deviceID, href, contentType string, content []byte, l 
 
 func (m *resourceCtx) onPendingContentUpdate(ctx context.Context) error {
 	var h SubscriptionHandler
-	err := m.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{store.SubscriptionQuery{Type: store.Type_Resource, DeviceID: m.resource.DeviceId, Href: m.resource.Href}}, &h)
+	err := m.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{Type: store.Type_Resource, DeviceID: m.resource.DeviceId, Href: m.resource.Href}}, &h)
 	if err != nil {
 		return err
 	}

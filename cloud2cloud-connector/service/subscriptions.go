@@ -11,13 +11,13 @@ import (
 	"github.com/patrickmn/go-cache"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/kit/log"
-	kitHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/kit/codec/json"
+	"github.com/go-ocf/kit/log"
+	kitHttp "github.com/go-ocf/kit/net/http"
 )
 
 const AuthorizationHeader string = "Authorization"
@@ -132,7 +132,7 @@ func (s *SubscribeManager) HandleEvent(ctx context.Context, header events.EventH
 		subData.subscription = newSubscription
 	} else {
 		var h SubscriptionHandler
-		err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{store.SubscriptionQuery{SubscriptionID: header.SubscriptionID}}, &h)
+		err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{SubscriptionID: header.SubscriptionID}}, &h)
 		if err != nil {
 			return http.StatusGone, fmt.Errorf("cannot load subscription from DB: %v", err)
 		}
@@ -210,7 +210,7 @@ func (h *LinkedAccountHandler) Handle(ctx context.Context, iter store.LinkedAcco
 
 func (s *SubscribeManager) HandleCancelEvent(ctx context.Context, header events.EventHeader, linkedAccount store.LinkedAccount) error {
 	var h SubscriptionHandler
-	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{store.SubscriptionQuery{SubscriptionID: header.SubscriptionID}}, &h)
+	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{SubscriptionID: header.SubscriptionID}}, &h)
 	if err != nil {
 		return fmt.Errorf("cannot load subscription from DB: %v", err)
 	}
@@ -275,7 +275,7 @@ func (h *SubscriptionsHandler) Handle(ctx context.Context, iter store.Subscripti
 
 func (s *SubscribeManager) StopSubscriptions(ctx context.Context, l store.LinkedAccount) error {
 	var h SubscriptionsHandler
-	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{store.SubscriptionQuery{LinkedAccountID: l.ID}}, &h)
+	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{LinkedAccountID: l.ID}}, &h)
 	if err != nil {
 		return fmt.Errorf("cannot load subscriptions: %v", err)
 	}

@@ -1,8 +1,8 @@
 package events
 
 import (
-	"github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/kit/net/http"
 )
 
 type ResourceRetrievePending struct {

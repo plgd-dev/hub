@@ -179,7 +179,7 @@ func (h *testLinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCl
 }
 
 func TestStore_LoadLinkedClouds(t *testing.T) {
-	lcs := []store.LinkedCloud{store.LinkedCloud{
+	lcs := []store.LinkedCloud{{
 		ID:           "testID",
 		Name:         "testName",
 		ClientID:     "testClientID",

@@ -8,11 +8,11 @@ import (
 	"github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/security/certManager"
 
-	cqrs "github.com/go-ocf/cqrs"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
+	cqrs "github.com/go-ocf/cqrs"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"

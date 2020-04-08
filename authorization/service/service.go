@@ -99,7 +99,7 @@ func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provid
 	httpRouter.GET(uri.Healthcheck, service.Healthcheck)
 	httpRouter.GET(uri.JWKs, service.HandleJWKs)
 	httpServer := &fasthttp.Server{
-		Handler: httpRouter.Handler,
+		Handler:     httpRouter.Handler,
 		IdleTimeout: time.Second,
 	}
 

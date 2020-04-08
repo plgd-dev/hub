@@ -17,13 +17,13 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	kitNetHttp "github.com/go-ocf/kit/net/http"
 )
 
 //Server handle HTTP request

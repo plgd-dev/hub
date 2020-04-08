@@ -4,11 +4,11 @@ import (
 	"context"
 	"sync"
 
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore"
 	httpUtils "github.com/go-ocf/kit/net/http"
-	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type resourceCtx struct {

@@ -7,10 +7,10 @@ import (
 	"net/http"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 

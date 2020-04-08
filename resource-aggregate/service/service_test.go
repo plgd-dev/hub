@@ -15,10 +15,10 @@ import (
 	authProvider "github.com/go-ocf/cloud/authorization/provider"
 	authConfig "github.com/go-ocf/cloud/authorization/service"
 	authService "github.com/go-ocf/cloud/authorization/test/service"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/cloud/resource-aggregate/refImpl"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 )

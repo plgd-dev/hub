@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
 
 type devicesSubscription struct {

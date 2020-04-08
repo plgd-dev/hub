@@ -4,11 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/cqrs/event"
-	"github.com/go-ocf/cqrs/eventstore"
-	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/net/http"
 	kitCqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
@@ -16,6 +11,11 @@ import (
 	mockEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cqrs/event"
+	"github.com/go-ocf/cqrs/eventstore"
+	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
+	"github.com/go-ocf/kit/log"
+	"github.com/go-ocf/kit/net/http"
 	"github.com/stretchr/testify/assert"
 )
 

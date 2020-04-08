@@ -6,15 +6,15 @@ import (
 	"sync"
 	"sync/atomic"
 
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	gocoap "github.com/go-ocf/go-coap"
+	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 

@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
@@ -37,10 +37,10 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRD.ResourceLink{
-				Resource1.Id: &pbRD.ResourceLink{
+				Resource1.Id: {
 					Resource: &Resource1.Resource,
 				},
-				Resource3.Id: &pbRD.ResourceLink{
+				Resource3.Id: {
 					&Resource3.Resource,
 				},
 			},

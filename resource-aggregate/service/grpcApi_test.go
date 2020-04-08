@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

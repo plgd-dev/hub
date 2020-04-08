@@ -25,14 +25,14 @@ import (
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
 	authConfig "github.com/go-ocf/cloud/authorization/service"
 	authService "github.com/go-ocf/cloud/authorization/test/service"
-	gocoap "github.com/go-ocf/go-coap"
-	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	refImplRA "github.com/go-ocf/cloud/resource-aggregate/refImpl"
 	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
 	refImplRD "github.com/go-ocf/cloud/resource-directory/refImpl"
 	rdService "github.com/go-ocf/cloud/resource-directory/test/service"
+	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
@@ -276,13 +276,13 @@ func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
 	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	testPostHandler(t, uri.SignIn, signInEl, co)
 	publishResEl := []testEl{
-		testEl{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
-					TestResource{
+					{
 						DeviceId:      CertIdentity,
 						Href:          TestAResourceHref,
 						Id:            TestAResourceId,
@@ -291,13 +291,13 @@ func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
 					},
 				},
 			}, nil}},
-		testEl{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
-					TestResource{
+					{
 						DeviceId:      CertIdentity,
 						Href:          TestBResourceHref,
 						Id:            TestBResourceId,

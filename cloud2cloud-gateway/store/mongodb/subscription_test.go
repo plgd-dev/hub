@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/kit/security/certManager"
 	oapiConStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/go-ocf/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"

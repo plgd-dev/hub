@@ -229,7 +229,7 @@ func (h *testLinkedAccountHandler) Handle(ctx context.Context, iter store.Linked
 
 func TestStore_LoadLinkedAccounts(t *testing.T) {
 	linkedAccounts := []store.LinkedAccount{
-		store.LinkedAccount{
+		{
 			ID:        "testID",
 			TargetURL: "testTargetURL",
 			TargetCloud: store.OAuth{

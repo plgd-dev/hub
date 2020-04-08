@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	"github.com/go-ocf/kit/log"
 	"github.com/gorilla/mux"
 )
 

@@ -6,12 +6,12 @@ import (
 	"io"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -39,7 +39,7 @@ func logAndReturnError(err error) error {
 func (r *RequestHandler) GetUsersDevices(ctx context.Context, authCtx *pbCQRS.AuthorizationContext, deviceIdsFilter []string) ([]string, error) {
 	userIdsFilter := []string(nil)
 	if authCtx.GetUserId() != "" {
-		userIdsFilter = []string{authCtx.GetUserId() }
+		userIdsFilter = []string{authCtx.GetUserId()}
 	}
 	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 	if err != nil {

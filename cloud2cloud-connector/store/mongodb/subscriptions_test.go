@@ -201,18 +201,18 @@ func (h *testSubscriptionHandler) Handle(ctx context.Context, iter store.Subscri
 func TestStore_LoadSubscriptions(t *testing.T) {
 
 	subs := []store.Subscription{
-		store.Subscription{
+		{
 			SubscriptionID:  "0",
 			Type:            store.Type_Devices,
 			LinkedAccountID: "testLinkedAccountID",
 		},
-		store.Subscription{
+		{
 			SubscriptionID:  "1",
 			Type:            store.Type_Device,
 			LinkedAccountID: "testLinkedAccountID",
 			DeviceID:        "testDeviceID",
 		},
-		store.Subscription{
+		{
 			SubscriptionID:  "2",
 			Type:            store.Type_Resource,
 			LinkedAccountID: "testLinkedAccountID",
@@ -233,35 +233,35 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 		{
 			name: "bySubscriptionID",
 			args: args{
-				queries: []store.SubscriptionQuery{store.SubscriptionQuery{SubscriptionID: "2"}},
+				queries: []store.SubscriptionQuery{{SubscriptionID: "2"}},
 			},
 			want: []store.Subscription{subs[2]},
 		},
 		{
 			name: "byLinkedAccountID",
 			args: args{
-				queries: []store.SubscriptionQuery{store.SubscriptionQuery{LinkedAccountID: "testLinkedAccountID"}},
+				queries: []store.SubscriptionQuery{{LinkedAccountID: "testLinkedAccountID"}},
 			},
 			want: subs,
 		},
 		{
 			name: "byResource",
 			args: args{
-				queries: []store.SubscriptionQuery{store.SubscriptionQuery{Type: store.Type_Resource, DeviceID: "testDeviceID", Href: "testHref"}},
+				queries: []store.SubscriptionQuery{{Type: store.Type_Resource, DeviceID: "testDeviceID", Href: "testHref"}},
 			},
 			want: []store.Subscription{subs[2]},
 		},
 		{
 			name: "byDevice",
 			args: args{
-				queries: []store.SubscriptionQuery{store.SubscriptionQuery{Type: store.Type_Device, DeviceID: "testDeviceID"}},
+				queries: []store.SubscriptionQuery{{Type: store.Type_Device, DeviceID: "testDeviceID"}},
 			},
 			want: []store.Subscription{subs[1]},
 		},
 		{
 			name: "allDeviceSubscriptions",
 			args: args{
-				queries: []store.SubscriptionQuery{store.SubscriptionQuery{Type: store.Type_Device}},
+				queries: []store.SubscriptionQuery{{Type: store.Type_Device}},
 			},
 			want: []store.Subscription{subs[1]},
 		},
@@ -299,18 +299,18 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 
 func TestStore_RemoveSubscriptions(t *testing.T) {
 	subs := []store.Subscription{
-		store.Subscription{
+		{
 			SubscriptionID:  "0",
 			Type:            store.Type_Devices,
 			LinkedAccountID: "testLinkedAccountID",
 		},
-		store.Subscription{
+		{
 			SubscriptionID:  "1",
 			Type:            store.Type_Device,
 			LinkedAccountID: "testLinkedAccountID",
 			DeviceID:        "testDeviceID",
 		},
-		store.Subscription{
+		{
 			SubscriptionID:  "2",
 			Type:            store.Type_Resource,
 			LinkedAccountID: "testLinkedAccountID",

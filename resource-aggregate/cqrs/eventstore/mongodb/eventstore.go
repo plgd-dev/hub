@@ -27,11 +27,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore"
 	cqrsMongodb "github.com/go-ocf/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/kit/log"
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 )
 
 const instanceIdsCollection = "instanceIds"

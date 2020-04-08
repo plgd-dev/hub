@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/cqrs/eventstore/maintenance"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/kit/log"
 	"github.com/jessevdk/go-flags"
 )

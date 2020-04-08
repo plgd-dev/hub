@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/cloud/portal-webapi/uri"
+	"github.com/go-ocf/kit/log"
 	"github.com/ugorji/go/codec"
 	"github.com/valyala/fasthttp"
 

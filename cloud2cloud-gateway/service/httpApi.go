@@ -11,12 +11,12 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
-	"github.com/go-ocf/go-coap"
-	"github.com/go-ocf/kit/log"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
+	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/kit/log"
+	kitNetHttp "github.com/go-ocf/kit/net/http"
 
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"

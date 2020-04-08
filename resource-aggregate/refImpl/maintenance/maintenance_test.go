@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-ocf/cqrs/event"
-	"github.com/go-ocf/cqrs/eventstore/maintenance"
-	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	cqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	kitCqrsPb "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cqrs/event"
+	"github.com/go-ocf/cqrs/eventstore/maintenance"
+	"github.com/go-ocf/kit/security/certManager"
 	"github.com/golang/snappy"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
@@ -118,15 +118,15 @@ func TestPerformMaintenance(t *testing.T) {
 	require.False(t, conExcep)
 
 	tasksToSave := []maintenance.Task{
-		maintenance.Task{
+		{
 			AggregateID: aggregateID1,
 			Version:     3,
 		},
-		maintenance.Task{
+		{
 			AggregateID: aggregateID1,
 			Version:     4,
 		},
-		maintenance.Task{
+		{
 			AggregateID: aggregateID2,
 			Version:     3,
 		},

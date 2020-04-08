@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
@@ -51,14 +51,14 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource2.Id: &pbRS.ResourceValue{
+				Resource2.Id: {
 					ResourceId: Resource2.Id,
 					DeviceId:   Resource2.DeviceId,
 					Href:       Resource2.Href,
@@ -77,14 +77,14 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource3.Id: &pbRS.ResourceValue{
+				Resource3.Id: {
 					ResourceId: Resource3.Id,
 					DeviceId:   Resource3.DeviceId,
 					Href:       Resource3.Href,
@@ -103,14 +103,14 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource2.Id: &pbRS.ResourceValue{
+				Resource2.Id: {
 					ResourceId: Resource2.Id,
 					DeviceId:   Resource2.DeviceId,
 					Href:       Resource2.Href,
@@ -130,7 +130,7 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
@@ -148,21 +148,21 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource2.Id: &pbRS.ResourceValue{
+				Resource2.Id: {
 					ResourceId: Resource2.Id,
 					DeviceId:   Resource2.DeviceId,
 					Href:       Resource2.Href,
 					Content:    &Resource2.Content,
 					Types:      Resource2.ResourceTypes,
 				},
-				Resource3.Id: &pbRS.ResourceValue{
+				Resource3.Id: {
 					ResourceId: Resource3.Id,
 					DeviceId:   Resource3.DeviceId,
 					Href:       Resource3.Href,

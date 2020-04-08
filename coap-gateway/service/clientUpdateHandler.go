@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/gofrs/uuid"
 	"google.golang.org/grpc/status"
 )

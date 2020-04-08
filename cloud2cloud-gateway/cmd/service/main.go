@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/refImpl"
+	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 )
 

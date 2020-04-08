@@ -3,9 +3,9 @@ package service
 import (
 	"net/http"
 
+	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 )
 
 func jsonResponseWriterEncoder(w http.ResponseWriter, v interface{}) error {

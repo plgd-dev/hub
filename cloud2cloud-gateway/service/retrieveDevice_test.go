@@ -15,10 +15,10 @@ import (
 	"github.com/go-ocf/kit/codec/json"
 
 	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	c2cTest "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/go-coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/assert"

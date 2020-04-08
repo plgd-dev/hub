@@ -99,15 +99,15 @@ func (s sortObserveResource) Less(i, j int) bool {
 
 func Test_observeResourceContainer_Find(t *testing.T) {
 	obs := []*observeResource{
-		&observeResource{
+		{
 			resourceId: "a",
 			token:      []byte("0"),
 		},
-		&observeResource{
+		{
 			resourceId: "a",
 			token:      []byte("1"),
 		},
-		&observeResource{
+		{
 			resourceId: "b",
 			token:      []byte("2"),
 		},
@@ -162,15 +162,15 @@ func Test_observeResourceContainer_Find(t *testing.T) {
 
 func Test_observeResourceContainer_RemoveByResource(t *testing.T) {
 	obs := []observeResource{
-		observeResource{
+		{
 			resourceId: "a",
 			token:      []byte("0"),
 		},
-		observeResource{
+		{
 			resourceId: "a",
 			token:      []byte("1"),
 		},
-		observeResource{
+		{
 			resourceId: "b",
 			token:      []byte("2"),
 		},
@@ -239,17 +239,17 @@ func Test_observeResourceContainer_RemoveByResource(t *testing.T) {
 
 func Test_observeResourceContainer_PopByRemoteAddr(t *testing.T) {
 	obs := []*observeResource{
-		&observeResource{
+		{
 			resourceId: "a",
 			remoteAddr: "A",
 			token:      []byte("0"),
 		},
-		&observeResource{
+		{
 			resourceId: "a",
 			remoteAddr: "A",
 			token:      []byte("1"),
 		},
-		&observeResource{
+		{
 			resourceId: "b",
 			remoteAddr: "B",
 			token:      []byte("2"),
@@ -321,17 +321,17 @@ func Test_observeResourceContainer_PopByRemoteAddr(t *testing.T) {
 
 func Test_observeResourceContainer_PopByRemoteAddrToken(t *testing.T) {
 	obs := []*observeResource{
-		&observeResource{
+		{
 			resourceId: "a",
 			remoteAddr: "A",
 			token:      []byte("0"),
 		},
-		&observeResource{
+		{
 			resourceId: "a",
 			remoteAddr: "A",
 			token:      []byte("1"),
 		},
-		&observeResource{
+		{
 			resourceId: "b",
 			remoteAddr: "B",
 			token:      []byte("2"),

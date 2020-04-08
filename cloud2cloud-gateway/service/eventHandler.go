@@ -13,9 +13,9 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 
+	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/sdk/schema"
 )
 

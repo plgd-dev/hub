@@ -9,10 +9,10 @@ import (
 
 	"google.golang.org/grpc"
 
+	connectorStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/cqrs/eventbus"
 	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
-	connectorStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
@@ -86,7 +86,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		resourceProjection: resourceProjection,
 	}
 	err = store.LoadSubscriptions(ctx, []connectorStore.SubscriptionQuery{
-		connectorStore.SubscriptionQuery{
+		{
 			Type: connectorStore.Type_Device,
 		},
 	}, &h)

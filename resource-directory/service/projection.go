@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/strings"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	cache "github.com/patrickmn/go-cache"
 )
 
@@ -41,7 +41,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIdsFilter, typeFilter, deviceIds strings.Set) (map[string]map[string]*resourceCtx, error) {
 	models := make([]eventstore.Model, 0, 32)
 
-	for deviceId, _ := range deviceIds {
+	for deviceId := range deviceIds {
 		loaded, err := p.projection.Register(ctx, deviceId)
 		if err != nil {
 			return nil, fmt.Errorf("cannot register to projection %v", err)
@@ -54,7 +54,7 @@ func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIdsFilter, typ
 		}
 		p.cache.Set(deviceId, loaded, cache.DefaultExpiration)
 		if len(resourceIdsFilter) > 0 {
-			for resourceId, _ := range resourceIdsFilter {
+			for resourceId := range resourceIdsFilter {
 				m := p.projection.Models(deviceId, resourceId)
 				if len(m) > 0 {
 					models = append(models, m...)

@@ -11,7 +11,7 @@ import (
 )
 
 func makeOnlineOfflineRepresentation(deviceID string) interface{} {
-	return []map[string]string{map[string]string{"di": deviceID}}
+	return []map[string]string{{"di": deviceID}}
 }
 
 func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Request) (int, error) {

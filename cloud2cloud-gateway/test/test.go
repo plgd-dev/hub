@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	authURI "github.com/go-ocf/cloud/authorization/uri"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/refImpl"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/test/service"
+	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/net/http/transport"
 	"github.com/jtacoma/uritemplates"

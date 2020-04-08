@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/gofrs/uuid"
 	"github.com/patrickmn/go-cache"

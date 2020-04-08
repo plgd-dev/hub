@@ -6,13 +6,13 @@ import (
 
 	"github.com/go-ocf/go-coap"
 
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	kitHttp "github.com/go-ocf/kit/net/http"
 )
 
 func (s *SubscribeManager) subscribeToResource(ctx context.Context, l store.LinkedAccount, correlationID, signingSecret, deviceID, resourceHrefLink string) (string, error) {
