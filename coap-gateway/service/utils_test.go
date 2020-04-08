@@ -25,14 +25,14 @@ import (
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
 	authConfig "github.com/go-ocf/cloud/authorization/service"
 	authService "github.com/go-ocf/cloud/authorization/test/service"
-	gocoap "github.com/go-ocf/go-coap"
-	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	refImplRA "github.com/go-ocf/cloud/resource-aggregate/refImpl"
 	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
 	refImplRD "github.com/go-ocf/cloud/resource-directory/refImpl"
 	rdService "github.com/go-ocf/cloud/resource-directory/test/service"
+	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
@@ -100,7 +100,7 @@ func initializeStruct(t reflect.Type, v reflect.Value) {
 
 func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 	if resp.Code() != test.out.code {
-		t.Fatalf("Ouput code %v is invalid, expected %v", resp.Code(), test.out.code)
+		t.Fatalf("Output code %v is invalid, expected %v", resp.Code(), test.out.code)
 	} else {
 		if len(resp.Payload()) > 0 || test.out.payload != nil {
 			if contentType, ok := resp.Option(gocoap.ContentFormat).(gocoap.MediaType); ok {
@@ -117,14 +117,14 @@ func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 				case gocoap.TextPlain:
 					if v, ok := test.out.payload.(string); ok {
 						if strings.Count(string(resp.Payload()), v) == 0 {
-							t.Fatalf("Ouput payload '%v' is invalid, expected '%v'", string(resp.Payload()), test.out.payload)
+							t.Fatalf("Output payload '%v' is invalid, expected '%v'", string(resp.Payload()), test.out.payload)
 						}
 					} else {
-						t.Fatalf("Ouput payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
+						t.Fatalf("Output payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
 					}
 				}
 			} else {
-				t.Fatalf("Ouput payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
+				t.Fatalf("Output payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
 			}
 		}
 		if len(test.out.queries) > 0 {
@@ -276,13 +276,13 @@ func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
 	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	testPostHandler(t, uri.SignIn, signInEl, co)
 	publishResEl := []testEl{
-		testEl{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
-					TestResource{
+					{
 						DeviceId:      CertIdentity,
 						Href:          TestAResourceHref,
 						Id:            TestAResourceId,
@@ -291,13 +291,13 @@ func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
 					},
 				},
 			}, nil}},
-		testEl{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
-					TestResource{
+					{
 						DeviceId:      CertIdentity,
 						Href:          TestBResourceHref,
 						Id:            TestBResourceId,

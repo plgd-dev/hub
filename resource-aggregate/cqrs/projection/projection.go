@@ -30,7 +30,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 // It can be called multiple times for same deviceId but after successful the a call Unregister
 // must be called same times to free resources.
 func (p *Projection) Register(ctx context.Context, deviceId string) (loaded bool, err error) {
-	return p.projection.register(ctx, deviceId, []eventstore.SnapshotQuery{eventstore.SnapshotQuery{GroupId: deviceId}})
+	return p.projection.register(ctx, deviceId, []eventstore.SnapshotQuery{{GroupId: deviceId}})
 }
 
 // Unregister unregisters device and his resource from projection.
@@ -40,12 +40,12 @@ func (p *Projection) Unregister(deviceId string) error {
 
 // Models returns models for device, resource or nil for non exist.
 func (p *Projection) Models(deviceId, resourceId string) []eventstore.Model {
-	return p.projection.models([]eventstore.SnapshotQuery{eventstore.SnapshotQuery{GroupId: deviceId, AggregateId: resourceId}})
+	return p.projection.models([]eventstore.SnapshotQuery{{GroupId: deviceId, AggregateId: resourceId}})
 }
 
 // ForceUpdate invokes update registered resource model from evenstore.
 func (p *Projection) ForceUpdate(ctx context.Context, deviceId, resourceId string) error {
-	err := p.projection.forceUpdate(ctx, deviceId, []eventstore.SnapshotQuery{eventstore.SnapshotQuery{GroupId: deviceId, AggregateId: resourceId}})
+	err := p.projection.forceUpdate(ctx, deviceId, []eventstore.SnapshotQuery{{GroupId: deviceId, AggregateId: resourceId}})
 	if err != nil {
 		return fmt.Errorf("cannot force update resource projection: %w", err)
 	}

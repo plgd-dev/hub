@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"strings"
 
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	uuid "github.com/satori/go.uuid"
 )
 

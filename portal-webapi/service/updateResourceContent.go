@@ -12,10 +12,10 @@ import (
 
 	"github.com/ugorji/go/codec"
 
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/valyala/fasthttp"
 )
 

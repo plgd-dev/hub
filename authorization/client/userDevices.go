@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
-	kitSync "github.com/go-ocf/kit/sync"
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	kitSync "github.com/go-ocf/kit/sync"
 	"google.golang.org/grpc/status"
 )
 

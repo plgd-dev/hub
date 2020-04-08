@@ -6,14 +6,14 @@ import (
 
 	"google.golang.org/grpc/status"
 
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	cqrs "github.com/go-ocf/cqrs"
 	cqrsEvent "github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore/maintenance"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/strings"
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
-	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"google.golang.org/grpc/codes"
 )
 

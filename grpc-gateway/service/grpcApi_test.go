@@ -16,9 +16,9 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/go-ocf/cloud/authorization/provider"
-	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/codec/cbor"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -179,7 +179,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 			args: args{
 				req: &pb.RetrieveResourcesValuesRequest{
 					ResourceIdsFilter: []*pb.ResourceId{
-						&pb.ResourceId{
+						{
 							DeviceId:         deviceID,
 							ResourceLinkHref: cloud.StatusHref,
 						},
@@ -187,7 +187,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: []*pb.ResourceValue{
-				&pb.ResourceValue{
+				{
 					ResourceId: &pb.ResourceId{
 						DeviceId:         deviceID,
 						ResourceLinkHref: cloud.StatusHref,
@@ -483,7 +483,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 			},
 
 			want: []*pb.Event{
-				&pb.Event{
+				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
 							Token: "testToken",
@@ -493,7 +493,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_SubscriptionCanceled_{
 						SubscriptionCanceled: &pb.Event_SubscriptionCanceled{
 							Reason: "not supported",
@@ -517,7 +517,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				},
 			},
 			want: []*pb.Event{
-				&pb.Event{
+				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
 							Token: "testToken",
@@ -527,7 +527,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_DeviceRegistered_{
 						DeviceRegistered: &pb.Event_DeviceRegistered{
 							DeviceId: deviceID,
@@ -551,7 +551,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				},
 			},
 			want: []*pb.Event{
-				&pb.Event{
+				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
 							Token: "testToken",
@@ -561,7 +561,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_DeviceOnline_{
 						DeviceOnline: &pb.Event_DeviceOnline{
 							DeviceId: deviceID,
@@ -586,7 +586,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				},
 			},
 			want: []*pb.Event{
-				&pb.Event{
+				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
 							Token: "testToken",
@@ -596,7 +596,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_ResourcePublished_{
 						ResourcePublished: &pb.Event_ResourcePublished{
 							Link: &pb.ResourceLink{
@@ -608,7 +608,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_ResourcePublished_{
 						ResourcePublished: &pb.Event_ResourcePublished{
 							Link: &pb.ResourceLink{
@@ -620,7 +620,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_ResourcePublished_{
 						ResourcePublished: &pb.Event_ResourcePublished{
 							Link: &pb.ResourceLink{
@@ -632,7 +632,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_ResourcePublished_{
 						ResourcePublished: &pb.Event_ResourcePublished{
 							Link: &pb.ResourceLink{
@@ -644,7 +644,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_ResourcePublished_{
 						ResourcePublished: &pb.Event_ResourcePublished{
 							Link: &pb.ResourceLink{
@@ -656,7 +656,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				&pb.Event{
+				{
 					Type: &pb.Event_ResourcePublished_{
 						ResourcePublished: &pb.Event_ResourcePublished{
 							Link: &pb.ResourceLink{

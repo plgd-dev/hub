@@ -5,10 +5,10 @@ import (
 
 	"github.com/go-ocf/kit/codec/cbor"
 
-	gocoap "github.com/go-ocf/go-coap"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	gocoap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 
@@ -46,6 +46,7 @@ func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID stri
 			CoapContentFormat: int32(gocoap.AppOcfCbor),
 			Data:              data,
 		},
+		Status: pbRA.Status_OK,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),

@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"

@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-ocf/go-coap"
 
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/cqrs"
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/net/http"
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 type VerifyAccessFunc func(deviceId, resourceId string) error

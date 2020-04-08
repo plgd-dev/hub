@@ -45,7 +45,7 @@ var tblResourceDirectory = []testEl{
 			TimeToLive:       12345,
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
-				TestResource{
+				{
 					DeviceId: CertIdentity,
 					Href:     TestAResourceHref,
 					Id:       TestAResourceId,
@@ -59,7 +59,7 @@ var tblResourceDirectory = []testEl{
 			TimeToLive:       12345,
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
-				TestResource{
+				{
 					DeviceId: CertIdentity,
 					Href:     "/b",
 					Id:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
@@ -72,12 +72,12 @@ var tblResourceDirectory = []testEl{
 			TimeToLive:       12345,
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
-				TestResource{
+				{
 					DeviceId: CertIdentity,
 					Href:     "/b",
 					Id:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
 				},
-				TestResource{
+				{
 					DeviceId: CertIdentity,
 					Href:     "/c",
 					Id:       "41529a9c-b80f-5487-82da-da4a476402ae",

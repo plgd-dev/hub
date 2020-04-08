@@ -98,20 +98,20 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
-		UserId:      t.Name(),
-		DeviceId:    "deviceId_" + t.Name(),
+		UserId:   t.Name(),
+		DeviceId: "deviceId_" + t.Name(),
 	})
 
 	time.Sleep(time.Second * 2)
 	require.Equal(t, map[string]map[string]bool{
-		t.Name(): map[string]bool{
+		t.Name(): {
 			"deviceId_" + t.Name(): true,
 		},
 	}, trigger.allDevices)
 
 	_, err = c.RemoveDevice(context.Background(), &pb.RemoveDeviceRequest{
-		UserId:      t.Name(),
-		DeviceId:    "deviceId_" + t.Name(),
+		UserId:   t.Name(),
+		DeviceId: "deviceId_" + t.Name(),
 	})
 
 	time.Sleep(time.Second * 2)
@@ -155,12 +155,12 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 			},
 			want: &testTrigger{
 				addedDevices: map[string]map[string]bool{
-					t.Name(): map[string]bool{
+					t.Name(): {
 						"deviceId_" + t.Name(): true,
 					},
 				},
 				allDevices: map[string]map[string]bool{
-					t.Name(): map[string]bool{
+					t.Name(): {
 						"deviceId_" + t.Name(): true,
 					},
 				},
@@ -188,8 +188,8 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	c := pb.NewAuthorizationServiceClient(conn)
 
 	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
-		UserId:      t.Name(),
-		DeviceId:    "deviceId_" + t.Name(),
+		UserId:   t.Name(),
+		DeviceId: "deviceId_" + t.Name(),
 	})
 
 	for _, tt := range tests {
@@ -244,12 +244,12 @@ func TestUserDevicesManager_Release(t *testing.T) {
 			},
 			want: &testTrigger{
 				addedDevices: map[string]map[string]bool{
-					t.Name(): map[string]bool{
+					t.Name(): {
 						"deviceId_" + t.Name(): true,
 					},
 				},
 				removedDevices: map[string]map[string]bool{
-					t.Name(): map[string]bool{
+					t.Name(): {
 						"deviceId_" + t.Name(): true,
 					},
 				},
@@ -278,8 +278,8 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	c := pb.NewAuthorizationServiceClient(conn)
 
 	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
-		UserId:      t.Name(),
-		DeviceId:    "deviceId_" + t.Name(),
+		UserId:   t.Name(),
+		DeviceId: "deviceId_" + t.Name(),
 	})
 
 	for _, tt := range tests {

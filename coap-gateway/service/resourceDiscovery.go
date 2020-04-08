@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/codes"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -92,7 +92,7 @@ func makeDiscoveryResp(serverNetwork, serverAddr string, getResourceLinksClient 
 		}
 		//override EndpointInformations to cloud address
 		resource.EndpointInformations = []*pbRA.EndpointInformation{
-			&pbRA.EndpointInformation{
+			{
 				Endpoint: ep,
 				Priority: 1,
 			},

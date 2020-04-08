@@ -1,9 +1,9 @@
 package nats
 
 import (
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	cqrsEventBus "github.com/go-ocf/cqrs/eventbus"
 	cqrsNats "github.com/go-ocf/cqrs/eventbus/nats"
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 )
 
 type Subscriber struct {

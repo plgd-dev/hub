@@ -27,11 +27,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore"
 	cqrsMongodb "github.com/go-ocf/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/kit/log"
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 )
 
 const instanceIdsCollection = "instanceIds"
@@ -100,7 +100,7 @@ func (s *EventStore) LoadUpToVersion(ctx context.Context, queries []eventstore.V
 	return s.es.LoadUpToVersion(ctx, queries, eventHandler)
 }
 
-// LoadFromSnapshot loads events from begining.
+// LoadFromSnapshot loads events from beginning.
 func (s *EventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.SnapshotQuery, eventHandler event.Handler) error {
 	return s.es.LoadFromSnapshot(ctx, queries, eventHandler)
 }

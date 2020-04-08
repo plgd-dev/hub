@@ -10,8 +10,6 @@ import (
 	clientAS "github.com/go-ocf/cloud/authorization/client"
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
@@ -21,6 +19,8 @@ import (
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 

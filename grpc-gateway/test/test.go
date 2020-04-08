@@ -26,7 +26,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/go-ocf/sdk/schema"

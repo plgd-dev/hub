@@ -46,4 +46,5 @@ enum Status {
   UNAVAILABLE = 6;
   NOT_IMPLEMENTED = 7;
   ACCEPTED = 8;
+  ERROR = 9;
 }

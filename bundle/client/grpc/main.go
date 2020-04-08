@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	coap "github.com/go-ocf/go-coap"
 	pbGW "github.com/go-ocf/cloud/grpc-gateway/pb"
+	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/net/http/transport"

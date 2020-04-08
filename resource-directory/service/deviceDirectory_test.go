@@ -13,8 +13,6 @@ import (
 	cbor "github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/security/certManager"
 
-	coap "github.com/go-ocf/go-coap"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mockEventStore "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/test"
@@ -22,6 +20,8 @@ import (
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
+	coap "github.com/go-ocf/go-coap"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -48,12 +48,12 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pbDD.Device{
-				ddResource2.Resource.DeviceId: &pbDD.Device{
+				ddResource2.Resource.DeviceId: {
 					Id:       ddResource2.Resource.DeviceId,
 					Resource: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes),
 					IsOnline: true,
 				},
-				ddResource4.Resource.DeviceId: &pbDD.Device{
+				ddResource4.Resource.DeviceId: {
 					Id:       ddResource4.Resource.DeviceId,
 					IsOnline: true,
 				},
@@ -70,7 +70,7 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pbDD.Device{
-				ddResource1.Resource.DeviceId: &pbDD.Device{
+				ddResource1.Resource.DeviceId: {
 					Id:       ddResource1.Resource.DeviceId,
 					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
 					IsOnline: false,
@@ -86,17 +86,17 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pbDD.Device{
-				ddResource1.Resource.DeviceId: &pbDD.Device{
+				ddResource1.Resource.DeviceId: {
 					Id:       ddResource1.Resource.DeviceId,
 					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
 					IsOnline: false,
 				},
-				ddResource2.Resource.DeviceId: &pbDD.Device{
+				ddResource2.Resource.DeviceId: {
 					Id:       ddResource2.Resource.DeviceId,
 					Resource: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes),
 					IsOnline: true,
 				},
-				ddResource4.Resource.DeviceId: &pbDD.Device{
+				ddResource4.Resource.DeviceId: {
 					Id:       ddResource4.Resource.DeviceId,
 					IsOnline: true,
 				},
@@ -123,7 +123,7 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pbDD.Device{
-				ddResource1.Resource.DeviceId: &pbDD.Device{
+				ddResource1.Resource.DeviceId: {
 					Id:       ddResource1.Resource.DeviceId,
 					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
 					IsOnline: false,
@@ -209,11 +209,11 @@ func testMakeDeviceResouceProtobuf(deviceId string, types []string) *pbDD.Resour
 		ResourceTypes: types,
 		Name:          "Name." + deviceId,
 		ManufacturerName: []*pbDD.LocalizedString{
-			&pbDD.LocalizedString{
+			{
 				Language: "en",
 				Value:    "test device resource",
 			},
-			&pbDD.LocalizedString{
+			{
 				Language: "sk",
 				Value:    "testovaci prostriedok pre zariadenie",
 			},

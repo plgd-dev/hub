@@ -8,10 +8,10 @@ import (
 	"time"
 
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/log"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/valyala/fasthttp"
 )
 
@@ -32,7 +32,7 @@ func (r *RequestHandler) listResources(ctx *fasthttp.RequestCtx, token, sub stri
 
 	getResourceLinksClient, err := r.rdClient.GetResourceLinks(kitNetGrpc.CtxWithToken(context.Background(), token), &pbRD.GetResourceLinksRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId:      sub,
+			UserId: sub,
 		},
 	})
 

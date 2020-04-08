@@ -11,9 +11,9 @@ import (
 	"github.com/ugorji/go/codec"
 
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/valyala/fasthttp"
 )
 
@@ -33,7 +33,7 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 
 	retrieveResourcesValuesClient, err := r.rsClient.RetrieveResourcesValues(kitNetGrpc.CtxWithToken(context.Background(), token), &pbRS.RetrieveResourcesValuesRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId:      sub,
+			UserId: sub,
 		},
 		ResourceIdsFilter: []string{resourceId},
 	})

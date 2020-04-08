@@ -20,7 +20,7 @@ func TestUserDevicesList(t *testing.T) {
 	err := s.service.GetUserDevices(newGetUserDevicesRequest(), srv)
 	assert.NoError(t, err)
 	r := map[string]*pb.UserDevice{
-		testDeviceID: &pb.UserDevice{
+		testDeviceID: {
 			DeviceId: testDeviceID,
 			UserId:   testUserID,
 		},
@@ -42,11 +42,11 @@ func TestListingMoreDevices(t *testing.T) {
 	assert := assert.New(t)
 	assert.NoError(err)
 	r := map[string]*pb.UserDevice{
-		testDeviceID: &pb.UserDevice{
+		testDeviceID: {
 			DeviceId: testDeviceID,
 			UserId:   testUserID,
 		},
-		d.DeviceID: &pb.UserDevice{
+		d.DeviceID: {
 			DeviceId: d.DeviceID,
 			UserId:   testUserID,
 		},

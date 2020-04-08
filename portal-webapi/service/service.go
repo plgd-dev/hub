@@ -4,11 +4,11 @@ import (
 	"crypto/tls"
 	"net"
 
-	"github.com/go-ocf/kit/log"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"github.com/go-ocf/kit/log"
 	"github.com/valyala/fasthttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

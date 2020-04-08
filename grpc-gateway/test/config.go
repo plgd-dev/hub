@@ -47,7 +47,7 @@ func init() {
 	}
 
 	TestDevsimBackendResources = []schema.ResourceLink{
-		schema.ResourceLink{
+		{
 			Href:          cloud.StatusHref,
 			ResourceTypes: cloud.StatusResourceTypes,
 			Interfaces:    cloud.StatusInterfaces,

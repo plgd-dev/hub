@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mockEventStore "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/test"
@@ -21,6 +19,8 @@ import (
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/kit/security/certManager"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -55,14 +55,14 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource2.Id: &pbRS.ResourceValue{
+				Resource2.Id: {
 					ResourceId: Resource2.Id,
 					DeviceId:   Resource2.DeviceId,
 					Href:       Resource2.Href,
@@ -80,14 +80,14 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource3.Id: &pbRS.ResourceValue{
+				Resource3.Id: {
 					ResourceId: Resource3.Id,
 					DeviceId:   Resource3.DeviceId,
 					Href:       Resource3.Href,
@@ -105,14 +105,14 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource2.Id: &pbRS.ResourceValue{
+				Resource2.Id: {
 					ResourceId: Resource2.Id,
 					DeviceId:   Resource2.DeviceId,
 					Href:       Resource2.Href,
@@ -131,7 +131,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
@@ -148,21 +148,21 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRS.ResourceValue{
-				Resource1.Id: &pbRS.ResourceValue{
+				Resource1.Id: {
 					ResourceId: Resource1.Id,
 					DeviceId:   Resource1.DeviceId,
 					Href:       Resource1.Href,
 					Content:    &Resource1.Content,
 					Types:      Resource1.ResourceTypes,
 				},
-				Resource2.Id: &pbRS.ResourceValue{
+				Resource2.Id: {
 					ResourceId: Resource2.Id,
 					DeviceId:   Resource2.DeviceId,
 					Href:       Resource2.Href,
 					Content:    &Resource2.Content,
 					Types:      Resource2.ResourceTypes,
 				},
-				Resource3.Id: &pbRS.ResourceValue{
+				Resource3.Id: {
 					ResourceId: Resource3.Id,
 					DeviceId:   Resource3.DeviceId,
 					Href:       Resource3.Href,
@@ -235,10 +235,10 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRD.ResourceLink{
-				Resource1.Id: &pbRD.ResourceLink{
+				Resource1.Id: {
 					Resource: &Resource1.Resource,
 				},
-				Resource3.Id: &pbRD.ResourceLink{
+				Resource3.Id: {
 					Resource: &Resource3.Resource,
 				},
 			},
@@ -251,13 +251,13 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRD.ResourceLink{
-				Resource1.Id: &pbRD.ResourceLink{
+				Resource1.Id: {
 					Resource: &Resource1.Resource,
 				},
-				Resource3.Id: &pbRD.ResourceLink{
+				Resource3.Id: {
 					Resource: &Resource3.Resource,
 				},
-				Resource2.Id: &pbRD.ResourceLink{
+				Resource2.Id: {
 					Resource: &Resource2.Resource,
 				},
 			},
@@ -271,10 +271,10 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRD.ResourceLink{
-				Resource1.Id: &pbRD.ResourceLink{
+				Resource1.Id: {
 					Resource: &Resource1.Resource,
 				},
-				Resource2.Id: &pbRD.ResourceLink{
+				Resource2.Id: {
 					Resource: &Resource2.Resource,
 				},
 			},
@@ -289,7 +289,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pbRD.ResourceLink{
-				Resource3.Id: &pbRD.ResourceLink{
+				Resource3.Id: {
 					Resource: &Resource3.Resource,
 				},
 			},
@@ -344,11 +344,11 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			name: "list ONLINE devices",
 			args: args{
 				request: pbDD.GetDevicesRequest{
-					StatusFilter:         []pbDD.Status{pbDD.Status_ONLINE},
+					StatusFilter: []pbDD.Status{pbDD.Status_ONLINE},
 				},
 			},
 			want: map[string]*pbDD.Device{
-				ddResource2.Resource.DeviceId: &pbDD.Device{
+				ddResource2.Resource.DeviceId: {
 					Id:       Resource2.Resource.DeviceId,
 					Resource: testMakeDeviceResouceProtobuf(Resource2.Resource.DeviceId, deviceResourceTypes),
 					IsOnline: true,
