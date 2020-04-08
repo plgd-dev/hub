@@ -282,23 +282,23 @@ func (s *SubscribeManager) StopSubscriptions(ctx context.Context, l store.Linked
 	if len(h.subscriptions) == 0 {
 		return nil
 	}
-	linkedAccount, err := l.RefreshTokens(ctx, s.store)
+	l, err = l.RefreshTokens(ctx, s.store)
 
 	var errors []error
 	for _, sub := range h.subscriptions {
 		switch sub.Type {
 		case store.Type_Devices:
-			err = cancelDevicesSubscription(ctx, linkedAccount, sub.SubscriptionID)
+			err = cancelDevicesSubscription(ctx, l, sub.SubscriptionID)
 			if err != nil {
 				errors = append(errors, err)
 			}
 		case store.Type_Device:
-			err = cancelDeviceSubscription(ctx, linkedAccount, sub.DeviceID, sub.SubscriptionID)
+			err = cancelDeviceSubscription(ctx, l, sub.DeviceID, sub.SubscriptionID)
 			if err != nil {
 				errors = append(errors, err)
 			}
 		case store.Type_Resource:
-			err = cancelResourceSubscription(ctx, linkedAccount, sub.DeviceID, sub.Href, sub.SubscriptionID)
+			err = cancelResourceSubscription(ctx, l, sub.DeviceID, sub.Href, sub.SubscriptionID)
 			if err != nil {
 				errors = append(errors, err)
 			}

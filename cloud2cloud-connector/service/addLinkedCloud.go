@@ -37,9 +37,9 @@ func (rh *RequestHandler) addLinkedCloud(w http.ResponseWriter, r *http.Request)
 		return http.StatusBadRequest, fmt.Errorf("cannot decode body: %v", err)
 	}
 	if l.ID == "" {
-		uuid, err := uuid.NewV4()
-		if err != nil {
-			return http.StatusBadRequest, fmt.Errorf("cannot generate uuid %v", err)
+		uuid, err1 := uuid.NewV4()
+		if err1 != nil {
+			return http.StatusBadRequest, fmt.Errorf("cannot generate uuid %v", err1)
 		}
 		l.ID = uuid.String()
 		err = rh.store.InsertLinkedCloud(r.Context(), l)
