@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/kit/log"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/kit/log"
 )
 
 type resourceSubscription struct {
@@ -58,7 +58,7 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	for _, f := range s.resourceEvent.FilterEvents {
 		switch f {
 		case pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED:
-			if res.content.GetStatus() != pbRA.Status_OK {
+			if res.content.GetStatus() != pbRA.Status_OK && res.content.GetStatus() != pbRA.Status_UNKNOWN {
 				return fmt.Errorf("unable to subscribe to resource %v%v: device response: %v", res.resource.GetDeviceId(), res.resource.GetHref(), res.content.GetStatus())
 			}
 			content := makeContent(res.content.GetContent())

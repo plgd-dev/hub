@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-chi/chi v4.1.0+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap v0.0.0-20200406073902-cf923db524db
@@ -19,6 +18,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/jtacoma/uritemplates v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v0.9.1
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
@@ -31,7 +31,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/ugorji/go/codec v1.1.7
 	github.com/valyala/fasthttp v1.9.0
-	go.mongodb.org/mongo-driver v1.3.1
+	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/atomic v1.6.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a

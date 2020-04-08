@@ -57,7 +57,7 @@ func generateToken() (*Token, error) {
 	token.Set(jwt.AudienceKey, []string{"https://127.0.0.1", "https://localhost"})
 	token.Set(jwt.IssuedAtKey, time.Now().Unix())
 	token.Set(jwt.ExpirationKey, t.Expiry.Unix())
-	token.Set(`scope`, `openid`)
+	token.Set(`scope`, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"})
 	token.Set(`client_id`, clientID)
 	token.Set(`email`, `test@test.com`)
 	token.Set(jwt.IssuerKey, "https://localhost/")

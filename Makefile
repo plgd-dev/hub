@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 SIMULATOR_NAME_SUFFIX ?= $(shell hostname)
 
-SUBDIRS := resource-aggregate authorization resource-directory openapi-connector openapi-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle
+SUBDIRS := resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle
 .PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca cloud-build
 
 default: build

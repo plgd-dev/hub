@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"fmt"
 
-	coap "github.com/go-ocf/go-coap"
-	"github.com/go-ocf/go-coap/codes"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	coap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/codes"
 )
 
 func StatusToCoapCode(status pbRA.Status, cmdCode codes.Code) codes.Code {
@@ -60,7 +60,7 @@ func CoapCodeToStatus(code codes.Code) pbRA.Status {
 	case codes.NotImplemented:
 		return pbRA.Status_NOT_IMPLEMENTED
 	default:
-		return pbRA.Status_UNKNOWN
+		return pbRA.Status_ERROR
 	}
 }
 

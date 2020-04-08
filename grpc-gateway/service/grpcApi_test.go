@@ -16,9 +16,9 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/go-ocf/cloud/authorization/provider"
-	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/codec/cbor"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
