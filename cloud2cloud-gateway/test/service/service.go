@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func NewOpenApiGateway(t *testing.T, cfg refImpl.Config) func() {
-	t.Log("NewOpenApiGateway")
-	defer t.Log("NewOpenApiGateway done")
+func NewCloud2cloudGateway(t *testing.T, cfg refImpl.Config) func() {
+	t.Log("NewCloud2cloudGateway")
+	defer t.Log("NewCloud2cloudGateway done")
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 

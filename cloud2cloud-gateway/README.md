@@ -23,7 +23,7 @@ https://auth.plgd.cloud/authorize?
     client_id=9XjK2mCf2J0or4Ko0ow7wCmZeDTjC1mW&
     redirect_uri=http://localhost:8080/callback&
     scope=r:deviceinformation:* r:resources:* w:resources:* w:subscriptions:* offline_access&
-    audience=https://openapi.try.plgd.cloud/&
+    audience=https://cloud2cloud.try.plgd.cloud/&
     state=STATE
 ```
 
@@ -64,7 +64,7 @@ If all goes well, you'll receive an HTTP 200 response with a payload containing 
 To call the C2C API as an authorized user, the application must pass the retrieved Access Token as a Bearer token in the Authorization header of your HTTP request.
 ```bash
 curl --request GET \
-  --url https://openapi.try.plgd.cloud/api/v1/devices \
+  --url https://cloud2cloud.try.plgd.cloud/api/v1/devices \
   --header 'authorization: Bearer eyJ...lojg' \
   --header 'content-type: application/json' \
   --header 'accept: application/json'

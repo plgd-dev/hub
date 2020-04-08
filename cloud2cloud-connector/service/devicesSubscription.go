@@ -59,7 +59,7 @@ func (s *SubscribeManager) publishCloudDeviceStatus(ctx context.Context, deviceI
 		TimeToLive:           0,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			Sequence:     sequence,
-			ConnectionId: OpenapiConnectorConnectionId,
+			ConnectionId: Cloud2cloudConnectorConnectionId,
 		},
 	}
 

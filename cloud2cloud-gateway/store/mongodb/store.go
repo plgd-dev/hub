@@ -22,7 +22,7 @@ type Store struct {
 
 type Config struct {
 	Host         string `envconfig:"SUBSTORE_MONGO_HOST" default:"localhost:27017"`
-	DatabaseName string `envconfig:"SUBSTORE_MONGO_DATABASE" default:"openapiGateway"`
+	DatabaseName string `envconfig:"SUBSTORE_MONGO_DATABASE" default:"cloud2cloudGateway"`
 	tlsCfg       *tls.Config
 }
 

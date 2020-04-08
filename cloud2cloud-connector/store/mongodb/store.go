@@ -22,7 +22,7 @@ type Store struct {
 
 type Config struct {
 	Host         string `envconfig:"LINKED_STORE_MONGO_HOST" default:"localhost:27017"`
-	DatabaseName string `envconfig:"LINKED_STORE_MONGO_DATABASE" default:"openapiConnector"`
+	DatabaseName string `envconfig:"LINKED_STORE_MONGO_DATABASE" default:"cloud2cloudConnector"`
 	tlsCfg       *tls.Config
 }
 

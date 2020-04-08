@@ -62,7 +62,7 @@ func (s *SubscribeManager) updateCloudStatus(ctx context.Context, deviceID strin
 		},
 		Status: pbRA.Status_OK,
 		CommandMetadata: &pbCQRS.CommandMetadata{
-			ConnectionId: OpenapiConnectorConnectionId,
+			ConnectionId: Cloud2cloudConnectorConnectionId,
 			Sequence:     sequence,
 		},
 		AuthorizationContext: &authContext,
@@ -116,7 +116,7 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 				EndpointInformations:  endpoints,
 			},
 			CommandMetadata: &pbCQRS.CommandMetadata{
-				ConnectionId: OpenapiConnectorConnectionId,
+				ConnectionId: Cloud2cloudConnectorConnectionId,
 				Sequence:     header.SequenceNumber,
 			},
 		})
@@ -184,7 +184,7 @@ func (s *SubscribeManager) HandleResourcesUnpublished(ctx context.Context, d sub
 			},
 			ResourceId: raCqrs.MakeResourceId(link.GetDeviceID(), kitHttp.CanonicalHref(href)),
 			CommandMetadata: &pbCQRS.CommandMetadata{
-				ConnectionId: OpenapiConnectorConnectionId,
+				ConnectionId: Cloud2cloudConnectorConnectionId,
 				Sequence:     header.SequenceNumber,
 			},
 		})

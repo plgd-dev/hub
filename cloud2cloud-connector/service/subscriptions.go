@@ -22,7 +22,7 @@ import (
 
 const AuthorizationHeader string = "Authorization"
 const AcceptHeader string = "Accept"
-const OpenapiConnectorConnectionId string = "cloud2cloud-connector"
+const Cloud2cloudConnectorConnectionId string = "cloud2cloud-connector"
 
 type SubscribeManager struct {
 	eventsURL          string

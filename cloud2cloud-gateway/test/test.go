@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const OPENAPI_GW_HOST = "localhost:9090"
+const Cloud2cloud_GW_HOST = "localhost:9090"
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	tearDown := grpcTest.SetUp(ctx, t)
@@ -28,14 +28,14 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	var cfg refImpl.Config
 	err := envconfig.Process("", &cfg)
 	require.NoError(t, err)
-	cfg.Service.Addr = OPENAPI_GW_HOST
+	cfg.Service.Addr = Cloud2cloud_GW_HOST
 	cfg.JwksURL = "https://" + grpcTest.AUTH_HTTP_HOST + authURI.JWKs
 	cfg.Service.AuthServerAddr = grpcTest.AUTH_HOST
 	cfg.Service.ResourceAggregateAddr = grpcTest.RESOURCE_AGGREGATE_HOST
 	cfg.Service.ResourceDirectoryAddr = grpcTest.RESOURCE_DIRECTORY_HOST
 	cfg.Service.FQDN = "cloud2cloud-gateway-" + t.Name()
 	cfg.Listen.Acme.DisableVerifyClientCertificate = true
-	c2cShutdown := service.NewOpenApiGateway(t, cfg)
+	c2cShutdown := service.NewCloud2cloudGateway(t, cfg)
 
 	return func() {
 		c2cShutdown()
@@ -47,7 +47,7 @@ func NewRequest(method, url string, body io.Reader) *requestBuilder {
 	b := requestBuilder{
 		method:      method,
 		body:        body,
-		uri:         fmt.Sprintf("https://%s%s", OPENAPI_GW_HOST, url),
+		uri:         fmt.Sprintf("https://%s%s", Cloud2cloud_GW_HOST, url),
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
 		queryParams: make(map[string]string),

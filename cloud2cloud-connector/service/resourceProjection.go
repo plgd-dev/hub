@@ -184,7 +184,7 @@ func (m *resourceCtx) onPendingContentUpdate(ctx context.Context) error {
 			ResourceId:    m.resource.Id,
 			CorrelationId: m.pendingContentUpdate[0].AuditContext.CorrelationId,
 			CommandMetadata: &pbCQRS.CommandMetadata{
-				ConnectionId: OpenapiConnectorConnectionId,
+				ConnectionId: Cloud2cloudConnectorConnectionId,
 				//Sequence:     header.SequenceNumber,
 			},
 			Content: &pbRA.Content{

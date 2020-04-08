@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RemoveDevice remove a device from user. It is used by openapi connector.
+// RemoveDevice remove a device from user. It is used by cloud2cloud connector.
 func (s *Service) RemoveDevice(ctx context.Context, request *pb.RemoveDeviceRequest) (*pb.RemoveDeviceResponse, error) {
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()

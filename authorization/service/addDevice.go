@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// AddDevice adds a device to user. It is used by openapi connector.
+// AddDevice adds a device to user. It is used by cloud2cloud connector.
 func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (*pb.AddDeviceResponse, error) {
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
