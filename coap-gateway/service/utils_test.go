@@ -100,7 +100,7 @@ func initializeStruct(t reflect.Type, v reflect.Value) {
 
 func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 	if resp.Code() != test.out.code {
-		t.Fatalf("Ouput code %v is invalid, expected %v", resp.Code(), test.out.code)
+		t.Fatalf("Output code %v is invalid, expected %v", resp.Code(), test.out.code)
 	} else {
 		if len(resp.Payload()) > 0 || test.out.payload != nil {
 			if contentType, ok := resp.Option(gocoap.ContentFormat).(gocoap.MediaType); ok {
@@ -117,14 +117,14 @@ func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 				case gocoap.TextPlain:
 					if v, ok := test.out.payload.(string); ok {
 						if strings.Count(string(resp.Payload()), v) == 0 {
-							t.Fatalf("Ouput payload '%v' is invalid, expected '%v'", string(resp.Payload()), test.out.payload)
+							t.Fatalf("Output payload '%v' is invalid, expected '%v'", string(resp.Payload()), test.out.payload)
 						}
 					} else {
-						t.Fatalf("Ouput payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
+						t.Fatalf("Output payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
 					}
 				}
 			} else {
-				t.Fatalf("Ouput payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
+				t.Fatalf("Output payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
 			}
 		}
 		if len(test.out.queries) > 0 {

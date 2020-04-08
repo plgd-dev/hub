@@ -100,7 +100,7 @@ func (s *EventStore) LoadUpToVersion(ctx context.Context, queries []eventstore.V
 	return s.es.LoadUpToVersion(ctx, queries, eventHandler)
 }
 
-// LoadFromSnapshot loads events from begining.
+// LoadFromSnapshot loads events from beginning.
 func (s *EventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.SnapshotQuery, eventHandler event.Handler) error {
 	return s.es.LoadFromSnapshot(ctx, queries, eventHandler)
 }

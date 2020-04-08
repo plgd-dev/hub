@@ -81,7 +81,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	// load resource subscritpion
+	// load resource subscriptions
 	h := loadDeviceSubscriptionsHandler{
 		resourceProjection: resourceProjection,
 	}
