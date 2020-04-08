@@ -11,14 +11,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
+
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
 	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	c2cTest "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/go-coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -107,7 +109,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
-			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): cannot retrieve resource(d4b92d8f-fcc9-5782-a7f4-ad64929a5312): cannot retrieve resources values: rpc error: code = NotFound desc = cannot retrieve resources values: not found",
+			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): cannot retrieve resource(" + cqrs.MakeResourceId(deviceID, "/notFound") + "): cannot retrieve resources values: rpc error: code = NotFound desc = cannot retrieve resources values: not found",
 		},
 		{
 			name: "invalidAccept",
