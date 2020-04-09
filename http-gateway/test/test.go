@@ -41,8 +41,6 @@ func NewTestBackendConfig() service.Config {
 	cfg.UserDevicesManagerExpiration = time.Second * 1
 	cfg.UserDevicesManagerTickFrequency = time.Millisecond * 500
 	cfg.Service.OAuth.Endpoint.TokenURL = "https://" + grpcTest.AUTH_HTTP_HOST + "/api/authz/token"
-
-	fmt.Println(cfg.String())
 	return cfg
 }
 
