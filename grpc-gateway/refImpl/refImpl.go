@@ -22,6 +22,7 @@ type Config struct {
 	JwksURL string             `envconfig:"JWKS_URL"`
 	Listen  certManager.Config `envconfig:"LISTEN"`
 	Dial    certManager.Config `envconfig:"DIAL"`
+	kitNetGrpc.Config
 	service.HandlerConfig
 }
 
@@ -47,7 +48,7 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig(), "openid")
 
 	serverTLSConfig := listenCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(config.Service.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
 	if err != nil {
 		return nil, err
 	}
@@ -74,5 +75,4 @@ func NewAuth(jwksUrl string, tls tls.Config, scope string) kitNetGrpc.AuthInterc
 		}
 		return ctx, err
 	})
-
 }

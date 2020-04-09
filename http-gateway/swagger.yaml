@@ -1,0 +1,416 @@
+openapi: 3.0.1
+info:
+  title: WebAPI
+  description: Control plane for your devices
+  version: 1.0.0
+servers:
+- url: 'https://try.plgd.cloud/api/v1'
+paths:
+  '/devices':
+    get:
+      tags:
+        - Devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/statusFilter'
+      summary: Get all devices
+      description: To filter only devices with specific status, use query parameter `status`. To filter specific type of devices, use the `type` query parameter.
+      security:
+        - oauth2:
+          - plgd.devices
+      responses:
+        200:
+          description: Devices array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        500:
+          $ref: '#/components/responses/error'
+  '/devices/{deviceId}':
+    get:
+      tags:
+        - Devices
+      summary: Get device by ID
+      description: It has to be canceled by the client in the time you define.
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/deviceId'
+      responses:
+        200:
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+  '/devices/{deviceId}/{resourcePath}':
+    get:
+      tags:
+        - Devices
+      summary: Get a single resource
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/resourcePath'
+        - $ref: '#/components/parameters/interface'
+        - $ref: '#/components/parameters/skipShadow'
+      description: Get a single resource
+      responses:
+        200:
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRepresentation'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+    put:
+      tags:
+        - Devices
+      summary: Update a single resource. In case you want update BigDecimal attribute.
+               It's necessary include also decimal point. Otherwise attribute will be converted
+               as int.
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/resourcePath'
+        - $ref: '#/components/parameters/interface'
+      requestBody:
+        description: Data source base information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceRepresentationUpdate'
+        required: true
+      responses:
+        200:
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRepresentation'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+  '/devices/{deviceId}/reboot':
+    post:
+      tags:
+        - Maintenance
+      summary: Initialisation of reboot process on device
+      description: Initialisation of reboot process on device. After initialisation device should change its state to offline
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/deviceId'
+      responses:
+        204:
+          description: Initialisation of reboot process on device started
+          content: {}
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+  '/devices/{deviceId}/factory-reset':
+    post:
+      tags:
+        - Maintenance
+      summary: Initialisation of factory reset process on device
+      description: After initialisation device should change its state to offline
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/deviceId'
+      responses:
+        204:
+          description: Initialisation of factory reset process on device started
+          content: {}
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+  '/ws/devices/{deviceId}/{resourcePath}':
+    get:
+      tags:
+        - Observation
+      summary: Observe state of device resource via websocket
+      description: Start observation of single device resource via websocket. When observation start, user
+        is notified with first event which represent actual state of resource
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/resourcePath'
+      responses:
+        101:
+          description: Websocket connection was established
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceObservation'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+  '/ws/devices':
+    get:
+      tags:
+        - Observation
+      summary: Observe status of devices
+      description: Start observation of device online/offline status.
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+      responses:
+        101:
+          description: Websocket connection was established
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceStatusEvent'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        500:
+          $ref: '#/components/responses/error'
+  '/ws/devices/{deviceId}':
+    get:
+      tags:
+        - Observation
+      summary: Observe device resources registration via websocket
+      description: Start observation of device resource registration via websocket. When observation start, user
+        is notified with set of events which represent all resources already published
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/correlationId'
+        - $ref: '#/components/parameters/deviceId'
+      responses:
+        101:
+          description: Websocket connection was established
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResourcesObservation'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: The default OAuth API Resources.
+      flows:
+        implicit:
+          authorizationUrl: https://auth.plgd.cloud/oauth/token
+          scopes:
+            openid: to authorize access to a user's details
+  schemas:
+    DeviceResourcesObservation:
+      type: object
+      properties:
+        resource:
+          $ref: '#/components/schemas/Resource'
+        event:
+          $ref: '#/components/schemas/DeviceResourceObservationEventType'
+      example:
+        resource:
+          types:
+            - "oic.wk.p"
+          interfaces:
+            - "oic.if.baseline"
+            - "oic.if.r"
+          href: "/oic/p"
+        event: added
+    Resource:
+      type: object
+      properties:
+        types:
+          description: Resource types
+          type: array
+          items:
+            type: string
+        interfaces:
+          description: Resource interface
+          type: array
+          items:
+            type: string
+        href:
+          type: string
+          description: Href of resource
+    DeviceStatusEvent:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+          description: Unique identifier of the device
+        status:
+            $ref: '#/components/schemas/DeviceStatus'
+      example:
+        deviceId: f1b0f779-57e9-4b76-9a9b-16ff0390f89b
+        status: online
+    ResourceObservation:
+      type: object
+      example:
+        n: Rename test device
+    Device:
+      type: object
+      properties:
+        device:
+          $ref: "http://openconnectivityfoundation.github.io/core/swagger2.0/oic.wk.d.swagger.json#definitions/Device"
+        links:
+          $ref: "http://openconnectivityfoundation.github.io/core/swagger2.0/oic.wk.col.swagger.json#definitions/sbaseline/properties/links"
+        status:
+          $ref: '#/components/schemas/DeviceStatus'
+      example:
+        device:
+          rt: ['x.com.device', 'oic.wk.d']
+          di: '53080a4f-5e3e-4291-802f-3436238232d2'
+          n: Test device
+        status: online
+        links:
+          - di: '53080a4f-5e3e-4291-802f-3436238232d2'
+            href: /oic/d
+            rt: [ 'x.com.device', 'oic.wk.d']
+            if: [ 'oic.if.baseline', 'oic.if.r']
+    ResourceRepresentation:
+      type: object
+      properties:
+        rt:
+          type: array
+          description: Resources types
+          items:
+            type: string
+        if:
+          type: array
+          description: Supported interfaces
+          items:
+            type: string
+      example:
+        rt: [ 'x.com.device', 'oic.wk.d']
+        if: [ 'oic.if.baseline', 'oic.if.r']
+        di: '53080a4f-5e3e-4291-802f-3436238232d2'
+        n: Test device
+    ResourceRepresentationUpdate:
+      type: object
+      example:
+        n: Rename test device
+    DeviceResourceObservationEventType:
+      type: string
+      enum:
+      - added
+      - removed
+    DeviceStatus:
+      type: string
+      enum:
+      - online
+      - offline
+  parameters:
+    correlationId:
+      name: Correlation-ID
+      in: header
+      description: Cross request logging correlation id
+      schema:
+        type: string
+      example: 53080a4f-5e3e-4291-802f-3436238232d1
+    deviceId:
+      name: deviceId
+      in: path
+      description: Id of the device
+      required: true
+      schema:
+        type: string
+        format: uuid
+    resourcePath:
+      name: resourcePath
+      in: path
+      description: Href of the resource
+      required: true
+      schema:
+        type: string
+    skipShadow:
+      name: skipShadow
+      in: query
+      description: Get resource content directly from device without cache
+      schema:
+        type: boolean
+    deviceIdFilter:
+      name: deviceId
+      in: query
+      description: Filter data sources by device id to which they belongs to
+      schema:
+        type: string
+        format: uuid
+    typeFilter:
+      name: type
+      in: query
+      description: Filter by the type
+      schema:
+        type: array
+        items:
+          type: string
+    statusFilter:
+      name: type
+      in: query
+      description: Filter by the device status
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/DeviceStatus'
+    interface:
+      name: interface
+      in: query
+      description: Defines the view or a way how to interact with a resource
+      schema:
+        type: string
+  responses:
+    unauthorized:
+      description: Not authorized
+    error:
+      description: An error occured when processing your request
+    deviceNotFound:
+      description: Device or resource was not found

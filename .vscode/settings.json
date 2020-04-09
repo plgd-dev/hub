@@ -13,5 +13,8 @@
         "TEST_COAP_GW_OVERWRITE_LISTEN_ACME_DIRECTORY_URL": "https://localhost:10443/acme/ocf.gw/directory",
         //"GOFLAGS":"-mod=vendor",
     },
-    "go.testTimeout": "180s"
+    "go.testTimeout": "180s",
+    "go.buildFlags": [
+        // "-mod=vendor",
+    ]
 }

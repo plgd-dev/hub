@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/go-ocf/kit/security/certManager"
 	"testing"
 	"time"
+
+	"github.com/go-ocf/kit/security/certManager"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
@@ -15,8 +16,6 @@ import (
 	"github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/authorization/service"
 	testService "github.com/go-ocf/cloud/authorization/test/service"
-
-	_ "github.com/mattn/go-sqlite3" // sql driver
 )
 
 type testTrigger struct {

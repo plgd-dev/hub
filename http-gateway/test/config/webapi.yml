@@ -1,0 +1,69 @@
+Address: 0.0.0.0:7000
+Listen:
+  Type: acme
+  Acme:
+    CAPool: /home/krz/go/src/github.com/go-ocf/cloud/.tmp/step-ca/data/certs/root_ca.crt
+    CADirURL: https://localhost:10443/acme/acme/directory
+    Domains:
+    - localhost
+    Email: ""
+    TickFrequency: 15s
+    ChallengeListenPort: 80
+    DisableVerifyClientCertificate: true
+    UseSystemCertPool: false
+  File:
+    CAPool: ""
+    TLSKeyFileName: ""
+    DirPath: ""
+    TLSCertFileName: ""
+    DisableVerifyClientCertificate: false
+    UseSystemCertPool: false
+Dial:
+  Type: acme
+  Acme:
+    CAPool: /home/krz/go/src/github.com/go-ocf/cloud/.tmp/step-ca/data/certs/root_ca.crt
+    CADirURL: https://localhost:10443/acme/acme/directory
+    Domains:
+    - localhost
+    Email: ""
+    TickFrequency: 15s
+    ChallengeListenPort: 80
+    DisableVerifyClientCertificate: false
+    UseSystemCertPool: false
+  File:
+    CAPool: ""
+    TLSKeyFileName: ""
+    DirPath: ""
+    TLSCertFileName: ""
+    DisableVerifyClientCertificate: false
+    UseSystemCertPool: false
+DefaultRequestTimeout: 3s
+AccessTokenURL: localhost:7005
+JwksURL: https://localhost:7006/.well-known/jwks.json
+HandlerConfig:
+  Mongo:
+    URI: mongodb://localhost:27017
+    DatabaseName: eventStore
+    BatchSize: 16
+    MaxPoolSize: 16
+    MaxConnIdleTime: 4m0s
+  Nats:
+    URL: nats://localhost:4222
+    Options: []
+  Service:
+    OAuth:
+      ClientID: ""
+      ClientSecret: ""
+      Scopes: []
+      Endpoint:
+        TokenURL: https://localhost:7006/api/authz/token
+      Audience: ""
+      RequestTimeout: 10s
+    AuthServerAddr: localhost:7005
+    ResourceAggregateAddr: localhost:9083
+    ResourceDirectoryAddr: localhost:9082
+    FQDN: http-gateway
+    TimeoutForRequests: 10s
+  GoRoutinePoolSize: 16
+  UserDevicesManagerTickFrequency: 500ms
+  UserDevicesManagerExpiration: 1s
