@@ -12,8 +12,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
-
 func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *http.Request) {
 	var body interface{}
 	if err := json.ReadFrom(r.Body, &body); err != nil {
