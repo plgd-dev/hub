@@ -22,15 +22,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const WebApiPort = 7000
-const WebApiHost = "0.0.0.0"
+const HTTP_GW_Port = 7000
+const HTTP_GW_Host = "0.0.0.0"
 const TestTimeout = 10 * time.Second
 
 func NewTestBackendConfig() service.Config {
 	var cfg service.Config
 	envconfig.Process("", &cfg)
 	cfg.AccessTokenURL = grpcTest.AUTH_HOST
-	cfg.Address = fmt.Sprintf("%s:%d", WebApiHost, WebApiPort)
+	cfg.Address = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
 	cfg.Listen.Acme.DisableVerifyClientCertificate = true
 	cfg.DefaultRequestTimeout = time.Second * 3
 	cfg.JwksURL = "https://" + grpcTest.AUTH_HTTP_HOST + authURI.JWKs
@@ -60,7 +60,7 @@ func NewTestHTTPGW(t *testing.T, config string) func() {
 }
 
 func GetTestRebootUri(deviceID string, t *testing.T) string {
-	template, _ := uritemplates.Parse(fmt.Sprintf("https://localhost:%d%s", WebApiPort, uri.DeviceReboot))
+	template, _ := uritemplates.Parse(fmt.Sprintf("https://localhost:%d%s", HTTP_GW_Port, uri.DeviceReboot))
 	values := make(map[string]interface{})
 	values[uri.DeviceIDKey] = deviceID
 	u, _ := template.Expand(values)
@@ -72,7 +72,7 @@ func NewRequest(method, url string, body io.Reader) *requestBuilder {
 	b := requestBuilder{
 		method:      method,
 		body:        body,
-		uri:         fmt.Sprintf("https://localhost:%d%s", WebApiPort, url),
+		uri:         fmt.Sprintf("https://localhost:%d%s", HTTP_GW_Port, url),
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
 		queryParams: make(map[string]string),

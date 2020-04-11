@@ -102,7 +102,7 @@ func testResourceObservation(t *testing.T, deviceID string) {
 }
 
 func GetResourceObservationUri(deviceID, href string) string {
-	return fmt.Sprintf("wss://localhost:%d%s/%s%s", test.WebApiPort, uri.WSDevices, deviceID, href)
+	return fmt.Sprintf("wss://localhost:%d%s/%s%s", test.HTTP_GW_Port, uri.WSDevices, deviceID, href)
 }
 
 func webSocketConnection(t *testing.T, uri string) *websocket.Conn {

@@ -75,5 +75,5 @@ func testDeviceEvent(t *testing.T, conn *websocket.Conn, expect service.DeviceEv
 }
 
 func GetDevicesObservationUri() string {
-	return fmt.Sprintf("wss://localhost:%d%s", test.WebApiPort, uri.WsStartDevicesObservation)
+	return fmt.Sprintf("wss://localhost:%d%s", test.HTTP_GW_Port, uri.WsStartDevicesObservation)
 }

@@ -76,5 +76,5 @@ func readMessage(t *testing.T, conn *websocket.Conn, messages *sync.Map) {
 }
 
 func GetDeviceResourcesObservationUri(deviceID string) string {
-	return fmt.Sprintf("wss://localhost:%d%s/%s", test.WebApiPort, uri.WSDevices, deviceID)
+	return fmt.Sprintf("wss://localhost:%d%s/%s", test.HTTP_GW_Port, uri.WSDevices, deviceID)
 }
