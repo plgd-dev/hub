@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	ConfigPath string `long:"config" env:"CONFIG" default:"webapi.yaml" description:"yaml config file path"`
+	ConfigPath string `long:"config" env:"CONFIG" default:"httpgw.yaml" description:"yaml config file path"`
 }
 
 func main() {

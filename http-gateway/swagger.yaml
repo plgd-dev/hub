@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: WebAPI
+  title: HTTP Gateway
   description: Control plane for your devices
   version: 1.0.0
 servers:
@@ -308,14 +308,14 @@ components:
           $ref: '#/components/schemas/DeviceStatus'
       example:
         device:
-          rt: ['x.com.device', 'oic.wk.d']
+          rt: ['x.org.iotivity.device', 'oic.wk.d']
           di: '53080a4f-5e3e-4291-802f-3436238232d2'
           n: Test device
         status: online
         links:
           - di: '53080a4f-5e3e-4291-802f-3436238232d2'
             href: /oic/d
-            rt: [ 'x.com.device', 'oic.wk.d']
+            rt: [ 'x.org.iotivity.device', 'oic.wk.d']
             if: [ 'oic.if.baseline', 'oic.if.r']
     ResourceRepresentation:
       type: object
@@ -331,7 +331,7 @@ components:
           items:
             type: string
       example:
-        rt: [ 'x.com.device', 'oic.wk.d']
+        rt: [ 'x.org.iotivity.device', 'oic.wk.d']
         if: [ 'oic.if.baseline', 'oic.if.r']
         di: '53080a4f-5e3e-4291-802f-3436238232d2'
         n: Test device

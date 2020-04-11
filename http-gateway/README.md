@@ -9,7 +9,7 @@
 
 ## WebSocket
 
-WebAPI provides WebSocket API for observations:
+HTTP Gateway provides WebSocket API for observations:
 
 | URI                                                       | Description                                                     |
 | ---                                                       | ---                                                             |
