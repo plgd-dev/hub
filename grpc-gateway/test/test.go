@@ -129,7 +129,7 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	err = envconfig.Process("", &grpcCfg)
 	require.NoError(t, err)
 	//grpcCfg.Log.Debug = true
-	grpcCfg.Service.Addr = GRPC_HOST
+	grpcCfg.Addr = GRPC_HOST
 	grpcCfg.Service.AuthServerAddr = AUTH_HOST
 	grpcCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
 	grpcCfg.Service.ResourceDirectoryAddr = RESOURCE_DIRECTORY_HOST
@@ -182,7 +182,7 @@ func NewGrpcGateway(t *testing.T, config refImpl.Config) func() {
 	})
 	serverTLSConfig := listenCertManager.GetServerTLSConfig()
 	serverTLSConfig.ClientAuth = tls.NoClientCert
-	server, err := kitNetGrpc.NewServer(config.Service.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
 	require.NoError(t, err)
 	server.AddCloseFunc(func() {
 		listenCertManager.Close()

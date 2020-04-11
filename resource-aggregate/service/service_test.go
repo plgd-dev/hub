@@ -120,7 +120,7 @@ func testNewResource(href string, deviceId string, resourceId string) *pb.Resour
 	return &pb.Resource{
 		Id:            resourceId,
 		Href:          href,
-		ResourceTypes: []string{"oic.wk.d", "x.com.kistler.kiconnect.device"},
+		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
 		Interfaces:    []string{"oic.if.baseline"},
 		DeviceId:      deviceId,
 		InstanceId:    1,

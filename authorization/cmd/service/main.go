@@ -9,8 +9,6 @@ import (
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
-
-	_ "github.com/mattn/go-sqlite3" // sql driver
 )
 
 func main() {

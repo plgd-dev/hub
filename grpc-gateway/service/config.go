@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security/oauth/manager"
 )
 
 // Config represent application configuration
 type Config struct {
-	grpc.Config
 	OAuth                 manager.Config `envconfig:"OAUTH"`
 	AuthServerAddr        string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
 	ResourceAggregateAddr string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`

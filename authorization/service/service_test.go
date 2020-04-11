@@ -14,7 +14,6 @@ import (
 	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
 	oauthProvider "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/kelseyhightower/envconfig"
-	_ "github.com/mattn/go-sqlite3" // sql driver
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
