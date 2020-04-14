@@ -30,6 +30,9 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 | `COAP_GATEWAY_ADDRESS` | string | coaps-tcp listen address | `"0.0.0.0:5684"` |
 | `COAP_GATEWAY_FQDN` | string | public FQDN for coaps-tcp | `"localhost"` |
 | `COAP_GATEWAY_CLOUD_ID` | string | cloud id | `"00000000-0000-0000-0000-000000000001"` |
+| `COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER`| bool | disable blockwise transfer | `false` |
+| `COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX` | string | blockwise transfer size | `"1024"` |
+| `COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS` | bool | ignore tcp control signal message from peer | `"false"`|
 | `COAP_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying coap clients certificates | `true` |
 | `GRPC_GATEWAY_ADDRESS`| string | secure grpc-tcp listen address | `"0.0.0.0:9084"` |
 | `GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying grpc clients certificates | `true` |
