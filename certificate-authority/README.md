@@ -6,7 +6,7 @@
 ## Configuration
 | Option | ENV variable | Type | Description | Default |
 | ------ | --------- | ----------- | ------- | ------- |
-| `-` | `ADDRESS` | string | tbd | `"0.0.0.0:5684"` |
+| `-` | `ADDRESS` | string | tbd | `"0.0.0.0:7000"` |
 | `-` | `DIAL_ACME_CA_POOL` | string | tbd | `""` |
 | `-` | `DIAL_ACME_DIRECTORY_URL` | string | tbd | `""` |
 | `-` | `DIAL_ACME_DOMAINS` | string | tbd | `""` |
