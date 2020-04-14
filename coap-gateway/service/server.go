@@ -42,6 +42,8 @@ type Server struct {
 	SendErrorTextInResponse         bool
 	RequestTimeout                  time.Duration
 	ConnectionsHeartBeat            time.Duration
+	BlockWiseTransfer               bool
+	BlockWiseTransferSZX            gocoap.BlockWiseSzx
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
@@ -120,6 +122,28 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		}
 	}
 
+	var blockWiseTransferSZX gocoap.BlockWiseSzx
+	switch strings.ToLower(config.BlockWiseTransferSZX) {
+	case "16":
+		blockWiseTransferSZX = gocoap.BlockWiseSzx16
+	case "32":
+		blockWiseTransferSZX = gocoap.BlockWiseSzx32
+	case "64":
+		blockWiseTransferSZX = gocoap.BlockWiseSzx64
+	case "128":
+		blockWiseTransferSZX = gocoap.BlockWiseSzx128
+	case "256":
+		blockWiseTransferSZX = gocoap.BlockWiseSzx256
+	case "512":
+		blockWiseTransferSZX = gocoap.BlockWiseSzx512
+	case "1024":
+		blockWiseTransferSZX = gocoap.BlockWiseSzx1024
+	case "bert":
+		blockWiseTransferSZX = gocoap.BlockWiseSzxBERT
+	default:
+		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.BlockWiseTransferSZX)
+	}
+
 	s := Server{
 		Keepalive:                       keepalive,
 		Net:                             config.Net,
@@ -131,6 +155,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		DisablePeerTCPSignalMessageCSMs: config.DisablePeerTCPSignalMessageCSMs,
 		SendErrorTextInResponse:         config.SendErrorTextInResponse,
 		ConnectionsHeartBeat:            config.ConnectionsHeartBeat,
+		BlockWiseTransfer:               !config.DisableBlockWiseTransfer,
+		BlockWiseTransferSZX:            blockWiseTransferSZX,
 
 		raClient: raClient,
 		asClient: asClient,
@@ -290,6 +316,8 @@ func (server *Server) setupCoapServer() {
 		NotifySessionNewFunc:            server.coapConnOnNew,
 		NotifySessionEndFunc:            server.coapConnOnClose,
 		HeartBeat:                       server.ConnectionsHeartBeat,
+		BlockWiseTransfer:               &server.BlockWiseTransfer,
+		BlockWiseTransferSzx:            &server.BlockWiseTransferSZX,
 	}
 }
 

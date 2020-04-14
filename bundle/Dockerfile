@@ -40,7 +40,7 @@ RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
 FROM ubuntu:18.04 as service
 RUN apt update
-RUN apt install -y mongodb-server
+RUN apt install -y mongodb-server curl
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
@@ -59,6 +59,10 @@ ENV COAP_GATEWAY_ADDRESS="0.0.0.0:$COAP_GATEWAY_PORT"
 ENV COAP_GATEWAY_FQDN="localhost"
 ENV COAP_GATEWAY_CLOUD_ID="00000000-0000-0000-0000-000000000001"
 ENV COAP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
+ENV COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER=false
+ENV COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX="1024"
+ENV COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=false
+
 
 # grpc-gateway
 ENV GRPC_GATEWAY_ADDRESS="0.0.0.0:9084"
