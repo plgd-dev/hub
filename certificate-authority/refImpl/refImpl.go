@@ -2,10 +2,12 @@ package refImpl
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 
 	"github.com/go-ocf/kit/security/certManager"
+	"github.com/go-ocf/kit/security/jwt"
 
 	"github.com/go-ocf/cloud/certificate-authority/pb"
 	"github.com/go-ocf/cloud/certificate-authority/service"
@@ -16,17 +18,19 @@ import (
 )
 
 type Config struct {
-	Log     log.Config
-	Service service.Config
-	Signer  service.SignerConfig
-	Listen  certManager.Config `envconfig:"LISTEN"`
-	JwksURL string             `envconfig:"JWKS_URL" required:"True"`
+	Log     log.Config           `envconfig:"LOG"`
+	Signer  service.SignerConfig `envconfig:"SIGNER"`
+	Listen  certManager.Config   `envconfig:"LISTEN"`
+	Dial    certManager.Config   `envconfig:"DIAL"`
+	JwksURL string               `envconfig:"JWKS_URL"`
+	kitNetGrpc.Config
 }
 
 type RefImpl struct {
 	handle            *service.RequestHandler
 	server            *kitNetGrpc.Server
 	listenCertManager certManager.CertManager
+	dialCertManager   certManager.CertManager
 }
 
 // NewRequestHandlerFromConfig creates RegisterGrpcGatewayServer with all dependencies.
@@ -37,7 +41,7 @@ func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*Ref
 	}
 
 	serverTLSConfig := listenCertManager.GetServerTLSConfig()
-	svr, err := kitNetGrpc.NewServer(config.Service.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
+	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
 	if err != nil {
 		listenCertManager.Close()
 		return nil, err
@@ -61,10 +65,19 @@ func (c Config) String() string {
 }
 
 func Init(config Config) (*RefImpl, error) {
-	auth := kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
-		return ctx, nil
-	})
-	return InitWithAuth(config, auth)
+	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create dial cert manager %v", err)
+	}
+
+	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig(), "openid")
+	r, err := InitWithAuth(config, auth)
+	if err != nil {
+		dialCertManager.Close()
+		return nil, err
+	}
+	r.dialCertManager = dialCertManager
+	return r, nil
 }
 
 func InitWithAuth(config Config, auth kitNetGrpc.AuthInterceptors) (*RefImpl, error) {
@@ -88,4 +101,20 @@ func (r *RefImpl) Serve() error {
 func (r *RefImpl) Shutdown() {
 	r.server.Stop()
 	r.listenCertManager.Close()
+	if r.dialCertManager != nil {
+		r.dialCertManager.Close()
+	}
+}
+
+func NewAuth(jwksUrl string, tls tls.Config, scope string) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
+		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
+			return jwt.NewScopeClaims(scope)
+		})
+		ctx, err := interceptor(ctx, method)
+		if err != nil {
+			log.Errorf("auth interceptor: %v", err)
+		}
+		return ctx, err
+	})
 }

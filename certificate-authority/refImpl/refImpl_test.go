@@ -17,7 +17,6 @@ func TestInit(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 	testSignerCerts(t, dir)
-	os.Setenv("JWKS_URL", "test.com")
 	err = envconfig.Process("", &config)
 	require.NoError(t, err)
 
