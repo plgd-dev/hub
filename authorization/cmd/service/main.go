@@ -27,7 +27,7 @@ func main() {
 
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
-	persistence, err := mongodb.NewStore(context.Background(), cfg.MongoDB, mongodb.WithTLS(&tlsConfig))
+	persistence, err := mongodb.NewStore(context.Background(), cfg.MongoDB, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}
