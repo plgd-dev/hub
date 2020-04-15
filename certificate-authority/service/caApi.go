@@ -25,9 +25,9 @@ type RequestHandler struct {
 }
 
 type SignerConfig struct {
-	Certificate   string        `envconfig:"SIGNER_CERTIFICATE" required:"True"`
-	PrivateKey    string        `envconfig:"SIGNER_PRIVATE_KEY" required:"True"`
-	ValidDuration time.Duration `envconfig:"SIGNER_VALID_DURATION" default:"87600h"`
+	Certificate   string        `envconfig:"CERTIFICATE"`
+	PrivateKey    string        `envconfig:"PRIVATE_KEY"`
+	ValidDuration time.Duration `envconfig:"VALID_DURATION" default:"87600h"`
 }
 
 func AddHandler(svr *kitNetGrpc.Server, cfg SignerConfig) error {

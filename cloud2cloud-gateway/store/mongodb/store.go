@@ -109,14 +109,10 @@ func (s *Store) DBName() string {
 
 // Clear clears the event storage.
 func (s *Store) Clear(ctx context.Context) error {
-	var errors []error
-	if err := s.client.Database(s.DBName()).Collection(subscriptionsCName).Drop(ctx); err != nil {
-		errors = append(errors, err)
+	err := s.client.Database(s.DBName()).Collection(subscriptionsCName).Drop(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot clear: %w", err)
 	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot clear: %w", errors)
-	}
-
 	return nil
 }
 
