@@ -20,10 +20,7 @@ func NewCoapGateway(t *testing.T, cfg refImpl.Config) func() {
 
 	go func() {
 		defer wg.Done()
-		err := c.Serve()
-		if err != nil {
-			t.Logf("coap-gw ends with error %v\n", err)
-		}
+		c.Serve()
 	}()
 
 	return func() {
