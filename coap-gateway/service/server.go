@@ -65,11 +65,11 @@ type Server struct {
 }
 
 type DialCertManager = interface {
-	GetClientTLSConfig() tls.Config
+	GetClientTLSConfig() *tls.Config
 }
 
 type ListenCertManager = interface {
-	GetServerTLSConfig() tls.Config
+	GetServerTLSConfig() *tls.Config
 }
 
 //NewServer setup coap gateway
@@ -77,21 +77,21 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
-	clientTLSConfig := dialCertManager.GetClientTLSConfig()
+	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLSConfig)))
+	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLSConfig)))
+	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	asClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLSConfig)))
+	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -105,7 +105,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		listener = l
 	} else {
 		tlsConfig := listenCertManager.GetServerTLSConfig()
-		l, err := gocoapNet.NewTLSListener("tcp", config.Addr, &tlsConfig, time.Millisecond*100)
+		l, err := gocoapNet.NewTLSListener("tcp", config.Addr, tlsConfig, time.Millisecond*100)
 		if err != nil {
 			log.Fatalf("cannot setup tcp-tls for server: %v", err)
 		}

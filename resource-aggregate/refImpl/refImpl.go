@@ -44,11 +44,11 @@ func Init(config Config) (*RefImpl, error) {
 	}
 	tlsConfig := clientCertManager.GetClientTLSConfig()
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
-	publisher, err := nats.NewPublisher(config.Nats, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(config.Nats, nats.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create kafka publisher %w", err)
 	}

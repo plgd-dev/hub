@@ -58,9 +58,9 @@ func Init(config Config) (*RefImpl, error) {
 		return nil, err
 	}
 
-	serverTLSConfig := impl.serverCertManager.GetServerTLSConfig()
+	listenTLSConfig := impl.serverCertManager.GetServerTLSConfig()
 
-	svr, err := kitNetGrpc.NewServer(config.Service.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)))
+	svr, err := kitNetGrpc.NewServer(config.Service.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +96,9 @@ func NewRequestHandlerFromConfig(config Config) (*RefImpl, error) {
 	}
 
 	svc := config.Service
-	clientTLSConfig := clientCertManager.GetClientTLSConfig()
+	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 
-	authServiceConn, err := grpc.Dial(svc.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLSConfig)))
+	authServiceConn, err := grpc.Dial(svc.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	authServiceClient := pbAS.NewAuthorizationServiceClient(authServiceConn)
 
 	pool, err := ants.NewPool(config.GoRoutinePoolSize)
@@ -106,12 +106,12 @@ func NewRequestHandlerFromConfig(config Config) (*RefImpl, error) {
 		return nil, fmt.Errorf("cannot create goroutine pool: %v", err)
 	}
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(&clientTLSConfig))
+	eventstore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %v", err)
 	}
 
-	subscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("resource-directory: error occurs during receiving event: %v", err) }, nats.WithTLS(&clientTLSConfig))
+	subscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("resource-directory: error occurs during receiving event: %v", err) }, nats.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource nats subscriber %v", err)
 	}

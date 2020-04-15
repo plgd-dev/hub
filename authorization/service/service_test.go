@@ -49,7 +49,7 @@ func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provi
 	if sdkProvider == nil {
 		deviceProvider = oauthProvider.NewTestProvider()
 	}
-	persistence, err := mongodb.NewStore(context.Background(), cfg.MongoDB, mongodb.WithTLS(&tlsConfig))
+	persistence, err := mongodb.NewStore(context.Background(), cfg.MongoDB, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 
 	dir, err := ioutil.TempDir("", "gotesttmp")

@@ -47,7 +47,7 @@ func New(config string) (*Server, error) {
 	}
 	listenTLSCfg := listenCertManager.GetServerTLSConfig()
 
-	ln, err := tls.Listen("tcp", cfg.Address, &listenTLSCfg)
+	ln, err := tls.Listen("tcp", cfg.Address, listenTLSCfg)
 	if err != nil {
 		log.Fatalf("cannot listen tls and serve: %w", err)
 	}

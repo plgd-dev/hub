@@ -67,7 +67,7 @@ func TestPerformMaintenance(t *testing.T) {
 
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
-	store, err := cqrs.NewEventStore(config.Mongo, nil, mongodb.WithMarshaler(bson.Marshal), mongodb.WithUnmarshaler(unmarshalPlain), mongodb.WithTLS(&tlsConfig))
+	store, err := cqrs.NewEventStore(config.Mongo, nil, mongodb.WithMarshaler(bson.Marshal), mongodb.WithUnmarshaler(unmarshalPlain), mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	require.NotNil(t, store)
 

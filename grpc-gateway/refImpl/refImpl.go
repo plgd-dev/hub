@@ -47,8 +47,8 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 
 	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig(), "openid")
 
-	serverTLSConfig := listenCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
+	listenTLSConfig := listenCertManager.GetServerTLSConfig()
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	return server, nil
 }
 
-func NewAuth(jwksUrl string, tls tls.Config, scope string) kitNetGrpc.AuthInterceptors {
+func NewAuth(jwksUrl string, tls *tls.Config, scope string) kitNetGrpc.AuthInterceptors {
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
 		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 			return jwt.NewScopeClaims(scope)

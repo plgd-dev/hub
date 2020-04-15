@@ -40,8 +40,8 @@ func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*Ref
 		return nil, fmt.Errorf("cannot create listen cert manager %v", err)
 	}
 
-	serverTLSConfig := listenCertManager.GetServerTLSConfig()
-	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
+	listenTLSConfig := listenCertManager.GetServerTLSConfig()
+	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
 	if err != nil {
 		listenCertManager.Close()
 		return nil, err
@@ -106,7 +106,7 @@ func (r *RefImpl) Shutdown() {
 	}
 }
 
-func NewAuth(jwksUrl string, tls tls.Config, scope string) kitNetGrpc.AuthInterceptors {
+func NewAuth(jwksUrl string, tls *tls.Config, scope string) kitNetGrpc.AuthInterceptors {
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
 		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 			return jwt.NewScopeClaims(scope)

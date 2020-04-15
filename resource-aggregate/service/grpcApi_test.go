@@ -82,9 +82,9 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -170,9 +170,9 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -249,9 +249,9 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 
 	defer func() {
@@ -343,9 +343,9 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -424,9 +424,9 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -505,9 +505,9 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -586,9 +586,9 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)

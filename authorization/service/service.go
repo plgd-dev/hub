@@ -75,14 +75,14 @@ func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provid
 	}
 	httpServerTLSConfig := serverCertManager.GetServerTLSConfig()
 	httpServerTLSConfig.ClientAuth = tls.NoClientCert
-	listener, err := tls.Listen("tcp", cfg.HTTPAddr, &httpServerTLSConfig)
+	listener, err := tls.Listen("tcp", cfg.HTTPAddr, httpServerTLSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("listening failed: %v", err)
 	}
 
 	service := newService(deviceProvider, sdkProvider, persistence)
-	serverTLSConfig := serverCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(cfg.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)))
+	listenTLSConfig := serverCertManager.GetServerTLSConfig()
+	server, err := kitNetGrpc.NewServer(cfg.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
 	if err != nil {
 		return nil, err
 	}

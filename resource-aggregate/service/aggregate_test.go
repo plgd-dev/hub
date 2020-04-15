@@ -63,12 +63,12 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -139,7 +139,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	defer pool.Release()
 
-	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(tlsConfig))
 
 	deviceId := "dupDeviceId"
 	resourceId := "dupResourceId"
@@ -179,14 +179,14 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 
 	assert.NoError(t, err)
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
 	defer pool.Release()
 
-	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -428,8 +428,8 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -527,8 +527,8 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -616,9 +616,9 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -705,8 +705,8 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -794,9 +794,9 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(&tlsConfig))
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
