@@ -101,45 +101,45 @@ func (r *RefImpl) Close() {
 var authRules = map[string][]kitNetHttp.AuthArgs{
 	http.MethodGet: {
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:deviceinformation:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\?` + service.ContentQuery + `=` + service.ContentQueryBaseValue + `$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]*\?` + service.ContentQuery + `=` + service.ContentQueryBaseValue + `$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:deviceinformation:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\?` + service.ContentQuery + `=` + service.ContentQueryAllValue + `$`),
-			Scopes: []*regexp.Regexp{
-				regexp.MustCompile(`r:deviceinformation:.*`),
-				regexp.MustCompile(`r:resources:.*`),
-			},
-		},
-		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$`),
-			Scopes: []*regexp.Regexp{
-				regexp.MustCompile(`r:deviceinformation:.*`),
-			},
-		},
-		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\?` + service.ContentQuery + `=` + service.ContentQueryBaseValue + `$`),
-			Scopes: []*regexp.Regexp{
-				regexp.MustCompile(`r:deviceinformation:.*`),
-			},
-		},
-		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\?` + service.ContentQuery + `=` + service.ContentQueryAllValue + `$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]*\?` + service.ContentQuery + `=` + service.ContentQueryAllValue + `$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:deviceinformation:.*`),
 				regexp.MustCompile(`r:resources:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/.*`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*$`),
+			Scopes: []*regexp.Regexp{
+				regexp.MustCompile(`r:deviceinformation:.*`),
+			},
+		},
+		{
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*\?` + service.ContentQuery + `=` + service.ContentQueryBaseValue + `$`),
+			Scopes: []*regexp.Regexp{
+				regexp.MustCompile(`r:deviceinformation:.*`),
+			},
+		},
+		{
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*\?` + service.ContentQuery + `=` + service.ContentQueryAllValue + `$`),
+			Scopes: []*regexp.Regexp{
+				regexp.MustCompile(`r:deviceinformation:.*`),
+				regexp.MustCompile(`r:resources:.*`),
+			},
+		},
+		{
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]+.*[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:resources:.*`),
 			},
@@ -147,28 +147,28 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 	http.MethodPost: {
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/subscriptions$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+subscriptions[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:deviceinformation:.*`),
 				regexp.MustCompile(`w:subscriptions:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/subscriptions$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]+subscriptions[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:deviceinformation:.*`),
 				regexp.MustCompile(`w:subscriptions:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/.*\/subscriptions$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]+.*[\/]+subscriptions[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:resources:.*`),
 				regexp.MustCompile(`w:subscriptions:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/.*`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]+.*[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`w:resources:.*`),
 			},
@@ -176,21 +176,21 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 	http.MethodDelete: {
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/subscriptions\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+subscriptions[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:deviceinformation:.*`),
 				regexp.MustCompile(`w:subscriptions:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/subscriptions\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]+subscriptions[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:deviceinformation:.*`),
 				regexp.MustCompile(`w:subscriptions:.*`),
 			},
 		},
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/.*\/subscriptions\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$`),
+			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]+.*[\/]+subscriptions[\/]+[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}[\/]*$`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`r:resources:.*`),
 				regexp.MustCompile(`w:subscriptions:.*`),
