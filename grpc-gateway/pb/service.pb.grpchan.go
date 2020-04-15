@@ -90,3 +90,12 @@ func (c *grpcGatewayChannelClient) SubscribeForEvents(ctx context.Context, opts 
 	x := &grpcGatewaySubscribeForEventsClient{stream}
 	return x, nil
 }
+
+func (c *grpcGatewayChannelClient) GetClientConfiguration(ctx context.Context, in *ClientConfigurationRequest, opts ...grpc.CallOption) (*ClientConfigurationResponse, error) {
+	out := new(ClientConfigurationResponse)
+	err := c.ch.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}

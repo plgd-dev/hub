@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	clientAS "github.com/go-ocf/cloud/authorization/client"
@@ -48,6 +49,7 @@ type RequestHandler struct {
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
 	timeoutForRequests            time.Duration
 	closeFunc                     func()
+	clientConfiguration           pb.ClientConfigurationResponse
 }
 
 type HandlerConfig struct {
@@ -77,6 +79,14 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 
 func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*RequestHandler, error) {
 	svc := config.Service
+
+	if svc.ClientConfiguration.CloudCAPool != "" {
+		content, err := ioutil.ReadFile(svc.ClientConfiguration.CloudCAPool)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read file %v: %w", svc.ClientConfiguration.CloudCAPool, err)
+		}
+		svc.ClientConfiguration.CloudCertificateAuthorities = string(content)
+	}
 
 	rdConn, err := grpc.Dial(svc.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)))
 	if err != nil {
@@ -157,7 +167,9 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		updateNotificationContainer,
 		retrieveNotificationContainer,
 		svc.TimeoutForRequests,
-		closeFunc)
+		closeFunc,
+		svc.ClientConfiguration.ClientConfigurationResponse,
+	)
 	h.clientTLS = clientTLS
 	return h, nil
 }
@@ -175,6 +187,7 @@ func NewRequestHandler(
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer,
 	timeoutForRequests time.Duration,
 	closeFunc func(),
+	clientConfiguration pb.ClientConfigurationResponse,
 ) *RequestHandler {
 	return &RequestHandler{
 		authServiceClient:             authServiceClient,
@@ -188,6 +201,7 @@ func NewRequestHandler(
 		retrieveNotificationContainer: retrieveNotificationContainer,
 		timeoutForRequests:            timeoutForRequests,
 		closeFunc:                     closeFunc,
+		clientConfiguration:           clientConfiguration,
 	}
 }
 

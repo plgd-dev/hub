@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.grpcgateway.pb;
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/go-ocf/cloud/grpc-gateway/pb/clientConfiguration.proto";
 import "github.com/go-ocf/cloud/grpc-gateway/pb/devices.proto";
 
 option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb;pb";
@@ -22,4 +22,7 @@ service GrpcGateway {
 
   // Subscribe to events
   rpc SubscribeForEvents(stream ocf.cloud.grpcgateway.pb.SubscribeForEvents) returns (stream Event) {}
+
+  // Get client configuration
+  rpc GetClientConfiguration(ClientConfigurationRequest) returns (ClientConfigurationResponse) {}
 }

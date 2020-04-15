@@ -74,5 +74,5 @@ func NewAuth(jwksUrl string, tls *tls.Config, scope string) kitNetGrpc.AuthInter
 			log.Errorf("auth interceptor: %v", err)
 		}
 		return ctx, err
-	})
+	}, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
 }
