@@ -66,12 +66,12 @@ func InitWithAuthInterceptor(config Config, dialCertManager certManager.CertMana
 		return nil, fmt.Errorf("cannot create goroutine pool: %v", err)
 	}
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(&dialTLSConfig))
+	eventstore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %v", err)
 	}
 
-	subscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("coap-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(&dialTLSConfig))
+	subscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("coap-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats publisher %v", err)
 	}

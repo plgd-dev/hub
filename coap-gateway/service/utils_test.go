@@ -69,9 +69,9 @@ func testCreateResourceStoreSub(t *testing.T, resourceDBname string) (*mongodb.E
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
-	subscriber, err := nats.NewSubscriber(natsCfg, nil, func(err error) { log.Errorf("%v", err) }, nats.WithTLS(&tlsConfig))
+	subscriber, err := nats.NewSubscriber(natsCfg, nil, func(err error) { log.Errorf("%v", err) }, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(&tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	return eventstore, subscriber
 }
@@ -380,7 +380,7 @@ func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
 		return nil
 	}
 
-	c := &gocoap.Client{Net: net, TLSConfig: &tlsConfig, Handler: func(w gocoap.ResponseWriter, req *gocoap.Request) {
+	c := &gocoap.Client{Net: net, TLSConfig: tlsConfig, Handler: func(w gocoap.ResponseWriter, req *gocoap.Request) {
 		switch req.Msg.Code() {
 		case coapCodes.POST, coapCodes.GET, coapCodes.PUT, coapCodes.DELETE:
 			w.SetContentFormat(gocoap.TextPlain)

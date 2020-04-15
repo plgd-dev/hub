@@ -31,9 +31,9 @@ func TestPublishUnpublish(t *testing.T) {
 	config.Service.AuthServerAddr = "localhost:7000"
 	clientCertManager, err := certManager.NewCertManager(config.Dial)
 	require.NoError(t, err)
-	clientTLSConfig := clientCertManager.GetClientTLSConfig()
+	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(&clientTLSConfig))
+	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
@@ -55,11 +55,11 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	authConn, err := grpc.Dial(config.Service.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLSConfig)))
+	authConn, err := grpc.Dial(config.Service.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	require.NoError(t, err)
 	authClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	raConn, err := grpc.Dial(config.Service.Addr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLSConfig)))
+	raConn, err := grpc.Dial(config.Service.Addr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	require.NoError(t, err)
 	raClient := pb.NewResourceAggregateClient(raConn)
 

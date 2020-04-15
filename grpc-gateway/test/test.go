@@ -69,7 +69,7 @@ func ClearDB(ctx context.Context, t *testing.T) {
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(&tlsConfig))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(tlsConfig))
 	require.NoError(t, err)
 	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
 	if mongo.ErrNilDocument == err {
@@ -180,9 +180,9 @@ func NewGrpcGateway(t *testing.T, config refImpl.Config) func() {
 	auth := kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
 		return ctx, nil
 	})
-	serverTLSConfig := listenCertManager.GetServerTLSConfig()
-	serverTLSConfig.ClientAuth = tls.NoClientCert
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)), auth.Stream(), auth.Unary())
+	listenTLSConfig := listenCertManager.GetServerTLSConfig()
+	listenTLSConfig.ClientAuth = tls.NoClientCert
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
 	require.NoError(t, err)
 	server.AddCloseFunc(func() {
 		listenCertManager.Close()

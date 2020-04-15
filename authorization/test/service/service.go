@@ -35,7 +35,7 @@ func NewAuthServer(t *testing.T, config service.Config) func() {
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
-	auth, err := newService(config, &tlsConfig)
+	auth, err := newService(config, tlsConfig)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)

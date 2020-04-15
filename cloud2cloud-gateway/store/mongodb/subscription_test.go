@@ -22,7 +22,7 @@ func newStore(ctx context.Context, t *testing.T, cfg Config) *Store {
 	require.NoError(t, err)
 	defer dialCertManager.Close()
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	s, err := NewStore(ctx, cfg, WithTLS(&tlsConfig))
+	s, err := NewStore(ctx, cfg, WithTLS(tlsConfig))
 	require.NoError(t, err)
 	return s
 }

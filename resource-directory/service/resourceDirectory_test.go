@@ -59,7 +59,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	require.NoError(t, err)
-	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(&tlsConfig))
+	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 	resourceProjection, err := NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, time.Second)

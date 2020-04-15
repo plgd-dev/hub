@@ -21,7 +21,7 @@ func TestNewPublisher(t *testing.T) {
 
 	bus, err := NewPublisher(Config{
 		URL: "nats://localhost:4222",
-	}, WithTLS(&tlsConfig))
+	}, WithTLS(tlsConfig))
 	require.NoError(t, err)
 	assert.NotNil(t, bus)
 	defer bus.Close()

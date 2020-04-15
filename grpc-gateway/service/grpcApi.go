@@ -43,7 +43,7 @@ type RequestHandler struct {
 	resourceProjection            *projectionRA.Projection
 	subscriptions                 *subscriptions
 	seqNum                        uint64
-	clientTLS                     tls.Config
+	clientTLS                     *tls.Config
 	updateNotificationContainer   *notification.UpdateNotificationContainer
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
 	timeoutForRequests            time.Duration
@@ -60,7 +60,7 @@ type HandlerConfig struct {
 	UserDevicesManagerExpiration    time.Duration `envconfig:"USER_MGMT_EXPIRATION" default:"1m"`
 }
 
-func AddHandler(svr *kitNetGrpc.Server, config HandlerConfig, clientTLS tls.Config) error {
+func AddHandler(svr *kitNetGrpc.Server, config HandlerConfig, clientTLS *tls.Config) error {
 	handler, err := NewRequestHandlerFromConfig(config, clientTLS)
 	if err != nil {
 		return err
@@ -75,10 +75,10 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS tls.Config) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*RequestHandler, error) {
 	svc := config.Service
 
-	rdConn, err := grpc.Dial(svc.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLS)))
+	rdConn, err := grpc.Dial(svc.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)))
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
@@ -86,18 +86,18 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS tls.Config) (*R
 	resourceDirectoryClient := pbRD.NewResourceDirectoryClient(rdConn)
 	resourceShadowClient := pbRS.NewResourceShadowClient(rdConn)
 
-	oauthMgr, err := manager.NewManagerFromConfiguration(svc.OAuth, &clientTLS)
+	oauthMgr, err := manager.NewManagerFromConfiguration(svc.OAuth, clientTLS)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
 	}
 
-	asConn, err := grpc.Dial(svc.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLS)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	asConn, err := grpc.Dial(svc.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
 	}
 	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	raConn, err := grpc.Dial(svc.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLS)))
+	raConn, err := grpc.Dial(svc.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)))
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -108,12 +108,12 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS tls.Config) (*R
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 
-	resourceEventStore, err := mongodb.NewEventStore(config.Mongo, pool.Submit, mongodb.WithTLS(&clientTLS))
+	resourceEventStore, err := mongodb.NewEventStore(config.Mongo, pool.Submit, mongodb.WithTLS(clientTLS))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(&clientTLS))
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(clientTLS))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource nats subscriber %w", err)
 	}
@@ -359,6 +359,6 @@ func (r *RequestHandler) Close() {
 	r.closeFunc()
 }
 
-func (r *RequestHandler) GetClientTLSConfig() tls.Config {
+func (r *RequestHandler) GetClientTLSConfig() *tls.Config {
 	return r.clientTLS
 }

@@ -35,25 +35,25 @@ type Server struct {
 }
 
 type ClientCertManager = interface {
-	GetClientTLSConfig() tls.Config
+	GetClientTLSConfig() *tls.Config
 }
 
 type ServerCertManager = interface {
-	GetServerTLSConfig() tls.Config
+	GetServerTLSConfig() *tls.Config
 }
 
 // New creates new Server with provided store and publisher.
 func New(config Config, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
-	clientTLSConfig := clientCertManager.GetClientTLSConfig()
-	serverTLSConfig := serverCertManager.GetServerTLSConfig()
+	dialTLSConfig := clientCertManager.GetClientTLSConfig()
+	listenTLSConfig := serverCertManager.GetServerTLSConfig()
 
-	authConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(&clientTLSConfig)))
+	authConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	authClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(&serverTLSConfig)))
+	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}

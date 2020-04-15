@@ -36,7 +36,7 @@ func TestNewEventStore(t *testing.T) {
 
 	bus, err := NewEventStore(Config{
 		URI: "mongodb://localhost:27017",
-	}, nil, WithTLS(&tlsConfig))
+	}, nil, WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	assert.NotNil(t, bus)
 }
@@ -55,7 +55,7 @@ func TestInstanceId(t *testing.T) {
 	store, err := NewEventStore(Config{
 		URI:          "mongodb://localhost:27017",
 		DatabaseName: "test",
-	}, nil, WithTLS(&tlsConfig))
+	}, nil, WithTLS(tlsConfig))
 	defer func() {
 		store.Clear(ctx)
 		store.Close(ctx)

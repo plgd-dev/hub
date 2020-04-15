@@ -86,9 +86,9 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	require.NoError(t, err)
 	certMgr, err := certManager.NewCertManager(acmeCfg)
 	require.NoError(t, err)
-	tlsCfg := certMgr.GetClientTLSConfig()
+	tlsConfig := certMgr.GetClientTLSConfig()
 
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
+	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 
@@ -180,9 +180,9 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	require.NoError(t, err)
 	certMgr, err := certManager.NewCertManager(acmeCfg)
 	require.NoError(t, err)
-	tlsCfg := certMgr.GetClientTLSConfig()
+	tlsConfig := certMgr.GetClientTLSConfig()
 
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
+	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 
@@ -270,9 +270,9 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	require.NoError(t, err)
 	certMgr, err := certManager.NewCertManager(acmeCfg)
 	require.NoError(t, err)
-	tlsCfg := certMgr.GetClientTLSConfig()
+	tlsConfig := certMgr.GetClientTLSConfig()
 
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
+	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 

@@ -76,11 +76,11 @@ func (l *DeviceSubscriptionLoader) Handle(ctx context.Context, iter store.Subscr
 }
 
 type DialCertManager = interface {
-	GetClientTLSConfig() tls.Config
+	GetClientTLSConfig() *tls.Config
 }
 
 type ListenCertManager = interface {
-	GetServerTLSConfig() tls.Config
+	GetServerTLSConfig() *tls.Config
 }
 
 //New create new Server with provided store and bus
@@ -98,18 +98,18 @@ func New(
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
 	listenTLSConfig.ClientAuth = tls.NoClientCert
 
-	ln, err := tls.Listen("tcp", config.Addr, &listenTLSConfig)
+	ln, err := tls.Listen("tcp", config.Addr, listenTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot listen and serve: %v", err)
 	}
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(&dialTLSConfig)))
+	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(&dialTLSConfig)))
+	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -117,7 +117,7 @@ func New(
 	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
 	ddClient := pbDD.NewDeviceDirectoryClient(rdConn)
 
-	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(&dialTLSConfig)))
+	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}

@@ -56,17 +56,17 @@ func Init(config Config) (*RefImpl, error) {
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 
-	resourceEventstore, err := mongodb.NewEventStore(config.ResourceMongoDB, pool.Submit, mongodb.WithTLS(&dialTLSConfig))
+	resourceEventstore, err := mongodb.NewEventStore(config.ResourceMongoDB, pool.Submit, mongodb.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.ResourceNats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(&dialTLSConfig))
+	resourceSubscriber, err := nats.NewSubscriber(config.ResourceNats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource kafka subscriber %w", err)
 	}
 
-	substore, err := storeMongodb.NewStore(context.Background(), config.StoreMongoDB, storeMongodb.WithTLS(&dialTLSConfig))
+	substore, err := storeMongodb.NewStore(context.Background(), config.StoreMongoDB, storeMongodb.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb substore %w", err)
 	}
