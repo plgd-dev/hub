@@ -78,14 +78,10 @@ The onboarding values which should be set to the [coapcloudconf](https://github.
 
 ## Build a sample device application
 ```bash
-curl https://raw.githubusercontent.com/go-ocf/grpc-gateway/master/device-simulator/patches/devsim.diff -o devsim.diff
-git clone https://github.com/iotivity/iotivity-lite.git
+git clone --recursive https://github.com/iotivity/iotivity-lite.git
 cd ./iotivity-lite/port/linux
-patch -p1 < ../devsim.diff
-make
-make clean
 make CLOUD=1 SECURE=0 cloud_server
-./cloud_server "Test Device" coap+tcp://127.0.0.1:5683 test test
+./cloud_server test test coap+tcp://127.0.0.1:5683 COAP_GATEWAY_CLOUD_ID
 ```
 
 ## Build a COAP client application
