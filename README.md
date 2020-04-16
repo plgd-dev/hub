@@ -8,6 +8,10 @@
 Cloud-native means, simply, that applications are designed to be deployed in the cloud from the beginning, easing horizontal scalability.
 Applications are composed of dozens of micro-services, each expressed as a RESTful API, whose provisioning code is in a software container, and whose lifetime is limited to the interaction with a single client
 
+## Try
+* [pluggedin.cloud](https://pluggedin.cloud)
+* [single docker image](https://github.com/go-ocf/cloud/tree/master/bundle)
+
 ## Micros-services
 * [coap-gateway](https://github.com/go-ocf/cloud/tree/master/coap-gateway) provides gateway for [**a Device**](https://github.com/iotivity/iotivity-lite)
 * [grpc-gateway](https://github.com/go-ocf/cloud/tree/master/grpc-gateway) provides gateway for **a Service**
