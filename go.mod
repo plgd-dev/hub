@@ -28,7 +28,7 @@ require (
 	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/satori/go.uuid v1.2.0
-	github.com/smallstep/certificates v0.14.2
+	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
 	github.com/stretchr/testify v1.5.1
 	github.com/ugorji/go/codec v1.1.7
