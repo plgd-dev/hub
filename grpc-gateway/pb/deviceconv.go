@@ -32,37 +32,34 @@ func (d Device) ToSchema() schema.Device {
 	}
 }
 
-type SchemaLocalizedString schema.LocalizedString
-
-func (s SchemaLocalizedString) ToProto() *LocalizedString {
+func SchemaLocalizedStringToProto(s schema.LocalizedString) *LocalizedString {
 	return &LocalizedString{
 		Language: s.Language,
 		Value:    s.Value,
 	}
 }
 
-type SchemaLocalizedStrings []schema.LocalizedString
-
-func (s SchemaLocalizedStrings) ToProto() []*LocalizedString {
+func SchemaLocalizedStringsToProto(s []schema.LocalizedString) []*LocalizedString {
 	if s == nil {
 		return nil
 	}
 	l := make([]*LocalizedString, 0, len(s))
 	for _, m := range s {
-		l = append(l, SchemaLocalizedString(m).ToProto())
+		l = append(l, SchemaLocalizedStringToProto(m))
 	}
 	return l
 }
 
-type SchemaDevice schema.Device
-
-func (d SchemaDevice) ToProto() Device {
-	return Device{
+func SchemaDeviceToProto(d *schema.Device) *Device {
+	if d == nil {
+		return nil
+	}
+	return &Device{
 		Id:               d.ID,
 		Types:            d.ResourceTypes,
 		Interfaces:       d.Interfaces,
 		Name:             d.Name,
-		ManufacturerName: SchemaLocalizedStrings(d.ManufacturerName).ToProto(),
+		ManufacturerName: SchemaLocalizedStringsToProto(d.ManufacturerName),
 		ModelNumber:      d.ModelNumber,
 	}
 }

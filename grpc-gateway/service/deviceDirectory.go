@@ -80,13 +80,14 @@ type Device struct {
 	cloudStateUpdated bool
 }
 
-func (d Device) ToProto() pb.Device {
-	var r pb.Device
-	if d.Resource != nil {
-		r = pb.SchemaDevice(*d.Resource).ToProto()
+func (d Device) ToProto() *pb.Device {
+	r := pb.SchemaDeviceToProto(d.Resource)
+	if r == nil {
+		r = &pb.Device{
+			Id: d.ID,
+		}
 	}
 	r.IsOnline = d.IsOnline
-	r.Id = d.ID
 	return r
 }
 
@@ -184,8 +185,7 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 	}
 
 	for _, device := range devices {
-		dev := device.ToProto()
-		err := srv.Send(&dev)
+		err := srv.Send(device.ToProto())
 		if err != nil {
 			return status.Errorf(codes.Canceled, "cannot send device: %v", err)
 		}
