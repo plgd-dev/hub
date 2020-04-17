@@ -5,10 +5,11 @@ package pb
 
 import (
 	fmt "fmt"
-	proto "github.com/gogo/protobuf/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+
+	proto "github.com/gogo/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -21,6 +22,55 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
+
+type Status int32
+
+const (
+	Status_UNKNOWN         Status = 0
+	Status_OK              Status = 1
+	Status_BAD_REQUEST     Status = 2
+	Status_UNAUTHORIZED    Status = 3
+	Status_FORBIDDEN       Status = 4
+	Status_NOT_FOUND       Status = 5
+	Status_UNAVAILABLE     Status = 6
+	Status_NOT_IMPLEMENTED Status = 7
+	Status_ACCEPTED        Status = 8
+	Status_ERROR           Status = 9
+)
+
+var Status_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "OK",
+	2: "BAD_REQUEST",
+	3: "UNAUTHORIZED",
+	4: "FORBIDDEN",
+	5: "NOT_FOUND",
+	6: "UNAVAILABLE",
+	7: "NOT_IMPLEMENTED",
+	8: "ACCEPTED",
+	9: "ERROR",
+}
+
+var Status_value = map[string]int32{
+	"UNKNOWN":         0,
+	"OK":              1,
+	"BAD_REQUEST":     2,
+	"UNAUTHORIZED":    3,
+	"FORBIDDEN":       4,
+	"NOT_FOUND":       5,
+	"UNAVAILABLE":     6,
+	"NOT_IMPLEMENTED": 7,
+	"ACCEPTED":        8,
+	"ERROR":           9,
+}
+
+func (x Status) String() string {
+	return proto.EnumName(Status_name, int32(x))
+}
+
+func (Status) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_f2e89dd986657715, []int{0}
+}
 
 type GetDevicesRequest_Status int32
 
@@ -479,6 +529,7 @@ type ResourceValue struct {
 	ResourceId *ResourceId `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	Types      []string    `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty"`
 	Content    *Content    `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	Status     Status      `protobuf:"varint,4,opt,name=status,proto3,enum=ocf.cloud.grpcgateway.pb.Status" json:"status,omitempty"`
 }
 
 func (m *ResourceValue) Reset()         { *m = ResourceValue{} }
@@ -533,6 +584,13 @@ func (m *ResourceValue) GetContent() *Content {
 		return m.Content
 	}
 	return nil
+}
+
+func (m *ResourceValue) GetStatus() Status {
+	if m != nil {
+		return m.Status
+	}
+	return Status_UNKNOWN
 }
 
 type UpdateResourceValuesRequest struct {
@@ -1403,6 +1461,7 @@ func (m *Event_ResourceUnpublished) GetLink() *ResourceLink {
 type Event_ResourceChanged struct {
 	ResourceId *ResourceId `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	Content    *Content    `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	Status     Status      `protobuf:"varint,3,opt,name=status,proto3,enum=ocf.cloud.grpcgateway.pb.Status" json:"status,omitempty"`
 }
 
 func (m *Event_ResourceChanged) Reset()         { *m = Event_ResourceChanged{} }
@@ -1450,6 +1509,13 @@ func (m *Event_ResourceChanged) GetContent() *Content {
 		return m.Content
 	}
 	return nil
+}
+
+func (m *Event_ResourceChanged) GetStatus() Status {
+	if m != nil {
+		return m.Status
+	}
+	return Status_UNKNOWN
 }
 
 type Event_OperationProcessed struct {
@@ -1659,6 +1725,7 @@ type Device struct {
 	IsOnline         bool               `protobuf:"varint,4,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	ManufacturerName []*LocalizedString `protobuf:"bytes,5,rep,name=manufacturer_name,json=manufacturerName,proto3" json:"manufacturer_name,omitempty"`
 	ModelNumber      string             `protobuf:"bytes,6,opt,name=model_number,json=modelNumber,proto3" json:"model_number,omitempty"`
+	Interfaces       []string           `protobuf:"bytes,7,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
 }
 
 func (m *Device) Reset()         { *m = Device{} }
@@ -1736,18 +1803,127 @@ func (m *Device) GetModelNumber() string {
 	return ""
 }
 
+func (m *Device) GetInterfaces() []string {
+	if m != nil {
+		return m.Interfaces
+	}
+	return nil
+}
+
+type Policies struct {
+	BitFlags int32 `protobuf:"varint,1,opt,name=bit_flags,json=bitFlags,proto3" json:"bit_flags,omitempty"`
+}
+
+func (m *Policies) Reset()         { *m = Policies{} }
+func (m *Policies) String() string { return proto.CompactTextString(m) }
+func (*Policies) ProtoMessage()    {}
+func (*Policies) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f2e89dd986657715, []int{13}
+}
+func (m *Policies) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Policies) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Policies.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Policies) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Policies.Merge(m, src)
+}
+func (m *Policies) XXX_Size() int {
+	return m.Size()
+}
+func (m *Policies) XXX_DiscardUnknown() {
+	xxx_messageInfo_Policies.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Policies proto.InternalMessageInfo
+
+func (m *Policies) GetBitFlags() int32 {
+	if m != nil {
+		return m.BitFlags
+	}
+	return 0
+}
+
+type EndpointInformation struct {
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	Priority int64  `protobuf:"varint,2,opt,name=priority,proto3" json:"priority,omitempty"`
+}
+
+func (m *EndpointInformation) Reset()         { *m = EndpointInformation{} }
+func (m *EndpointInformation) String() string { return proto.CompactTextString(m) }
+func (*EndpointInformation) ProtoMessage()    {}
+func (*EndpointInformation) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f2e89dd986657715, []int{14}
+}
+func (m *EndpointInformation) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EndpointInformation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EndpointInformation.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EndpointInformation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EndpointInformation.Merge(m, src)
+}
+func (m *EndpointInformation) XXX_Size() int {
+	return m.Size()
+}
+func (m *EndpointInformation) XXX_DiscardUnknown() {
+	xxx_messageInfo_EndpointInformation.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EndpointInformation proto.InternalMessageInfo
+
+func (m *EndpointInformation) GetEndpoint() string {
+	if m != nil {
+		return m.Endpoint
+	}
+	return ""
+}
+
+func (m *EndpointInformation) GetPriority() int64 {
+	if m != nil {
+		return m.Priority
+	}
+	return 0
+}
+
 type ResourceLink struct {
-	Href       string   `protobuf:"bytes,1,opt,name=href,proto3" json:"href,omitempty"`
-	Types      []string `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty"`
-	Interfaces []string `protobuf:"bytes,3,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
-	DeviceId   string   `protobuf:"bytes,4,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	Href                  string                 `protobuf:"bytes,1,opt,name=href,proto3" json:"href,omitempty"`
+	Types                 []string               `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty"`
+	Interfaces            []string               `protobuf:"bytes,3,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	DeviceId              string                 `protobuf:"bytes,4,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	InstanceId            int64                  `protobuf:"varint,5,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	Anchor                string                 `protobuf:"bytes,6,opt,name=anchor,proto3" json:"anchor,omitempty"`
+	Policies              *Policies              `protobuf:"bytes,7,opt,name=policies,proto3" json:"policies,omitempty"`
+	Title                 string                 `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
+	SupportedContentTypes []string               `protobuf:"bytes,9,rep,name=supported_content_types,json=supportedContentTypes,proto3" json:"supported_content_types,omitempty"`
+	EndpointInformations  []*EndpointInformation `protobuf:"bytes,10,rep,name=endpoint_informations,json=endpointInformations,proto3" json:"endpoint_informations,omitempty"`
 }
 
 func (m *ResourceLink) Reset()         { *m = ResourceLink{} }
 func (m *ResourceLink) String() string { return proto.CompactTextString(m) }
 func (*ResourceLink) ProtoMessage()    {}
 func (*ResourceLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f2e89dd986657715, []int{13}
+	return fileDescriptor_f2e89dd986657715, []int{15}
 }
 func (m *ResourceLink) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1804,6 +1980,48 @@ func (m *ResourceLink) GetDeviceId() string {
 	return ""
 }
 
+func (m *ResourceLink) GetInstanceId() int64 {
+	if m != nil {
+		return m.InstanceId
+	}
+	return 0
+}
+
+func (m *ResourceLink) GetAnchor() string {
+	if m != nil {
+		return m.Anchor
+	}
+	return ""
+}
+
+func (m *ResourceLink) GetPolicies() *Policies {
+	if m != nil {
+		return m.Policies
+	}
+	return nil
+}
+
+func (m *ResourceLink) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+func (m *ResourceLink) GetSupportedContentTypes() []string {
+	if m != nil {
+		return m.SupportedContentTypes
+	}
+	return nil
+}
+
+func (m *ResourceLink) GetEndpointInformations() []*EndpointInformation {
+	if m != nil {
+		return m.EndpointInformations
+	}
+	return nil
+}
+
 type Content struct {
 	ContentType string `protobuf:"bytes,1,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
 	Data        []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
@@ -1813,7 +2031,7 @@ func (m *Content) Reset()         { *m = Content{} }
 func (m *Content) String() string { return proto.CompactTextString(m) }
 func (*Content) ProtoMessage()    {}
 func (*Content) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f2e89dd986657715, []int{14}
+	return fileDescriptor_f2e89dd986657715, []int{16}
 }
 func (m *Content) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1857,6 +2075,7 @@ func (m *Content) GetData() []byte {
 }
 
 func init() {
+	proto.RegisterEnum("ocf.cloud.grpcgateway.pb.Status", Status_name, Status_value)
 	proto.RegisterEnum("ocf.cloud.grpcgateway.pb.GetDevicesRequest_Status", GetDevicesRequest_Status_name, GetDevicesRequest_Status_value)
 	proto.RegisterEnum("ocf.cloud.grpcgateway.pb.SubscribeForEvents_DevicesEventFilter_Event", SubscribeForEvents_DevicesEventFilter_Event_name, SubscribeForEvents_DevicesEventFilter_Event_value)
 	proto.RegisterEnum("ocf.cloud.grpcgateway.pb.SubscribeForEvents_DeviceEventFilter_Event", SubscribeForEvents_DeviceEventFilter_Event_name, SubscribeForEvents_DeviceEventFilter_Event_value)
@@ -1889,6 +2108,8 @@ func init() {
 	proto.RegisterType((*Event_SubscriptionCanceled)(nil), "ocf.cloud.grpcgateway.pb.Event.SubscriptionCanceled")
 	proto.RegisterType((*LocalizedString)(nil), "ocf.cloud.grpcgateway.pb.LocalizedString")
 	proto.RegisterType((*Device)(nil), "ocf.cloud.grpcgateway.pb.Device")
+	proto.RegisterType((*Policies)(nil), "ocf.cloud.grpcgateway.pb.Policies")
+	proto.RegisterType((*EndpointInformation)(nil), "ocf.cloud.grpcgateway.pb.EndpointInformation")
 	proto.RegisterType((*ResourceLink)(nil), "ocf.cloud.grpcgateway.pb.ResourceLink")
 	proto.RegisterType((*Content)(nil), "ocf.cloud.grpcgateway.pb.Content")
 }
@@ -2282,6 +2503,11 @@ func (m *ResourceValue) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.Status != 0 {
+		i = encodeVarintDevices(dAtA, i, uint64(m.Status))
+		i--
+		dAtA[i] = 0x20
+	}
 	if m.Content != nil {
 		{
 			size, err := m.Content.MarshalToSizedBuffer(dAtA[:i])
@@ -3142,6 +3368,11 @@ func (m *Event_ResourceChanged) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.Status != 0 {
+		i = encodeVarintDevices(dAtA, i, uint64(m.Status))
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.Content != nil {
 		{
 			size, err := m.Content.MarshalToSizedBuffer(dAtA[:i])
@@ -3333,6 +3564,15 @@ func (m *Device) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Interfaces) > 0 {
+		for iNdEx := len(m.Interfaces) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Interfaces[iNdEx])
+			copy(dAtA[i:], m.Interfaces[iNdEx])
+			i = encodeVarintDevices(dAtA, i, uint64(len(m.Interfaces[iNdEx])))
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
 	if len(m.ModelNumber) > 0 {
 		i -= len(m.ModelNumber)
 		copy(dAtA[i:], m.ModelNumber)
@@ -3390,6 +3630,69 @@ func (m *Device) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Policies) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Policies) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Policies) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.BitFlags != 0 {
+		i = encodeVarintDevices(dAtA, i, uint64(m.BitFlags))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EndpointInformation) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EndpointInformation) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EndpointInformation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Priority != 0 {
+		i = encodeVarintDevices(dAtA, i, uint64(m.Priority))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Endpoint) > 0 {
+		i -= len(m.Endpoint)
+		copy(dAtA[i:], m.Endpoint)
+		i = encodeVarintDevices(dAtA, i, uint64(len(m.Endpoint)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ResourceLink) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3410,6 +3713,60 @@ func (m *ResourceLink) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.EndpointInformations) > 0 {
+		for iNdEx := len(m.EndpointInformations) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.EndpointInformations[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintDevices(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x52
+		}
+	}
+	if len(m.SupportedContentTypes) > 0 {
+		for iNdEx := len(m.SupportedContentTypes) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.SupportedContentTypes[iNdEx])
+			copy(dAtA[i:], m.SupportedContentTypes[iNdEx])
+			i = encodeVarintDevices(dAtA, i, uint64(len(m.SupportedContentTypes[iNdEx])))
+			i--
+			dAtA[i] = 0x4a
+		}
+	}
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintDevices(dAtA, i, uint64(len(m.Title)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.Policies != nil {
+		{
+			size, err := m.Policies.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDevices(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.Anchor) > 0 {
+		i -= len(m.Anchor)
+		copy(dAtA[i:], m.Anchor)
+		i = encodeVarintDevices(dAtA, i, uint64(len(m.Anchor)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.InstanceId != 0 {
+		i = encodeVarintDevices(dAtA, i, uint64(m.InstanceId))
+		i--
+		dAtA[i] = 0x28
+	}
 	if len(m.DeviceId) > 0 {
 		i -= len(m.DeviceId)
 		copy(dAtA[i:], m.DeviceId)
@@ -3635,6 +3992,9 @@ func (m *ResourceValue) Size() (n int) {
 	if m.Content != nil {
 		l = m.Content.Size()
 		n += 1 + l + sovDevices(uint64(l))
+	}
+	if m.Status != 0 {
+		n += 1 + sovDevices(uint64(m.Status))
 	}
 	return n
 }
@@ -4022,6 +4382,9 @@ func (m *Event_ResourceChanged) Size() (n int) {
 		l = m.Content.Size()
 		n += 1 + l + sovDevices(uint64(l))
 	}
+	if m.Status != 0 {
+		n += 1 + sovDevices(uint64(m.Status))
+	}
 	return n
 }
 
@@ -4121,6 +4484,40 @@ func (m *Device) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovDevices(uint64(l))
 	}
+	if len(m.Interfaces) > 0 {
+		for _, s := range m.Interfaces {
+			l = len(s)
+			n += 1 + l + sovDevices(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *Policies) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BitFlags != 0 {
+		n += 1 + sovDevices(uint64(m.BitFlags))
+	}
+	return n
+}
+
+func (m *EndpointInformation) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Endpoint)
+	if l > 0 {
+		n += 1 + l + sovDevices(uint64(l))
+	}
+	if m.Priority != 0 {
+		n += 1 + sovDevices(uint64(m.Priority))
+	}
 	return n
 }
 
@@ -4149,6 +4546,33 @@ func (m *ResourceLink) Size() (n int) {
 	l = len(m.DeviceId)
 	if l > 0 {
 		n += 1 + l + sovDevices(uint64(l))
+	}
+	if m.InstanceId != 0 {
+		n += 1 + sovDevices(uint64(m.InstanceId))
+	}
+	l = len(m.Anchor)
+	if l > 0 {
+		n += 1 + l + sovDevices(uint64(l))
+	}
+	if m.Policies != nil {
+		l = m.Policies.Size()
+		n += 1 + l + sovDevices(uint64(l))
+	}
+	l = len(m.Title)
+	if l > 0 {
+		n += 1 + l + sovDevices(uint64(l))
+	}
+	if len(m.SupportedContentTypes) > 0 {
+		for _, s := range m.SupportedContentTypes {
+			l = len(s)
+			n += 1 + l + sovDevices(uint64(l))
+		}
+	}
+	if len(m.EndpointInformations) > 0 {
+		for _, e := range m.EndpointInformations {
+			l = e.Size()
+			n += 1 + l + sovDevices(uint64(l))
+		}
 	}
 	return n
 }
@@ -5090,6 +5514,25 @@ func (m *ResourceValue) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= Status(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipDevices(dAtA[iNdEx:])
@@ -7123,6 +7566,25 @@ func (m *Event_ResourceChanged) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= Status(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipDevices(dAtA[iNdEx:])
@@ -7785,6 +8247,214 @@ func (m *Device) Unmarshal(dAtA []byte) error {
 			}
 			m.ModelNumber = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Interfaces", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDevices
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Interfaces = append(m.Interfaces, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDevices(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Policies) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDevices
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Policies: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Policies: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BitFlags", wireType)
+			}
+			m.BitFlags = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BitFlags |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDevices(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EndpointInformation) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDevices
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EndpointInformation: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EndpointInformation: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDevices
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Priority", wireType)
+			}
+			m.Priority = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Priority |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipDevices(dAtA[iNdEx:])
@@ -7965,6 +8635,191 @@ func (m *ResourceLink) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeviceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InstanceId", wireType)
+			}
+			m.InstanceId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.InstanceId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Anchor", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDevices
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Anchor = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Policies", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDevices
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Policies == nil {
+				m.Policies = &Policies{}
+			}
+			if err := m.Policies.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDevices
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Title = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SupportedContentTypes", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDevices
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SupportedContentTypes = append(m.SupportedContentTypes, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EndpointInformations", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDevices
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDevices
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDevices
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EndpointInformations = append(m.EndpointInformations, &EndpointInformation{})
+			if err := m.EndpointInformations[len(m.EndpointInformations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

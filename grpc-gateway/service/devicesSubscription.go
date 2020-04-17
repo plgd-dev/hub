@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
@@ -16,7 +15,7 @@ type devicesSubscription struct {
 	devicesEvent *pb.SubscribeForEvents_DevicesEventFilter
 }
 
-func NewDevicesSubscription(id, userID string, send SendEventFunc, resourceProjection *projectionRA.Projection, devicesEvent *pb.SubscribeForEvents_DevicesEventFilter) *devicesSubscription {
+func NewDevicesSubscription(id, userID string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeForEvents_DevicesEventFilter) *devicesSubscription {
 	log.Debugf("subscription.NewDevicesSubscription %v", id)
 	defer log.Debugf("subscription.NewDevicesSubscription %v done", id)
 	return &devicesSubscription{

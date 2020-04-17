@@ -46,6 +46,7 @@ message ResourceValue {
   ResourceId resource_id = 1;
   repeated string types = 2;
   Content content = 3;
+  Status status = 4;
 }
 
 message UpdateResourceValuesRequest {
@@ -117,6 +118,7 @@ message Event {
   message ResourceChanged {
     ResourceId resource_id = 1;
     Content content = 2;
+    Status status = 3;
   }
   message OperationProcessed {
     message ErrorStatus {
@@ -162,6 +164,16 @@ message Device {
   bool is_online = 4;
   repeated LocalizedString manufacturer_name = 5;
   string model_number = 6;
+  repeated string interfaces = 7;
+}
+
+message Policies {
+  int32 bit_flags = 1;
+}
+
+message EndpointInformation {
+    string endpoint = 1;
+    int64 priority = 2;
 }
 
 message ResourceLink {
@@ -169,9 +181,28 @@ message ResourceLink {
   repeated string types = 2;
   repeated string interfaces = 3;
   string device_id = 4;
+  int64 instance_id = 5;
+  string anchor = 6; 
+  Policies policies = 7;
+  string title = 8;
+  repeated string supported_content_types = 9;
+  repeated EndpointInformation endpoint_informations=10;
 }
 
 message Content {
   string content_type = 1;
   bytes data = 2;
+}
+
+enum Status {
+  UNKNOWN = 0;
+  OK = 1;
+  BAD_REQUEST = 2;
+  UNAUTHORIZED = 3;
+  FORBIDDEN = 4;
+  NOT_FOUND = 5;
+  UNAVAILABLE = 6;
+  NOT_IMPLEMENTED = 7;
+  ACCEPTED = 8;
+  ERROR = 9;
 }

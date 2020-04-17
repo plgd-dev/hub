@@ -11,6 +11,7 @@ import (
 	"github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/sdk/schema/cloud"
 
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
@@ -60,13 +61,13 @@ func (m *resourceCtx) Clone() *resourceCtx {
 
 func (m *resourceCtx) onResourcePublishedLocked(ctx context.Context) error {
 	log.Debugf("onResourcePublishedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
-	link := makeResourceLink(m.resource)
+	link := pb.RAResourceToProto(m.resource)
 	return m.subscriptions.OnResourcePublished(ctx, link, m.onResourcePublishedVersion)
 }
 
 func (m *resourceCtx) onResourceUnpublishedLocked(ctx context.Context) error {
 	log.Debugf("onResourceUnpublishedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
-	link := makeResourceLink(m.resource)
+	link := pb.RAResourceToProto(m.resource)
 	return m.subscriptions.OnResourceUnpublished(ctx, link, m.onResourceUnpublishedVersion)
 }
 

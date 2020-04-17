@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"io"
 	"sync"
 	"testing"
 	"time"
@@ -24,224 +23,6 @@ import (
 )
 
 const TEST_TIMEOUT = time.Second * 20
-
-func TestRequestHandler_GetDevices(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
-	type args struct {
-		req *pb.GetDevicesRequest
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []*pb.Device
-	}{
-		{
-			name: "valid",
-			args: args{
-				req: &pb.GetDevicesRequest{},
-			},
-			want: []*pb.Device{
-				{
-					Id:       deviceID,
-					Name:     grpcTest.TestDeviceName,
-					IsOnline: true,
-				},
-			},
-		},
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
-
-	tearDown := grpcTest.SetUp(ctx, t)
-	defer tearDown()
-
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.GetDevices(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				devices := make([]*pb.Device, 0, 1)
-				for {
-					dev, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					devices = append(devices, dev)
-				}
-				require.Equal(t, tt.want, devices)
-			}
-		})
-	}
-}
-
-func TestRequestHandler_GetResourceLinks(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
-	type args struct {
-		req *pb.GetResourceLinksRequest
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []pb.ResourceLink
-	}{
-		{
-			name: "valid",
-			args: args{
-				req: &pb.GetResourceLinksRequest{},
-			},
-			wantErr: false,
-			want:    grpcTest.SortResources(grpcTest.ConvertSchemaToPb(deviceID, grpcTest.GetAllBackendResourceLinks())),
-		},
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
-
-	tearDown := grpcTest.SetUp(ctx, t)
-	defer tearDown()
-
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.GetResourceLinks(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				links := make([]pb.ResourceLink, 0, 1)
-				for {
-					link, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					links = append(links, *link)
-				}
-				require.Equal(t, tt.want, grpcTest.SortResources(links))
-			}
-		})
-	}
-}
-
-func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.ResourceValue) {
-	require.Len(t, got, len(want))
-	for idx := range want {
-		dataWant := want[idx].GetContent().GetData()
-		datagot := got[idx].GetContent().GetData()
-		want[idx].Content.Data = nil
-		got[idx].Content.Data = nil
-		require.Equal(t, want[idx], got[idx])
-		w := grpcTest.DecodeCbor(t, dataWant)
-		g := grpcTest.DecodeCbor(t, datagot)
-		require.Equal(t, w, g)
-	}
-}
-
-func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
-	type args struct {
-		req *pb.RetrieveResourcesValuesRequest
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    []*pb.ResourceValue
-	}{
-		{
-			name: "valid",
-			args: args{
-				req: &pb.RetrieveResourcesValuesRequest{
-					ResourceIdsFilter: []*pb.ResourceId{
-						{
-							DeviceId:         deviceID,
-							ResourceLinkHref: cloud.StatusHref,
-						},
-					},
-				},
-			},
-			want: []*pb.ResourceValue{
-				{
-					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: cloud.StatusHref,
-					},
-					Types: cloud.StatusResourceTypes,
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
-							"if":     cloud.StatusInterfaces,
-							"rt":     cloud.StatusResourceTypes,
-							"online": true,
-						}),
-					},
-				},
-			},
-		},
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
-
-	tearDown := grpcTest.SetUp(ctx, t)
-	defer tearDown()
-
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.RetrieveResourcesValues(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				values := make([]*pb.ResourceValue, 0, 1)
-				for {
-					value, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					values = append(values, value)
-				}
-				cmpResourceValues(t, tt.want, values)
-			}
-		})
-	}
-}
 
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
@@ -595,78 +376,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				{
-					Type: &pb.Event_ResourcePublished_{
-						ResourcePublished: &pb.Event_ResourcePublished{
-							Link: &pb.ResourceLink{
-								Href:       "/light/1",
-								Types:      []string{"core.light"},
-								Interfaces: []string{"oic.if.rw", "oic.if.baseline"},
-								DeviceId:   deviceID,
-							},
-						},
-					},
-				},
-				{
-					Type: &pb.Event_ResourcePublished_{
-						ResourcePublished: &pb.Event_ResourcePublished{
-							Link: &pb.ResourceLink{
-								Href:       "/light/2",
-								Types:      []string{"core.light"},
-								Interfaces: []string{"oic.if.rw", "oic.if.baseline"},
-								DeviceId:   deviceID,
-							},
-						},
-					},
-				},
-				{
-					Type: &pb.Event_ResourcePublished_{
-						ResourcePublished: &pb.Event_ResourcePublished{
-							Link: &pb.ResourceLink{
-								Href:       "/oic/p",
-								Types:      []string{"oic.wk.p"},
-								Interfaces: []string{"oic.if.r", "oic.if.baseline"},
-								DeviceId:   deviceID,
-							},
-						},
-					},
-				},
-				{
-					Type: &pb.Event_ResourcePublished_{
-						ResourcePublished: &pb.Event_ResourcePublished{
-							Link: &pb.ResourceLink{
-								Href:       "/oic/d",
-								Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-								Interfaces: []string{"oic.if.r", "oic.if.baseline"},
-								DeviceId:   deviceID,
-							},
-						},
-					},
-				},
-				{
-					Type: &pb.Event_ResourcePublished_{
-						ResourcePublished: &pb.Event_ResourcePublished{
-							Link: &pb.ResourceLink{
-								Href:       cloud.StatusHref,
-								Types:      cloud.StatusResourceTypes,
-								Interfaces: cloud.StatusInterfaces,
-								DeviceId:   deviceID,
-							},
-						},
-					},
-				},
-				{
-					Type: &pb.Event_ResourcePublished_{
-						ResourcePublished: &pb.Event_ResourcePublished{
-							Link: &pb.ResourceLink{
-								Href:       "/oc/con",
-								Types:      []string{"oic.wk.con"},
-								Interfaces: []string{"oic.if.rw", "oic.if.baseline"},
-								DeviceId:   deviceID,
-							},
-						},
-					},
-				},
+				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/light/1")),
+				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/light/2")),
+				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/oic/p")),
+				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/oic/d")),
+				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink(cloud.StatusHref)),
+				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/oc/con")),
 			},
 		},
 	}
@@ -700,6 +415,10 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					ev, err := client.Recv()
 					require.NoError(t, err)
 					ev.SubscriptionId = w.SubscriptionId
+					link := ev.GetResourcePublished().GetLink()
+					if link != nil {
+						link.InstanceId = 0
+					}
 					require.Contains(t, tt.want, ev)
 				}
 			}()

@@ -1,12 +1,12 @@
 module github.com/go-ocf/cloud
 
-go 1.13
+go 1.14
 
 require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fullstorydev/grpchan v1.0.1
-	github.com/go-chi/chi v4.1.0+incompatible
+	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap/v2 v2.0.0-beta.21
 	github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9
@@ -28,7 +28,7 @@ require (
 	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/satori/go.uuid v1.2.0
-	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
+	github.com/smallstep/certificates v0.14.2
 	github.com/smallstep/nosql v0.2.0
 	github.com/stretchr/testify v1.5.1
 	github.com/ugorji/go/codec v1.1.7
@@ -41,5 +41,3 @@ require (
 	google.golang.org/grpc v1.29.1
 	gopkg.in/yaml.v2 v2.2.8
 )
-
-replace gopkg.in/yaml.v2 v2.2.8 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454

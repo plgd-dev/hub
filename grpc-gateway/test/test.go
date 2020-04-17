@@ -132,7 +132,6 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	grpcCfg.Addr = GRPC_HOST
 	grpcCfg.Service.AuthServerAddr = AUTH_HOST
 	grpcCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
-	grpcCfg.Service.ResourceDirectoryAddr = RESOURCE_DIRECTORY_HOST
 	grpcCfg.Service.FQDN = "grpc-gateway-" + t.Name()
 	grpcCfg.UserDevicesManagerExpiration = time.Second * 1
 	grpcCfg.UserDevicesManagerTickFrequency = time.Millisecond * 500
@@ -320,6 +319,8 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		ev.SubscriptionId = ""
 		key := ev.GetResourcePublished().GetLink().GetDeviceId() + ev.GetResourcePublished().GetLink().GetHref()
+		expectedEvents[key].GetResourcePublished().GetLink().InstanceId = ev.GetResourcePublished().GetLink().GetInstanceId()
+
 		require.Equal(t, expectedEvents[key], ev)
 		delete(expectedEvents, key)
 	}
@@ -468,21 +469,23 @@ func EncodeToCbor(t *testing.T, v interface{}) []byte {
 	return d
 }
 
+func ResourceLinkToPublishEvent(deviceID string, instanceID int64, l schema.ResourceLink) *pb.Event {
+	link := pb.SchemaResourceLinkToProto(l)
+	link.DeviceId = deviceID
+	link.InstanceId = instanceID
+	return &pb.Event{
+		Type: &pb.Event_ResourcePublished_{
+			ResourcePublished: &pb.Event_ResourcePublished{
+				Link: &link,
+			},
+		},
+	}
+}
+
 func ResourceLinksToExpectedPublishEvents(deviceID string, links []schema.ResourceLink) map[string]*pb.Event {
 	e := make(map[string]*pb.Event)
 	for _, l := range links {
-		e[deviceID+l.Href] = &pb.Event{
-			Type: &pb.Event_ResourcePublished_{
-				ResourcePublished: &pb.Event_ResourcePublished{
-					Link: &pb.ResourceLink{
-						Href:       l.Href,
-						Types:      l.ResourceTypes,
-						Interfaces: l.Interfaces,
-						DeviceId:   deviceID,
-					},
-				},
-			},
-		}
+		e[deviceID+l.Href] = ResourceLinkToPublishEvent(deviceID, 0, l)
 	}
 	return e
 }
@@ -491,15 +494,11 @@ func GetAllBackendResourceLinks() []schema.ResourceLink {
 	return append(TestDevsimResources, TestDevsimBackendResources...)
 }
 
-func ConvertSchemaToPb(deviceID string, s []schema.ResourceLink) []pb.ResourceLink {
+func ResourceLinksToPb(deviceID string, s []schema.ResourceLink) []pb.ResourceLink {
 	r := make([]pb.ResourceLink, 0, len(s))
 	for _, l := range s {
-		r = append(r, pb.ResourceLink{
-			Href:       l.Href,
-			DeviceId:   deviceID,
-			Types:      l.ResourceTypes,
-			Interfaces: l.Interfaces,
-		})
+		l.DeviceID = deviceID
+		r = append(r, pb.SchemaResourceLinkToProto(l))
 	}
 	return r
 }

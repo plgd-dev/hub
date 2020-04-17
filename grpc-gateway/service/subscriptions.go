@@ -10,7 +10,6 @@ import (
 
 	clientAS "github.com/go-ocf/cloud/authorization/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
@@ -321,25 +320,16 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 	return nil
 }
 
-func makeResourceLink(resource *pbRA.Resource) pb.ResourceLink {
-	return pb.ResourceLink{
-		Href:       resource.Href,
-		DeviceId:   resource.DeviceId,
-		Interfaces: resource.Interfaces,
-		Types:      resource.ResourceTypes,
-	}
-}
-
 func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Event, m eventstore.Model) (pb.ResourceLink, uint64, bool) {
 	c := m.(*resourceCtx).Clone()
 	switch eventType {
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
 		if c.isPublished {
-			return makeResourceLink(c.resource), c.onResourcePublishedVersion, true
+			return pb.RAResourceToProto(c.resource), c.onResourcePublishedVersion, true
 		}
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
 		if !c.isPublished {
-			return makeResourceLink(c.resource), c.onResourceUnpublishedVersion, true
+			return pb.RAResourceToProto(c.resource), c.onResourceUnpublishedVersion, true
 		}
 	}
 	return pb.ResourceLink{}, 0, false
@@ -503,7 +493,7 @@ func isDeviceOnline(content *pbRA.Content) (bool, error) {
 	return cloudStatus.Online, nil
 }
 
-func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *projectionRA.Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
+func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
 	sub := NewDevicesSubscription(subscriptionID, userID, send, resourceProjection, req)
 	err := s.InsertDevicesSubscription(ctx, sub)
 	if err != nil {
@@ -518,7 +508,7 @@ func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID str
 	return nil
 }
 
-func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID string, resourceProjection *projectionRA.Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
+func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
 	sub := NewDeviceSubscription(subscriptionID, userID, send, resourceProjection, req)
 	err := s.InsertDeviceSubscription(ctx, sub)
 	if err != nil {
@@ -533,7 +523,7 @@ func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID stri
 	return nil
 }
 
-func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID string, resourceProjection *projectionRA.Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
+func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
 	sub := NewResourceSubscription(subscriptionID, userID, send, resourceProjection, req)
 	err := s.InsertResourceSubscription(ctx, sub)
 	if err != nil {
@@ -557,7 +547,7 @@ func (s *subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscri
 	return s.Close(subscriptionID, nil)
 }
 
-func (s *subscriptions) SubscribeForEvents(resourceProjection *projectionRA.Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
+func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
 	accessToken, err := grpc_auth.AuthFromMD(srv.Context(), "bearer")
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.Unauthenticated, err)

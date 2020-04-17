@@ -34,7 +34,7 @@ func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb
 	}
 
 	correlationID := correlationIDUUID.String()
-	resourceID := GrpcResourceID2ResourceID(req.ResourceId)
+	resourceID := req.ResourceId.ID()
 	notify := r.retrieveNotificationContainer.Add(correlationID)
 	defer r.retrieveNotificationContainer.Remove(correlationID)
 

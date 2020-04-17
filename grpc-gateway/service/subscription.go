@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	"github.com/go-ocf/kit/log"
 )
 
@@ -15,7 +14,7 @@ type subscription struct {
 	id     string
 	userID string
 
-	resourceProjection *projectionRA.Projection
+	resourceProjection *Projection
 	send               SendEventFunc
 
 	lock                          sync.Mutex
@@ -25,7 +24,7 @@ type subscription struct {
 	eventVersions     map[string]uint64
 }
 
-func NewSubscription(userID, id string, send SendEventFunc, resourceProjection *projectionRA.Projection) *subscription {
+func NewSubscription(userID, id string, send SendEventFunc, resourceProjection *Projection) *subscription {
 	return &subscription{
 		userID:                        userID,
 		id:                            id,

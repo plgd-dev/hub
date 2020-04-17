@@ -117,7 +117,7 @@ func (r *RequestHandler) UpdateResourcesValues(ctx context.Context, req *pb.Upda
 	}
 
 	correlationID := correlationIDUUID.String()
-	resourceID := GrpcResourceID2ResourceID(req.ResourceId)
+	resourceID := req.ResourceId.ID()
 	notify := r.updateNotificationContainer.Add(correlationID)
 	defer r.updateNotificationContainer.Remove(correlationID)
 
