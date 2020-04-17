@@ -36,7 +36,6 @@ func NewTestBackendConfig() service.Config {
 	cfg.JwksURL = "https://" + grpcTest.AUTH_HTTP_HOST + authURI.JWKs
 	cfg.Service.AuthServerAddr = grpcTest.AUTH_HOST
 	cfg.Service.ResourceAggregateAddr = grpcTest.RESOURCE_AGGREGATE_HOST
-	cfg.Service.ResourceDirectoryAddr = grpcTest.RESOURCE_DIRECTORY_HOST
 	cfg.Service.FQDN = "http-gateway"
 	cfg.UserDevicesManagerExpiration = time.Second * 1
 	cfg.UserDevicesManagerTickFrequency = time.Millisecond * 500
