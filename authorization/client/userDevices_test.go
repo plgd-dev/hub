@@ -112,6 +112,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	c := pb.NewAuthorizationServiceClient(conn)
 
 	m := NewUserDevicesManager(trigger.Trigger, c, time.Millisecond*200, time.Millisecond*500, func(err error) { fmt.Println(err) })
+	defer m.Close()
 	err = m.Acquire(context.Background(), t.Name())
 	require.NoError(t, err)
 
@@ -236,6 +237,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewUserDevicesManager(tt.fields.trigger.Trigger, c, time.Millisecond*200, time.Second, func(err error) { fmt.Println(err) })
+			defer m.Close()
 			err := m.Acquire(context.Background(), tt.args.userID)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -326,6 +328,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewUserDevicesManager(tt.fields.trigger.Trigger, c, time.Millisecond*200, time.Millisecond*500, func(err error) { fmt.Println(err) })
+			defer m.Close()
 			err := m.Acquire(context.Background(), tt.args.userID)
 			if tt.wantErr {
 				require.Error(t, err)

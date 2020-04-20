@@ -23,7 +23,7 @@ type UserDevicesManager struct {
 
 	lock                sync.RWMutex
 	users               map[string]*kitSync.RefCounter
-	done                chan struct{}
+	done                context.CancelFunc
 	trigger             chan triggerUserDevice
 	doneWg              sync.WaitGroup
 	getUserDevicesCache *cache.Cache
@@ -43,17 +43,19 @@ func NewUserDevicesManager(fn TriggerFunc, asClient pbAS.AuthorizationServiceCli
 		r.Release(context.Background())
 	})
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	m := &UserDevicesManager{
 		fn:                  fn,
 		asClient:            asClient,
-		done:                make(chan struct{}),
+		done:                cancel,
 		trigger:             make(chan triggerUserDevice, 32),
 		users:               make(map[string]*kitSync.RefCounter),
 		errFunc:             errFunc,
 		getUserDevicesCache: c,
 	}
 	m.doneWg.Add(1)
-	go m.run(tickFrequency, expiration)
+	go m.run(ctx, tickFrequency, expiration)
 	return m
 }
 
@@ -231,8 +233,8 @@ func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClie
 	return userDevices, nil
 }
 
-func (d *UserDevicesManager) onTick(timeout time.Duration, expiration time.Duration, triggerTime time.Time) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+func (d *UserDevicesManager) onTick(ctx context.Context, timeout time.Duration, expiration time.Duration, triggerTime time.Time) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	users := d.getUsers(triggerTime)
 	if len(users) == 0 {
@@ -251,8 +253,8 @@ func (d *UserDevicesManager) onTick(timeout time.Duration, expiration time.Durat
 	}
 }
 
-func (d *UserDevicesManager) onTrigger(timeout time.Duration, expiration time.Duration, t triggerUserDevice) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+func (d *UserDevicesManager) onTrigger(ctx context.Context, timeout time.Duration, expiration time.Duration, t triggerUserDevice) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	if t.create {
 		for userID, devices := range t.userDevices {
@@ -265,25 +267,25 @@ func (d *UserDevicesManager) onTrigger(timeout time.Duration, expiration time.Du
 	}
 }
 
-func (d *UserDevicesManager) run(tickFrequency, expiration time.Duration) {
+func (d *UserDevicesManager) run(ctx context.Context, tickFrequency, expiration time.Duration) {
 	ticker := time.NewTicker(tickFrequency)
 	defer d.doneWg.Done()
 	defer ticker.Stop()
 	for {
 		select {
-		case <-d.done:
+		case <-ctx.Done():
 			return
 		case triggerTime := <-ticker.C:
-			d.onTick(tickFrequency, expiration, triggerTime)
+			d.onTick(ctx, tickFrequency, expiration, triggerTime)
 		case t := <-d.trigger:
-			d.onTrigger(tickFrequency, expiration, t)
+			d.onTrigger(ctx, tickFrequency, expiration, t)
 		}
 	}
 }
 
 // Close stops userID manager goroutine.
 func (d *UserDevicesManager) Close() {
-	close(d.done)
+	d.done()
 	d.doneWg.Wait()
 }
 
