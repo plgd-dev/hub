@@ -73,7 +73,7 @@ func TestGetResourceNotExist(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusNotFound, res.StatusCode)
 	exp := map[string]string{
-		"err": "cannot get resource: rpc error: code = NotFound desc = cannot retrieve resources values: rpc error: code = NotFound desc = cannot retrieve resources values: not found",
+		"err": "cannot get resource: rpc error: code = NotFound desc = not found",
 	}
 	require.Equal(t, exp, response)
 }

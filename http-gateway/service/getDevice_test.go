@@ -77,7 +77,7 @@ func TestGetDeviceNotExist(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusNotFound, res.StatusCode)
 	exp := map[interface{}]interface{}{
-		"err": "cannot get device: rpc error: code = NotFound desc = cannot get devices: rpc error: code = NotFound desc = cannot get devices contents: not found",
+		"err": "cannot get device: rpc error: code = NotFound desc = not found",
 	}
 	require.Equal(t, exp, response)
 }
