@@ -100,8 +100,10 @@ func updateDevice(dev Device, resource *resourceCtx) (Device, error) {
 	return dev, nil
 }
 
-func filterDevicesByStatus(resourceValues map[string]map[string]*resourceCtx, req *pbDD.GetDevicesRequest) ([]Device, error) {
+func filterDevicesByUserFilters(resourceValues map[string]map[string]*resourceCtx, req *pbDD.GetDevicesRequest) ([]Device, error) {
 	devices := make([]Device, 0, len(resourceValues))
+	typeFilter := make(strings.Set)
+	typeFilter.Add(req.TypeFilter...)
 	for deviceID, resources := range resourceValues {
 		var device Device
 		for _, resource := range resources {
@@ -114,9 +116,13 @@ func filterDevicesByStatus(resourceValues map[string]map[string]*resourceCtx, re
 		if device.Resource == nil {
 			device.Id = deviceID
 		}
+		if !hasMatchingType(device.GetResource().GetResourceTypes(), typeFilter) {
+			continue
+		}
 		if !device.cloudStateUpdated {
 			continue
 		}
+
 		if hasMatchingStatus(device.IsOnline, req.StatusFilter) {
 			devices = append(devices, device)
 		}
@@ -133,22 +139,20 @@ func (dd *DeviceDirectory) GetDevices(ctx context.Context, req *pbDD.GetDevicesR
 		return
 	}
 
-	typeFilter := make(strings.Set)
-	typeFilter.Add(req.TypeFilter...)
 	resourceIdsFilter := make(strings.Set)
 	for deviceID := range deviceIds {
 		resourceIdsFilter.Add(cqrs.MakeResourceId(deviceID, "/oic/d"))
 		resourceIdsFilter.Add(cqrs.MakeResourceId(deviceID, cloud.StatusHref))
 	}
 
-	resourceValues, err := dd.projection.GetResourceCtxs(ctx, resourceIdsFilter, typeFilter, deviceIds)
+	resourceValues, err := dd.projection.GetResourceCtxs(ctx, resourceIdsFilter, nil, deviceIds)
 	if err != nil {
 		err = fmt.Errorf("cannot get resource links by device ids: %w", err)
 		statusCode = codes.Internal
 		return
 	}
 
-	devices, err := filterDevicesByStatus(resourceValues, req)
+	devices, err := filterDevicesByUserFilters(resourceValues, req)
 	if err != nil {
 		statusCode = codes.Internal
 		return
