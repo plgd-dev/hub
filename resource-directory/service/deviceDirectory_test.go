@@ -103,15 +103,37 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 		},
 		{
-			name: "project_type_filter",
+			name: "project_type_filter-not-found",
 			args: args{
 				request: pbDD.GetDevicesRequest{
 					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					TypeFilter:           []string{"customType"},
+					TypeFilter:           []string{"notFound"},
 				},
 			},
 			wantStatusCode: codes.NotFound,
 			wantErr:        true,
+		},
+		{
+			name: "project_type_filter",
+			args: args{
+				request: pbDD.GetDevicesRequest{
+					AuthorizationContext: &pbCQRS.AuthorizationContext{},
+					TypeFilter:           []string{"x.test.d"},
+				},
+			},
+			wantStatusCode: codes.OK,
+			wantResponse: map[string]*pbDD.Device{
+				ddResource1.Resource.DeviceId: {
+					Id:       ddResource1.Resource.DeviceId,
+					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
+					IsOnline: false,
+				},
+				ddResource2.Resource.DeviceId: {
+					Id:       ddResource2.Resource.DeviceId,
+					Resource: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes),
+					IsOnline: true,
+				},
+			},
 		},
 		{
 			name: "project_one_device",
