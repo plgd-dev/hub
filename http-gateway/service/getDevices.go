@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-ocf/sdk/backend"
-
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/http-gateway/uri"
 	"github.com/go-ocf/kit/grpcconv"
 	grpcStatus "google.golang.org/grpc/status"
@@ -22,7 +21,7 @@ func (requestHandler *RequestHandler) getDevices(w http.ResponseWriter, r *http.
 	ctx, cancel := requestHandler.makeCtx(r)
 	defer cancel()
 
-	sdkDevices, err := requestHandler.client.GetDevices(ctx, backend.WithResourceTypes(typeFilter...))
+	sdkDevices, err := requestHandler.client.GetDevices(ctx, client.WithResourceTypes(typeFilter...))
 	if err != nil {
 		if IsMappedTo(err, http.StatusNotFound) {
 			jsonResponseWriter(w, []Device{})

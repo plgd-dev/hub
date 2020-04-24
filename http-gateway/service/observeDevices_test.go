@@ -51,7 +51,7 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 
 	expEvt := service.DeviceEvent{
 		DeviceId: deviceID,
-		Status:   service.ToDevicesObservationEvent(backend.DevicesObservationEvent_ONLINE),
+		Status:   service.ToDevicesObservationEvent(client.DevicesObservationEvent_ONLINE),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 
@@ -59,7 +59,7 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 	shutdownDevSim()
 	expEvt = service.DeviceEvent{
 		DeviceId: deviceID,
-		Status:   service.ToDevicesObservationEvent(backend.DevicesObservationEvent_OFFLINE),
+		Status:   service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 }

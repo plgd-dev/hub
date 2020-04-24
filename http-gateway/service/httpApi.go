@@ -9,26 +9,26 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/google/uuid"
 
 	"github.com/go-ocf/cloud/http-gateway/uri"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/sdk/backend"
 
 	router "github.com/gorilla/mux"
 )
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	client  *backend.Client
+	client  *client.Client
 	config  *Config
 	manager *ObservationManager
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(client *backend.Client, config *Config, manager *ObservationManager) *RequestHandler {
+func NewRequestHandler(client *client.Client, config *Config, manager *ObservationManager) *RequestHandler {
 	return &RequestHandler{
 		client:  client,
 		config:  config,

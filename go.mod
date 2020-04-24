@@ -9,7 +9,10 @@ require (
 	github.com/go-chi/chi v4.1.0+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap v0.0.0-20200406073902-cf923db524db
+	github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79
 	github.com/go-ocf/kit v0.0.0-20200415134408-e0585e8eea21
+	github.com/go-ocf/resource-aggregate v0.0.0-20200326125438-8ab650abf05f
+	github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726
 	github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gogo/protobuf v1.3.1
@@ -39,6 +42,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	google.golang.org/grpc v1.28.1
+	gopkg.in/jcmturner/gokrb5.v7 v7.3.0
 	gopkg.in/yaml.v2 v2.2.8
 )
 

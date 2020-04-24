@@ -11,6 +11,8 @@ const (
 	TypeFilterQueryKey     string = "type"
 
 	API string = "/api/v1"
+	//client
+	ClientConfiguration = API + "/client-configuration"
 
 	//devices
 	Devices         = API + "/devices"

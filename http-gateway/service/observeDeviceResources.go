@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/backend"
 	"github.com/go-ocf/sdk/schema"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -53,17 +53,17 @@ type deviceResourcesObservation struct {
 	subscribeSession
 }
 
-func ToDeviceResourcesObservationEvent(e backend.DeviceResourcesObservationEvent_type) string {
+func ToDeviceResourcesObservationEvent(e client.DeviceResourcesObservationEvent_type) string {
 	switch e {
-	case backend.DeviceResourcesObservationEvent_ADDED:
+	case client.DeviceResourcesObservationEvent_ADDED:
 		return "added"
-	case backend.DeviceResourcesObservationEvent_REMOVED:
+	case client.DeviceResourcesObservationEvent_REMOVED:
 		return "removed"
 	}
 	return ""
 }
 
-func (d *deviceResourcesObservation) Handle(ctx context.Context, event backend.DeviceResourcesObservationEvent) error {
+func (d *deviceResourcesObservation) Handle(ctx context.Context, event client.DeviceResourcesObservationEvent) error {
 	evt := DeviceResourceObservationEvent{
 		Resource: schema.ResourceLink{
 			ResourceTypes: event.Link.GetTypes(),

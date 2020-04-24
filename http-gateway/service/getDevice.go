@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-ocf/sdk/schema"
 
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/cloud/http-gateway/uri"
-	"github.com/go-ocf/sdk/backend"
 	"github.com/gorilla/mux"
 )
 
@@ -80,7 +80,7 @@ func toResourceLinks(s []pb.ResourceLink) []schema.ResourceLink {
 	return r
 }
 
-func mapToDevice(d backend.DeviceDetails) RetrieveDeviceWithLinksResponse {
+func mapToDevice(d client.DeviceDetails) RetrieveDeviceWithLinksResponse {
 	return RetrieveDeviceWithLinksResponse{
 		Device: Device{
 			Device: schema.Device{

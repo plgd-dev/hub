@@ -114,6 +114,7 @@ github.com/go-ocf/grpc-gateway v0.0.0-20200319123843-760c721614a6/go.mod h1:MrWS
 github.com/go-ocf/grpc-gateway v0.0.0-20200319135410-983e3720b65d/go.mod h1:G4Axmfc2431jBj/gJU4RtKnHTsnPUrccuLet9HS/3H0=
 github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79 h1:bB+5V1yzRCO0a8V4lMV2hoQVwySFcNrl9kB8O8kXco0=
 github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79/go.mod h1:G2jLNVvag68GNQVuRvDIohEe7R4TDKg49faDJzWPSy0=
+github.com/go-ocf/grpc-gateway v0.0.0-20200406114428-ec2f75e0b14b h1:AkQ1QD03sheDujYG39mHv9/PvrScRRlJm8EqFz1/lRw=
 github.com/go-ocf/kit v0.0.0-20190627123507-31d82dceaba0/go.mod h1:cP9tDuWo0oq30mYGOSvpVJ6mDSUiOUCuisMnPN/AmvQ=
 github.com/go-ocf/kit v0.0.0-20191028131320-a13f1309c964/go.mod h1:cP9tDuWo0oq30mYGOSvpVJ6mDSUiOUCuisMnPN/AmvQ=
 github.com/go-ocf/kit v0.0.0-20191121115122-d51c9ca11d08/go.mod h1:PyZjU7p8U5oXiCuTYfufjEsFwePni3eMr5l5qU2nkZ8=
@@ -161,6 +162,7 @@ github.com/go-ocf/resource-directory v0.0.0-20200127170709-a4bef91c57a2/go.mod h
 github.com/go-ocf/resource-directory v0.0.0-20200206134042-b65dd1895c5d/go.mod h1:Fp3pOkNC1EWoa/TaYGOLsNeXEc5JakGIauufi6c+KBM=
 github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726 h1:8pqqiIGExabOE3YLJ5+o3fEe/yKsIUe4luwMx1LACys=
 github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726/go.mod h1:Nm3ZojlZ3REemNMfnHtBalCR6OsdrxpOV2SoJFzya9U=
+github.com/go-ocf/resource-directory v0.0.0-20200406090151-1c3cffe8b98d h1:jRTIMrok6XOBUgP8rMwDNdoGwvhWpmni6bpu6CDlGe8=
 github.com/go-ocf/sdk v0.0.0-20190926135508-aa0190036e50/go.mod h1:CK33PRv54Esvk2TLNvixJTcwwBwGnGuIAZr5LwchnMo=
 github.com/go-ocf/sdk v0.0.0-20191014110911-e42b567505f4/go.mod h1:CK33PRv54Esvk2TLNvixJTcwwBwGnGuIAZr5LwchnMo=
 github.com/go-ocf/sdk v0.0.0-20191105105859-e5b3f03a79c0/go.mod h1:KTuP0di3ddTq/fgzjbQxWQnGnLB/ebI5OUA2RK+c8BY=
@@ -173,6 +175,7 @@ github.com/go-ocf/sdk v0.0.0-20200408161730-424631fc67f3 h1:wf58IzAw4ciYyBccFi7n
 github.com/go-ocf/sdk v0.0.0-20200408161730-424631fc67f3/go.mod h1:mU0HDyK3eyZXb9JtmgonizwtoLXy6fCpxVURHrfzBxQ=
 github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33 h1:SebOrDhhe9CtlEey6WElOlQMwYEsvFpoVcb1OFqDiGU=
 github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33/go.mod h1:9vLNYHs9YT+5Ytye8mzdiAI0Xez/DZWTHaqiZMpEIVQ=
+github.com/go-ocf/sdk v0.0.0-20200416065600-d8f1f3d0d880 h1:4edgEYCQwG2Tadea5vjExW2mnshwuc9QjAs08GLJ7Wo=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=

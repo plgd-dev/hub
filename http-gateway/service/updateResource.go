@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/http-gateway/uri"
-	"github.com/go-ocf/sdk/backend"
 
 	"github.com/go-ocf/kit/codec/json"
 
@@ -25,7 +25,7 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 	defer cancel()
 
 	var response interface{}
-	err := requestHandler.client.UpdateResource(ctx, vars[uri.DeviceIDKey], vars[uri.ResourceLinkHrefKey], body, &response, backend.WithInterface(interfaceQueryString))
+	err := requestHandler.client.UpdateResource(ctx, vars[uri.DeviceIDKey], vars[uri.ResourceLinkHrefKey], body, &response, client.WithInterface(interfaceQueryString))
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot update resource: %w", err))
 		return
