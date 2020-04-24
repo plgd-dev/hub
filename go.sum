@@ -114,6 +114,7 @@ github.com/go-ocf/grpc-gateway v0.0.0-20200319123843-760c721614a6/go.mod h1:MrWS
 github.com/go-ocf/grpc-gateway v0.0.0-20200319135410-983e3720b65d/go.mod h1:G4Axmfc2431jBj/gJU4RtKnHTsnPUrccuLet9HS/3H0=
 github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79 h1:bB+5V1yzRCO0a8V4lMV2hoQVwySFcNrl9kB8O8kXco0=
 github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79/go.mod h1:G2jLNVvag68GNQVuRvDIohEe7R4TDKg49faDJzWPSy0=
+github.com/go-ocf/grpc-gateway v0.0.0-20200406114428-ec2f75e0b14b h1:AkQ1QD03sheDujYG39mHv9/PvrScRRlJm8EqFz1/lRw=
 github.com/go-ocf/kit v0.0.0-20190627123507-31d82dceaba0/go.mod h1:cP9tDuWo0oq30mYGOSvpVJ6mDSUiOUCuisMnPN/AmvQ=
 github.com/go-ocf/kit v0.0.0-20191028131320-a13f1309c964/go.mod h1:cP9tDuWo0oq30mYGOSvpVJ6mDSUiOUCuisMnPN/AmvQ=
 github.com/go-ocf/kit v0.0.0-20191121115122-d51c9ca11d08/go.mod h1:PyZjU7p8U5oXiCuTYfufjEsFwePni3eMr5l5qU2nkZ8=
@@ -137,6 +138,8 @@ github.com/go-ocf/kit v0.0.0-20200408211624-bfa7f116ff71 h1:WKAjuJfMHcfjQzUVpoOL
 github.com/go-ocf/kit v0.0.0-20200408211624-bfa7f116ff71/go.mod h1:tnazqyziD6lz3FYORKJge3vVN+11pN8bPV637G5fdv8=
 github.com/go-ocf/kit v0.0.0-20200415082910-ad21ac15dfec h1:G157nR3k3WGMDhpsR130ewG3pRK4kf6VgNR8ruzOgkQ=
 github.com/go-ocf/kit v0.0.0-20200415082910-ad21ac15dfec/go.mod h1:tnazqyziD6lz3FYORKJge3vVN+11pN8bPV637G5fdv8=
+github.com/go-ocf/kit v0.0.0-20200415134408-e0585e8eea21 h1:Toj4dMQlx/d8thW+r0/cygkyxKsXY2xVjXULj8eg0Ro=
+github.com/go-ocf/kit v0.0.0-20200415134408-e0585e8eea21/go.mod h1:tnazqyziD6lz3FYORKJge3vVN+11pN8bPV637G5fdv8=
 github.com/go-ocf/resource-aggregate v0.0.0-20190610073816-ff5194c51d2a/go.mod h1:5G1FgzxCnQhETxlFMh2DYtGJrl82AK3MvHXW4MYpO08=
 github.com/go-ocf/resource-aggregate v0.0.0-20191001194720-f5aade86d89a/go.mod h1:5G1FgzxCnQhETxlFMh2DYtGJrl82AK3MvHXW4MYpO08=
 github.com/go-ocf/resource-aggregate v0.0.0-20191029083107-ed77cacca426/go.mod h1:8KjjOJsevWFUzQ5UhD/tybREQhW05HeQsuGJ449X5qM=
@@ -159,6 +162,7 @@ github.com/go-ocf/resource-directory v0.0.0-20200127170709-a4bef91c57a2/go.mod h
 github.com/go-ocf/resource-directory v0.0.0-20200206134042-b65dd1895c5d/go.mod h1:Fp3pOkNC1EWoa/TaYGOLsNeXEc5JakGIauufi6c+KBM=
 github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726 h1:8pqqiIGExabOE3YLJ5+o3fEe/yKsIUe4luwMx1LACys=
 github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726/go.mod h1:Nm3ZojlZ3REemNMfnHtBalCR6OsdrxpOV2SoJFzya9U=
+github.com/go-ocf/resource-directory v0.0.0-20200406090151-1c3cffe8b98d h1:jRTIMrok6XOBUgP8rMwDNdoGwvhWpmni6bpu6CDlGe8=
 github.com/go-ocf/sdk v0.0.0-20190926135508-aa0190036e50/go.mod h1:CK33PRv54Esvk2TLNvixJTcwwBwGnGuIAZr5LwchnMo=
 github.com/go-ocf/sdk v0.0.0-20191014110911-e42b567505f4/go.mod h1:CK33PRv54Esvk2TLNvixJTcwwBwGnGuIAZr5LwchnMo=
 github.com/go-ocf/sdk v0.0.0-20191105105859-e5b3f03a79c0/go.mod h1:KTuP0di3ddTq/fgzjbQxWQnGnLB/ebI5OUA2RK+c8BY=
@@ -171,6 +175,7 @@ github.com/go-ocf/sdk v0.0.0-20200408161730-424631fc67f3 h1:wf58IzAw4ciYyBccFi7n
 github.com/go-ocf/sdk v0.0.0-20200408161730-424631fc67f3/go.mod h1:mU0HDyK3eyZXb9JtmgonizwtoLXy6fCpxVURHrfzBxQ=
 github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33 h1:SebOrDhhe9CtlEey6WElOlQMwYEsvFpoVcb1OFqDiGU=
 github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33/go.mod h1:9vLNYHs9YT+5Ytye8mzdiAI0Xez/DZWTHaqiZMpEIVQ=
+github.com/go-ocf/sdk v0.0.0-20200416065600-d8f1f3d0d880 h1:4edgEYCQwG2Tadea5vjExW2mnshwuc9QjAs08GLJ7Wo=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
@@ -400,6 +405,7 @@ github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4k
 github.com/spf13/cobra v0.0.3/go.mod h1:1l0Ry5zgKvJasoi3XT1TypsSe7PqH0Sj9dhYf7v3XqQ=
 github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/objx v0.1.1 h1:2vfRuCMp5sSVIDSqO8oNnWJq7mPa6KVP3iPIwFBuy8A=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=

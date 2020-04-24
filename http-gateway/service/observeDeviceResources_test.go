@@ -10,13 +10,13 @@ import (
 	"github.com/go-ocf/cloud/http-gateway/uri"
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/cloud/http-gateway/service"
 	"github.com/go-ocf/cloud/http-gateway/test"
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/backend"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -67,9 +67,9 @@ func readMessage(t *testing.T, conn *websocket.Conn, messages *sync.Map) {
 		var event service.DeviceResourceObservationEvent
 		err = json.Decode(message, &event)
 		require.NoError(t, err)
-		if event.Event == service.ToDeviceResourcesObservationEvent(backend.DeviceResourcesObservationEvent_ADDED) {
+		if event.Event == service.ToDeviceResourcesObservationEvent(client.DeviceResourcesObservationEvent_ADDED) {
 			messages.Store(event.Resource.Href, event)
-		} else if event.Event == service.ToDeviceResourcesObservationEvent(backend.DeviceResourcesObservationEvent_REMOVED) {
+		} else if event.Event == service.ToDeviceResourcesObservationEvent(client.DeviceResourcesObservationEvent_REMOVED) {
 			messages.Delete(event.Resource.Href)
 		}
 	}

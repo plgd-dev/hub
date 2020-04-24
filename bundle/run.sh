@@ -90,6 +90,14 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+for ((i=0;i<10;i++)); do
+  if curl -s -k ${OAUTH_ENDPOINT_TOKEN_URL} > /dev/null; then
+    break
+  fi
+  echo "Retry connect to ${OAUTH_ENDPOINT_TOKEN_URL} $((i+1))/10"
+  sleep 1
+done
+
 # resource-aggregate
 echo "starting resource-aggregate"
 ADDRESS=${RESOURCE_AGGREGATE_ADDRESS} resource-aggregate >$LOGS_PATH/resource-aggregate.log 2>&1 &
@@ -169,13 +177,6 @@ fi
 
 # grpc-gateway
 echo "starting grpc-gateway"
-for ((i=0;i<10;i++)); do
-if curl -s -k ${OAUTH_ENDPOINT_TOKEN_URL} > /dev/null; then
-  break
-fi
-echo "Retry connect to ${OAUTH_ENDPOINT_TOKEN_URL} $((i+1))/10"
-sleep 1
-done
 ADDRESS=${GRPC_GATEWAY_ADDRESS} \
 LOG_ENABLE_DEBUG=true \
 LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS} \

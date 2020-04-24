@@ -8,12 +8,13 @@ import (
 	"regexp"
 
 	"github.com/fullstorydev/grpchan/inprocgrpc"
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcService "github.com/go-ocf/cloud/grpc-gateway/service"
+	"github.com/go-ocf/cloud/http-gateway/uri"
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/kit/security/certManager"
-	"github.com/go-ocf/sdk/backend"
 )
 
 func logError(err error) { log.Error(err) }
@@ -61,7 +62,7 @@ func New(config string) (*Server, error) {
 	pb.RegisterHandlerGrpcGateway(&ch, grpcServerHandler)
 	grpcClient := pb.NewGrpcGatewayChannelClient(&ch)
 
-	client, err := backend.NewClient(cfg.AccessTokenURL, grpcClient)
+	client, err := client.NewClient(cfg.AccessTokenURL, grpcClient)
 	if err != nil {
 		log.Fatalf("cannot initialize new client: %w", err)
 	}
@@ -69,7 +70,10 @@ func New(config string) (*Server, error) {
 	if err != nil {
 		log.Fatal("unable to initialize new observation manager %w", err)
 	}
-	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules)
+	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, kitNetHttp.RequestMatcher{
+		Method: http.MethodGet,
+		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
+	})
 	requestHandler := NewRequestHandler(client, &cfg, manager)
 
 	server := Server{
@@ -105,7 +109,7 @@ func (s *Server) Shutdown() error {
 var authRules = map[string][]kitNetHttp.AuthArgs{
 	http.MethodGet: {
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/.*`),
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`openid`),
 			},
@@ -113,7 +117,7 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 	http.MethodPost: {
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/.*`),
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`openid`),
 			},
@@ -121,7 +125,7 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 	http.MethodDelete: {
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/.*`),
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`openid`),
 			},
@@ -129,7 +133,7 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	},
 	http.MethodPut: {
 		{
-			URI: regexp.MustCompile(`\/api\/v1\/.*`),
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
 			Scopes: []*regexp.Regexp{
 				regexp.MustCompile(`openid`),
 			},

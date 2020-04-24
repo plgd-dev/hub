@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ocf.cloud.grpcgateway.pb;
+
+option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb;pb";
+
+message ClientConfigurationRequest {
+}
+
+message ClientConfigurationResponse {
+	string access_token_url  = 1;
+    string auth_code_url  = 2;
+    string jwt_claim_owner_id = 3;
+    string signing_server_address  = 4;
+    string cloud_id = 5;
+    string cloud_url  = 6;
+    string cloud_authorization_provider = 7;
+    string cloud_certificate_authorities = 8;
+}

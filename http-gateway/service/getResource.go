@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-ocf/sdk/backend"
-
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/http-gateway/uri"
 
 	"github.com/gorilla/mux"
@@ -18,12 +17,12 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 	resourceLinkHref := parseResourceLinkHref(vars[uri.ResourceLinkHrefKey])
 	interfaceQueryKeyString := r.URL.Query().Get(uri.InterfaceQueryKey)
 	skipShadowQueryString := r.URL.Query().Get(uri.SkipShadowQueryKey)
-	ocfOpts := make([]backend.GetOption, 0, 2)
+	ocfOpts := make([]client.GetOption, 0, 2)
 	if interfaceQueryKeyString != "" {
-		ocfOpts = append(ocfOpts, backend.WithInterface(interfaceQueryKeyString))
+		ocfOpts = append(ocfOpts, client.WithInterface(interfaceQueryKeyString))
 	}
 	if skipShadowQueryString == "1" || strings.ToLower(skipShadowQueryString) == "true" {
-		ocfOpts = append(ocfOpts, backend.WithSkipShadow())
+		ocfOpts = append(ocfOpts, client.WithSkipShadow())
 	}
 	ctx, cancel := requestHandler.makeCtx(r)
 	defer cancel()

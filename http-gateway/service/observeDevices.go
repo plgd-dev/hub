@@ -4,8 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/go-ocf/sdk/backend"
-
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gorilla/websocket"
 )
@@ -50,23 +49,23 @@ type deviceObservation struct {
 	subscribeSession
 }
 
-func ToDevicesObservationEvent(e backend.DevicesObservationEvent_type) string {
+func ToDevicesObservationEvent(e client.DevicesObservationEvent_type) string {
 	switch e {
-	case backend.DevicesObservationEvent_ONLINE:
+	case client.DevicesObservationEvent_ONLINE:
 		return "online"
-	case backend.DevicesObservationEvent_OFFLINE:
+	case client.DevicesObservationEvent_OFFLINE:
 		return "offline"
-	case backend.DevicesObservationEvent_REGISTERED:
+	case client.DevicesObservationEvent_REGISTERED:
 		return "registered"
-	case backend.DevicesObservationEvent_UNREGISTERED:
+	case client.DevicesObservationEvent_UNREGISTERED:
 		return "unregistered"
 	}
 	return ""
 }
 
-func (d *deviceObservation) Handle(ctx context.Context, event backend.DevicesObservationEvent) error {
-	if event.Event == backend.DevicesObservationEvent_REGISTERED ||
-		event.Event == backend.DevicesObservationEvent_UNREGISTERED {
+func (d *deviceObservation) Handle(ctx context.Context, event client.DevicesObservationEvent) error {
+	if event.Event == client.DevicesObservationEvent_REGISTERED ||
+		event.Event == client.DevicesObservationEvent_UNREGISTERED {
 		return nil
 	}
 	evt := DeviceEvent{

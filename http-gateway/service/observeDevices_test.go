@@ -9,13 +9,13 @@ import (
 	"github.com/go-ocf/cloud/http-gateway/uri"
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/cloud/http-gateway/service"
 	"github.com/go-ocf/cloud/http-gateway/test"
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/backend"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -51,7 +51,7 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 
 	expEvt := service.DeviceEvent{
 		DeviceId: deviceID,
-		Status:   service.ToDevicesObservationEvent(backend.DevicesObservationEvent_ONLINE),
+		Status:   service.ToDevicesObservationEvent(client.DevicesObservationEvent_ONLINE),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 
@@ -59,7 +59,7 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 	shutdownDevSim()
 	expEvt = service.DeviceEvent{
 		DeviceId: deviceID,
-		Status:   service.ToDevicesObservationEvent(backend.DevicesObservationEvent_OFFLINE),
+		Status:   service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 }
