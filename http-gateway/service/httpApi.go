@@ -95,6 +95,9 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	// health check
 	r.HandleFunc("/", healthCheck).Methods(http.MethodGet)
 
+	// client configuration
+	r.HandleFunc(uri.ClientConfiguration, requestHandler.getClientConfiguration).Methods(http.MethodGet)
+
 	// devices
 	r.HandleFunc(uri.Devices, requestHandler.getDevices).Methods(http.MethodGet)
 	r.HandleFunc(uri.Device, requestHandler.getDevice).Methods(http.MethodGet)
