@@ -5,26 +5,23 @@
 
 # OCF Native Cloud
 
-Cloud-native means, simply, that applications are designed to be deployed in the cloud from the beginning, easing horizontal scalability.
-Applications are composed of dozens of micro-services, each expressed as a RESTful API, whose provisioning code is in a software container, and whose lifetime is limited to the interaction with a single client
-
 ## Try
 * [pluggedin.cloud](https://pluggedin.cloud)
 * [single docker image](https://github.com/go-ocf/cloud/tree/master/bundle)
 
-## Micros-services
-* [coap-gateway](https://github.com/go-ocf/cloud/tree/master/coap-gateway) provides gateway for [**a Device**](https://github.com/iotivity/iotivity-lite)
-* [grpc-gateway](https://github.com/go-ocf/cloud/tree/master/grpc-gateway) provides gateway for **a Service**
-* [http-gateway](https://github.com/go-ocf/cloud/tree/master/http-gateway) provides gateway for **a GUI**
-* [cloud2cloud-gateway](https://github.com/go-ocf/cloud/tree/master/cloud2cloud-gateway) provides gateway for **a Cloud**
-* [cloud2cloud-connector](https://github.com/go-ocf/cloud/tree/master/cloud2cloud-gateway) provides connector to **a Cloud**
+## Micro-services
+* [coap-gateway](https://github.com/go-ocf/cloud/tree/master/coap-gateway) provides gateway for [**Device**](https://github.com/iotivity/iotivity-lite)
+* [grpc-gateway](https://github.com/go-ocf/cloud/tree/master/grpc-gateway) provides gateway for **Service**
+* [http-gateway](https://github.com/go-ocf/cloud/tree/master/http-gateway) provides gateway for **GUI**
+* [cloud2cloud-gateway](https://github.com/go-ocf/cloud/tree/master/cloud2cloud-gateway) provides gateway for **Cloud**
+* [cloud2cloud-connector](https://github.com/go-ocf/cloud/tree/master/cloud2cloud-gateway) provides connector to **Cloud**
 * ...
 
 ## Features
-* all micro-services are scalable
-* internal communication goes through grpc with mTLS
-* supporting ACME protocol
-* using [CQRS pattern](https://leanpub.com/esversioning/read)
+* all services are scalable
+* internal communication is secured using GRPC
+* supports ACME protocol
+* following [CQRS pattern](https://leanpub.com/esversioning/read)
 * test [cloud](https://github.com/go-ocf/cloud/tree/master/bundle) in a single docker image
 * ...
 
