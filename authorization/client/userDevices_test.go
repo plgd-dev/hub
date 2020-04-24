@@ -6,14 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/authorization/service"
-	testService "github.com/go-ocf/cloud/authorization/test/service"
 	"github.com/go-ocf/kit/security/certManager"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/go-ocf/cloud/authorization/service"
+	testService "github.com/go-ocf/cloud/authorization/test/service"
 )
 
 type testTrigger struct {
@@ -106,12 +108,6 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		},
 	}, trigger.allDevices)
 
-	for i := 0; i < 5; i++ {
-		devs, err := m.GetUserDevices(context.Background(), t.Name())
-		require.NoError(t, err)
-		require.NotEmpty(t, devs)
-	}
-
 	_, err = c.RemoveDevice(context.Background(), &pb.RemoveDeviceRequest{
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
@@ -119,23 +115,6 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 
 	time.Sleep(time.Second * 2)
 	require.Equal(t, map[string]map[string]bool(nil), trigger.allDevices)
-
-	err = m.Release(t.Name())
-	require.NoError(t, err)
-
-	devs, err := m.GetUserDevices(context.Background(), t.Name())
-	require.NoError(t, err)
-	require.Empty(t, devs)
-
-	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
-		UserId:   t.Name(),
-		DeviceId: "deviceId_" + t.Name(),
-	})
-	time.Sleep(time.Second * 2)
-
-	devs, err = m.GetUserDevices(context.Background(), t.Name())
-	require.NoError(t, err)
-	require.NotEmpty(t, devs)
 
 	err = m.Release(t.Name())
 	require.NoError(t, err)

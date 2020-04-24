@@ -11,7 +11,6 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	kitSync "github.com/go-ocf/kit/sync"
-	"github.com/patrickmn/go-cache"
 	"google.golang.org/grpc/status"
 )
 
@@ -21,12 +20,11 @@ type UserDevicesManager struct {
 	asClient pbAS.AuthorizationServiceClient
 	errFunc  ErrFunc
 
-	lock                sync.RWMutex
-	users               map[string]*kitSync.RefCounter
-	done                chan struct{}
-	trigger             chan triggerUserDevice
-	doneWg              sync.WaitGroup
-	getUserDevicesCache *cache.Cache
+	lock    sync.RWMutex
+	users   map[string]*kitSync.RefCounter
+	done    chan struct{}
+	trigger chan triggerUserDevice
+	doneWg  sync.WaitGroup
 }
 
 // TriggerFunc notifies users remove/add device.
@@ -37,20 +35,13 @@ type ErrFunc func(err error)
 
 // NewUserDevicesManager creates userID devices manager.
 func NewUserDevicesManager(fn TriggerFunc, asClient pbAS.AuthorizationServiceClient, tickFrequency, expiration time.Duration, errFunc ErrFunc) *UserDevicesManager {
-	c := cache.New(expiration, cache.DefaultExpiration)
-	c.OnEvicted(func(key string, v interface{}) {
-		r := v.(*kitSync.RefCounter)
-		r.Release(context.Background())
-	})
-
 	m := &UserDevicesManager{
-		fn:                  fn,
-		asClient:            asClient,
-		done:                make(chan struct{}),
-		trigger:             make(chan triggerUserDevice, 32),
-		users:               make(map[string]*kitSync.RefCounter),
-		errFunc:             errFunc,
-		getUserDevicesCache: c,
+		fn:       fn,
+		asClient: asClient,
+		done:     make(chan struct{}),
+		trigger:  make(chan triggerUserDevice, 32),
+		users:    make(map[string]*kitSync.RefCounter),
+		errFunc:  errFunc,
 	}
 	m.doneWg.Add(1)
 	go m.run(tickFrequency, expiration)
@@ -102,32 +93,6 @@ func (d *UserDevicesManager) Acquire(ctx context.Context, userID string) error {
 	}
 
 	return nil
-}
-
-// GetUserDevices returns devices which belows to user.
-func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) ([]string, error) {
-	v, created := d.getRef(userID, true)
-	if created {
-		userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
-		if err != nil {
-			v.Release(ctx)
-			return nil, err
-		}
-		d.trigger <- triggerUserDevice{
-			userID:      userID,
-			userDevices: userDevices,
-			create:      true,
-		}
-		d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
-		return userDevices[userID], nil
-	}
-	defer v.Release(ctx) // getRef increase ref counter
-	mapDevs := v.Data().(*userDevices).getDevices()
-	devs := make([]string, 0, len(mapDevs))
-	for d := range mapDevs {
-		devs = append(devs, d)
-	}
-	return devs, nil
 }
 
 func (d *UserDevicesManager) IsUserDevice(userID, deviceID string) bool {
