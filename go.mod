@@ -26,7 +26,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lestrrat-go/jwx v0.9.1
+	github.com/lestrrat-go/jwx v0.9.2
 	github.com/nats-io/nats.go v1.9.2
 	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
