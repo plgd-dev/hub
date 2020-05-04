@@ -1,4 +1,4 @@
-language: minimal
+language: generic
 
 services:
   - docker
@@ -10,9 +10,22 @@ jobs:
       script:
         - make test
     - stage: "Test & Publish"
-      if: branch = master AND type != pull_request
+      if: branch = master AND type != pull_request AND commit_message !~ \[doc\]
       script:
         - make test
         - bash <(curl -s https://codecov.io/bash)
         - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
         - make push
+    - stage: Documentation
+      node_js:
+        - lts/*
+      install:
+        - yarn install
+      script:
+        - yarn docs:build
+      deploy:
+        provider: pages
+      skip_cleanup: true
+      local_dir: docs/.vuepress/dist
+      github_token: $GITHUB_TOKEN
+      keep_history: true
