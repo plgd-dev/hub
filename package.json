@@ -6,8 +6,8 @@
         "vuepress": "^1.0.0-alpha.48"
     },
     "scripts": {
-        "dev": "vuepress dev docs",
-        "build": "vuepress build docs"
+        "docs:dev": "vuepress dev docs",
+        "docs:build": "vuepress build docs"
     },
     "dependencies": {
         "vuepress-bar": "^0.3.0"
