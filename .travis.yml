@@ -25,10 +25,9 @@ jobs:
         - yarn docs:build
       deploy:
         provider: pages
-      skip_cleanup: true
-      local_dir: docs/.vuepress/dist
-      github_token: $GITHUB_TOKEN
-      keep_history: true
-      edge: true
-      on:
-        branch: master
+        skip_cleanup: true
+        local_dir: docs/.vuepress/dist
+        github_token: $GITHUB_TOKEN
+        keep_history: true
+        on:
+          branch: master
