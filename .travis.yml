@@ -5,18 +5,21 @@ services:
 
 jobs:
   include:
-    - stage: "Test"
+    - stage: test
+      name: "Test"
       if: type = pull_request
       script:
         - make test
-    - stage: "Test & Publish"
+    - stage: test_publish
+      name: "Test & Publish"
       if: branch = master AND type != pull_request AND commit_message !~ \[doc\]
       script:
         - make test
         - bash <(curl -s https://codecov.io/bash)
         - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
         - make push
-    - stage: Documentation
+    - stage: docs
+      name: "Documentation"
       node_js:
         - lts/*
       install:
