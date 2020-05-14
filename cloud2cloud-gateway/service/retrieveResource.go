@@ -21,7 +21,7 @@ func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.Respo
 			return statusToHttpStatus(v[0].Status), fmt.Errorf("cannot retrieve resource(%v): device returns code %v", resourceID, v[0].Status)
 		}
 
-		err = encoder(w, v[0].Representation)
+		err = encoder(w, v[0].Representation, http.StatusOK)
 		if err != nil {
 			return http.StatusBadRequest, fmt.Errorf("cannot retrieve resource(%v): %w", resourceID, err)
 		}

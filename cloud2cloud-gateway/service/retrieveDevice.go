@@ -207,7 +207,7 @@ func (rh *RequestHandler) RetrieveDeviceWithLinks(ctx context.Context, w http.Re
 		Links:  resourceLink[deviceID],
 	}
 
-	err = encoder(w, resp)
+	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot retrieve devices(%v) [base]: %w", deviceID, err)
 	}
@@ -234,7 +234,7 @@ func (rh *RequestHandler) RetrieveDeviceWithRepresentations(ctx context.Context,
 		Links:  allResources[deviceID],
 	}
 
-	err = encoder(w, resp)
+	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot retrieve devices(%v) [all]: %w", deviceID, err)
 	}

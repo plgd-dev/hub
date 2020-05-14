@@ -154,10 +154,9 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: s.ID,
-	})
+	}, http.StatusCreated)
 	if err != nil {
 		rh.store.PopSubscription(r.Context(), s.ID)
 		rh.resourceProjection.Unregister(deviceID)

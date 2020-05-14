@@ -73,10 +73,9 @@ func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Requ
 		return http.StatusBadRequest, fmt.Errorf("cannot save subscription: %w", err)
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: subscription.ID,
-	})
+	}, http.StatusCreated)
 	if err != nil {
 		rh.store.PopSubscription(r.Context(), subscription.ID)
 		return http.StatusBadRequest, fmt.Errorf("cannot write response: %w", err)

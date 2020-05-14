@@ -94,8 +94,7 @@ func clientUpdateSendResponse(w http.ResponseWriter, deviceID, resourceID string
 			w.Write(v)
 			return statusCode, nil
 		default:
-			w.WriteHeader(statusCode)
-			err = jsonResponseWriterEncoder(w, content)
+			err = jsonResponseWriterEncoder(w, content, statusCode)
 			if err != nil {
 				logAndWriteErrorResponse(fmt.Errorf("cannot make action on resource content changed: %w", err), statusCode, w)
 				return statusCode, nil

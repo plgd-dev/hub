@@ -42,7 +42,7 @@ func toLocalizedStrings(s []*pbDD.LocalizedString) []schema.LocalizedString {
 	return r
 }
 
-type responseWriterEncoderFunc func(w http.ResponseWriter, v interface{}) error
+type responseWriterEncoderFunc func(w http.ResponseWriter, v interface{}, status int) error
 
 type Device struct {
 	Device schema.Device `json:"device"`
@@ -108,7 +108,7 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 		}
 	}
 
-	err = encoder(w, resp)
+	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}
@@ -136,7 +136,7 @@ func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.Respons
 		}
 	}
 
-	err = encoder(w, resp)
+	err = encoder(w, resp, http.StatusOK)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}
@@ -156,7 +156,7 @@ func (rh *RequestHandler) RetrieveDevicesWithContentQuery(ctx context.Context, w
 		statusCode = kitNetHttp.ErrToStatusWithDef(err, statusCode)
 		if statusCode == http.StatusNotFound {
 			// return's empty array
-			errEnc := encoder(w, []interface{}{})
+			errEnc := encoder(w, []interface{}{}, http.StatusOK)
 			if errEnc == nil {
 				return http.StatusOK, nil
 			}

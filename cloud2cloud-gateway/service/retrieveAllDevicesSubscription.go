@@ -40,7 +40,7 @@ func (rh *RequestHandler) retrieveDevicesSubscription(w http.ResponseWriter, r *
 
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: subscriptionID,
-	})
+	}, http.StatusOK)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot write response: %w", err)
 	}
