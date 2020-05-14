@@ -154,6 +154,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 		}
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: s.ID,
 	})
@@ -170,7 +171,5 @@ func (rh *RequestHandler) SubscribeToResource(w http.ResponseWriter, r *http.Req
 	statusCode, err := rh.subscribeToResource(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot subscribe to resource: %w", err), statusCode, w)
-	} else {
-		w.WriteHeader(http.StatusCreated)
 	}
 }

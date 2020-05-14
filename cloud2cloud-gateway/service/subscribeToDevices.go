@@ -73,6 +73,7 @@ func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Requ
 		return http.StatusBadRequest, fmt.Errorf("cannot save subscription: %w", err)
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: subscription.ID,
 	})
@@ -88,7 +89,5 @@ func (rh *RequestHandler) SubscribeToDevices(w http.ResponseWriter, r *http.Requ
 	statusCode, err := rh.subscribeToDevices(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot subscribe to all devices: %w", err), statusCode, w)
-	} else {
-		w.WriteHeader(http.StatusCreated)
 	}
 }
