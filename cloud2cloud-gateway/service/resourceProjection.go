@@ -159,13 +159,17 @@ func (m *resourceCtx) SnapshotEventType() string {
 }
 
 func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
-	var eu event.EventUnmarshaler
+
 	var onResourcePublished, onResourceUnpublished, onResourceChanged bool
 	processedContentUpdates := make([]raEvents.ResourceUpdated, 0, 128)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	var anyEventProcessed bool
-	for iter.Next(ctx, &eu) {
+	for {
+		var eu event.EventUnmarshaler
+		if !iter.Next(ctx, &eu) {
+			break
+		}
 		anyEventProcessed = true
 		log.Debugf("resourceCtx.Handle: DeviceID: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
 		switch eu.EventType {

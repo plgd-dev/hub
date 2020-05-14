@@ -47,5 +47,7 @@ func (rh *RequestHandler) UnsubscribeFromResource(w http.ResponseWriter, r *http
 	statusCode, err := rh.unsubscribeFromResource(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot unsubscribe from resource: %w", err), statusCode, w)
+	} else {
+		w.WriteHeader(http.StatusAccepted)
 	}
 }

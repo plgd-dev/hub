@@ -47,5 +47,7 @@ func (rh *RequestHandler) UnsubscribeFromDevice(w http.ResponseWriter, r *http.R
 	statusCode, err := rh.unsubscribeFromDevice(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot unsubscribe from device: %w", err), statusCode, w)
+	} else {
+		w.WriteHeader(http.StatusAccepted)
 	}
 }

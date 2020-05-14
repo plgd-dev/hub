@@ -44,8 +44,11 @@ func newResourceSubscriptionLoader(projection *projectionRA.Projection) *Resourc
 }
 
 func (l *ResourceSubscriptionLoader) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	var s store.Subscription
-	for iter.Next(ctx, &s) {
+	for {
+		var s store.Subscription
+		if !iter.Next(ctx, &s) {
+			break
+		}
 		_, err := l.projection.Register(ctx, s.DeviceID)
 		if err != nil {
 			log.Errorf("cannot register to resource projection for resource subscription %v: %v", s.ID, err)
@@ -65,8 +68,11 @@ func newDeviceSubscriptionLoader(resourceProjection *projectionRA.Projection) *D
 }
 
 func (l *DeviceSubscriptionLoader) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	var s store.Subscription
-	for iter.Next(ctx, &s) {
+	for {
+		var s store.Subscription
+		if !iter.Next(ctx, &s) {
+			break
+		}
 		_, err := l.resourceProjection.Register(ctx, s.DeviceID)
 		if err != nil {
 			log.Errorf("cannot register to resource projection for device subscription %v: %v", s.ID, err)

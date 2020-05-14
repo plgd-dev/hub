@@ -88,5 +88,7 @@ func (rh *RequestHandler) SubscribeToDevices(w http.ResponseWriter, r *http.Requ
 	statusCode, err := rh.subscribeToDevices(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot subscribe to all devices: %w", err), statusCode, w)
+	} else {
+		w.WriteHeader(http.StatusCreated)
 	}
 }
