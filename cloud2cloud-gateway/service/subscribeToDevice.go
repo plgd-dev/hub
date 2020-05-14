@@ -77,6 +77,7 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: s.ID,
 	})
@@ -93,7 +94,5 @@ func (rh *RequestHandler) SubscribeToDevice(w http.ResponseWriter, r *http.Reque
 	statusCode, err := rh.subscribeToDevice(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot subscribe to device: %w", err), statusCode, w)
-	} else {
-		w.WriteHeader(http.StatusCreated)
 	}
 }
