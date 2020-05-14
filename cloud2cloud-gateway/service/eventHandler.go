@@ -127,6 +127,10 @@ func (c *resourceSubscriptionHandler) Handle(ctx context.Context, iter store.Sub
 		if !iter.Next(ctx, &s) {
 			break
 		}
+		if s.SequenceNumber == 0 {
+			// first event is emitted by after create subscription.
+			continue
+		}
 		for _, e := range s.EventTypes {
 			if e == c.event.EventType {
 				wg.Add(1)
