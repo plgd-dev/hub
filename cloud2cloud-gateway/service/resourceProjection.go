@@ -165,13 +165,17 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	var anyEventProcessed bool
+	var deviceID string
+	var resourceID string
 	for {
 		var eu event.EventUnmarshaler
 		if !iter.Next(ctx, &eu) {
 			break
 		}
+		deviceID = eu.GroupId
+		resourceID = eu.AggregateId
 		anyEventProcessed = true
-		log.Debugf("resourceCtx.Handle: DeviceID: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
+		log.Debugf("resourceCtx.Handle: DeviceID: %v, ResourceId: %v, Version: %v, EventType: %v", deviceID, resourceID, eu.Version, eu.EventType)
 		switch eu.EventType {
 		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
 			var s raEvents.ResourceStateSnapshotTaken
@@ -233,7 +237,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	}
 
 	if m.resource == nil {
-		return fmt.Errorf("DeviceID: %v, ResourceId: %v: invalid resource is stored in eventstore: Resource attribute is not set", eu.GroupId, eu.AggregateId)
+		return fmt.Errorf("DeviceID: %v, ResourceId: %v: invalid resource is stored in eventstore: Resource attribute is not set", deviceID, resourceID)
 	}
 
 	if onResourcePublished {
