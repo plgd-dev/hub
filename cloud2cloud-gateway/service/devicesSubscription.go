@@ -88,7 +88,7 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 		delete(devicesOffline, dev.ID)
 	}
 
-	if len(devicesRegistered) == 0 && len(devicesUnregistered) == 0 && len(devicesOnline) == 0 && len(devicesOffline) == 0 {
+	if sub.SequenceNumber != 0 && len(devicesRegistered) == 0 && len(devicesUnregistered) == 0 && len(devicesOnline) == 0 && len(devicesOffline) == 0 {
 		return nil
 	}
 
@@ -97,7 +97,7 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 	for _, eventType := range sub.EventTypes {
 		switch eventType {
 		case events.EventType_DevicesRegistered:
-			if len(devicesRegistered) > 0 {
+			if len(devicesRegistered) > 0 || sub.SequenceNumber == 0 {
 				devs := make(events.DevicesRegistered, 0, len(devicesRegistered))
 				for _, dev := range devicesRegistered {
 					devs = append(devs, dev)
@@ -111,7 +111,7 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 				}
 			}
 		case events.EventType_DevicesUnregistered:
-			if len(devicesUnregistered) > 0 {
+			if len(devicesUnregistered) > 0 || sub.SequenceNumber == 0 {
 				devs := make(events.DevicesUnregistered, 0, len(devicesUnregistered))
 				for _, dev := range devicesUnregistered {
 					devs = append(devs, dev)
@@ -126,7 +126,7 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 			}
 
 		case events.EventType_DevicesOnline:
-			if len(devicesOnline) > 0 {
+			if len(devicesOnline) > 0 || sub.SequenceNumber == 0 {
 				devs := make(events.DevicesOnline, 0, len(devicesOnline))
 				for _, dev := range devicesOnline {
 					devs = append(devs, dev)
@@ -140,7 +140,7 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 				}
 			}
 		case events.EventType_DevicesOffline:
-			if len(devicesOffline) > 0 {
+			if len(devicesOffline) > 0 || sub.SequenceNumber == 0 {
 				devs := make(events.DevicesOffline, 0, len(devicesOffline))
 				for _, dev := range devicesOffline {
 					devs = append(devs, dev)
@@ -164,10 +164,12 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 }
 
 func (s *devicesSubscription) Handle(ctx context.Context, iter store.DevicesSubscriptionIter) error {
-	var sub store.DevicesSubscription
-
 	var wg sync.WaitGroup
-	for iter.Next(ctx, &sub) {
+	for {
+		var sub store.DevicesSubscription
+		if !iter.Next(ctx, &sub) {
+			break
+		}
 		wg.Add(1)
 		err := s.goroutinePoolGo(func() {
 			defer wg.Done()

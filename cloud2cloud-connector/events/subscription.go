@@ -10,7 +10,7 @@ const (
 	EventType_DevicesOffline       EventType = "devices_offline"
 	EventType_DevicesRegistered    EventType = "devices_registered"
 	EventType_DevicesUnregistered  EventType = "devices_unregistered"
-	EventType_SubscriptionCanceled EventType = "subscription_canceled"
+	EventType_SubscriptionCanceled EventType = "subscription_cancelled"
 )
 
 type SubscriptionRequest struct {

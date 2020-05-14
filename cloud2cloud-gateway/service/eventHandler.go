@@ -121,9 +121,12 @@ func newResourceSubscriptionHandler(
 }
 
 func (c *resourceSubscriptionHandler) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	var s store.Subscription
 	var wg sync.WaitGroup
-	for iter.Next(ctx, &s) {
+	for {
+		var s store.Subscription
+		if !iter.Next(ctx, &s) {
+			break
+		}
 		for _, e := range s.EventTypes {
 			if e == c.event.EventType {
 				wg.Add(1)
@@ -199,9 +202,12 @@ func makeLinksRepresentation(eventType events.EventType, models []eventstore.Mod
 }
 
 func (c *deviceSubscriptionHandlerEvent) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	var s store.Subscription
 	var wg sync.WaitGroup
-	for iter.Next(ctx, &s) {
+	for {
+		var s store.Subscription
+		if !iter.Next(ctx, &s) {
+			break
+		}
 		for _, e := range s.EventTypes {
 			if e == c.event.EventType {
 				wg.Add(1)
@@ -253,9 +259,11 @@ func (h *EventHandler) processEvent(e Event) error {
 }
 
 func (h *EventHandler) Handle(ctx context.Context, iter Iter) (err error) {
-	var e Event
-
-	for iter.Next(ctx, &e) {
+	for {
+		var e Event
+		if !iter.Next(ctx, &e) {
+			break
+		}
 		err := h.processEvent(e)
 		if err != nil {
 			log.Errorf("%v", err)
