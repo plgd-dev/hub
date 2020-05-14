@@ -117,7 +117,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 	resourceID := cqrsRA.MakeResourceId(deviceID, href)
 	models := rh.resourceProjection.Models(deviceID, resourceID)
 	if len(models) == 0 {
-		err = rh.resourceProjection.ForceUpdate(r.Context(), deviceID, href)
+		err = rh.resourceProjection.ForceUpdate(r.Context(), deviceID, resourceID)
 		if err != nil {
 			rh.resourceProjection.Unregister(deviceID)
 			return http.StatusBadRequest, fmt.Errorf("cannot load resource: %w", err)
