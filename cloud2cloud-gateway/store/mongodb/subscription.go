@@ -42,10 +42,10 @@ type DBSub struct {
 	Type           oapiConStore.Type
 	ContentType    string
 	EventTypes     []events.EventType
-	DeviceID       string `bson:deviceIDKey`
-	Href           string `bson:hrefKey`
-	SequenceNumber uint64 `bson:sequenceNumberKey`
-	UserID         string `bson:userIDKey`
+	DeviceID       string `bson:"deviceid"`
+	Href           string `bson:"href"`
+	SequenceNumber uint64 `bson:"sequencenumber"`
+	UserID         string `bson:"userid"`
 	SigningSecret  string
 }
 

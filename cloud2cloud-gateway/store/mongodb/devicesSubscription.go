@@ -32,16 +32,16 @@ type dbDevicesSub struct {
 	Type                  oapiConStore.Type
 	ContentType           string
 	EventTypes            []events.EventType
-	DeviceID              string `bson:deviceIDKey`
-	Href                  string `bson:hrefKey`
-	SequenceNumber        uint64 `bson:sequenceNumberKey`
-	UserID                string `bson:userIDKey`
+	DeviceID              string `bson:"deviceid"`
+	Href                  string `bson:"href"`
+	SequenceNumber        uint64 `bson:"sequencenumber"`
+	UserID                string `bson:"userid"`
 	SigningSecret         string
 	AccessToken           string
-	LastDevicesRegistered []string `bson:lastDevicesRegisteredKey`
-	LastDevicesOnline     []string `bson:lastDevicesOnlineKey`
-	LastDevicesOffline    []string `bson:lastDevicesOfflineKey`
-	LastCheck             int64    `bson:lastCheckKey`
+	LastDevicesRegistered []string `bson:"lastdevicesregistered"`
+	LastDevicesOnline     []string `bson:"lastdevicesonline"`
+	LastDevicesOffline    []string `bson:"lastdevicesoffline"`
+	LastCheck             int64    `bson:"lastcheck"`
 }
 
 func toStringArray(devices []events.Device) []string {
