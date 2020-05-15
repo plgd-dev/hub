@@ -103,7 +103,7 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 		if ok {
 			resp = append(resp, RetrieveDeviceWithLinksResponse{
 				Device: dev,
-				Links:  links,
+				Links:  SortResources(links),
 			})
 		}
 	}
@@ -131,7 +131,7 @@ func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.Respons
 		if ok {
 			resp = append(resp, RetrieveDeviceContentAllResponse{
 				Device: dev,
-				Links:  devReps,
+				Links:  SortResourcesRepresentations(devReps),
 			})
 		}
 	}

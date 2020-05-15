@@ -17,6 +17,7 @@ import (
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/sdk/schema"
+	"github.com/go-ocf/sdk/schema/cloud"
 )
 
 type EventHandler struct {
@@ -193,10 +194,16 @@ func makeLinksRepresentation(eventType events.EventType, models []eventstore.Mod
 		c := m.(*resourceCtx).Clone()
 		switch eventType {
 		case events.EventType_ResourcesPublished:
+			if c.resource.GetHref() == cloud.StatusHref {
+				continue
+			}
 			if c.isPublished {
 				result = append(result, makeResourceLink(c.resource))
 			}
 		case events.EventType_ResourcesUnpublished:
+			if c.resource.GetHref() == cloud.StatusHref {
+				continue
+			}
 			if !c.isPublished {
 				result = append(result, makeResourceLink(c.resource))
 			}

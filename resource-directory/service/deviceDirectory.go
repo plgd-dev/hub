@@ -87,6 +87,17 @@ func updateDevice(dev Device, resource *resourceCtx) (Device, error) {
 			return dev, err
 		}
 		dev.Resource = &devContent
+		if len(dev.Resource.GetResourceTypes()) == 0 {
+			dev.Resource.ResourceTypes = resource.snapshot.Resource.ResourceTypes
+		}
+		if len(dev.Resource.GetManufacturerName()) == 0 {
+			dev.Resource.ManufacturerName = []*pbDD.LocalizedString{
+				{
+					Value:    "Unknown",
+					Language: "en",
+				},
+			}
+		}
 		dev.Id = resource.snapshot.GroupId()
 	case cloudResourceTypes.HasOneOf(resource.snapshot.Resource.ResourceTypes...):
 		var cloudStatus cloud.Status

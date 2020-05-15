@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/sdk/schema"
+	"github.com/go-ocf/sdk/schema/cloud"
 
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
@@ -50,6 +52,10 @@ func getHref(deviceID, href string) string {
 }
 
 func makeResourceLink(resource *pbRA.Resource) schema.ResourceLink {
+	types := resource.GetSupportedContentTypes()
+	if len(types) == 0 {
+		types = []string{coap.AppOcfCbor.String()}
+	}
 	return schema.ResourceLink{
 		Href:                  getHref(resource.GetDeviceId(), resource.GetHref()),
 		ResourceTypes:         resource.GetResourceTypes(),
@@ -59,7 +65,7 @@ func makeResourceLink(resource *pbRA.Resource) schema.ResourceLink {
 		Anchor:                resource.GetAnchor(),
 		Policy:                toPolicy(resource.GetPolicies()),
 		Title:                 resource.GetTitle(),
-		SupportedContentTypes: resource.GetSupportedContentTypes(),
+		SupportedContentTypes: types,
 		Endpoints:             toEndpoints(resource.GetEndpointInformations()),
 	}
 }
@@ -83,6 +89,9 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter 
 		}
 		if err != nil {
 			return nil, fmt.Errorf("cannot get resource links: %w", err)
+		}
+		if resourceLink.GetResource().GetHref() == cloud.StatusHref {
+			continue
 		}
 		_, ok := resourceLinks[resourceLink.GetResource().GetDeviceId()]
 		if !ok {
@@ -169,6 +178,10 @@ func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceI
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
 		}
+		if content.GetHref() == cloud.StatusHref {
+			continue
+		}
+
 		rep, err := unmarshalContent(content.GetContent())
 		if err != nil {
 			log.Errorf("cannot retrieve resources values: %v", err)
@@ -192,6 +205,20 @@ func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceI
 	return allResources, nil
 }
 
+type sortResourceLinksByHref schema.ResourceLinks
+
+func (a sortResourceLinksByHref) Len() int      { return len(a) }
+func (a sortResourceLinksByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortResourceLinksByHref) Less(i, j int) bool {
+	return a[i].Href < a[j].Href
+}
+
+func SortResources(s schema.ResourceLinks) schema.ResourceLinks {
+	v := sortResourceLinksByHref(s)
+	sort.Sort(v)
+	return s
+}
+
 func (rh *RequestHandler) RetrieveDeviceWithLinks(ctx context.Context, w http.ResponseWriter, deviceID string, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, []string{deviceID}, pbCQRS.AuthorizationContext{})
 	if err != nil {
@@ -204,7 +231,7 @@ func (rh *RequestHandler) RetrieveDeviceWithLinks(ctx context.Context, w http.Re
 
 	resp := RetrieveDeviceWithLinksResponse{
 		Device: devices[0],
-		Links:  resourceLink[deviceID],
+		Links:  SortResources(resourceLink[deviceID]),
 	}
 
 	err = encoder(w, resp, http.StatusOK)
@@ -219,6 +246,20 @@ type RetrieveDeviceContentAllResponse struct {
 	Links []Representation `json:"links"`
 }
 
+type sortResourceRepresentationsByHref []Representation
+
+func (a sortResourceRepresentationsByHref) Len() int      { return len(a) }
+func (a sortResourceRepresentationsByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortResourceRepresentationsByHref) Less(i, j int) bool {
+	return a[i].Href < a[j].Href
+}
+
+func SortResourcesRepresentations(s []Representation) []Representation {
+	v := sortResourceRepresentationsByHref(s)
+	sort.Sort(v)
+	return s
+}
+
 func (rh *RequestHandler) RetrieveDeviceWithRepresentations(ctx context.Context, w http.ResponseWriter, deviceID string, encoder responseWriterEncoderFunc) (int, error) {
 	devices, err := rh.GetDevices(ctx, []string{deviceID}, pbCQRS.AuthorizationContext{})
 	if err != nil {
@@ -231,7 +272,7 @@ func (rh *RequestHandler) RetrieveDeviceWithRepresentations(ctx context.Context,
 
 	resp := RetrieveDeviceContentAllResponse{
 		Device: devices[0],
-		Links:  allResources[deviceID],
+		Links:  SortResourcesRepresentations(allResources[deviceID]),
 	}
 
 	err = encoder(w, resp, http.StatusOK)

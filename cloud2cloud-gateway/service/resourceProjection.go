@@ -58,6 +58,9 @@ func (m *resourceCtx) Clone() *resourceCtx {
 }
 
 func (m *resourceCtx) onResourcePublishedLocked(ctx context.Context) error {
+	if m.resource.GetHref() == cloud.StatusHref {
+		return nil
+	}
 	err := m.syncPoolHandler.Handle(ctx, Event{
 		Id:             m.resource.GetDeviceId(),
 		EventType:      events.EventType_ResourcesPublished,
@@ -101,6 +104,9 @@ func (m *resourceCtx) onCloudStatusChangedLocked(ctx context.Context) error {
 }
 
 func (m *resourceCtx) onResourceUnpublishedLocked(ctx context.Context) error {
+	if m.resource.GetHref() == cloud.StatusHref {
+		return nil
+	}
 	err := m.syncPoolHandler.Handle(ctx, Event{
 		Id:             m.resource.GetDeviceId(),
 		EventType:      events.EventType_ResourcesUnpublished,
