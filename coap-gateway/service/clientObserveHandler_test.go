@@ -6,7 +6,7 @@ import (
 	"time"
 
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 )

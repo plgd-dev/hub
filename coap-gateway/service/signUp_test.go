@@ -5,7 +5,7 @@ import (
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 )

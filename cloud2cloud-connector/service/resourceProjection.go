@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore"
-	coap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
@@ -169,12 +169,12 @@ func (m *resourceCtx) onPendingContentUpdate(ctx context.Context) error {
 		coapContentFormat := int32(-1)
 
 		switch contentType {
-		case coap.AppCBOR.String():
-			coapContentFormat = int32(coap.AppCBOR)
-		case coap.AppOcfCbor.String():
-			coapContentFormat = int32(coap.AppOcfCbor)
-		case coap.AppJSON.String():
-			coapContentFormat = int32(coap.AppJSON)
+		case message.AppCBOR.String():
+			coapContentFormat = int32(message.AppCBOR)
+		case message.AppOcfCbor.String():
+			coapContentFormat = int32(message.AppOcfCbor)
+		case message.AppJSON.String():
+			coapContentFormat = int32(message.AppJSON)
 		}
 
 		_, err = m.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, linkedAccount.OriginCloud.AccessToken.String()), &pbRA.ConfirmResourceUpdateRequest{

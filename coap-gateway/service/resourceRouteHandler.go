@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 )
 
 var resourceRoute = "oic/route"
 
-func resourceRouteHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceRouteHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	switch req.Msg.Code() {
 	case coapCodes.POST:
 		clientUpdateHandler(s, req, client)

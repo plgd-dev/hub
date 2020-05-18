@@ -3,7 +3,7 @@ package coapconv
 import (
 	"net/http"
 
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 )
 
 func HttpCode2CoapCode(statusCode int, method coapCodes.Code) coapCodes.Code {

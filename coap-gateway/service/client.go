@@ -12,7 +12,7 @@ import (
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -31,7 +31,7 @@ type authCtx struct {
 //Client a setup of connection
 type Client struct {
 	server   *Server
-	coapConn *gocoap.ClientConn
+	coapConn *mux.Client
 	isClosed int32
 
 	observedResources     map[string]map[int64]observedResource // [deviceID][instanceID]
@@ -99,7 +99,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 
 	obsRes := res.Clone()
 	if obs {
-		obs, err := client.coapConn.ObserveWithContext(ctx, res.Href, func(req *gocoap.Request) {
+		obs, err := client.coapConn.ObserveWithContext(ctx, res.Href, func(req *message.Message) {
 			err := client.notifyContentChanged(obsRes, req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.

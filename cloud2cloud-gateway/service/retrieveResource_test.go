@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	"github.com/go-ocf/go-coap/v2/message"
 
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
@@ -21,7 +22,6 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
-	"github.com/go-ocf/go-coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/stretchr/testify/assert"
@@ -49,10 +49,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			name: "JSON: " + uri.Devices + "/" + deviceID + cloud.StatusHref,
 			args: args{
 				uri:    uri.Devices + "/" + deviceID + cloud.StatusHref,
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppJSON.String(),
+			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
 				"rt":     []interface{}{"x.cloud.device.status"},
 				"if":     []interface{}{"oic.if.baseline"},
@@ -63,10 +63,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			name: "CBOR: " + uri.Devices + "/" + deviceID + cloud.StatusHref,
 			args: args{
 				uri:    uri.Devices + "/" + deviceID + cloud.StatusHref,
-				accept: coap.AppOcfCbor.String(),
+				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppOcfCbor.String(),
+			wantContentType: message.AppOcfCbor.String(),
 			want: map[interface{}]interface{}{
 				"rt":     []interface{}{"x.cloud.device.status"},
 				"if":     []interface{}{"oic.if.baseline"},
@@ -77,10 +77,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			name: "JSON: " + uri.Devices + "/" + deviceID + "/light/1",
 			args: args{
 				uri:    uri.Devices + "/" + deviceID + "/light/1",
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppJSON.String(),
+			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
 				"name":  "Light",
 				"power": uint64(0),
@@ -91,10 +91,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			name: "CBOR: " + uri.Devices + "/" + deviceID + "/light/1",
 			args: args{
 				uri:    uri.Devices + "/" + deviceID + "/light/1",
-				accept: coap.AppOcfCbor.String(),
+				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppOcfCbor.String(),
+			wantContentType: message.AppOcfCbor.String(),
 			want: map[interface{}]interface{}{
 				"name":  "Light",
 				"power": uint64(0),
@@ -105,7 +105,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			name: "notFound",
 			args: args{
 				uri:    uri.Devices + "/" + deviceID + "/notFound",
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
@@ -125,10 +125,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			name: "JSON: " + uri.Devices + "//" + deviceID + cloud.StatusHref + "/",
 			args: args{
 				uri:    uri.Devices + "//" + deviceID + cloud.StatusHref + "/",
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppJSON.String(),
+			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
 				"rt":     []interface{}{"x.cloud.device.status"},
 				"if":     []interface{}{"oic.if.baseline"},
@@ -166,9 +166,9 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 					return fmt.Errorf("not supported")
 				}
 				switch tt.wantContentType {
-				case coap.AppJSON.String():
+				case message.AppJSON.String():
 					readFrom = json.ReadFrom
-				case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+				case message.AppCBOR.String(), message.AppOcfCbor.String():
 					readFrom = cbor.ReadFrom
 				case "text/plain":
 					readFrom = func(w io.Reader, v interface{}) error {

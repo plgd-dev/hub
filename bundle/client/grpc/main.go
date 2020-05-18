@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbGW "github.com/go-ocf/cloud/grpc-gateway/pb"
-	coap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/net/http/transport"
@@ -77,7 +77,7 @@ func main() {
 	//observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expceted in stdin")
 
-	contentFormat := flag.Int("contentFormat", int(coap.AppJSON), "contentFormat for update resource")
+	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
 	flag.Parse()
 
@@ -126,7 +126,7 @@ func main() {
 				ResourceLinkHref: *href,
 			},
 			Content: &pbGW.Content{
-				ContentType: coap.MediaType(*contentFormat).String(),
+				ContentType: message.MediaType(*contentFormat).String(),
 				Data:        data,
 			},
 		})

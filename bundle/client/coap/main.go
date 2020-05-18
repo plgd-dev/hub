@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -15,8 +17,10 @@ import (
 
 	"github.com/go-ocf/kit/net"
 
-	coap "github.com/go-ocf/go-coap"
-	codes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	codes "github.com/go-ocf/go-coap/v2/message/codes"
+	coap "github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/codec/cbor"
 )
 
@@ -40,7 +44,7 @@ func signUp(co *coap.ClientConn, authreq authReq) authResp {
 		log.Fatalf("cannt encode signup req: %v", err)
 	}
 
-	resp, err := co.Post("/oic/sec/account", coap.AppCBOR, bw)
+	resp, err := co.Post(context.Background(), "/oic/sec/account", message.AppCBOR, bytes.NewReader(bw.Bytes()))
 	if err != nil {
 		log.Fatalf("error sending request to signup: %v", err)
 	}
@@ -49,7 +53,7 @@ func signUp(co *coap.ClientConn, authreq authReq) authResp {
 	}
 
 	var authresp authResp
-	err = cbor.Decode(resp.Payload(), &authresp)
+	err = cbor.ReadFrom(resp.Body(), &authresp)
 	if err != nil {
 		log.Fatalf("cannot decode authresp: %v", err)
 	}
@@ -66,7 +70,7 @@ func signIn(co *coap.ClientConn, authresp authResp) {
 		log.Fatalf("cannt encode signin req: %v", err)
 	}
 
-	resp, err := co.Post("/oic/sec/session", coap.AppCBOR, bw)
+	resp, err := co.Post(context.Background(), "/oic/sec/session", message.AppCBOR, bytes.NewReader(bw.Bytes()))
 	if err != nil {
 		log.Fatalf("error sending request to signin: %v", err)
 	}
@@ -84,32 +88,39 @@ func toJSON(v interface{}) string {
 	return string(d)
 }
 
-func decodePayload(resp coap.Message) {
+func decodePayload(resp *pool.Message) {
+	mt, err := resp.Options().ContentFormat()
+
 	buf := fmt.Sprint("-------------------COAP-RESPONSE------------------\n",
 		"Code: ", resp.Code(), "\n",
-		"ContentFormat: ", resp.Options(coap.ContentFormat), "\n",
+		"ContentFormat: ", mt, "\n",
 		"Payload: ",
 	)
-	if mediaType, ok := resp.Option(coap.ContentFormat).(coap.MediaType); ok {
-		switch mediaType {
-		case coap.AppCBOR, coap.AppOcfCbor:
-			s, err := cbor.ToJSON(resp.Payload())
+	if err == nil {
+		bufr, err := ioutil.ReadAll(resp.Body())
+		if err != nil {
+			buf = buf + fmt.Sprintf("cannot read body: %v", err)
+			log.Printf(buf)
+			return
+		}
+		switch mt {
+		case message.AppCBOR, message.AppOcfCbor:
+			s, err := cbor.ToJSON(bufr)
 			if err != nil {
-				buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", resp.Payload(), err)
+				buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", bufr, err)
 			} else {
 				buf = buf + fmt.Sprintf("%v\n", s)
 			}
-		case coap.TextPlain:
-			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-		case coap.AppJSON:
-			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-		case coap.AppXML:
-			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
+		case message.TextPlain:
+
+			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+		case message.AppJSON:
+			buf = buf + fmt.Sprintf("%v\n", string(bufr))
+		case message.AppXML:
+			buf = buf + fmt.Sprintf("%v\n", string(bufr))
 		default:
-			buf = buf + fmt.Sprintf("%v\n", resp.Payload())
+			buf = buf + fmt.Sprintf("%v\n", bufr)
 		}
-	} else {
-		buf = buf + fmt.Sprintf("%v\n", resp.Payload())
 	}
 	log.Printf(buf)
 }
@@ -127,7 +138,7 @@ func main() {
 	observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expceted in stdin")
 
-	contentFormat := flag.Int("contentFormat", int(coap.AppJSON), "contentFormat for update resource")
+	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
 	flag.Parse()
 
@@ -143,14 +154,14 @@ func main() {
 	var co *coap.ClientConn
 	switch address.GetScheme() {
 	case "coap+tcp":
-		co, err = coap.Dial("tcp", address.String())
+		co, err = coap.Dial(address.String())
 		if err != nil {
 			log.Fatalf("Error dialing: %v", err)
 		}
 	case "coaps+tcp":
-		co, err = coap.DialTLS("tcp-tls", address.String(), &tls.Config{
+		co, err = coap.Dial(address.String(), coap.WithTLS(&tls.Config{
 			InsecureSkipVerify: true,
-		})
+		}))
 		if err != nil {
 			log.Fatalf("Error dialing: %v", err)
 		}
@@ -186,39 +197,38 @@ func main() {
 
 	switch {
 	case *update:
-		resp, err := co.Post(*href, coap.MediaType(*contentFormat), os.Stdin)
+		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), os.Stdin)
 		if err != nil {
 			log.Fatalf("cannot get value: %v", err)
 		}
 		decodePayload(resp)
 	case *observe:
-		obs, err := co.Observe(*href, func(req *coap.Request) {
-			decodePayload(req.Msg)
+		obs, err := co.Observe(context.Background(), *href, func(req *pool.Message) {
+			decodePayload(req)
 		})
 		if err != nil {
 			log.Fatalf("cannot observe value: %v", err)
 		}
-		defer obs.Cancel()
+		defer obs.Cancel(context.Background())
 
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs
 		fmt.Println("exiting")
 	case *discover:
-		req, err := co.NewGetRequest("/oic/res")
+		var opts message.Options
+		if *discoverRt != "" {
+			v := "rt=" + *discoverRt
+			buf := make([]byte, len(v))
+			opts, _, _ = opts.AddString(buf, message.URIQuery, v)
+		}
+		resp, err := co.Get(context.Background(), "/oic/res", opts...)
 		if err != nil {
 			log.Fatalf("cannot discover value: %v", err)
 		}
-		if *discoverRt != "" {
-			req.SetURIQuery("rt=" + *discoverRt)
-		}
-		resp, err := co.Exchange(req)
-		if err != nil {
-			log.Fatalf("cannot get value: %v", err)
-		}
 		decodePayload(resp)
 	case *get:
-		resp, err := co.Get(*href)
+		resp, err := co.Get(context.Background(), *href)
 		if err != nil {
 			log.Fatalf("cannot get value: %v", err)
 		}

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-ocf/cloud/grpc-gateway/client"
-	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	kit "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema"
@@ -125,7 +125,7 @@ func sendResourceValue(srv pb.GrpcGateway_RetrieveResourcesValuesServer, deviceI
 	rv := pb.ResourceValue{
 		ResourceId: &pb.ResourceId{DeviceId: deviceId},
 		Types:      []string{resourceType},
-		Content:    &pb.Content{ContentType: coap.AppCBOR.String(), Data: c},
+		Content:    &pb.Content{ContentType: message.AppCBOR.String(), Data: c},
 	}
 	err = srv.Send(&rv)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/log"
@@ -487,9 +487,9 @@ func isDeviceOnline(content *pbRA.Content) (bool, error) {
 	}
 	var decoder func(data []byte, v interface{}) error
 	switch content.ContentType {
-	case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+	case message.AppCBOR.String(), message.AppOcfCbor.String():
 		decoder = cbor.Decode
-	case coap.AppJSON.String():
+	case message.AppJSON.String():
 		decoder = json.Decode
 	}
 	if decoder == nil {

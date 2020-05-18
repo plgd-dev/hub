@@ -12,7 +12,7 @@ import (
 	refImplRA "github.com/go-ocf/cloud/resource-aggregate/refImpl"
 	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -75,7 +75,7 @@ func TestServer(t *testing.T) {
 }
 
 func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
-	c := &gocoap.Client{Net: net, Handler: func(w gocoap.ResponseWriter, req *gocoap.Request) {
+	c := &gocoap.Client{Net: net, Handler: func(w gocoap.ResponseWriter, req *message.Message) {
 		switch req.Msg.Code() {
 		case coapCodes.POST, coapCodes.GET, coapCodes.PUT, coapCodes.DELETE:
 			w.SetContentFormat(gocoap.TextPlain)

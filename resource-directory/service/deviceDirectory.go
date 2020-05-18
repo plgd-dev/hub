@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/sdk/schema/cloud"
 
-	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/strings"
@@ -59,9 +59,9 @@ func decodeContent(content *pbRA.Content, v interface{}) error {
 	var decoder func([]byte, interface{}) error
 
 	switch content.ContentType {
-	case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+	case message.AppCBOR.String(), message.AppOcfCbor.String():
 		decoder = cbor.Decode
-	case coap.AppJSON.String():
+	case message.AppJSON.String():
 		decoder = json.Decode
 	default:
 		return fmt.Errorf("unsupported content type: %v", content.ContentType)

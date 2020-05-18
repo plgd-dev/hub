@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/go-coap"
-
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/go-coap/v2/message"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
 )
@@ -43,12 +42,12 @@ func (s *SubscribeManager) HandleResourceChangedEvent(ctx context.Context, subsc
 
 	coapContentFormat := int32(-1)
 	switch header.ContentType {
-	case coap.AppCBOR.String():
-		coapContentFormat = int32(coap.AppCBOR)
-	case coap.AppOcfCbor.String():
-		coapContentFormat = int32(coap.AppOcfCbor)
-	case coap.AppJSON.String():
-		coapContentFormat = int32(coap.AppJSON)
+	case message.AppCBOR.String():
+		coapContentFormat = int32(message.AppCBOR)
+	case message.AppOcfCbor.String():
+		coapContentFormat = int32(message.AppOcfCbor)
+	case message.AppJSON.String():
+		coapContentFormat = int32(message.AppJSON)
 	}
 
 	_, err = s.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.NotifyResourceChangedRequest{

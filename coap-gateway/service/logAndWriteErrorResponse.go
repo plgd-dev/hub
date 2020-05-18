@@ -1,22 +1,23 @@
 package service
 
 import (
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 )
 
-func logAndWriteErrorResponse(err error, s gocoap.ResponseWriter, client *Client, code coapCodes.Code) {
+func logAndWriteErrorResponse(err error, s mux.ResponseWriter, client *Client, code codes.Code) {
 	msg := s.NewResponse(code)
 	if err != nil {
 		log.Errorf("%v", err)
 	}
 	if msg != nil {
 		if client != nil && client.server.SendErrorTextInResponse {
-			msg.SetOption(gocoap.ContentFormat, gocoap.TextPlain)
+			msg.SetOption(message.ContentFormat, message.TextPlain)
 			msg.SetPayload([]byte(err.Error()))
 		} else {
-			msg.SetOption(gocoap.ContentFormat, gocoap.AppCBOR)
+			msg.SetOption(message.ContentFormat, message.AppCBOR)
 			msg.SetPayload([]byte{0xA0}) // empty object
 		}
 		err = s.WriteMsg(msg)

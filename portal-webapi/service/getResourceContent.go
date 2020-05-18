@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	coap "github.com/go-ocf/go-coap"
 	"github.com/ugorji/go/codec"
 
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/valyala/fasthttp"
@@ -57,19 +57,19 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 		}
 		if resourceValue.ResourceId == resourceId && resourceValue.Content != nil {
 			switch resourceValue.Content.ContentType {
-			case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+			case message.AppCBOR.String(), message.AppOcfCbor.String():
 				err := codec.NewDecoderBytes(resourceValue.Content.Data, new(codec.CborHandle)).Decode(&m)
 				if err != nil {
 					logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusInternalServerError, ctx)
 					return
 				}
-			case coap.AppJSON.String():
+			case message.AppJSON.String():
 				err := codec.NewDecoderBytes(resourceValue.Content.Data, new(codec.JsonHandle)).Decode(&m)
 				if err != nil {
 					logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusInternalServerError, ctx)
 					return
 				}
-			case coap.TextPlain.String():
+			case message.TextPlain.String():
 				m = string(resourceValue.Content.Data)
 			default:
 				logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: cannot convert content-type '%v' to json", resourceValue.Content.ContentType), http.StatusInternalServerError, ctx)
