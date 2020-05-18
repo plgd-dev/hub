@@ -11,7 +11,7 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
@@ -36,7 +36,7 @@ func getResourceInterface(msg gocoap.Message) string {
 	return ""
 }
 
-func clientRetrieveHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func clientRetrieveHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("clientRetrieveHandler takes %v", time.Since(t))
@@ -104,7 +104,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *gocoap.Request, client *Client, deviceID, resourceID, resourceInterface string) (*pbRA.Content, coapCodes.Code, error) {
+func clientRetrieveFromDeviceHandler(req *message.Message, client *Client, deviceID, resourceID, resourceInterface string) (*pbRA.Content, coapCodes.Code, error) {
 	authCtx := client.loadAuthorizationContext()
 	correlationIDUUID, err := uuid.NewV4()
 	if err != nil {

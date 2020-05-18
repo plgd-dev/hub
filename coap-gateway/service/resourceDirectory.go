@@ -10,7 +10,7 @@ import (
 
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
@@ -37,7 +37,7 @@ func fixTTL(w wkRd) wkRd {
 	return w
 }
 
-func sendResponse(s gocoap.ResponseWriter, client *Client, code coapCodes.Code, contentFormat gocoap.MediaType, payload []byte) {
+func sendResponse(s mux.ResponseWriter, client *Client, code coapCodes.Code, contentFormat gocoap.MediaType, payload []byte) {
 	msg := s.NewResponse(code)
 	if msg != nil {
 		if len(payload) > 0 {
@@ -84,7 +84,7 @@ func validatePublish(w wkRd) error {
 	return nil
 }
 
-func resourceDirectoryPublishHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	authCtx := client.loadAuthorizationContext()
 
 	var w wkRd
@@ -176,7 +176,7 @@ func parseUnpublishQueryString(queries []interface{}) (deviceId string, instance
 	return
 }
 
-func resourceDirectoryUnpublishHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceDirectoryUnpublishHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	queries := req.Msg.Options(gocoap.URIQuery)
 	deviceID, inss, err := parseUnpublishQueryString(queries)
 	if err != nil {
@@ -201,7 +201,7 @@ type resourceDirectorySelector struct {
 	SelectionCriteria int `json:"sel"`
 }
 
-func resourceDirectoryGetSelector(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceDirectoryGetSelector(s mux.ResponseWriter, req *message.Message, client *Client) {
 	var rds resourceDirectorySelector //we want to use sel:0 to prefer cloud RD
 
 	accept := coap.GetAccept(req.Msg)
@@ -219,7 +219,7 @@ func resourceDirectoryGetSelector(s gocoap.ResponseWriter, req *gocoap.Request, 
 	sendResponse(s, client, coapCodes.Content, accept, out)
 }
 
-func resourceDirectoryHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceDirectoryHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	switch req.Msg.Code() {
 	case coapCodes.POST:
 		resourceDirectoryPublishHandler(s, req, client)

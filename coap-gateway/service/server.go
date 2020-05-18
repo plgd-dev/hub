@@ -21,8 +21,10 @@ import (
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
-	coapCodes "github.com/go-ocf/go-coap/codes"
 	gocoapNet "github.com/go-ocf/go-coap/net"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	gocoap "github.com/go-ocf/go-coap"
@@ -193,7 +195,7 @@ func getDeviceId(client *Client) string {
 	return deviceId
 }
 
-func validateCommand(s gocoap.ResponseWriter, req *gocoap.Request, server *Server, fnc func(s gocoap.ResponseWriter, req *gocoap.Request, client *Client)) {
+func validateCommand(s mux.ResponseWriter, req *message.Message, server *Server, fnc func(s mux.ResponseWriter, req *message.Message, client *Client)) {
 	client := server.clientContainer.Find(req.Client.RemoteAddr().String())
 
 	switch req.Msg.Code() {
@@ -218,7 +220,7 @@ func validateCommand(s gocoap.ResponseWriter, req *gocoap.Request, server *Serve
 	}
 }
 
-func defaultHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func defaultHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	path := req.Msg.PathString()
 
 	switch {
@@ -246,7 +248,7 @@ func (server *Server) coapConnOnClose(coapConn *gocoap.ClientConn, err error) {
 }
 
 func (server *Server) logginMiddleware(next func(gocoap.ResponseWriter, *gocoap.Request)) func(gocoap.ResponseWriter, *gocoap.Request) {
-	return func(w gocoap.ResponseWriter, req *gocoap.Request) {
+	return func(w mux.ResponseWriter, r *message.Message) {
 		client := server.clientContainer.Find(req.Client.RemoteAddr().String())
 		decodeMsgToDebug(client, req.Msg, "RECEIVED-COMMAND")
 		next(w, req)
@@ -254,7 +256,7 @@ func (server *Server) logginMiddleware(next func(gocoap.ResponseWriter, *gocoap.
 }
 
 func (server *Server) authMiddleware(next func(gocoap.ResponseWriter, *gocoap.Request)) func(gocoap.ResponseWriter, *gocoap.Request) {
-	return func(w gocoap.ResponseWriter, req *gocoap.Request) {
+	return func(w mux.ResponseWriter, r *message.Message) {
 		client := server.clientContainer.Find(req.Client.RemoteAddr().String())
 		if client == nil {
 			logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), w, client, coapCodes.InternalServerError)
@@ -274,36 +276,36 @@ func (server *Server) authMiddleware(next func(gocoap.ResponseWriter, *gocoap.Re
 
 //setupCoapServer setup coap server
 func (server *Server) setupCoapServer() {
-	mux := gocoap.NewServeMux()
-	mux.DefaultHandle(gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, defaultHandler)
+	m := mux.NewServeMux()
+	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, defaultHandler)
 	}))
-	mux.Handle(uri.ResourceDirectory, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, resourceDirectoryHandler)
+	m.Handle(uri.ResourceDirectory, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, resourceDirectoryHandler)
 	}))
-	mux.Handle(uri.SignUp, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signUpHandler)
+	m.Handle(uri.SignUp, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, signUpHandler)
 	}))
-	mux.Handle(uri.SecureSignUp, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signUpHandler)
+	m.Handle(uri.SecureSignUp, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, signUpHandler)
 	}))
-	mux.Handle(uri.SignIn, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signInHandler)
+	m.Handle(uri.SignIn, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, signInHandler)
 	}))
-	mux.Handle(uri.SecureSignIn, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signInHandler)
+	m.Handle(uri.SecureSignIn, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, signInHandler)
 	}))
-	mux.Handle(uri.ResourceDiscovery, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, resourceDiscoveryHandler)
+	m.Handle(uri.ResourceDiscovery, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, resourceDiscoveryHandler)
 	}))
-	mux.Handle(uri.ResourcePing, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, resourcePingHandler)
+	m.Handle(uri.ResourcePing, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, resourcePingHandler)
 	}))
-	mux.Handle(uri.RefreshToken, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, refreshTokenHandler)
+	m.Handle(uri.RefreshToken, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, refreshTokenHandler)
 	}))
-	mux.Handle(uri.SecureRefreshToken, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, refreshTokenHandler)
+	m.Handle(uri.SecureRefreshToken, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+		validateCommand(w, r, server, refreshTokenHandler)
 	}))
 
 	server.coapServer = &gocoap.Server{
@@ -312,7 +314,7 @@ func (server *Server) setupCoapServer() {
 		DisableTCPSignalMessageCSM:      server.DisableTCPSignalMessageCSM,
 		DisablePeerTCPSignalMessageCSMs: server.DisablePeerTCPSignalMessageCSMs,
 		KeepAlive:                       server.Keepalive,
-		Handler:                         gocoap.HandlerFunc(server.logginMiddleware(server.authMiddleware(mux.ServeCOAP))),
+		Handler:                         gocoap.HandlerFunc(server.logginMiddleware(server.authMiddleware(m.ServeCOAP))),
 		NotifySessionNewFunc:            server.coapConnOnNew,
 		NotifySessionEndFunc:            server.coapConnOnClose,
 		HeartBeat:                       server.ConnectionsHeartBeat,

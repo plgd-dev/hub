@@ -13,7 +13,7 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
@@ -108,7 +108,7 @@ func makeDiscoveryResp(serverNetwork, serverAddr string, getResourceLinksClient 
 	return resp, codes.OK, nil
 }
 
-func resourceDirectoryFind(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceDirectoryFind(s mux.ResponseWriter, req *message.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourceDirectoryFind takes %v", time.Since(t))
@@ -166,7 +166,7 @@ func resourceDirectoryFind(s gocoap.ResponseWriter, req *gocoap.Request, client 
 	sendResponse(s, client, coapCode, accept, out)
 }
 
-func resourceDiscoveryHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceDiscoveryHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	switch req.Msg.Code() {
 	case coapCodes.GET:
 		resourceDirectoryFind(s, req, client)

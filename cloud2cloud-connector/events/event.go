@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
@@ -28,9 +28,9 @@ const EventSignatureKey = "Event-Signature"
 const AcceptEncodingKey = "Accept-Encoding"
 const ContentEncodingKey = "Content-Encoding"
 
-var ContentType_JSON = coap.AppJSON.String()
-var ContentType_CBOR = coap.AppCBOR.String()
-var ContentType_VNDOCFCBOR = coap.AppOcfCbor.String()
+var ContentType_JSON = message.AppJSON.String()
+var ContentType_CBOR = message.AppCBOR.String()
+var ContentType_VNDOCFCBOR = message.AppOcfCbor.String()
 
 type EventHeader struct {
 	CorrelationID   string

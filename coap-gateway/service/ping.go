@@ -8,7 +8,7 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 )
@@ -18,7 +18,7 @@ type oicwkping struct {
 	Interval      int64   `json:"in,omitempty"`
 }
 
-func getPingConfiguration(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func getPingConfiguration(s mux.ResponseWriter, req *message.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePingGetConfiguration takes %v", time.Since(t))
@@ -45,7 +45,7 @@ func getPingConfiguration(s gocoap.ResponseWriter, req *gocoap.Request, client *
 	sendResponse(s, client, coapCodes.Content, accept, out)
 }
 
-func ping(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func ping(s mux.ResponseWriter, req *message.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePing takes %v", time.Since(t))
@@ -85,7 +85,7 @@ func pingOnEvicted(key string, v interface{}) {
 	}
 }
 
-func resourcePingHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourcePingHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	switch req.Msg.Code() {
 	case coapCodes.GET:
 		getPingConfiguration(s, req, client)

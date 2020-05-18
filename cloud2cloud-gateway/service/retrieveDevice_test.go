@@ -11,6 +11,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
-	"github.com/go-ocf/go-coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -181,27 +181,27 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			name: "JSON: " + uri.Devices + "/" + deviceID,
 			args: args{
 				uri:    uri.Devices + "/" + deviceID,
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppJSON.String(),
+			wantContentType: message.AppJSON.String(),
 			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
 		},
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID,
 			args: args{
 				uri:    uri.Devices + "/" + deviceID,
-				accept: coap.AppOcfCbor.String(),
+				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppOcfCbor.String(),
+			wantContentType: message.AppOcfCbor.String(),
 			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
 		},
 		{
 			name: "notFound",
 			args: args{
 				uri:    uri.Devices + "/" + DeviceIDNotFound,
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
@@ -221,10 +221,10 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			name: "JSON: " + uri.Devices + "//" + deviceID + "/",
 			args: args{
 				uri:    uri.Devices + "//" + deviceID + "/",
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppJSON.String(),
+			wantContentType: message.AppJSON.String(),
 			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
 		},
 	}
@@ -258,9 +258,9 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 					return fmt.Errorf("not supported")
 				}
 				switch tt.wantContentType {
-				case coap.AppJSON.String():
+				case message.AppJSON.String():
 					readFrom = json.ReadFrom
-				case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+				case message.AppCBOR.String(), message.AppOcfCbor.String():
 					readFrom = cbor.ReadFrom
 				case "text/plain":
 					readFrom = func(w io.Reader, v interface{}) error {

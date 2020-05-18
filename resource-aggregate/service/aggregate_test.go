@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/security/certManager"
 
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
@@ -349,7 +349,7 @@ func testNewResource(href string, deviceId string, resourceId string) *pb.Resour
 		Anchor:                "ocf://" + deviceId + "/oic/p",
 		Policies:              &pb.Policies{1},
 		Title:                 "device",
-		SupportedContentTypes: []string{coap.TextPlain.String()},
+		SupportedContentTypes: []string{message.TextPlain.String()},
 	}
 }
 

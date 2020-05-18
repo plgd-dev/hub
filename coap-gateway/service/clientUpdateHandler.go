@@ -8,14 +8,14 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	"google.golang.org/grpc/status"
 )
 
-func clientUpdateHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func clientUpdateHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("clientUpdateHandler takes %v", time.Since(t))
@@ -46,7 +46,7 @@ func clientUpdateHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *C
 	sendResponse(s, client, code, mediaType, content.Data)
 }
 
-func clientUpdateDeviceHandler(req *gocoap.Request, client *Client, deviceID, resourceID string) (*pbRA.Content, coapCodes.Code, error) {
+func clientUpdateDeviceHandler(req *message.Message, client *Client, deviceID, resourceID string) (*pbRA.Content, coapCodes.Code, error) {
 	authCtx := client.loadAuthorizationContext()
 	correlationIDUUID, err := uuid.NewV4()
 	if err != nil {

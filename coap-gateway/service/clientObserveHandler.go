@@ -10,13 +10,13 @@ import (
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
-func clientObserveHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client, observe uint32) {
+func clientObserveHandler(s mux.ResponseWriter, req *message.Message, client *Client, observe uint32) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("clientObserveHandler takes %v", time.Since(t))
@@ -53,7 +53,7 @@ func cleanStartResourceObservation(client *Client, deviceId, resourceId string, 
 	}
 }
 
-func SendResourceContentToObserver(s gocoap.ResponseWriter, client *Client, contentCtx *pbRA.ResourceChanged, observe uint32, deviceId, resourceId string, token []byte) {
+func SendResourceContentToObserver(s mux.ResponseWriter, client *Client, contentCtx *pbRA.ResourceChanged, observe uint32, deviceId, resourceId string, token []byte) {
 	if contentCtx.GetStatus() != pbRA.Status_OK {
 		cleanStartResourceObservation(client, deviceId, resourceId, token)
 		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource %v, device response: %v", deviceId, resourceId, contentCtx.GetStatus()), s, client, coapconv.StatusToCoapCode(contentCtx.GetStatus(), coapCodes.GET))
@@ -81,7 +81,7 @@ func SendResourceContentToObserver(s gocoap.ResponseWriter, client *Client, cont
 	decodeMsgToDebug(client, msg, "SEND-NOTIFICATION")
 }
 
-func startResourceObservation(s gocoap.ResponseWriter, req *gocoap.Request, client *Client, authCtx authCtx, deviceId, resourceId string) {
+func startResourceObservation(s mux.ResponseWriter, req *message.Message, client *Client, authCtx authCtx, deviceId, resourceId string) {
 	userIdsFilter := []string(nil)
 	if authCtx.UserId != "" {
 		userIdsFilter = []string{authCtx.UserId}
@@ -162,7 +162,7 @@ func startResourceObservation(s gocoap.ResponseWriter, req *gocoap.Request, clie
 	// response will be send from projection
 }
 
-func stopResourceObservation(s gocoap.ResponseWriter, req *gocoap.Request, client *Client, authCtx authCtx, deviceId, resourceId string) {
+func stopResourceObservation(s mux.ResponseWriter, req *message.Message, client *Client, authCtx authCtx, deviceId, resourceId string) {
 	err := client.server.observeResourceContainer.RemoveByResource(resourceId, client.remoteAddrString(), req.Msg.Token())
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation %v.%v: %v", authCtx.DeviceId, deviceId, resourceId, err), s, client, coapCodes.BadRequest)
@@ -185,7 +185,7 @@ func stopResourceObservation(s gocoap.ResponseWriter, req *gocoap.Request, clien
 	SendResourceContentToObserver(s, client, content, 1, deviceId, resourceId, req.Msg.Token())
 }
 
-func clientResetObservationHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client, authCtx pbCQRS.AuthorizationContext) {
+func clientResetObservationHandler(s mux.ResponseWriter, req *message.Message, client *Client, authCtx pbCQRS.AuthorizationContext) {
 	observer, err := client.server.observeResourceContainer.PopByRemoteAddrToken(client.remoteAddrString(), req.Msg.Token())
 	if err != nil {
 		return

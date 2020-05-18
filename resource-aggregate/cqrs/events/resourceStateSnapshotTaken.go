@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/net/grpc"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/go-ocf/go-coap"
 
 	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
@@ -198,28 +197,28 @@ func convertContent(content *pb.Content, supportedContentTypes []string) (newCon
 	contentType := content.ContentType
 	coapContentFormat := int32(-1)
 	if len(supportedContentTypes) == 0 {
-		supportedContentTypes = []string{coap.AppOcfCbor.String()}
+		supportedContentTypes = []string{message.AppOcfCbor.String()}
 	}
 	if content.CoapContentFormat >= 0 && contentType == "" {
-		contentType = coap.MediaType(content.CoapContentFormat).String()
+		contentType = message.MediaType(content.CoapContentFormat).String()
 	}
 	var encode func(v interface{}) ([]byte, error)
 	for _, supportedContentType := range supportedContentTypes {
 		switch supportedContentType {
 		case contentType:
 			return content, nil
-		case coap.AppCBOR.String():
+		case message.AppCBOR.String():
 			encode = cbor.Encode
-			coapContentFormat = int32(coap.AppCBOR)
-		case coap.AppOcfCbor.String():
+			coapContentFormat = int32(message.AppCBOR)
+		case message.AppOcfCbor.String():
 			if encode == nil {
 				encode = cbor.Encode
-				coapContentFormat = int32(coap.AppOcfCbor)
+				coapContentFormat = int32(message.AppOcfCbor)
 			}
-		case coap.AppJSON.String():
+		case message.AppJSON.String():
 			if encode == nil {
 				encode = json.Encode
-				coapContentFormat = int32(coap.AppJSON)
+				coapContentFormat = int32(message.AppJSON)
 			}
 		}
 
@@ -231,9 +230,9 @@ func convertContent(content *pb.Content, supportedContentTypes []string) (newCon
 
 	var decode func(in []byte, v interface{}) error
 	switch contentType {
-	case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+	case message.AppCBOR.String(), message.AppOcfCbor.String():
 		decode = cbor.Decode
-	case coap.AppJSON.String():
+	case message.AppJSON.String():
 		decode = json.Decode
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "cannot convert content-type from %v: unsupported source", contentType)
@@ -247,11 +246,11 @@ func convertContent(content *pb.Content, supportedContentTypes []string) (newCon
 
 	data, err := encode(m)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot encode content data to %v: %v", coap.MediaType(coapContentFormat).String(), err)
+		return nil, status.Errorf(codes.InvalidArgument, "cannot encode content data to %v: %v", message.MediaType(coapContentFormat).String(), err)
 	}
 	return &pb.Content{
 		CoapContentFormat: coapContentFormat,
-		ContentType:       coap.MediaType(coapContentFormat).String(),
+		ContentType:       message.MediaType(coapContentFormat).String(),
 		Data:              data,
 	}, nil
 }

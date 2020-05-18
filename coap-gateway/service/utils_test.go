@@ -19,7 +19,7 @@ import (
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/kit/security/certManager/acme/ocf"
 
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
@@ -31,7 +31,6 @@ import (
 	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
 	refImplRD "github.com/go-ocf/cloud/resource-directory/refImpl"
 	rdService "github.com/go-ocf/cloud/resource-directory/test/service"
-	gocoap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
@@ -98,14 +97,14 @@ func initializeStruct(t reflect.Type, v reflect.Value) {
 	}
 }
 
-func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
+func testValidateResp(t *testing.T, test testEl, resp message.Message) {
 	if resp.Code() != test.out.code {
 		t.Fatalf("Output code %v is invalid, expected %v", resp.Code(), test.out.code)
 	} else {
 		if len(resp.Payload()) > 0 || test.out.payload != nil {
-			if contentType, ok := resp.Option(gocoap.ContentFormat).(gocoap.MediaType); ok {
+			if contentType, ok := resp.Option(message.ContentFormat).(message.MediaType); ok {
 				switch contentType {
-				case gocoap.AppCBOR, gocoap.AppOcfCbor:
+				case message.AppCBOR, message.AppOcfCbor:
 					n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
 					err := cbor.Decode(resp.Payload(), n)
 					if err != nil {
@@ -114,7 +113,7 @@ func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 					if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
 						t.Fatal()
 					}
-				case gocoap.TextPlain:
+				case message.TextPlain:
 					if v, ok := test.out.payload.(string); ok {
 						if strings.Count(string(resp.Payload()), v) == 0 {
 							t.Fatalf("Output payload '%v' is invalid, expected '%v'", string(resp.Payload()), test.out.payload)
@@ -128,7 +127,7 @@ func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 			}
 		}
 		if len(test.out.queries) > 0 {
-			queries := resp.Options(gocoap.URIQuery)
+			queries := resp.Options(message.URIQuery)
 			if resp == nil {
 				t.Fatalf("Output doesn't contains queries, expected: %v", test.out.queries)
 			}
@@ -144,7 +143,7 @@ func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 	}
 }
 
-func testPostHandler(t *testing.T, path string, test testEl, co *gocoap.ClientConn) {
+func testPostHandler(t *testing.T, path string, test testEl, co *message.ClientConn) {
 	var inputCbor []byte
 	var err error
 	if v, ok := test.in.payload.(string); ok && v != "" {
@@ -154,24 +153,24 @@ func testPostHandler(t *testing.T, path string, test testEl, co *gocoap.ClientCo
 		t.Fatalf("Cannot convert json to cbor: %v", err)
 	}
 
-	req := co.NewMessage(gocoap.MessageParams{
+	req := co.NewMessage(message.MessageParams{
 		Code: test.in.code,
 		Token: func() []byte {
-			token, err := gocoap.GenerateToken()
+			token, err := message.GenerateToken()
 			if err != nil {
 				t.Fatalf("Cannot generate token: %v", err)
 			}
 			return token
 		}(),
-		MessageID: gocoap.GenerateMessageID(),
+		MessageID: message.GenerateMessageID(),
 	})
 	req.SetPathString(path)
 	if len(inputCbor) > 0 {
-		req.AddOption(gocoap.ContentFormat, gocoap.AppOcfCbor)
+		req.AddOption(message.ContentFormat, message.AppOcfCbor)
 		req.SetPayload(inputCbor)
 	}
 	for _, q := range test.in.queries {
-		req.AddOption(gocoap.URIQuery, q)
+		req.AddOption(message.URIQuery, q)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
@@ -269,14 +268,14 @@ func init() {
 	log.Setup(log.Config{Debug: TestLogDebug})
 }
 
-func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
+func testPrepareDevice(t *testing.T, co *message.ClientConn) {
 
 	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
 	testPostHandler(t, uri.SignUp, signUpEl, co)
 	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	testPostHandler(t, uri.SignIn, signInEl, co)
 	publishResEl := []testEl{
-		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
@@ -287,11 +286,11 @@ func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
 						Href:          TestAResourceHref,
 						Id:            TestAResourceId,
 						ResourceTypes: []string{TestAResourceType},
-						Type:          []string{gocoap.TextPlain.String()},
+						Type:          []string{message.TextPlain.String()},
 					},
 				},
 			}, nil}},
-		{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
@@ -302,7 +301,7 @@ func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
 						Href:          TestBResourceHref,
 						Id:            TestBResourceId,
 						ResourceTypes: []string{TestBResourceType},
-						Type:          []string{gocoap.TextPlain.String()},
+						Type:          []string{message.TextPlain.String()},
 					},
 				},
 			}, nil}},
@@ -338,7 +337,7 @@ func testCreateAuthServer(t *testing.T, addr string) func() {
 	return authService.NewAuthServer(t, authConfig)
 }
 
-func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
+func testCoapDial(t *testing.T, host, net string) *message.ClientConn {
 	var config certManager.OcfConfig
 	err := envconfig.Process("LISTEN", &config)
 	assert.NoError(t, err)
@@ -380,10 +379,10 @@ func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
 		return nil
 	}
 
-	c := &gocoap.Client{Net: net, TLSConfig: tlsConfig, Handler: func(w gocoap.ResponseWriter, req *gocoap.Request) {
+	c := &message.Client{Net: net, TLSConfig: tlsConfig, Handler: func(w message.ResponseWriter, req *message.Message) {
 		switch req.Msg.Code() {
 		case coapCodes.POST, coapCodes.GET, coapCodes.PUT, coapCodes.DELETE:
-			w.SetContentFormat(gocoap.TextPlain)
+			w.SetContentFormat(message.TextPlain)
 			w.Write([]byte("hello world"))
 		}
 	}}
@@ -394,15 +393,15 @@ func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
 
 /*
 type mockResponseWriter struct {
-	gocoap.ResponseWriter
+	message.ResponseWriter
 	code coapCodes.Code
 }
 
-func (m *mockResponseWriter) NewResponse(code coapCodes.Code) gocoap.Message   { m.code = code; return nil }
+func (m *mockResponseWriter) NewResponse(code coapCodes.Code) message.Message   { m.code = code; return nil }
 func (m *mockResponseWriter) Write(p []byte) (n int, err error)             { return -1, nil }
 func (m *mockResponseWriter) SetCode(code coapCodes.Code)                    { m.code = code }
-func (m *mockResponseWriter) SetContentFormat(contentFormat gocoap.MediaType) {}
-func (m *mockResponseWriter) WriteMsg(gocoap.Message) error                   { return nil }
+func (m *mockResponseWriter) SetContentFormat(contentFormat message.MediaType) {}
+func (m *mockResponseWriter) WriteMsg(message.Message) error                   { return nil }
 */
 
 var (

@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
-	"github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 
@@ -110,19 +110,19 @@ const applicationMimeType = "application"
 
 func getResponseWriterEncoder(accept []string) (responseWriterEncoderFunc, error) {
 	if len(accept) == 0 {
-		return newCBORResponseWriterEncoder(coap.AppOcfCbor.String()), nil
+		return newCBORResponseWriterEncoder(message.AppOcfCbor.String()), nil
 	}
 	var encode responseWriterEncoderFunc
 	for _, v := range accept {
 		switch v {
-		case coap.AppJSON.String():
+		case message.AppJSON.String():
 			encode = jsonResponseWriterEncoder
-		case coap.AppCBOR.String():
+		case message.AppCBOR.String():
 			return newCBORResponseWriterEncoder(v), nil
-		case coap.AppOcfCbor.String():
+		case message.AppOcfCbor.String():
 			return newCBORResponseWriterEncoder(v), nil
 		case applicationMimeType + "/*":
-			return newCBORResponseWriterEncoder(coap.AppOcfCbor.String()), nil
+			return newCBORResponseWriterEncoder(message.AppOcfCbor.String()), nil
 		}
 	}
 	if encode != nil {

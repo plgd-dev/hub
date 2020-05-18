@@ -9,7 +9,7 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
@@ -42,7 +42,7 @@ func validateSignIn(req CoapSignInReq) error {
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client, signIn CoapSignInReq) {
+func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Client, signIn CoapSignInReq) {
 	err := validateSignIn(signIn)
 	if err != nil {
 		if err != nil {
@@ -134,7 +134,7 @@ func signInPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Cli
 	sendResponse(s, client, coapCodes.Changed, accept, out)
 }
 
-func signOutPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func signOutPostHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	authCtxOld := client.loadAuthorizationContext()
 
 	if authCtxOld.DeviceId != "" {
@@ -153,7 +153,7 @@ func signOutPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Cl
 
 // Sign-in
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func signInHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	switch req.Msg.Code() {
 	case coapCodes.POST:
 		var signIn CoapSignInReq

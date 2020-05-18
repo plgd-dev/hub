@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
-	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/sdk/schema/cloud"
 
 	"github.com/go-ocf/cqrs/event"
@@ -74,9 +74,9 @@ func (m *resourceCtx) onResourcePublishedLocked(ctx context.Context) error {
 func (m *resourceCtx) onCloudStatusChangedLocked(ctx context.Context) error {
 	var decoder func(data []byte, v interface{}) error
 	switch m.content.GetContent().GetContentType() {
-	case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+	case message.AppCBOR.String(), message.AppOcfCbor.String():
 		decoder = cbor.Decode
-	case coap.AppJSON.String():
+	case message.AppJSON.String():
 		decoder = json.Decode
 	}
 	if decoder == nil {

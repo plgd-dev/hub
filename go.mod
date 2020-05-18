@@ -9,6 +9,7 @@ require (
 	github.com/go-chi/chi v4.1.0+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap v0.0.0-20200406073902-cf923db524db
+	github.com/go-ocf/go-coap/v2 v2.0.0-beta.10
 	github.com/go-ocf/grpc-gateway v0.0.0-20200324152726-f5d2d0c21a79
 	github.com/go-ocf/kit v0.0.0-20200415134408-e0585e8eea21
 	github.com/go-ocf/resource-aggregate v0.0.0-20200326125438-8ab650abf05f
@@ -38,7 +39,7 @@ require (
 	github.com/valyala/fasthttp v1.9.0
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/atomic v1.6.0
-	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
+	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	google.golang.org/grpc v1.28.1

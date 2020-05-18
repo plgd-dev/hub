@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
@@ -20,7 +21,6 @@ import (
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
-	coap "github.com/go-ocf/go-coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -256,7 +256,7 @@ func testMakeDeviceResourceContent(deviceId string) pbRA.Content {
 
 	return pbRA.Content{
 		Data:        d,
-		ContentType: coap.AppCBOR.String(),
+		ContentType: message.AppCBOR.String(),
 	}
 }
 
@@ -273,7 +273,7 @@ func testMakeCloudResourceContent(deviceId string, online bool) pbRA.Content {
 
 	return pbRA.Content{
 		Data:        d,
-		ContentType: coap.AppCBOR.String(),
+		ContentType: message.AppCBOR.String(),
 	}
 }
 

@@ -8,7 +8,9 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
@@ -48,9 +50,9 @@ func validateSignUp(req CoapSignUpRequest) error {
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func signUpPostHandler(w mux.ResponseWriter, r *message.Message, client *Client) {
 	var signUp CoapSignUpRequest
-	err := cbor.Decode(req.Msg.Payload(), &signUp)
+	err := cbor.ReadFrom(r.Body(), &signUp)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), s, client, coapCodes.BadRequest)
 		return
@@ -110,14 +112,14 @@ func signUpPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Cli
 
 // Sign-up
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
-	switch req.Msg.Code() {
+func signUpHandler(w mux.ResponseWriter, r *message.Message, client *Client) {
+	switch r.Code() {
 	case coapCodes.POST:
-		signUpPostHandler(s, req, client)
+		signUpPostHandler(w, r, client)
 	case coapCodes.DELETE:
-		signOffHandler(s, req, client)
+		signOffHandler(w, r, client)
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", req.Client.RemoteAddr()), s, client, coapCodes.Forbidden)
+		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.RemoteAddr()), w, client, coapCodes.Forbidden)
 	}
 }
 
@@ -133,7 +135,7 @@ func validateSignOff(deviceID, accessToken string) error {
 
 // Sign-off
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signOffHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func signOffHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 	//from QUERY: di, accesstoken
 	var deviceID string
 	var accessToken string
