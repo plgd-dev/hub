@@ -7,8 +7,9 @@ import (
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
@@ -35,7 +36,7 @@ func clientUpdateHandler(s mux.ResponseWriter, req *message.Message, client *Cli
 		return
 	}
 	if content == nil || len(content.Data) == 0 {
-		sendResponse(s, client, code, gocoap.TextPlain, nil)
+		sendResponse(s, client, code, message.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(content.CoapContentFormat, content.ContentType)

@@ -10,8 +10,9 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
@@ -19,16 +20,20 @@ import (
 )
 
 // URIToDeviceIDHref convert uri to deviceID and href. Expected input "/oic/route/{deviceID}/{Href}".
-func URIToDeviceIDHref(msg gocoap.Message) (deviceID, href string, err error) {
-	path := msg.Path()
+func URIToDeviceIDHref(msg *mux.Message) (deviceID, href string, err error) {
+	path, err := msg.Options.Path()
+	if err != nil {
+		return "", "", fmt.Errorf("cannot parse deviceID, href from uri: %w", err)
+	}
 	if len(path) < 4 {
 		return "", "", fmt.Errorf("cannot parse deviceID, href from uri")
 	}
 	return path[2], fixHref(strings.Join(path[3:], "/")), nil
 }
 
-func getResourceInterface(msg gocoap.Message) string {
-	for _, queryRaw := range msg.Options(gocoap.URIQuery) {
+func getResourceInterface(msg *mux.Message) string {
+	queries, _ := msg.Options.Queries()
+	for _, queryRaw := range queries {
 		if query, ok := queryRaw.(string); ok && strings.HasPrefix(query, "if=") {
 			return strings.TrimLeft(query, "if=")
 		}
@@ -36,7 +41,7 @@ func getResourceInterface(msg gocoap.Message) string {
 	return ""
 }
 
-func clientRetrieveHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
+func clientRetrieveHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("clientRetrieveHandler takes %v", time.Since(t))
@@ -68,7 +73,7 @@ func clientRetrieveHandler(s mux.ResponseWriter, req *message.Message, client *C
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		sendResponse(s, client, code, gocoap.TextPlain, nil)
+		sendResponse(s, client, code, message.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(content.CoapContentFormat, content.ContentType)
