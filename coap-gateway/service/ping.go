@@ -7,8 +7,9 @@ import (
 
 	"github.com/go-ocf/kit/codec/cbor"
 
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 )
@@ -69,7 +70,7 @@ func ping(s mux.ResponseWriter, req *message.Message, client *Client) {
 	client.server.oicPingCache.Set(client.remoteAddrString(), client, time.Duration(float64(ping.Interval)*float64(time.Minute)*1.3))
 
 	//return not fount to disable ping from client
-	sendResponse(s, client, coapCodes.Valid, gocoap.TextPlain, nil)
+	sendResponse(s, client, coapCodes.Valid, message.TextPlain, nil)
 }
 
 func pingOnEvicted(key string, v interface{}) {

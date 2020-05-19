@@ -6,8 +6,9 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/net/coap"
 	"google.golang.org/grpc/status"
