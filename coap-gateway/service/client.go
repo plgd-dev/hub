@@ -11,7 +11,6 @@ import (
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/go-coap/v2/tcp"
@@ -79,8 +78,8 @@ func (client *Client) getResourceContent(ctx context.Context, obsRes *pbRA.Resou
 		log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content: %v", obsRes.DeviceId, obsRes.Id, err)
 		return
 	}
-	r := gocoap.Request{Msg: resp, Client: client.coapConn, Ctx: ctx, Sequence: client.coapConn.Sequence()}
-	err = client.notifyContentChanged(obsRes, &r)
+	defer pool.ReleaseMessage(resp)
+	err = client.notifyContentChanged(obsRes, resp)
 	if err != nil {
 		// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 		log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content: %v", obsRes.DeviceId, obsRes.Id, err)
@@ -92,7 +91,7 @@ func (client *Client) getResourceContent(ctx context.Context, obsRes *pbRA.Resou
 }
 
 func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.Resource) error {
-	var observation *gocoap.Observation
+	var observation *tcp.Observation
 	obs := isObservable(res)
 	log.Debugf("DeviceId: %v, ResourceId: %v: Observable: %v: Client.addObservedResourceLocked", res.DeviceId, res.Href, obs)
 
@@ -102,7 +101,8 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 
 	obsRes := res.Clone()
 	if obs {
-		obs, err := client.coapConn.ObserveWithContext(ctx, res.Href, func(req *pool.Message) {
+		obs, err := client.coapConn.Observe(ctx, res.Href, func(req *pool.Message) {
+			defer pool.ReleaseMessage(req)
 			err := client.notifyContentChanged(obsRes, req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
@@ -157,10 +157,10 @@ func (client *Client) removeResource(deviceID string, instanceID int64) {
 	}
 }
 
-func (client *Client) popObservation(deviceID string, instanceID int64) *gocoap.Observation {
+func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Observation {
 	log.Debugf("remove published resource ocf://%v/%v", deviceID, instanceID)
 
-	var obs *gocoap.Observation
+	var obs *tcp.Observation
 	if device, ok := client.observedResources[deviceID]; ok {
 		if res, ok := device[instanceID]; ok {
 			obs = res.observation
@@ -187,8 +187,8 @@ func (client *Client) Close() error {
 	return nil
 }
 
-func (client *Client) unobserveAndRemoveResources(rscs []*pbRA.Resource, rscsUnpublished map[string]bool) []*gocoap.Observation {
-	observartions := make([]*gocoap.Observation, 0, 32)
+func (client *Client) unobserveAndRemoveResources(rscs []*pbRA.Resource, rscsUnpublished map[string]bool) []*tcp.Observation {
+	observartions := make([]*tcp.Observation, 0, 32)
 
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
@@ -222,8 +222,8 @@ func (client *Client) cleanObservedResourcesOfDevices() {
 	}
 }
 
-func (client *Client) popObservedResources() []*gocoap.Observation {
-	observartions := make([]*gocoap.Observation, 0, 32)
+func (client *Client) popObservedResources() []*tcp.Observation {
+	observartions := make([]*tcp.Observation, 0, 32)
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 	for deviceId, instanceIDs := range client.observedResources {
@@ -291,7 +291,7 @@ func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *poo
 	decodeMsgToDebug(client, notification.Msg, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
 
-	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, notification)
+	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
 	_, err := client.server.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(notification.Ctx, authCtx.AccessToken), &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource content changed: %v", err)
@@ -307,10 +307,10 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
 		msg.SetCode(coapCodes.MethodNotAllowed)
-		msg.SetSequence(client.coapConn.)
+		msg.SetSequence(client.coapConn.Sequence())
+		defer pool.ReleaseMessage(msg)
 
-		notification := gocoap.Request{Msg: msg, Client: client.coapConn, Sequence: client.coapConn.Sequence()}
-		request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, &notification)
+		request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
 		_, err := client.server.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
 		if err != nil {
 			return err
@@ -318,18 +318,19 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 		return nil
 	}
 
-	req, err := coapconv.NewCoapResourceUpdateRequest(client.coapConn, resource.Href, &reqContentUpdate.ResourceUpdatePending)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
 	defer cancel()
-
-	resp, err := client.coapConn.ExchangeWithContext(ctx, req)
+	req, err := coapconv.NewCoapResourceUpdateRequest(ctx, resource.Href, &reqContentUpdate.ResourceUpdatePending)
 	if err != nil {
 		return err
 	}
+	defer pool.ReleaseMessage(req)
+
+	resp, err := client.coapConn.Do(ctx, req)
+	if err != nil {
+		return err
+	}
+	defer pool.ReleaseMessage(resp)
 
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE")
 
@@ -338,9 +339,8 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	}
 
 	authCtx := client.loadAuthorizationContext()
-	notification := gocoap.Request{Msg: resp, Client: client.coapConn, Sequence: client.coapConn.Sequence()}
 
-	request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, &notification)
+	request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
 	if err != nil {
 		return err
@@ -355,11 +355,12 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	}
 	if resource.Id == cqrsRA.MakeResourceId(resource.DeviceId, cloud.StatusHref) {
 		authCtx := client.loadAuthorizationContext()
-		msg := client.coapConn.NewMessage(gocoap.MessageParams{
-			Code: coapCodes.Content,
-		})
-		notification := gocoap.Request{Msg: msg, Client: client.coapConn, Sequence: client.coapConn.Sequence()}
-		request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, &notification)
+		msg := pool.AcquireMessage(ctx)
+		msg.SetCode(coapCodes.Content)
+		msg.SetSequence(client.coapConn.Sequence())
+		defer pool.ReleaseMessage(msg)
+
+		request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
 		_, err := client.server.raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
 		if err != nil {
 			return err
@@ -367,18 +368,19 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 		return nil
 	}
 
-	req, err := coapconv.NewCoapResourceRetrieveRequest(client.coapConn, resource.Href, &reqContentUpdate.ResourceRetrievePending)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
 	defer cancel()
-
-	resp, err := client.coapConn.ExchangeWithContext(ctx, req)
+	req, err := coapconv.NewCoapResourceRetrieveRequest(ctx, resource.Href, &reqContentUpdate.ResourceRetrievePending)
 	if err != nil {
 		return err
 	}
+	defer pool.ReleaseMessage(req)
+
+	resp, err := client.coapConn.Do(ctx, req)
+	if err != nil {
+		return err
+	}
+	defer pool.ReleaseMessage(resp)
 
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE")
 
@@ -387,9 +389,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	}
 
 	authCtx := client.loadAuthorizationContext()
-	notification := gocoap.Request{Msg: resp, Client: client.coapConn, Sequence: client.coapConn.Sequence()}
-
-	request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, &notification)
+	request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
 	if err != nil {
 		return err

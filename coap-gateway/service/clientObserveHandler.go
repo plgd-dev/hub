@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"time"
@@ -9,8 +10,10 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
@@ -61,7 +64,7 @@ func SendResourceContentToObserver(s mux.ResponseWriter, client *Client, content
 	}
 
 	if contentCtx.GetContent() == nil {
-		sendResponse(s, client, coapCodes.Content, gocoap.TextPlain, nil)
+		sendResponse(s, client, coapCodes.Content, message.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(contentCtx.GetContent().GetCoapContentFormat(), contentCtx.GetContent().GetContentType())
@@ -70,11 +73,12 @@ func SendResourceContentToObserver(s mux.ResponseWriter, client *Client, content
 		return
 	}
 
-	msg := s.NewResponse(coapCodes.Content)
-	msg.SetOption(gocoap.ContentFormat, mediaType)
+	msg := pool.AcquireMessage(client.coapConn.Context())
+	msg.SetCode(coapCodes.Content)
+	msg.SetContentFormat(mediaType)
 	msg.SetObserve(observe)
-	msg.SetPayload(contentCtx.GetContent().GetData())
-	err = s.WriteMsg(msg)
+	msg.SetBody(bytes.NewReader(contentCtx.GetContent().GetData()))
+	err = client.coapConn.WriteMessage(msg)
 	if err != nil {
 		log.Errorf("cannot send observe notification to %v: %v", client.remoteAddrString(), err)
 	}

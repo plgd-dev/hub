@@ -1,7 +1,8 @@
 package service
 
 import (
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/mux"
 )
 
 func clientResetHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
