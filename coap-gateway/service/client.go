@@ -13,6 +13,9 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
+	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -20,7 +23,7 @@ import (
 
 type observedResource struct {
 	res         *pbRA.Resource
-	observation *gocoap.Observation
+	observation mux.Observation
 }
 
 type authCtx struct {
@@ -31,7 +34,7 @@ type authCtx struct {
 //Client a setup of connection
 type Client struct {
 	server   *Server
-	coapConn *mux.Client
+	coapConn *tcp.ClientConn
 	isClosed int32
 
 	observedResources     map[string]map[int64]observedResource // [deviceID][instanceID]
@@ -41,7 +44,7 @@ type Client struct {
 }
 
 //newClient create and initialize client
-func newClient(server *Server, client *gocoap.ClientConn) *Client {
+func newClient(server *Server, client *tcp.ClientConn) *Client {
 	return &Client{
 		server:            server,
 		coapConn:          client,
@@ -71,7 +74,7 @@ func (client *Client) observeResource(ctx context.Context, res *pbRA.Resource, a
 }
 
 func (client *Client) getResourceContent(ctx context.Context, obsRes *pbRA.Resource) {
-	resp, err := client.coapConn.GetWithContext(ctx, obsRes.Href)
+	resp, err := client.coapConn.Get(ctx, obsRes.Href)
 	if err != nil {
 		log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content: %v", obsRes.DeviceId, obsRes.Id, err)
 		return
@@ -99,7 +102,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 
 	obsRes := res.Clone()
 	if obs {
-		obs, err := client.coapConn.ObserveWithContext(ctx, res.Href, func(req *message.Message) {
+		obs, err := client.coapConn.ObserveWithContext(ctx, res.Href, func(req *pool.Message) {
 			err := client.notifyContentChanged(obsRes, req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
@@ -284,7 +287,7 @@ func (client *Client) loadAuthorizationContext() authCtx {
 	return client.authCtx
 }
 
-func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *gocoap.Request) error {
+func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
 	decodeMsgToDebug(client, notification.Msg, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
 
@@ -302,9 +305,10 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	}
 	if resource.Id == cqrsRA.MakeResourceId(resource.DeviceId, cloud.StatusHref) {
 		authCtx := client.loadAuthorizationContext()
-		msg := client.coapConn.NewMessage(gocoap.MessageParams{
-			Code: coapCodes.MethodNotAllowed,
-		})
+		msg := pool.AcquireMessage(ctx)
+		msg.SetCode(coapCodes.MethodNotAllowed)
+		msg.SetSequence(client.coapConn.)
+
 		notification := gocoap.Request{Msg: msg, Client: client.coapConn, Sequence: client.coapConn.Sequence()}
 		request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, &notification)
 		_, err := client.server.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
