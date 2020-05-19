@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
@@ -10,7 +11,10 @@ import (
 
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
@@ -37,8 +41,14 @@ func fixTTL(w wkRd) wkRd {
 	return w
 }
 
-func sendResponse(s mux.ResponseWriter, client *Client, code coapCodes.Code, contentFormat gocoap.MediaType, payload []byte) {
-	msg := s.NewResponse(code)
+func sendResponse(s mux.ResponseWriter, client *Client, code coapCodes.Code, token message.Token, contentFormat message.MediaType, payload []byte) {
+	err := s.SetResponse(code, contentFormat, bytes.NewReader(payload))
+	if err != nil {
+		log.Errorf("Cannot send reply to %v: %v", getDeviceId(client), err)
+	}
+	msg := pool.AcquireMessage(client.coapConn.Context())
+	msg.SetCode(code)
+	msg.SetToken(token)
 	if msg != nil {
 		if len(payload) > 0 {
 			msg.SetOption(gocoap.ContentFormat, contentFormat)

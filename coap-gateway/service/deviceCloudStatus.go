@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	gocoap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 
@@ -42,8 +42,8 @@ func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID stri
 	request := pbRA.NotifyResourceChangedRequest{
 		ResourceId: cqrsRA.MakeResourceId(deviceID, cloud.StatusHref),
 		Content: &pbRA.Content{
-			ContentType:       gocoap.AppOcfCbor.String(),
-			CoapContentFormat: int32(gocoap.AppOcfCbor),
+			ContentType:       message.AppOcfCbor.String(),
+			CoapContentFormat: int32(message.AppOcfCbor),
 			Data:              data,
 		},
 		Status: pbRA.Status_OK,
