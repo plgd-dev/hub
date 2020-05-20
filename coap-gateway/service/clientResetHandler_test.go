@@ -5,8 +5,10 @@ import (
 	"testing"
 	"time"
 
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/message/codes"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,26 +37,11 @@ func Test_clientResetHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	NewGetRequest := func(path string, observe uint32, token []byte) gocoap.Message {
-		msg, err := co.NewGetRequest(path)
-		msg.SetObserve(observe)
-		if token != nil {
-			msg.SetToken(token)
-		}
-		assert.NoError(t, err)
-		return msg
-	}
-
-	NewReset := func(token []byte) gocoap.Message {
-		msg := co.NewMessage(gocoap.MessageParams{
-			Code:  coapCodes.Empty,
-			Token: token,
-		})
-		return msg
-	}
-
 	type args struct {
-		req gocoap.Message
+		code    codes.Code
+		token   message.Token
+		observe uint32
+		path    string
 	}
 	tests := []struct {
 		name      string
@@ -64,21 +51,28 @@ func Test_clientResetHandler(t *testing.T) {
 		{
 			name: "observe",
 			args: args{
-				req: NewGetRequest(resourceRoute+"/"+CertIdentity+TestAResourceHref, 0, []byte("observe")),
+				code:    codes.GET,
+				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				observe: 0,
+				token:   message.Token("observe"),
 			},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "reset",
 			args: args{
-				req: NewReset([]byte("observe")),
+				code:  codes.Empty,
+				token: message.Token("observe"),
 			},
 			wantsCode: coapCodes.Empty,
 		},
 		{
 			name: "unobserve",
 			args: args{
-				req: NewGetRequest(resourceRoute+"/"+CertIdentity+TestAResourceHref, 1, []byte("observe")),
+				code:    codes.GET,
+				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				observe: 1,
+				token:   message.Token("observe"),
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
@@ -89,15 +83,23 @@ func Test_clientResetHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.args.req.Code() == coapCodes.Empty {
+			if tt.args.code == coapCodes.Empty {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
-				err := co.WriteMsgWithContext(ctx, tt.args.req)
+				msg := pool.AcquireMessage(ctx)
+				msg.SetCode(tt.args.code)
+				msg.SetToken(tt.args.token)
+				err := co.WriteMessage(msg)
 				assert.NoError(t, err)
 			} else {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
-				resp, err := co.ExchangeWithContext(ctx, tt.args.req)
+				msg := pool.AcquireMessage(ctx)
+				msg.SetCode(tt.args.code)
+				msg.SetToken(tt.args.token)
+				msg.SetPath(tt.args.path)
+				msg.SetObserve(tt.args.observe)
+				resp, err := co.Do(msg)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.wantsCode, resp.Code())
 			}

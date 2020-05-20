@@ -5,10 +5,12 @@ import (
 	"testing"
 	"time"
 
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/tcp"
+
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_resourceDirectoryFind(t *testing.T) {
@@ -36,17 +38,8 @@ func Test_resourceDirectoryFind(t *testing.T) {
 	}
 	defer co.Close()
 
-	NewGetRequest := func(queries ...string) gocoap.Message {
-		msg, err := co.NewGetRequest("/oic/res")
-		for _, q := range queries {
-			msg.AddOption(gocoap.URIQuery, q)
-		}
-		assert.NoError(t, err)
-		return msg
-	}
-
 	type args struct {
-		req gocoap.Message
+		queries []string
 	}
 	tests := []struct {
 		name      string
@@ -54,37 +47,35 @@ func Test_resourceDirectoryFind(t *testing.T) {
 		wantsCode coapCodes.Code
 	}{
 		{
-			name: "without query",
-			args: args{
-				req: NewGetRequest(),
-			},
+			name:      "without query",
+			args:      args{},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "with di",
 			args: args{
-				req: NewGetRequest("di=" + CertIdentity),
+				queries: []string{"di=" + CertIdentity},
 			},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "with rt",
 			args: args{
-				req: NewGetRequest("rt=" + TestBResourceType),
+				queries: []string{"rt=" + TestBResourceType},
 			},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "with di & rt",
 			args: args{
-				req: NewGetRequest("di="+CertIdentity, "rt="+TestAResourceType),
+				queries: []string{"di=" + CertIdentity, "rt=" + TestAResourceType},
 			},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "di not exist",
 			args: args{
-				req: NewGetRequest("di=1234"),
+				queries: []string{"di=1234"},
 			},
 			wantsCode: coapCodes.NotFound,
 		},
@@ -96,8 +87,13 @@ func Test_resourceDirectoryFind(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, tt.args.req)
-			assert.NoError(t, err)
+			req, err := tcp.NewGetRequest(ctx, "/oic/res")
+			require.NoError(t, err)
+			for _, q := range tt.args.queries {
+				req.AddQuery(q)
+			}
+			resp, err := co.Do(req)
+			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
 		})
 	}

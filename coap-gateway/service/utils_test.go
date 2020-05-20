@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"fmt"
@@ -19,7 +20,10 @@ import (
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/kit/security/certManager/acme/ocf"
 
+	"github.com/go-ocf/go-coap/v2/message/codes"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
@@ -337,7 +341,7 @@ func testCreateAuthServer(t *testing.T, addr string) func() {
 	return authService.NewAuthServer(t, authConfig)
 }
 
-func testCoapDial(t *testing.T, host, net string) *message.ClientConn {
+func testCoapDial(t *testing.T, host, net string) *tcp.ClientConn {
 	var config certManager.OcfConfig
 	err := envconfig.Process("LISTEN", &config)
 	assert.NoError(t, err)
@@ -379,30 +383,24 @@ func testCoapDial(t *testing.T, host, net string) *message.ClientConn {
 		return nil
 	}
 
-	c := &message.Client{Net: net, TLSConfig: tlsConfig, Handler: func(w message.ResponseWriter, req *message.Message) {
-		switch req.Msg.Code() {
-		case coapCodes.POST, coapCodes.GET, coapCodes.PUT, coapCodes.DELETE:
-			w.SetContentFormat(message.TextPlain)
-			w.Write([]byte("hello world"))
+	if net == "tcp" {
+		tlsConfig = nil
+	}
+	conn, err := tcp.Dial(tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
+		switch r.Code() {
+		case coapCodes.POST:
+			w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.GET:
+			w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.PUT:
+			w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.DELETE:
+			w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		}
-	}}
-	conn, err := c.Dial(host)
-	assert.NoError(t, err)
+	}))
+	require.NoError(t, err)
 	return conn
 }
-
-/*
-type mockResponseWriter struct {
-	message.ResponseWriter
-	code coapCodes.Code
-}
-
-func (m *mockResponseWriter) NewResponse(code coapCodes.Code) message.Message   { m.code = code; return nil }
-func (m *mockResponseWriter) Write(p []byte) (n int, err error)             { return -1, nil }
-func (m *mockResponseWriter) SetCode(code coapCodes.Code)                    { m.code = code }
-func (m *mockResponseWriter) SetContentFormat(contentFormat message.MediaType) {}
-func (m *mockResponseWriter) WriteMsg(message.Message) error                   { return nil }
-*/
 
 var (
 	AuthorizationUserId       = "1"
