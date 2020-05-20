@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message/codes"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,18 +38,10 @@ func Test_clientObserveHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	NewGetRequest := func(path string, observe uint32, token []byte) gocoap.Message {
-		msg, err := co.NewGetRequest(path)
-		msg.SetObserve(observe)
-		if token != nil {
-			msg.SetToken(token)
-		}
-		assert.NoError(t, err)
-		return msg
-	}
-
 	type args struct {
-		req gocoap.Message
+		path    string
+		observe uint32
+		token   []byte
 	}
 	tests := []struct {
 		name      string
@@ -104,7 +97,14 @@ func Test_clientObserveHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, tt.args.req)
+			req := pool.AcquireMessage(ctx)
+			req.SetCode(codes.GET)
+			req.SetObserve(tt.args.observe)
+			req.SetPath(tt.args.path)
+			if tt.args.token != nil {
+				req.SetToken(token)
+			}
+			resp, err := co.Do(req)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
 		})

@@ -66,11 +66,11 @@ func generateToken() (*Token, error) {
 		return nil, fmt.Errorf("failed to encode token: %s", err)
 	}
 
-	var hdr jws.StandardHeaders
+	hdr := jws.NewHeaders()
 	hdr.Set(jws.AlgorithmKey, jwa.ES256.String())
 	hdr.Set(jws.TypeKey, `JWT`)
 	hdr.Set(jws.KeyIDKey, jwkKeyID)
-	payload, err := jws.Sign(buf, jwa.ES256, jwkPrivateKey, jws.WithHeaders(&hdr))
+	payload, err := jws.Sign(buf, jwa.ES256, jwkPrivateKey, jws.WithHeaders(hdr))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create UserToken: %s", err)
 	}

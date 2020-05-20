@@ -30,7 +30,6 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
-	gocoap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/log"
 	cache "github.com/patrickmn/go-cache"
 )
@@ -119,32 +118,29 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
 	rsClient := pbRS.NewResourceShadowClient(rdConn)
 
-	var keepalive *keepalive.KeepAlive
+	var keepAlive *keepalive.KeepAlive
 	if config.KeepaliveEnable {
-		keepalive, err = keepalive.MakeKeepAlive(config.KeepaliveTimeoutConnection)
-		if err != nil {
-			log.Fatalf("cannot setup keepalive for server: %v", err)
-		}
+		keepAlive = keepalive.New(WithConfig(keepalive.MakeConfig(config.KeepaliveTimeoutConnection)))
 	}
 
-	var blockWiseTransferSZX gocoap.BlockWiseSzx
+	var blockWiseTransferSZX blockwise.SZX
 	switch strings.ToLower(config.BlockWiseTransferSZX) {
 	case "16":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx16
+		blockWiseTransferSZX = blockwise.SZX16
 	case "32":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx32
+		blockWiseTransferSZX = blockwise.SZX32
 	case "64":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx64
+		blockWiseTransferSZX = blockwise.SZX64
 	case "128":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx128
+		blockWiseTransferSZX = blockwise.SZX128
 	case "256":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx256
+		blockWiseTransferSZX = blockwise.SZX256
 	case "512":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx512
+		blockWiseTransferSZX = blockwise.SZX512
 	case "1024":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx1024
+		blockWiseTransferSZX = blockwise.SZX1024
 	case "bert":
-		blockWiseTransferSZX = gocoap.BlockWiseSzxBERT
+		blockWiseTransferSZX = blockwise.SZXBERT
 	default:
 		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.BlockWiseTransferSZX)
 	}
@@ -184,6 +180,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create projection for server: %v", err)
 	}
 	s.projection = projection
+
 	return &s
 }
 
@@ -216,7 +213,7 @@ func validateCommand(s mux.ResponseWriter, req *message.Message, server *Server,
 		clientResetHandler(s, req, client)
 	case coapCodes.Content:
 		// Unregistered observer at a peer send us a notification - inform the peer to remove it
-		sendResponse(s, client, coapCodes.Empty, gocoap.TextPlain, nil)
+		sendResponse(s, client, coapCodes.Empty, message.TextPlain, nil)
 	default:
 		deviceID := getDeviceID(client)
 		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Msg.Code())
@@ -235,32 +232,27 @@ func defaultHandler(s mux.ResponseWriter, req *message.Message, client *Client) 
 	}
 }
 
-func (server *Server) coapConnOnNew(coapConn *gocoap.ClientConn) {
+func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn) {
 	remoteAddr := coapConn.RemoteAddr().String()
+	coapConn.AddOnClose(func() {
+		if client, ok := server.clientContainer.Pop(remoteAddr); ok {
+			client.OnClose()
+		}
+	})
 	server.clientContainer.Add(remoteAddr, newClient(server, coapConn))
 }
 
-func (server *Server) coapConnOnClose(coapConn *gocoap.ClientConn, err error) {
-	if err != nil {
-		log.Errorf("coap connection closed with error: %v", err)
-	}
-	if client, ok := server.clientContainer.Pop(coapConn.RemoteAddr().String()); ok {
-		client.OnClose()
-	}
-
-}
-
-func (server *Server) logginMiddleware(next func(gocoap.ResponseWriter, *gocoap.Request)) func(gocoap.ResponseWriter, *gocoap.Request) {
-	return func(w mux.ResponseWriter, r *message.Message) {
-		client := server.clientContainer.Find(req.Client.RemoteAddr().String())
-		decodeMsgToDebug(client, req.Msg, "RECEIVED-COMMAND")
+func (server *Server) logginMiddleware(next func(mux.ResponseWriter, *mux.Message)) func(mux.ResponseWriter, *mux.Message) {
+	return func(w mux.ResponseWriter, r *mux.Message) {
+		client := server.clientContainer.Find(w.Client.RemoteAddr().String())
+		decodeMsgToDebug(client, r, "RECEIVED-COMMAND")
 		next(w, req)
 	}
 }
 
-func (server *Server) authMiddleware(next func(gocoap.ResponseWriter, *gocoap.Request)) func(gocoap.ResponseWriter, *gocoap.Request) {
-	return func(w mux.ResponseWriter, r *message.Message) {
-		client := server.clientContainer.Find(req.Client.RemoteAddr().String())
+func (server *Server) authMiddleware(next func(mux.ResponseWriter, *mux.Message)) func(mux.ResponseWriter, *mux.Message) {
+	return func(w mux.ResponseWriter, r *mux.Message) {
+		client := server.clientContainer.Find(r.Client.RemoteAddr().String())
 		if client == nil {
 			logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), w, client, coapCodes.InternalServerError)
 			return
@@ -279,51 +271,51 @@ func (server *Server) authMiddleware(next func(gocoap.ResponseWriter, *gocoap.Re
 
 //setupCoapServer setup coap server
 func (server *Server) setupCoapServer() {
-	m := mux.NewServeMux()
+	m := mux.NewRouter()
+	m.Use(server.logginMiddleware, server.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, defaultHandler)
 	}))
-	m.Handle(uri.ResourceDirectory, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, resourceDirectoryHandler)
 	}))
-	m.Handle(uri.SignUp, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, signUpHandler)
 	}))
-	m.Handle(uri.SecureSignUp, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SecureSignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, signUpHandler)
 	}))
-	m.Handle(uri.SignIn, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, signInHandler)
 	}))
-	m.Handle(uri.SecureSignIn, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SecureSignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, signInHandler)
 	}))
-	m.Handle(uri.ResourceDiscovery, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, resourceDiscoveryHandler)
 	}))
-	m.Handle(uri.ResourcePing, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.ResourcePing, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, resourcePingHandler)
 	}))
-	m.Handle(uri.RefreshToken, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, refreshTokenHandler)
 	}))
-	m.Handle(uri.SecureRefreshToken, gocoap.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SecureRefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
 		validateCommand(w, r, server, refreshTokenHandler)
 	}))
 
-	server.coapServer = &gocoap.Server{
-		Net:                             server.Net,
-		Addr:                            server.Addr,
-		DisableTCPSignalMessageCSM:      server.DisableTCPSignalMessageCSM,
-		DisablePeerTCPSignalMessageCSMs: server.DisablePeerTCPSignalMessageCSMs,
-		KeepAlive:                       server.Keepalive,
-		Handler:                         gocoap.HandlerFunc(server.logginMiddleware(server.authMiddleware(m.ServeCOAP))),
-		NotifySessionNewFunc:            server.coapConnOnNew,
-		NotifySessionEndFunc:            server.coapConnOnClose,
-		HeartBeat:                       server.ConnectionsHeartBeat,
-		BlockWiseTransfer:               &server.BlockWiseTransfer,
-		BlockWiseTransferSzx:            &server.BlockWiseTransferSZX,
+	opts := make(tcp.ServerOption, 0, 10)
+	if server.DisableTCPSignalMessageCSM {
+		opts = append(opts, tcp.WithDisableTCPSignalMessageCSM())
 	}
+	if server.DisablePeerTCPSignalMessageCSMs {
+		opts = append(opts, tcp.WithDisablePeerTCPSignalMessageCSMs())
+	}
+	opts = append(opts, tcp.WithKeepAlive(server.Keepalive))
+	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
+	opts = append(opts, tcp.WithBlockwise(server.BlockWiseTransfer, server.BlockWiseTransferSZX, server.RequestTimeout))
+	opts = append(opts, tcp.WithMux(m))
+	server.coapServer = tcp.NewServer(opts...)
 }
 
 func (server *Server) tlsEnabled() bool {

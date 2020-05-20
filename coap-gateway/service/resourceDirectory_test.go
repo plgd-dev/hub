@@ -6,10 +6,12 @@ import (
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type TestResource struct {
@@ -176,16 +178,14 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	//delete resources
 	for _, test := range deletetblResourceDirectory {
 		tf := func(t *testing.T) {
-			req, err := co.NewDeleteRequest(uri.ResourceDirectory)
-			if err != nil {
-				t.Fatalf("cannot create request: %v", err)
-			}
-			for _, q := range test.in.queries {
-				req.AddOption(gocoap.URIQuery, q)
-			}
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, req)
+			req, err := tcp.NewDeleteRequest(ctx, uri.ResourceDirectory)
+			require.NoError(t, err)
+			for _, q := range test.in.queries {
+				req.AddOptionString(message.URIQuery, q)
+			}
+			resp, err := co.Do(req)
 			if err != nil {
 				t.Fatalf("Cannot send/retrieve msg: %v", err)
 			}
@@ -236,18 +236,13 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			req, err := co.NewGetRequest(uri.ResourceDirectory)
-			if err != nil {
-				t.Fatalf("cannot create request: %v", err)
-			}
+			req, err := tcp.NewGetRequest(ctx, uri.ResourceDirectory)
+			require.NoError(t, err)
 			for _, q := range test.in.queries {
-				req.AddOption(gocoap.URIQuery, q)
+				req.AddOptionString(message.URIQuery, q)
 			}
-
-			resp, err := co.Exchange(req)
-			if err != nil {
-				t.Fatalf("Cannot send/retrieve msg: %v", err)
-			}
+			resp, err := co.Do(req)
+			require.NoError(t, err)
 			testValidateResp(t, test, resp)
 		}
 		t.Run(test.name, tf)
