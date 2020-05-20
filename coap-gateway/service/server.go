@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/panjf2000/ants"
@@ -28,6 +29,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/go-coap/v2/net"
 	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	"github.com/go-ocf/kit/log"
@@ -39,8 +41,8 @@ type Server struct {
 	FQDN                            string // fully qualified domain name of GW
 	ExternalPort                    uint16 // used to construct oic/res response
 	Addr                            string // Address to listen on, ":COAP" if empty.
-	Net                             string // if "tcp" or "tcp-tls" (COAP over TLS) it will invoke a TCP listener, otherwise an UDP one
-	Keepalive                       keepalive.Config
+	IsTLSListener                   bool
+	Keepalive                       *keepalive.KeepAlive
 	DisableTCPSignalMessageCSM      bool
 	DisablePeerTCPSignalMessageCSMs bool
 	SendErrorTextInResponse         bool
@@ -66,6 +68,7 @@ type Server struct {
 	coapServer      *tcp.Server
 	listener        tcp.Listener
 	authInterceptor kitNetCoap.Interceptor
+	wgDone          *sync.WaitGroup
 }
 
 type DialCertManager = interface {
@@ -100,7 +103,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create server: %v", err)
 	}
 	var listener tcp.Listener
-
+	var isTLSListener bool
 	if listenCertManager == nil || reflect.ValueOf(listenCertManager).IsNil() {
 		l, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -114,13 +117,14 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 			log.Fatalf("cannot setup tcp-tls for server: %v", err)
 		}
 		listener = l
+		isTLSListener = true
 	}
 	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
 	rsClient := pbRS.NewResourceShadowClient(rdConn)
 
 	var keepAlive *keepalive.KeepAlive
 	if config.KeepaliveEnable {
-		keepAlive = keepalive.New(WithConfig(keepalive.MakeConfig(config.KeepaliveTimeoutConnection)))
+		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.KeepaliveTimeoutConnection)))
 	}
 
 	var blockWiseTransferSZX blockwise.SZX
@@ -146,8 +150,6 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 
 	s := Server{
-		Keepalive:                       keepalive,
-		Net:                             config.Net,
 		FQDN:                            config.FQDN,
 		ExternalPort:                    config.ExternalPort,
 		Addr:                            config.Addr,
@@ -159,10 +161,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		BlockWiseTransfer:               !config.DisableBlockWiseTransfer,
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
 
-		raClient: raClient,
-		asClient: asClient,
-		rsClient: rsClient,
-		rdClient: rdClient,
+		Keepalive:     keepAlive,
+		IsTLSListener: isTLSListener,
+		raClient:      raClient,
+		asClient:      asClient,
+		rsClient:      rsClient,
+		rdClient:      rdClient,
 
 		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},
 		clientContainerByDeviceID:     NewClientContainerByDeviceId(),
@@ -173,6 +177,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		oicPingCache:                  oicPingCache,
 		listener:                      listener,
 		authInterceptor:               authInterceptor,
+		wgDone:                        new(sync.WaitGroup),
 	}
 
 	projection, err := projectionRA.NewProjection(context.Background(), fmt.Sprintf("%v:%v", config.FQDN, config.ExternalPort), store, subscriber, newResourceCtx(&s))
@@ -180,6 +185,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create projection for server: %v", err)
 	}
 	s.projection = projection
+	s.setupCoapServer()
 
 	return &s
 }
@@ -195,40 +201,40 @@ func getDeviceID(client *Client) string {
 	return deviceID
 }
 
-func validateCommand(s mux.ResponseWriter, req *message.Message, server *Server, fnc func(s mux.ResponseWriter, req *message.Message, client *Client)) {
-	client := server.clientContainer.Find(req.Client.RemoteAddr().String())
+func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(s mux.ResponseWriter, req *mux.Message, client *Client)) {
+	client := server.clientContainer.Find(s.Client().RemoteAddr().String())
 
-	switch req.Msg.Code() {
+	switch req.Code {
 	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
 		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), s, client, coapCodes.InternalServerError)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), client, coapCodes.InternalServerError, req.Token)
 			return
 		}
 		fnc(s, req, client)
 	case coapCodes.Empty:
 		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), s, client, coapCodes.InternalServerError)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), client, coapCodes.InternalServerError, req.Token)
 			return
 		}
 		clientResetHandler(s, req, client)
 	case coapCodes.Content:
 		// Unregistered observer at a peer send us a notification - inform the peer to remove it
-		sendResponse(s, client, coapCodes.Empty, message.TextPlain, nil)
+		sendResponse(client, coapCodes.Empty, req.Token, message.TextPlain, nil)
 	default:
 		deviceID := getDeviceID(client)
-		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Msg.Code())
+		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
 	}
 }
 
-func defaultHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
-	path := req.Msg.PathString()
+func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+	path, _ := req.Options.Path()
 
 	switch {
 	case strings.HasPrefix(path, resourceRoute):
 		resourceRouteHandler(s, req, client)
 	default:
 		deviceID := getDeviceID(client)
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), s, client, coapCodes.NotFound)
+		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), client, coapCodes.NotFound, req.Token)
 	}
 }
 
@@ -242,69 +248,71 @@ func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn) {
 	server.clientContainer.Add(remoteAddr, newClient(server, coapConn))
 }
 
-func (server *Server) logginMiddleware(next func(mux.ResponseWriter, *mux.Message)) func(mux.ResponseWriter, *mux.Message) {
-	return func(w mux.ResponseWriter, r *mux.Message) {
-		client := server.clientContainer.Find(w.Client.RemoteAddr().String())
+func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
+	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		client := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		tmp := pool.AcquireMessage(r.Context)
 		decodeMsgToDebug(client, r, "RECEIVED-COMMAND")
-		next(w, req)
-	}
+		next.ServeCOAP(w, r)
+	})
 }
 
-func (server *Server) authMiddleware(next func(mux.ResponseWriter, *mux.Message)) func(mux.ResponseWriter, *mux.Message) {
-	return func(w mux.ResponseWriter, r *mux.Message) {
-		client := server.clientContainer.Find(r.Client.RemoteAddr().String())
+func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
+	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		client := server.clientContainer.Find(w.Client().RemoteAddr().String())
 		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), w, client, coapCodes.InternalServerError)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), client, coapCodes.InternalServerError, r.Token)
 			return
 		}
 
-		ctx := kitNetCoap.CtxWithToken(req.Ctx, client.loadAuthorizationContext().AccessToken)
-		_, err := server.authInterceptor(ctx, req.Msg.Code(), "/"+req.Msg.PathString())
+		ctx := kitNetCoap.CtxWithToken(r.Context, client.loadAuthorizationContext().AccessToken)
+		path, _ := r.Options.Path()
+		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %v", req.Msg.PathString(), err), w, client, coapCodes.Unauthorized)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %v", path, err), client, coapCodes.Unauthorized, r.Token)
 			client.Close()
 			return
 		}
-		next(w, req)
-	}
+		next.ServeCOAP(w, r)
+	})
 }
 
 //setupCoapServer setup coap server
 func (server *Server) setupCoapServer() {
 	m := mux.NewRouter()
-	m.Use(server.logginMiddleware, server.authMiddleware)
-	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Use(server.loggingMiddleware, server.authMiddleware)
+	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, defaultHandler)
 	}))
-	m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourceDirectoryHandler)
 	}))
-	m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signUpHandler)
 	}))
-	m.Handle(uri.SecureSignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SecureSignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signUpHandler)
 	}))
-	m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signInHandler)
 	}))
-	m.Handle(uri.SecureSignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SecureSignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signInHandler)
 	}))
-	m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourceDiscoveryHandler)
 	}))
-	m.Handle(uri.ResourcePing, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.ResourcePing, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourcePingHandler)
 	}))
-	m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, refreshTokenHandler)
 	}))
-	m.Handle(uri.SecureRefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *message.Message) {
+	m.Handle(uri.SecureRefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, refreshTokenHandler)
 	}))
 
-	opts := make(tcp.ServerOption, 0, 10)
+	opts := make([]tcp.ServerOption, 0, 8)
 	if server.DisableTCPSignalMessageCSM {
 		opts = append(opts, tcp.WithDisableTCPSignalMessageCSM())
 	}
@@ -319,19 +327,19 @@ func (server *Server) setupCoapServer() {
 }
 
 func (server *Server) tlsEnabled() bool {
-	return strings.HasSuffix(server.Net, "-tls")
+	return server.IsTLSListener
 }
 
 // Serve starts a coapgateway on the configured address in *Server.
 func (server *Server) Serve() error {
-	server.setupCoapServer()
-	server.coapServer.Listener = server.listener
-	return server.coapServer.ActivateAndServe()
+	server.wgDone.Add(1)
+	defer server.wgDone.Done()
+	return server.coapServer.Serve(server.listener)
 }
 
 // Shutdown turn off server.
 func (server *Server) Shutdown() error {
-	err := server.coapServer.Shutdown()
-	server.listener.Close()
-	return err
+	defer server.wgDone.Wait()
+	server.coapServer.Stop()
+	return server.listener.Close()
 }

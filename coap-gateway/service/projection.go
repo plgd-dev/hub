@@ -58,12 +58,12 @@ func (m *resourceCtx) onResourceUnpublishedLocked() {
 	if client == nil {
 		return
 	}
-	client.unobserveResources([]*pbRA.Resource{m.resource}, map[string]bool{m.resource.Id: true})
+	client.unobserveResources(client.coapConn.Context(), []*pbRA.Resource{m.resource}, map[string]bool{m.resource.Id: true})
 }
 
 func (m *resourceCtx) onResourceChangedLocked() {
 	for _, obs := range m.server.observeResourceContainer.Find(m.resource.Id) {
-		SendResourceContentToObserver(obs.responseWriter, obs.client, m.contentCtx, obs.Observe(), obs.deviceID, obs.resourceId, obs.token)
+		SendResourceContentToObserver(obs.client, m.contentCtx, obs.Observe(), obs.deviceID, obs.resourceID, obs.token)
 	}
 }
 
