@@ -21,10 +21,13 @@ import (
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
-	gocoapNet "github.com/go-ocf/go-coap/net"
+	"github.com/go-ocf/go-coap/v2/blockwise"
+	"github.com/go-ocf/go-coap/v2/keepalive"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
+	"github.com/go-ocf/go-coap/v2/net"
+	"github.com/go-ocf/go-coap/v2/tcp"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	gocoap "github.com/go-ocf/go-coap"
@@ -38,14 +41,14 @@ type Server struct {
 	ExternalPort                    uint16 // used to construct oic/res response
 	Addr                            string // Address to listen on, ":COAP" if empty.
 	Net                             string // if "tcp" or "tcp-tls" (COAP over TLS) it will invoke a TCP listener, otherwise an UDP one
-	Keepalive                       gocoap.KeepAlive
+	Keepalive                       keepalive.Config
 	DisableTCPSignalMessageCSM      bool
 	DisablePeerTCPSignalMessageCSMs bool
 	SendErrorTextInResponse         bool
 	RequestTimeout                  time.Duration
 	ConnectionsHeartBeat            time.Duration
 	BlockWiseTransfer               bool
-	BlockWiseTransferSZX            gocoap.BlockWiseSzx
+	BlockWiseTransferSZX            blockwise.SZX
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
@@ -53,7 +56,7 @@ type Server struct {
 	rdClient pbRD.ResourceDirectoryClient
 
 	clientContainer               *ClientContainer
-	clientContainerByDeviceId     *clientContainerByDeviceId
+	clientContainerByDeviceID     *clientContainerByDeviceID
 	updateNotificationContainer   *notificationRA.UpdateNotificationContainer
 	retrieveNotificationContainer *notificationRA.RetrieveNotificationContainer
 	observeResourceContainer      *observeResourceContainer
@@ -61,8 +64,8 @@ type Server struct {
 	oicPingCache                  *cache.Cache
 
 	projection      *projectionRA.Projection
-	coapServer      *gocoap.Server
-	listener        gocoap.Listener
+	coapServer      *tcp.Server
+	listener        tcp.Listener
 	authInterceptor kitNetCoap.Interceptor
 }
 
@@ -97,17 +100,17 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	var listener gocoap.Listener
+	var listener tcp.Listener
 
 	if listenCertManager == nil || reflect.ValueOf(listenCertManager).IsNil() {
-		l, err := gocoapNet.NewTCPListener("tcp", config.Addr, time.Millisecond*100)
+		l, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
 			log.Fatalf("cannot setup tcp for server: %v", err)
 		}
 		listener = l
 	} else {
 		tlsConfig := listenCertManager.GetServerTLSConfig()
-		l, err := gocoapNet.NewTLSListener("tcp", config.Addr, tlsConfig, time.Millisecond*100)
+		l, err := net.NewTLSListener("tcp", config.Addr, tlsConfig)
 		if err != nil {
 			log.Fatalf("cannot setup tcp-tls for server: %v", err)
 		}
@@ -116,9 +119,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
 	rsClient := pbRS.NewResourceShadowClient(rdConn)
 
-	var keepalive gocoap.KeepAlive
+	var keepalive *keepalive.KeepAlive
 	if config.KeepaliveEnable {
-		keepalive, err = gocoap.MakeKeepAlive(config.KeepaliveTimeoutConnection)
+		keepalive, err = keepalive.MakeKeepAlive(config.KeepaliveTimeoutConnection)
 		if err != nil {
 			log.Fatalf("cannot setup keepalive for server: %v", err)
 		}
@@ -166,7 +169,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		rdClient: rdClient,
 
 		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},
-		clientContainerByDeviceId:     NewClientContainerByDeviceId(),
+		clientContainerByDeviceID:     NewClientContainerByDeviceId(),
 		updateNotificationContainer:   notificationRA.NewUpdateNotificationContainer(),
 		retrieveNotificationContainer: notificationRA.NewRetrieveNotificationContainer(),
 		observeResourceContainer:      NewObserveResourceContainer(),
@@ -184,15 +187,15 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	return &s
 }
 
-func getDeviceId(client *Client) string {
-	deviceId := "unknown"
+func getDeviceID(client *Client) string {
+	deviceID := "unknown"
 	if client != nil {
-		deviceId = client.loadAuthorizationContext().DeviceId
-		if deviceId == "" {
-			deviceId = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
+		deviceID = client.loadAuthorizationContext().DeviceId
+		if deviceID == "" {
+			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
 		}
 	}
-	return deviceId
+	return deviceID
 }
 
 func validateCommand(s mux.ResponseWriter, req *message.Message, server *Server, fnc func(s mux.ResponseWriter, req *message.Message, client *Client)) {
@@ -215,7 +218,7 @@ func validateCommand(s mux.ResponseWriter, req *message.Message, server *Server,
 		// Unregistered observer at a peer send us a notification - inform the peer to remove it
 		sendResponse(s, client, coapCodes.Empty, gocoap.TextPlain, nil)
 	default:
-		deviceID := getDeviceId(client)
+		deviceID := getDeviceID(client)
 		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Msg.Code())
 	}
 }
@@ -227,8 +230,8 @@ func defaultHandler(s mux.ResponseWriter, req *message.Message, client *Client) 
 	case strings.HasPrefix(path, resourceRoute):
 		resourceRouteHandler(s, req, client)
 	default:
-		deviceId := getDeviceId(client)
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceId, path), s, client, coapCodes.NotFound)
+		deviceID := getDeviceID(client)
+		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), s, client, coapCodes.NotFound)
 	}
 }
 

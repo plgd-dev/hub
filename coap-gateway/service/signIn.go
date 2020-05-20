@@ -8,8 +8,9 @@ import (
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
@@ -30,7 +31,7 @@ type CoapSignInResp struct {
 
 func validateSignIn(req CoapSignInReq) error {
 	if req.DeviceId == "" {
-		return errors.New("cannot sign in to auth server: invalid deviceId")
+		return errors.New("cannot sign in to auth server: invalid deviceID")
 	}
 	if req.AccessToken == "" {
 		return errors.New("cannot sign in to auth server: invalid accessToken")
@@ -100,7 +101,7 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 		newDevice = true
 	case oldDeviceId != signIn.DeviceId:
 		err := client.server.projection.Unregister(oldDeviceId)
-		client.server.clientContainerByDeviceId.Remove(oldDeviceId)
+		client.server.clientContainerByDeviceID.Remove(oldDeviceId)
 		if err != nil {
 			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
 			client.Close()
@@ -110,11 +111,11 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 	}
 
 	if newDevice {
-		client.server.clientContainerByDeviceId.Add(signIn.DeviceId, client)
+		client.server.clientContainerByDeviceID.Add(signIn.DeviceId, client)
 		loaded, err := client.server.projection.Register(context.Background(), signIn.DeviceId)
 		if err != nil {
 			client.server.projection.Unregister(signIn.DeviceId)
-			client.server.clientContainerByDeviceId.Remove(signIn.DeviceId)
+			client.server.clientContainerByDeviceID.Remove(signIn.DeviceId)
 
 			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
 			client.Close()
@@ -123,7 +124,7 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 		if !loaded {
 			models := client.server.projection.Models(signIn.DeviceId, "")
 			if len(models) == 0 {
-				log.Errorf("cannot load models for deviceId %v", signIn.DeviceId)
+				log.Errorf("cannot load models for deviceID %v", signIn.DeviceId)
 			} else {
 				for _, r := range models {
 					r.(*resourceCtx).TriggerSignIn()

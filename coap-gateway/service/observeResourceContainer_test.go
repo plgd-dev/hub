@@ -85,7 +85,7 @@ func (s sortObserveResource) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s sortObserveResource) Less(i, j int) bool {
-	if s[i].deviceId < s[j].deviceId {
+	if s[i].deviceID < s[j].deviceID {
 		return true
 	}
 	if s[i].resourceId < s[j].resourceId {

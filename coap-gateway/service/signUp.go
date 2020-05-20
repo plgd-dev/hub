@@ -7,7 +7,6 @@ import (
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	gocoap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
@@ -25,7 +24,7 @@ var (
 )
 
 type CoapSignUpRequest struct {
-	DeviceId                string `json:"di"`
+	DeviceID                string `json:"di"`
 	AuthorizationCode       string `json:"accesstoken"`
 	AuthorizationProvider   string `json:"authprovider"`
 	AuthorizationCodeLegacy string `json:"authcode"`
@@ -40,8 +39,8 @@ type CoapSignUpResponse struct {
 }
 
 func validateSignUp(req CoapSignUpRequest) error {
-	if req.DeviceId == "" {
-		return fmt.Errorf("cannot sign up to auth server: invalid deviceId")
+	if req.DeviceID == "" {
+		return fmt.Errorf("cannot sign up to auth server: invalid deviceID")
 	}
 	if req.AuthorizationCode == "" {
 		return fmt.Errorf("cannot sign up to auth server: invalid authorizationCode")
@@ -70,7 +69,7 @@ func signUpPostHandler(w mux.ResponseWriter, r *message.Message, client *Client)
 	}
 
 	response, err := client.server.asClient.SignUp(req.Ctx, &pbAS.SignUpRequest{
-		DeviceId:              signUp.DeviceId,
+		DeviceId:              signUp.DeviceID,
 		AuthorizationCode:     signUp.AuthorizationCode,
 		AuthorizationProvider: signUp.AuthorizationProvider,
 	})
@@ -79,9 +78,9 @@ func signUpPostHandler(w mux.ResponseWriter, r *message.Message, client *Client)
 		return
 	}
 
-	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Ctx, response.AccessToken), signUp.DeviceId, pbCQRS.AuthorizationContext{
+	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Ctx, response.AccessToken), signUp.DeviceID, pbCQRS.AuthorizationContext{
 		UserId:   response.UserId,
-		DeviceId: signUp.DeviceId,
+		DeviceId: signUp.DeviceID,
 	})
 	if err != nil {
 		log.Errorf("cannot publish cloud device status: %v", err)
@@ -135,13 +134,14 @@ func validateSignOff(deviceID, accessToken string) error {
 
 // Sign-off
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signOffHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
+func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	//from QUERY: di, accesstoken
 	var deviceID string
 	var accessToken string
 	var userID string
 
-	for _, q := range req.Msg.Options(gocoap.URIQuery) {
+	queries, _ := req.Options.Queries()
+	for _, q := range queries {
 		var query string
 		var ok bool
 		if query, ok = q.(string); !ok {
@@ -180,5 +180,5 @@ func signOffHandler(s mux.ResponseWriter, req *message.Message, client *Client) 
 		return
 	}
 	client.storeAuthorizationContext(authCtx{})
-	sendResponse(s, client, coapCodes.Deleted, gocoap.TextPlain, nil)
+	sendResponse(s, client, coapCodes.Deleted, message.TextPlain, nil)
 }

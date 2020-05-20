@@ -17,7 +17,7 @@ func decodeMsgToDebug(client *Client, resp *mux.Message, tag string) {
 	queries, _ := resp.Options.Queries()
 
 	fmt.Fprintf(buf, "\n-------------------%v------------------\n", tag)
-	fmt.Fprintf(buf, "DeviceId: %v\n", getDeviceId(client))
+	fmt.Fprintf(buf, "DeviceId: %v\n", getDeviceID(client))
 	fmt.Fprintf(buf, "Token: %v\n", resp.Token)
 	fmt.Fprintf(buf, "Path: %v\n", path)
 	fmt.Fprintf(buf, "Code: %v\n", resp.Code)

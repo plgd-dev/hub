@@ -215,9 +215,9 @@ func (client *Client) unobserveAndRemoveResources(rscs []*pbRA.Resource, rscsUnp
 func (client *Client) cleanObservedResourcesOfDevices() {
 	obs, _ := client.server.observeResourceContainer.PopByRemoteAddr(client.remoteAddrString())
 	for _, ob := range obs {
-		err := client.server.projection.Unregister(ob.deviceId)
+		err := client.server.projection.Unregister(ob.deviceID)
 		if err != nil {
-			log.Errorf("cannot unregister observed device %v from projection: %v", ob.deviceId, err)
+			log.Errorf("cannot unregister observed device %v from projection: %v", ob.deviceID, err)
 		}
 	}
 }
@@ -226,18 +226,18 @@ func (client *Client) popObservedResources() []*tcp.Observation {
 	observartions := make([]*tcp.Observation, 0, 32)
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
-	for deviceId, instanceIDs := range client.observedResources {
+	for deviceID, instanceIDs := range client.observedResources {
 		for instanceID := range instanceIDs {
-			obs := client.popObservation(deviceId, instanceID)
+			obs := client.popObservation(deviceID, instanceID)
 			if obs != nil {
 				observartions = append(observartions, obs)
 			}
-			client.removeResource(deviceId, instanceID)
+			client.removeResource(deviceID, instanceID)
 		}
-		client.server.clientContainerByDeviceId.Remove(deviceId)
-		err := client.server.projection.Unregister(deviceId)
+		client.server.clientContainerByDeviceID.Remove(deviceID)
+		err := client.server.projection.Unregister(deviceID)
 		if err != nil {
-			log.Errorf("DeviceId %v: cannot unregister device from projection: %v", deviceId, err)
+			log.Errorf("DeviceId %v: cannot unregister device from projection: %v", deviceID, err)
 		}
 	}
 	return observartions

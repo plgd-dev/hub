@@ -16,7 +16,7 @@ type TestCoapSignInResponse struct {
 
 func TestSignInPostHandler(t *testing.T) {
 	tbl := []testEl{
-		{"BadRequest0", input{coapCodes.POST, `{"login": true }`, nil}, output{coapCodes.BadRequest, `invalid deviceId`, nil}},
+		{"BadRequest0", input{coapCodes.POST, `{"login": true }`, nil}, output{coapCodes.BadRequest, `invalid deviceID`, nil}},
 		{"BadRequest1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123, "login": true}`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: cbor: cannot unmarshal positive integer`, nil}},
 		{"BadRequest2", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "login": true }`, nil}, output{coapCodes.BadRequest, `invalid userId`, nil}},
 		{"BadRequest3", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid": "0", "login": true }`, nil}, output{coapCodes.BadRequest, `invalid accessToken`, nil}},
