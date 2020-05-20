@@ -19,7 +19,7 @@ type oicwkping struct {
 	Interval      int64   `json:"in,omitempty"`
 }
 
-func getPingConfiguration(s mux.ResponseWriter, req *message.Message, client *Client) {
+func getPingConfiguration(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePingGetConfiguration takes %v", time.Since(t))
@@ -29,24 +29,27 @@ func getPingConfiguration(s mux.ResponseWriter, req *message.Message, client *Cl
 		IntervalArray: []int64{1},
 	}
 
-	accept := coap.GetAccept(req.Msg)
+	accept, err := req.Options.Accept()
+	if err != nil {
+		accept = message.AppOcfCbor
+	}
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), s, client, coapCodes.InternalServerError)
+		logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), client, coapCodes.InternalServerError, req.Token)
 		return
 	}
 
 	out, err := encode(ping)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), s, client, coapCodes.InternalServerError)
+		logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), client, coapCodes.InternalServerError, req.Token)
 		return
 	}
 
 	//return not fount to disable ping from client
-	sendResponse(s, client, coapCodes.Content, accept, out)
+	sendResponse(client, coapCodes.Content, req.Token, accept, out)
 }
 
-func ping(s mux.ResponseWriter, req *message.Message, client *Client) {
+func ping(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePing takes %v", time.Since(t))
@@ -57,20 +60,20 @@ func ping(s mux.ResponseWriter, req *message.Message, client *Client) {
 	}
 
 	var ping oicwkping
-	err := cbor.Decode(req.Msg.Payload(), &ping)
+	err := cbor.ReadFrom(req.Body, &ping)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %v", deviceID, err), s, client, coapCodes.BadRequest)
+		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %v", deviceID, err), client, coapCodes.BadRequest, req.Token)
 		return
 	}
 	if ping.Interval == 0 {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: invalid interval value", deviceID), s, client, coapCodes.BadRequest)
+		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: invalid interval value", deviceID), client, coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	client.server.oicPingCache.Set(client.remoteAddrString(), client, time.Duration(float64(ping.Interval)*float64(time.Minute)*1.3))
 
 	//return not fount to disable ping from client
-	sendResponse(s, client, coapCodes.Valid, message.TextPlain, nil)
+	sendResponse(client, coapCodes.Valid, req.Token, message.TextPlain, nil)
 }
 
 func pingOnEvicted(key string, v interface{}) {
@@ -86,13 +89,13 @@ func pingOnEvicted(key string, v interface{}) {
 	}
 }
 
-func resourcePingHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
-	switch req.Msg.Code() {
+func resourcePingHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+	switch req.Code {
 	case coapCodes.GET:
 		getPingConfiguration(s, req, client)
 	case coapCodes.POST:
 		ping(s, req, client)
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", req.Client.RemoteAddr()), s, client, coapCodes.Forbidden)
+		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), client, coapCodes.Forbidden, req.Token)
 	}
 }

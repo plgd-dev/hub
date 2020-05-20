@@ -12,7 +12,6 @@ import (
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/log"
@@ -22,7 +21,7 @@ import (
 
 type observedResource struct {
 	res         *pbRA.Resource
-	observation mux.Observation
+	observation *tcp.Observation
 }
 
 type authCtx struct {
@@ -86,7 +85,7 @@ func (client *Client) getResourceContent(ctx context.Context, obsRes *pbRA.Resou
 		client.Close()
 	}
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources([]*pbRA.Resource{obsRes})
+		client.unpublishResources(ctx, []*pbRA.Resource{obsRes})
 	}
 }
 
@@ -109,8 +108,8 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 				log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content: %v", obsRes.DeviceId, obsRes.Id, err)
 				client.Close()
 			}
-			if req.Msg.Code() == coapCodes.NotFound {
-				client.unpublishResources([]*pbRA.Resource{obsRes})
+			if req.Code() == coapCodes.NotFound {
+				client.unpublishResources(req.Context(), []*pbRA.Resource{obsRes})
 			}
 		})
 		if err != nil {
@@ -171,10 +170,10 @@ func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Obs
 	return obs
 }
 
-func (client *Client) unobserveResources(rscs []*pbRA.Resource, rscsUnpublished map[string]bool) {
+func (client *Client) unobserveResources(ctx context.Context, rscs []*pbRA.Resource, rscsUnpublished map[string]bool) {
 	observartions := client.unobserveAndRemoveResources(rscs, rscsUnpublished)
 	for _, obs := range observartions {
-		obs.Cancel()
+		obs.Cancel(ctx)
 	}
 }
 
@@ -246,7 +245,7 @@ func (client *Client) popObservedResources() []*tcp.Observation {
 // cleanObservedResources remove all device pbRA observation requested by cloud.
 func (client *Client) cleanObservedResources() {
 	for _, obs := range client.popObservedResources() {
-		obs.Cancel()
+		obs.Cancel(client.coapConn.Context())
 	}
 }
 
@@ -288,11 +287,11 @@ func (client *Client) loadAuthorizationContext() authCtx {
 }
 
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
-	decodeMsgToDebug(client, notification.Msg, "RECEIVED-NOTIFICATION")
+	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
 
 	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
-	_, err := client.server.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(notification.Ctx, authCtx.AccessToken), &request)
+	_, err := client.server.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(notification.Context(), authCtx.AccessToken), &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource content changed: %v", err)
 	}
@@ -326,7 +325,7 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	}
 	defer pool.ReleaseMessage(req)
 
-	resp, err := client.coapConn.Do(ctx, req)
+	resp, err := client.coapConn.Do(req)
 	if err != nil {
 		return err
 	}
@@ -335,7 +334,7 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources([]*pbRA.Resource{resource})
+		client.unpublishResources(ctx, []*pbRA.Resource{resource})
 	}
 
 	authCtx := client.loadAuthorizationContext()
@@ -376,7 +375,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	}
 	defer pool.ReleaseMessage(req)
 
-	resp, err := client.coapConn.Do(ctx, req)
+	resp, err := client.coapConn.Do(req)
 	if err != nil {
 		return err
 	}
@@ -385,7 +384,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources([]*pbRA.Resource{resource})
+		client.unpublishResources(ctx, []*pbRA.Resource{resource})
 	}
 
 	authCtx := client.loadAuthorizationContext()
@@ -450,13 +449,13 @@ func (client *Client) unpublishResource(ctx context.Context, resource *pbRA.Reso
 	return rscsUnpublished
 }
 
-func (client *Client) unpublishResources(rscs []*pbRA.Resource) {
+func (client *Client) unpublishResources(ctx context.Context, rscs []*pbRA.Resource) {
 	rscsUnpublished := make(map[string]bool, 32)
 	authCtx := client.loadAuthorizationContext()
 
 	for _, resource := range rscs {
-		rscsUnpublished = client.unpublishResource(kitNetGrpc.CtxWithToken(context.Background(), authCtx.AccessToken), resource, authCtx.AuthorizationContext, rscsUnpublished)
+		rscsUnpublished = client.unpublishResource(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), resource, authCtx.AuthorizationContext, rscsUnpublished)
 	}
 
-	client.unobserveResources(rscs, rscsUnpublished)
+	client.unobserveResources(ctx, rscs, rscsUnpublished)
 }

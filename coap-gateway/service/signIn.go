@@ -43,21 +43,21 @@ func validateSignIn(req CoapSignInReq) error {
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Client, signIn CoapSignInReq) {
+func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, signIn CoapSignInReq) {
 	err := validateSignIn(signIn)
 	if err != nil {
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.BadRequest)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.BadRequest, req.Token)
 			return
 		}
 	}
 
-	resp, err := client.server.asClient.SignIn(kitNetGrpc.CtxWithToken(req.Ctx, signIn.AccessToken), &pbAS.SignInRequest{
+	resp, err := client.server.asClient.SignIn(kitNetGrpc.CtxWithToken(req.Context, signIn.AccessToken), &pbAS.SignInRequest{
 		DeviceId: signIn.DeviceId,
 		UserId:   signIn.UserId,
 	})
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST))
+		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
 		return
 	}
 
@@ -65,15 +65,18 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 		ExpiresIn: resp.ExpiresIn,
 	}
 
-	accept := coap.GetAccept(req.Msg)
+	accept, err := req.Options.Accept()
+	if err != nil {
+		accept = message.AppOcfCbor
+	}
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
+		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(coapResp)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
+		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.InternalServerError, req.Token)
 		return
 	}
 
@@ -85,10 +88,10 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 		AccessToken: signIn.AccessToken,
 	}
 
-	err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Ctx, signIn.AccessToken), signIn.DeviceId, authCtx.AuthorizationContext, true)
+	err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Context, signIn.AccessToken), signIn.DeviceId, authCtx.AuthorizationContext, true)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %v", err), s, client, coapCodes.InternalServerError)
+		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %v", err), client, coapCodes.InternalServerError, req.Token)
 		client.Close()
 		return
 	}
@@ -103,7 +106,7 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 		err := client.server.projection.Unregister(oldDeviceId)
 		client.server.clientContainerByDeviceID.Remove(oldDeviceId)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
@@ -117,7 +120,7 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 			client.server.projection.Unregister(signIn.DeviceId)
 			client.server.clientContainerByDeviceID.Remove(signIn.DeviceId)
 
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
@@ -132,14 +135,14 @@ func signInPostHandler(s mux.ResponseWriter, req *message.Message, client *Clien
 			}
 		}
 	}
-	sendResponse(s, client, coapCodes.Changed, accept, out)
+	sendResponse(client, coapCodes.Changed, req.Token, accept, out)
 }
 
-func signOutPostHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
+func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	authCtxOld := client.loadAuthorizationContext()
 
 	if authCtxOld.DeviceId != "" {
-		err := client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Ctx, authCtxOld.AccessToken), authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
+		err := client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Context, authCtxOld.AccessToken), authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtxOld.DeviceId, err)
@@ -149,18 +152,18 @@ func signOutPostHandler(s mux.ResponseWriter, req *message.Message, client *Clie
 		client.storeAuthorizationContext(authCtx{})
 	}
 
-	sendResponse(s, client, coapCodes.Changed, coap.GetAccept(req.Msg), []byte{0xA0}) // empty object
+	sendResponse(client, coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}) // empty object
 }
 
 // Sign-in
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
-	switch req.Msg.Code() {
+func signInHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+	switch req.Code {
 	case coapCodes.POST:
 		var signIn CoapSignInReq
-		err := cbor.Decode(req.Msg.Payload(), &signIn)
+		err := cbor.ReadFrom(req.Body, &signIn)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.BadRequest)
+			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.BadRequest, req.Token)
 			return
 		}
 		switch signIn.Login {
@@ -170,6 +173,6 @@ func signInHandler(s mux.ResponseWriter, req *message.Message, client *Client) {
 			signOutPostHandler(s, req, client)
 		}
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", req.Client.RemoteAddr()), s, client, coapCodes.Forbidden)
+		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), client, coapCodes.Forbidden, req.Token)
 	}
 }
