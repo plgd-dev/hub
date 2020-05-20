@@ -43,7 +43,7 @@ func (m *resourceCtx) Resource() *pbRA.Resource {
 }
 
 func (m *resourceCtx) onResourcePublishedLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}
@@ -54,7 +54,7 @@ func (m *resourceCtx) onResourcePublishedLocked() {
 }
 
 func (m *resourceCtx) onResourceUnpublishedLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}
@@ -63,7 +63,7 @@ func (m *resourceCtx) onResourceUnpublishedLocked() {
 
 func (m *resourceCtx) onResourceChangedLocked() {
 	for _, obs := range m.server.observeResourceContainer.Find(m.resource.Id) {
-		SendResourceContentToObserver(obs.responseWriter, obs.client, m.contentCtx, obs.Observe(), obs.deviceId, obs.resourceId, obs.token)
+		SendResourceContentToObserver(obs.responseWriter, obs.client, m.contentCtx, obs.Observe(), obs.deviceID, obs.resourceId, obs.token)
 	}
 }
 
@@ -78,7 +78,7 @@ func (m *resourceCtx) TriggerSignIn() {
 }
 
 func (m *resourceCtx) onUpdateResourceLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}
@@ -98,7 +98,7 @@ func (m *resourceCtx) onUpdateResourceLocked() {
 }
 
 func (m *resourceCtx) onRetrieveResourceLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}

@@ -51,19 +51,19 @@ func ping(s mux.ResponseWriter, req *message.Message, client *Client) {
 	defer func() {
 		log.Debugf("resourcePing takes %v", time.Since(t))
 	}()
-	deviceId := client.loadAuthorizationContext().DeviceId
-	if deviceId == "" {
-		deviceId = "unknown"
+	deviceID := client.loadAuthorizationContext().DeviceId
+	if deviceID == "" {
+		deviceID = "unknown"
 	}
 
 	var ping oicwkping
 	err := cbor.Decode(req.Msg.Payload(), &ping)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %v", deviceId, err), s, client, coapCodes.BadRequest)
+		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %v", deviceID, err), s, client, coapCodes.BadRequest)
 		return
 	}
 	if ping.Interval == 0 {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: invalid interval value", deviceId), s, client, coapCodes.BadRequest)
+		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: invalid interval value", deviceID), s, client, coapCodes.BadRequest)
 		return
 	}
 
@@ -77,11 +77,11 @@ func pingOnEvicted(key string, v interface{}) {
 	if client, ok := v.(*Client); ok {
 		if atomic.LoadInt32(&client.isClosed) == 0 {
 			client.Close()
-			deviceId := client.loadAuthorizationContext().DeviceId
-			if deviceId == "" {
-				deviceId = "unknown"
+			deviceID := client.loadAuthorizationContext().DeviceId
+			if deviceID == "" {
+				deviceID = "unknown"
 			}
-			log.Errorf("DeviceId %v: ping timeout", deviceId)
+			log.Errorf("DeviceId %v: ping timeout", deviceID)
 		}
 	}
 }

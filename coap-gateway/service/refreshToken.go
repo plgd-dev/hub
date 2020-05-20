@@ -28,7 +28,7 @@ type CoapRefreshTokenResp struct {
 
 func validateRefreshToken(req CoapRefreshTokenReq) error {
 	if req.DeviceId == "" {
-		return errors.New("cannot refresh token: invalid deviceId")
+		return errors.New("cannot refresh token: invalid deviceID")
 	}
 	if req.RefreshToken == "" {
 		return errors.New("cannot refresh token: invalid refreshToken")

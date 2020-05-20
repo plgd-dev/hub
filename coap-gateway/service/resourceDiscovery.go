@@ -12,8 +12,9 @@ import (
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
@@ -21,11 +22,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func makeListDevicesCommand(msg gocoap.Message, authCtx pbCQRS.AuthorizationContext) (pbRD.GetResourceLinksRequest, error) {
+func makeListDevicesCommand(msg *mux.Message, authCtx pbCQRS.AuthorizationContext) (pbRD.GetResourceLinksRequest, error) {
 	deviceIdsFilter := make([]string, 0, 4)
 	typeFilter := make([]string, 0, 4)
 
-	for _, q := range msg.Options(gocoap.URIQuery) {
+	queries, _ := msq.Options.Queries()
+	for _, q := range queries {
 		var query string
 		var ok bool
 		if query, ok = q.(string); !ok {
@@ -54,8 +56,8 @@ func makeListDevicesCommand(msg gocoap.Message, authCtx pbCQRS.AuthorizationCont
 	return cmd, nil
 }
 
-func makeHref(deviceId, href string) string {
-	return fixHref("/" + resourceRoute + "/" + deviceId + "/" + href)
+func makeHref(deviceID, href string) string {
+	return fixHref("/" + resourceRoute + "/" + deviceID + "/" + href)
 }
 
 func makeDiscoveryResp(serverNetwork, serverAddr string, getResourceLinksClient pbRD.ResourceDirectory_GetResourceLinksClient) ([]*wkRd, codes.Code, error) {
@@ -141,13 +143,13 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *message.Message, client *C
 	var resp interface{}
 	respContentFormat := coap.GetAccept(req.Msg)
 	switch respContentFormat {
-	case gocoap.AppOcfCbor:
+	case message.AppOcfCbor:
 		links := make([]*pbRA.Resource, 0, 64)
 		for _, d := range discoveryResp {
 			links = append(links, d.Links...)
 		}
 		resp = links
-	case gocoap.AppCBOR:
+	case message.AppCBOR:
 		resp = discoveryResp
 	}
 

@@ -22,7 +22,7 @@ func logAndWriteErrorResponse(err error, s mux.ResponseWriter, client *Client, c
 		}
 		err = s.WriteMsg(msg)
 		if err != nil {
-			log.Errorf("cannot send error to %v: %v", getDeviceId(client), err)
+			log.Errorf("cannot send error to %v: %v", getDeviceID(client), err)
 		}
 		decodeMsgToDebug(client, msg, "SEND-ERROR")
 	}
