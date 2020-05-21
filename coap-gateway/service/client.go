@@ -101,11 +101,10 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 	obsRes := res.Clone()
 	if obs {
 		obs, err := client.coapConn.Observe(ctx, res.Href, func(req *pool.Message) {
-			defer pool.ReleaseMessage(req)
 			err := client.notifyContentChanged(obsRes, req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-				log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content: %v", obsRes.DeviceId, obsRes.Id, err)
+				log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content %v%v: %v", obsRes.DeviceId, obsRes.Id, obsRes.DeviceId, obsRes.Href, err)
 				client.Close()
 			}
 			if req.Code() == coapCodes.NotFound {
@@ -113,7 +112,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 			}
 		})
 		if err != nil {
-			log.Errorf("DeviceId: %v, ResourceId: %v: cannot observe resource: %v", obsRes.DeviceId, obsRes.Id, err)
+			log.Errorf("DeviceId: %v, ResourceId: %v: cannot observe resource %v%v: %v", obsRes.DeviceId, obsRes.Id, obsRes.DeviceId, obsRes.Href, err)
 		} else {
 			observation = obs
 		}

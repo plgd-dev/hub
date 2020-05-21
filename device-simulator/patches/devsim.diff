@@ -1,5 +1,5 @@
 diff --git a/api/cloud/oc_cloud_resource.c b/api/cloud/oc_cloud_resource.c
-index ece67a1..7678153 100644
+index c6b36d7..09b14c5 100644
 --- a/api/cloud/oc_cloud_resource.c
 +++ b/api/cloud/oc_cloud_resource.c
 @@ -144,7 +144,7 @@ post_cloud(oc_request_t *request, oc_interface_mask_t interface,
@@ -8,7 +8,7 @@ index ece67a1..7678153 100644
    (void)interface;
 -
 +/*
-   switch (ctx->cps) {
+   switch (ctx->store.cps) {
    case OC_CPS_UNINITIALIZED:
    case OC_CPS_READYTOREGISTER:
 @@ -155,7 +155,7 @@ post_cloud(oc_request_t *request, oc_interface_mask_t interface,
@@ -21,19 +21,26 @@ index ece67a1..7678153 100644
    size_t cps_len = 0;
    if (oc_rep_get_string(request->request_payload, "cps", &cps, &cps_len)) {
 diff --git a/apps/cloud_server.c b/apps/cloud_server.c
-index c5186aa..4042524 100644
+index 6edd644..ceaff87 100644
 --- a/apps/cloud_server.c
 +++ b/apps/cloud_server.c
-@@ -18,6 +18,8 @@
-  ****************************************************************************/
+@@ -19,6 +19,7 @@
  
  #include "oc_api.h"
-+#include "oc_pki.h"
+ #include "oc_pki.h"
 +#include "oc_core_res.h"
  #include <signal.h>
  #include <inttypes.h>
  
-@@ -282,11 +284,79 @@ register_resources(void)
+@@ -194,6 +195,7 @@ cloud_status_handler(oc_cloud_context_t *ctx, oc_cloud_status_t status,
+ static int
+ app_init(void)
+ {
++  oc_set_con_res_announced(true);
+   int ret = oc_init_platform(manufacturer, NULL, NULL);
+   ret |= oc_add_device("/oic/d", device_rt, device_name, spec_version,
+                        data_model_version, NULL, NULL);
+@@ -294,6 +296,10 @@ register_resources(void)
    oc_resource_set_request_handler(res2, OC_POST, post_handler, &light2);
    oc_cloud_add_resource(res2);
    oc_add_resource(res2);
@@ -41,10 +48,15 @@ index c5186aa..4042524 100644
 +  // publish con resource
 +  oc_resource_t *con_res = oc_core_get_resource_by_index(OCF_CON, 0);
 +  oc_cloud_add_resource(con_res);
-+}
-+
+ }
+ 
+ #if defined(OC_SECURITY) && defined(OC_PKI)
+@@ -360,6 +366,65 @@ factory_presets_cb(size_t device, void *data)
+ #endif /* OC_SECURITY && OC_PKI */
+ }
+ 
 +void
-+factory_presets_cb(size_t device, void *data)
++factory_presets_cb_new(size_t device, void *data)
 +{
 +  oc_device_info_t* dev = oc_core_get_device_info(device);
 +  oc_free_string(&dev->name);
@@ -100,44 +112,17 @@ index c5186aa..4042524 100644
 +
 +  oc_pki_set_security_profile(0, OC_SP_BLACK, OC_SP_BLACK, ee_credid);
 +#endif /* OC_SECURITY && OC_PKI */
- }
- 
- int
--main(void)
-+main(int argc, const char** argv)
- {
-+  if (argc > 1) {
-+    device_name = argv[1];
-+    PRINT("\t\tDevice Name: %s\n", argv[1]);
-+  }
++}
 +
-   int ret = init();
-   if (ret < 0) {
-     return ret;
-@@ -297,6 +367,7 @@ main(void)
-                                         .register_resources =
-                                           register_resources };
+ int
+ main(int argc, char *argv[])
+ {
+@@ -406,7 +471,7 @@ main(int argc, char *argv[])
+ #ifdef OC_STORAGE
    oc_storage_config("./cloud_server_creds/");
-+  oc_set_factory_presets_cb(factory_presets_cb, NULL);
+ #endif /* OC_STORAGE */
+-  oc_set_factory_presets_cb(factory_presets_cb, NULL);
++  oc_set_factory_presets_cb(factory_presets_cb_new, NULL);
  
    ret = oc_main_init(&handler);
    if (ret < 0)
-@@ -304,6 +375,18 @@ main(void)
- 
-   oc_cloud_context_t *ctx = oc_cloud_get_context(0);
-   if (ctx) {
-+    if (argc > 2) {
-+      oc_new_string(&ctx->store.ci_server, argv[2], strlen(argv[2]));
-+      PRINT("\t\tCloud ci_server: %s\n", argv[2]);
-+    }
-+    if (argc > 3) {
-+      oc_new_string(&ctx->store.auth_provider, argv[3], strlen(argv[3]));
-+      PRINT("\t\tCloud auth_provider: %s\n", argv[3]);
-+    }
-+    if (argc > 4) {
-+      oc_new_string(&ctx->store.access_token, argv[4], strlen(argv[4]));
-+      PRINT("\t\tCloud access_token: %s\n", argv[4]);
-+    }
-     oc_cloud_manager_start(ctx, cloud_status_handler, NULL);
-   }
- 
