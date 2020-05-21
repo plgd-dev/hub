@@ -19,9 +19,9 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 
 	fmt.Fprintf(buf, "\n-------------------%v------------------\n", tag)
 	fmt.Fprintf(buf, "DeviceId: %v\n", getDeviceID(client))
-	fmt.Fprintf(buf, "Token: %v\n", resp.Token)
+	fmt.Fprintf(buf, "Token: %v\n", resp.Token())
 	fmt.Fprintf(buf, "Path: %v\n", path)
-	fmt.Fprintf(buf, "Code: %v\n", resp.Code)
+	fmt.Fprintf(buf, "Code: %v\n", resp.Code())
 	fmt.Fprintf(buf, "Query: %v\n", queries)
 
 	if observe, err := resp.Options().Observe(); err == nil {

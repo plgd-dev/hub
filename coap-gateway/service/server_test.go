@@ -12,8 +12,8 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/uri"
 	refImplRA "github.com/go-ocf/cloud/resource-aggregate/refImpl"
 	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
-	"github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/message/codes"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
@@ -69,10 +69,10 @@ func TestServer(t *testing.T) {
 	co := testCoapDial(t, config.Service.Addr, config.Service.Net)
 	defer co.Close()
 
-	resp, err := co.Get(uri.ResourcePing)
+	resp, err := co.Get(co.Context(), uri.ResourcePing)
 	require.NoError(t, err)
 	assert.Equal(t, resp.Code(), coapCodes.Content)
-	resp, err = co.Get(uri.ResourceDirectory)
+	resp, err = co.Get(co.Context(), uri.ResourceDirectory)
 	if err == nil {
 		assert.Equal(t, resp.Code(), coapCodes.Unauthorized)
 	}

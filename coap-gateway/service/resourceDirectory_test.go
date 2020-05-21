@@ -236,7 +236,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			req, err := tcp.NewGetRequest(ctx, uri.ResourceDirectory)
+			req, err := tcp.NewGetRequest(co.Context(), uri.ResourceDirectory)
 			require.NoError(t, err)
 			for _, q := range test.in.queries {
 				req.AddOptionString(message.URIQuery, q)
