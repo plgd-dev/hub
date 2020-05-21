@@ -1,8 +1,11 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/kit/net/coap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,7 +25,7 @@ func ContentTypeToMediaType(contentType string) (message.MediaType, error) {
 	}
 }
 
-func DecodeContentWithCodec(codec kitNetmessage.Codec, contentType string, data []byte, response interface{}) error {
+func DecodeContentWithCodec(codec coap.Codec, contentType string, data []byte, response interface{}) error {
 	if response == nil {
 		return nil
 	}
@@ -38,10 +41,12 @@ func DecodeContentWithCodec(codec kitNetmessage.Codec, contentType string, data 
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "cannot convert response contentype %v to mediatype: %v", contentType, err)
 	}
-	msg := message.NewTcpMessage(message.MessageParams{
-		Payload: data,
-	})
-	msg.SetOption(message.ContentFormat, mediaType)
+	opts := make(message.Options, 0, 1)
+	opts, _, _ = opts.SetContentFormat(make([]byte, 4), mediaType)
+	msg := &message.Message{
+		Options: opts,
+		Body:    bytes.NewReader(data),
+	}
 	err = codec.Decode(msg, response)
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "cannot decode response: %v", err)
