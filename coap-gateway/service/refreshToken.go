@@ -6,7 +6,6 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
-	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/codec/cbor"
@@ -69,10 +68,7 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 		ExpiresIn:    resp.ExpiresIn,
 	}
 
-	accept, err := req.Options.Accept()
-	if err != nil {
-		accept = message.AppOcfCbor
-	}
+	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.InternalServerError, req.Token)
