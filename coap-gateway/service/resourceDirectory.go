@@ -132,10 +132,7 @@ func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, cli
 		}
 	}
 
-	accept, err := req.Options.Accept()
-	if err != nil {
-		accept = message.AppOcfCbor
-	}
+	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %v", authCtx.DeviceId, err), client, coapCodes.InternalServerError, req.Token)
@@ -207,10 +204,7 @@ type resourceDirectorySelector struct {
 func resourceDirectoryGetSelector(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	var rds resourceDirectorySelector //we want to use sel:0 to prefer cloud RD
 
-	accept, err := req.Options.Accept()
-	if err != nil {
-		accept = message.AppOcfCbor
-	}
+	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot get selector: %v", err), client, coapCodes.InternalServerError, req.Token)

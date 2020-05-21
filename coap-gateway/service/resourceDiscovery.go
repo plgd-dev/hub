@@ -133,10 +133,7 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 	}
 
 	var resp interface{}
-	accept, err := req.Options.Accept()
-	if err != nil {
-		accept = message.AppOcfCbor
-	}
+	accept := coap.GetAccept(req.Options)
 	switch accept {
 	case message.AppOcfCbor:
 		links := make([]*pbRA.Resource, 0, 64)

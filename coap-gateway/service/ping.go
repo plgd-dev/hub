@@ -29,10 +29,7 @@ func getPingConfiguration(s mux.ResponseWriter, req *mux.Message, client *Client
 		IntervalArray: []int64{1},
 	}
 
-	accept, err := req.Options.Accept()
-	if err != nil {
-		accept = message.AppOcfCbor
-	}
+	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), client, coapCodes.InternalServerError, req.Token)

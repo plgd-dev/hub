@@ -65,10 +65,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		ExpiresIn: resp.ExpiresIn,
 	}
 
-	accept, err := req.Options.Accept()
-	if err != nil {
-		accept = message.AppOcfCbor
-	}
+	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), client, coapCodes.InternalServerError, req.Token)

@@ -94,10 +94,7 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		RedirectUri:  response.RedirectUri,
 	}
 
-	accept, err := r.Options.Accept()
-	if err != nil {
-		accept = message.AppOcfCbor
-	}
+	accept := coap.GetAccept(r.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), client, coapCodes.InternalServerError, r.Token)
