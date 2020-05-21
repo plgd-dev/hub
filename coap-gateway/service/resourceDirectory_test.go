@@ -131,7 +131,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	//set counter 0, when other test run with this that it can be modified
 	deletetblResourceDirectory := []testEl{
 		{"NotExist1", input{coapCodes.DELETE, ``, []string{"di=c", "ins=5"}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},                 // Non-existent device ID.
-		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `Incorrect Unpublish query string - deviceID not found`, nil}},                            // Device ID empty.
+		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `cannot parse queries: deviceID not found`, nil}},                                         // Device ID empty.
 		{"NotExist3", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity, "ins=999"}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}}, // Instance ID non-existent.
 		{"Exist1", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.Deleted, nil, nil}},                                                                         // If instanceIDs empty, all instances for a given device ID should be unpublished.
 		{"NotExist4", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},

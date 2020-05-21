@@ -115,7 +115,7 @@ func Test_clientObserveHandler(t *testing.T) {
 				req.SetToken(tt.args.token)
 			}
 			resp, err := co.Do(req)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
 		})
 	}

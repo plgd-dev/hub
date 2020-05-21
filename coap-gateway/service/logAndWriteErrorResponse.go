@@ -13,7 +13,6 @@ func logAndWriteErrorResponse(err error, client *Client, code codes.Code, token 
 	msg := pool.AcquireMessage(client.coapConn.Context())
 	if err != nil {
 		log.Errorf("%v", err)
-		return
 	}
 	defer pool.ReleaseMessage(msg)
 	msg.SetCode(code)

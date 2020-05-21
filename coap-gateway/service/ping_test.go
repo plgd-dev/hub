@@ -87,7 +87,7 @@ func Test_resourcePingHandler(t *testing.T) {
 				require.NoError(t, err)
 			}
 			resp, err := co.Do(req)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
 		})
 	}
