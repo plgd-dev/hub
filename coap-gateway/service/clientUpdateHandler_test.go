@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -82,7 +83,11 @@ func Test_clientUpdateHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.Post(ctx, tt.args.href, tt.args.contentFormat, bytes.NewReader(tt.args.payload))
+			var body io.ReadSeeker
+			if len(tt.args.payload) > 0 {
+				body = bytes.NewReader(tt.args.payload)
+			}
+			resp, err := co.Post(ctx, tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
 		})

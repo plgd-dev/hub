@@ -129,7 +129,10 @@ func MakeContent(opts message.Options, body io.Reader) pbRA.Content {
 		contentTypeString = mt.String()
 		coapContentFormat = int32(mt)
 	}
-	data, _ := ioutil.ReadAll(body)
+	var data []byte
+	if body != nil {
+		data, _ = ioutil.ReadAll(body)
+	}
 	return pbRA.Content{
 		ContentType:       contentTypeString,
 		CoapContentFormat: coapContentFormat,

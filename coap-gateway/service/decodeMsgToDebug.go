@@ -12,6 +12,26 @@ import (
 	"github.com/go-ocf/kit/log"
 )
 
+func readBody(r io.ReadSeeker) []byte {
+	if r == nil {
+		return nil
+	}
+	v, err := r.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil
+	}
+	_, err = r.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil
+	}
+	body, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil
+	}
+	r.Seek(v, io.SeekStart)
+	return body
+}
+
 func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 	buf := bytes.NewBuffer(make([]byte, 0, 2048))
 	path, _ := resp.Options().Path()
@@ -27,12 +47,7 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 	if observe, err := resp.Options().Observe(); err == nil {
 		fmt.Fprintf(buf, "Observe: %v\n", observe)
 	}
-	var body []byte
-	if resp.Body() != nil {
-		body, _ = ioutil.ReadAll(resp.Body())
-		resp.Body().Seek(0, io.SeekStart)
-	}
-
+	body := readBody(resp.Body())
 	if mt, err := resp.Options().ContentFormat(); err == nil {
 		fmt.Fprintf(buf, "ContentFormat: %v\n", mt)
 

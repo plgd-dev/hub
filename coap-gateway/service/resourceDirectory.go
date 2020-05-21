@@ -45,8 +45,10 @@ func sendResponse(client *Client, code coapCodes.Code, token message.Token, cont
 	defer pool.ReleaseMessage(msg)
 	msg.SetCode(code)
 	msg.SetToken(token)
-	msg.SetContentFormat(contentFormat)
-	msg.SetBody(bytes.NewReader(payload))
+	if len(payload) > 0 {
+		msg.SetContentFormat(contentFormat)
+		msg.SetBody(bytes.NewReader(payload))
+	}
 	err := client.coapConn.WriteMessage(msg)
 	if err != nil {
 		log.Errorf("Cannot send reply to %v: %v", getDeviceID(client), err)
@@ -180,7 +182,7 @@ func resourceDirectoryUnpublishHandler(s mux.ResponseWriter, req *mux.Message, c
 	}
 	deviceID, inss, err := parseUnpublishQueryString(queries)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("canot parse queries: %w", err), client, coapCodes.BadRequest, req.Token)
+		logAndWriteErrorResponse(fmt.Errorf("cannot parse queries: %w", err), client, coapCodes.BadRequest, req.Token)
 		return
 	}
 

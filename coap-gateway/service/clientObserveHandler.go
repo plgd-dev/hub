@@ -78,6 +78,7 @@ func SendResourceContentToObserver(client *Client, contentCtx *pbRA.ResourceChan
 	msg.SetContentFormat(mediaType)
 	msg.SetObserve(observe)
 	msg.SetBody(bytes.NewReader(contentCtx.GetContent().GetData()))
+	msg.SetToken(token)
 	err = client.coapConn.WriteMessage(msg)
 	if err != nil {
 		log.Errorf("cannot send observe notification to %v: %v", client.remoteAddrString(), err)

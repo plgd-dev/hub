@@ -11,6 +11,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_clientResetHandler(t *testing.T) {
@@ -90,7 +91,7 @@ func Test_clientResetHandler(t *testing.T) {
 				msg.SetCode(tt.args.code)
 				msg.SetToken(tt.args.token)
 				err := co.WriteMessage(msg)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
@@ -100,7 +101,7 @@ func Test_clientResetHandler(t *testing.T) {
 				msg.SetPath(tt.args.path)
 				msg.SetObserve(tt.args.observe)
 				resp, err := co.Do(msg)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.wantsCode, resp.Code())
 			}
 			time.Sleep(time.Second) // to avoid reorder test case
