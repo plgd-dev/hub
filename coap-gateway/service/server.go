@@ -251,8 +251,13 @@ func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn) {
 func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client := server.clientContainer.Find(w.Client().RemoteAddr().String())
-		tmp := pool.AcquireMessage(r.Context)
-		decodeMsgToDebug(client, r, "RECEIVED-COMMAND")
+		tmp, err := pool.ConvertFrom(r.Message)
+		if err != nil {
+			log.Errorf("cannot convert from mux.Message: %w", err)
+			w.SetResponse(coapCodes.InternalServerError, message.TextPlain, nil)
+			return
+		}
+		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
 		next.ServeCOAP(w, r)
 	})
 }

@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
@@ -54,11 +53,10 @@ func makeHref(deviceID, href string) string {
 	return fixHref("/" + resourceRoute + "/" + deviceID + "/" + href)
 }
 
-func makeDiscoveryResp(serverNetwork, serverAddr string, getResourceLinksClient pbRD.ResourceDirectory_GetResourceLinksClient) ([]*wkRd, codes.Code, error) {
+func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksClient pbRD.ResourceDirectory_GetResourceLinksClient) ([]*wkRd, codes.Code, error) {
 	deviceRes := make(map[string]*wkRd)
-
 	ep := "coap"
-	if strings.HasSuffix(serverNetwork, "-tls") {
+	if isTLSListener {
 		ep = "coaps"
 	}
 	ep = ep + "+tcp://" + serverAddr
@@ -123,7 +121,7 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 		return
 	}
 
-	discoveryResp, code, err := makeDiscoveryResp(client.server.Net, client.server.FQDN+":"+strconv.Itoa(int(client.server.ExternalPort)), getResourceLinksClient)
+	discoveryResp, code, err := makeDiscoveryResp(client.server.IsTLSListener, client.server.FQDN+":"+strconv.Itoa(int(client.server.ExternalPort)), getResourceLinksClient)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err), client, coapconv.GrpcCode2CoapCode(code, coapCodes.GET), req.Token)
 		return
