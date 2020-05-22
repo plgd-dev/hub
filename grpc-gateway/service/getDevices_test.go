@@ -34,9 +34,11 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			},
 			want: []*pb.Device{
 				{
-					Id:       deviceID,
-					Name:     grpcTest.TestDeviceName,
-					IsOnline: true,
+					Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
+					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+					Id:         deviceID,
+					Name:       grpcTest.TestDeviceName,
+					IsOnline:   true,
 				},
 			},
 		},

@@ -84,14 +84,27 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 		},
 		{
-			name: "project_type_filter",
+			name: "project_type_filter-not-found",
 			args: args{
 				request: pb.GetDevicesRequest{
-					TypeFilter: []string{"customType"},
+					TypeFilter: []string{"notFound"},
 				},
 			},
 			wantStatusCode: codes.NotFound,
 			wantErr:        true,
+		},
+		{
+			name: "project_type_filter",
+			args: args{
+				request: pb.GetDevicesRequest{
+					TypeFilter: []string{"x.test.d"},
+				},
+			},
+			wantStatusCode: codes.OK,
+			wantResponse: map[string]*pb.Device{
+				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
+				ddResource2.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes, true),
+			},
 		},
 		{
 			name: "project_one_device",

@@ -139,6 +139,7 @@ github.com/go-ocf/kit v0.0.0-20200320133358-8740baee0a2e/go.mod h1:r06JYqsz49LOt
 github.com/go-ocf/kit v0.0.0-20200324144609-83b53db6bbf7/go.mod h1:soXSMc9RbMEFlW2trzwSowX8ppHEQAQ0cEpYnd4q+vs=
 github.com/go-ocf/kit v0.0.0-20200326124037-40a7509422e3/go.mod h1:l+jh47kCrxjvuvKicH9cczmaCGOYRoD0bF73FlG8saQ=
 github.com/go-ocf/kit v0.0.0-20200408211624-bfa7f116ff71/go.mod h1:tnazqyziD6lz3FYORKJge3vVN+11pN8bPV637G5fdv8=
+github.com/go-ocf/kit v0.0.0-20200415134408-e0585e8eea21 h1:Toj4dMQlx/d8thW+r0/cygkyxKsXY2xVjXULj8eg0Ro=
 github.com/go-ocf/kit v0.0.0-20200415134408-e0585e8eea21/go.mod h1:tnazqyziD6lz3FYORKJge3vVN+11pN8bPV637G5fdv8=
 github.com/go-ocf/kit v0.0.0-20200512120648-b85237b48a64/go.mod h1:t6BL1Z38jV7qKwmaoh9l8iPKrhZcYMe4MGTCjxzr6v4=
 github.com/go-ocf/kit v0.0.0-20200522104643-af04c1ff1971 h1:u7EfBoO8bKuWUNK2ivoLCPbHd+89t7n5mqEkiWhyvhg=
@@ -176,6 +177,7 @@ github.com/go-ocf/sdk v0.0.0-20200406082918-51e333156732/go.mod h1:mU0HDyK3eyZXb
 github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33/go.mod h1:9vLNYHs9YT+5Ytye8mzdiAI0Xez/DZWTHaqiZMpEIVQ=
 github.com/go-ocf/sdk v0.0.0-20200514081745-227ac451ff9b h1:5BJ63ONqqfstkn0PdMNgRmXQBl1SI8An6i7/T3OEwxE=
 github.com/go-ocf/sdk v0.0.0-20200514081745-227ac451ff9b/go.mod h1:y3mUHBTcWRRaPJkZQFqmJNFTY5o0/AH1nrYI3bARass=
+github.com/go-ocf/sdk v0.0.0-20200519063626-cb917369f154 h1:hwRgCLBvxnjnTpmY9i8guAwSHg9TY11uJR10iyZxQPw=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=

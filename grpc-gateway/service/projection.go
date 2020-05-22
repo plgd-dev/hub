@@ -18,6 +18,9 @@ func hasMatchingType(resourceTypes []string, typeFilter strings.Set) bool {
 	if len(typeFilter) == 0 {
 		return true
 	}
+	if len(resourceTypes) == 0 {
+		return false
+	}
 	return typeFilter.HasOneOf(resourceTypes...)
 }
 

@@ -176,6 +176,7 @@ func NewRequestHandler(
 		timeoutForRequests:            timeoutForRequests,
 		closeFunc:                     closeFunc,
 		clientConfiguration:           clientConfiguration,
+		userDevicesManager:            userDevicesManager,
 	}
 }
 
