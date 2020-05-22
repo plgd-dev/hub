@@ -4,6 +4,7 @@
 .travis.yml
 Makefile
 Dockerfile
+Dockerfile.test
 README.md
 LICENSE
 renovate.json
