@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,9 +20,27 @@ import (
 )
 
 type testTrigger struct {
+	sync.Mutex
 	addedDevices   map[string]map[string]bool
 	removedDevices map[string]map[string]bool
 	allDevices     map[string]map[string]bool
+}
+
+func (t *testTrigger) Clone() *testTrigger {
+	t.Lock()
+	defer t.Unlock()
+	a := newTestTrigger()
+	for userID, addedDevices := range t.addedDevices {
+		a.Trigger(nil, userID, addedDevices, nil, nil)
+	}
+	for userID, removedDevices := range t.removedDevices {
+		a.Trigger(nil, userID, nil, removedDevices, nil)
+	}
+	for userID, allDevices := range t.allDevices {
+		a.Trigger(nil, userID, nil, nil, allDevices)
+	}
+
+	return a
 }
 
 func newTestTrigger() *testTrigger {
@@ -29,6 +48,8 @@ func newTestTrigger() *testTrigger {
 }
 
 func (t *testTrigger) Trigger(ctx context.Context, userID string, addedDevices, removedDevices, allDevices map[string]bool) {
+	t.Lock()
+	defer t.Unlock()
 	if len(addedDevices) > 0 {
 		if t.addedDevices == nil {
 			t.addedDevices = make(map[string]map[string]bool)
@@ -106,7 +127,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		t.Name(): {
 			"deviceId_" + t.Name(): true,
 		},
-	}, trigger.allDevices)
+	}, trigger.Clone().allDevices)
 
 	_, err = c.RemoveDevice(context.Background(), &pb.RemoveDeviceRequest{
 		UserId:   t.Name(),
@@ -114,7 +135,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	})
 
 	time.Sleep(time.Second * 2)
-	require.Equal(t, map[string]map[string]bool(nil), trigger.allDevices)
+	require.Equal(t, map[string]map[string]bool(nil), trigger.Clone().allDevices)
 
 	err = m.Release(t.Name())
 	require.NoError(t, err)
@@ -200,7 +221,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				time.Sleep(time.Second)
-				require.Equal(t, tt.want, tt.fields.trigger)
+				require.Equal(t, tt.want, tt.fields.trigger.Clone())
 				err := m.Release(tt.args.userID)
 				require.NoError(t, err)
 			}
@@ -292,7 +313,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 				time.Sleep(time.Second)
 				err := m.Release(tt.args.userID)
 				require.NoError(t, err)
-				require.Equal(t, tt.want, tt.fields.trigger)
+				require.Equal(t, tt.want, tt.fields.trigger.Clone())
 				require.Equal(t, tt.wantMgmtSize, len(m.users))
 			}
 		})

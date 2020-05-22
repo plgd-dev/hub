@@ -26,7 +26,6 @@ func NewObservationManager() (*ObservationManager, error) {
 	}
 	m := ObservationManager{
 		ws:           ws,
-		lock:         sync.Mutex{},
 		observations: make(map[string]map[string]SubscribeSession),
 	}
 	return &m, nil
@@ -204,6 +203,13 @@ func (requestHandler *RequestHandler) removeSession(s SubscribeSession) {
 			}
 		}
 	}
+}
+func (requestHandler *RequestHandler) pop() map[string]map[string]SubscribeSession {
+	requestHandler.manager.lock.Lock()
+	defer requestHandler.manager.lock.Unlock()
+	observations := requestHandler.manager.observations
+	requestHandler.manager.observations = make(map[string]map[string]SubscribeSession)
+	return observations
 }
 
 func GetClientID(ws *websocket.Conn) string {

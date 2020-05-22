@@ -95,7 +95,8 @@ func (s *Server) Serve() error {
 
 // Shutdown ends serving
 func (s *Server) Shutdown() error {
-	for _, v := range s.requestHandler.manager.observations {
+	observations := s.requestHandler.pop()
+	for _, v := range observations {
 		for _, s := range v {
 			s.OnClose()
 		}
