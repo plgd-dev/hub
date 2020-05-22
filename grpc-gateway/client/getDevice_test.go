@@ -9,9 +9,9 @@ import (
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
-	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,7 +26,7 @@ func (a *testApplication) GetRootCertificateAuthorities() ([]*x509.Certificate, 
 	return a.cas, nil
 }
 
-func NewTestDeviceSimulator(deviceID, deviceName string)client.DeviceDetails {
+func NewTestDeviceSimulator(deviceID, deviceName string) client.DeviceDetails {
 	return client.DeviceDetails{
 		ID: deviceID,
 		Device: pb.Device{
@@ -34,7 +34,7 @@ func NewTestDeviceSimulator(deviceID, deviceName string)client.DeviceDetails {
 			Name:     deviceName,
 			IsOnline: true,
 		},
-		Resources: grpcTest.SortResources(grpcTest.ConvertSchemaToPb(deviceID, grpcTest.GetAllBackendResourceLinks())),
+		Resources: grpcTest.SortResources(grpcTest.ResourceLinksToPb(deviceID, grpcTest.GetAllBackendResourceLinks())),
 	}
 }
 
@@ -47,7 +47,7 @@ func TestClient_GetDevice(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want   client.DeviceDetails
+		want    client.DeviceDetails
 		wantErr bool
 	}{
 		{
