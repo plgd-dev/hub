@@ -32,10 +32,10 @@ type CoapSignUpRequest struct {
 
 type CoapSignUpResponse struct {
 	AccessToken  string `json:"accesstoken"`
-	UserId       string `json:"uid"`
+	UserID       string `json:"uid"`
 	RefreshToken string `json:"refreshtoken"`
 	ExpiresIn    int64  `json:"expiresin"`
-	RedirectUri  string `json:"redirecturi"`
+	RedirectURI  string `json:"redirecturi"`
 }
 
 func validateSignUp(req CoapSignUpRequest) error {
@@ -53,7 +53,7 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 	var signUp CoapSignUpRequest
 	err := cbor.ReadFrom(r.Body, &signUp)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), client, coapCodes.BadRequest, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapCodes.BadRequest, r.Token)
 		return
 	}
 
@@ -64,7 +64,7 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 
 	err = validateSignUp(signUp)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), client, coapCodes.BadRequest, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapCodes.BadRequest, r.Token)
 		return
 	}
 
@@ -74,7 +74,7 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		AuthorizationProvider: signUp.AuthorizationProvider,
 	})
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), client, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), r.Token)
 		return
 	}
 
@@ -88,25 +88,25 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 
 	coapResponse := CoapSignUpResponse{
 		AccessToken:  response.AccessToken,
-		UserId:       response.UserId,
+		UserID:       response.UserId,
 		RefreshToken: response.RefreshToken,
 		ExpiresIn:    response.ExpiresIn,
-		RedirectUri:  response.RedirectUri,
+		RedirectURI:  response.RedirectUri,
 	}
 
 	accept := coap.GetAccept(r.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), client, coapCodes.InternalServerError, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapCodes.InternalServerError, r.Token)
 		return
 	}
 	out, err := encode(coapResponse)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), client, coapCodes.InternalServerError, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapCodes.InternalServerError, r.Token)
 		return
 	}
 
-	sendResponse(client, coapCodes.Changed, r.Token, accept, out)
+	client.sendResponse(coapCodes.Changed, r.Token, accept, out)
 }
 
 // Sign-up
@@ -118,7 +118,7 @@ func signUpHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 	case coapCodes.DELETE:
 		signOffHandler(w, r, client)
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), client, coapCodes.Forbidden, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, r.Token)
 	}
 }
 
@@ -144,7 +144,7 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	for _, query := range queries {
 		values, err := url.ParseQuery(query)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), client, coapCodes.BadOption, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.BadOption, req.Token)
 			return
 		}
 		if di := values.Get(queryDeviceID); di != "" {
@@ -162,7 +162,7 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 
 	err := validateSignOff(deviceID, accessToken)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	_, err = client.server.asClient.SignOff(kitNetGrpc.CtxWithToken(req.Context, accessToken), &pbAS.SignOffRequest{
@@ -170,9 +170,9 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		UserId:   userID,
 	})
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), client, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
 		return
 	}
 	client.storeAuthorizationContext(authCtx{})
-	sendResponse(client, coapCodes.Deleted, req.Token, message.TextPlain, nil)
+	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
 }

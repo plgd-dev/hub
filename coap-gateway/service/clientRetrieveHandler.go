@@ -51,7 +51,7 @@ func clientRetrieveHandler(s mux.ResponseWriter, req *mux.Message, client *Clien
 
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.DeviceId, err), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.DeviceId, err),  coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -62,27 +62,27 @@ func clientRetrieveHandler(s mux.ResponseWriter, req *mux.Message, client *Clien
 	if resourceInterface == "" {
 		content, code, err = clientRetrieveFromResourceShadowHandler(kitNetGrpc.CtxWithToken(req.Context, authCtx.AccessToken), client, resourceID)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.DeviceId, deviceID, href, err), client, code, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 			return
 		}
 	} else {
 		content, code, err = clientRetrieveFromDeviceHandler(req, client, deviceID, resourceID, resourceInterface)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.DeviceId, deviceID, href, err), client, code, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 			return
 		}
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		sendResponse(client, code, req.Token, message.TextPlain, nil)
+		client.sendResponse( code, req.Token, message.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(content.CoapContentFormat, content.ContentType)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), client, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 		return
 	}
-	sendResponse(client, code, req.Token, mediaType, content.Data)
+	client.sendResponse( code, req.Token, mediaType, content.Data)
 }
 
 func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, resourceID string) (*pbRA.Content, coapCodes.Code, error) {

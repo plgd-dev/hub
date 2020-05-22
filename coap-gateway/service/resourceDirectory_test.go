@@ -15,12 +15,12 @@ import (
 )
 
 type TestResource struct {
-	DeviceId string `json:"di"`
+	DeviceID string `json:"di"`
 	//Eps interface{} `json:"eps"`
 	Href       string   `json:"href"`
-	Id         string   `json:"id"`
+	ID         string   `json:"id"`
 	Interfaces []string `json:"if"`
-	InstanceId uint64   `json:"-"`
+	InstanceID uint64   `json:"-"`
 	//P             interface{} `json:"p"`
 	ResourceTypes []string `json:"rt"`
 	Type          []string `json:"type"`
@@ -48,9 +48,9 @@ var tblResourceDirectory = []testEl{
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     TestAResourceHref,
-					Id:       TestAResourceId,
+					ID:       TestAResourceId,
 				},
 			},
 		}, nil}},
@@ -62,9 +62,9 @@ var tblResourceDirectory = []testEl{
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     "/b",
-					Id:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
+					ID:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
 				},
 			},
 		}, nil}},
@@ -75,14 +75,14 @@ var tblResourceDirectory = []testEl{
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     "/b",
-					Id:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
+					ID:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
 				},
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     "/c",
-					Id:       "41529a9c-b80f-5487-82da-da4a476402ae",
+					ID:       "41529a9c-b80f-5487-82da-da4a476402ae",
 				},
 			},
 		}, nil}},
@@ -110,7 +110,7 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
@@ -158,7 +158,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
@@ -225,7 +225,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})

@@ -4,13 +4,13 @@ import (
 	"sync"
 )
 
-//clientContainerByDeviceID client <-> server connections
+// clientContainerByDeviceID client <-> server connections
 type clientContainerByDeviceID struct {
 	sessions map[string]*Client
 	mutex    sync.Mutex
 }
 
-func NewClientContainerByDeviceId() *clientContainerByDeviceID {
+func newClientContainerByDeviceID() *clientContainerByDeviceID {
 	return &clientContainerByDeviceID{sessions: make(map[string]*Client)}
 }
 

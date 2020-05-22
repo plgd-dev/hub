@@ -270,7 +270,7 @@ func (client *Client) OnClose() {
 	}
 }
 
-func (client *Client) storeAuthorizationContext(authCtx authCtx) (oldDeviceId string) {
+func (client *Client) storeAuthorizationContext(authCtx authCtx) (oldDeviceID string) {
 	log.Debugf("Authorization context stored for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceId(), authCtx.GetUserId())
 	client.authContextLock.Lock()
 	defer client.authContextLock.Unlock()
@@ -396,7 +396,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	return nil
 }
 
-func (client *Client) publishResource(ctx context.Context, resource *pbRA.Resource, ttl int32, connectionId string, sequence uint64, authCtx pbCQRS.AuthorizationContext) (*pbRA.Resource, error) {
+func (client *Client) publishResource(ctx context.Context, resource *pbRA.Resource, ttl int32, connectionID string, sequence uint64, authCtx pbCQRS.AuthorizationContext) (*pbRA.Resource, error) {
 	if resource.DeviceId == "" {
 		return resource, fmt.Errorf("cannot send command publish resource: invalid DeviceId")
 	}
@@ -414,7 +414,7 @@ func (client *Client) publishResource(ctx context.Context, resource *pbRA.Resour
 		TimeToLive:           ttl,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			Sequence:     sequence,
-			ConnectionId: connectionId,
+			ConnectionId: connectionID,
 		},
 	}
 

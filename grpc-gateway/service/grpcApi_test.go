@@ -413,7 +413,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.0.0", "icv": "ocf.1.0.0", "n": grpcTest.TestDeviceName},
+			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": grpcTest.TestDeviceName},
 		},
 		{
 			name: "invalid ResourceLinkHref",

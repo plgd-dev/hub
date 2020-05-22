@@ -34,7 +34,7 @@ func (r *observeResource) Observe() uint32 {
 	return r.observe
 }
 
-func NewObserveResourceContainer() *observeResourceContainer {
+func newObserveResourceContainer() *observeResourceContainer {
 	return &observeResourceContainer{
 		observersByResource:   make(map[string]map[string]map[string]*observeResource),
 		observersByRemoteAddr: make(map[string]map[string]*observeResource),
@@ -78,7 +78,7 @@ func (c *observeResourceContainer) prepareObserversByDeviceLocked(remoteAddr, to
 	return tokens, nil
 }
 
-func (c *observeResourceContainer) Add(observeResource observeResource) error {
+func (c *observeResourceContainer) Add(observeResource *observeResource) error {
 	tokenStr := tokenToString(observeResource.token)
 
 	c.mutex.Lock()
@@ -94,8 +94,8 @@ func (c *observeResourceContainer) Add(observeResource observeResource) error {
 		return fmt.Errorf("cannot observe resource observersByRemoteAddr[%v][%v]: %v", observeResource.remoteAddr, observeResource.token, err)
 	}
 
-	byResource[tokenStr] = &observeResource
-	byDevice[tokenStr] = &observeResource
+	byResource[tokenStr] = observeResource
+	byDevice[tokenStr] = observeResource
 	return nil
 }
 
@@ -150,9 +150,8 @@ func (c *observeResourceContainer) RemoveByResource(resourceID, remoteAddr strin
 			return nil
 		}
 		return fmt.Errorf("unstable container - observersByRemoteAddr[%v][%v]", remoteAddr, token)
-	} else {
-		return fmt.Errorf("unstable container - observersByRemoteAddr[%v]", remoteAddr)
 	}
+	return fmt.Errorf("unstable container - observersByRemoteAddr[%v]", remoteAddr)
 }
 
 func (c *observeResourceContainer) PopByRemoteAddr(remoteAddr string) ([]*observeResource, error) {
