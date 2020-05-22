@@ -88,7 +88,7 @@ func (c *requestBuilder) Build(ctx context.Context, t *testing.T) *http.Request 
 	require.NoError(t, err)
 	query := url.Query()
 
-	token, err := kitNetGrpc.CtxExtractOutgoingToken(ctx)
+	token, err := kitNetGrpc.TokenFromOutgoingMD(ctx)
 	if err == nil {
 		c.AuthToken(token)
 	}
