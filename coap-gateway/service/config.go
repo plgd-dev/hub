@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-//config for application
+// Config for application.
 type Config struct {
 	Addr                            string        `envconfig:"ADDRESS" default:"0.0.0.0:5684"`
 	ExternalPort                    uint16        `envconfig:"EXTERNAL_PORT" default:"5684"`

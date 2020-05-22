@@ -91,9 +91,8 @@ func (m *resourceCtx) onUpdateResourceLocked() {
 		if err != nil {
 			log.Errorf("DeviceId: %v, ResourceId: %v: cannot perform update: %v", m.resource.DeviceId, m.resource.Id, err)
 			return
-		} else {
-			m.resourceUpdatePendings = m.resourceUpdatePendings[1:]
 		}
+		m.resourceUpdatePendings = m.resourceUpdatePendings[1:]
 	}
 }
 
@@ -111,9 +110,8 @@ func (m *resourceCtx) onRetrieveResourceLocked() {
 		if err != nil {
 			log.Errorf("DeviceId: %v, ResourceId: %v: cannot perform retrieve: %v", m.resource.DeviceId, m.resource.Id, err)
 			return
-		} else {
-			m.resourceRetrievePendings = m.resourceRetrievePendings[1:]
 		}
+		m.resourceRetrievePendings = m.resourceRetrievePendings[1:]
 	}
 }
 

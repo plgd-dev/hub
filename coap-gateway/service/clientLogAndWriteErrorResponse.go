@@ -9,11 +9,11 @@ import (
 	"github.com/go-ocf/kit/log"
 )
 
-func logAndWriteErrorResponse(err error, client *Client, code codes.Code, token message.Token) {
-	msg := pool.AcquireMessage(client.coapConn.Context())
+func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token message.Token) {
 	if err != nil {
 		log.Errorf("%v", err)
 	}
+	msg := pool.AcquireMessage(client.coapConn.Context())
 	defer pool.ReleaseMessage(msg)
 	msg.SetCode(code)
 	msg.SetToken(token)

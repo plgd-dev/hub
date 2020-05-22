@@ -22,6 +22,6 @@ func resourceRouteHandler(s mux.ResponseWriter, req *mux.Message, client *Client
 	default:
 		deviceID := getDeviceID(client)
 		path, _ := req.Options.Path()
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v, Href %v: unsupported method %v", deviceID, path, req.Code), client, coapCodes.MethodNotAllowed, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v, Href %v: unsupported method %v", deviceID, path, req.Code),  coapCodes.MethodNotAllowed, req.Token)
 	}
 }

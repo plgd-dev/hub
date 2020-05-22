@@ -79,7 +79,7 @@ type ListenCertManager = interface {
 	GetServerTLSConfig() *tls.Config
 }
 
-//NewServer setup coap gateway
+// New creates server.
 func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, authInterceptor kitNetCoap.Interceptor, store eventstore.EventStore, subscriber eventbus.Subscriber, pool *ants.Pool) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
@@ -169,10 +169,10 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		rdClient:      rdClient,
 
 		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},
-		clientContainerByDeviceID:     NewClientContainerByDeviceId(),
+		clientContainerByDeviceID:     newClientContainerByDeviceID(),
 		updateNotificationContainer:   notificationRA.NewUpdateNotificationContainer(),
 		retrieveNotificationContainer: notificationRA.NewRetrieveNotificationContainer(),
-		observeResourceContainer:      NewObserveResourceContainer(),
+		observeResourceContainer:      newObserveResourceContainer(),
 		goroutinesPool:                pool,
 		oicPingCache:                  oicPingCache,
 		listener:                      listener,
@@ -202,24 +202,26 @@ func getDeviceID(client *Client) string {
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(s mux.ResponseWriter, req *mux.Message, client *Client)) {
-	client := server.clientContainer.Find(s.Client().RemoteAddr().String())
-
+	client, ok := server.clientContainer.Find(s.Client().RemoteAddr().String())
+	if !ok {
+		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
+	}
 	switch req.Code {
 	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), client, coapCodes.InternalServerError, req.Token)
+		if !ok {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
 			return
 		}
 		fnc(s, req, client)
 	case coapCodes.Empty:
-		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), client, coapCodes.InternalServerError, req.Token)
+		if !ok {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
 			return
 		}
 		clientResetHandler(s, req, client)
 	case coapCodes.Content:
 		// Unregistered observer at a peer send us a notification - inform the peer to remove it
-		sendResponse(client, coapCodes.Empty, req.Token, message.TextPlain, nil)
+		client.sendResponse(coapCodes.Empty, req.Token, message.TextPlain, nil)
 	default:
 		deviceID := getDeviceID(client)
 		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
@@ -234,7 +236,7 @@ func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		resourceRouteHandler(s, req, client)
 	default:
 		deviceID := getDeviceID(client)
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), client, coapCodes.NotFound, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
 	}
 }
 
@@ -250,11 +252,13 @@ func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn) {
 
 func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		if !ok {
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
+		}
 		tmp, err := pool.ConvertFrom(r.Message)
 		if err != nil {
-			log.Errorf("cannot convert from mux.Message: %w", err)
-			w.SetResponse(coapCodes.InternalServerError, message.TextPlain, nil)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
 			return
 		}
 		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
@@ -264,9 +268,10 @@ func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 
 func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client := server.clientContainer.Find(w.Client().RemoteAddr().String())
-		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), client, coapCodes.InternalServerError, r.Token)
+		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		if !ok {
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), coapCodes.InternalServerError, r.Token)
 			return
 		}
 
@@ -274,7 +279,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %v", path, err), client, coapCodes.Unauthorized, r.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %v", path, err), coapCodes.Unauthorized, r.Token)
 			client.Close()
 			return
 		}

@@ -28,7 +28,7 @@ func clientObserveHandler(s mux.ResponseWriter, req *mux.Message, client *Client
 	authCtx := client.loadAuthorizationContext()
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle observe resource: %v", authCtx.DeviceId, err), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle observe resource: %v", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	resourceID := resource2UUID(deviceID, href)
@@ -39,7 +39,7 @@ func clientObserveHandler(s mux.ResponseWriter, req *mux.Message, client *Client
 	case 1:
 		stopResourceObservation(s, req, client, authCtx, deviceID, resourceID)
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource %v.%v: invalid Observe value", authCtx.DeviceId, deviceID, resourceID), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource %v.%v: invalid Observe value", authCtx.DeviceId, deviceID, resourceID), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -59,12 +59,12 @@ func cleanStartResourceObservation(client *Client, deviceID, resourceID string, 
 func SendResourceContentToObserver(client *Client, contentCtx *pbRA.ResourceChanged, observe uint32, deviceID, resourceID string, token message.Token) {
 	if contentCtx.GetStatus() != pbRA.Status_OK {
 		cleanStartResourceObservation(client, deviceID, resourceID, token)
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource %v, device response: %v", deviceID, resourceID, contentCtx.GetStatus()), client, coapconv.StatusToCoapCode(contentCtx.GetStatus(), coapCodes.GET), token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource %v, device response: %v", deviceID, resourceID, contentCtx.GetStatus()), coapconv.StatusToCoapCode(contentCtx.GetStatus(), coapCodes.GET), token)
 		return
 	}
 
 	if contentCtx.GetContent() == nil {
-		sendResponse(client, coapCodes.Content, token, message.TextPlain, nil)
+		client.sendResponse(coapCodes.Content, token, message.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(contentCtx.GetContent().GetCoapContentFormat(), contentCtx.GetContent().GetContentType())
@@ -96,7 +96,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		DeviceIdsFilter: []string{deviceID},
 	})
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	var found bool
@@ -107,7 +107,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 			break
 		}
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
 			return
 		}
 		if userDev.DeviceId == deviceID {
@@ -116,7 +116,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		}
 	}
 	if !found {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: unauthorized access", authCtx.DeviceId, deviceID, resourceID), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: unauthorized access", authCtx.DeviceId, deviceID, resourceID), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -128,9 +128,9 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		client:     client,
 	}
 
-	err = client.server.observeResourceContainer.Add(observeResource)
+	err = client.server.observeResourceContainer.Add(&observeResource)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -140,7 +140,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		if err1 != nil {
 			log.Errorf("DeviceId: %v: cannot start resource observation - remove resource from observation %v: %v", resourceID, err1)
 		}
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: cannot register: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: cannot register: %v", authCtx.DeviceId, deviceID, resourceID, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	resourceCtxs := client.server.projection.Models(deviceID, resourceID)
@@ -148,13 +148,13 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		err := client.server.projection.ForceUpdate(req.Context, deviceID, resourceID)
 		if err != nil {
 			cleanStartResourceObservation(client, deviceID, resourceID, req.Token)
-			logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: force update: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapCodes.BadRequest, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: force update: %v", authCtx.DeviceId, deviceID, resourceID, err), coapCodes.BadRequest, req.Token)
 			return
 		}
 		resourceCtxs = client.server.projection.Models(deviceID, resourceID)
 		if len(resourceCtxs) == 0 {
 			cleanStartResourceObservation(client, deviceID, resourceID, req.Token)
-			logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: resource model: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapCodes.BadRequest, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation %v.%v: resource model: %v", authCtx.DeviceId, deviceID, resourceID, err), coapCodes.BadRequest, req.Token)
 			return
 		}
 	}
@@ -169,7 +169,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx authCtx, deviceID, resourceID string) {
 	err := client.server.observeResourceContainer.RemoveByResource(resourceID, client.remoteAddrString(), req.Token)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	var content *pbRA.ResourceChanged
@@ -182,7 +182,7 @@ func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cli
 
 	err = client.server.projection.Unregister(deviceID)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), client, coapCodes.NotFound, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation %v.%v: %v", authCtx.DeviceId, deviceID, resourceID, err), coapCodes.NotFound, req.Token)
 		return
 	}
 
@@ -196,6 +196,6 @@ func clientResetObservationHandler(s mux.ResponseWriter, req *mux.Message, clien
 	}
 	err = client.server.projection.Unregister(observer.deviceID)
 	if err != nil {
-		fmt.Errorf("DeviceId: %v: cannot reset resource observation %v.%v: %v", authCtx.DeviceId, observer.deviceID, observer.resourceID, err)
+		log.Errorf("DeviceId: %v: cannot reset resource observation %v.%v: %v", authCtx.DeviceId, observer.deviceID, observer.resourceID, err)
 	}
 }

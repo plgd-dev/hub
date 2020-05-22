@@ -9,7 +9,7 @@ import (
 
 func Test_observeResourceContainer_Add(t *testing.T) {
 	type args struct {
-		observeResource observeResource
+		observeResource *observeResource
 	}
 	tests := []struct {
 		name    string
@@ -19,7 +19,7 @@ func Test_observeResourceContainer_Add(t *testing.T) {
 		{
 			name: "ok",
 			args: args{
-				observeResource: observeResource{
+				observeResource: &observeResource{
 					resourceID: "resourceID",
 					remoteAddr: "remoteAddr",
 					token:      []byte("token"),
@@ -29,7 +29,7 @@ func Test_observeResourceContainer_Add(t *testing.T) {
 		{
 			name: "ok-token",
 			args: args{
-				observeResource: observeResource{
+				observeResource: &observeResource{
 					resourceID: "resourceID",
 					remoteAddr: "remoteAddr",
 					token:      []byte("token1"),
@@ -39,7 +39,7 @@ func Test_observeResourceContainer_Add(t *testing.T) {
 		{
 			name: "ok-remoteAddr",
 			args: args{
-				observeResource: observeResource{
+				observeResource: &observeResource{
 					resourceID: "resourceID",
 					remoteAddr: "remoteAddr1",
 					token:      []byte("token"),
@@ -49,7 +49,7 @@ func Test_observeResourceContainer_Add(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				observeResource: observeResource{
+				observeResource: &observeResource{
 					resourceID: "resourceID",
 					remoteAddr: "remoteAddr",
 					token:      []byte("token"),
@@ -59,7 +59,7 @@ func Test_observeResourceContainer_Add(t *testing.T) {
 		},
 	}
 
-	c := NewObserveResourceContainer()
+	c := newObserveResourceContainer()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -144,9 +144,9 @@ func Test_observeResourceContainer_Find(t *testing.T) {
 		},
 	}
 
-	c := NewObserveResourceContainer()
+	c := newObserveResourceContainer()
 	for _, ob := range obs {
-		err := c.Add(*ob)
+		err := c.Add(ob)
 		assert.NoError(t, err)
 	}
 
@@ -161,7 +161,7 @@ func Test_observeResourceContainer_Find(t *testing.T) {
 }
 
 func Test_observeResourceContainer_RemoveByResource(t *testing.T) {
-	obs := []observeResource{
+	obs := []*observeResource{
 		{
 			resourceID: "a",
 			token:      []byte("0"),
@@ -216,7 +216,7 @@ func Test_observeResourceContainer_RemoveByResource(t *testing.T) {
 		},
 	}
 
-	c := NewObserveResourceContainer()
+	c := newObserveResourceContainer()
 	for _, ob := range obs {
 		err := c.Add(ob)
 		assert.NoError(t, err)
@@ -295,9 +295,9 @@ func Test_observeResourceContainer_PopByRemoteAddr(t *testing.T) {
 		},
 	}
 
-	c := NewObserveResourceContainer()
+	c := newObserveResourceContainer()
 	for _, ob := range obs {
-		err := c.Add(*ob)
+		err := c.Add(ob)
 		assert.NoError(t, err)
 	}
 
@@ -365,9 +365,9 @@ func Test_observeResourceContainer_PopByRemoteAddrToken(t *testing.T) {
 		},
 	}
 
-	c := NewObserveResourceContainer()
+	c := newObserveResourceContainer()
 	for _, ob := range obs {
-		err := c.Add(*ob)
+		err := c.Add(ob)
 		assert.NoError(t, err)
 	}
 

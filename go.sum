@@ -124,6 +124,8 @@ github.com/go-ocf/go-coap/v2 v2.0.0-beta.19 h1:h/zctHnEP31ZBb5hp1te0PrMiCpGe66Hy
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.19/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.20 h1:+kkzTmtlH2kwAh9jDCa3zWlakujWqMQSizHo4T9uA6Q=
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.20/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
+github.com/go-ocf/go-coap/v2 v2.0.0-beta.21 h1:PXd2xA7DXX4H/C2Hnn6lnrSiJrPo4SWh6mVKo9oPpXI=
+github.com/go-ocf/go-coap/v2 v2.0.0-beta.21/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
 github.com/go-ocf/grpc-gateway v0.0.0-20191029150757-8ed2b7d67a67/go.mod h1:GuVJZHmSz7KGATOk0tqLPkgBJq2H12hZnG74CTJXOtI=
 github.com/go-ocf/grpc-gateway v0.0.0-20191128115804-9c2e8f77af08/go.mod h1:XBVeqnt2JEx0Z6SLEdjnjQ53jEpbAvcx+/CAC43eAb4=
 github.com/go-ocf/grpc-gateway v0.0.0-20200206140756-f2e98d630ed6/go.mod h1:UmskFCqe00ISEBHTZJbWIeyvvHcIuVsS/5c5FFEHF8s=

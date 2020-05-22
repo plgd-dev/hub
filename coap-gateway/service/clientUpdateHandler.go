@@ -25,26 +25,26 @@ func clientUpdateHandler(s mux.ResponseWriter, req *mux.Message, client *Client)
 	authCtx := client.loadAuthorizationContext()
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.DeviceId, err), client, coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource: %w", authCtx.DeviceId, err),  coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	resourceID := resource2UUID(deviceID, href)
 	content, code, err := clientUpdateDeviceHandler(req, client, deviceID, resourceID)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), client, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 		return
 	}
 	if content == nil || len(content.Data) == 0 {
-		sendResponse(client, code, req.Token, message.TextPlain, nil)
+		client.sendResponse( code, req.Token, message.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(content.CoapContentFormat, content.ContentType)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot encode response for update resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), client, code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot encode response for update resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 		return
 	}
-	sendResponse(client, code, req.Token, mediaType, content.Data)
+	client.sendResponse( code, req.Token, mediaType, content.Data)
 }
 
 func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, resourceID string) (*pbRA.Content, coapCodes.Code, error) {

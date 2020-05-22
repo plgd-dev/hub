@@ -264,7 +264,7 @@ func init() {
 }
 
 func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	testPostHandler(t, uri.SignUp, signUpEl, co)
 	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	testPostHandler(t, uri.SignIn, signInEl, co)
@@ -276,9 +276,9 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
 					{
-						DeviceId:      CertIdentity,
+						DeviceID:      CertIdentity,
 						Href:          TestAResourceHref,
-						Id:            TestAResourceId,
+						ID:            TestAResourceId,
 						ResourceTypes: []string{TestAResourceType},
 						Type:          []string{message.TextPlain.String()},
 					},
@@ -291,9 +291,9 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
 					{
-						DeviceId:      CertIdentity,
+						DeviceID:      CertIdentity,
 						Href:          TestBResourceHref,
-						Id:            TestBResourceId,
+						ID:            TestBResourceId,
 						ResourceTypes: []string{TestBResourceType},
 						Type:          []string{message.TextPlain.String()},
 					},
