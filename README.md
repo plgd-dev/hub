@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/go-ocf/cloud.svg?branch=master)](https://travis-ci.com/go-ocf/cloud)
-[![codecov](https://codecov.io/gh/go-ocf/cloud/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/cloud)
+[![Financial Contributors on Open Collective](https://opencollective.com/gocf-cloud/all/badge.svg?label=financial+contributors)](https://opencollective.com/gocf-cloud) [![codecov](https://codecov.io/gh/go-ocf/cloud/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/cloud)
 [![Go Report](https://goreportcard.com/badge/github.com/go-ocf/cloud)](https://goreportcard.com/report/github.com/go-ocf/cloud)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
@@ -12,3 +12,32 @@ Beyond the specification bounds is the **open source** gOCF project delivering y
 
 ## Features
 ...
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/go-ocf/cloud/graphs/contributors"><img src="https://opencollective.com/gocf-cloud/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/gocf-cloud/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/gocf-cloud"><img src="https://opencollective.com/gocf-cloud/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/gocf-cloud/contribute)]
+
+<a href="https://opencollective.com/gocf-cloud/organization/0/website"><img src="https://opencollective.com/gocf-cloud/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/1/website"><img src="https://opencollective.com/gocf-cloud/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/2/website"><img src="https://opencollective.com/gocf-cloud/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/3/website"><img src="https://opencollective.com/gocf-cloud/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/4/website"><img src="https://opencollective.com/gocf-cloud/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/5/website"><img src="https://opencollective.com/gocf-cloud/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/6/website"><img src="https://opencollective.com/gocf-cloud/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/7/website"><img src="https://opencollective.com/gocf-cloud/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/8/website"><img src="https://opencollective.com/gocf-cloud/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/gocf-cloud/organization/9/website"><img src="https://opencollective.com/gocf-cloud/organization/9/avatar.svg"></a>
