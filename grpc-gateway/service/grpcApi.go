@@ -4,22 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
-	"time"
+	"io"
+	"sync"
 
-	clientAS "github.com/go-ocf/cloud/authorization/client"
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/gofrs/uuid"
 
 	"github.com/go-ocf/kit/security/oauth/manager"
-	"github.com/panjf2000/ants"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -27,29 +19,12 @@ import (
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
-	authServiceClient       pbAS.AuthorizationServiceClient
-	resourceAggregateClient pbRA.ResourceAggregateClient
-
-	resourceProjection            *Projection
-	subscriptions                 *subscriptions
-	seqNum                        uint64
-	clientTLS                     *tls.Config
-	updateNotificationContainer   *notification.UpdateNotificationContainer
-	retrieveNotificationContainer *notification.RetrieveNotificationContainer
-	timeoutForRequests            time.Duration
-	closeFunc                     func()
-	clientConfiguration           pb.ClientConfigurationResponse
-	userDevicesManager            *clientAS.UserDevicesManager
+	resourceDirectoryClient pb.GrpcGatewayClient
+	closeFunc               func()
 }
 
 type HandlerConfig struct {
-	Mongo   mongodb.Config
-	Nats    nats.Config
 	Service Config
-
-	GoRoutinePoolSize               int           `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
-	UserDevicesManagerTickFrequency time.Duration `envconfig:"USER_MGMT_TICK_FREQUENCY" default:"15s"`
-	UserDevicesManagerExpiration    time.Duration `envconfig:"USER_MGMT_EXPIRATION" default:"1m"`
 }
 
 func AddHandler(svr *kitNetGrpc.Server, config HandlerConfig, clientTLS *tls.Config) error {
@@ -69,114 +44,40 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 
 func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*RequestHandler, error) {
 	svc := config.Service
-
-	if svc.ClientConfiguration.CloudCAPool != "" {
-		content, err := ioutil.ReadFile(svc.ClientConfiguration.CloudCAPool)
-		if err != nil {
-			return nil, fmt.Errorf("cannot read file %v: %w", svc.ClientConfiguration.CloudCAPool, err)
-		}
-		svc.ClientConfiguration.CloudCertificateAuthorities = string(content)
-	}
-
 	oauthMgr, err := manager.NewManagerFromConfiguration(svc.OAuth, clientTLS)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
 	}
-
-	asConn, err := grpc.Dial(svc.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
-	if err != nil {
-		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
-	}
-	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn)
-
-	raConn, err := grpc.Dial(svc.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)))
+	rdConn, err := grpc.Dial(
+		svc.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
-	resourceAggregateClient := pbRA.NewResourceAggregateClient(raConn)
-
-	pool, err := ants.NewPool(config.GoRoutinePoolSize)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
-	}
-
-	resourceEventStore, err := mongodb.NewEventStore(config.Mongo, pool.Submit, mongodb.WithTLS(clientTLS))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
-	}
-
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(clientTLS))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create resource nats subscriber %w", err)
-	}
-
-	ctx := context.Background()
-
-	subscriptions := NewSubscriptions()
-	userDevicesManager := clientAS.NewUserDevicesManager(subscriptions.UserDevicesChanged, authServiceClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving devices: %v", err) })
-	subscriptions.userDevicesManager = userDevicesManager
-
-	updateNotificationContainer := notification.NewUpdateNotificationContainer()
-	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
-	projUUID, err := uuid.NewV4()
-	if err != nil {
-		return nil, fmt.Errorf("cannot create uuid for projection %w", err)
-	}
-	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), time.Second)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
-	}
+	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
 
 	closeFunc := func() {
-		resourceSubscriber.Close()
-		resourceEventStore.Close(context.Background())
-		userDevicesManager.Close()
-		pool.Release()
-		raConn.Close()
-		asConn.Close()
+		rdConn.Close()
 		oauthMgr.Close()
 	}
 
 	h := NewRequestHandler(
-		authServiceClient,
-		resourceAggregateClient,
-		resourceProjection,
-		subscriptions,
-		updateNotificationContainer,
-		retrieveNotificationContainer,
-		svc.TimeoutForRequests,
+		resourceDirectoryClient,
 		closeFunc,
-		svc.ClientConfiguration.ClientConfigurationResponse,
-		userDevicesManager,
 	)
-	h.clientTLS = clientTLS
 	return h, nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
-	authServiceClient pbAS.AuthorizationServiceClient,
-	resourceAggregateClient pbRA.ResourceAggregateClient,
-	resourceProjection *Projection,
-	subscriptions *subscriptions,
-	updateNotificationContainer *notification.UpdateNotificationContainer,
-	retrieveNotificationContainer *notification.RetrieveNotificationContainer,
-	timeoutForRequests time.Duration,
+	resourceDirectoryClient pb.GrpcGatewayClient,
 	closeFunc func(),
-	clientConfiguration pb.ClientConfigurationResponse,
-	userDevicesManager *clientAS.UserDevicesManager,
 ) *RequestHandler {
 	return &RequestHandler{
-		authServiceClient:             authServiceClient,
-		resourceProjection:            resourceProjection,
-		subscriptions:                 subscriptions,
-		resourceAggregateClient:       resourceAggregateClient,
-		updateNotificationContainer:   updateNotificationContainer,
-		retrieveNotificationContainer: retrieveNotificationContainer,
-		timeoutForRequests:            timeoutForRequests,
-		closeFunc:                     closeFunc,
-		clientConfiguration:           clientConfiguration,
-		userDevicesManager:            userDevicesManager,
+		resourceDirectoryClient: resourceDirectoryClient,
+		closeFunc:               closeFunc,
 	}
 }
 
@@ -185,18 +86,72 @@ func logAndReturnError(err error) error {
 	return err
 }
 
-func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEventsServer) error {
-	err := r.subscriptions.SubscribeForEvents(r.resourceProjection, srv)
+func makeCtx(ctx context.Context) context.Context {
+	token, err := kitNetGrpc.TokenFromMD(ctx)
 	if err != nil {
-		return logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err))
+		ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	}
+	return ctx
+}
+
+func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEventsServer) (errRet error) {
+	ctx, cancel := context.WithCancel(makeCtx(srv.Context()))
+	defer cancel()
+	rd, err := r.resourceDirectoryClient.SubscribeForEvents(ctx)
+	if err != nil {
+		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err)
+	}
+	clientErr := make(chan error, 1)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer func() {
+		wg.Wait()
+		select {
+		case err := <-clientErr:
+			logAndReturnError(err)
+			if errRet != nil {
+				errRet = err
+			}
+		default:
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		req, err := srv.Recv()
+		if err == io.EOF {
+			cancel()
+			clientErr <- err
+			return
+		}
+		if err != nil {
+			cancel()
+			clientErr <- kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive commands: %v", err)
+			return
+		}
+		err = rd.Send(req)
+		if err != nil {
+			cancel()
+			clientErr <- kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send commands: %v", err)
+			return
+		}
+	}()
+
+	for {
+		resp, err := rd.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err)
+		}
+		err = srv.Send(resp)
+		if err != nil {
+			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send events: %v", err)
+		}
 	}
 	return nil
 }
 
 func (r *RequestHandler) Close() {
 	r.closeFunc()
-}
-
-func (r *RequestHandler) GetClientTLSConfig() *tls.Config {
-	return r.clientTLS
 }

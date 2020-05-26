@@ -7,16 +7,15 @@ import (
 	"net/http"
 	"time"
 
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/sdk/schema"
 	"github.com/valyala/fasthttp"
 )
 
 type DeviceResources struct {
-	Resources map[string]*pbRA.Resource `json:"resources"`
+	Resources map[string]schema.ResourceLink `json:"resources"`
 }
 
 type GetResourceLinksResponse struct {
@@ -30,11 +29,7 @@ func (r *RequestHandler) listResources(ctx *fasthttp.RequestCtx, token, sub stri
 		log.Debugf("RequestHandler.listResources takes %v", time.Since(t))
 	}()
 
-	getResourceLinksClient, err := r.rdClient.GetResourceLinks(kitNetGrpc.CtxWithToken(context.Background(), token), &pbRD.GetResourceLinksRequest{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId: sub,
-		},
-	})
+	getResourceLinksClient, err := r.rdClient.GetResourceLinks(kitNetGrpc.CtxWithToken(context.Background(), token), &pbGRPC.GetResourceLinksRequest{})
 
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot list resource directory: %v", err), http.StatusBadRequest, ctx)
@@ -55,14 +50,14 @@ func (r *RequestHandler) listResources(ctx *fasthttp.RequestCtx, token, sub stri
 			return
 		}
 
-		device, ok := response.Devices[resLink.Resource.DeviceId]
+		device, ok := response.Devices[resLink.GetDeviceId()]
 		if !ok {
 			device = &DeviceResources{
-				Resources: make(map[string]*pbRA.Resource),
+				Resources: make(map[string]schema.ResourceLink),
 			}
-			response.Devices[resLink.Resource.DeviceId] = device
+			response.Devices[resLink.GetDeviceId()] = device
 		}
-		device.Resources[resLink.Resource.Id] = resLink.Resource
+		device.Resources["/"+resLink.GetDeviceId()+resLink.GetHref()] = resLink.ToSchema()
 	}
 
 	writeJson(response, fasthttp.StatusOK, ctx)

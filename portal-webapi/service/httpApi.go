@@ -10,30 +10,24 @@ import (
 	"github.com/valyala/fasthttp"
 
 	router "github.com/buaazp/fasthttprouter"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 )
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
 	config   Config
 	server   *Server
+	rdClient pbGRPC.GrpcGatewayClient
 	raClient pbRA.ResourceAggregateClient
-	rsClient pbRS.ResourceShadowClient
-	rdClient pbRD.ResourceDirectoryClient
-	ddClient pbDD.DeviceDirectoryClient
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(server *Server, raClient pbRA.ResourceAggregateClient, rsClient pbRS.ResourceShadowClient, rdClient pbRD.ResourceDirectoryClient, ddClient pbDD.DeviceDirectoryClient) *RequestHandler {
+func NewRequestHandler(server *Server, raClient pbRA.ResourceAggregateClient, rdClient pbGRPC.GrpcGatewayClient) *RequestHandler {
 	return &RequestHandler{
 		server:   server,
-		raClient: raClient,
-		rsClient: rsClient,
 		rdClient: rdClient,
-		ddClient: ddClient,
+		raClient: raClient,
 	}
 }
 

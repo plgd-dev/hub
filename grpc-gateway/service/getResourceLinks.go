@@ -1,31 +1,31 @@
 package service
 
 import (
+	"io"
+
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	accessToken, err := grpc_auth.AuthFromMD(srv.Context(), "bearer")
+	ctx := makeCtx(srv.Context())
+	rd, err := r.resourceDirectoryClient.GetResourceLinks(ctx, req)
 	if err != nil {
-		return logAndReturnError(kitNetGrpc.ForwardErrorf(codes.NotFound, "cannot get resource links: %v", err))
+		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get resource links: %v", err)
 	}
-	userID, err := parseSubFromJwtToken(accessToken)
-	if err != nil {
-		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
-	}
-	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), userID)
-	if err != nil {
-		return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
-	}
-
-	rd := NewResourceDirectory(r.resourceProjection, deviceIDs)
-	err = rd.GetResourceLinks(req, srv)
-	if err != nil {
-		return logAndReturnError(err)
+	for {
+		resp, err := rd.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive link: %v", err)
+		}
+		err = srv.Send(resp)
+		if err != nil {
+			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send link: %v", err)
+		}
 	}
 	return nil
 }

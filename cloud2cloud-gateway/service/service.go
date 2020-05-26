@@ -17,12 +17,10 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 )
 
@@ -119,9 +117,7 @@ func New(
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	rsClient := pbRS.NewResourceShadowClient(rdConn)
-	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
-	ddClient := pbDD.NewDeviceDirectoryClient(rdConn)
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
 	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	if err != nil {
@@ -153,7 +149,7 @@ func New(
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	requestHandler := NewRequestHandler(asClient, raClient, rsClient, rdClient, ddClient, resourceProjection, subscriptionStore, updateNotificationContainer, config.TimeoutForRequests)
+	requestHandler := NewRequestHandler(asClient, raClient, rdClient, resourceProjection, subscriptionStore, updateNotificationContainer, config.TimeoutForRequests)
 
 	devicesSubscription := newDevicesSubscription(requestHandler, goroutinePoolGo)
 

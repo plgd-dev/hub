@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
@@ -29,10 +28,7 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 	devicesRegistered := make(map[string]events.Device)
 	devicesOnline := make(map[string]events.Device)
 	devicesOffline := make(map[string]events.Device)
-	authorizationContext := pbCQRS.AuthorizationContext{
-		UserId: sub.UserID,
-	}
-	devices, err := rh.GetDevices(kitNetGrpc.CtxWithToken(ctx, sub.AccessToken), nil, authorizationContext)
+	devices, err := rh.GetDevices(kitNetGrpc.CtxWithToken(ctx, sub.AccessToken), nil)
 	if err != nil {
 		sub, errPop := rh.store.PopSubscription(ctx, sub.ID)
 		if errPop != nil {

@@ -5,19 +5,18 @@ import (
 	"fmt"
 	"net/http"
 
-	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 )
 
-func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID string, encoder responseWriterEncoderFunc) (int, error) {
-	allResources, err := rh.RetrieveResourcesValues(ctx, []string{resourceID}, nil, pbCQRS.AuthorizationContext{})
+func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID pbGRPC.ResourceId, encoder responseWriterEncoderFunc) (int, error) {
+	allResources, err := rh.RetrieveResourcesValues(ctx, []*pbGRPC.ResourceId{&resourceID}, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve resource(%v): %w", resourceID, err)
 	}
 
 	for _, v := range allResources {
-		if v[0].Status != pbCQRS.Status_OK {
+		if v[0].Status != pbGRPC.Status_OK {
 			return statusToHttpStatus(v[0].Status), fmt.Errorf("cannot retrieve resource(%v): device returns code %v", resourceID, v[0].Status)
 		}
 
@@ -34,10 +33,11 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 	switch contentQuery {
 	case ContentQueryBaseValue:
 		deviceID := routeVars[deviceIDKey]
-		resourceID := routeVars[resourceLinkHrefKey]
-		code, err := rh.RetrieveResourceBase(ctx, w, cqrsRA.MakeResourceId(deviceID, resourceID), encoder)
+		href := routeVars[resourceLinkHrefKey]
+		code, err := rh.RetrieveResourceBase(ctx, w, pbGRPC.ResourceId{
+			DeviceId: deviceID, ResourceLinkHref: href}, encoder)
 		if err != nil {
-			err = fmt.Errorf("cannot retrieve resource(deviceID: %v, Href: %v): %w", deviceID, resourceID, err)
+			err = fmt.Errorf("cannot retrieve resource(deviceID: %v, Href: %v): %w", deviceID, href, err)
 		}
 		return code, err
 

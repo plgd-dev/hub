@@ -1,18 +1,14 @@
 package service
 
 import (
-	"context"
 	"fmt"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/strings"
 )
-
-func toResourceLink(model *resourceCtx) pbRD.ResourceLink {
-	return pbRD.ResourceLink{Resource: model.snapshot.Resource}
-}
 
 type ResourceDirectory struct {
 	projection    *Projection
@@ -26,40 +22,36 @@ func NewResourceDirectory(projection *Projection, deviceIds []string) *ResourceD
 	return &ResourceDirectory{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-func (rd *ResourceDirectory) GetResourceLinks(ctx context.Context, in *pbRD.GetResourceLinksRequest, responseHandler func(*pbRD.ResourceLink) error) (statusCode codes.Code, err error) {
+func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
 	deviceIds := filterDevices(rd.userDeviceIds, in.DeviceIdsFilter)
 	if len(deviceIds) == 0 {
-		err = fmt.Errorf("not found")
-		statusCode = codes.NotFound
-		return
+		return status.Errorf(codes.NotFound, "not found")
 	}
+	fmt.Println(deviceIds)
 
 	typeFilter := make(strings.Set)
 	typeFilter.Add(in.TypeFilter...)
 	resourceIdsFilter := make(strings.Set)
 
-	resourceValues, err := rd.projection.GetResourceCtxs(ctx, resourceIdsFilter, typeFilter, deviceIds)
+	resourceValues, err := rd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, typeFilter, deviceIds)
 	if err != nil {
-		err = fmt.Errorf("cannot get resource links by device ids: %w", err)
-		statusCode = codes.Internal
-		return
+		return status.Errorf(codes.Internal, "cannot get resource links by device ids: %v", err)
 	}
 	if len(resourceValues) == 0 {
-		err = fmt.Errorf("not found")
-		statusCode = codes.NotFound
-		return
+		return status.Errorf(codes.NotFound, "not found")
 	}
 
 	for _, resources := range resourceValues {
 		for _, resource := range resources {
-			resourceLink := toResourceLink(resource)
-			if err = responseHandler(&resourceLink); err != nil {
-				err = fmt.Errorf("cannot handle response: %w", err)
-				statusCode = codes.Canceled
-				return
+			if resource.resource == nil {
+				continue
+			}
+			resourceLink := pb.RAResourceToProto(resource.resource)
+			err = srv.Send(&resourceLink)
+			if err != nil {
+				return status.Errorf(codes.Canceled, "cannot send resource link: %v", err)
 			}
 		}
 	}
-	statusCode = codes.OK
-	return
+	return nil
 }

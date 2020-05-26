@@ -74,6 +74,7 @@ func (l ResourceLink) ToRAProto() pbRA.Resource {
 
 func (l ResourceLink) ToSchema() schema.ResourceLink {
 	return schema.ResourceLink{
+		ID:                    cqrs.MakeResourceId(l.GetDeviceId(), l.GetHref()),
 		Anchor:                l.GetAnchor(),
 		DeviceID:              l.GetDeviceId(),
 		Endpoints:             EndpointInformations(l.GetEndpointInformations()).ToSchema(),

@@ -310,9 +310,8 @@ func testCreateResourceDirectory(t *testing.T, resourceDBname, addr, AuthServerA
 	err := envconfig.Process("", &config)
 	assert.NoError(t, err)
 	config.Service.AuthServerAddr = AuthServerAddr
-	config.MongoDB.DatabaseName = resourceDBname
-	config.Service.Addr = addr
-	//config.Log.Debug = TestLogDebug
+	config.Mongo.DatabaseName = resourceDBname
+	config.Addr = addr
 
 	return rdService.NewResourceDirectory(t, config)
 }

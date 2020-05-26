@@ -1,48 +1,53 @@
-package service
+package service_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	mockEventStore "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/test"
+	mockEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/test"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
+	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/resource-directory/service"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestResourceDirectory_GetResourceLinks(t *testing.T) {
+	linkToPtr := func(l pb.ResourceLink) *pb.ResourceLink {
+		return &l
+	}
 	type args struct {
-		request pbRD.GetResourceLinksRequest
+		request pb.GetResourceLinksRequest
 	}
 	test := []struct {
 		name     string
 		args     args
-		want     map[string]*pbRD.ResourceLink
+		want     map[string]*pb.ResourceLink
 		wantCode codes.Code
 		wantErr  bool
 	}{
 		{
 			name: "list one device - filter by device Id",
 			args: args{
-				request: pbRD.GetResourceLinksRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					DeviceIdsFilter:      []string{Resource1.DeviceId},
+				request: pb.GetResourceLinksRequest{
+					DeviceIdsFilter: []string{Resource1.DeviceId},
 				},
 			},
-			want: map[string]*pbRD.ResourceLink{
-				Resource1.Id: {
-					Resource: &Resource1.Resource,
-				},
-				Resource3.Id: {
-					&Resource3.Resource,
-				},
+			want: map[string]*pb.ResourceLink{
+				cqrs.MakeResourceId(Resource1.DeviceId, Resource1.Href): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
+				cqrs.MakeResourceId(Resource3.DeviceId, Resource3.Href): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
 			},
 		},
 	}
@@ -62,29 +67,70 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
-	resourceProjection, err := NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, time.Second)
+
+	subscriptions := service.NewSubscriptions()
+	updateNotificationContainer := notification.NewUpdateNotificationContainer()
+	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
+
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), time.Second)
 	require.NoError(t, err)
 
-	rd := NewResourceDirectory(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
+	rd := service.NewResourceDirectory(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
 
 	for _, tt := range test {
 		fn := func(t *testing.T) {
-			var got map[string]*pbRD.ResourceLink
-			statusCode, err := rd.GetResourceLinks(ctx, &tt.args.request, func(resourceLink *pbRD.ResourceLink) error {
-				if got == nil {
-					got = make(map[string]*pbRD.ResourceLink)
-				}
-				got[resourceLink.Resource.Id] = resourceLink
-				return nil
-			})
+			var s testGrpcGateway_GetResourceLinksServer
+			err := rd.GetResourceLinks(&tt.args.request, &s)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, tt.wantCode, statusCode)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantCode, status.Convert(err).Code())
+			assert.Equal(t, tt.want, s.got)
 		}
 		t.Run(tt.name, fn)
 	}
+}
+
+func newResourceContent(deviceID, href string, resourceTypesp []string, content pbRA.Content) ResourceContent {
+	return ResourceContent{
+		Resource: pbRA.Resource{Id: cqrs.MakeResourceId(deviceID, href), Href: href, DeviceId: deviceID, ResourceTypes: resourceTypesp},
+		Content:  content,
+	}
+}
+
+var Resource0 = newResourceContent("0", "a", []string{"t0"}, pbRA.Content{Data: []byte("0.a")})
+var Resource1 = newResourceContent("1", "b", []string{"t1", "t2"}, pbRA.Content{Data: []byte("1.b")})
+var Resource2 = newResourceContent("2", "c", []string{"t1"}, pbRA.Content{Data: []byte("2.c")})
+var Resource3 = newResourceContent("1", "d", []string{"t3", "t8"}, pbRA.Content{Data: []byte("1.d")})
+
+func testCreateEventstore() *mockEventStore.MockEventStore {
+	store := mockEventStore.NewMockEventStore()
+	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourcePublishedEvent(Resource0.Resource, cqrs.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourceChangedEvent(Resource0.Id, Resource0.DeviceId, Resource0.Content, cqrs.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourcePublishedEvent(Resource1.Resource, cqrs.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourceChangedEvent(Resource1.Id, Resource1.DeviceId, Resource1.Content, cqrs.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourcePublishedEvent(Resource2.Resource, cqrs.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourceChangedEvent(Resource2.Id, Resource2.DeviceId, Resource2.Content, cqrs.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourcePublishedEvent(Resource3.Resource, cqrs.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourceChangedEvent(Resource3.Id, Resource3.DeviceId, Resource3.Content, cqrs.MakeEventMeta("a", 0, 1)))
+	return store
+}
+
+type testGrpcGateway_GetResourceLinksServer struct {
+	got map[string]*pb.ResourceLink
+	grpc.ServerStream
+}
+
+func (s *testGrpcGateway_GetResourceLinksServer) Context() context.Context {
+	return context.Background()
+}
+
+func (s *testGrpcGateway_GetResourceLinksServer) Send(d *pb.ResourceLink) error {
+	if s.got == nil {
+		s.got = make(map[string]*pb.ResourceLink)
+	}
+	s.got[cqrs.MakeResourceId(d.DeviceId, d.Href)] = d
+	return nil
 }

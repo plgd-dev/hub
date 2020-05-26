@@ -2,35 +2,28 @@ package refImpl
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/go-ocf/kit/security/certManager"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"google.golang.org/grpc"
+
 	"github.com/go-ocf/cloud/resource-directory/service"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/panjf2000/ants"
+	"github.com/go-ocf/kit/security/jwt"
+	"google.golang.org/grpc/credentials"
 )
 
 type Config struct {
-	Service           service.Config
-	GoRoutinePoolSize int                `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
-	CacheExpiration   time.Duration      `envconfig:"CACHE_EXPIRATION" default:"30s"`
-	Nats              nats.Config        `envconfig:"NATS"`
-	MongoDB           mongodb.Config     `envconfig:"MONGODB"`
-	Log               log.Config         `envconfig:"LOG"`
-	Listen            certManager.Config `envconfig:"LISTEN"`
-	Dial              certManager.Config `envconfig:"DIAL"`
+	Log     log.Config
+	JwksURL string             `envconfig:"JWKS_URL"`
+	Listen  certManager.Config `envconfig:"LISTEN"`
+	Dial    certManager.Config `envconfig:"DIAL"`
+	kitNetGrpc.Config
+	service.HandlerConfig
 }
 
 //String return string representation of Config
@@ -39,95 +32,47 @@ func (c Config) String() string {
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
-type RefImpl struct {
-	eventstore        *mongodb.EventStore
-	handle            *service.RequestHandler
-	subscriber        *nats.Subscriber
-	clientCertManager certManager.CertManager
-	serverCertManager certManager.CertManager
-	server            *kitNetGrpc.Server
-}
-
-func Init(config Config) (*RefImpl, error) {
+func Init(config Config) (*kitNetGrpc.Server, error) {
 	log.Setup(config.Log)
-
 	log.Info(config.String())
 
-	impl, err := NewRequestHandlerFromConfig(config)
+	listenCertManager, err := certManager.NewCertManager(config.Listen)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create server cert manager %w", err)
+	}
+	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create client cert manager %w", err)
+	}
+
+	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig(), "openid")
+
+	listenTLSConfig := listenCertManager.GetServerTLSConfig()
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
 	if err != nil {
 		return nil, err
 	}
+	server.AddCloseFunc(func() {
+		listenCertManager.Close()
+		dialCertManager.Close()
+	})
 
-	listenTLSConfig := impl.serverCertManager.GetServerTLSConfig()
-
-	svr, err := kitNetGrpc.NewServer(config.Service.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
-	if err != nil {
+	if err := service.AddHandler(server, config.HandlerConfig, dialCertManager.GetClientTLSConfig()); err != nil {
 		return nil, err
 	}
-	pbRS.RegisterResourceShadowServer(svr.Server, impl.handle)
-	pbRD.RegisterResourceDirectoryServer(svr.Server, impl.handle)
-	pbDD.RegisterDeviceDirectoryServer(svr.Server, impl.handle)
-	impl.server = svr
-	return impl, nil
+
+	return server, nil
 }
 
-func (r *RefImpl) Serve() error {
-	return r.server.Serve()
-}
-
-func (r *RefImpl) Shutdown() {
-	r.server.Stop()
-	r.eventstore.Close(context.Background())
-	r.subscriber.Close()
-	r.clientCertManager.Close()
-	r.serverCertManager.Close()
-}
-
-// NewRequestHandlerFromConfig creates RegisterGrpcGatewayServer with all dependencies.
-func NewRequestHandlerFromConfig(config Config) (*RefImpl, error) {
-
-	clientCertManager, err := certManager.NewCertManager(config.Dial)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create client cert manager %v", err)
-	}
-	serverCertManager, err := certManager.NewCertManager(config.Listen)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create server cert manager %v", err)
-	}
-
-	svc := config.Service
-	dialTLSConfig := clientCertManager.GetClientTLSConfig()
-
-	authServiceConn, err := grpc.Dial(svc.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
-	authServiceClient := pbAS.NewAuthorizationServiceClient(authServiceConn)
-
-	pool, err := ants.NewPool(config.GoRoutinePoolSize)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create goroutine pool: %v", err)
-	}
-
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(dialTLSConfig))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create resource mongodb eventstore %v", err)
-	}
-
-	subscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("resource-directory: error occurs during receiving event: %v", err) }, nats.WithTLS(dialTLSConfig))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create resource nats subscriber %v", err)
-	}
-
-	ctx := context.Background()
-
-	resourceProjection, err := service.NewProjection(ctx, svc.FQDN, eventstore, subscriber, config.CacheExpiration)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create server: %v", err)
-	}
-
-	return &RefImpl{
-		eventstore:        eventstore,
-		handle:            service.NewRequestHandler(authServiceClient, resourceProjection),
-		subscriber:        subscriber,
-		clientCertManager: clientCertManager,
-		serverCertManager: serverCertManager,
-	}, nil
+func NewAuth(jwksUrl string, tls *tls.Config, scope string) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
+		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
+			return jwt.NewScopeClaims(scope)
+		})
+		ctx, err := interceptor(ctx, method)
+		if err != nil {
+			log.Errorf("auth interceptor: %v", err)
+		}
+		return ctx, err
+	}, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
 }

@@ -1,32 +1,31 @@
 package service
 
 import (
+	"io"
+
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) error {
-	accessToken, err := grpc_auth.AuthFromMD(srv.Context(), "bearer")
+	ctx := makeCtx(srv.Context())
+	rd, err := r.resourceDirectoryClient.GetDevices(ctx, req)
 	if err != nil {
-		return logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot get devices: %v", err))
+		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get devices: %v", err)
 	}
-	userID, err := parseSubFromJwtToken(accessToken)
-	if err != nil {
-		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
+	for {
+		resp, err := rd.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive device: %v", err)
+		}
+		err = srv.Send(resp)
+		if err != nil {
+			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send device: %v", err)
+		}
 	}
-	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), userID)
-	if err != nil {
-		return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
-	}
-
-	rd := NewDeviceDirectory(r.resourceProjection, deviceIDs)
-	err = rd.GetDevices(req, srv)
-	if err != nil {
-		return logAndReturnError(err)
-	}
-
 	return nil
 }

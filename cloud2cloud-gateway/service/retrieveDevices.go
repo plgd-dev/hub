@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
@@ -49,10 +49,9 @@ type Device struct {
 	Status Status        `json:"status"`
 }
 
-func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdsFilter []string, authorizationContext pbCQRS.AuthorizationContext) ([]Device, error) {
-	getDevicesClient, err := rh.ddClient.GetDevices(ctx, &pbDD.GetDevicesRequest{
-		DeviceIdsFilter:      deviceIdsFilter,
-		AuthorizationContext: &authorizationContext,
+func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdsFilter []string) ([]Device, error) {
+	getDevicesClient, err := rh.rdClient.GetDevices(ctx, &pbGRPC.GetDevicesRequest{
+		DeviceIdsFilter: deviceIdsFilter,
 	})
 
 	if err != nil {
@@ -71,13 +70,7 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdsFilter []stri
 		}
 
 		devices = append(devices, Device{
-			Device: schema.Device{
-				ID:               device.GetId(),
-				ResourceTypes:    device.GetResource().GetResourceTypes(),
-				Name:             device.GetResource().GetName(),
-				ModelNumber:      device.GetResource().GetModelNumber(),
-				ManufacturerName: toLocalizedStrings(device.GetResource().GetManufacturerName()),
-			},
+			Device: device.ToSchema(),
 			Status: toStatus(device.IsOnline),
 		})
 	}
@@ -88,11 +81,11 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdsFilter []stri
 }
 
 func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
-	devices, err := rh.GetDevices(ctx, nil, pbCQRS.AuthorizationContext{})
+	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}
-	resourceLink, err := rh.GetResourceLinks(ctx, nil, pbCQRS.AuthorizationContext{})
+	resourceLink, err := rh.GetResourceLinks(ctx, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}
@@ -116,11 +109,11 @@ func (rh *RequestHandler) RetrieveDevicesBase(ctx context.Context, w http.Respon
 }
 
 func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.ResponseWriter, encoder responseWriterEncoderFunc) (int, error) {
-	devices, err := rh.GetDevices(ctx, nil, pbCQRS.AuthorizationContext{})
+	devices, err := rh.GetDevices(ctx, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}
-	reps, err := rh.RetrieveResourcesValues(ctx, nil, nil, pbCQRS.AuthorizationContext{})
+	reps, err := rh.RetrieveResourcesValues(ctx, nil, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}

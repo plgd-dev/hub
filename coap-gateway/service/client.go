@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
@@ -16,6 +17,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/sdk/schema"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 
@@ -396,21 +398,24 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	return nil
 }
 
-func (client *Client) publishResource(ctx context.Context, resource *pbRA.Resource, ttl int32, connectionID string, sequence uint64, authCtx pbCQRS.AuthorizationContext) (*pbRA.Resource, error) {
-	if resource.DeviceId == "" {
-		return resource, fmt.Errorf("cannot send command publish resource: invalid DeviceId")
+func (client *Client) publishResource(ctx context.Context, link schema.ResourceLink, ttl int32, connectionID string, sequence uint64, authCtx pbCQRS.AuthorizationContext) (schema.ResourceLink, error) {
+	if link.DeviceID == "" {
+		return link, fmt.Errorf("cannot send command publish resource: invalid DeviceId")
 	}
-	resource.Href = fixHref(resource.Href)
+	link.Href = fixHref(link.Href)
 
-	if resource.Href == "" || resource.Href == "/" {
-		return resource, fmt.Errorf("cannot send command publish resource: invalid Href")
+	if link.Href == "" || link.Href == "/" {
+		return link, fmt.Errorf("cannot send command publish resource: invalid Href")
 	}
-	resource.Id = resource2UUID(resource.DeviceId, resource.Href)
+	resourceID := resource2UUID(link.DeviceID, link.Href)
+
+	raLink := pbGRPC.SchemaResourceLinkToProto(link).ToRAProto()
+	raLink.Id = resourceID
 
 	request := pbRA.PublishResourceRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resource.Id,
-		Resource:             resource,
+		ResourceId:           resourceID,
+		Resource:             &raLink,
 		TimeToLive:           ttl,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			Sequence:     sequence,
@@ -420,11 +425,11 @@ func (client *Client) publishResource(ctx context.Context, resource *pbRA.Resour
 
 	response, err := client.server.raClient.PublishResource(ctx, &request)
 	if err != nil {
-		return resource, fmt.Errorf("cannot process command publish resource: %v", err)
+		return link, fmt.Errorf("cannot process command publish resource: %v", err)
 	}
 
-	resource.InstanceId = response.InstanceId
-	return resource, nil
+	link.InstanceID = response.InstanceId
+	return link, nil
 }
 
 func (client *Client) unpublishResource(ctx context.Context, resource *pbRA.Resource, authCtx pbCQRS.AuthorizationContext, rscsUnpublished map[string]bool) map[string]bool {

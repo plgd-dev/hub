@@ -15,11 +15,10 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	notificationRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/go-coap/v2/blockwise"
@@ -53,8 +52,7 @@ type Server struct {
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
-	rsClient pbRS.ResourceShadowClient
-	rdClient pbRD.ResourceDirectoryClient
+	rdClient pbGRPC.GrpcGatewayClient
 
 	clientContainer               *ClientContainer
 	clientContainerByDeviceID     *clientContainerByDeviceID
@@ -119,8 +117,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		listener = l
 		isTLSListener = true
 	}
-	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
-	rsClient := pbRS.NewResourceShadowClient(rdConn)
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
 	var keepAlive *keepalive.KeepAlive
 	if config.KeepaliveEnable {
@@ -165,7 +162,6 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		IsTLSListener: isTLSListener,
 		raClient:      raClient,
 		asClient:      asClient,
-		rsClient:      rsClient,
 		rdClient:      rdClient,
 
 		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},

@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"context"
@@ -6,36 +6,39 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
+	"github.com/go-ocf/cloud/resource-directory/service"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 	type args struct {
-		req *pbRS.RetrieveResourcesValuesRequest
+		req *pb.RetrieveResourcesValuesRequest
 	}
 	tests := []struct {
 		name           string
 		args           args
 		wantStatusCode codes.Code
 		wantErr        bool
-		want           map[string]*pbRS.ResourceValue
+		want           map[string]*pb.ResourceValue
 	}{
 
 		{
 			name: "list unauthorized device",
 			args: args{
-				req: &pbRS.RetrieveResourcesValuesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					DeviceIdsFilter:      []string{Resource0.DeviceId},
+				req: &pb.RetrieveResourcesValuesRequest{
+					DeviceIdsFilter: []string{Resource0.DeviceId},
 				},
 			},
 			wantStatusCode: codes.NotFound,
@@ -45,25 +48,34 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 		{
 			name: "filter by resource Id",
 			args: args{
-				req: &pbRS.RetrieveResourcesValuesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					ResourceIdsFilter:    []string{Resource1.Id, Resource2.Id},
+				req: &pb.RetrieveResourcesValuesRequest{
+					ResourceIdsFilter: []*pb.ResourceId{
+						{
+							DeviceId:         Resource1.DeviceId,
+							ResourceLinkHref: Resource1.Href,
+						}, {
+							DeviceId:         Resource2.DeviceId,
+							ResourceLinkHref: Resource2.Href,
+						},
+					},
 				},
 			},
-			want: map[string]*pbRS.ResourceValue{
+			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
-					ResourceId: Resource1.Id,
-					DeviceId:   Resource1.DeviceId,
-					Href:       Resource1.Href,
-					Content:    &Resource1.Content,
-					Types:      Resource1.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource1.DeviceId,
+						ResourceLinkHref: Resource1.Href,
+					},
+					Content: pb.RAContent2Content(&Resource1.Content),
+					Types:   Resource1.ResourceTypes,
 				},
 				Resource2.Id: {
-					ResourceId: Resource2.Id,
-					DeviceId:   Resource2.DeviceId,
-					Href:       Resource2.Href,
-					Content:    &Resource2.Content,
-					Types:      Resource2.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource2.DeviceId,
+						ResourceLinkHref: Resource2.Href,
+					},
+					Content: pb.RAContent2Content(&Resource2.Content),
+					Types:   Resource2.ResourceTypes,
 				},
 			},
 		},
@@ -71,25 +83,26 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 		{
 			name: "filter by device Id",
 			args: args{
-				req: &pbRS.RetrieveResourcesValuesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					DeviceIdsFilter:      []string{Resource1.DeviceId},
+				req: &pb.RetrieveResourcesValuesRequest{
+					DeviceIdsFilter: []string{Resource1.DeviceId},
 				},
 			},
-			want: map[string]*pbRS.ResourceValue{
+			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
-					ResourceId: Resource1.Id,
-					DeviceId:   Resource1.DeviceId,
-					Href:       Resource1.Href,
-					Content:    &Resource1.Content,
-					Types:      Resource1.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource1.DeviceId,
+						ResourceLinkHref: Resource1.Href,
+					},
+					Content: pb.RAContent2Content(&Resource1.Content),
+					Types:   Resource1.ResourceTypes,
 				},
 				Resource3.Id: {
-					ResourceId: Resource3.Id,
-					DeviceId:   Resource3.DeviceId,
-					Href:       Resource3.Href,
-					Content:    &Resource3.Content,
-					Types:      Resource3.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource3.DeviceId,
+						ResourceLinkHref: Resource3.Href,
+					},
+					Content: pb.RAContent2Content(&Resource3.Content),
+					Types:   Resource3.ResourceTypes,
 				},
 			},
 		},
@@ -97,25 +110,26 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 		{
 			name: "filter by type",
 			args: args{
-				req: &pbRS.RetrieveResourcesValuesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					TypeFilter:           []string{Resource2.ResourceTypes[0]},
+				req: &pb.RetrieveResourcesValuesRequest{
+					TypeFilter: []string{Resource2.ResourceTypes[0]},
 				},
 			},
-			want: map[string]*pbRS.ResourceValue{
+			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
-					ResourceId: Resource1.Id,
-					DeviceId:   Resource1.DeviceId,
-					Href:       Resource1.Href,
-					Content:    &Resource1.Content,
-					Types:      Resource1.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource1.DeviceId,
+						ResourceLinkHref: Resource1.Href,
+					},
+					Content: pb.RAContent2Content(&Resource1.Content),
+					Types:   Resource1.ResourceTypes,
 				},
 				Resource2.Id: {
-					ResourceId: Resource2.Id,
-					DeviceId:   Resource2.DeviceId,
-					Href:       Resource2.Href,
-					Content:    &Resource2.Content,
-					Types:      Resource2.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource2.DeviceId,
+						ResourceLinkHref: Resource2.Href,
+					},
+					Content: pb.RAContent2Content(&Resource2.Content),
+					Types:   Resource2.ResourceTypes,
 				},
 			},
 		},
@@ -123,19 +137,19 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 		{
 			name: "filter by device Id and type",
 			args: args{
-				req: &pbRS.RetrieveResourcesValuesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					DeviceIdsFilter:      []string{Resource1.DeviceId},
-					TypeFilter:           []string{Resource1.ResourceTypes[0]},
+				req: &pb.RetrieveResourcesValuesRequest{
+					DeviceIdsFilter: []string{Resource1.DeviceId},
+					TypeFilter:      []string{Resource1.ResourceTypes[0]},
 				},
 			},
-			want: map[string]*pbRS.ResourceValue{
+			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
-					ResourceId: Resource1.Id,
-					DeviceId:   Resource1.DeviceId,
-					Href:       Resource1.Href,
-					Content:    &Resource1.Content,
-					Types:      Resource1.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource1.DeviceId,
+						ResourceLinkHref: Resource1.Href,
+					},
+					Content: pb.RAContent2Content(&Resource1.Content),
+					Types:   Resource1.ResourceTypes,
 				},
 			},
 		},
@@ -143,31 +157,32 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 		{
 			name: "list all resources of user",
 			args: args{
-				req: &pbRS.RetrieveResourcesValuesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-				},
+				req: &pb.RetrieveResourcesValuesRequest{},
 			},
-			want: map[string]*pbRS.ResourceValue{
+			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
-					ResourceId: Resource1.Id,
-					DeviceId:   Resource1.DeviceId,
-					Href:       Resource1.Href,
-					Content:    &Resource1.Content,
-					Types:      Resource1.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource1.DeviceId,
+						ResourceLinkHref: Resource1.Href,
+					},
+					Content: pb.RAContent2Content(&Resource1.Content),
+					Types:   Resource1.ResourceTypes,
 				},
 				Resource2.Id: {
-					ResourceId: Resource2.Id,
-					DeviceId:   Resource2.DeviceId,
-					Href:       Resource2.Href,
-					Content:    &Resource2.Content,
-					Types:      Resource2.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource2.DeviceId,
+						ResourceLinkHref: Resource2.Href,
+					},
+					Content: pb.RAContent2Content(&Resource2.Content),
+					Types:   Resource2.ResourceTypes,
 				},
 				Resource3.Id: {
-					ResourceId: Resource3.Id,
-					DeviceId:   Resource3.DeviceId,
-					Href:       Resource3.Href,
-					Content:    &Resource3.Content,
-					Types:      Resource3.ResourceTypes,
+					ResourceId: &pb.ResourceId{
+						DeviceId:         Resource3.DeviceId,
+						ResourceLinkHref: Resource3.Href,
+					},
+					Content: pb.RAContent2Content(&Resource3.Content),
+					Types:   Resource3.ResourceTypes,
 				},
 			},
 		},
@@ -188,31 +203,46 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
-	resourceProjection, err := NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, time.Second)
+
+	subscriptions := service.NewSubscriptions()
+	updateNotificationContainer := notification.NewUpdateNotificationContainer()
+	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
+
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), time.Second)
 	require.NoError(t, err)
 
-	rd := NewResourceShadow(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
+	rd := service.NewResourceShadow(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fmt.Println(tt.name)
-			var got map[string]*pbRS.ResourceValue
-			gotStatusCode, err := rd.RetrieveResourcesValues(context.Background(), tt.args.req, func(r *pbRS.ResourceValue) error {
-				if got == nil {
-					got = make(map[string]*pbRS.ResourceValue)
-				}
-				got[r.ResourceId] = r
-				return nil
-			})
+			var s testGrpcGateway_RetrieveResourcesValuesServer
+			err := rd.RetrieveResourcesValues(tt.args.req, &s)
 
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, tt.wantStatusCode, gotStatusCode)
-			assert.Equal(t, tt.want, got)
-			got = nil
+			assert.Equal(t, tt.wantStatusCode, status.Convert(err).Code())
+			assert.Equal(t, tt.want, s.got)
 		})
 	}
+}
+
+type testGrpcGateway_RetrieveResourcesValuesServer struct {
+	got map[string]*pb.ResourceValue
+	grpc.ServerStream
+}
+
+func (s *testGrpcGateway_RetrieveResourcesValuesServer) Context() context.Context {
+	return context.Background()
+}
+
+func (s *testGrpcGateway_RetrieveResourcesValuesServer) Send(d *pb.ResourceValue) error {
+	if s.got == nil {
+		s.got = make(map[string]*pb.ResourceValue)
+	}
+	s.got[cqrs.MakeResourceId(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetResourceLinkHref())] = d
+	return nil
 }

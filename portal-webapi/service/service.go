@@ -4,10 +4,8 @@ import (
 	"crypto/tls"
 	"net"
 
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/go-ocf/kit/log"
 	"github.com/valyala/fasthttp"
 	"google.golang.org/grpc"
@@ -50,9 +48,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
-	rsClient := pbRS.NewResourceShadowClient(rdConn)
-	ddClient := pbDD.NewDeviceDirectoryClient(rdConn)
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
@@ -63,7 +59,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		ln:     ln,
 	}
 
-	requestHandler := NewRequestHandler(&server, raClient, rsClient, rdClient, ddClient)
+	requestHandler := NewRequestHandler(&server, raClient, rdClient)
 	router := NewHTTP(requestHandler)
 
 	server.server = &fasthttp.Server{

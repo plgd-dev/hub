@@ -1,4 +1,4 @@
-package service
+package test
 
 import (
 	"context"
@@ -7,11 +7,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 
 	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/authorization/service"
+	testCfg "github.com/go-ocf/cloud/test"
 	"github.com/go-ocf/kit/security/certManager"
 )
 
@@ -28,6 +30,16 @@ func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, 
 	}
 
 	return s, nil
+}
+
+func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
+	var authCfg service.Config
+	err := envconfig.Process("", &authCfg)
+	require.NoError(t, err)
+	authCfg.Addr = testCfg.AUTH_HOST
+	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
+	authCfg.Device.Provider = "test"
+	return authService.NewAuthServer(t, authCfg)
 }
 
 func NewAuthServer(t *testing.T, config service.Config) func() {
