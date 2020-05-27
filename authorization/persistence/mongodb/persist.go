@@ -3,11 +3,12 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-ocf/cloud/authorization/persistence"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 const (
@@ -168,6 +169,9 @@ func (i *iterator) Err() error {
 }
 
 func (i *iterator) Close() {
+	if i.iter == nil {
+		return
+	}
 	i.err = i.iter.Close(i.ctx)
 }
 
