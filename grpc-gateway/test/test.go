@@ -15,18 +15,19 @@ import (
 
 	"github.com/go-ocf/cloud/grpc-gateway/refImpl"
 	"github.com/go-ocf/cloud/grpc-gateway/service"
-	testCfg "github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	var grpcCfg refImpl.Config
-	err = envconfig.Process("", &grpcCfg)
+	err := envconfig.Process("", &grpcCfg)
 	require.NoError(t, err)
 	grpcCfg.Addr = testCfg.GRPC_HOST
 	grpcCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	grpcCfg.Service.OAuth.Endpoint.TokenURL = "https://" + testCfg.AUTH_HTTP_HOST + "/api/authz/token"
+	grpcCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	grpcCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 	return NewGrpcGateway(t, grpcCfg)
 }
 

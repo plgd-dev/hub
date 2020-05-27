@@ -13,7 +13,7 @@ import (
 	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/authorization/service"
-	testCfg "github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/kit/security/certManager"
 )
 
@@ -39,7 +39,7 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	authCfg.Addr = testCfg.AUTH_HOST
 	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
 	authCfg.Device.Provider = "test"
-	return authService.NewAuthServer(t, authCfg)
+	return NewAuthServer(t, authCfg)
 }
 
 func NewAuthServer(t *testing.T, config service.Config) func() {

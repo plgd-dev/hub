@@ -39,21 +39,23 @@ func init() {
 	key.Set(jwk.AlgorithmKey, jwa.ES256.String())
 	jwkKey = key
 
-	token, err := generateToken()
+	token, err := generateToken(false)
 	if err != nil {
 		log.Fatal(err)
 	}
 	UserToken = token.AccessToken
 }
 
-func generateToken() (*Token, error) {
+func generateToken(isService bool) (*Token, error) {
 	t := Token{
 		RefreshToken: "refresh-token",
 		Expiry:       time.Now().Add(time.Hour * 24 * 365),
 		UserID:       "1",
 	}
 	token := jwt.New()
-	token.Set(jwt.SubjectKey, t.UserID)
+	if !isService {
+		token.Set(jwt.SubjectKey, t.UserID)
+	}
 	token.Set(jwt.AudienceKey, []string{"https://127.0.0.1", "https://localhost"})
 	token.Set(jwt.IssuedAtKey, time.Now().Unix())
 	token.Set(jwt.ExpirationKey, t.Expiry.Unix())
@@ -94,12 +96,12 @@ func (p *TestProvider) GetProviderName() string {
 
 // Exchange Auth Code for Access Token via OAuth.
 func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
-	return generateToken()
+	return generateToken(false)
 }
 
 // Refresh gets new Access Token via OAuth.
 func (p *TestProvider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
-	return generateToken()
+	return generateToken(false)
 }
 
 // AuthCodeURL returns URL for redirecting.
@@ -129,7 +131,12 @@ func (p *TestProvider) HandleAuthorizationCode(ctx *fasthttp.RequestCtx) {
 }
 
 func (p *TestProvider) HandleAccessToken(ctx *fasthttp.RequestCtx) {
-	token, err := generateToken()
+	clientID := string(ctx.QueryArgs().Peek("ClientId"))
+	var isService bool
+	if clientID == "service" {
+		isService = true
+	}
+	token, err := generateToken(isService)
 	if err != nil {
 		setErrorResponse(&ctx.Response, fasthttp.StatusInternalServerError, err.Error())
 		return

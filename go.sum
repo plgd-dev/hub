@@ -146,6 +146,7 @@ github.com/go-ocf/kit v0.0.0-20200522104643-af04c1ff1971 h1:u7EfBoO8bKuWUNK2ivoL
 github.com/go-ocf/kit v0.0.0-20200522104643-af04c1ff1971/go.mod h1:t6BL1Z38jV7qKwmaoh9l8iPKrhZcYMe4MGTCjxzr6v4=
 github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9 h1:jB/BO9UQTHtM1rIMWGHdJ2J9PHxY4J/29/aREdjMd6I=
 github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9/go.mod h1:t6BL1Z38jV7qKwmaoh9l8iPKrhZcYMe4MGTCjxzr6v4=
+github.com/go-ocf/kit v0.0.0-20200527102456-7ae9675557b2 h1:0DNDj8pLZPDStiLoS9oFHSwhzfjHsbSJTwMfyJubgnI=
 github.com/go-ocf/resource-aggregate v0.0.0-20190610073816-ff5194c51d2a/go.mod h1:5G1FgzxCnQhETxlFMh2DYtGJrl82AK3MvHXW4MYpO08=
 github.com/go-ocf/resource-aggregate v0.0.0-20191001194720-f5aade86d89a/go.mod h1:5G1FgzxCnQhETxlFMh2DYtGJrl82AK3MvHXW4MYpO08=
 github.com/go-ocf/resource-aggregate v0.0.0-20191029083107-ed77cacca426/go.mod h1:8KjjOJsevWFUzQ5UhD/tybREQhW05HeQsuGJ449X5qM=

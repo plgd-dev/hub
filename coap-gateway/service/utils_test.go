@@ -30,14 +30,8 @@ import (
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
-	authConfig "github.com/go-ocf/cloud/authorization/service"
-	authService "github.com/go-ocf/cloud/authorization/test/service"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	refImplRA "github.com/go-ocf/cloud/resource-aggregate/refImpl"
-	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
-	refImplRD "github.com/go-ocf/cloud/resource-directory/refImpl"
-	rdService "github.com/go-ocf/cloud/resource-directory/test/service"
 	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
@@ -246,19 +240,6 @@ func testCreateCoapGateway(t *testing.T, resourceDBname string, config Config) f
 	}
 }
 
-func testCreateResourceAggregate(t *testing.T, resourceDBname, addr, AuthServerAddr string) (shutdown func()) {
-	var config refImplRA.Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.Service.AuthServerAddr = AuthServerAddr
-	config.MongoDB.DatabaseName = resourceDBname
-	config.Service.Addr = addr
-	//config.Log.Debug = TestLogDebug
-	config.Service.SnapshotThreshold = 1
-
-	return raService.NewResourceAggregate(t, config)
-}
-
 func init() {
 	log.Setup(log.Config{Debug: TestLogDebug})
 }
@@ -303,31 +284,6 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	for _, tt := range publishResEl {
 		testPostHandler(t, uri.ResourceDirectory, tt, co)
 	}
-}
-
-func testCreateResourceDirectory(t *testing.T, resourceDBname, addr, AuthServerAddr string) func() {
-	var config refImplRD.Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.Service.AuthServerAddr = AuthServerAddr
-	config.Mongo.DatabaseName = resourceDBname
-	config.Addr = addr
-
-	return rdService.NewResourceDirectory(t, config)
-}
-
-func testCreateAuthServer(t *testing.T, addr string) func() {
-	var authConfig authConfig.Config
-
-	envconfig.Process("", &authConfig)
-	var acmeCfg certManager.Config
-	err := envconfig.Process("DIAL", &acmeCfg)
-	assert.NoError(t, err)
-	authConfig.Listen = acmeCfg
-	require.NoError(t, err)
-	authConfig.Addr = addr
-
-	return authService.NewAuthServer(t, authConfig)
 }
 
 func testCoapDial(t *testing.T, host, net string) *tcp.ClientConn {

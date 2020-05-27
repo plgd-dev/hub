@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-ocf/kit/security/oauth/manager"
+
 	"github.com/panjf2000/ants"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -30,6 +32,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 
 	"github.com/go-ocf/kit/log"
 	cache "github.com/patrickmn/go-cache"
@@ -61,6 +64,7 @@ type Server struct {
 	observeResourceContainer      *observeResourceContainer
 	goroutinesPool                *ants.Pool
 	oicPingCache                  *cache.Cache
+	oauthMgr                      *manager.Manager
 
 	projection      *projectionRA.Projection
 	coapServer      *tcp.Server
@@ -83,20 +87,35 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	oicPingCache.OnEvicted(pingOnEvicted)
 
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create oauth manager: %v", err)
+	}
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	raConn, err := grpc.Dial(
+		config.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	asConn, err := grpc.Dial(
+		config.AuthServerAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	asClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -163,6 +182,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		raClient:      raClient,
 		asClient:      asClient,
 		rdClient:      rdClient,
+		oauthMgr:      oauthMgr,
 
 		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},
 		clientContainerByDeviceID:     newClientContainerByDeviceID(),
@@ -347,5 +367,6 @@ func (server *Server) Serve() error {
 func (server *Server) Shutdown() error {
 	defer server.wgDone.Wait()
 	server.coapServer.Stop()
+	server.oauthMgr.Close()
 	return server.listener.Close()
 }

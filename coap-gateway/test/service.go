@@ -6,18 +6,21 @@ import (
 	"testing"
 
 	"github.com/go-ocf/cloud/coap-gateway/refImpl"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	var gwCfg refImpl.Config
-	err = envconfig.Process("", &gwCfg)
+	err := envconfig.Process("", &gwCfg)
 	require.NoError(t, err)
 	gwCfg.Service.Addr = testCfg.GW_HOST
 	gwCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	gwCfg.Service.FQDN = "coap-gateway-" + t.Name()
-	gwShutdown := coapgwService.NewCoapGateway(t, gwCfg)
+	gwCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	gwCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	return NewCoapGateway(t, gwCfg)
 }
 
 // NewCoapGateway creates test coap-gateway.
