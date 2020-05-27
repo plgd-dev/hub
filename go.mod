@@ -13,7 +13,7 @@ require (
 	github.com/go-ocf/kit v0.0.0-20200415134408-e0585e8eea21
 	github.com/go-ocf/resource-aggregate v0.0.0-20200326125438-8ab650abf05f
 	github.com/go-ocf/resource-directory v0.0.0-20200317085054-6490221ad726
-	github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33
+	github.com/go-ocf/sdk 478e59f33e2c
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.3.5
