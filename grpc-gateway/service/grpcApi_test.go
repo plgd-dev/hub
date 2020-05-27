@@ -17,7 +17,7 @@ import (
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
-	coap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -193,7 +193,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 					},
 					Types: cloud.StatusResourceTypes,
 					Content: &pb.Content{
-						ContentType: coap.AppOcfCbor.String(),
+						ContentType: message.AppOcfCbor.String(),
 						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
 							"if":     cloud.StatusInterfaces,
 							"rt":     cloud.StatusResourceTypes,
@@ -263,7 +263,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						ResourceLinkHref: "/light/1",
 					},
 					Content: &pb.Content{
-						ContentType: coap.AppOcfCbor.String(),
+						ContentType: message.AppOcfCbor.String(),
 						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
 							"power": 1,
 						}),
@@ -284,7 +284,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						ResourceLinkHref: "/light/1",
 					},
 					Content: &pb.Content{
-						ContentType: coap.AppOcfCbor.String(),
+						ContentType: message.AppOcfCbor.String(),
 						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
 							"power": 2,
 						}),
@@ -305,7 +305,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						ResourceLinkHref: "/light/1",
 					},
 					Content: &pb.Content{
-						ContentType: coap.AppOcfCbor.String(),
+						ContentType: message.AppOcfCbor.String(),
 						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
 							"power": 0,
 						}),
@@ -325,7 +325,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						ResourceLinkHref: "/oic/d",
 					},
 					Content: &pb.Content{
-						ContentType: coap.AppOcfCbor.String(),
+						ContentType: message.AppOcfCbor.String(),
 						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
 							"di": "abc",
 						}),
@@ -413,7 +413,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.0.0", "icv": "ocf.1.0.0", "n": grpcTest.TestDeviceName},
+			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": grpcTest.TestDeviceName},
 		},
 		{
 			name: "invalid ResourceLinkHref",
@@ -811,7 +811,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					ResourceLinkHref: "/light/2",
 				},
 				Content: &pb.Content{
-					ContentType: coap.AppOcfCbor.String(),
+					ContentType: message.AppOcfCbor.String(),
 					Data:        []byte("\277estate\364epower\000dnameeLight\377"),
 				},
 			},
@@ -825,7 +825,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			ResourceLinkHref: "/light/2",
 		},
 		Content: &pb.Content{
-			ContentType: coap.AppOcfCbor.String(),
+			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
 				v := map[string]interface{}{
 					"power": 99,
@@ -849,7 +849,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					ResourceLinkHref: "/light/2",
 				},
 				Content: &pb.Content{
-					ContentType: coap.AppOcfCbor.String(),
+					ContentType: message.AppOcfCbor.String(),
 					Data:        []byte("\277estate\364epower\030cdnameeLight\377"),
 				},
 			},

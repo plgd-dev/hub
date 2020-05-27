@@ -127,3 +127,5 @@ dist
 
 # TernJS port file
 .tern-port
+
+certificate-authority/acme/refImpl/acmeDB/

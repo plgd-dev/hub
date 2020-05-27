@@ -5,10 +5,12 @@ import (
 	"testing"
 	"time"
 
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/tcp"
+
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_clientObserveHandler(t *testing.T) {
@@ -37,18 +39,10 @@ func Test_clientObserveHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	NewGetRequest := func(path string, observe uint32, token []byte) gocoap.Message {
-		msg, err := co.NewGetRequest(path)
-		msg.SetObserve(observe)
-		if token != nil {
-			msg.SetToken(token)
-		}
-		assert.NoError(t, err)
-		return msg
-	}
-
 	type args struct {
-		req gocoap.Message
+		path    string
+		observe uint32
+		token   []byte
 	}
 	tests := []struct {
 		name      string
@@ -59,7 +53,9 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "invalid observe",
 			args: args{
-				req: NewGetRequest(resourceRoute+"/dev0/res0", 123, nil),
+				path:    resourceRoute + "/dev0/res0",
+				observe: 123,
+				token:   nil,
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
@@ -67,7 +63,9 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "observe - not exist resource",
 			args: args{
-				req: NewGetRequest(resourceRoute+"/dev0/res0", 0, nil),
+				path:    resourceRoute + "/dev0/res0",
+				observe: 0,
+				token:   nil,
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
@@ -75,7 +73,9 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "unobserve - not exist resource",
 			args: args{
-				req: NewGetRequest(resourceRoute+"/dev0/res0", 1, nil),
+				path:    resourceRoute + "/dev0/res0",
+				observe: 1,
+				token:   nil,
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
@@ -83,7 +83,9 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "observe",
 			args: args{
-				req: NewGetRequest(resourceRoute+"/"+CertIdentity+TestAResourceHref, 0, []byte("observe")),
+				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				observe: 0,
+				token:   []byte("observe"),
 			},
 			wantsCode: coapCodes.Content,
 		},
@@ -91,7 +93,9 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "unobserve",
 			args: args{
-				req: NewGetRequest(resourceRoute+"/"+CertIdentity+TestAResourceHref, 1, []byte("observe")),
+				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				observe: 1,
+				token:   []byte("observe"),
 			},
 			wantsCode: coapCodes.Content,
 		},
@@ -104,8 +108,14 @@ func Test_clientObserveHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, tt.args.req)
-			assert.NoError(t, err)
+			req, err := tcp.NewGetRequest(ctx, tt.args.path)
+			require.NoError(t, err)
+			req.SetObserve(tt.args.observe)
+			if tt.args.token != nil {
+				req.SetToken(tt.args.token)
+			}
+			resp, err := co.Do(req)
+			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
 		})
 	}

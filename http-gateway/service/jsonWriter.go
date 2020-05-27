@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/gogo/protobuf/proto"
 )
@@ -51,7 +51,7 @@ func jsonResponseWriter(w http.ResponseWriter, v interface{}) error {
 	if v == nil {
 		return nil
 	}
-	w.Header().Set(contentTypeHeaderKey, coap.AppJSON.String())
+	w.Header().Set(contentTypeHeaderKey, message.AppJSON.String())
 	if pb, ok := v.(proto.Message); ok {
 		v = structToMap(pb)
 	}

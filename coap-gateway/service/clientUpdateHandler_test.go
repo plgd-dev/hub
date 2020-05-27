@@ -3,13 +3,15 @@ package service
 import (
 	"bytes"
 	"context"
+	"io"
 	"testing"
 	"time"
 
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_clientUpdateHandler(t *testing.T) {
@@ -36,14 +38,10 @@ func Test_clientUpdateHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	NewPostRequest := func(href string, contentFormat gocoap.MediaType, payload []byte) gocoap.Message {
-		msg, err := co.NewPostRequest(href, contentFormat, bytes.NewBuffer(payload))
-		assert.NoError(t, err)
-		return msg
-	}
-
 	type args struct {
-		req gocoap.Message
+		href          string
+		contentFormat message.MediaType
+		payload       []byte
 	}
 	tests := []struct {
 		name      string
@@ -53,21 +51,27 @@ func Test_clientUpdateHandler(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				req: NewPostRequest(resourceRoute+TestAResourceHref, gocoap.TextPlain, []byte{}),
+				href:          resourceRoute + TestAResourceHref,
+				contentFormat: message.TextPlain,
+				payload:       []byte{},
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
 		{
 			name: "not found",
 			args: args{
-				req: NewPostRequest(resourceRoute+"/a/b", gocoap.TextPlain, []byte{}),
+				href:          resourceRoute + "/a/b",
+				contentFormat: message.TextPlain,
+				payload:       []byte{},
 			},
 			wantsCode: coapCodes.NotFound,
 		},
 		{
 			name: "valid",
 			args: args{
-				req: NewPostRequest(resourceRoute+"/"+CertIdentity+TestAResourceHref, gocoap.TextPlain, []byte("data")),
+				href:          resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				contentFormat: message.TextPlain,
+				payload:       []byte("data"),
 			},
 			wantsCode: coapCodes.Changed,
 		},
@@ -79,11 +83,13 @@ func Test_clientUpdateHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, tt.args.req)
-			assert.NoError(t, err)
-			if resp != nil {
-				assert.Equal(t, tt.wantsCode, resp.Code())
+			var body io.ReadSeeker
+			if len(tt.args.payload) > 0 {
+				body = bytes.NewReader(tt.args.payload)
 			}
+			resp, err := co.Post(ctx, tt.args.href, tt.args.contentFormat, body)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantsCode, resp.Code())
 		})
 	}
 }

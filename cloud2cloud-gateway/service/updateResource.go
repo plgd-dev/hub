@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -23,12 +23,12 @@ const checkAgain = http.StatusPreconditionRequired
 
 func getCoapContentFormat(contentType string) int32 {
 	switch contentType {
-	case coap.AppJSON.String():
-		return int32(coap.AppJSON)
-	case coap.AppCBOR.String():
-		return int32(coap.AppCBOR)
-	case coap.AppOcfCbor.String():
-		return int32(coap.AppOcfCbor)
+	case message.AppJSON.String():
+		return int32(message.AppJSON)
+	case message.AppCBOR.String():
+		return int32(message.AppCBOR)
+	case message.AppOcfCbor.String():
+		return int32(message.AppOcfCbor)
 	}
 
 	return -1

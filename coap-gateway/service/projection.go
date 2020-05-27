@@ -43,7 +43,7 @@ func (m *resourceCtx) Resource() *pbRA.Resource {
 }
 
 func (m *resourceCtx) onResourcePublishedLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}
@@ -54,16 +54,16 @@ func (m *resourceCtx) onResourcePublishedLocked() {
 }
 
 func (m *resourceCtx) onResourceUnpublishedLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}
-	client.unobserveResources([]*pbRA.Resource{m.resource}, map[string]bool{m.resource.Id: true})
+	client.unobserveResources(client.coapConn.Context(), []*pbRA.Resource{m.resource}, map[string]bool{m.resource.Id: true})
 }
 
 func (m *resourceCtx) onResourceChangedLocked() {
 	for _, obs := range m.server.observeResourceContainer.Find(m.resource.Id) {
-		SendResourceContentToObserver(obs.responseWriter, obs.client, m.contentCtx, obs.Observe(), obs.deviceId, obs.resourceId, obs.token)
+		SendResourceContentToObserver(obs.client, m.contentCtx, obs.Observe(), obs.deviceID, obs.resourceID, obs.token)
 	}
 }
 
@@ -78,7 +78,7 @@ func (m *resourceCtx) TriggerSignIn() {
 }
 
 func (m *resourceCtx) onUpdateResourceLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}
@@ -91,14 +91,13 @@ func (m *resourceCtx) onUpdateResourceLocked() {
 		if err != nil {
 			log.Errorf("DeviceId: %v, ResourceId: %v: cannot perform update: %v", m.resource.DeviceId, m.resource.Id, err)
 			return
-		} else {
-			m.resourceUpdatePendings = m.resourceUpdatePendings[1:]
 		}
+		m.resourceUpdatePendings = m.resourceUpdatePendings[1:]
 	}
 }
 
 func (m *resourceCtx) onRetrieveResourceLocked() {
-	client := m.server.clientContainerByDeviceId.Find(m.resource.DeviceId)
+	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
 	}
@@ -111,9 +110,8 @@ func (m *resourceCtx) onRetrieveResourceLocked() {
 		if err != nil {
 			log.Errorf("DeviceId: %v, ResourceId: %v: cannot perform retrieve: %v", m.resource.DeviceId, m.resource.Id, err)
 			return
-		} else {
-			m.resourceRetrievePendings = m.resourceRetrievePendings[1:]
 		}
+		m.resourceRetrievePendings = m.resourceRetrievePendings[1:]
 	}
 }
 

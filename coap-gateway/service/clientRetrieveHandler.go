@@ -10,8 +10,9 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
@@ -19,64 +20,69 @@ import (
 )
 
 // URIToDeviceIDHref convert uri to deviceID and href. Expected input "/oic/route/{deviceID}/{Href}".
-func URIToDeviceIDHref(msg gocoap.Message) (deviceID, href string, err error) {
-	path := msg.Path()
+func URIToDeviceIDHref(msg *mux.Message) (deviceID, href string, err error) {
+	wholePath, err := msg.Options.Path()
+	if err != nil {
+		return "", "", fmt.Errorf("cannot parse deviceID, href from uri: %w", err)
+	}
+	path := strings.Split(wholePath, "/")
 	if len(path) < 4 {
 		return "", "", fmt.Errorf("cannot parse deviceID, href from uri")
 	}
 	return path[2], fixHref(strings.Join(path[3:], "/")), nil
 }
 
-func getResourceInterface(msg gocoap.Message) string {
-	for _, queryRaw := range msg.Options(gocoap.URIQuery) {
-		if query, ok := queryRaw.(string); ok && strings.HasPrefix(query, "if=") {
+func getResourceInterface(msg *mux.Message) string {
+	queries, _ := msg.Options.Queries()
+	for _, query := range queries {
+		if strings.HasPrefix(query, "if=") {
 			return strings.TrimLeft(query, "if=")
 		}
 	}
 	return ""
 }
 
-func clientRetrieveHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func clientRetrieveHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("clientRetrieveHandler takes %v", time.Since(t))
 	}()
 	authCtx := client.loadAuthorizationContext()
 
-	deviceID, href, err := URIToDeviceIDHref(req.Msg)
+	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.DeviceId, err), s, client, coapCodes.BadRequest)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.DeviceId, err),  coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	var content *pbRA.Content
 	var code coapCodes.Code
-	resourceInterface := getResourceInterface(req.Msg)
+	resourceInterface := getResourceInterface(req)
 	resourceID := resource2UUID(deviceID, href)
 	if resourceInterface == "" {
-		content, code, err = clientRetrieveFromResourceShadowHandler(kitNetGrpc.CtxWithToken(req.Ctx, authCtx.AccessToken), client, resourceID)
+		content, code, err = clientRetrieveFromResourceShadowHandler(kitNetGrpc.CtxWithToken(req.Context, authCtx.AccessToken), client, resourceID)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.DeviceId, deviceID, href, err), s, client, code)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 			return
 		}
 	} else {
 		content, code, err = clientRetrieveFromDeviceHandler(req, client, deviceID, resourceID, resourceInterface)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.DeviceId, deviceID, href, err), s, client, code)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 			return
 		}
 	}
 
 	if content == nil || len(content.Data) == 0 {
-		sendResponse(s, client, code, gocoap.TextPlain, nil)
+		client.sendResponse( code, req.Token, message.TextPlain, nil)
 		return
 	}
 	mediaType, err := coapconv.MakeMediaType(content.CoapContentFormat, content.ContentType)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), s, client, code)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err),  code, req.Token)
 		return
 	}
-	sendResponse(s, client, code, mediaType, content.Data)
+	client.sendResponse( code, req.Token, mediaType, content.Data)
 }
 
 func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, resourceID string) (*pbRA.Content, coapCodes.Code, error) {
@@ -104,7 +110,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *gocoap.Request, client *Client, deviceID, resourceID, resourceInterface string) (*pbRA.Content, coapCodes.Code, error) {
+func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, resourceID, resourceInterface string) (*pbRA.Content, coapCodes.Code, error) {
 	authCtx := client.loadAuthorizationContext()
 	correlationIDUUID, err := uuid.NewV4()
 	if err != nil {
@@ -116,29 +122,29 @@ func clientRetrieveFromDeviceHandler(req *gocoap.Request, client *Client, device
 	notify := client.server.retrieveNotificationContainer.Add(correlationID)
 	defer client.server.retrieveNotificationContainer.Remove(correlationID)
 
-	loaded, err := client.server.projection.Register(req.Ctx, deviceID)
+	loaded, err := client.server.projection.Register(req.Context, deviceID)
 	if err != nil {
 		return nil, coapCodes.NotFound, fmt.Errorf("cannot register device to projection: %w", err)
 	}
 	defer client.server.projection.Unregister(deviceID)
 	if !loaded {
 		if len(client.server.projection.Models(deviceID, resourceID)) == 0 {
-			err = client.server.projection.ForceUpdate(req.Ctx, deviceID, resourceID)
+			err = client.server.projection.ForceUpdate(req.Context, deviceID, resourceID)
 			if err != nil {
 				return nil, coapCodes.NotFound, err
 			}
 		}
 	}
 
-	request := coapconv.MakeRetrieveResourceRequest(resourceID, resourceInterface, correlationID, authCtx.AuthorizationContext, req)
+	request := coapconv.MakeRetrieveResourceRequest(resourceID, resourceInterface, correlationID, authCtx.AuthorizationContext, client.remoteAddrString(), req)
 
-	_, err = client.server.raClient.RetrieveResource(kitNetGrpc.CtxWithToken(req.Ctx, authCtx.AccessToken), &request)
+	_, err = client.server.raClient.RetrieveResource(kitNetGrpc.CtxWithToken(req.Context, authCtx.AccessToken), &request)
 	if err != nil {
 		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
 	}
 
 	// first wait for notification
-	timeoutCtx, cancel := context.WithTimeout(req.Ctx, client.server.RequestTimeout)
+	timeoutCtx, cancel := context.WithTimeout(req.Context, client.server.RequestTimeout)
 	defer cancel()
 	select {
 	case processed := <-notify:

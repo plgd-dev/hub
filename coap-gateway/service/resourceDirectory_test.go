@@ -6,19 +6,21 @@ import (
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type TestResource struct {
-	DeviceId string `json:"di"`
+	DeviceID string `json:"di"`
 	//Eps interface{} `json:"eps"`
 	Href       string   `json:"href"`
-	Id         string   `json:"id"`
+	ID         string   `json:"id"`
 	Interfaces []string `json:"if"`
-	InstanceId uint64   `json:"-"`
+	InstanceID uint64   `json:"-"`
 	//P             interface{} `json:"p"`
 	ResourceTypes []string `json:"rt"`
 	Type          []string `json:"type"`
@@ -46,9 +48,9 @@ var tblResourceDirectory = []testEl{
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     TestAResourceHref,
-					Id:       TestAResourceId,
+					ID:       TestAResourceId,
 				},
 			},
 		}, nil}},
@@ -60,9 +62,9 @@ var tblResourceDirectory = []testEl{
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     "/b",
-					Id:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
+					ID:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
 				},
 			},
 		}, nil}},
@@ -73,14 +75,14 @@ var tblResourceDirectory = []testEl{
 			TimeToLiveLegacy: 12345,
 			Links: []TestResource{
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     "/b",
-					Id:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
+					ID:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
 				},
 				{
-					DeviceId: CertIdentity,
+					DeviceID: CertIdentity,
 					Href:     "/c",
-					Id:       "41529a9c-b80f-5487-82da-da4a476402ae",
+					ID:       "41529a9c-b80f-5487-82da-da4a476402ae",
 				},
 			},
 		}, nil}},
@@ -108,7 +110,7 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
@@ -129,7 +131,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	//set counter 0, when other test run with this that it can be modified
 	deletetblResourceDirectory := []testEl{
 		{"NotExist1", input{coapCodes.DELETE, ``, []string{"di=c", "ins=5"}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},                 // Non-existent device ID.
-		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `Incorrect Unpublish query string - deviceId not found`, nil}},                            // Device ID empty.
+		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `cannot parse queries: deviceID not found`, nil}},                                         // Device ID empty.
 		{"NotExist3", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity, "ins=999"}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}}, // Instance ID non-existent.
 		{"Exist1", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.Deleted, nil, nil}},                                                                         // If instanceIDs empty, all instances for a given device ID should be unpublished.
 		{"NotExist4", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},
@@ -156,7 +158,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
@@ -176,16 +178,14 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	//delete resources
 	for _, test := range deletetblResourceDirectory {
 		tf := func(t *testing.T) {
-			req, err := co.NewDeleteRequest(uri.ResourceDirectory)
-			if err != nil {
-				t.Fatalf("cannot create request: %v", err)
-			}
-			for _, q := range test.in.queries {
-				req.AddOption(gocoap.URIQuery, q)
-			}
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, req)
+			req, err := tcp.NewDeleteRequest(ctx, uri.ResourceDirectory)
+			require.NoError(t, err)
+			for _, q := range test.in.queries {
+				req.AddOptionString(message.URIQuery, q)
+			}
+			resp, err := co.Do(req)
 			if err != nil {
 				t.Fatalf("Cannot send/retrieve msg: %v", err)
 			}
@@ -225,7 +225,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
@@ -236,18 +236,13 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			req, err := co.NewGetRequest(uri.ResourceDirectory)
-			if err != nil {
-				t.Fatalf("cannot create request: %v", err)
-			}
+			req, err := tcp.NewGetRequest(co.Context(), uri.ResourceDirectory)
+			require.NoError(t, err)
 			for _, q := range test.in.queries {
-				req.AddOption(gocoap.URIQuery, q)
+				req.AddOptionString(message.URIQuery, q)
 			}
-
-			resp, err := co.Exchange(req)
-			if err != nil {
-				t.Fatalf("Cannot send/retrieve msg: %v", err)
-			}
+			resp, err := co.Do(req)
+			require.NoError(t, err)
 			testValidateResp(t, test, resp)
 		}
 		t.Run(test.name, tf)

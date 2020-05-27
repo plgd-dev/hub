@@ -1,15 +1,19 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-ocf/go-coap/v2/message"
 
 	"github.com/go-ocf/cloud/coap-gateway/uri"
 	"github.com/go-ocf/kit/codec/cbor"
@@ -19,7 +23,10 @@ import (
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/go-ocf/kit/security/certManager/acme/ocf"
 
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
@@ -31,7 +38,6 @@ import (
 	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
 	refImplRD "github.com/go-ocf/cloud/resource-directory/refImpl"
 	rdService "github.com/go-ocf/cloud/resource-directory/test/service"
-	gocoap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants"
@@ -98,43 +104,40 @@ func initializeStruct(t reflect.Type, v reflect.Value) {
 	}
 }
 
-func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
+func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 	if resp.Code() != test.out.code {
 		t.Fatalf("Output code %v is invalid, expected %v", resp.Code(), test.out.code)
 	} else {
-		if len(resp.Payload()) > 0 || test.out.payload != nil {
-			if contentType, ok := resp.Option(gocoap.ContentFormat).(gocoap.MediaType); ok {
+		bodySize, _ := resp.BodySize()
+		if bodySize > 0 || test.out.payload != nil {
+			body, err := ioutil.ReadAll(resp.Body())
+			require.NoError(t, err)
+			if contentType, err := resp.ContentFormat(); err == nil {
 				switch contentType {
-				case gocoap.AppCBOR, gocoap.AppOcfCbor:
+				case message.AppCBOR, message.AppOcfCbor:
 					n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
-					err := cbor.Decode(resp.Payload(), n)
-					if err != nil {
-						t.Fatalf("Cannot convert cbor to type: %v %v", err, n)
-					}
+					err := cbor.Decode(body, n)
+					require.NoError(t, err)
 					if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
 						t.Fatal()
 					}
-				case gocoap.TextPlain:
+				case message.TextPlain:
 					if v, ok := test.out.payload.(string); ok {
-						if strings.Count(string(resp.Payload()), v) == 0 {
-							t.Fatalf("Output payload '%v' is invalid, expected '%v'", string(resp.Payload()), test.out.payload)
+						if strings.Count(string(body), v) == 0 {
+							t.Fatalf("Output payload '%v' is invalid, expected '%v'", string(body), test.out.payload)
 						}
 					} else {
-						t.Fatalf("Output payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
+						t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
 					}
 				}
 			} else {
-				t.Fatalf("Output payload %v is invalid, expected %v", resp.Payload(), test.out.payload)
+				t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
 			}
 		}
 		if len(test.out.queries) > 0 {
-			queries := resp.Options(gocoap.URIQuery)
-			if resp == nil {
-				t.Fatalf("Output doesn't contains queries, expected: %v", test.out.queries)
-			}
-			if len(queries) == len(test.out.queries) {
-				t.Fatalf("Invalid queries %v, expected: %v", queries, test.out.queries)
-			}
+			queries, err := resp.Options().Queries()
+			require.NoError(t, err)
+			require.Len(t, queries, len(test.out.queries))
 			for idx := range queries {
 				if queries[idx] != test.out.queries[idx] {
 					t.Fatalf("Invalid query %v, expected %v", queries[idx], test.out.queries[idx])
@@ -144,39 +147,30 @@ func testValidateResp(t *testing.T, test testEl, resp gocoap.Message) {
 	}
 }
 
-func testPostHandler(t *testing.T, path string, test testEl, co *gocoap.ClientConn) {
+func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn) {
 	var inputCbor []byte
 	var err error
 	if v, ok := test.in.payload.(string); ok && v != "" {
 		inputCbor, err = json2cbor(v)
 	}
-	if err != nil {
-		t.Fatalf("Cannot convert json to cbor: %v", err)
-	}
+	require.NoError(t, err)
 
-	req := co.NewMessage(gocoap.MessageParams{
-		Code: test.in.code,
-		Token: func() []byte {
-			token, err := gocoap.GenerateToken()
-			if err != nil {
-				t.Fatalf("Cannot generate token: %v", err)
-			}
-			return token
-		}(),
-		MessageID: gocoap.GenerateMessageID(),
-	})
-	req.SetPathString(path)
+	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
+	defer cancel()
+	req := pool.AcquireMessage(ctx)
+	token, err := message.GetToken()
+	require.NoError(t, err)
+	req.SetCode(test.in.code)
+	req.SetToken(token)
+	req.SetPath(path)
 	if len(inputCbor) > 0 {
-		req.AddOption(gocoap.ContentFormat, gocoap.AppOcfCbor)
-		req.SetPayload(inputCbor)
+		req.SetContentFormat(message.AppOcfCbor)
+		req.SetBody(bytes.NewReader(inputCbor))
 	}
 	for _, q := range test.in.queries {
-		req.AddOption(gocoap.URIQuery, q)
+		req.AddQuery(q)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
-	defer cancel()
-	resp, err := co.ExchangeWithContext(ctx, req)
+	resp, err := co.Do(req)
 	if err != nil {
 		t.Fatalf("Cannot send/retrieve msg: %v", err)
 	}
@@ -269,40 +263,39 @@ func init() {
 	log.Setup(log.Config{Debug: TestLogDebug})
 }
 
-func testPrepareDevice(t *testing.T, co *gocoap.ClientConn) {
-
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserId: AuthorizationUserId}, nil}}
+func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	testPostHandler(t, uri.SignUp, signUpEl, co)
 	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	testPostHandler(t, uri.SignIn, signInEl, co)
 	publishResEl := []testEl{
-		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
 					{
-						DeviceId:      CertIdentity,
+						DeviceID:      CertIdentity,
 						Href:          TestAResourceHref,
-						Id:            TestAResourceId,
+						ID:            TestAResourceId,
 						ResourceTypes: []string{TestAResourceType},
-						Type:          []string{gocoap.TextPlain.String()},
+						Type:          []string{message.TextPlain.String()},
 					},
 				},
 			}, nil}},
-		{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + gocoap.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+		{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
 				Links: []TestResource{
 					{
-						DeviceId:      CertIdentity,
+						DeviceID:      CertIdentity,
 						Href:          TestBResourceHref,
-						Id:            TestBResourceId,
+						ID:            TestBResourceId,
 						ResourceTypes: []string{TestBResourceType},
-						Type:          []string{gocoap.TextPlain.String()},
+						Type:          []string{message.TextPlain.String()},
 					},
 				},
 			}, nil}},
@@ -338,7 +331,7 @@ func testCreateAuthServer(t *testing.T, addr string) func() {
 	return authService.NewAuthServer(t, authConfig)
 }
 
-func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
+func testCoapDial(t *testing.T, host, net string) *tcp.ClientConn {
 	var config certManager.OcfConfig
 	err := envconfig.Process("LISTEN", &config)
 	assert.NoError(t, err)
@@ -380,30 +373,24 @@ func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
 		return nil
 	}
 
-	c := &gocoap.Client{Net: net, TLSConfig: tlsConfig, Handler: func(w gocoap.ResponseWriter, req *gocoap.Request) {
-		switch req.Msg.Code() {
-		case coapCodes.POST, coapCodes.GET, coapCodes.PUT, coapCodes.DELETE:
-			w.SetContentFormat(gocoap.TextPlain)
-			w.Write([]byte("hello world"))
+	if net == "tcp" {
+		tlsConfig = nil
+	}
+	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
+		switch r.Code() {
+		case coapCodes.POST:
+			w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.GET:
+			w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.PUT:
+			w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.DELETE:
+			w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		}
-	}}
-	conn, err := c.Dial(host)
-	assert.NoError(t, err)
+	}))
+	require.NoError(t, err)
 	return conn
 }
-
-/*
-type mockResponseWriter struct {
-	gocoap.ResponseWriter
-	code coapCodes.Code
-}
-
-func (m *mockResponseWriter) NewResponse(code coapCodes.Code) gocoap.Message   { m.code = code; return nil }
-func (m *mockResponseWriter) Write(p []byte) (n int, err error)             { return -1, nil }
-func (m *mockResponseWriter) SetCode(code coapCodes.Code)                    { m.code = code }
-func (m *mockResponseWriter) SetContentFormat(contentFormat gocoap.MediaType) {}
-func (m *mockResponseWriter) WriteMsg(gocoap.Message) error                   { return nil }
-*/
 
 var (
 	AuthorizationUserId       = "1"

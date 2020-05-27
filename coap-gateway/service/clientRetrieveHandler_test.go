@@ -5,10 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-ocf/go-coap/v2/message"
+
+	"github.com/go-ocf/go-coap/v2/tcp"
+
 	"github.com/go-ocf/kit/log"
 
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,21 +41,9 @@ func Test_clientRetrieveHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	NewGetRequest := func(path string) gocoap.Message {
-		msg, err := co.NewGetRequest(path)
-		assert.NoError(t, err)
-		return msg
-	}
-
-	NewGetRequestWithInterface := func(path, resourceInterface string) gocoap.Message {
-		msg, err := co.NewGetRequest(path)
-		assert.NoError(t, err)
-		msg.AddOption(gocoap.URIQuery, "if="+resourceInterface)
-		return msg
-	}
-
 	type args struct {
-		req gocoap.Message
+		path  string
+		query string
 	}
 	tests := []struct {
 		name      string
@@ -62,28 +53,29 @@ func Test_clientRetrieveHandler(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				req: NewGetRequest(resourceRoute + TestAResourceHref),
+				path: resourceRoute + TestAResourceHref,
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
 		{
 			name: "not found",
 			args: args{
-				req: NewGetRequest(resourceRoute + "/dev0/res0"),
+				path: resourceRoute + "/dev0/res0",
 			},
 			wantsCode: coapCodes.NotFound,
 		},
 		{
 			name: "found",
 			args: args{
-				req: NewGetRequest(resourceRoute + "/" + CertIdentity + TestAResourceHref),
+				path: resourceRoute + "/" + CertIdentity + TestAResourceHref,
 			},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "found with interface",
 			args: args{
-				req: NewGetRequestWithInterface(resourceRoute+"/"+CertIdentity+TestAResourceHref, "oic.if.baseline"),
+				path:  resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				query: "if=oic.if.baseline",
 			},
 			wantsCode: coapCodes.Content,
 		},
@@ -99,7 +91,11 @@ func Test_clientRetrieveHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, tt.args.req)
+			req, err := tcp.NewGetRequest(ctx, tt.args.path)
+			if tt.args.query != "" {
+				req.SetOptionString(message.URIQuery, tt.args.query)
+			}
+			resp, err := co.Do(req)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 		})

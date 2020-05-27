@@ -4,33 +4,33 @@ import (
 	"sync"
 )
 
-//clientContainerByDeviceId client <-> server connections
-type clientContainerByDeviceId struct {
+// clientContainerByDeviceID client <-> server connections
+type clientContainerByDeviceID struct {
 	sessions map[string]*Client
 	mutex    sync.Mutex
 }
 
-func NewClientContainerByDeviceId() *clientContainerByDeviceId {
-	return &clientContainerByDeviceId{sessions: make(map[string]*Client)}
+func newClientContainerByDeviceID() *clientContainerByDeviceID {
+	return &clientContainerByDeviceID{sessions: make(map[string]*Client)}
 }
 
-func (c *clientContainerByDeviceId) Add(deviceId string, session *Client) {
+func (c *clientContainerByDeviceID) Add(deviceID string, session *Client) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	c.sessions[deviceId] = session
+	c.sessions[deviceID] = session
 }
 
-func (c *clientContainerByDeviceId) Find(deviceId string) *Client {
+func (c *clientContainerByDeviceID) Find(deviceID string) *Client {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	if session, ok := c.sessions[deviceId]; ok {
+	if session, ok := c.sessions[deviceID]; ok {
 		return session
 	}
 	return nil
 }
 
-func (c *clientContainerByDeviceId) Remove(deviceId string) {
+func (c *clientContainerByDeviceID) Remove(deviceID string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	delete(c.sessions, deviceId)
+	delete(c.sessions, deviceID)
 }

@@ -7,8 +7,9 @@ import (
 
 	"github.com/go-ocf/kit/codec/cbor"
 
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 )
@@ -18,7 +19,7 @@ type oicwkping struct {
 	Interval      int64   `json:"in,omitempty"`
 }
 
-func getPingConfiguration(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func getPingConfiguration(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePingGetConfiguration takes %v", time.Since(t))
@@ -28,70 +29,70 @@ func getPingConfiguration(s gocoap.ResponseWriter, req *gocoap.Request, client *
 		IntervalArray: []int64{1},
 	}
 
-	accept := coap.GetAccept(req.Msg)
+	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), s, client, coapCodes.InternalServerError)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err),  coapCodes.InternalServerError, req.Token)
 		return
 	}
 
 	out, err := encode(ping)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), s, client, coapCodes.InternalServerError)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err),  coapCodes.InternalServerError, req.Token)
 		return
 	}
 
 	//return not fount to disable ping from client
-	sendResponse(s, client, coapCodes.Content, accept, out)
+	client.sendResponse( coapCodes.Content, req.Token, accept, out)
 }
 
-func ping(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func ping(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePing takes %v", time.Since(t))
 	}()
-	deviceId := client.loadAuthorizationContext().DeviceId
-	if deviceId == "" {
-		deviceId = "unknown"
+	deviceID := client.loadAuthorizationContext().DeviceId
+	if deviceID == "" {
+		deviceID = "unknown"
 	}
 
 	var ping oicwkping
-	err := cbor.Decode(req.Msg.Payload(), &ping)
+	err := cbor.ReadFrom(req.Body, &ping)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %v", deviceId, err), s, client, coapCodes.BadRequest)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %v", deviceID, err),  coapCodes.BadRequest, req.Token)
 		return
 	}
 	if ping.Interval == 0 {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: invalid interval value", deviceId), s, client, coapCodes.BadRequest)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: invalid interval value", deviceID),  coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	client.server.oicPingCache.Set(client.remoteAddrString(), client, time.Duration(float64(ping.Interval)*float64(time.Minute)*1.3))
 
 	//return not fount to disable ping from client
-	sendResponse(s, client, coapCodes.Valid, gocoap.TextPlain, nil)
+	client.sendResponse( coapCodes.Valid, req.Token, message.TextPlain, nil)
 }
 
 func pingOnEvicted(key string, v interface{}) {
 	if client, ok := v.(*Client); ok {
 		if atomic.LoadInt32(&client.isClosed) == 0 {
 			client.Close()
-			deviceId := client.loadAuthorizationContext().DeviceId
-			if deviceId == "" {
-				deviceId = "unknown"
+			deviceID := client.loadAuthorizationContext().DeviceId
+			if deviceID == "" {
+				deviceID = "unknown"
 			}
-			log.Errorf("DeviceId %v: ping timeout", deviceId)
+			log.Errorf("DeviceId %v: ping timeout", deviceID)
 		}
 	}
 }
 
-func resourcePingHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
-	switch req.Msg.Code() {
+func resourcePingHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+	switch req.Code {
 	case coapCodes.GET:
 		getPingConfiguration(s, req, client)
 	case coapCodes.POST:
 		ping(s, req, client)
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", req.Client.RemoteAddr()), s, client, coapCodes.Forbidden)
+		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()),  coapCodes.Forbidden, req.Token)
 	}
 }

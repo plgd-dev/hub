@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"bytes"
 	"os"
 	"sync"
 	"testing"
@@ -11,8 +12,11 @@ import (
 	"github.com/go-ocf/cloud/coap-gateway/uri"
 	refImplRA "github.com/go-ocf/cloud/resource-aggregate/refImpl"
 	raService "github.com/go-ocf/cloud/resource-aggregate/test/service"
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/message/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -65,24 +69,28 @@ func TestServer(t *testing.T) {
 	co := testCoapDial(t, config.Service.Addr, config.Service.Net)
 	defer co.Close()
 
-	resp, err := co.Get(uri.ResourcePing)
+	resp, err := co.Get(co.Context(), uri.ResourcePing)
 	require.NoError(t, err)
 	assert.Equal(t, resp.Code(), coapCodes.Content)
-	resp, err = co.Get(uri.ResourceDirectory)
+	resp, err = co.Get(co.Context(), uri.ResourceDirectory)
 	if err == nil {
 		assert.Equal(t, resp.Code(), coapCodes.Unauthorized)
 	}
 }
 
-func testCoapDial(t *testing.T, host, net string) *gocoap.ClientConn {
-	c := &gocoap.Client{Net: net, Handler: func(w gocoap.ResponseWriter, req *gocoap.Request) {
-		switch req.Msg.Code() {
-		case coapCodes.POST, coapCodes.GET, coapCodes.PUT, coapCodes.DELETE:
-			w.SetContentFormat(gocoap.TextPlain)
-			w.Write([]byte("hello world"))
+func testCoapDial(t *testing.T, host, net string) *tcp.ClientConn {
+	conn, err := tcp.Dial(host, tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
+		switch r.Code() {
+		case coapCodes.POST:
+			w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.GET:
+			w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.PUT:
+			w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
+		case coapCodes.DELETE:
+			w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		}
-	}}
-	conn, err := c.Dial(host)
+	}))
 	require.NoError(t, err)
 	return conn
 }

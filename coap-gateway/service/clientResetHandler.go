@@ -1,10 +1,10 @@
 package service
 
 import (
-	gocoap "github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/mux"
 )
 
-func clientResetHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func clientResetHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	authCtx := client.loadAuthorizationContext()
 	clientResetObservationHandler(s, req, client, authCtx.AuthorizationContext)
 }

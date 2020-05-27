@@ -6,16 +6,16 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/net/coap"
 	"google.golang.org/grpc/status"
 )
 
 type CoapRefreshTokenReq struct {
-	DeviceId     string `json:"di"`
-	UserId       string `json:"uid"`
+	DeviceID     string `json:"di"`
+	UserID       string `json:"uid"`
 	RefreshToken string `json:"refreshtoken"`
 }
 
@@ -26,39 +26,39 @@ type CoapRefreshTokenResp struct {
 }
 
 func validateRefreshToken(req CoapRefreshTokenReq) error {
-	if req.DeviceId == "" {
-		return errors.New("cannot refresh token: invalid deviceId")
+	if req.DeviceID == "" {
+		return errors.New("cannot refresh token: invalid deviceID")
 	}
 	if req.RefreshToken == "" {
 		return errors.New("cannot refresh token: invalid refreshToken")
 	}
-	if req.UserId == "" {
+	if req.UserID == "" {
 		return errors.New("cannot refresh token: invalid userId")
 	}
 	return nil
 }
 
-func refreshTokenPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	var refreshToken CoapRefreshTokenReq
-	err := cbor.Decode(req.Msg.Payload(), &refreshToken)
+	err := cbor.ReadFrom(req.Body, &refreshToken)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err), s, client, coapCodes.BadRequest)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err),  coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	err = validateRefreshToken(refreshToken)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err), s, client, coapCodes.BadRequest)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err),  coapCodes.BadRequest, req.Token)
 		return
 	}
 
-	resp, err := client.server.asClient.RefreshToken(req.Ctx, &pbAS.RefreshTokenRequest{
-		DeviceId:     refreshToken.DeviceId,
-		UserId:       refreshToken.UserId,
+	resp, err := client.server.asClient.RefreshToken(req.Context, &pbAS.RefreshTokenRequest{
+		DeviceId:     refreshToken.DeviceID,
+		UserId:       refreshToken.UserID,
 		RefreshToken: refreshToken.RefreshToken,
 	})
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err), s, client, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST))
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err),  coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
 		return
 	}
 
@@ -68,27 +68,27 @@ func refreshTokenPostHandler(s gocoap.ResponseWriter, req *gocoap.Request, clien
 		ExpiresIn:    resp.ExpiresIn,
 	}
 
-	accept := coap.GetAccept(req.Msg)
+	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err),  coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(coapResp)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), s, client, coapCodes.InternalServerError)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err),  coapCodes.InternalServerError, req.Token)
 		return
 	}
-	sendResponse(s, client, coapCodes.Changed, accept, out)
+	client.sendResponse( coapCodes.Changed, req.Token, accept, out)
 }
 
 // RefreshToken
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.tokenrefresh.swagger.json
-func refreshTokenHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
-	switch req.Msg.Code() {
+func refreshTokenHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+	switch req.Code {
 	case coapCodes.POST:
 		refreshTokenPostHandler(s, req, client)
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", req.Client.RemoteAddr()), s, client, coapCodes.Forbidden)
+		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()),  coapCodes.Forbidden, req.Token)
 	}
 }

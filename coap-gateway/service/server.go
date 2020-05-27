@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/panjf2000/ants"
@@ -21,11 +22,16 @@ import (
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
-	coapCodes "github.com/go-ocf/go-coap/codes"
-	gocoapNet "github.com/go-ocf/go-coap/net"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
+	"github.com/go-ocf/go-coap/v2/net"
+	"github.com/go-ocf/go-coap/v2/net/blockwise"
+	"github.com/go-ocf/go-coap/v2/net/keepalive"
+	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
-	gocoap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/log"
 	cache "github.com/patrickmn/go-cache"
 )
@@ -35,15 +41,15 @@ type Server struct {
 	FQDN                            string // fully qualified domain name of GW
 	ExternalPort                    uint16 // used to construct oic/res response
 	Addr                            string // Address to listen on, ":COAP" if empty.
-	Net                             string // if "tcp" or "tcp-tls" (COAP over TLS) it will invoke a TCP listener, otherwise an UDP one
-	Keepalive                       gocoap.KeepAlive
+	IsTLSListener                   bool
+	Keepalive                       *keepalive.KeepAlive
 	DisableTCPSignalMessageCSM      bool
 	DisablePeerTCPSignalMessageCSMs bool
 	SendErrorTextInResponse         bool
 	RequestTimeout                  time.Duration
 	ConnectionsHeartBeat            time.Duration
 	BlockWiseTransfer               bool
-	BlockWiseTransferSZX            gocoap.BlockWiseSzx
+	BlockWiseTransferSZX            blockwise.SZX
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
@@ -51,7 +57,7 @@ type Server struct {
 	rdClient pbRD.ResourceDirectoryClient
 
 	clientContainer               *ClientContainer
-	clientContainerByDeviceId     *clientContainerByDeviceId
+	clientContainerByDeviceID     *clientContainerByDeviceID
 	updateNotificationContainer   *notificationRA.UpdateNotificationContainer
 	retrieveNotificationContainer *notificationRA.RetrieveNotificationContainer
 	observeResourceContainer      *observeResourceContainer
@@ -59,9 +65,10 @@ type Server struct {
 	oicPingCache                  *cache.Cache
 
 	projection      *projectionRA.Projection
-	coapServer      *gocoap.Server
-	listener        gocoap.Listener
+	coapServer      *tcp.Server
+	listener        tcp.Listener
 	authInterceptor kitNetCoap.Interceptor
+	wgDone          *sync.WaitGroup
 }
 
 type DialCertManager = interface {
@@ -72,7 +79,7 @@ type ListenCertManager = interface {
 	GetServerTLSConfig() *tls.Config
 }
 
-//NewServer setup coap gateway
+// New creates server.
 func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, authInterceptor kitNetCoap.Interceptor, store eventstore.EventStore, subscriber eventbus.Subscriber, pool *ants.Pool) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
@@ -95,58 +102,54 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	var listener gocoap.Listener
-
+	var listener tcp.Listener
+	var isTLSListener bool
 	if listenCertManager == nil || reflect.ValueOf(listenCertManager).IsNil() {
-		l, err := gocoapNet.NewTCPListener("tcp", config.Addr, time.Millisecond*100)
+		l, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
 			log.Fatalf("cannot setup tcp for server: %v", err)
 		}
 		listener = l
 	} else {
 		tlsConfig := listenCertManager.GetServerTLSConfig()
-		l, err := gocoapNet.NewTLSListener("tcp", config.Addr, tlsConfig, time.Millisecond*100)
+		l, err := net.NewTLSListener("tcp", config.Addr, tlsConfig)
 		if err != nil {
 			log.Fatalf("cannot setup tcp-tls for server: %v", err)
 		}
 		listener = l
+		isTLSListener = true
 	}
 	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
 	rsClient := pbRS.NewResourceShadowClient(rdConn)
 
-	var keepalive gocoap.KeepAlive
+	var keepAlive *keepalive.KeepAlive
 	if config.KeepaliveEnable {
-		keepalive, err = gocoap.MakeKeepAlive(config.KeepaliveTimeoutConnection)
-		if err != nil {
-			log.Fatalf("cannot setup keepalive for server: %v", err)
-		}
+		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.KeepaliveTimeoutConnection)))
 	}
 
-	var blockWiseTransferSZX gocoap.BlockWiseSzx
+	var blockWiseTransferSZX blockwise.SZX
 	switch strings.ToLower(config.BlockWiseTransferSZX) {
 	case "16":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx16
+		blockWiseTransferSZX = blockwise.SZX16
 	case "32":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx32
+		blockWiseTransferSZX = blockwise.SZX32
 	case "64":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx64
+		blockWiseTransferSZX = blockwise.SZX64
 	case "128":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx128
+		blockWiseTransferSZX = blockwise.SZX128
 	case "256":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx256
+		blockWiseTransferSZX = blockwise.SZX256
 	case "512":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx512
+		blockWiseTransferSZX = blockwise.SZX512
 	case "1024":
-		blockWiseTransferSZX = gocoap.BlockWiseSzx1024
+		blockWiseTransferSZX = blockwise.SZX1024
 	case "bert":
-		blockWiseTransferSZX = gocoap.BlockWiseSzxBERT
+		blockWiseTransferSZX = blockwise.SZXBERT
 	default:
 		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.BlockWiseTransferSZX)
 	}
 
 	s := Server{
-		Keepalive:                       keepalive,
-		Net:                             config.Net,
 		FQDN:                            config.FQDN,
 		ExternalPort:                    config.ExternalPort,
 		Addr:                            config.Addr,
@@ -158,20 +161,23 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		BlockWiseTransfer:               !config.DisableBlockWiseTransfer,
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
 
-		raClient: raClient,
-		asClient: asClient,
-		rsClient: rsClient,
-		rdClient: rdClient,
+		Keepalive:     keepAlive,
+		IsTLSListener: isTLSListener,
+		raClient:      raClient,
+		asClient:      asClient,
+		rsClient:      rsClient,
+		rdClient:      rdClient,
 
 		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},
-		clientContainerByDeviceId:     NewClientContainerByDeviceId(),
+		clientContainerByDeviceID:     newClientContainerByDeviceID(),
 		updateNotificationContainer:   notificationRA.NewUpdateNotificationContainer(),
 		retrieveNotificationContainer: notificationRA.NewRetrieveNotificationContainer(),
-		observeResourceContainer:      NewObserveResourceContainer(),
+		observeResourceContainer:      newObserveResourceContainer(),
 		goroutinesPool:                pool,
 		oicPingCache:                  oicPingCache,
 		listener:                      listener,
 		authInterceptor:               authInterceptor,
+		wgDone:                        new(sync.WaitGroup),
 	}
 
 	projection, err := projectionRA.NewProjection(context.Background(), fmt.Sprintf("%v:%v", config.FQDN, config.ExternalPort), store, subscriber, newResourceCtx(&s))
@@ -179,162 +185,171 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create projection for server: %v", err)
 	}
 	s.projection = projection
+	s.setupCoapServer()
+
 	return &s
 }
 
-func getDeviceId(client *Client) string {
-	deviceId := "unknown"
+func getDeviceID(client *Client) string {
+	deviceID := "unknown"
 	if client != nil {
-		deviceId = client.loadAuthorizationContext().DeviceId
-		if deviceId == "" {
-			deviceId = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
+		deviceID = client.loadAuthorizationContext().DeviceId
+		if deviceID == "" {
+			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
 		}
 	}
-	return deviceId
+	return deviceID
 }
 
-func validateCommand(s gocoap.ResponseWriter, req *gocoap.Request, server *Server, fnc func(s gocoap.ResponseWriter, req *gocoap.Request, client *Client)) {
-	client := server.clientContainer.Find(req.Client.RemoteAddr().String())
-
-	switch req.Msg.Code() {
+func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(s mux.ResponseWriter, req *mux.Message, client *Client)) {
+	client, ok := server.clientContainer.Find(s.Client().RemoteAddr().String())
+	if !ok {
+		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
+	}
+	switch req.Code {
 	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), s, client, coapCodes.InternalServerError)
+		if !ok {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
 			return
 		}
 		fnc(s, req, client)
 	case coapCodes.Empty:
-		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), s, client, coapCodes.InternalServerError)
+		if !ok {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
 			return
 		}
 		clientResetHandler(s, req, client)
 	case coapCodes.Content:
 		// Unregistered observer at a peer send us a notification - inform the peer to remove it
-		sendResponse(s, client, coapCodes.Empty, gocoap.TextPlain, nil)
+		client.sendResponse(coapCodes.Empty, req.Token, message.TextPlain, nil)
 	default:
-		deviceID := getDeviceId(client)
-		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Msg.Code())
+		deviceID := getDeviceID(client)
+		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
 	}
 }
 
-func defaultHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
-	path := req.Msg.PathString()
+func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+	path, _ := req.Options.Path()
 
 	switch {
 	case strings.HasPrefix(path, resourceRoute):
 		resourceRouteHandler(s, req, client)
 	default:
-		deviceId := getDeviceId(client)
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceId, path), s, client, coapCodes.NotFound)
+		deviceID := getDeviceID(client)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
 	}
 }
 
-func (server *Server) coapConnOnNew(coapConn *gocoap.ClientConn) {
+func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn) {
 	remoteAddr := coapConn.RemoteAddr().String()
+	coapConn.AddOnClose(func() {
+		if client, ok := server.clientContainer.Pop(remoteAddr); ok {
+			client.OnClose()
+		}
+	})
 	server.clientContainer.Add(remoteAddr, newClient(server, coapConn))
 }
 
-func (server *Server) coapConnOnClose(coapConn *gocoap.ClientConn, err error) {
-	if err != nil {
-		log.Errorf("coap connection closed with error: %v", err)
-	}
-	if client, ok := server.clientContainer.Pop(coapConn.RemoteAddr().String()); ok {
-		client.OnClose()
-	}
-
+func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
+	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		if !ok {
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
+		}
+		tmp, err := pool.ConvertFrom(r.Message)
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot convert from mux.Message: %w", err), coapCodes.InternalServerError, r.Token)
+			return
+		}
+		decodeMsgToDebug(client, tmp, "RECEIVED-COMMAND")
+		next.ServeCOAP(w, r)
+	})
 }
 
-func (server *Server) logginMiddleware(next func(gocoap.ResponseWriter, *gocoap.Request)) func(gocoap.ResponseWriter, *gocoap.Request) {
-	return func(w gocoap.ResponseWriter, req *gocoap.Request) {
-		client := server.clientContainer.Find(req.Client.RemoteAddr().String())
-		decodeMsgToDebug(client, req.Msg, "RECEIVED-COMMAND")
-		next(w, req)
-	}
-}
-
-func (server *Server) authMiddleware(next func(gocoap.ResponseWriter, *gocoap.Request)) func(gocoap.ResponseWriter, *gocoap.Request) {
-	return func(w gocoap.ResponseWriter, req *gocoap.Request) {
-		client := server.clientContainer.Find(req.Client.RemoteAddr().String())
-		if client == nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), w, client, coapCodes.InternalServerError)
+func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
+	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		if !ok {
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), coapCodes.InternalServerError, r.Token)
 			return
 		}
 
-		ctx := kitNetCoap.CtxWithToken(req.Ctx, client.loadAuthorizationContext().AccessToken)
-		_, err := server.authInterceptor(ctx, req.Msg.Code(), "/"+req.Msg.PathString())
+		ctx := kitNetCoap.CtxWithToken(r.Context, client.loadAuthorizationContext().AccessToken)
+		path, _ := r.Options.Path()
+		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %v", req.Msg.PathString(), err), w, client, coapCodes.Unauthorized)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %v", path, err), coapCodes.Unauthorized, r.Token)
 			client.Close()
 			return
 		}
-		next(w, req)
-	}
+		next.ServeCOAP(w, r)
+	})
 }
 
 //setupCoapServer setup coap server
 func (server *Server) setupCoapServer() {
-	mux := gocoap.NewServeMux()
-	mux.DefaultHandle(gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, defaultHandler)
+	m := mux.NewRouter()
+	m.Use(server.loggingMiddleware, server.authMiddleware)
+	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, defaultHandler)
 	}))
-	mux.Handle(uri.ResourceDirectory, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, resourceDirectoryHandler)
+	m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, resourceDirectoryHandler)
 	}))
-	mux.Handle(uri.SignUp, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signUpHandler)
+	m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, signUpHandler)
 	}))
-	mux.Handle(uri.SecureSignUp, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signUpHandler)
+	m.Handle(uri.SecureSignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, signUpHandler)
 	}))
-	mux.Handle(uri.SignIn, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signInHandler)
+	m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, signInHandler)
 	}))
-	mux.Handle(uri.SecureSignIn, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, signInHandler)
+	m.Handle(uri.SecureSignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, signInHandler)
 	}))
-	mux.Handle(uri.ResourceDiscovery, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, resourceDiscoveryHandler)
+	m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, resourceDiscoveryHandler)
 	}))
-	mux.Handle(uri.ResourcePing, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, resourcePingHandler)
+	m.Handle(uri.ResourcePing, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, resourcePingHandler)
 	}))
-	mux.Handle(uri.RefreshToken, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, refreshTokenHandler)
+	m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, refreshTokenHandler)
 	}))
-	mux.Handle(uri.SecureRefreshToken, gocoap.HandlerFunc(func(s gocoap.ResponseWriter, req *gocoap.Request) {
-		validateCommand(s, req, server, refreshTokenHandler)
+	m.Handle(uri.SecureRefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+		validateCommand(w, r, server, refreshTokenHandler)
 	}))
 
-	server.coapServer = &gocoap.Server{
-		Net:                             server.Net,
-		Addr:                            server.Addr,
-		DisableTCPSignalMessageCSM:      server.DisableTCPSignalMessageCSM,
-		DisablePeerTCPSignalMessageCSMs: server.DisablePeerTCPSignalMessageCSMs,
-		KeepAlive:                       server.Keepalive,
-		Handler:                         gocoap.HandlerFunc(server.logginMiddleware(server.authMiddleware(mux.ServeCOAP))),
-		NotifySessionNewFunc:            server.coapConnOnNew,
-		NotifySessionEndFunc:            server.coapConnOnClose,
-		HeartBeat:                       server.ConnectionsHeartBeat,
-		BlockWiseTransfer:               &server.BlockWiseTransfer,
-		BlockWiseTransferSzx:            &server.BlockWiseTransferSZX,
+	opts := make([]tcp.ServerOption, 0, 8)
+	if server.DisableTCPSignalMessageCSM {
+		opts = append(opts, tcp.WithDisableTCPSignalMessageCSM())
 	}
+	if server.DisablePeerTCPSignalMessageCSMs {
+		opts = append(opts, tcp.WithDisablePeerTCPSignalMessageCSMs())
+	}
+	opts = append(opts, tcp.WithKeepAlive(server.Keepalive))
+	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
+	opts = append(opts, tcp.WithBlockwise(server.BlockWiseTransfer, server.BlockWiseTransferSZX, server.RequestTimeout))
+	opts = append(opts, tcp.WithMux(m))
+	server.coapServer = tcp.NewServer(opts...)
 }
 
 func (server *Server) tlsEnabled() bool {
-	return strings.HasSuffix(server.Net, "-tls")
+	return server.IsTLSListener
 }
 
 // Serve starts a coapgateway on the configured address in *Server.
 func (server *Server) Serve() error {
-	server.setupCoapServer()
-	server.coapServer.Listener = server.listener
-	return server.coapServer.ActivateAndServe()
+	server.wgDone.Add(1)
+	defer server.wgDone.Done()
+	return server.coapServer.Serve(server.listener)
 }
 
 // Shutdown turn off server.
 func (server *Server) Shutdown() error {
-	err := server.coapServer.Shutdown()
-	server.listener.Close()
-	return err
+	defer server.wgDone.Wait()
+	server.coapServer.Stop()
+	return server.listener.Close()
 }

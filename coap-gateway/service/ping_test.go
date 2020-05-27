@@ -5,12 +5,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/tcp"
+
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_resourcePingHandler(t *testing.T) {
@@ -36,23 +40,8 @@ func Test_resourcePingHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	NewPostRequest := func(interval int64) gocoap.Message {
-		ping := oicwkping{
-			Interval: interval,
-		}
-		out, err := cbor.Encode(ping)
-		msg, err := co.NewPostRequest(uri.ResourcePing, gocoap.AppCBOR, bytes.NewBuffer(out))
-		assert.NoError(t, err)
-		return msg
-	}
-	NewGetRequest := func() gocoap.Message {
-		msg, err := co.NewGetRequest(uri.ResourcePing)
-		assert.NoError(t, err)
-		return msg
-	}
-
 	type args struct {
-		req gocoap.Message
+		ping *oicwkping // nill means get, otherwise it is ping
 	}
 	tests := []struct {
 		name      string
@@ -62,21 +51,23 @@ func Test_resourcePingHandler(t *testing.T) {
 		{
 			name: "invalid interval",
 			args: args{
-				req: NewPostRequest(0),
+				ping: &oicwkping{
+					Interval: 0,
+				},
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
 		{
-			name: "get configuration",
-			args: args{
-				req: NewGetRequest(),
-			},
+			name:      "get configuration",
+			args:      args{},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "ping",
 			args: args{
-				req: NewPostRequest(1),
+				ping: &oicwkping{
+					Interval: 1,
+				},
 			},
 			wantsCode: coapCodes.Valid,
 		},
@@ -85,8 +76,18 @@ func Test_resourcePingHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
-			resp, err := co.ExchangeWithContext(ctx, tt.args.req)
-			assert.NoError(t, err)
+			var req *pool.Message
+			if tt.args.ping != nil {
+				out, err := cbor.Encode(tt.args.ping)
+				require.NoError(t, err)
+				req, err = tcp.NewPostRequest(ctx, uri.ResourcePing, message.AppCBOR, bytes.NewReader(out))
+				require.NoError(t, err)
+			} else {
+				req, err = tcp.NewGetRequest(ctx, uri.ResourcePing)
+				require.NoError(t, err)
+			}
+			resp, err := co.Do(req)
+			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode, resp.Code())
 		})
 	}

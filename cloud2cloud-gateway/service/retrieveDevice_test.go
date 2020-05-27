@@ -11,6 +11,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
-	"github.com/go-ocf/go-coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,86 +78,59 @@ func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 		},
 		"links": []interface{}{
 			map[interface{}]interface{}{
-				"anchor": "",
-				"di":     deviceID,
-				"eps":    []interface{}{},
-				"href":   "/" + deviceID + "/oc/con",
-				"id":     "",
-				"if":     []interface{}{"oic.if.rw", "oic.if.baseline"},
+				"di":   deviceID,
+				"href": "/" + deviceID + "/oc/con",
+				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"p": map[interface{}]interface{}{
 					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
-				"rt":    []interface{}{"oic.wk.con"},
-				"title": "",
-				"type":  interface{}(nil),
+				"rt": []interface{}{"oic.wk.con"},
 			},
 			map[interface{}]interface{}{
-				"anchor": "",
-				"di":     deviceID,
-				"eps":    []interface{}{},
-				"href":   "/" + deviceID + "/oic/cloud/s",
-				"id":     "",
-				"if":     []interface{}{"oic.if.baseline"},
+				"di":   deviceID,
+				"href": "/" + deviceID + "/oic/cloud/s",
+				"if":   []interface{}{"oic.if.baseline"},
 				"p": map[interface{}]interface{}{
 					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
 				"rt":    []interface{}{"x.cloud.device.status"},
 				"title": "Cloud device status",
-				"type":  interface{}(nil),
 			},
 			map[interface{}]interface{}{
-				"anchor": "",
-				"di":     "" + deviceID + "",
-				"eps":    []interface{}{},
-				"href":   "/" + deviceID + "/light/1",
-				"id":     "",
-				"if":     []interface{}{"oic.if.rw", "oic.if.baseline"},
+				"di":   "" + deviceID + "",
+				"href": "/" + deviceID + "/light/1",
+				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"p": map[interface{}]interface{}{
 					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
-				"rt":    []interface{}{"core.light"},
-				"title": "",
-				"type":  interface{}(nil),
+				"rt": []interface{}{"core.light"},
 			},
 			map[interface{}]interface{}{
-				"anchor": "",
-				"di":     "" + deviceID + "",
-				"eps":    []interface{}{},
-				"href":   "/" + deviceID + "/oic/d",
-				"id":     "",
-				"if":     []interface{}{"oic.if.r", "oic.if.baseline"},
+				"di":   "" + deviceID + "",
+				"href": "/" + deviceID + "/oic/d",
+				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
 				"p": map[interface{}]interface{}{
 					"bm": uint64(0x1), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
-				"rt":    []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
-				"title": "", "type": interface{}(nil),
+				"rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
 			},
 			map[interface{}]interface{}{
-				"anchor": "",
-				"di":     "" + deviceID + "",
-				"eps":    []interface{}{},
-				"href":   "/" + deviceID + "/light/2",
-				"id":     "",
-				"if":     []interface{}{"oic.if.rw", "oic.if.baseline"},
+				"di":   "" + deviceID + "",
+				"href": "/" + deviceID + "/light/2",
+				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"p": map[interface{}]interface{}{
 					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
-				"rt":    []interface{}{"core.light"},
-				"title": "",
-				"type":  interface{}(nil),
+				"rt": []interface{}{"core.light"},
 			},
 			map[interface{}]interface{}{
-				"anchor": "",
-				"di":     "" + deviceID + "",
-				"eps":    []interface{}{},
-				"href":   "/" + deviceID + "/oic/p",
-				"id":     "", "if": []interface{}{"oic.if.r", "oic.if.baseline"},
+				"di":   "" + deviceID + "",
+				"href": "/" + deviceID + "/oic/p",
+				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
 				"p": map[interface{}]interface{}{
 					"bm": uint64(0x1), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
-				"rt":    []interface{}{"oic.wk.p"},
-				"title": "",
-				"type":  interface{}(nil),
+				"rt": []interface{}{"oic.wk.p"},
 			},
 		},
 		"status": "online",
@@ -181,27 +154,27 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			name: "JSON: " + uri.Devices + "/" + deviceID,
 			args: args{
 				uri:    uri.Devices + "/" + deviceID,
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppJSON.String(),
+			wantContentType: message.AppJSON.String(),
 			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
 		},
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID,
 			args: args{
 				uri:    uri.Devices + "/" + deviceID,
-				accept: coap.AppOcfCbor.String(),
+				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppOcfCbor.String(),
+			wantContentType: message.AppOcfCbor.String(),
 			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
 		},
 		{
 			name: "notFound",
 			args: args{
 				uri:    uri.Devices + "/" + DeviceIDNotFound,
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
@@ -221,10 +194,10 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			name: "JSON: " + uri.Devices + "//" + deviceID + "/",
 			args: args{
 				uri:    uri.Devices + "//" + deviceID + "/",
-				accept: coap.AppJSON.String(),
+				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
-			wantContentType: coap.AppJSON.String(),
+			wantContentType: message.AppJSON.String(),
 			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
 		},
 	}
@@ -258,9 +231,9 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 					return fmt.Errorf("not supported")
 				}
 				switch tt.wantContentType {
-				case coap.AppJSON.String():
+				case message.AppJSON.String():
 					readFrom = json.ReadFrom
-				case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+				case message.AppCBOR.String(), message.AppOcfCbor.String():
 					readFrom = cbor.ReadFrom
 				case "text/plain":
 					readFrom = func(w io.Reader, v interface{}) error {

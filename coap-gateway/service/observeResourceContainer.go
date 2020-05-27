@@ -4,24 +4,21 @@ import (
 	"encoding/base64"
 	"fmt"
 	"sync"
-
-	gocoap "github.com/go-ocf/go-coap"
 )
 
 type observeResource struct {
-	remoteAddr     string
-	deviceId       string
-	resourceId     string
-	token          []byte
-	client         *Client
-	responseWriter gocoap.ResponseWriter
+	remoteAddr string
+	deviceID   string
+	resourceID string
+	token      []byte
+	client     *Client
 
 	mutex   sync.Mutex
 	observe uint32
 }
 
 type observeResourceContainer struct {
-	observersByResource   map[string]map[string]map[string]*observeResource //resourceId, remoteAddr, token
+	observersByResource   map[string]map[string]map[string]*observeResource //resourceID, remoteAddr, token
 	observersByRemoteAddr map[string]map[string]*observeResource            //remoteAddr, token
 	mutex                 sync.Mutex
 }
@@ -37,7 +34,7 @@ func (r *observeResource) Observe() uint32 {
 	return r.observe
 }
 
-func NewObserveResourceContainer() *observeResourceContainer {
+func newObserveResourceContainer() *observeResourceContainer {
 	return &observeResourceContainer{
 		observersByResource:   make(map[string]map[string]map[string]*observeResource),
 		observersByRemoteAddr: make(map[string]map[string]*observeResource),
@@ -48,14 +45,14 @@ func tokenToString(token []byte) string {
 	return base64.StdEncoding.EncodeToString(token)
 }
 
-func (c *observeResourceContainer) prepareObserversByResourceLocked(resourceId, remoteAddr, token string) (map[string]*observeResource, error) {
+func (c *observeResourceContainer) prepareObserversByResourceLocked(resourceID, remoteAddr, token string) (map[string]*observeResource, error) {
 	var ok bool
 	var clients map[string]map[string]*observeResource
 	var tokens map[string]*observeResource
 
-	if clients, ok = c.observersByResource[resourceId]; !ok {
+	if clients, ok = c.observersByResource[resourceID]; !ok {
 		clients = make(map[string]map[string]*observeResource)
-		c.observersByResource[resourceId] = clients
+		c.observersByResource[resourceID] = clients
 	}
 	if tokens, ok = clients[remoteAddr]; !ok {
 		tokens = make(map[string]*observeResource)
@@ -81,32 +78,32 @@ func (c *observeResourceContainer) prepareObserversByDeviceLocked(remoteAddr, to
 	return tokens, nil
 }
 
-func (c *observeResourceContainer) Add(observeResource observeResource) error {
+func (c *observeResourceContainer) Add(observeResource *observeResource) error {
 	tokenStr := tokenToString(observeResource.token)
 
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	byResource, err := c.prepareObserversByResourceLocked(observeResource.resourceId, observeResource.remoteAddr, tokenStr)
+	byResource, err := c.prepareObserversByResourceLocked(observeResource.resourceID, observeResource.remoteAddr, tokenStr)
 	if err != nil {
-		return fmt.Errorf("cannot observe resource observersByResource[%v][%v][%v]: %v", observeResource.resourceId, observeResource.remoteAddr, observeResource.token, err)
+		return fmt.Errorf("cannot observe resource observersByResource[%v][%v][%v]: %v", observeResource.resourceID, observeResource.remoteAddr, observeResource.token, err)
 	}
 	byDevice, err := c.prepareObserversByDeviceLocked(observeResource.remoteAddr, tokenStr)
 	if err != nil {
-		c.removeByResourceLocked(observeResource.resourceId, observeResource.remoteAddr, tokenStr)
+		c.removeByResourceLocked(observeResource.resourceID, observeResource.remoteAddr, tokenStr)
 		//this cannot occurs - it mean that byResource and byDevice are unsync
 		return fmt.Errorf("cannot observe resource observersByRemoteAddr[%v][%v]: %v", observeResource.remoteAddr, observeResource.token, err)
 	}
 
-	byResource[tokenStr] = &observeResource
-	byDevice[tokenStr] = &observeResource
+	byResource[tokenStr] = observeResource
+	byDevice[tokenStr] = observeResource
 	return nil
 }
 
-func (c *observeResourceContainer) Find(resourceId string) []*observeResource {
+func (c *observeResourceContainer) Find(resourceID string) []*observeResource {
 	found := make([]*observeResource, 0, 128)
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	for _, clients := range c.observersByResource[resourceId] {
+	for _, clients := range c.observersByResource[resourceID] {
 		for _, ob := range clients {
 			found = append(found, ob)
 		}
@@ -114,9 +111,9 @@ func (c *observeResourceContainer) Find(resourceId string) []*observeResource {
 	return found
 }
 
-func (c *observeResourceContainer) removeByResourceLocked(resourceId, remoteAddr, token string) error {
+func (c *observeResourceContainer) removeByResourceLocked(resourceID, remoteAddr, token string) error {
 	found := false
-	if clients, ok := c.observersByResource[resourceId]; ok {
+	if clients, ok := c.observersByResource[resourceID]; ok {
 		if tokens, ok := clients[remoteAddr]; ok {
 			if _, ok := tokens[token]; ok {
 				delete(tokens, token)
@@ -126,8 +123,8 @@ func (c *observeResourceContainer) removeByResourceLocked(resourceId, remoteAddr
 				delete(clients, remoteAddr)
 			}
 		}
-		if len(c.observersByResource[resourceId]) == 0 {
-			delete(c.observersByResource, resourceId)
+		if len(c.observersByResource[resourceID]) == 0 {
+			delete(c.observersByResource, resourceID)
 		}
 	}
 	if !found {
@@ -136,11 +133,11 @@ func (c *observeResourceContainer) removeByResourceLocked(resourceId, remoteAddr
 	return nil
 }
 
-func (c *observeResourceContainer) RemoveByResource(resourceId, remoteAddr string, token []byte) error {
+func (c *observeResourceContainer) RemoveByResource(resourceID, remoteAddr string, token []byte) error {
 	tokenStr := tokenToString(token)
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	err := c.removeByResourceLocked(resourceId, remoteAddr, tokenStr)
+	err := c.removeByResourceLocked(resourceID, remoteAddr, tokenStr)
 	if err != nil {
 		return fmt.Errorf("cannot remove observer of resource: %v", err)
 	}
@@ -153,9 +150,8 @@ func (c *observeResourceContainer) RemoveByResource(resourceId, remoteAddr strin
 			return nil
 		}
 		return fmt.Errorf("unstable container - observersByRemoteAddr[%v][%v]", remoteAddr, token)
-	} else {
-		return fmt.Errorf("unstable container - observersByRemoteAddr[%v]", remoteAddr)
 	}
+	return fmt.Errorf("unstable container - observersByRemoteAddr[%v]", remoteAddr)
 }
 
 func (c *observeResourceContainer) PopByRemoteAddr(remoteAddr string) ([]*observeResource, error) {
@@ -172,9 +168,9 @@ func (c *observeResourceContainer) PopByRemoteAddr(remoteAddr string) ([]*observ
 	delete(c.observersByRemoteAddr, remoteAddr)
 	var errors []error
 	for token, obs := range tokens {
-		err := c.removeByResourceLocked(obs.resourceId, remoteAddr, token)
+		err := c.removeByResourceLocked(obs.resourceID, remoteAddr, token)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("observersByResource[%v][%v][%v]:%v", obs.resourceId, remoteAddr, token, err))
+			errors = append(errors, fmt.Errorf("observersByResource[%v][%v][%v]:%v", obs.resourceID, remoteAddr, token, err))
 		}
 		poped = append(poped, obs)
 	}
@@ -202,9 +198,9 @@ func (c *observeResourceContainer) PopByRemoteAddrToken(remoteAddr string, token
 	}
 	delete(tokens, tokenStr)
 
-	err := c.removeByResourceLocked(obs.resourceId, remoteAddr, tokenStr)
+	err := c.removeByResourceLocked(obs.resourceID, remoteAddr, tokenStr)
 	if err != nil {
-		return obs, fmt.Errorf("unstable container: observersByResource[%v][%v][%v]:%v", obs.resourceId, remoteAddr, token, err)
+		return obs, fmt.Errorf("unstable container: observersByResource[%v][%v][%v]:%v", obs.resourceID, remoteAddr, token, err)
 	}
 	return obs, nil
 }

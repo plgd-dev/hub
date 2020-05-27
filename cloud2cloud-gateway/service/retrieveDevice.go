@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/log"
@@ -16,7 +17,6 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
 	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
-	coap "github.com/go-ocf/go-coap"
 )
 
 func toEndpoint(s *pbRA.EndpointInformation) schema.Endpoint {
@@ -34,8 +34,8 @@ func toEndpoints(s []*pbRA.EndpointInformation) []schema.Endpoint {
 	return r
 }
 
-func toPolicy(s *pbRA.Policies) schema.Policy {
-	return schema.Policy{
+func toPolicy(s *pbRA.Policies) *schema.Policy {
+	return &schema.Policy{
 		BitMask: schema.BitMask(s.GetBitFlags()),
 	}
 }
@@ -111,15 +111,15 @@ func normalizeContentType(c *pbRA.Content) string {
 	if c.GetContentType() != "" {
 		return c.GetContentType()
 	}
-	switch coap.MediaType(c.GetCoapContentFormat()) {
-	case coap.AppCBOR:
-		return coap.AppCBOR.String()
-	case coap.AppOcfCbor:
-		return coap.AppOcfCbor.String()
-	case coap.AppJSON:
-		return coap.AppJSON.String()
-	case coap.TextPlain:
-		return coap.TextPlain.String()
+	switch message.MediaType(c.GetCoapContentFormat()) {
+	case message.AppCBOR:
+		return message.AppCBOR.String()
+	case message.AppOcfCbor:
+		return message.AppOcfCbor.String()
+	case message.AppJSON:
+		return message.AppJSON.String()
+	case message.TextPlain:
+		return message.TextPlain.String()
 	}
 	return ""
 }
@@ -127,17 +127,17 @@ func normalizeContentType(c *pbRA.Content) string {
 func unmarshalContent(c *pbRA.Content) (interface{}, error) {
 	var m interface{}
 	switch normalizeContentType(c) {
-	case coap.AppCBOR.String(), coap.AppOcfCbor.String():
+	case message.AppCBOR.String(), message.AppOcfCbor.String():
 		err := cbor.Decode(c.GetData(), &m)
 		if err != nil {
 			return nil, fmt.Errorf("cannot unmarshal resource content: %w", err)
 		}
-	case coap.AppJSON.String():
+	case message.AppJSON.String():
 		err := json.Decode(c.GetData(), &m)
 		if err != nil {
 			return nil, fmt.Errorf("cannot unmarshal resource content: %w", err)
 		}
-	case coap.TextPlain.String():
+	case message.TextPlain.String():
 		m = string(c.Data)
 	default:
 		if c.CoapContentFormat == -1 {

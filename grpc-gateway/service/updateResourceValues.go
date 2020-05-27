@@ -11,7 +11,7 @@ import (
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/go-coap"
+	"github.com/go-ocf/go-coap/v2/message"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -49,7 +49,7 @@ func eventContentToContent(s pbRA.Status, c *pbRA.Content) (*pb.Content, error) 
 	if c != nil {
 		contentType := c.GetContentType()
 		if contentType == "" && c.GetCoapContentFormat() >= 0 {
-			contentType = coap.MediaType(c.GetCoapContentFormat()).String()
+			contentType = message.MediaType(c.GetCoapContentFormat()).String()
 		}
 		content = &pb.Content{
 			Data:        c.GetData(),

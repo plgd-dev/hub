@@ -5,15 +5,15 @@ import (
 	"io"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
@@ -21,17 +21,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func makeListDevicesCommand(msg gocoap.Message, authCtx pbCQRS.AuthorizationContext) (pbRD.GetResourceLinksRequest, error) {
+func makeListDevicesCommand(msg *mux.Message, authCtx pbCQRS.AuthorizationContext) (pbRD.GetResourceLinksRequest, error) {
 	deviceIdsFilter := make([]string, 0, 4)
 	typeFilter := make([]string, 0, 4)
 
-	for _, q := range msg.Options(gocoap.URIQuery) {
-		var query string
-		var ok bool
-		if query, ok = q.(string); !ok {
-			continue
-		}
-
+	queries, _ := msg.Options.Queries()
+	for _, query := range queries {
 		values, err := url.ParseQuery(query)
 		if err != nil {
 			return pbRD.GetResourceLinksRequest{}, fmt.Errorf("cannot parse list devices query: %v", err)
@@ -54,15 +49,14 @@ func makeListDevicesCommand(msg gocoap.Message, authCtx pbCQRS.AuthorizationCont
 	return cmd, nil
 }
 
-func makeHref(deviceId, href string) string {
-	return fixHref("/" + resourceRoute + "/" + deviceId + "/" + href)
+func makeHref(deviceID, href string) string {
+	return fixHref("/" + resourceRoute + "/" + deviceID + "/" + href)
 }
 
-func makeDiscoveryResp(serverNetwork, serverAddr string, getResourceLinksClient pbRD.ResourceDirectory_GetResourceLinksClient) ([]*wkRd, codes.Code, error) {
+func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksClient pbRD.ResourceDirectory_GetResourceLinksClient) ([]*wkRd, codes.Code, error) {
 	deviceRes := make(map[string]*wkRd)
-
 	ep := "coap"
-	if strings.HasSuffix(serverNetwork, "-tls") {
+	if isTLSListener {
 		ep = "coaps"
 	}
 	ep = ep + "+tcp://" + serverAddr
@@ -108,28 +102,28 @@ func makeDiscoveryResp(serverNetwork, serverAddr string, getResourceLinksClient 
 	return resp, codes.OK, nil
 }
 
-func resourceDirectoryFind(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
+func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourceDirectoryFind takes %v", time.Since(t))
 	}()
 
 	authCtx := client.loadAuthorizationContext()
-	request, err := makeListDevicesCommand(req.Msg, authCtx.AuthorizationContext)
+	request, err := makeListDevicesCommand(req, authCtx.AuthorizationContext)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %v", authCtx.DeviceId, err), s, client, coapCodes.BadRequest)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %v", authCtx.DeviceId, err),  coapCodes.BadRequest, req.Token)
 		return
 	}
 
-	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithToken(req.Ctx, authCtx.AccessToken), &request)
+	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithToken(req.Context, authCtx.AccessToken), &request)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err), s, client, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET))
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err),  coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
 		return
 	}
 
-	discoveryResp, code, err := makeDiscoveryResp(client.server.Net, client.server.FQDN+":"+strconv.Itoa(int(client.server.ExternalPort)), getResourceLinksClient)
+	discoveryResp, code, err := makeDiscoveryResp(client.server.IsTLSListener, client.server.FQDN+":"+strconv.Itoa(int(client.server.ExternalPort)), getResourceLinksClient)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err), s, client, coapconv.GrpcCode2CoapCode(code, coapCodes.GET))
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err),  coapconv.GrpcCode2CoapCode(code, coapCodes.GET), req.Token)
 		return
 	}
 
@@ -139,38 +133,37 @@ func resourceDirectoryFind(s gocoap.ResponseWriter, req *gocoap.Request, client 
 	}
 
 	var resp interface{}
-	respContentFormat := coap.GetAccept(req.Msg)
-	switch respContentFormat {
-	case gocoap.AppOcfCbor:
+	accept := coap.GetAccept(req.Options)
+	switch accept {
+	case message.AppOcfCbor:
 		links := make([]*pbRA.Resource, 0, 64)
 		for _, d := range discoveryResp {
 			links = append(links, d.Links...)
 		}
 		resp = links
-	case gocoap.AppCBOR:
+	case message.AppCBOR:
 		resp = discoveryResp
 	}
 
-	accept := coap.GetAccept(req.Msg)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %v", authCtx.DeviceId, err), s, client, coapCodes.InternalServerError)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %v", authCtx.DeviceId, err),  coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(resp)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %v", authCtx.DeviceId, err), s, client, coapCodes.InternalServerError)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %v", authCtx.DeviceId, err),  coapCodes.InternalServerError, req.Token)
 		return
 	}
 
-	sendResponse(s, client, coapCode, accept, out)
+	client.sendResponse( coapCode, req.Token, accept, out)
 }
 
-func resourceDiscoveryHandler(s gocoap.ResponseWriter, req *gocoap.Request, client *Client) {
-	switch req.Msg.Code() {
+func resourceDiscoveryHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+	switch req.Code {
 	case coapCodes.GET:
 		resourceDirectoryFind(s, req, client)
 	default:
-		logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", req.Client.RemoteAddr()), s, client, coapCodes.Forbidden)
+		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()),  coapCodes.Forbidden, req.Token)
 	}
 }

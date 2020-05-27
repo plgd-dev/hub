@@ -12,6 +12,13 @@ cloud-build:
 		--tag cloud-build \
 		.
 
+cloud-test:
+	docker build \
+		--network=host \
+		--tag cloud-test \
+		-f Dockerfile.test \
+		.
+
 make-ca:
 	docker pull ocfcloud/step-ca:vnext
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
@@ -59,7 +66,7 @@ env: clean make-ca make-nats make-mongo
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
-test: env cloud-build
+test: env cloud-test
 	docker run \
 		--network=host \
 		-v $(shell pwd)/.tmp/step-ca/data/certs/root_ca.crt:/root_ca.crt \
@@ -72,8 +79,8 @@ test: env cloud-build
 		-e LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/acme/directory" \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/ocf.gw/directory" \
 		--mount type=bind,source="$(shell pwd)",target=/shared \
-		cloud-build \
-		go test -p 1 -v ./... -covermode=atomic -coverprofile=/shared/coverage.txt
+		cloud-test \
+		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/shared/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 

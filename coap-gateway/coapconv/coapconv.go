@@ -2,12 +2,19 @@ package coapconv
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+
+	"github.com/go-ocf/go-coap/v2/tcp"
 
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	coap "github.com/go-ocf/go-coap"
-	"github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/go-ocf/go-coap/v2/mux"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 )
 
 func StatusToCoapCode(status pbRA.Status, cmdCode codes.Code) codes.Code {
@@ -64,118 +71,126 @@ func CoapCodeToStatus(code codes.Code) pbRA.Status {
 	}
 }
 
-func MakeMediaType(coapContentFormat int32, contentType string) (coap.MediaType, error) {
+func MakeMediaType(coapContentFormat int32, contentType string) (message.MediaType, error) {
 	if coapContentFormat >= 0 {
-		return coap.MediaType(coapContentFormat), nil
+		return message.MediaType(coapContentFormat), nil
 	}
 	switch contentType {
-	case coap.TextPlain.String():
-		return coap.TextPlain, nil
-	case coap.AppJSON.String():
-		return coap.AppJSON, nil
-	case coap.AppCBOR.String():
-		return coap.AppCBOR, nil
-	case coap.AppOcfCbor.String():
-		return coap.AppOcfCbor, nil
+	case message.TextPlain.String():
+		return message.TextPlain, nil
+	case message.AppJSON.String():
+		return message.AppJSON, nil
+	case message.AppCBOR.String():
+		return message.AppCBOR, nil
+	case message.AppOcfCbor.String():
+		return message.AppOcfCbor, nil
 	default:
-		return coap.TextPlain, fmt.Errorf("unknown content type coapContentFormat(%v), contentType(%v)", coapContentFormat, contentType)
+		return message.TextPlain, fmt.Errorf("unknown content type coapContentFormat(%v), contentType(%v)", coapContentFormat, contentType)
 	}
 }
 
-func NewCoapResourceUpdateRequest(client *coap.ClientConn, href string, reqContentUpdate *pbRA.ResourceUpdatePending) (coap.Message, error) {
-	if reqContentUpdate.Content == nil {
-		return nil, fmt.Errorf("invalid content for update content")
-	}
+func NewCoapResourceUpdateRequest(ctx context.Context, href string, reqContentUpdate *pbRA.ResourceUpdatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(reqContentUpdate.Content.CoapContentFormat, reqContentUpdate.Content.ContentType)
 	if err != nil {
 		return nil, fmt.Errorf("invalid content type for update content: %v", err)
 	}
-	req, err := client.NewPostRequest(href, mediaType, bytes.NewBuffer(reqContentUpdate.Content.Data))
+	if reqContentUpdate.Content == nil {
+		return nil, fmt.Errorf("invalid content for update content")
+	}
+
+	req, err := tcp.NewPostRequest(ctx, href, mediaType, bytes.NewReader(reqContentUpdate.GetContent().GetData()))
 	if err != nil {
-		return nil, fmt.Errorf("cannot create update content request: %v", err)
+		return nil, err
 	}
 	if reqContentUpdate.GetResourceInterface() != "" {
-		req.AddOption(coap.URIQuery, "if="+reqContentUpdate.GetResourceInterface())
+		req.AddOptionString(message.URIQuery, "if="+reqContentUpdate.GetResourceInterface())
 	}
+
 	return req, nil
 }
 
-func NewCoapResourceRetrieveRequest(client *coap.ClientConn, href string, resRetrieve *pbRA.ResourceRetrievePending) (coap.Message, error) {
-	req, err := client.NewGetRequest(href)
+func NewCoapResourceRetrieveRequest(ctx context.Context, href string, resRetrieve *pbRA.ResourceRetrievePending) (*pool.Message, error) {
+	req, err := tcp.NewGetRequest(ctx, href)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create retrieve content request: %v", err)
+		return nil, err
 	}
 	if resRetrieve.GetResourceInterface() != "" {
-		req.AddOption(coap.URIQuery, "if="+resRetrieve.GetResourceInterface())
+		req.AddOptionString(message.URIQuery, "if="+resRetrieve.GetResourceInterface())
 	}
+
 	return req, nil
 }
 
-func MakeContent(resp coap.Message) pbRA.Content {
+func MakeContent(opts message.Options, body io.Reader) pbRA.Content {
 	contentTypeString := ""
 	coapContentFormat := int32(-1)
-	if contentType, ok := resp.Option(coap.ContentFormat).(coap.MediaType); ok {
-		contentTypeString = contentType.String()
-		coapContentFormat = int32(contentType)
+	mt, err := opts.ContentFormat()
+	if err == nil {
+		contentTypeString = mt.String()
+		coapContentFormat = int32(mt)
+	}
+	var data []byte
+	if body != nil {
+		data, _ = ioutil.ReadAll(body)
 	}
 	return pbRA.Content{
 		ContentType:       contentTypeString,
 		CoapContentFormat: coapContentFormat,
-		Data:              resp.Payload(),
+		Data:              data,
 	}
 }
 
-func MakeCommandMetadata(req *coap.Request) pbCQRS.CommandMetadata {
+func MakeCommandMetadata(sequenceNumber uint64, connectionID string) pbCQRS.CommandMetadata {
 	return pbCQRS.CommandMetadata{
-		Sequence:     req.Sequence,
-		ConnectionId: req.Client.RemoteAddr().String(),
+		Sequence:     sequenceNumber,
+		ConnectionId: connectionID,
 	}
 }
 
-func MakeConfirmResourceRetrieveRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, req *coap.Request) pbRA.ConfirmResourceRetrieveRequest {
-	content := MakeContent(req.Msg)
-	metadata := MakeCommandMetadata(req)
+func MakeConfirmResourceRetrieveRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceRetrieveRequest {
+	content := MakeContent(req.Options(), req.Body())
+	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.ConfirmResourceRetrieveRequest{
 		AuthorizationContext: &authCtx,
 		ResourceId:           resourceId,
 		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Msg.Code()),
+		Status:               CoapCodeToStatus(req.Code()),
 		Content:              &content,
 		CommandMetadata:      &metadata,
 	}
 }
 
-func MakeConfirmResourceUpdateRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, req *coap.Request) pbRA.ConfirmResourceUpdateRequest {
-	content := MakeContent(req.Msg)
-	metadata := MakeCommandMetadata(req)
+func MakeConfirmResourceUpdateRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceUpdateRequest {
+	content := MakeContent(req.Options(), req.Body())
+	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.ConfirmResourceUpdateRequest{
 		AuthorizationContext: &authCtx,
 		ResourceId:           resourceId,
 		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Msg.Code()),
+		Status:               CoapCodeToStatus(req.Code()),
 		Content:              &content,
 		CommandMetadata:      &metadata,
 	}
 }
 
-func MakeNotifyResourceChangedRequest(resourceId string, authCtx pbCQRS.AuthorizationContext, req *coap.Request) pbRA.NotifyResourceChangedRequest {
-	content := MakeContent(req.Msg)
-	metadata := MakeCommandMetadata(req)
+func MakeNotifyResourceChangedRequest(resourceId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.NotifyResourceChangedRequest {
+	content := MakeContent(req.Options(), req.Body())
+	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.NotifyResourceChangedRequest{
 		AuthorizationContext: &authCtx,
 		ResourceId:           resourceId,
 		Content:              &content,
 		CommandMetadata:      &metadata,
-		Status:               CoapCodeToStatus(req.Msg.Code()),
+		Status:               CoapCodeToStatus(req.Code()),
 	}
 }
 
-func MakeUpdateResourceRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, req *coap.Request) pbRA.UpdateResourceRequest {
-	content := MakeContent(req.Msg)
-	metadata := MakeCommandMetadata(req)
+func MakeUpdateResourceRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *mux.Message) pbRA.UpdateResourceRequest {
+	content := MakeContent(req.Options, req.Body)
+	metadata := MakeCommandMetadata(req.SequenceNumber, connectionID)
 
 	return pbRA.UpdateResourceRequest{
 		AuthorizationContext: &authCtx,
@@ -186,8 +201,8 @@ func MakeUpdateResourceRequest(resourceId, correlationId string, authCtx pbCQRS.
 	}
 }
 
-func MakeRetrieveResourceRequest(resourceId, resourceInterface, correlationId string, authCtx pbCQRS.AuthorizationContext, req *coap.Request) pbRA.RetrieveResourceRequest {
-	metadata := MakeCommandMetadata(req)
+func MakeRetrieveResourceRequest(resourceId, resourceInterface, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *mux.Message) pbRA.RetrieveResourceRequest {
+	metadata := MakeCommandMetadata(req.SequenceNumber, connectionID)
 
 	return pbRA.RetrieveResourceRequest{
 		AuthorizationContext: &authCtx,

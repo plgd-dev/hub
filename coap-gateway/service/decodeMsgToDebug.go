@@ -3,45 +3,72 @@ package service
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 
-	gocoap "github.com/go-ocf/go-coap"
-	coapCodes "github.com/go-ocf/go-coap/codes"
+	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 )
 
-func decodeMsgToDebug(client *Client, resp gocoap.Message, tag string) {
-	buf := bytes.NewBuffer(make([]byte, 0, 2048))
-	fmt.Fprintf(buf, "\n-------------------%v------------------\n", tag)
-	fmt.Fprintf(buf, "DeviceId: %v\n", getDeviceId(client))
-	fmt.Fprintf(buf, "Token: %v\n", resp.Token())
-	fmt.Fprintf(buf, "Path: %v\n", resp.PathString())
-	fmt.Fprintf(buf, "Code: %v\n", resp.Code())
-	fmt.Fprintf(buf, "Type: %v\n", resp.Type())
-	fmt.Fprintf(buf, "Query: %v\n", resp.Options(gocoap.URIQuery))
-	fmt.Fprintf(buf, "ContentFormat: %v\n", resp.Options(gocoap.ContentFormat))
-	if resp.Code() == coapCodes.GET || resp.Code() == coapCodes.Content {
-		fmt.Fprintf(buf, "Observe: %v\n", resp.Option(gocoap.Observe))
+func readBody(r io.ReadSeeker) []byte {
+	if r == nil {
+		return nil
 	}
-	if mediaType, ok := resp.Option(gocoap.ContentFormat).(gocoap.MediaType); ok {
-		switch mediaType {
-		case gocoap.AppCBOR, gocoap.AppOcfCbor:
-			s, err := cbor.ToJSON(resp.Payload())
+	v, err := r.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil
+	}
+	_, err = r.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil
+	}
+	body, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil
+	}
+	r.Seek(v, io.SeekStart)
+	return body
+}
+
+func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
+	buf := bytes.NewBuffer(make([]byte, 0, 2048))
+	path, _ := resp.Options().Path()
+	queries, _ := resp.Options().Queries()
+
+	fmt.Fprintf(buf, "\n-------------------%v------------------\n", tag)
+	fmt.Fprintf(buf, "DeviceId: %v\n", getDeviceID(client))
+	fmt.Fprintf(buf, "Token: %v\n", resp.Token())
+	fmt.Fprintf(buf, "Path: %v\n", path)
+	fmt.Fprintf(buf, "Code: %v\n", resp.Code())
+	fmt.Fprintf(buf, "Query: %v\n", queries)
+
+	if observe, err := resp.Options().Observe(); err == nil {
+		fmt.Fprintf(buf, "Observe: %v\n", observe)
+	}
+	body := readBody(resp.Body())
+	if mt, err := resp.Options().ContentFormat(); err == nil {
+		fmt.Fprintf(buf, "ContentFormat: %v\n", mt)
+
+		switch mt {
+		case message.AppCBOR, message.AppOcfCbor:
+			s, err := cbor.ToJSON(body)
 			if err != nil {
-				log.Errorf("Cannot encode %v to JSON: %v", resp.Payload(), err)
+				log.Errorf("Cannot encode %v to JSON: %v", body, err)
 			}
 			fmt.Fprintf(buf, "CBOR:\n%v", s)
-		case gocoap.TextPlain:
-			fmt.Fprintf(buf, "TXT:\n%v", string(resp.Payload()))
-		case gocoap.AppJSON:
-			fmt.Fprintf(buf, "JSON:\n%v", string(resp.Payload()))
-		case gocoap.AppXML:
-			fmt.Fprintf(buf, "XML:\n%v", string(resp.Payload()))
+		case message.TextPlain:
+			fmt.Fprintf(buf, "TXT:\n%v", string(body))
+		case message.AppJSON:
+			fmt.Fprintf(buf, "JSON:\n%v", string(body))
+		case message.AppXML:
+			fmt.Fprintf(buf, "XML:\n%v", string(body))
 		default:
-			fmt.Fprintf(buf, "RAW(%v):\n%v", mediaType, resp.Payload())
+			fmt.Fprintf(buf, "RAW(%v):\n%v", mt, body)
 		}
 	} else {
-		fmt.Fprintf(buf, "RAW:\n%v", resp.Payload())
+		fmt.Fprintf(buf, "RAW:\n%v", body)
 	}
 	log.Debug(buf.String())
 }
