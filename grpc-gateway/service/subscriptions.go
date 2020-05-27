@@ -188,10 +188,6 @@ func (s *subscriptions) Pop(id string) Subscriber {
 				delete(s.devicesSubscriptions, userID)
 			}
 		}
-		delete(s.initSubscriptions[userID], id)
-		if len(s.initSubscriptions[userID]) == 0 {
-			delete(s.initSubscriptions, userID)
-		}
 		delete(s.allSubscriptions, id)
 		return sub
 	}
