@@ -15,7 +15,7 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.1
 	github.com/golang/snappy v0.0.2-0.20190904063534-ff6b7dc882cf
-	github.com/google/go-github v17.0.0+incompatible
+	github.com/google/go-github/v31 v31.0.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.2
