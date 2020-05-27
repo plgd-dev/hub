@@ -112,6 +112,7 @@ github.com/go-ocf/go-coap v0.0.0-20200302101636-d137010769dc/go.mod h1:4M5psGWXK
 github.com/go-ocf/go-coap v0.0.0-20200401083107-6259c4e0dca6/go.mod h1:51jqgNxk+XXTQs/yI5V8SxMbOhRfyNY7IwNFJ4Es6mU=
 github.com/go-ocf/go-coap v0.0.0-20200406073902-cf923db524db h1:zYs9RIr1Ghp2POmmwWl1nmgCSrInPRqRhM1fPFqG0UY=
 github.com/go-ocf/go-coap v0.0.0-20200406073902-cf923db524db/go.mod h1:QoCnsMBbmLW/XqYJj5reW4Mm7QxIz8QTycLGqWczpZA=
+github.com/go-ocf/go-coap v0.0.0-20200511140640-db6048acfdd3 h1:oIfjM7VTgcV2DLvHpQSg3iwqAXL5RHG/dsg/oS9/ITQ=
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.4/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.9/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.16 h1:UR90lbA8omNmgS+2CpFPtjdRMvxRlyZDfiFbSWB66LY=
@@ -126,6 +127,8 @@ github.com/go-ocf/go-coap/v2 v2.0.0-beta.20 h1:+kkzTmtlH2kwAh9jDCa3zWlakujWqMQSi
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.20/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.21 h1:PXd2xA7DXX4H/C2Hnn6lnrSiJrPo4SWh6mVKo9oPpXI=
 github.com/go-ocf/go-coap/v2 v2.0.0-beta.21/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
+github.com/go-ocf/go-coap/v2 v2.0.0 h1:yhaNL9ZCLorkLHfZeaowLCAAbq0+m9/U9yCU3IqsShA=
+github.com/go-ocf/go-coap/v2 v2.0.0/go.mod h1:X9wVKcaOSx7wBxKcvrWgMQq1R2DNeA7NBLW2osIb8TM=
 github.com/go-ocf/grpc-gateway v0.0.0-20191029150757-8ed2b7d67a67/go.mod h1:GuVJZHmSz7KGATOk0tqLPkgBJq2H12hZnG74CTJXOtI=
 github.com/go-ocf/grpc-gateway v0.0.0-20191128115804-9c2e8f77af08/go.mod h1:XBVeqnt2JEx0Z6SLEdjnjQ53jEpbAvcx+/CAC43eAb4=
 github.com/go-ocf/grpc-gateway v0.0.0-20200206140756-f2e98d630ed6/go.mod h1:UmskFCqe00ISEBHTZJbWIeyvvHcIuVsS/5c5FFEHF8s=
@@ -164,6 +167,8 @@ github.com/go-ocf/kit v0.0.0-20200522104643-af04c1ff1971 h1:u7EfBoO8bKuWUNK2ivoL
 github.com/go-ocf/kit v0.0.0-20200522104643-af04c1ff1971/go.mod h1:t6BL1Z38jV7qKwmaoh9l8iPKrhZcYMe4MGTCjxzr6v4=
 github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9 h1:jB/BO9UQTHtM1rIMWGHdJ2J9PHxY4J/29/aREdjMd6I=
 github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9/go.mod h1:t6BL1Z38jV7qKwmaoh9l8iPKrhZcYMe4MGTCjxzr6v4=
+github.com/go-ocf/kit v0.0.0-20200527091251-aa44b115a690 h1:wlfeLKpI1wYT7IZfjDV4ik9rEyh9DhUQU0ZIOaPI2ac=
+github.com/go-ocf/kit v0.0.0-20200527091251-aa44b115a690/go.mod h1:VQ/L9+wU9EEddE6X0VIWtodORpT8WCapogWoR3jWhbM=
 github.com/go-ocf/resource-aggregate v0.0.0-20190610073816-ff5194c51d2a/go.mod h1:5G1FgzxCnQhETxlFMh2DYtGJrl82AK3MvHXW4MYpO08=
 github.com/go-ocf/resource-aggregate v0.0.0-20191001194720-f5aade86d89a/go.mod h1:5G1FgzxCnQhETxlFMh2DYtGJrl82AK3MvHXW4MYpO08=
 github.com/go-ocf/resource-aggregate v0.0.0-20191029083107-ed77cacca426/go.mod h1:8KjjOJsevWFUzQ5UhD/tybREQhW05HeQsuGJ449X5qM=
@@ -198,6 +203,8 @@ github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33 h1:SebOrDhhe9CtlEey6WEl
 github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33/go.mod h1:9vLNYHs9YT+5Ytye8mzdiAI0Xez/DZWTHaqiZMpEIVQ=
 github.com/go-ocf/sdk v0.0.0-20200514081745-227ac451ff9b h1:5BJ63ONqqfstkn0PdMNgRmXQBl1SI8An6i7/T3OEwxE=
 github.com/go-ocf/sdk v0.0.0-20200514081745-227ac451ff9b/go.mod h1:y3mUHBTcWRRaPJkZQFqmJNFTY5o0/AH1nrYI3bARass=
+github.com/go-ocf/sdk v0.0.0-20200527092432-478e59f33e2c h1:A86jTui7BGddywtBXC1f4BJ7InRCdkDjJcRodb+m/wA=
+github.com/go-ocf/sdk v0.0.0-20200527092432-478e59f33e2c/go.mod h1:Z1S2nsnJgkJUF0OrpbaJ+We9xbQitHTMs60SL7XD5Ug=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=

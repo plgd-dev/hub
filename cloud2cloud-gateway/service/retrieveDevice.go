@@ -34,8 +34,8 @@ func toEndpoints(s []*pbRA.EndpointInformation) []schema.Endpoint {
 	return r
 }
 
-func toPolicy(s *pbRA.Policies) schema.Policy {
-	return schema.Policy{
+func toPolicy(s *pbRA.Policies) *schema.Policy {
+	return &schema.Policy{
 		BitMask: schema.BitMask(s.GetBitFlags()),
 	}
 }

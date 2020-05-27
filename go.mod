@@ -8,9 +8,9 @@ require (
 	github.com/fullstorydev/grpchan v1.0.1
 	github.com/go-chi/chi v4.1.0+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
-	github.com/go-ocf/go-coap/v2 v2.0.0-beta.21
-	github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9
-	github.com/go-ocf/sdk v0.0.0-20200514081745-227ac451ff9b
+	github.com/go-ocf/go-coap/v2 v2.0.0
+	github.com/go-ocf/kit v0.0.0-20200527091251-aa44b115a690
+	github.com/go-ocf/sdk v0.0.0-20200527092432-478e59f33e2c
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.1
