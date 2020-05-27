@@ -93,7 +93,7 @@ clean:
 	rm -rf ./.tmp/mongo || true
 
 proto/generate: $(SUBDIRS)
-push: $(SUBDIRS)
+push: cloud-build $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
