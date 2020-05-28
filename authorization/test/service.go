@@ -32,7 +32,7 @@ func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, 
 	return s, nil
 }
 
-func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (TearDown func()) {
 	var authCfg service.Config
 	err := envconfig.Process("", &authCfg)
 	require.NoError(t, err)
