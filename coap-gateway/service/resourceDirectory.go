@@ -16,7 +16,6 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema"
 	uuid "github.com/satori/go.uuid"
 )
@@ -95,7 +94,7 @@ func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, cli
 		if resource.DeviceID == "" {
 			resource.DeviceID = w.DeviceID
 		}
-		resource, err := client.publishResource(kitNetGrpc.CtxWithToken(req.Context, authCtx.AccessToken), resource, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber, authCtx.AuthorizationContext)
+		resource, err := client.publishResource(req.Context, resource, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber, authCtx.AuthorizationContext)
 		if err != nil {
 			// publish resource is not critical, it cause unaccessible resource
 			log.Errorf("DeviceId %v: cannot handle coap req to publish resource: %v", authCtx.DeviceId, err)

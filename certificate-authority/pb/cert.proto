@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package ocf.cloud.certificateauthority.pb;
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-
 option go_package = "github.com/go-ocf/cloud/certificate-authority/pb;pb";
 
 message SignCertificateRequest {

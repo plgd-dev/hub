@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
@@ -84,8 +83,7 @@ func clientRetrieveHandler(s mux.ResponseWriter, req *mux.Message, client *Clien
 }
 
 func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
-	authCtx := client.loadAuthorizationContext()
-	retrieveResourcesValuesClient, err := client.server.rdClient.RetrieveResourcesValues(kitNetGrpc.CtxWithUserID(ctx, authCtx.UserId), &pbGRPC.RetrieveResourcesValuesRequest{
+	retrieveResourcesValuesClient, err := client.server.rdClient.RetrieveResourcesValues(ctx, &pbGRPC.RetrieveResourcesValuesRequest{
 		ResourceIdsFilter: []*pbGRPC.ResourceId{
 			{
 				DeviceId:         deviceID,
@@ -123,5 +121,5 @@ func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID,
 	if err != nil {
 		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
 	}
-	return processed.GetContent(), coapconv.StatusToCoapCode(pb.Status_OK, coapCodes.GET), nil
+	return processed.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapCodes.GET), nil
 }

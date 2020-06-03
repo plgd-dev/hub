@@ -57,6 +57,7 @@ message UpdateResourceValuesRequest {
 
 message UpdateResourceValuesResponse {
   Content content = 1;
+  Status status = 2;
 }
 
 message SubscribeForEvents {

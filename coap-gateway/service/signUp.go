@@ -13,7 +13,6 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -78,7 +77,7 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		return
 	}
 
-	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithToken(r.Context, response.AccessToken), signUp.DeviceID, pbCQRS.AuthorizationContext{
+	err = client.PublishCloudDeviceStatus(r.Context, signUp.DeviceID, pbCQRS.AuthorizationContext{
 		UserId:   response.UserId,
 		DeviceId: signUp.DeviceID,
 	})
@@ -165,7 +164,7 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.BadRequest, req.Token)
 		return
 	}
-	_, err = client.server.asClient.SignOff(kitNetGrpc.CtxWithToken(req.Context, accessToken), &pbAS.SignOffRequest{
+	_, err = client.server.asClient.SignOff(req.Context, &pbAS.SignOffRequest{
 		DeviceId: deviceID,
 		UserId:   userID,
 	})

@@ -3,11 +3,12 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-ocf/cloud/authorization/persistence"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 const (
@@ -168,7 +169,9 @@ func (i *iterator) Err() error {
 }
 
 func (i *iterator) Close() {
-	i.err = i.iter.Close(i.ctx)
+	if i.iter != nil {
+		i.err = i.iter.Close(i.ctx)
+	}
 }
 
 func makeRecord(d *persistence.AuthorizedDevice) bson.M {

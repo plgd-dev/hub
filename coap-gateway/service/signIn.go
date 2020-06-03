@@ -14,7 +14,6 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -52,7 +51,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		}
 	}
 
-	resp, err := client.server.asClient.SignIn(kitNetGrpc.CtxWithToken(req.Context, signIn.AccessToken), &pbAS.SignInRequest{
+	resp, err := client.server.asClient.SignIn(req.Context, &pbAS.SignInRequest{
 		DeviceId: signIn.DeviceID,
 		UserId:   signIn.UserID,
 	})
@@ -85,7 +84,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		AccessToken: signIn.AccessToken,
 	}
 
-	err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Context, signIn.AccessToken), signIn.DeviceID, authCtx.AuthorizationContext, true)
+	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %v", err), coapCodes.InternalServerError, req.Token)
@@ -139,7 +138,7 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client) 
 	authCtxOld := client.loadAuthorizationContext()
 
 	if authCtxOld.DeviceId != "" {
-		err := client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(req.Context, authCtxOld.AccessToken), authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
+		err := client.UpdateCloudDeviceStatus(req.Context, authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtxOld.DeviceId, err)

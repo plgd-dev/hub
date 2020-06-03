@@ -264,7 +264,14 @@ func (client *Client) OnClose() {
 	authCtx := client.loadAuthorizationContext()
 
 	if client.authCtx.DeviceId != "" {
-		err := client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(context.Background(), authCtx.AccessToken), authCtx.DeviceId, authCtx.AuthorizationContext, false)
+		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
+		defer cancel()
+		token, err := client.server.oauthMgr.GetToken(ctx)
+		if err != nil {
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
+			return
+		}
+		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.UserId), authCtx.DeviceId, authCtx.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
@@ -292,7 +299,7 @@ func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *poo
 	authCtx := client.loadAuthorizationContext()
 
 	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
-	_, err := client.server.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(notification.Context(), authCtx.AccessToken), &request)
+	_, err := client.server.raClient.NotifyResourceChanged(notification.Context(), &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource content changed: %v", err)
 	}
@@ -311,7 +318,7 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 		defer pool.ReleaseMessage(msg)
 
 		request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
-		_, err := client.server.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+		_, err := client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 		if err != nil {
 			return err
 		}
@@ -341,7 +348,7 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	authCtx := client.loadAuthorizationContext()
 
 	request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 	if err != nil {
 		return err
 	}
@@ -361,7 +368,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 		defer pool.ReleaseMessage(msg)
 
 		request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
-		_, err := client.server.raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+		_, err := client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 		if err != nil {
 			return err
 		}
@@ -390,7 +397,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 
 	authCtx := client.loadAuthorizationContext()
 	request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 	if err != nil {
 		return err
 	}
@@ -458,7 +465,7 @@ func (client *Client) unpublishResources(ctx context.Context, rscs []*pbRA.Resou
 	authCtx := client.loadAuthorizationContext()
 
 	for _, resource := range rscs {
-		rscsUnpublished = client.unpublishResource(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), resource, authCtx.AuthorizationContext, rscsUnpublished)
+		rscsUnpublished = client.unpublishResource(ctx, resource, authCtx.AuthorizationContext, rscsUnpublished)
 	}
 
 	client.unobserveResources(ctx, rscs, rscsUnpublished)

@@ -291,7 +291,8 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			return
 		}
 
-		ctx := kitNetCoap.CtxWithToken(r.Context, client.loadAuthorizationContext().AccessToken)
+		authCtx := client.loadAuthorizationContext()
+		ctx := kitNetCoap.CtxWithToken(r.Context, authCtx.AccessToken)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
@@ -299,6 +300,13 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
+		serviceToken, err := server.oauthMgr.GetToken(r.Context)
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, r.Token)
+			client.Close()
+			return
+		}
+		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.UserId)
 		next.ServeCOAP(w, r)
 	})
 }

@@ -85,6 +85,7 @@ func toResponse(processed raEvents.ResourceUpdated) (*pb.UpdateResourceValuesRes
 	}
 	return &pb.UpdateResourceValuesResponse{
 		Content: content,
+		Status:  pb.RAStatus2Status(processed.GetStatus()),
 	}, nil
 }
 
