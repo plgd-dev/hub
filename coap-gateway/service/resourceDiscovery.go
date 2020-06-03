@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	"github.com/go-ocf/cloud/coap-gateway/uri"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
@@ -47,7 +48,7 @@ func makeListDevicesCommand(msg *mux.Message, authCtx pbCQRS.AuthorizationContex
 }
 
 func makeHref(deviceID, href string) string {
-	return fixHref("/" + resourceRoute + "/" + deviceID + "/" + href)
+	return fixHref("/" + uri.ResourceRoute + "/" + deviceID + "/" + href)
 }
 
 func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksClient pbGRPC.GrpcGateway_GetResourceLinksClient) ([]*wkRd, codes.Code, error) {

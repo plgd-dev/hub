@@ -1,13 +1,15 @@
-package service
+package service_test
 
 import (
 	"testing"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
+	authTest "github.com/go-ocf/cloud/authorization/test"
+	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/stretchr/testify/assert"
 )
 
 type TestCoapSignInResponse struct {
@@ -23,23 +25,11 @@ func TestSignInPostHandler(t *testing.T) {
 		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}},
 	}
 
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	deviceDB := t.Name() + "_deviceDB"
-	resourceDB := t.Name() + "_resourceDB"
+	defer authTest.SetUp(t)
+	defer raTest.SetUp(t)
+	defer coapgwTest.SetUp(t)
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, deviceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
@@ -63,23 +53,11 @@ func TestSignOutPostHandler(t *testing.T) {
 		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.UserToken + `", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}},
 	}
 
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	deviceDB := t.Name() + "_deviceDB"
-	resourceDB := t.Name() + "_resourceDB"
+	defer authTest.SetUp(t)
+	defer raTest.SetUp(t)
+	defer coapgwTest.SetUp(t)
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, deviceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}

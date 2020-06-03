@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"bytes"
@@ -6,35 +6,35 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/go-ocf/go-coap/v2/message"
 
+	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	rdTest "github.com/go-ocf/cloud/resource-directory/test"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/net/coap"
 
 	"github.com/go-ocf/kit/security/certManager"
-	"github.com/go-ocf/kit/security/certManager/acme/ocf"
 
 	"github.com/go-ocf/go-coap/v2/message/codes"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
-	kitNetCoap "github.com/go-ocf/kit/net/coap"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
+	authTest "github.com/go-ocf/cloud/authorization/test"
+	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
 	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/panjf2000/ants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -192,58 +192,6 @@ func cbor2json(data []byte) (string, error) {
 	return cbor.ToJSON(data)
 }
 
-func testCreateCoapGateway(t *testing.T, resourceDBname string, config Config) func() {
-	eventstore, subscriber := testCreateResourceStoreSub(t, resourceDBname)
-	var acmeCfg certManager.Config
-	err := envconfig.Process("DIAL", &acmeCfg)
-	assert.NoError(t, err)
-
-	clientCertManager, err := certManager.NewCertManager(acmeCfg)
-	require.NoError(t, err)
-
-	var listenCertManager ListenCertManager
-	if strings.HasSuffix(config.Net, "-tls") {
-		var acmeOcfCfg ocf.Config
-		err = envconfig.Process("LISTEN_ACME", &acmeOcfCfg)
-		assert.NoError(t, err)
-		coapGWAcmeDirectory := os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_ACME_DIRECTORY_URL")
-		require.NotEmpty(t, coapGWAcmeDirectory)
-		acmeOcfCfg.CADirURL = coapGWAcmeDirectory
-		listenCertManager, err = ocf.NewAcmeCertManagerFromConfiguration(acmeOcfCfg)
-		require.NoError(t, err)
-	}
-
-	pool, err := ants.NewPool(16)
-	assert.NoError(t, err)
-	server := New(config, clientCertManager, listenCertManager, func(ctx context.Context, code coapCodes.Code, path string) (context.Context, error) {
-		switch path {
-		case uri.RefreshToken, uri.SecureRefreshToken, uri.SignUp, uri.SecureSignUp, uri.SignIn, uri.SecureSignIn, uri.ResourcePing:
-			return ctx, nil
-		}
-		_, err := kitNetCoap.TokenFromCtx(ctx)
-		if err != nil {
-			return ctx, err
-		}
-		return ctx, nil
-	}, eventstore, subscriber, pool)
-	server.setupCoapServer()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		server.Serve()
-	}()
-
-	return func() {
-		server.Shutdown()
-		wg.Wait()
-	}
-}
-
-func init() {
-	log.Setup(log.Config{Debug: TestLogDebug})
-}
-
 func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	testPostHandler(t, uri.SignUp, signUpEl, co)
@@ -286,7 +234,7 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	}
 }
 
-func testCoapDial(t *testing.T, host, net string) *tcp.ClientConn {
+func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn {
 	var config certManager.OcfConfig
 	err := envconfig.Process("LISTEN", &config)
 	assert.NoError(t, err)
@@ -328,7 +276,7 @@ func testCoapDial(t *testing.T, host, net string) *tcp.ClientConn {
 		return nil
 	}
 
-	if net == "tcp" {
+	if len(withoutTLS) > 0 {
 		tlsConfig = nil
 	}
 	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
@@ -347,16 +295,29 @@ func testCoapDial(t *testing.T, host, net string) *tcp.ClientConn {
 	return conn
 }
 
+func setUp(t *testing.T, withoutTLS ...bool) func() {
+	auShutdown := authTest.SetUp(t)
+	raShutdown := raTest.SetUp(t)
+	rdShutdown := rdTest.SetUp(t)
+	gwShutdown := coapgwTest.SetUp(t)
+	return func() {
+		gwShutdown()
+		rdShutdown()
+		raShutdown()
+		auShutdown()
+	}
+}
+
 var (
 	AuthorizationUserId       = "1"
 	AuthorizationRefreshToken = "refresh-token"
 
 	CertIdentity      = "b5a2a42e-b285-42f1-a36b-034c8fc8efd5"
 	TestAResourceHref = "/a"
-	TestAResourceId   = resource2UUID(CertIdentity, TestAResourceHref)
+	TestAResourceId   = cqrsUtils.MakeResourceId(CertIdentity, TestAResourceHref)
 	TestAResourceType = "x.a"
 	TestBResourceHref = "/b"
-	TestBResourceId   = resource2UUID(CertIdentity, TestBResourceHref)
+	TestBResourceId   = cqrsUtils.MakeResourceId(CertIdentity, TestBResourceHref)
 	TestBResourceType = "x.b"
 
 	TestExchangeTimeout = time.Second * 15

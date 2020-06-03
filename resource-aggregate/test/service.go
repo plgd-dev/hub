@@ -1,23 +1,22 @@
 package test
 
 import (
-	"context"
 	"sync"
 	"testing"
 
 	"github.com/go-ocf/cloud/resource-aggregate/refImpl"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (TearDown func()) {
 	var raCfg refImpl.Config
-	err = envconfig.Process("", &raCfg)
+	err := envconfig.Process("", &raCfg)
 	require.NoError(t, err)
-	//raCfg.Log.Debug = true
 	raCfg.Service.Addr = testCfg.RESOURCE_AGGREGATE_HOST
 	raCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
-	return raService.NewResourceAggregate(t, raCfg)
+	return NewResourceAggregate(t, raCfg)
 }
 
 func NewResourceAggregate(t *testing.T, cfg refImpl.Config) func() {

@@ -14,7 +14,7 @@ import (
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	authProvider "github.com/go-ocf/cloud/authorization/provider"
 	authConfig "github.com/go-ocf/cloud/authorization/service"
-	authService "github.com/go-ocf/cloud/authorization/test/service"
+	authService "github.com/go-ocf/cloud/authorization/test"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/cloud/resource-aggregate/refImpl"

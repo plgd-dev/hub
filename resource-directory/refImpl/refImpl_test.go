@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	authConfig "github.com/go-ocf/cloud/authorization/service"
-	authService "github.com/go-ocf/cloud/authorization/test/service"
+	authService "github.com/go-ocf/cloud/authorization/test"
 	"github.com/go-ocf/cloud/resource-directory/refImpl"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"

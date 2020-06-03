@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/authorization/service"
-	testService "github.com/go-ocf/cloud/authorization/test/service"
+	authService "github.com/go-ocf/cloud/authorization/test"
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
@@ -97,7 +97,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	require.NoError(t, err)
 	cfg.Addr = "localhost:1234"
 
-	shutdown := testService.NewAuthServer(t, cfg)
+	shutdown := authService.NewAuthServer(t, cfg)
 	defer shutdown()
 
 	var acmeCfg certManager.Config
@@ -215,7 +215,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	require.NoError(t, err)
 	cfg.Addr = "localhost:1234"
 
-	shutdown := testService.NewAuthServer(t, cfg)
+	shutdown := authService.NewAuthServer(t, cfg)
 	defer shutdown()
 
 	var acmeCfg certManager.Config
@@ -306,7 +306,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	require.NoError(t, err)
 	cfg.Addr = "localhost:1234"
 
-	shutdown := testService.NewAuthServer(t, cfg)
+	shutdown := authService.NewAuthServer(t, cfg)
 	defer shutdown()
 
 	var acmeCfg certManager.Config

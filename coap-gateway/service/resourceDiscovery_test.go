@@ -1,38 +1,28 @@
-package service
+package service_test
 
 import (
 	"context"
 	"testing"
-	"time"
 
+	authTest "github.com/go-ocf/cloud/authorization/test"
+	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
+	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
+	rdTest "github.com/go-ocf/cloud/resource-directory/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/tcp"
 
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_resourceDirectoryFind(t *testing.T) {
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	config.RequestTimeout = time.Second * 2
-	resourceDB := t.Name() + "_resourceDB"
+	defer authTest.SetUp(t)
+	defer raTest.SetUp(t)
+	defer rdTest.SetUp(t)
+	defer coapgwTest.SetUp(t)
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownRD := testCreateResourceDirectory(t, resourceDB, config.ResourceDirectoryAddr, config.AuthServerAddr)
-	defer shutdownRD()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}

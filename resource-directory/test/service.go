@@ -1,7 +1,6 @@
 package test
 
 import (
-	"context"
 	"sync"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (TearDown func()) {
 	var rdCfg refImpl.Config
 	err := envconfig.Process("", &rdCfg)
 	require.NoError(t, err)

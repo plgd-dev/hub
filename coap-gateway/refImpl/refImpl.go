@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/go-ocf/kit/security/certManager"
 
@@ -25,6 +24,7 @@ type Config struct {
 	MongoDB           mongodb.Config        `envconfig:"MONGODB"`
 	Dial              certManager.Config    `envconfig:"DIAL"`
 	Listen            certManager.OcfConfig `envconfig:"LISTEN"`
+	ListenWithoutTLS  bool                  `envconfig:"LISTEN_WITHOUT_TLS"`
 	Log               log.Config            `envconfig:"LOG"`
 }
 
@@ -77,7 +77,7 @@ func InitWithAuthInterceptor(config Config, dialCertManager certManager.CertMana
 	}
 
 	var listenCertManager certManager.CertManager
-	if strings.Contains(config.Service.Net, "-tls") {
+	if !config.ListenWithoutTLS {
 		listenCertManager, err = certManager.NewOcfCertManager(config.Listen)
 		if err != nil {
 			dialCertManager.Close()

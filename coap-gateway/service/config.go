@@ -10,7 +10,6 @@ import (
 type Config struct {
 	Addr                            string         `envconfig:"ADDRESS" default:"0.0.0.0:5684"`
 	ExternalPort                    uint16         `envconfig:"EXTERNAL_PORT" default:"5684"`
-	Net                             string         `envconfig:"NETWORK" default:"tcp"`
 	FQDN                            string         `envconfig:"FQDN" default:"coapgw.ocf.cloud"`
 	AuthServerAddr                  string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
 	ResourceAggregateAddr           string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`

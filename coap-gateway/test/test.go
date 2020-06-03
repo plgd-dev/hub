@@ -10,10 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T, withOutTLS ...bool) (TearDown func()) {
 	var gwCfg refImpl.Config
 	err := envconfig.Process("", &gwCfg)
 	require.NoError(t, err)
+	if len(withOutTLS) > 0 {
+		gwCfg.ListenWithoutTLS = true
+	}
+	gwCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
+	gwCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	gwCfg.Service.Addr = testCfg.GW_HOST
 	gwCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	gwCfg.Service.FQDN = "coap-gateway-" + t.Name()

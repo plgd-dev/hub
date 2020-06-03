@@ -1,10 +1,16 @@
-package service
+package service_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	authTest "github.com/go-ocf/cloud/authorization/test"
+	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
+	"github.com/go-ocf/cloud/coap-gateway/uri"
+	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
+	rdTest "github.com/go-ocf/cloud/resource-directory/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 
 	"github.com/go-ocf/go-coap/v2/tcp"
@@ -12,30 +18,16 @@ import (
 	"github.com/go-ocf/kit/log"
 
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_clientRetrieveHandler(t *testing.T) {
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
+	defer authTest.SetUp(t)
+	defer raTest.SetUp(t)
+	defer rdTest.SetUp(t)
+	defer coapgwTest.SetUp(t)
 
-	resourceDB := t.Name() + "_resourceDB"
-
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownRS := testCreateResourceDirectory(t, resourceDB, config.ResourceDirectoryAddr, config.AuthServerAddr)
-	defer shutdownRS()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
@@ -53,28 +45,28 @@ func Test_clientRetrieveHandler(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				path: resourceRoute + TestAResourceHref,
+				path: uri.ResourceRoute + TestAResourceHref,
 			},
 			wantsCode: coapCodes.BadRequest,
 		},
 		{
 			name: "not found",
 			args: args{
-				path: resourceRoute + "/dev0/res0",
+				path: uri.ResourceRoute + "/dev0/res0",
 			},
 			wantsCode: coapCodes.NotFound,
 		},
 		{
 			name: "found",
 			args: args{
-				path: resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				path: uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
 			},
 			wantsCode: coapCodes.Content,
 		},
 		{
 			name: "found with interface",
 			args: args{
-				path:  resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				path:  uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
 				query: "if=oic.if.baseline",
 			},
 			wantsCode: coapCodes.Content,

@@ -248,7 +248,7 @@ func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
 
 	switch {
-	case strings.HasPrefix(path, resourceRoute):
+	case strings.HasPrefix(path, uri.ResourceRoute):
 		resourceRouteHandler(s, req, client)
 	default:
 		deviceID := getDeviceID(client)

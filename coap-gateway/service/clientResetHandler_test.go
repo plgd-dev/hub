@@ -1,38 +1,31 @@
-package service
+package service_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	authTest "github.com/go-ocf/cloud/authorization/test"
+	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
+	"github.com/go-ocf/cloud/coap-gateway/uri"
+	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
+	rdTest "github.com/go-ocf/cloud/resource-directory/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/go-coap/v2/message/codes"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_clientResetHandler(t *testing.T) {
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	resourceDB := t.Name() + "_resourceDB"
+	defer authTest.SetUp(t)
+	defer raTest.SetUp(t)
+	defer rdTest.SetUp(t)
+	defer coapgwTest.SetUp(t)
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownRS := testCreateResourceDirectory(t, resourceDB, config.ResourceDirectoryAddr, config.AuthServerAddr)
-	defer shutdownRS()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
@@ -53,7 +46,7 @@ func Test_clientResetHandler(t *testing.T) {
 			name: "observe",
 			args: args{
 				code:    codes.GET,
-				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				path:    uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
 				observe: 0,
 				token:   message.Token("observe"),
 			},
@@ -71,7 +64,7 @@ func Test_clientResetHandler(t *testing.T) {
 			name: "unobserve",
 			args: args{
 				code:    codes.GET,
-				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				path:    uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
 				observe: 1,
 				token:   message.Token("observe"),
 			},
