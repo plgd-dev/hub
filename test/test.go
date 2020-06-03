@@ -152,12 +152,12 @@ func ClearDB(ctx context.Context, t *testing.T) {
 }
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
-	testCfg.ClearDB(ctx, t)
-	authShutdown := authService.SetUp(ctx, t)
-	rdShutdown := rdService.SetUp(ctx, t)
-	raShutdown := raService.SetUp(ctx, t)
-	gwShutdown := coapgwService.SetUp(ctx, t)
-	grpcShutdown := grpcgwService.SetUp(t, grpcCfg)
+	ClearDB(ctx, t)
+	authShutdown := authService.SetUp(t)
+	rdShutdown := rdService.SetUp(t)
+	raShutdown := raService.SetUp(t)
+	gwShutdown := coapgwService.SetUp(t)
+	grpcShutdown := grpcgwService.SetUp(t)
 
 	return func() {
 		grpcShutdown()

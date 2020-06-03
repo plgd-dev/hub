@@ -5,10 +5,7 @@ import (
 	"testing"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
-	authTest "github.com/go-ocf/cloud/authorization/test"
-	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
@@ -91,9 +88,8 @@ var tblResourceDirectory = []testEl{
 }
 
 func TestResourceDirectoryPostHandler(t *testing.T) {
-	defer authTest.SetUp(t)
-	defer raTest.SetUp(t)
-	defer coapgwTest.SetUp(t)
+	shutdown := setUp(t)
+	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
@@ -128,9 +124,8 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 		{"NotExist4", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},
 	}
 
-	defer authTest.SetUp(t)
-	defer raTest.SetUp(t)
-	defer coapgwTest.SetUp(t)
+	shutdown := setUp(t)
+	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
@@ -184,9 +179,8 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 		{"GetSelector", input{coapCodes.GET, ``, []string{}}, output{coapCodes.Content, TestGetSelector{}, nil}},
 	}
 
-	defer authTest.SetUp(t)
-	defer raTest.SetUp(t)
-	defer coapgwTest.SetUp(t)
+	shutdown := setUp(t)
+	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {

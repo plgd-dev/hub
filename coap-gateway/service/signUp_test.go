@@ -4,10 +4,7 @@ import (
 	"testing"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
-	authTest "github.com/go-ocf/cloud/authorization/test"
-	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 )
@@ -27,9 +24,8 @@ func TestSignUpPostHandler(t *testing.T) {
 		{"Changed0", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: "1"}, nil}},
 	}
 
-	defer authTest.SetUp(t)
-	defer raTest.SetUp(t)
-	defer coapgwTest.SetUp(t)
+	shutdown := setUp(t)
+	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {

@@ -33,6 +33,7 @@ import (
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
+	test "github.com/go-ocf/cloud/test"
 	"github.com/go-ocf/kit/log"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
@@ -296,10 +297,13 @@ func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn
 }
 
 func setUp(t *testing.T, withoutTLS ...bool) func() {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	test.ClearDB(ctx, t)
 	auShutdown := authTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
-	gwShutdown := coapgwTest.SetUp(t)
+	gwShutdown := coapgwTest.SetUp(t, withoutTLS...)
 	return func() {
 		gwShutdown()
 		rdShutdown()

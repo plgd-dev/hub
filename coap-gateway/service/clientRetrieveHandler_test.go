@@ -5,11 +5,7 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/go-ocf/cloud/authorization/test"
-	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
-	rdTest "github.com/go-ocf/cloud/resource-directory/test"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 
@@ -22,10 +18,8 @@ import (
 )
 
 func Test_clientRetrieveHandler(t *testing.T) {
-	defer authTest.SetUp(t)
-	defer raTest.SetUp(t)
-	defer rdTest.SetUp(t)
-	defer coapgwTest.SetUp(t)
+	shutdown := setUp(t)
+	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {

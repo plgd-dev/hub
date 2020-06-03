@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
+func SetUp(t *testing.T) (TearDown func()) {
 	var grpcCfg refImpl.Config
 	err := envconfig.Process("", &grpcCfg)
 	require.NoError(t, err)

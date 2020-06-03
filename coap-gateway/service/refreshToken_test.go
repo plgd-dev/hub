@@ -3,10 +3,7 @@ package service_test
 import (
 	"testing"
 
-	authTest "github.com/go-ocf/cloud/authorization/test"
-	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 )
@@ -26,9 +23,8 @@ func Test_refreshTokenHandler(t *testing.T) {
 		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "refreshtoken":"123" }`, nil}, output{coapCodes.Changed, TestCoapRefreshTokenResponse{RefreshToken: AuthorizationRefreshToken}, nil}},
 	}
 
-	defer authTest.SetUp(t)
-	defer raTest.SetUp(t)
-	defer coapgwTest.SetUp(t)
+	shutdown := setUp(t)
+	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {

@@ -8,10 +8,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/go-coap/v2/tcp"
 
-	authTest "github.com/go-ocf/cloud/authorization/test"
-	coapgwTest "github.com/go-ocf/cloud/coap-gateway/test"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	raTest "github.com/go-ocf/cloud/resource-aggregate/test"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
@@ -21,9 +18,8 @@ import (
 )
 
 func Test_resourcePingHandler(t *testing.T) {
-	defer authTest.SetUp(t)
-	defer raTest.SetUp(t)
-	defer coapgwTest.SetUp(t)
+	shutdown := setUp(t,)
+	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
