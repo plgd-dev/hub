@@ -18,7 +18,6 @@ import (
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/gofrs/uuid"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
 	"github.com/go-ocf/cqrs/eventstore"
 )
@@ -569,12 +568,7 @@ func (s *subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscri
 }
 
 func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
-	accessToken, err := grpc_auth.AuthFromMD(srv.Context(), "bearer")
-	if err != nil {
-		return kitNetGrpc.ForwardFromError(codes.Unauthenticated, err)
-	}
-
-	userID, err := parseSubFromJwtToken(accessToken)
+	userID, err := kitNetGrpc.UserIDFromMD(srv.Context())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}

@@ -35,7 +35,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				request: testMakePublishResourceRequest(deviceId, resId, user0),
+				request: testMakePublishResourceRequest(deviceId, resId),
 			},
 			want: &pb.PublishResourceResponse{
 				AuditContext: &pb.AuditContext{
@@ -47,7 +47,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakePublishResourceRequest(deviceId, resId, user0),
+				request: testMakePublishResourceRequest(deviceId, resId),
 			},
 			want: &pb.PublishResourceResponse{
 				AuditContext: &pb.AuditContext{
@@ -70,7 +70,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -116,6 +116,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 
 	type args struct {
 		request *pb.UnpublishResourceRequest
+		userID  string
 	}
 	test := []struct {
 		name      string
@@ -125,7 +126,10 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeUnpublishResourceRequest(deviceId, resId, user0)},
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceId, resId),
+				userID:  user0,
+			},
 			want: &pb.UnpublishResourceResponse{
 				AuditContext: &pb.AuditContext{
 					UserId:   user0,
@@ -134,13 +138,19 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 			},
 		},
 		{
-			name:      "duplicit",
-			args:      args{request: testMakeUnpublishResourceRequest(deviceId, resId, user0)},
+			name: "duplicit",
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceId, resId),
+				userID:  user0,
+			},
 			wantError: true,
 		},
 		{
-			name:      "unauthorized",
-			args:      args{request: testMakeUnpublishResourceRequest(deviceId, resId, testUnauthorizedUser)},
+			name: "unauthorized",
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceId, resId),
+				userID:  testUnauthorizedUser,
+			},
 			wantError: true,
 		},
 		{
@@ -181,13 +191,13 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId, user0)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
+	pubReq := testMakePublishResourceRequest(deviceId, resId)
+	_, err = requestHandler.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
 	assert.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.UnpublishResource(ctx, tt.args.request)
+			response, err := requestHandler.UnpublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -215,7 +225,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeNotifyResourceChangedRequest(deviceId, resId, user0, 2)},
+			args: args{request: testMakeNotifyResourceChangedRequest(deviceId, resId, 2)},
 			want: &pb.NotifyResourceChangedResponse{
 				AuditContext: &pb.AuditContext{
 					UserId:   user0,
@@ -237,7 +247,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -261,7 +271,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId, user0)
+	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
 	assert.NoError(t, err)
 
@@ -296,7 +306,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "", user0, correlationId)},
+			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "", correlationId)},
 			want: &pb.UpdateResourceResponse{
 				AuditContext: &pb.AuditContext{
 					UserId:        user0,
@@ -307,7 +317,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		},
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "oic.if.baseline", user0, correlationId)},
+			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "oic.if.baseline", correlationId)},
 			want: &pb.UpdateResourceResponse{
 				AuditContext: &pb.AuditContext{
 					UserId:        user0,
@@ -331,7 +341,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -354,7 +364,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId, user0)
+	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
 	assert.NoError(t, err)
 
@@ -389,7 +399,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceUpdateRequest(deviceId, resId, user0, correlationId)},
+			args: args{request: testMakeConfirmResourceUpdateRequest(deviceId, resId, correlationId)},
 			want: &pb.ConfirmResourceUpdateResponse{
 				AuditContext: &pb.AuditContext{
 					UserId:        user0,
@@ -412,7 +422,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -435,7 +445,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId, user0)
+	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
 	assert.NoError(t, err)
 
@@ -470,7 +480,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeRetrieveResourceRequest(deviceId, resId, user0, correlationId)},
+			args: args{request: testMakeRetrieveResourceRequest(deviceId, resId, correlationId)},
 			want: &pb.RetrieveResourceResponse{
 				AuditContext: &pb.AuditContext{
 					UserId:        user0,
@@ -493,7 +503,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -516,7 +526,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId, user0)
+	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
 	assert.NoError(t, err)
 
@@ -551,7 +561,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceRetrieveRequest(deviceId, resId, user0, correlationId)},
+			args: args{request: testMakeConfirmResourceRetrieveRequest(deviceId, resId, correlationId)},
 			want: &pb.ConfirmResourceRetrieveResponse{
 				AuditContext: &pb.AuditContext{
 					UserId:        user0,
@@ -574,7 +584,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -597,7 +607,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId, user0)
+	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
 	assert.NoError(t, err)
 

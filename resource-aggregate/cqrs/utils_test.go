@@ -8,25 +8,25 @@ import (
 )
 
 func TestDummyForCoverage(t *testing.T) {
-	device := "dev"
+	deviceID := "dev"
 
-	GetTopics(device)
-	MakeResourceId(device, "/abc")
+	GetTopics(deviceID)
+	MakeResourceId(deviceID, "/abc")
 	sequence := uint64(1234)
 	version := uint64(5)
 	connId := "c"
-	corId := "a"
-	userId := "u"
+	corID := "a"
+	userID := "u"
 
 	TimeNowMs()
 	em := MakeEventMeta(connId, sequence, version)
 	assert.Equal(t, connId, em.ConnectionId)
 	assert.Equal(t, sequence, em.Sequence)
 	assert.Equal(t, version, em.Version)
-	ac := MakeAuditContext(&pb.AuthorizationContext{UserId: userId, DeviceId: device}, corId)
-	assert.Equal(t, corId, ac.CorrelationId)
-	assert.Equal(t, userId, ac.UserId)
-	assert.Equal(t, device, ac.DeviceId)
+	ac := MakeAuditContext(deviceID, userID, corID)
+	assert.Equal(t, corID, ac.CorrelationId)
+	assert.Equal(t, userID, ac.UserId)
+	assert.Equal(t, deviceID, ac.DeviceId)
 }
 
 func TestProtobufMarshaler(t *testing.T) {

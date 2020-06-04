@@ -10,14 +10,13 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
 func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb.RetrieveResourceFromDeviceRequest) (*pb.RetrieveResourceFromDeviceResponse, error) {
-	accessToken, err := grpc_auth.AuthFromMD(ctx, "bearer")
+	accessToken, err := kitNetGrpc.TokenFromMD(ctx)
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot retrieve resource from device: %v", err))
 	}

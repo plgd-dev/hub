@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/sdk/schema"
@@ -25,21 +24,6 @@ func toStatus(isOnline bool) Status {
 		return "online"
 	}
 	return "offline"
-}
-
-func toLocalizedString(s *pbDD.LocalizedString) schema.LocalizedString {
-	return schema.LocalizedString{
-		Value:    s.Value,
-		Language: s.Language,
-	}
-}
-
-func toLocalizedStrings(s []*pbDD.LocalizedString) []schema.LocalizedString {
-	r := make([]schema.LocalizedString, 0, 16)
-	for _, v := range s {
-		r = append(r, toLocalizedString(v))
-	}
-	return r
 }
 
 type responseWriterEncoderFunc func(w http.ResponseWriter, v interface{}, status int) error

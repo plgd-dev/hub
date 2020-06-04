@@ -3,17 +3,12 @@ package service
 import (
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 func (r *RequestHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
-	accessToken, err := grpc_auth.AuthFromMD(srv.Context(), "bearer")
-	if err != nil {
-		return logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot retrieve resources values: %v", err))
-	}
-	userID, err := parseSubFromJwtToken(accessToken)
+	userID, err := kitNetGrpc.UserIDFromMD(srv.Context())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}

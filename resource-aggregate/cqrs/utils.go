@@ -33,10 +33,10 @@ func MakeEventMeta(connectionId string, sequence, version uint64) pb.EventMetada
 	}
 }
 
-func MakeAuditContext(a *pb.AuthorizationContext, correlationId string) pb.AuditContext {
+func MakeAuditContext(deviceID, userID, correlationId string) pb.AuditContext {
 	return pb.AuditContext{
-		UserId:        a.GetUserId(),
-		DeviceId:      a.GetDeviceId(),
+		UserId:        userID,
+		DeviceId:      deviceID,
 		CorrelationId: correlationId,
 	}
 }

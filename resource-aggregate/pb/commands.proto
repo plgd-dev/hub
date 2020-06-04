@@ -8,8 +8,7 @@ import "github.com/go-ocf/cloud/resource-aggregate/pb/resources.proto";
 option go_package = "github.com/go-ocf/cloud/resource-aggregate/pb;pb";
 
 message AuthorizationContext {
-    string user_id = 1;
-    string device_id = 2;
+    string device_id = 1;
 }
 
 message CommandMetadata {

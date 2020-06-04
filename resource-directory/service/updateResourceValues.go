@@ -14,7 +14,6 @@ import (
 	"github.com/go-ocf/go-coap/v2/message"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
@@ -101,7 +100,7 @@ func (r *RequestHandler) waitForUpdateContentResponse(ctx context.Context, devic
 }
 
 func (r *RequestHandler) UpdateResourcesValues(ctx context.Context, req *pb.UpdateResourceValuesRequest) (*pb.UpdateResourceValuesResponse, error) {
-	accessToken, err := grpc_auth.AuthFromMD(ctx, "bearer")
+	accessToken, err := kitNetGrpc.TokenFromMD(ctx)
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot update resource: %v", err))
 	}

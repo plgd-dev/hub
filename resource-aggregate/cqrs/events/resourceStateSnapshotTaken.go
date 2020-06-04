@@ -256,6 +256,10 @@ func convertContent(content *pb.Content, supportedContentTypes []string) (newCon
 }
 
 func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqrs.Command, newVersion uint64) ([]event.Event, error) {
+	userID, err := grpc.UserIDFromMD(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot handle command: invalid userID: %w", err)
+	}
 	switch req := cmd.(type) {
 	case *pb.PublishResourceRequest:
 		if rs.Id != req.ResourceId && rs.Id != "" {
@@ -266,7 +270,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		}
 
 		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.AuthorizationContext, "")
+		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 
 		rp := ResourcePublished{pb.ResourcePublished{
 			Id:            req.ResourceId,
@@ -293,7 +297,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		}
 
 		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.AuthorizationContext, "")
+		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 		ru := ResourceUnpublished{pb.ResourceUnpublished{
 			Id:            req.ResourceId,
 			AuditContext:  &ac,
@@ -316,7 +320,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		}
 
 		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.AuthorizationContext, "")
+		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 
 		rc := ResourceChanged{
 			pb.ResourceChanged{
@@ -348,7 +352,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		}
 
 		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.AuthorizationContext, req.CorrelationId)
+		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 		content, err := convertContent(req.Content, rs.Resource.SupportedContentTypes)
 		if err != nil {
 			return nil, fmt.Errorf("cannot handle notify resource changed: %w", err)
@@ -380,7 +384,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		}
 
 		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.AuthorizationContext, req.CorrelationId)
+		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 		rc := ResourceUpdated{
 			pb.ResourceUpdated{
 				Id:            req.ResourceId,
@@ -406,7 +410,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		}
 
 		em := cqrsUtils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext(), req.CorrelationId)
+		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 
 		rc := ResourceRetrievePending{
 			pb.ResourceRetrievePending{
@@ -433,7 +437,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		}
 
 		em := cqrsUtils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext(), req.GetCorrelationId())
+		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceRetrieved{
 			pb.ResourceRetrieved{
 				Id:            req.GetResourceId(),

@@ -16,6 +16,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 	require.NoError(t, err)
 	raCfg.Service.Addr = testCfg.RESOURCE_AGGREGATE_HOST
 	raCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
+	raCfg.Service.JwksURL = testCfg.JWKS_URL
 	return NewResourceAggregate(t, raCfg)
 }
 

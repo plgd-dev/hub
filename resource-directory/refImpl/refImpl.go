@@ -45,7 +45,7 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 
-	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig(), "openid")
+	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
 	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
@@ -64,15 +64,27 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	return server, nil
 }
 
-func NewAuth(jwksUrl string, tls *tls.Config, scope string) kitNetGrpc.AuthInterceptors {
+func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
 		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
-			return jwt.NewScopeClaims(scope)
+			return jwt.NewScopeClaims()
 		})
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
 			log.Errorf("auth interceptor: %v", err)
+			return ctx, err
 		}
-		return ctx, err
+		userID, err := kitNetGrpc.UserIDFromMD(ctx)
+		if err != nil {
+			userID, err = kitNetGrpc.UserIDFromTokenMD(ctx)
+			if err == nil {
+				ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, userID)
+			}
+		}
+		if err != nil {
+			log.Errorf("auth cannot get userID: %v", err)
+			return ctx, err
+		}
+		return kitNetGrpc.CtxWithUserID(ctx, userID), nil
 	}, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
 }
