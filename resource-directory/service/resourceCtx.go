@@ -31,6 +31,7 @@ type resourceCtx struct {
 	subscriptions                 *subscriptions
 	updateNotificationContainer   *notification.UpdateNotificationContainer
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
+	resourceUpdatePendings        []raEvents.ResourceUpdatePending
 }
 
 func NewResourceCtx(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer) func(context.Context) (eventstore.Model, error) {
@@ -39,16 +40,22 @@ func NewResourceCtx(subscriptions *subscriptions, updateNotificationContainer *n
 			subscriptions:                 subscriptions,
 			updateNotificationContainer:   updateNotificationContainer,
 			retrieveNotificationContainer: retrieveNotificationContainer,
+			resourceUpdatePendings:        make([]raEvents.ResourceUpdatePending, 0, 8),
 		}, nil
 	}
 }
 
 func (m *resourceCtx) cloneLocked() *resourceCtx {
+	resourceUpdatePendings := make([]raEvents.ResourceUpdatePending, 0, len(m.resourceUpdatePendings))
+	for _, v := range m.resourceUpdatePendings {
+		resourceUpdatePendings = append(resourceUpdatePendings, v)
+	}
 	return &resourceCtx{
-		resource:    m.resource,
-		isPublished: m.isPublished,
-		content:     m.content,
-		version:     m.version,
+		resource:               m.resource,
+		isPublished:            m.isPublished,
+		content:                m.content,
+		version:                m.version,
+		resourceUpdatePendings: resourceUpdatePendings,
 	}
 }
 
@@ -69,6 +76,30 @@ func (m *resourceCtx) onResourceUnpublishedLocked(ctx context.Context) error {
 	log.Debugf("onResourceUnpublishedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	link := pb.RAResourceToProto(m.resource)
 	return m.subscriptions.OnResourceUnpublished(ctx, link, m.onResourceUnpublishedVersion)
+}
+
+func (m *resourceCtx) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error) error {
+	log.Debugf("onResourceUpdatePending %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
+	for {
+		if len(m.resourceUpdatePendings) == 0 {
+			return nil
+		}
+		p := m.resourceUpdatePendings[0]
+		updatePending := pb.Event_ResourceUpdatePending{
+			ResourceId: &pb.ResourceId{
+				DeviceId:         m.resource.GetDeviceId(),
+				ResourceLinkHref: m.resource.GetHref(),
+			},
+			ResourceInterface: p.GetResourceInterface(),
+			Content:           pb.RAContent2Content(p.GetContent()),
+			CorrelationId:     p.GetAuditContext().GetCorrelationId(),
+		}
+		err := do(ctx, updatePending, p.GetEventMetadata().GetVersion())
+		if err != nil {
+			return err
+		}
+		m.resourceUpdatePendings = m.resourceUpdatePendings[1:]
+	}
 }
 
 func (m *resourceCtx) onResourceChangedLocked(ctx context.Context) error {
@@ -132,6 +163,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var onResourcePublished, onResourceUnpublished, onResourceContentChanged bool
 	resourceUpdated := make([]raEvents.ResourceUpdated, 0, 16)
 	resourceRetrieved := make([]raEvents.ResourceRetrieved, 0, 16)
+	resourceUpdatePendings := make([]raEvents.ResourceUpdatePending, 0, 16)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	var anyEventProcessed bool
@@ -183,12 +215,25 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			m.content = &s.ResourceChanged
 			m.onResourceChangedVersion = eu.Version
 			onResourceContentChanged = true
+		case http.ProtobufContentType(&pbRA.ResourceUpdatePending{}):
+			var s raEvents.ResourceUpdatePending
+			if err := eu.Unmarshal(&s); err != nil {
+				return err
+			}
+			resourceUpdatePendings = append(resourceUpdatePendings, s)
 		case http.ProtobufContentType(&pbRA.ResourceUpdated{}):
 			var s raEvents.ResourceUpdated
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
 			resourceUpdated = append(resourceUpdated, s)
+			tmp := resourceUpdatePendings[:0]
+			for _, cu := range resourceUpdatePendings {
+				if cu.AuditContext.CorrelationId != s.AuditContext.CorrelationId {
+					tmp = append(tmp, cu)
+				}
+			}
+			resourceUpdatePendings = tmp
 		case http.ProtobufContentType(&pbRA.ResourceRetrieved{}):
 			var s raEvents.ResourceRetrieved
 			if err := eu.Unmarshal(&s); err != nil {
@@ -231,6 +276,12 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 
 	m.onResourceUpdatedLocked(resourceUpdated)
 	m.onResourceRetrievedLocked(resourceRetrieved)
+
+	m.resourceUpdatePendings = append(m.resourceUpdatePendings, resourceUpdatePendings...)
+	err := m.onResourceUpdatePendingLocked(ctx, m.subscriptions.OnResourceUpdatePending)
+	if err != nil {
+		log.Errorf("%v", err)
+	}
 
 	return nil
 }

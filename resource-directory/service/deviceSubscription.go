@@ -72,6 +72,27 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 	})
 }
 
+func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
+	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetResourceLinkHref(), "res", version) {
+		return nil
+	}
+	var found bool
+	for _, f := range s.deviceEvent.GetFilterEvents() {
+		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING {
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	return s.Send(ctx, pb.Event{
+		SubscriptionId: s.ID(),
+		Type: &pb.Event_ResourceUpdatePending_{
+			ResourceUpdatePending: &updatePending,
+		},
+	})
+}
+
 func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
 	models := s.resourceProjection.Models(s.DeviceID(), "")
 	for _, model := range models {
@@ -97,6 +118,18 @@ func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) e
 		err := s.NotifyOfUnpublishedResource(ctx, link, version)
 		if err != nil {
 			return fmt.Errorf("cannot send resource published: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context) error {
+	models := s.resourceProjection.Models(s.DeviceID(), "")
+	for _, model := range models {
+		c := model.(*resourceCtx).Clone()
+		err := c.onResourceUpdatePendingLocked(ctx, s.NotifyOfUpdatePendingResource)
+		if err != nil {
+			return fmt.Errorf("cannot send resource update pending: %w", err)
 		}
 	}
 	return nil

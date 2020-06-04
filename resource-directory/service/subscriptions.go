@@ -384,6 +384,27 @@ func (s *subscriptions) OnResourceUnpublished(ctx context.Context, link pb.Resou
 	return nil
 }
 
+func (s *subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, updatePending.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[updatePending.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfUpdatePendingResource(ctx, updatePending, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource unpublished event: %v", errors)
+	}
+	return nil
+}
+
 func (s *subscriptions) OnDeviceOnline(ctx context.Context, deviceID string, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
