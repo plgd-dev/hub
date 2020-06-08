@@ -35,15 +35,6 @@ func Test_clientUpdateHandler(t *testing.T) {
 		wantsCode coapCodes.Code
 	}{
 		{
-			name: "invalid href",
-			args: args{
-				href:          uri.ResourceRoute + TestAResourceHref,
-				contentFormat: message.TextPlain,
-				payload:       []byte{},
-			},
-			wantsCode: coapCodes.BadRequest,
-		},
-		{
 			name: "not found",
 			args: args{
 				href:          uri.ResourceRoute + "/a/b",
@@ -75,7 +66,7 @@ func Test_clientUpdateHandler(t *testing.T) {
 			}
 			resp, err := co.Post(ctx, tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
-			assert.Equal(t, tt.wantsCode, resp.Code())
+			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 		})
 	}
 }

@@ -29,6 +29,7 @@ type observedResource struct {
 type authCtx struct {
 	pbCQRS.AuthorizationContext
 	AccessToken string
+	UserID      string
 }
 
 //Client a setup of connection
@@ -271,7 +272,7 @@ func (client *Client) OnClose() {
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
 			return
 		}
-		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.UserId), authCtx.DeviceId, authCtx.AuthorizationContext, false)
+		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.UserID), authCtx.DeviceId, authCtx.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
@@ -280,7 +281,7 @@ func (client *Client) OnClose() {
 }
 
 func (client *Client) storeAuthorizationContext(authCtx authCtx) (oldDeviceID string) {
-	log.Debugf("Authorization context stored for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceId(), authCtx.GetUserId())
+	log.Debugf("Authorization context stored for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceId(), authCtx.UserID)
 	client.authContextLock.Lock()
 	defer client.authContextLock.Unlock()
 	oldAuthContext := client.authCtx
@@ -436,6 +437,7 @@ func (client *Client) publishResource(ctx context.Context, link schema.ResourceL
 	}
 
 	link.InstanceID = response.InstanceId
+	link.ID = resourceID
 	return link, nil
 }
 

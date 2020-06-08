@@ -24,6 +24,7 @@ var jwkKeyID = `QkY4MzFGMTdFMzMyN0NGQjEyOUFFMzE5Q0ZEMUYzQUQxNkNENTlEMg`
 var jwkKey jwk.Key
 var clientID = "test"
 var UserToken = ""
+var DeviceAccessToken = "123"
 
 func init() {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -96,12 +97,22 @@ func (p *TestProvider) GetProviderName() string {
 
 // Exchange Auth Code for Access Token via OAuth.
 func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
-	return generateToken(false)
+	return &Token{
+		UserID:       "1",
+		AccessToken:  DeviceAccessToken,
+		Expiry:       time.Now().Add(time.Minute),
+		RefreshToken: "refresh-token",
+	}, nil
 }
 
 // Refresh gets new Access Token via OAuth.
 func (p *TestProvider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
-	return generateToken(false)
+	return &Token{
+		UserID:       "1",
+		AccessToken:  DeviceAccessToken,
+		Expiry:       time.Now().Add(time.Minute),
+		RefreshToken: "refresh-token",
+	}, nil
 }
 
 // AuthCodeURL returns URL for redirecting.

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
@@ -28,32 +27,12 @@ type CoapSignInResp struct {
 	ExpiresIn int64 `json:"expiresin"`
 }
 
-func validateSignIn(req CoapSignInReq) error {
-	if req.DeviceID == "" {
-		return errors.New("cannot sign in to auth server: invalid deviceID")
-	}
-	if req.AccessToken == "" {
-		return errors.New("cannot sign in to auth server: invalid accessToken")
-	}
-	if req.UserID == "" {
-		return errors.New("cannot sign in to auth server: invalid userId")
-	}
-	return nil
-}
-
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, signIn CoapSignInReq) {
-	err := validateSignIn(signIn)
-	if err != nil {
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.BadRequest, req.Token)
-			return
-		}
-	}
-
 	resp, err := client.server.asClient.SignIn(req.Context, &pbAS.SignInRequest{
-		DeviceId: signIn.DeviceID,
-		UserId:   signIn.UserID,
+		DeviceId:    signIn.DeviceID,
+		UserId:      signIn.UserID,
+		AccessToken: signIn.AccessToken,
 	})
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
@@ -79,8 +58,8 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	authCtx := authCtx{
 		AuthorizationContext: pbCQRS.AuthorizationContext{
 			DeviceId: signIn.DeviceID,
-			UserId:   signIn.UserID,
 		},
+		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
 	}
 

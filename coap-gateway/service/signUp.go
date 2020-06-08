@@ -13,6 +13,7 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -61,12 +62,6 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		signUp.AuthorizationCode = signUp.AuthorizationCodeLegacy
 	}
 
-	err = validateSignUp(signUp)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapCodes.BadRequest, r.Token)
-		return
-	}
-
 	response, err := client.server.asClient.SignUp(r.Context, &pbAS.SignUpRequest{
 		DeviceId:              signUp.DeviceID,
 		AuthorizationCode:     signUp.AuthorizationCode,
@@ -77,8 +72,7 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		return
 	}
 
-	err = client.PublishCloudDeviceStatus(r.Context, signUp.DeviceID, pbCQRS.AuthorizationContext{
-		UserId:   response.UserId,
+	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithUserID(r.Context, response.UserId), signUp.DeviceID, pbCQRS.AuthorizationContext{
 		DeviceId: signUp.DeviceID,
 	})
 	if err != nil {

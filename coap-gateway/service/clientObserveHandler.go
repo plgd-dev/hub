@@ -88,8 +88,8 @@ func SendResourceContentToObserver(client *Client, contentCtx *pbRA.ResourceChan
 
 func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx authCtx, deviceID, resourceID string) {
 	userIdsFilter := []string(nil)
-	if authCtx.UserId != "" {
-		userIdsFilter = []string{authCtx.UserId}
+	if authCtx.UserID != "" {
+		userIdsFilter = []string{authCtx.UserID}
 	}
 	getUserDevicesClient, err := client.server.asClient.GetUserDevices(req.Context, &pbAS.GetUserDevicesRequest{
 		UserIdsFilter:   userIdsFilter,

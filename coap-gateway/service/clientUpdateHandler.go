@@ -26,7 +26,7 @@ func clientUpdateHandler(s mux.ResponseWriter, req *mux.Message, client *Client)
 		return
 	}
 
-	content, code, err := clientUpdateDeviceHandler(req, client, deviceID)
+	content, code, err := clientUpdateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), code, req.Token)
 		return
@@ -43,12 +43,8 @@ func clientUpdateHandler(s mux.ResponseWriter, req *mux.Message, client *Client)
 	client.sendResponse(code, req.Token, mediaType, content.Data)
 }
 
-func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID string) (*pbGRPC.Content, coapCodes.Code, error) {
-	request, err := coapconv.MakeUpdateResourceRequest(deviceID, req)
-	if err != nil {
-		return nil, coapCodes.BadRequest, fmt.Errorf("cannot update resource of device %v: %w", deviceID, err)
-	}
-
+func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
+	request := coapconv.MakeUpdateResourceRequest(deviceID, href, req)
 	resp, err := client.server.rdClient.UpdateResourcesValues(req.Context, request)
 	if err != nil {
 		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), err

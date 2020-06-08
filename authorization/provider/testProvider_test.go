@@ -18,7 +18,7 @@ func TestSignUpTestProvider(t *testing.T) {
 	assert.NotEmpty(token.AccessToken)
 	assert.Equal("refresh-token", token.RefreshToken)
 	expiresIn := int(token.Expiry.Sub(time.Now()).Seconds())
-	assert.True(expiresIn > 60*60*60*60)
+	assert.True(expiresIn > 0)
 	assert.Equal("1", token.UserID)
 }
 
@@ -32,6 +32,6 @@ func TestRefreshTokenTestProvider(t *testing.T) {
 	assert.NotEmpty(token.AccessToken)
 	assert.Equal("refresh-token", token.RefreshToken)
 	expiresIn := int(token.Expiry.Sub(time.Now()).Seconds())
-	assert.True(expiresIn > 60*60*60*60)
+	assert.True(expiresIn > 0)
 	assert.Equal("1", token.UserID)
 }

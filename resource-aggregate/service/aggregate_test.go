@@ -82,8 +82,8 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			deviceIds, _, err := testListDevicesOfUserFunc(ctx, "a0", tt.args.userID)
-			ag, err := NewAggregate(kitNetGrpc.CtxWithUserID(ctx, tt.args.userID), tt.args.request.ResourceId, deviceIds, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
-			assert.NoError(t, err)
+			ag, err := NewAggregate(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request.ResourceId, deviceIds, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+			require.NoError(t, err)
 			_, events, err := ag.PublishResource(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -126,13 +126,16 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nat
 }
 
 func TestAggregateDuplicitPublishResource(t *testing.T) {
+	deviceID := "dupDeviceId"
+	resourceID := "dupResourceId"
+	userID := "dupResourceId"
 	var cmconfig certManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "token")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -144,20 +147,16 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 
 	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(tlsConfig))
 
-	deviceID := "dupDeviceId"
-	resourceID := "dupResourceId"
-	userID := "dupResourceId"
-
-	ag, err := NewAggregate(kitNetGrpc.CtxWithUserID(ctx, userID), resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	require.NoError(t, err)
 	pc1 := testMakePublishResourceRequest(deviceID, resourceID)
 
 	resp1, events, err := ag.PublishResource(ctx, pc1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := NewAggregate(kitNetGrpc.CtxWithUserID(ctx, userID), resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	ag2, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, resourceID)
 	resp2, events, err := ag2.PublishResource(ctx, pc2)
 	assert.NoError(t, err)
@@ -167,13 +166,16 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 }
 
 func TestAggregateHandleUnpublishResource(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
 	var cmconfig certManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -196,15 +198,11 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	deviceID := "dev0"
-	resourceID := "res0"
-	userID := "user0"
-
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
 	pc := testMakeUnpublishResourceRequest(deviceID, resourceID)
 
-	ag, err := NewAggregate(kitNetGrpc.CtxWithUserID(ctx, userID), resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	resp, events, err := ag.UnpublishResource(ctx, pc)
 	assert.NoError(t, err)
@@ -421,7 +419,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -440,7 +438,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(kitNetGrpc.CtxWithUserID(ctx, userID), resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {

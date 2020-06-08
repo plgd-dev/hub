@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	grpcTest "github.com/go-ocf/cloud/test"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
 

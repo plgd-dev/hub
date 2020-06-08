@@ -112,7 +112,7 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 		return
 	}
 
-	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserId), request)
+	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID), request)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
 		return

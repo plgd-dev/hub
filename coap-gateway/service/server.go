@@ -23,12 +23,12 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
-	"github.com/go-ocf/go-coap/v2/net/blockwise"
-	"github.com/go-ocf/go-coap/v2/net/keepalive"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/go-coap/v2/net"
+	"github.com/go-ocf/go-coap/v2/net/blockwise"
+	"github.com/go-ocf/go-coap/v2/net/keepalive"
 	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
@@ -248,7 +248,7 @@ func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
 
 	switch {
-	case strings.HasPrefix(path, uri.ResourceRoute):
+	case strings.HasPrefix("/"+path, uri.ResourceRoute):
 		resourceRouteHandler(s, req, client)
 	default:
 		deviceID := getDeviceID(client)
@@ -306,7 +306,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
-		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.UserId)
+		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.UserID)
 		next.ServeCOAP(w, r)
 	})
 }

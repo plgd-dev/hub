@@ -190,12 +190,8 @@ func MakeNotifyResourceChangedRequest(resourceId string, authCtx pbCQRS.Authoriz
 	}
 }
 
-func MakeUpdateResourceRequest(deviceID string, req *mux.Message) (*pbGRPC.UpdateResourceValuesRequest, error) {
+func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.UpdateResourceValuesRequest {
 	content := MakeContent(req.Options, req.Body)
-	href, err := req.Options.Path()
-	if err != nil {
-		return nil, fmt.Errorf("cannot get path: %w", err)
-	}
 	var resourceInterface string
 	qs, err := req.Options.Queries()
 	if err == nil {
@@ -217,7 +213,7 @@ func MakeUpdateResourceRequest(deviceID string, req *mux.Message) (*pbGRPC.Updat
 			ContentType: content.ContentType,
 		},
 		ResourceInterface: resourceInterface,
-	}, nil
+	}
 }
 
 func MakeRetrieveResourceRequest(resourceId, resourceInterface, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *mux.Message) pbRA.RetrieveResourceRequest {
