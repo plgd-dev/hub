@@ -11,7 +11,8 @@ import (
 
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/test"
+	"github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
 
@@ -31,11 +32,11 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)

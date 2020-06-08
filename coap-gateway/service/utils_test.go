@@ -235,7 +235,7 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	}
 }
 
-func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn {
+func testCoapDial(t *testing.T, host string, withTLS ...bool) *tcp.ClientConn {
 	var config certManager.OcfConfig
 	err := envconfig.Process("LISTEN", &config)
 	assert.NoError(t, err)
@@ -277,7 +277,7 @@ func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn
 		return nil
 	}
 
-	if len(withoutTLS) > 0 {
+	if len(withTLS) == 0 {
 		tlsConfig = nil
 	}
 	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {

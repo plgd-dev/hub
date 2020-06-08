@@ -45,8 +45,7 @@ func TestSignInPostHandler(t *testing.T) {
 
 func TestSignOutPostHandler(t *testing.T) {
 	tbl := []testEl{
-		{"Changed0", input{coapCodes.POST, `{}`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}},
-		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}},
+		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}},
 	}
 
 	shutdown := setUp(t)

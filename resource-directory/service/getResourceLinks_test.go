@@ -12,12 +12,13 @@ import (
 
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	test "github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
 
 func TestRequestHandler_GetResourceLinks(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.GetResourceLinksRequest
 	}
@@ -33,7 +34,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				req: &pb.GetResourceLinksRequest{},
 			},
 			wantErr: false,
-			want:    grpcTest.SortResources(grpcTest.ResourceLinksToPb(deviceID, grpcTest.GetAllBackendResourceLinks())),
+			want:    test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks())),
 		},
 	}
 
@@ -41,16 +42,16 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -70,7 +71,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 					link.InstanceId = 0
 					links = append(links, *link)
 				}
-				require.Equal(t, tt.want, grpcTest.SortResources(links))
+				require.Equal(t, tt.want, test.SortResources(links))
 			}
 		})
 	}

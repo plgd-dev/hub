@@ -46,10 +46,7 @@ func TestSignOffHandler(t *testing.T) {
 	tbl := []testEl{
 		{"BadRequest0", input{coapCodes.DELETE, `{}`, nil}, output{coapCodes.BadRequest, "invalid 'di'", nil}},
 		{"BadRequest1", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity}}, output{coapCodes.BadRequest, "invalid 'accesstoken'", nil}},
-		/* TODO: coap.URIQuery param has limit to 255 bytes, but jwt token has around 460. Token cannot be send by coap.URIQuery
-		{"Deleted0", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + oauthTest.UserToken}}, output{coapCodes.Deleted, nil, nil}},
-		{"Deleted1", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + oauthTest.UserToken, "uid=1"}}, output{coapCodes.Deleted, nil, nil}},
-		*/
+		{"Deleted0", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + oauthTest.DeviceAccessToken, "uid=1"}}, output{coapCodes.Deleted, nil, nil}},
 	}
 
 	shutdown := setUp(t)

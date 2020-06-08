@@ -80,11 +80,8 @@ func (m *resourceCtx) onResourceUnpublishedLocked(ctx context.Context) error {
 
 func (m *resourceCtx) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error) error {
 	log.Debugf("onResourceUpdatePending %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
-	for {
-		if len(m.resourceUpdatePendings) == 0 {
-			return nil
-		}
-		p := m.resourceUpdatePendings[0]
+	for idx := range m.resourceUpdatePendings {
+		p := m.resourceUpdatePendings[idx]
 		updatePending := pb.Event_ResourceUpdatePending{
 			ResourceId: &pb.ResourceId{
 				DeviceId:         m.resource.GetDeviceId(),
@@ -98,8 +95,27 @@ func (m *resourceCtx) onResourceUpdatePendingLocked(ctx context.Context, do func
 		if err != nil {
 			return err
 		}
-		m.resourceUpdatePendings = m.resourceUpdatePendings[1:]
 	}
+	return nil
+}
+
+func (m *resourceCtx) sendEventResourceUpdated(ctx context.Context, resourcesUpdated []raEvents.ResourceUpdated) error {
+	for _, u := range resourcesUpdated {
+		updated := pb.Event_ResourceUpdated{
+			ResourceId: &pb.ResourceId{
+				DeviceId:         m.resource.GetDeviceId(),
+				ResourceLinkHref: m.resource.GetHref(),
+			},
+			Content:       pb.RAContent2Content(u.GetContent()),
+			CorrelationId: u.GetAuditContext().GetCorrelationId(),
+			Status:        pb.RAStatus2Status(u.GetStatus()),
+		}
+		err := m.subscriptions.OnResourceUpdated(ctx, updated, u.GetEventMetadata().GetVersion())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *resourceCtx) onResourceChangedLocked(ctx context.Context) error {
@@ -125,10 +141,10 @@ func (m *resourceCtx) onCloudStatusChangedLocked(ctx context.Context) error {
 	return m.subscriptions.OnDeviceOffline(ctx, m.resource.GetDeviceId(), m.onResourceChangedVersion)
 }
 
-func (m *resourceCtx) onResourceUpdatedLocked(updateProcessed []raEvents.ResourceUpdated) {
+func (m *resourceCtx) onResourceUpdatedLocked(ctx context.Context, updateProcessed []raEvents.ResourceUpdated) error {
 	log.Debugf("onResourceUpdatedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	for _, up := range updateProcessed {
-		notify := m.updateNotificationContainer.Find(up.AuditContext.CorrelationId)
+		notify := m.updateNotificationContainer.Find(up.GetAuditContext().GetCorrelationId())
 		if notify != nil {
 			select {
 			case notify <- up:
@@ -137,6 +153,7 @@ func (m *resourceCtx) onResourceUpdatedLocked(updateProcessed []raEvents.Resourc
 			}
 		}
 	}
+	return m.sendEventResourceUpdated(ctx, updateProcessed)
 }
 
 func (m *resourceCtx) onResourceRetrievedLocked(resourceRetrieved []raEvents.ResourceRetrieved) {
@@ -226,12 +243,24 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
-			resourceUpdated = append(resourceUpdated, s)
-			tmp := resourceUpdatePendings[:0]
+			tmp := make([]raEvents.ResourceUpdatePending, 0, 16)
+			var found bool
 			for _, cu := range resourceUpdatePendings {
-				if cu.AuditContext.CorrelationId != s.AuditContext.CorrelationId {
+				if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
 					tmp = append(tmp, cu)
+				} else {
+					found = true
 				}
+			}
+			if !found {
+				for _, cu := range m.resourceUpdatePendings {
+					if cu.GetAuditContext().GetCorrelationId() == s.GetAuditContext().GetCorrelationId() {
+						found = true
+					}
+				}
+			}
+			if found {
+				resourceUpdated = append(resourceUpdated, s)
 			}
 			resourceUpdatePendings = tmp
 		case http.ProtobufContentType(&pbRA.ResourceRetrieved{}):
@@ -274,14 +303,17 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 		}
 	}
 
-	m.onResourceUpdatedLocked(resourceUpdated)
-	m.onResourceRetrievedLocked(resourceRetrieved)
-
 	m.resourceUpdatePendings = append(m.resourceUpdatePendings, resourceUpdatePendings...)
 	err := m.onResourceUpdatePendingLocked(ctx, m.subscriptions.OnResourceUpdatePending)
 	if err != nil {
 		log.Errorf("%v", err)
 	}
+
+	err = m.onResourceUpdatedLocked(ctx, resourceUpdated)
+	if err != nil {
+		log.Errorf("%v", err)
+	}
+	m.onResourceRetrievedLocked(resourceRetrieved)
 
 	return nil
 }

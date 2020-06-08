@@ -24,6 +24,7 @@ message SignUpResponse {
 message SignOffRequest {
     string device_id = 1;
     string user_id = 2;
+    string access_token = 3; // access token for device
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/oic.r.account.raml#L60
@@ -46,6 +47,7 @@ message SignInResponse {
 message SignOutRequest {
     string device_id = 1;
     string user_id = 2;
+    string access_token = 3; // access token for device
     string correlation_id = 4;
 }
 

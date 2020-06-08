@@ -10,11 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(t *testing.T, withOutTLS ...bool) (TearDown func()) {
+func SetUp(t *testing.T, withTLS ...bool) (TearDown func()) {
 	var gwCfg refImpl.Config
 	err := envconfig.Process("", &gwCfg)
 	require.NoError(t, err)
-	if len(withOutTLS) > 0 {
+	if len(withTLS) > 0 {
+		gwCfg.ListenWithoutTLS = false
+	} else {
 		gwCfg.ListenWithoutTLS = true
 	}
 	gwCfg.Service.AuthServerAddr = testCfg.AUTH_HOST

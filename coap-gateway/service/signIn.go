@@ -13,6 +13,7 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -62,7 +63,13 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
 	}
-
+	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
+		client.Close()
+		return
+	}
+	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.UserID)
 	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
@@ -113,11 +120,28 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }
 
-func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
-	authCtxOld := client.loadAuthorizationContext()
+func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, signOut CoapSignInReq) {
+	_, err := client.server.asClient.SignOut(req.Context, &pbAS.SignOutRequest{
+		DeviceId:    signOut.DeviceID,
+		UserId:      signOut.UserID,
+		AccessToken: signOut.AccessToken,
+	})
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.Close()
+		return
+	}
 
+	authCtxOld := client.loadAuthorizationContext()
 	if authCtxOld.DeviceId != "" {
-		err := client.UpdateCloudDeviceStatus(req.Context, authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
+		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
+		}
+		req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtxOld.UserID)
+		err = client.UpdateCloudDeviceStatus(req.Context, authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtxOld.DeviceId, err)
@@ -145,7 +169,7 @@ func signInHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		case true:
 			signInPostHandler(s, req, client, signIn)
 		default:
-			signOutPostHandler(s, req, client)
+			signOutPostHandler(s, req, client, signIn)
 		}
 	default:
 		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)

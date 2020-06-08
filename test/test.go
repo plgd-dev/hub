@@ -15,7 +15,6 @@ import (
 	"github.com/go-ocf/kit/security/certManager"
 	"go.uber.org/atomic"
 
-	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security"
 
@@ -169,7 +168,6 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 }
 
 func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, gwHost string, expectedResources []schema.ResourceLink) func() {
-	log.Setup(log.Config{Debug: false})
 	client := core.NewClient()
 	dev, links, err := client.GetDevice(ctx, deviceID)
 	require.NoError(t, err)

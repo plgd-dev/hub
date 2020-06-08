@@ -159,8 +159,9 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		return
 	}
 	_, err = client.server.asClient.SignOff(req.Context, &pbAS.SignOffRequest{
-		DeviceId: deviceID,
-		UserId:   userID,
+		DeviceId:    deviceID,
+		UserId:      userID,
+		AccessToken: accessToken,
 	})
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)

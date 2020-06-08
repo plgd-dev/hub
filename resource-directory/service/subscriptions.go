@@ -399,7 +399,28 @@ func (s *subscriptions) OnResourceUpdatePending(ctx context.Context, updatePendi
 		}
 	}
 	if len(errors) > 0 {
-		return fmt.Errorf("cannot send resource unpublished event: %v", errors)
+		return fmt.Errorf("cannot send resource update pending event: %v", errors)
+	}
+	return nil
+}
+
+func (s *subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, updated.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[updated.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfUpdatedResource(ctx, updated, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource updated event: %v", errors)
 	}
 	return nil
 }

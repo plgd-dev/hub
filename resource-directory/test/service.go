@@ -3,6 +3,7 @@ package test
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/go-ocf/cloud/resource-directory/refImpl"
 	testCfg "github.com/go-ocf/cloud/test/config"
@@ -21,6 +22,8 @@ func SetUp(t *testing.T) (TearDown func()) {
 	rdCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	rdCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	rdCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	rdCfg.UserDevicesManagerTickFrequency = time.Second
+	rdCfg.UserDevicesManagerExpiration = time.Second
 	rdCfg.JwksURL = testCfg.JWKS_URL
 	return NewResourceDirectory(t, rdCfg)
 }

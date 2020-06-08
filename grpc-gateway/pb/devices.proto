@@ -76,6 +76,7 @@ message SubscribeForEvents {
       RESOURCE_PUBLISHED = 0;
       RESOURCE_UNPUBLISHED = 1;
       RESOURCE_UPDATE_PENDING = 2;
+      RESOURCE_UPDATED = 3;
     }
     repeated Event filter_events = 2;
   }
@@ -128,6 +129,12 @@ message Event {
     string resource_interface = 3;
     string correlation_id = 4;
   }
+  message ResourceUpdated {
+    ResourceId resource_id = 1;
+    Content content = 2;
+    Status status = 3;
+    string correlation_id = 4;
+  }
   message OperationProcessed {
     message ErrorStatus {
       enum Code {
@@ -157,6 +164,7 @@ message Event {
     OperationProcessed operation_processed = 10;
     SubscriptionCanceled subscription_canceled = 11;
     ResourceUpdatePending resource_update_pending = 12;
+    ResourceUpdated resource_updated = 13;
   }
 
 }
