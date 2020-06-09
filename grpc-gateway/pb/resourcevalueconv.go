@@ -40,6 +40,9 @@ func RAContent2Content(s *pbRA.Content) *Content {
 	}
 	contentType := s.GetContentType()
 	if contentType == "" {
+		if s.GetCoapContentFormat() < 0 {
+			return nil
+		}
 		contentType = message.MediaType(s.GetCoapContentFormat()).String()
 	}
 

@@ -117,22 +117,24 @@ func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEvent
 	}()
 	go func() {
 		defer wg.Done()
-		req, err := srv.Recv()
-		if err == io.EOF {
-			cancel()
-			clientErr <- err
-			return
-		}
-		if err != nil {
-			cancel()
-			clientErr <- kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive commands: %v", err)
-			return
-		}
-		err = rd.Send(req)
-		if err != nil {
-			cancel()
-			clientErr <- kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send commands: %v", err)
-			return
+		for {
+			req, err := srv.Recv()
+			if err == io.EOF {
+				cancel()
+				clientErr <- err
+				return
+			}
+			if err != nil {
+				cancel()
+				clientErr <- kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive commands: %v", err)
+				return
+			}
+			err = rd.Send(req)
+			if err != nil {
+				cancel()
+				clientErr <- kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send commands: %v", err)
+				return
+			}
 		}
 	}()
 
