@@ -9,7 +9,7 @@ import (
 )
 
 func (r *RequestHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
-	ctx := makeCtx(srv.Context())
+	ctx := srv.Context()
 	rd, err := r.resourceDirectoryClient.RetrieveResourcesValues(ctx, req)
 	if err != nil {
 		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resources values: %v", err)

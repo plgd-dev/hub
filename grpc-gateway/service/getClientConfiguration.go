@@ -9,7 +9,6 @@ import (
 )
 
 func (r *RequestHandler) GetClientConfiguration(ctx context.Context, req *pb.ClientConfigurationRequest) (*pb.ClientConfigurationResponse, error) {
-	ctx = makeCtx(ctx)
 	ret, err := r.resourceDirectoryClient.GetClientConfiguration(ctx, req)
 	if err != nil {
 		return ret, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get client configuration: %v", err)

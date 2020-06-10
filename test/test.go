@@ -15,7 +15,6 @@ import (
 	"github.com/go-ocf/kit/security/certManager"
 	"go.uber.org/atomic"
 
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -37,8 +36,6 @@ import (
 
 	authService "github.com/go-ocf/cloud/authorization/test"
 	grpcgwService "github.com/go-ocf/cloud/grpc-gateway/test"
-
-	"github.com/go-ocf/cloud/authorization/provider"
 )
 
 var (
@@ -205,7 +202,7 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 }
 
 func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, expectedResources []schema.ResourceLink) {
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
+	//ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 	client, err := c.SubscribeForEvents(ctx)
 	require.NoError(t, err)
 

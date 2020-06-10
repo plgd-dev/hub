@@ -14,8 +14,7 @@ import (
 
 func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	ctx, cancel := requestHandler.makeCtx(r)
-	defer cancel()
+	ctx := requestHandler.makeCtx(r)
 
 	sdkDevice, err := requestHandler.client.GetDevice(ctx, vars[uri.DeviceIDKey])
 	if err != nil {

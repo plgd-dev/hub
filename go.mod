@@ -38,6 +38,7 @@ require (
 	github.com/valyala/fasthttp v1.12.0
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/atomic v1.6.0
+	go.uber.org/zap v1.15.0
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a

@@ -9,7 +9,7 @@ import (
 )
 
 func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) error {
-	ctx := makeCtx(srv.Context())
+	ctx := srv.Context()
 	rd, err := r.resourceDirectoryClient.GetDevices(ctx, req)
 	if err != nil {
 		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get devices: %v", err)

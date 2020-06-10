@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/google/uuid"
@@ -118,19 +116,9 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	return &http.Server{Handler: r}
 }
 
-func (requestHandler *RequestHandler) makeCtx(r *http.Request) (context.Context, context.CancelFunc) {
+func (requestHandler *RequestHandler) makeCtx(r *http.Request) context.Context {
 	token := getAccessToken(r.Header)
-	ctx := kitNetGrpc.CtxWithToken(r.Context(), token)
-	return context.WithTimeout(ctx, requestHandler.getRequestTimeout(r.Header))
-}
-
-func (requestHandler *RequestHandler) getRequestTimeout(h http.Header) time.Duration {
-	requestTimeout := requestHandler.config.DefaultRequestTimeout
-	requestTimeoutSeconds, err := strconv.Atoi(h.Get("Request-Timeout"))
-	if err == nil {
-		requestTimeout = time.Duration(requestTimeoutSeconds) * time.Second
-	}
-	return requestTimeout
+	return kitNetGrpc.CtxWithToken(r.Context(), token)
 }
 
 func getAccessToken(h http.Header) string {

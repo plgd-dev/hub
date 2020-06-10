@@ -11,7 +11,6 @@ import (
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 
-	"github.com/go-ocf/kit/security/oauth/manager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -44,14 +43,9 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 
 func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*RequestHandler, error) {
 	svc := config.Service
-	oauthMgr, err := manager.NewManagerFromConfiguration(svc.OAuth, clientTLS)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
-	}
 	rdConn, err := grpc.Dial(
 		svc.ResourceDirectoryAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
-		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
@@ -60,7 +54,6 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 
 	closeFunc := func() {
 		rdConn.Close()
-		oauthMgr.Close()
 	}
 
 	h := NewRequestHandler(
@@ -86,16 +79,8 @@ func logAndReturnError(err error) error {
 	return err
 }
 
-func makeCtx(ctx context.Context) context.Context {
-	token, err := kitNetGrpc.TokenFromMD(ctx)
-	if err != nil {
-		ctx = kitNetGrpc.CtxWithToken(ctx, token)
-	}
-	return ctx
-}
-
 func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEventsServer) (errRet error) {
-	ctx, cancel := context.WithCancel(makeCtx(srv.Context()))
+	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 	rd, err := r.resourceDirectoryClient.SubscribeForEvents(ctx)
 	if err != nil {

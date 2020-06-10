@@ -9,7 +9,7 @@ import (
 )
 
 func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	ctx := makeCtx(srv.Context())
+	ctx := srv.Context()
 	rd, err := r.resourceDirectoryClient.GetResourceLinks(ctx, req)
 	if err != nil {
 		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get resource links: %v", err)

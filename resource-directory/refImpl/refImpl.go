@@ -7,6 +7,9 @@ import (
 	"fmt"
 
 	"github.com/go-ocf/kit/security/certManager"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
 
@@ -32,6 +35,34 @@ func (c Config) String() string {
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
+// StreamServerInterceptor returns a new unary server interceptors that performs per-request auth.
+func StreamServerInterceptor(authFunc func(ctx context.Context, method string) (context.Context, error)) grpc.StreamServerInterceptor {
+	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		var newCtx context.Context
+		var err error
+		newCtx, err = authFunc(stream.Context(), info.FullMethod)
+		if err != nil {
+			return err
+		}
+		wrapped := grpc_middleware.WrapServerStream(stream)
+		wrapped.WrappedContext = newCtx
+		return handler(srv, wrapped)
+	}
+}
+
+// UnaryServerInterceptor returns a new unary server interceptors that performs per-request auth.
+func UnaryServerInterceptor(authFunc func(ctx context.Context, method string) (context.Context, error)) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		var newCtx context.Context
+		var err error
+		newCtx, err = authFunc(ctx, info.FullMethod)
+		if err != nil {
+			return nil, err
+		}
+		return handler(newCtx, req)
+	}
+}
+
 func Init(config Config) (*kitNetGrpc.Server, error) {
 	log.Setup(config.Log)
 	log.Info(config.String())
@@ -45,10 +76,33 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 
-	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
+	//auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
+
+	var cfg zap.Config
+	//if config.Log.Debug {
+	cfg = zap.NewDevelopmentConfig()
+	//} else {
+	//	cfg = zap.NewProductionConfig()
+	//}
+	logger, err := cfg.Build()
+	if err != nil {
+		return nil, fmt.Errorf("logger creation failed: %w", err)
+	}
+
+	authFunc := makeAuthFunc(config.JwksURL, dialCertManager.GetClientTLSConfig())
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_zap.StreamServerInterceptor(logger),
+			StreamServerInterceptor(authFunc),
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_zap.UnaryServerInterceptor(logger),
+			UnaryServerInterceptor(authFunc),
+		)),
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -64,14 +118,19 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	return server, nil
 }
 
-func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
+func makeAuthFunc(jwksUrl string, tls *tls.Config) func(ctx context.Context, method string) (context.Context, error) {
+	return func(ctx context.Context, method string) (context.Context, error) {
+		switch method {
+		case "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration":
+			return ctx, nil
+		}
 		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 			return jwt.NewScopeClaims()
 		})
+		token, _ := kitNetGrpc.TokenFromMD(ctx)
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
-			log.Errorf("auth interceptor: %v", err)
+			log.Errorf("auth interceptor %v %v: %v", method, token, err)
 			return ctx, err
 		}
 		userID, err := kitNetGrpc.UserIDFromMD(ctx)
@@ -86,5 +145,9 @@ func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
 			return ctx, err
 		}
 		return kitNetGrpc.CtxWithUserID(ctx, userID), nil
-	}, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
+	}
+}
+
+func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(jwksUrl, tls))
 }

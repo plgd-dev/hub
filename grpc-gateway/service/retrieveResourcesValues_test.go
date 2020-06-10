@@ -12,7 +12,8 @@ import (
 
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	"github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -26,14 +27,14 @@ func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.Resourc
 		want[idx].Content.Data = nil
 		got[idx].Content.Data = nil
 		require.Equal(t, want[idx], got[idx])
-		w := grpcTest.DecodeCbor(t, dataWant)
-		g := grpcTest.DecodeCbor(t, datagot)
+		w := test.DecodeCbor(t, dataWant)
+		g := test.DecodeCbor(t, datagot)
 		require.Equal(t, w, g)
 	}
 }
 
 func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.RetrieveResourcesValuesRequest
 	}
@@ -64,7 +65,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 					Types: cloud.StatusResourceTypes,
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
-						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
+						Data: test.EncodeToCbor(t, map[string]interface{}{
 							"if":     cloud.StatusInterfaces,
 							"rt":     cloud.StatusResourceTypes,
 							"online": true,
@@ -80,16 +81,16 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

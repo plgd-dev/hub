@@ -24,7 +24,7 @@ import (
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 
-const TEST_TIMEOUT = time.Second * 20
+const TEST_TIMEOUT = time.Second * 3000
 
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)

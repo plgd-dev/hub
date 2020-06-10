@@ -18,8 +18,7 @@ func (requestHandler *RequestHandler) getDevices(w http.ResponseWriter, r *http.
 	if typeFilterString != "" {
 		typeFilter = strings.Split(strings.ReplaceAll(typeFilterString, " ", ","), ",")
 	}
-	ctx, cancel := requestHandler.makeCtx(r)
-	defer cancel()
+	ctx := requestHandler.makeCtx(r)
 
 	sdkDevices, err := requestHandler.client.GetDevices(ctx, client.WithResourceTypes(typeFilter...))
 	if err != nil {

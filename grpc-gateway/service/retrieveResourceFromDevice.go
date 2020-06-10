@@ -9,7 +9,7 @@ import (
 )
 
 func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb.RetrieveResourceFromDeviceRequest) (*pb.RetrieveResourceFromDeviceResponse, error) {
-	ctx = makeCtx(ctx)
+
 	ret, err := r.resourceDirectoryClient.RetrieveResourceFromDevice(ctx, req)
 	if err != nil {
 		return ret, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource from device: %v", err)

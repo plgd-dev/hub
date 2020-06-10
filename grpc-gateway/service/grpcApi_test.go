@@ -15,7 +15,8 @@ import (
 
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	"github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
@@ -25,7 +26,7 @@ import (
 const TEST_TIMEOUT = time.Second * 20
 
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req pb.UpdateResourceValuesRequest
 	}
@@ -45,7 +46,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
-						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
+						Data: test.EncodeToCbor(t, map[string]interface{}{
 							"power": 1,
 						}),
 					},
@@ -66,7 +67,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
-						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
+						Data: test.EncodeToCbor(t, map[string]interface{}{
 							"power": 2,
 						}),
 					},
@@ -87,7 +88,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
-						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
+						Data: test.EncodeToCbor(t, map[string]interface{}{
 							"power": 0,
 						}),
 					},
@@ -107,7 +108,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
-						Data: grpcTest.EncodeToCbor(t, map[string]interface{}{
+						Data: test.EncodeToCbor(t, map[string]interface{}{
 							"di": "abc",
 						}),
 					},
@@ -133,16 +134,16 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -159,7 +160,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 }
 
 func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req pb.RetrieveResourceFromDeviceRequest
 	}
@@ -194,7 +195,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": grpcTest.TestDeviceName},
+			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName},
 		},
 		{
 			name: "invalid ResourceLinkHref",
@@ -214,16 +215,16 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -245,7 +246,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 }
 
 func TestRequestHandler_SubscribeForEvents(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		sub pb.SubscribeForEvents
 	}
@@ -376,12 +377,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/light/1")),
-				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/light/2")),
-				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/oic/p")),
-				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/oic/d")),
-				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink(cloud.StatusHref)),
-				grpcTest.ResourceLinkToPublishEvent(deviceID, 0, grpcTest.FindResourceLink("/oc/con")),
+				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/light/1")),
+				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/light/2")),
+				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/oic/p")),
+				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/oic/d")),
+				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink(cloud.StatusHref)),
+				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/oc/con")),
 			},
 		},
 	}
@@ -390,16 +391,16 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -430,20 +431,20 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 }
 
 func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 
 	client, err := c.SubscribeForEvents(ctx)
 	require.NoError(t, err)

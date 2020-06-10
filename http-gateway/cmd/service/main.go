@@ -22,7 +22,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("invalid config file path %s: %v", config.ConfigPath, err)
 	}
-	server, err := service.New(string(cfg))
+	conf, err := service.ParseConfig(string(cfg))
+	if err != nil {
+		log.Fatalf("invalid parse config %s: %v", string(cfg), err)
+	}
+	server, err := service.New(conf)
 	if err != nil {
 		log.Fatalf("cannot init server: %v", err)
 	}
