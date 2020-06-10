@@ -54,6 +54,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			},
 			want: &pb.UpdateResourceValuesResponse{
 				Content: &pb.Content{},
+				Status:  pb.Status_OK,
 			},
 		},
 		{
@@ -75,6 +76,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			},
 			want: &pb.UpdateResourceValuesResponse{
 				Content: &pb.Content{},
+				Status:  pb.Status_OK,
 			},
 		},
 		{
@@ -96,6 +98,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			},
 			want: &pb.UpdateResourceValuesResponse{
 				Content: &pb.Content{},
+				Status:  pb.Status_OK,
 			},
 		},
 		{
@@ -428,166 +431,4 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 			wg.Wait()
 		})
 	}
-}
-
-func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
-
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: test.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-
-	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
-
-	client, err := c.SubscribeForEvents(ctx)
-	require.NoError(t, err)
-
-	err = client.Send(&pb.SubscribeForEvents{
-		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-				FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-					pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE,
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	ev, err := client.Recv()
-	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				Token: "testToken",
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	require.Equal(t, expectedEvent, ev)
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOnline_{
-			DeviceOnline: &pb.Event_DeviceOnline{
-				DeviceId: deviceID,
-			},
-		},
-	}
-	require.Equal(t, expectedEvent, ev)
-
-	err = client.Send(&pb.SubscribeForEvents{
-		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_ResourceEvent{
-			ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
-				ResourceId: &pb.ResourceId{
-					DeviceId:         deviceID,
-					ResourceLinkHref: "/light/2",
-				},
-				FilterEvents: []pb.SubscribeForEvents_ResourceEventFilter_Event{
-					pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED,
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				Token: "testToken",
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	}
-	require.Equal(t, expectedEvent, ev)
-	subContentChangedID := ev.SubscriptionId
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: subContentChangedID,
-		Type: &pb.Event_ResourceContentChanged{
-			ResourceContentChanged: &pb.Event_ResourceChanged{
-				ResourceId: &pb.ResourceId{
-					DeviceId:         deviceID,
-					ResourceLinkHref: "/light/2",
-				},
-				Content: &pb.Content{
-					ContentType: message.AppOcfCbor.String(),
-					Data:        []byte("\277estate\364epower\000dnameeLight\377"),
-				},
-			},
-		},
-	}
-	require.Equal(t, expectedEvent, ev)
-
-	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId:         deviceID,
-			ResourceLinkHref: "/light/2",
-		},
-		Content: &pb.Content{
-			ContentType: message.AppOcfCbor.String(),
-			Data: func() []byte {
-				v := map[string]interface{}{
-					"power": 99,
-				}
-				d, err := cbor.Encode(v)
-				require.NoError(t, err)
-				return d
-			}(),
-		},
-	})
-	require.NoError(t, err)
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: subContentChangedID,
-		Type: &pb.Event_ResourceContentChanged{
-			ResourceContentChanged: &pb.Event_ResourceChanged{
-				ResourceId: &pb.ResourceId{
-					DeviceId:         deviceID,
-					ResourceLinkHref: "/light/2",
-				},
-				Content: &pb.Content{
-					ContentType: message.AppOcfCbor.String(),
-					Data:        []byte("\277estate\364epower\030cdnameeLight\377"),
-				},
-			},
-		},
-	}
-	require.Equal(t, expectedEvent, ev)
-
-	shutdownDevSim()
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOffline_{
-			DeviceOffline: &pb.Event_DeviceOffline{
-				DeviceId: deviceID,
-			},
-		},
-	}
-	require.Equal(t, expectedEvent, ev)
 }

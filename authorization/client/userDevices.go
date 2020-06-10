@@ -85,11 +85,11 @@ func (d *UserDevicesManager) getRef(userID string, create bool) (_ *kitSync.RefC
 
 // Acquire acquires reference counter by 1 for userID.
 func (d *UserDevicesManager) Acquire(ctx context.Context, userID string) error {
-	v, created := d.getRef(userID, true)
+	_, created := d.getRef(userID, true)
 	if created {
 		userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
 		if err != nil {
-			v.Release(ctx)
+			d.Release(userID)
 			return err
 		}
 		d.trigger <- triggerUserDevice{
@@ -112,7 +112,7 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 	if created {
 		userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
 		if err != nil {
-			v.Release(ctx)
+			d.Release(userID)
 			return nil, err
 		}
 		d.trigger <- triggerUserDevice{
@@ -123,7 +123,7 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 		d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
 		return userDevices[userID], nil
 	}
-	defer v.Release(ctx) // getRef increase ref counter
+	defer d.Release(userID) // getRef increase ref counter
 	mapDevs := v.Data().(*userDevices).getDevices()
 	devs := make([]string, 0, len(mapDevs))
 	for d := range mapDevs {
@@ -137,7 +137,7 @@ func (d *UserDevicesManager) IsUserDevice(userID, deviceID string) bool {
 	if v == nil {
 		return false
 	}
-	defer v.Release(context.Background()) // getRef increase ref counter
+	defer d.Release(userID) // getRef increase ref counter
 	return v.Data().(*userDevices).isUserDevice(deviceID)
 }
 
@@ -170,7 +170,7 @@ func (d *UserDevicesManager) updateDevices(ctx context.Context, userID string, d
 		return
 	}
 	defer func() {
-		err := v.Release(ctx)
+		err := d.Release(userID)
 		if err != nil {
 			d.errFunc(fmt.Errorf("cannot release userID %v devices: %v", userID, err))
 		}
@@ -185,7 +185,7 @@ func (d *UserDevicesManager) getDevices(ctx context.Context, userID string) map[
 		return nil
 	}
 	defer func() {
-		err := v.Release(ctx)
+		err := d.Release(userID)
 		if err != nil {
 			d.errFunc(fmt.Errorf("cannot release userID %v devices: %v", userID, err))
 		}

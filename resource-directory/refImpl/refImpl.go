@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-ocf/kit/security/certManager"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
 
@@ -76,31 +74,19 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 
-	//auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
+	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-
-	var cfg zap.Config
-	//if config.Log.Debug {
-	cfg = zap.NewDevelopmentConfig()
-	//} else {
-	//	cfg = zap.NewProductionConfig()
-	//}
-	logger, err := cfg.Build()
-	if err != nil {
-		return nil, fmt.Errorf("logger creation failed: %w", err)
-	}
-
-	authFunc := makeAuthFunc(config.JwksURL, dialCertManager.GetClientTLSConfig())
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_zap.StreamServerInterceptor(logger),
-			StreamServerInterceptor(authFunc),
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_zap.UnaryServerInterceptor(logger),
-			UnaryServerInterceptor(authFunc),
-		)),
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), /*
+			grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+				grpc_zap.StreamServerInterceptor(logger),
+				StreamServerInterceptor(authFunc),
+			)),
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+				grpc_zap.UnaryServerInterceptor(logger),
+				UnaryServerInterceptor(authFunc),
+			)),*/
+		auth.Stream(), auth.Unary(),
 	)
 
 	if err != nil {

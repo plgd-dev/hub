@@ -69,13 +69,12 @@ func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
 		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 			return jwt.NewScopeClaims()
 		})
-		token, _ := kitNetGrpc.TokenFromMD(ctx)
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
-			log.Errorf("auth interceptor %v %v: %v", method, token, err)
+			log.Errorf("auth interceptor %v %v: %v", method, err)
 			return ctx, err
 		}
-		token, err = kitNetGrpc.TokenFromMD(ctx)
+		token, err := kitNetGrpc.TokenFromMD(ctx)
 		if err != nil {
 			log.Errorf("auth cannot get token: %v", err)
 			return ctx, err

@@ -659,6 +659,88 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			require.Equal(t, expectedEvent, ev)
 		}
 	}
+	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
+		ResourceId: &pb.ResourceId{
+			DeviceId:         deviceID,
+			ResourceLinkHref: "/light/2",
+		},
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data: func() []byte {
+				v := map[string]interface{}{
+					"power": 0,
+				}
+				d, err := cbor.Encode(v)
+				require.NoError(t, err)
+				return d
+			}(),
+		},
+	})
+	for i := 0; i < 3; i++ {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		switch {
+		case ev.GetResourceUpdatePending() != nil:
+			expectedEvent = &pb.Event{
+				SubscriptionId: subUpdatedID,
+				Type: &pb.Event_ResourceUpdatePending_{
+					ResourceUpdatePending: &pb.Event_ResourceUpdatePending{
+						ResourceId: &pb.ResourceId{
+							DeviceId:         deviceID,
+							ResourceLinkHref: "/light/2",
+						},
+						Content: &pb.Content{
+							ContentType: message.AppOcfCbor.String(),
+							Data: func() []byte {
+								v := map[string]interface{}{
+									"power": 0,
+								}
+								d, err := cbor.Encode(v)
+								require.NoError(t, err)
+								return d
+							}(),
+						},
+						CorrelationId: ev.GetResourceUpdatePending().GetCorrelationId(),
+					},
+				},
+			}
+			require.Equal(t, expectedEvent, ev)
+			updCorrelationID = ev.GetResourceUpdatePending().GetCorrelationId()
+		case ev.GetResourceUpdated() != nil:
+			expectedEvent = &pb.Event{
+				SubscriptionId: subUpdatedID,
+				Type: &pb.Event_ResourceUpdated_{
+					ResourceUpdated: &pb.Event_ResourceUpdated{
+						ResourceId: &pb.ResourceId{
+							DeviceId:         deviceID,
+							ResourceLinkHref: "/light/2",
+						},
+						Status:        pb.Status_OK,
+						CorrelationId: updCorrelationID,
+					},
+				},
+			}
+			require.Equal(t, expectedEvent, ev)
+		case ev.GetResourceContentChanged() != nil:
+			expectedEvent = &pb.Event{
+				SubscriptionId: subContentChangedID,
+				Type: &pb.Event_ResourceContentChanged{
+					ResourceContentChanged: &pb.Event_ResourceChanged{
+						ResourceId: &pb.ResourceId{
+							DeviceId:         deviceID,
+							ResourceLinkHref: "/light/2",
+						},
+						Content: &pb.Content{
+							ContentType: message.AppOcfCbor.String(),
+							Data:        []byte("\277estate\364epower\000dnameeLight\377"),
+						},
+					},
+				},
+			}
+			require.Equal(t, expectedEvent, ev)
+		}
+	}
+
 	shutdownDevSim()
 
 	ev, err = client.Recv()

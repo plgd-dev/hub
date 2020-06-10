@@ -38,9 +38,6 @@ func TestObserveDevices(t *testing.T) {
 
 func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 
-	wsConn := webSocketConnection(t, GetDevicesObservationUri())
-	defer closeWebSocketConnection(t, wsConn)
-
 	//first event
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -50,6 +47,8 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 	defer conn.Close()
 	shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
 
+	wsConn := webSocketConnection(t, GetDevicesObservationUri())
+	defer closeWebSocketConnection(t, wsConn)
 	expEvt := service.DeviceEvent{
 		DeviceId: deviceID,
 		Status:   service.ToDevicesObservationEvent(client.DevicesObservationEvent_ONLINE),

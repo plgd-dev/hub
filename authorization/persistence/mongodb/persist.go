@@ -165,7 +165,10 @@ func (i *iterator) Next(s *persistence.AuthorizedDevice) bool {
 }
 
 func (i *iterator) Err() error {
-	return i.iter.Err()
+	if i.iter != nil {
+		return i.iter.Err()
+	}
+	return i.err
 }
 
 func (i *iterator) Close() {

@@ -4,8 +4,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-ocf/kit/log"
-
 	"github.com/go-ocf/cloud/grpc-gateway/refImpl"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
@@ -19,24 +17,26 @@ func SetUp(t *testing.T) (TearDown func()) {
 	grpcCfg.Addr = testCfg.GRPC_HOST
 	grpcCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	grpcCfg.JwksURL = testCfg.JWKS_URL
+	grpcCfg.Listen.Acme.DisableVerifyClientCertificate = true
 	return NewGrpcGateway(t, grpcCfg)
 }
 
-func NewGrpcGateway(t *testing.T, config refImpl.Config) func() {
-	log.Setup(config.Log)
-	log.Info(config.String())
-	server, err := refImpl.Init(config)
+func NewGrpcGateway(t *testing.T, cfg refImpl.Config) func() {
+	t.Log("NewGrpcGateway")
+	defer t.Log("NewGrpcGateway done")
+	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		server.Serve()
+		err := s.Serve()
+		require.NoError(t, err)
 	}()
 
 	return func() {
-		server.Close()
+		s.Close()
 		wg.Wait()
 	}
 }
