@@ -18,7 +18,7 @@ import (
 )
 
 func Test_resourcePingHandler(t *testing.T) {
-	shutdown := setUp(t,)
+	shutdown := setUp(t)
 	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)

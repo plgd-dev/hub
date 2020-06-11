@@ -52,7 +52,7 @@ func init() {
 			Href:          "/oic/p",
 			ResourceTypes: []string{"oic.wk.p"},
 			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
-			Policy: schema.Policy{
+			Policy: &schema.Policy{
 				BitMask: 1,
 			},
 		},
@@ -61,7 +61,7 @@ func init() {
 			Href:          "/oic/d",
 			ResourceTypes: []string{"oic.d.cloudDevice", "oic.wk.d"},
 			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
-			Policy: schema.Policy{
+			Policy: &schema.Policy{
 				BitMask: 1,
 			},
 		},
@@ -70,7 +70,7 @@ func init() {
 			Href:          "/oc/con",
 			ResourceTypes: []string{"oic.wk.con"},
 			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
-			Policy: schema.Policy{
+			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
@@ -79,7 +79,7 @@ func init() {
 			Href:          "/light/1",
 			ResourceTypes: []string{"core.light"},
 			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
-			Policy: schema.Policy{
+			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
@@ -88,7 +88,7 @@ func init() {
 			Href:          "/light/2",
 			ResourceTypes: []string{"core.light"},
 			Interfaces:    []string{"oic.if.rw", "oic.if.baseline"},
-			Policy: schema.Policy{
+			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 		},
@@ -99,7 +99,7 @@ func init() {
 			Href:          cloud.StatusHref,
 			ResourceTypes: cloud.StatusResourceTypes,
 			Interfaces:    cloud.StatusInterfaces,
-			Policy: schema.Policy{
+			Policy: &schema.Policy{
 				BitMask: 3,
 			},
 			Title: "Cloud device status",

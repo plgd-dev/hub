@@ -32,8 +32,8 @@ func toEndpoints(s []*pbRA.EndpointInformation) []schema.Endpoint {
 	return r
 }
 
-func toPolicy(s *pbRA.Policies) schema.Policy {
-	return schema.Policy{
+func toPolicy(s *pbRA.Policies) *schema.Policy {
+	return &schema.Policy{
 		BitMask: schema.BitMask(s.GetBitFlags()),
 	}
 }
@@ -48,18 +48,10 @@ func getHref(deviceID, href string) string {
 }
 
 func makeResourceLink(resource *pbRA.Resource) schema.ResourceLink {
-	return schema.ResourceLink{
-		Href:                  getHref(resource.GetDeviceId(), resource.GetHref()),
-		ResourceTypes:         resource.GetResourceTypes(),
-		Interfaces:            resource.GetInterfaces(),
-		DeviceID:              resource.GetDeviceId(),
-		InstanceID:            resource.GetInstanceId(),
-		Anchor:                resource.GetAnchor(),
-		Policy:                toPolicy(resource.GetPolicies()),
-		Title:                 resource.GetTitle(),
-		SupportedContentTypes: resource.GetSupportedContentTypes(),
-		Endpoints:             toEndpoints(resource.GetEndpointInformations()),
-	}
+	r := pbGRPC.RAResourceToProto(resource).ToSchema()
+	r.Href = getHref(resource.GetDeviceId(), resource.GetHref())
+	r.ID = ""
+	return r
 }
 
 func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter []string) (map[string]schema.ResourceLinks, error) {
@@ -85,7 +77,10 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter 
 		if !ok {
 			resourceLinks[resourceLink.GetDeviceId()] = make(schema.ResourceLinks, 0, 32)
 		}
-		resourceLinks[resourceLink.GetDeviceId()] = append(resourceLinks[resourceLink.GetDeviceId()], resourceLink.ToSchema())
+		r := resourceLink.ToSchema()
+		r.Href = getHref(resourceLink.GetDeviceId(), resourceLink.GetHref())
+		r.ID = ""
+		resourceLinks[resourceLink.GetDeviceId()] = append(resourceLinks[resourceLink.GetDeviceId()], r)
 	}
 	if len(resourceLinks) == 0 {
 		return nil, fmt.Errorf("cannot get resource links: not found")

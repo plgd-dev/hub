@@ -152,6 +152,7 @@ github.com/go-ocf/kit v0.0.0-20200522104643-af04c1ff1971 h1:u7EfBoO8bKuWUNK2ivoL
 github.com/go-ocf/kit v0.0.0-20200522104643-af04c1ff1971/go.mod h1:t6BL1Z38jV7qKwmaoh9l8iPKrhZcYMe4MGTCjxzr6v4=
 github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9 h1:jB/BO9UQTHtM1rIMWGHdJ2J9PHxY4J/29/aREdjMd6I=
 github.com/go-ocf/kit v0.0.0-20200522130525-5daaa448d7b9/go.mod h1:t6BL1Z38jV7qKwmaoh9l8iPKrhZcYMe4MGTCjxzr6v4=
+github.com/go-ocf/kit v0.0.0-20200527091251-aa44b115a690/go.mod h1:VQ/L9+wU9EEddE6X0VIWtodORpT8WCapogWoR3jWhbM=
 github.com/go-ocf/kit v0.0.0-20200527102456-7ae9675557b2 h1:0DNDj8pLZPDStiLoS9oFHSwhzfjHsbSJTwMfyJubgnI=
 github.com/go-ocf/kit v0.0.0-20200604130427-dcf927c14c30 h1:ZoyORlwqW5rt81XC1Nr79BTnBFOzv6W6HOjPQJd/NFc=
 github.com/go-ocf/kit v0.0.0-20200604130427-dcf927c14c30/go.mod h1:VQ/L9+wU9EEddE6X0VIWtodORpT8WCapogWoR3jWhbM=
@@ -189,6 +190,8 @@ github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33/go.mod h1:9vLNYHs9YT+5Y
 github.com/go-ocf/sdk v0.0.0-20200514081745-227ac451ff9b h1:5BJ63ONqqfstkn0PdMNgRmXQBl1SI8An6i7/T3OEwxE=
 github.com/go-ocf/sdk v0.0.0-20200514081745-227ac451ff9b/go.mod h1:y3mUHBTcWRRaPJkZQFqmJNFTY5o0/AH1nrYI3bARass=
 github.com/go-ocf/sdk v0.0.0-20200519063626-cb917369f154 h1:hwRgCLBvxnjnTpmY9i8guAwSHg9TY11uJR10iyZxQPw=
+github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e h1:A7y211ERXh8bvW+CCkfpZe2+8BF2wq96PnfVD+QYYCc=
+github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e/go.mod h1:Z1S2nsnJgkJUF0OrpbaJ+We9xbQitHTMs60SL7XD5Ug=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=

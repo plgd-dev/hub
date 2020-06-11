@@ -7,12 +7,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"testing"
 
-	authURI "github.com/go-ocf/cloud/authorization/uri"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/refImpl"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/test/service"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	"github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/net/http/transport"
 	"github.com/jtacoma/uritemplates"
@@ -22,24 +22,36 @@ import (
 
 const Cloud2cloud_GW_HOST = "localhost:9090"
 
-func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
-	tearDown := grpcTest.SetUp(ctx, t)
-
+func SetUp(t *testing.T) (TearDown func()) {
 	var cfg refImpl.Config
 	err := envconfig.Process("", &cfg)
 	require.NoError(t, err)
 	cfg.Service.Addr = Cloud2cloud_GW_HOST
-	cfg.JwksURL = "https://" + grpcTest.AUTH_HTTP_HOST + authURI.JWKs
-	cfg.Service.AuthServerAddr = grpcTest.AUTH_HOST
-	cfg.Service.ResourceAggregateAddr = grpcTest.RESOURCE_AGGREGATE_HOST
-	cfg.Service.ResourceDirectoryAddr = grpcTest.RESOURCE_DIRECTORY_HOST
+	cfg.JwksURL = testCfg.JWKS_URL
+	cfg.Service.AuthServerAddr = testCfg.AUTH_HOST
+	cfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
+	cfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.Service.FQDN = "cloud2cloud-gateway-" + t.Name()
 	cfg.Listen.Acme.DisableVerifyClientCertificate = true
-	c2cShutdown := service.NewCloud2cloudGateway(t, cfg)
+	return NewC2CGateway(t, cfg)
+}
+
+func NewC2CGateway(t *testing.T, cfg refImpl.Config) func() {
+	t.Log("NewC2CGateway")
+	defer t.Log("NewC2CGateway done")
+	s, err := refImpl.Init(cfg)
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s.Serve()
+	}()
 
 	return func() {
-		c2cShutdown()
-		tearDown()
+		s.Close()
+		wg.Wait()
 	}
 }
 
@@ -107,7 +119,7 @@ func (c *requestBuilder) Build(ctx context.Context, t *testing.T) *http.Request 
 func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
 	trans := transport.NewDefaultTransport()
 	trans.TLSClientConfig = &tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+		RootCAs: test.GetRootCertificatePool(t),
 	}
 	c := http.Client{
 		Transport: trans,

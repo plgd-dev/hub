@@ -19,7 +19,7 @@ func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID str
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,
 		DeviceID:      deviceID,
-		Policy: schema.Policy{
+		Policy: &schema.Policy{
 			BitMask: 3,
 		},
 		Title: "Cloud device status",

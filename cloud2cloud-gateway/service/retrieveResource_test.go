@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/go-coap/v2/message"
 
 	"github.com/go-ocf/kit/codec/cbor"
@@ -21,7 +20,8 @@ import (
 	c2cTest "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	"github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +33,7 @@ import (
 const TEST_TIMEOUT = time.Second * 20
 
 func TestRequestHandler_RetrieveResource(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		uri    string
 		accept string
@@ -109,7 +109,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
-			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): cannot retrieve resource(" + cqrs.MakeResourceId(deviceID, "/notFound") + "): cannot retrieve resources values: rpc error: code = NotFound desc = cannot retrieve resources values: not found",
+			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): cannot retrieve resource({" + deviceID + " /notFound}): cannot retrieve resources values: rpc error: code = NotFound desc = not found",
 		},
 		{
 			name: "invalidAccept",
@@ -141,16 +141,16 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := c2cTest.SetUp(ctx, t)
+	tearDown := setUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

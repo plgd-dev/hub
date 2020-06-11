@@ -50,8 +50,8 @@ func (p Policies) ToRAProto() *pbRA.Policies {
 	}
 }
 
-func (p Policies) ToSchema() schema.Policy {
-	return schema.Policy{
+func (p Policies) ToSchema() *schema.Policy {
+	return &schema.Policy{
 		BitMask: schema.BitMask(p.GetBitFlags()),
 	}
 }
@@ -133,7 +133,7 @@ func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
 	return r
 }
 
-func SchemaPolicyToProto(ra schema.Policy) *Policies {
+func SchemaPolicyToProto(ra *schema.Policy) *Policies {
 	return &Policies{
 		BitFlags: int32(ra.BitMask),
 	}
