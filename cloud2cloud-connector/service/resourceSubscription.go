@@ -35,11 +35,6 @@ func cancelResourceSubscription(ctx context.Context, l store.LinkedAccount, devi
 }
 
 func (s *SubscribeManager) HandleResourceChangedEvent(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, body []byte) error {
-	userID, err := subscriptionData.linkedAccount.OriginCloud.AccessToken.GetSubject()
-	if err != nil {
-		return fmt.Errorf("cannot get userID for device (%v) resource (%v) content changed: %v", subscriptionData.subscription.DeviceID, subscriptionData.subscription.Href, err)
-	}
-
 	coapContentFormat := int32(-1)
 	switch header.ContentType {
 	case message.AppCBOR.String():
@@ -50,9 +45,8 @@ func (s *SubscribeManager) HandleResourceChangedEvent(ctx context.Context, subsc
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err = s.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.NotifyResourceChangedRequest{
+	_, err := s.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.NotifyResourceChangedRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId:   userID,
 			DeviceId: subscriptionData.subscription.DeviceID,
 		},
 		ResourceId: raCqrs.MakeResourceId(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),

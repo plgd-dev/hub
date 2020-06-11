@@ -153,11 +153,6 @@ func (m *resourceCtx) onPendingContentUpdate(ctx context.Context) error {
 		return err
 	}
 
-	userID, err := linkedAccount.OriginCloud.AccessToken.GetSubject()
-	if err != nil {
-		return fmt.Errorf("cannot get userID: %v", err)
-	}
-
 	for {
 		if len(m.pendingContentUpdate) == 0 {
 			break
@@ -178,9 +173,6 @@ func (m *resourceCtx) onPendingContentUpdate(ctx context.Context) error {
 		}
 
 		_, err = m.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, linkedAccount.OriginCloud.AccessToken.String()), &pbRA.ConfirmResourceUpdateRequest{
-			AuthorizationContext: &pbCQRS.AuthorizationContext{
-				UserId: userID,
-			},
 			ResourceId:    m.resource.Id,
 			CorrelationId: m.pendingContentUpdate[0].AuditContext.CorrelationId,
 			CommandMetadata: &pbCQRS.CommandMetadata{

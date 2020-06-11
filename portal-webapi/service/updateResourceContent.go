@@ -65,9 +65,6 @@ func (r *RequestHandler) updateResourceContent(ctx *fasthttp.RequestCtx, token, 
 	correlationId := correlationIdUUID.String()
 
 	response, err := r.raClient.UpdateResource(kitNetGrpc.CtxWithToken(context.Background(), token), &pbRA.UpdateResourceRequest{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId: sub,
-		},
 		ResourceId: resourceId,
 		Content: &pbRA.Content{
 			CoapContentFormat: int32(message.AppOcfCbor),

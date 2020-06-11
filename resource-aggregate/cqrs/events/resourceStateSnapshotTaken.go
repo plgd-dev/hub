@@ -258,7 +258,7 @@ func convertContent(content *pb.Content, supportedContentTypes []string) (newCon
 func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqrs.Command, newVersion uint64) ([]event.Event, error) {
 	userID, err := grpc.UserIDFromMD(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot handle command: invalid userID: %w", err)
+		return nil, status.Errorf(codes.InvalidArgument, "cannot handle command: invalid userID: %v", err)
 	}
 	switch req := cmd.(type) {
 	case *pb.PublishResourceRequest:

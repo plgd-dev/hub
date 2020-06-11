@@ -16,8 +16,6 @@ func TestInit(t *testing.T) {
 	var config Config
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
-	config.GoRoutinePoolSize = 1
-	config.Service.Net = "tcp-tls"
 	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 
 	got, err := Init(config)

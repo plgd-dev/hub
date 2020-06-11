@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-ocf/cloud/grpc-gateway/client"
+	"github.com/go-ocf/cloud/test"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	kit "github.com/go-ocf/kit/net/grpc"
@@ -16,7 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 )
 
 const (
@@ -25,13 +26,13 @@ const (
 )
 
 var ClientTestCfg = client.Config{
-	GatewayAddress: grpcTest.GRPC_HOST,
-	AccessTokenURL: grpcTest.AUTH_HOST,
+	GatewayAddress: testCfg.GRPC_HOST,
+	AccessTokenURL: testCfg.AUTH_HOST,
 }
 
 func NewTestClient(t *testing.T) *client.Client {
 	rootCAs := x509.NewCertPool()
-	for _, c := range grpcTest.GetRootCertificateAuthorities(t) {
+	for _, c := range test.GetRootCertificateAuthorities(t) {
 		rootCAs.AddCert(c)
 	}
 	tlsCfg := tls.Config{

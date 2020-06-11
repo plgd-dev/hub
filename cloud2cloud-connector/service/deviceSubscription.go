@@ -81,10 +81,6 @@ func trimDeviceIDFromHref(deviceID, href string) string {
 
 // HandleResourcesPublished publish resources to resource aggregate and subscribes to resources.
 func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
-	userID, err := d.linkedAccount.OriginCloud.AccessToken.GetSubject()
-	if err != nil {
-		return fmt.Errorf("cannot get userID: %v", err)
-	}
 	var errors []error
 	for _, link := range links {
 		endpoints := make([]*pbRA.EndpointInformation, 0, 4)
@@ -98,7 +94,6 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 		resourceId := raCqrs.MakeResourceId(link.DeviceID, kitHttp.CanonicalHref(href))
 		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
-				UserId:   userID,
 				DeviceId: link.DeviceID,
 			},
 			ResourceId: resourceId,
@@ -170,16 +165,11 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 
 // HandleResourcesUnpublished unpublish resources from resource aggregate and cancel resources subscriptions.
 func (s *SubscribeManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
-	userID, err := d.linkedAccount.OriginCloud.AccessToken.GetSubject()
-	if err != nil {
-		return fmt.Errorf("cannot get userID: %v", err)
-	}
 	var errors []error
 	for _, link := range links {
 		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
 		_, err := s.raClient.UnpublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.UnpublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
-				UserId:   userID,
 				DeviceId: link.DeviceID,
 			},
 			ResourceId: raCqrs.MakeResourceId(link.GetDeviceID(), kitHttp.CanonicalHref(href)),

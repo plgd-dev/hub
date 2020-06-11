@@ -11,7 +11,8 @@ import (
 	authTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	test "github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,12 +35,12 @@ func NewTestDeviceSimulator(deviceID, deviceName string) client.DeviceDetails {
 			Name:     deviceName,
 			IsOnline: true,
 		},
-		Resources: grpcTest.SortResources(grpcTest.ResourceLinksToPb(deviceID, grpcTest.GetAllBackendResourceLinks())),
+		Resources: test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks())),
 	}
 }
 
 func TestClient_GetDevice(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		token    string
 		deviceID string
@@ -56,7 +57,7 @@ func TestClient_GetDevice(t *testing.T) {
 				token:    authTest.UserToken,
 				deviceID: deviceID,
 			},
-			want: NewTestDeviceSimulator(deviceID, grpcTest.TestDeviceName),
+			want: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
 		},
 		{
 			name: "not-found",
@@ -72,13 +73,13 @@ func TestClient_GetDevice(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -91,7 +92,7 @@ func TestClient_GetDevice(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			got.Resources = grpcTest.SortResources(got.Resources)
+			got.Resources = test.SortResources(got.Resources)
 			require.Equal(t, tt.want, got)
 		})
 	}
