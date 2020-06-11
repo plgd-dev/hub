@@ -49,6 +49,10 @@ LOOP:
 						Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
 						Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 						DeviceId:   deviceID,
+						InstanceId: res.Link.GetInstanceId(),
+						Policies: &pb.Policies{
+							BitFlags: 1,
+						},
 					},
 					Event: client.DeviceResourcesObservationEvent_ADDED,
 				}, res)

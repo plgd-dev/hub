@@ -21,4 +21,5 @@ func TestInit(t *testing.T) {
 	got, err := Init(config)
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
+	got.Shutdown()
 }

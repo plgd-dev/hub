@@ -44,13 +44,19 @@ func (e EndpointInformations) ToSchema() []schema.Endpoint {
 	return r
 }
 
-func (p Policies) ToRAProto() *pbRA.Policies {
+func (p *Policies) ToRAProto() *pbRA.Policies {
+	if p == nil {
+		return nil
+	}
 	return &pbRA.Policies{
 		BitFlags: p.GetBitFlags(),
 	}
 }
 
-func (p Policies) ToSchema() *schema.Policy {
+func (p *Policies) ToSchema() *schema.Policy {
+	if p == nil {
+		return nil
+	}
 	return &schema.Policy{
 		BitMask: schema.BitMask(p.GetBitFlags()),
 	}
@@ -103,16 +109,20 @@ func RAEndpointInformationsToProto(e []*pbRA.EndpointInformation) []*EndpointInf
 }
 
 func RAResourceToProto(ra *pbRA.Resource) ResourceLink {
-	return ResourceLink{
-		Anchor:               ra.Anchor,
-		DeviceId:             ra.DeviceId,
-		EndpointInformations: RAEndpointInformationsToProto(ra.EndpointInformations),
-		Href:                 ra.Href,
-		InstanceId:           ra.InstanceId,
-		Interfaces:           ra.Interfaces,
-		Policies: &Policies{
+	var p *Policies
+	if ra.Policies != nil {
+		p = &Policies{
 			BitFlags: ra.Policies.GetBitFlags(),
-		},
+		}
+	}
+	return ResourceLink{
+		Anchor:                ra.Anchor,
+		DeviceId:              ra.DeviceId,
+		EndpointInformations:  RAEndpointInformationsToProto(ra.EndpointInformations),
+		Href:                  ra.Href,
+		InstanceId:            ra.InstanceId,
+		Interfaces:            ra.Interfaces,
+		Policies:              p,
 		Types:                 ra.ResourceTypes,
 		SupportedContentTypes: ra.SupportedContentTypes,
 		Title:                 ra.Title,
@@ -134,6 +144,9 @@ func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
 }
 
 func SchemaPolicyToProto(ra *schema.Policy) *Policies {
+	if ra == nil {
+		return nil
+	}
 	return &Policies{
 		BitFlags: int32(ra.BitMask),
 	}

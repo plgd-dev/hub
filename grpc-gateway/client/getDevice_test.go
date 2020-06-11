@@ -31,9 +31,11 @@ func NewTestDeviceSimulator(deviceID, deviceName string) client.DeviceDetails {
 	return client.DeviceDetails{
 		ID: deviceID,
 		Device: pb.Device{
-			Id:       deviceID,
-			Name:     deviceName,
-			IsOnline: true,
+			Id:         deviceID,
+			Name:       deviceName,
+			Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
+			IsOnline:   true,
+			Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 		},
 		Resources: test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks())),
 	}
@@ -93,6 +95,9 @@ func TestClient_GetDevice(t *testing.T) {
 			}
 			require.NoError(t, err)
 			got.Resources = test.SortResources(got.Resources)
+			for i := range got.Resources {
+				got.Resources[i].InstanceId = 0
+			}
 			require.Equal(t, tt.want, got)
 		})
 	}
