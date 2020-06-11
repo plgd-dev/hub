@@ -64,7 +64,8 @@ func TestExpiredAccessTokenOnSignOut(t *testing.T) {
 
 func newSignOutRequest() *pb.SignOutRequest {
 	return &pb.SignOutRequest{
-		DeviceId: testDeviceID,
-		UserId:   testUserID,
+		DeviceId:    testDeviceID,
+		UserId:      testUserID,
+		AccessToken: testAccessToken,
 	}
 }

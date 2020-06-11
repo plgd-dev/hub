@@ -48,7 +48,8 @@ func TestUnexpectedAccessTokenOnSignOff(t *testing.T) {
 
 func newSignOffRequest() *pb.SignOffRequest {
 	return &pb.SignOffRequest{
-		DeviceId: testDeviceID,
-		UserId:   testUserID,
+		DeviceId:    testDeviceID,
+		UserId:      testUserID,
+		AccessToken: testAccessToken,
 	}
 }
