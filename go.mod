@@ -28,7 +28,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v1.0.2
 	github.com/nats-io/nats.go v1.9.2
-	github.com/panjf2000/ants v1.3.0
+	github.com/panjf2000/ants/v2/v2 v2.4.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
