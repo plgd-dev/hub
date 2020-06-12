@@ -52,7 +52,7 @@ func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb
 		}
 	}
 
-	connectionID := "grpc-gateway"
+	connectionID := r.fqdn
 	peer, ok := peer.FromContext(ctx)
 	if ok {
 		connectionID = peer.Addr.String()
