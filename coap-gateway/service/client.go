@@ -267,12 +267,12 @@ func (client *Client) OnClose() {
 	if client.authCtx.DeviceId != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
 		defer cancel()
-		token, err := client.server.oauthMgr.GetToken(ctx)
+		ctx, err := client.server.ctxWithServiceToken(ctx)
 		if err != nil {
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
 			return
 		}
-		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.UserID), authCtx.DeviceId, authCtx.AuthorizationContext, false)
+		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(ctx, authCtx.UserID), authCtx.DeviceId, authCtx.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
@@ -298,9 +298,12 @@ func (client *Client) loadAuthorizationContext() authCtx {
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
 	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
-
+	ctx, err := client.server.ctxWithServiceToken(notification.Context())
+	if err != nil {
+		return fmt.Errorf("cannot notify resource content changed: %v", err)
+	}
 	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
-	_, err := client.server.raClient.NotifyResourceChanged(notification.Context(), &request)
+	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource content changed: %v", err)
 	}

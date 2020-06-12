@@ -282,6 +282,15 @@ func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
+func (server *Server) ctxWithServiceToken(ctx context.Context) (context.Context, error) {
+	serviceToken, err := server.oauthMgr.GetToken(ctx)
+	if err != nil {
+		return ctx, fmt.Errorf("cannot get service token: %v", err)
+
+	}
+	return kitNetGrpc.CtxWithToken(ctx, serviceToken.AccessToken), nil
+}
+
 func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
@@ -300,13 +309,13 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
-		serviceToken, err := server.oauthMgr.GetToken(r.Context)
+		r.Context, err = server.ctxWithServiceToken(r.Context)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, r.Token)
+			client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, r.Token)
 			client.Close()
 			return
 		}
-		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.UserID)
+		r.Context = kitNetGrpc.CtxWithUserID(r.Context, authCtx.UserID)
 		next.ServeCOAP(w, r)
 	})
 }

@@ -71,14 +71,14 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), r.Token)
 		return
 	}
-	serviceToken, err := client.server.oauthMgr.GetToken(r.Context)
+	ctx, err := client.server.ctxWithServiceToken(r.Context)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, r.Token)
 		client.Close()
 		return
 	}
 
-	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithUserID(r.Context, response.UserId), serviceToken.AccessToken), signUp.DeviceID, pbCQRS.AuthorizationContext{
+	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithUserID(ctx, response.UserId), signUp.DeviceID, pbCQRS.AuthorizationContext{
 		DeviceId: signUp.DeviceID,
 	})
 	if err != nil {

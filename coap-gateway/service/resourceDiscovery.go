@@ -16,7 +16,6 @@ import (
 	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/coap"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/sdk/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -112,7 +111,7 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 		return
 	}
 
-	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID), request)
+	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(req.Context, request)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
 		return

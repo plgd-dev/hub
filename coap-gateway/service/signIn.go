@@ -63,13 +63,14 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
 	}
-	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
+	req.Context, err = client.server.ctxWithServiceToken(req.Context)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
 		client.Close()
 		return
 	}
-	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.UserID)
+
+	req.Context = kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID)
 	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
@@ -112,7 +113,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 				log.Errorf("cannot load models for deviceID %v", signIn.DeviceID)
 			} else {
 				for _, r := range models {
-					r.(*resourceCtx).TriggerSignIn()
+					r.(*resourceCtx).TriggerSignIn(req.Context)
 				}
 			}
 		}
@@ -134,13 +135,13 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 
 	authCtxOld := client.loadAuthorizationContext()
 	if authCtxOld.DeviceId != "" {
-		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
+		req.Context, err = client.server.ctxWithServiceToken(req.Context)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
-		req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtxOld.UserID)
+		req.Context = kitNetGrpc.CtxWithUserID(req.Context, authCtxOld.UserID)
 		err = client.UpdateCloudDeviceStatus(req.Context, authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
