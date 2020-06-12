@@ -59,12 +59,24 @@ func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIDsFilter, typ
 		if len(resourceIDsFilter) > 0 {
 			for resourceID := range resourceIDsFilter {
 				m := p.Models(deviceID, resourceID)
+				if !loaded && len(m) == 0 {
+					err := p.ForceUpdate(ctx, deviceID, resourceID)
+					if err == nil {
+						m = p.Models(deviceID, resourceID)
+					}
+				}
 				if len(m) > 0 {
 					models = append(models, m...)
 				}
 			}
 		} else {
 			m := p.Models(deviceID, "")
+			if !loaded && len(m) == 0 {
+				err := p.ForceUpdate(ctx, deviceID, "")
+				if err == nil {
+					m = p.Models(deviceID, "")
+				}
+			}
 			if len(m) > 0 {
 				models = append(models, m...)
 			}
