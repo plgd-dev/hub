@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
@@ -16,6 +17,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/sdk/schema"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 
@@ -27,6 +29,7 @@ type observedResource struct {
 type authCtx struct {
 	pbCQRS.AuthorizationContext
 	AccessToken string
+	UserID      string
 }
 
 //Client a setup of connection
@@ -262,7 +265,14 @@ func (client *Client) OnClose() {
 	authCtx := client.loadAuthorizationContext()
 
 	if client.authCtx.DeviceId != "" {
-		err := client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithToken(context.Background(), authCtx.AccessToken), authCtx.DeviceId, authCtx.AuthorizationContext, false)
+		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
+		defer cancel()
+		ctx, err := client.server.ctxWithServiceToken(ctx)
+		if err != nil {
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
+			return
+		}
+		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(ctx, authCtx.UserID), authCtx.DeviceId, authCtx.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
@@ -271,7 +281,7 @@ func (client *Client) OnClose() {
 }
 
 func (client *Client) storeAuthorizationContext(authCtx authCtx) (oldDeviceID string) {
-	log.Debugf("Authorization context stored for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceId(), authCtx.GetUserId())
+	log.Debugf("Authorization context stored for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceId(), authCtx.UserID)
 	client.authContextLock.Lock()
 	defer client.authContextLock.Unlock()
 	oldAuthContext := client.authCtx
@@ -288,9 +298,12 @@ func (client *Client) loadAuthorizationContext() authCtx {
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
 	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
-
+	ctx, err := client.server.ctxWithServiceToken(notification.Context())
+	if err != nil {
+		return fmt.Errorf("cannot notify resource content changed: %v", err)
+	}
 	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
-	_, err := client.server.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(notification.Context(), authCtx.AccessToken), &request)
+	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource content changed: %v", err)
 	}
@@ -309,7 +322,7 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 		defer pool.ReleaseMessage(msg)
 
 		request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
-		_, err := client.server.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+		_, err := client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 		if err != nil {
 			return err
 		}
@@ -339,7 +352,7 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	authCtx := client.loadAuthorizationContext()
 
 	request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 	if err != nil {
 		return err
 	}
@@ -359,7 +372,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 		defer pool.ReleaseMessage(msg)
 
 		request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
-		_, err := client.server.raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+		_, err := client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 		if err != nil {
 			return err
 		}
@@ -388,7 +401,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 
 	authCtx := client.loadAuthorizationContext()
 	request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), &request)
+	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 	if err != nil {
 		return err
 	}
@@ -396,21 +409,24 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	return nil
 }
 
-func (client *Client) publishResource(ctx context.Context, resource *pbRA.Resource, ttl int32, connectionID string, sequence uint64, authCtx pbCQRS.AuthorizationContext) (*pbRA.Resource, error) {
-	if resource.DeviceId == "" {
-		return resource, fmt.Errorf("cannot send command publish resource: invalid DeviceId")
+func (client *Client) publishResource(ctx context.Context, link schema.ResourceLink, ttl int32, connectionID string, sequence uint64, authCtx pbCQRS.AuthorizationContext) (schema.ResourceLink, error) {
+	if link.DeviceID == "" {
+		return link, fmt.Errorf("cannot send command publish resource: invalid DeviceId")
 	}
-	resource.Href = fixHref(resource.Href)
+	link.Href = fixHref(link.Href)
 
-	if resource.Href == "" || resource.Href == "/" {
-		return resource, fmt.Errorf("cannot send command publish resource: invalid Href")
+	if link.Href == "" || link.Href == "/" {
+		return link, fmt.Errorf("cannot send command publish resource: invalid Href")
 	}
-	resource.Id = resource2UUID(resource.DeviceId, resource.Href)
+	resourceID := resource2UUID(link.DeviceID, link.Href)
+
+	raLink := pbGRPC.SchemaResourceLinkToProto(link).ToRAProto()
+	raLink.Id = resourceID
 
 	request := pbRA.PublishResourceRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resource.Id,
-		Resource:             resource,
+		ResourceId:           resourceID,
+		Resource:             &raLink,
 		TimeToLive:           ttl,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			Sequence:     sequence,
@@ -420,11 +436,12 @@ func (client *Client) publishResource(ctx context.Context, resource *pbRA.Resour
 
 	response, err := client.server.raClient.PublishResource(ctx, &request)
 	if err != nil {
-		return resource, fmt.Errorf("cannot process command publish resource: %v", err)
+		return link, fmt.Errorf("cannot process command publish resource: %v", err)
 	}
 
-	resource.InstanceId = response.InstanceId
-	return resource, nil
+	link.InstanceID = response.InstanceId
+	link.ID = resourceID
+	return link, nil
 }
 
 func (client *Client) unpublishResource(ctx context.Context, resource *pbRA.Resource, authCtx pbCQRS.AuthorizationContext, rscsUnpublished map[string]bool) map[string]bool {
@@ -453,7 +470,7 @@ func (client *Client) unpublishResources(ctx context.Context, rscs []*pbRA.Resou
 	authCtx := client.loadAuthorizationContext()
 
 	for _, resource := range rscs {
-		rscsUnpublished = client.unpublishResource(kitNetGrpc.CtxWithToken(ctx, authCtx.AccessToken), resource, authCtx.AuthorizationContext, rscsUnpublished)
+		rscsUnpublished = client.unpublishResource(ctx, resource, authCtx.AuthorizationContext, rscsUnpublished)
 	}
 
 	client.unobserveResources(ctx, rscs, rscsUnpublished)

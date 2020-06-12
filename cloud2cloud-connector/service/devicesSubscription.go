@@ -72,22 +72,16 @@ func (s *SubscribeManager) publishCloudDeviceStatus(ctx context.Context, deviceI
 
 func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
 	var errors []error
-	userID, err := d.linkedAccount.OriginCloud.AccessToken.GetSubject()
-	if err != nil {
-		return fmt.Errorf("cannot get userID: %v", err)
-	}
 	for _, device := range devices {
 		ctx := kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.OriginCloud.AccessToken.String())
 		_, err := s.asClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
 			DeviceId: device.ID,
-			UserId:   userID,
 		})
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
 		authCtx := pbCQRS.AuthorizationContext{
-			UserId:   userID,
 			DeviceId: device.ID,
 		}
 
@@ -187,17 +181,10 @@ func (s *SubscribeManager) HandleDevicesUnregistered(ctx context.Context, subscr
 func (s *SubscribeManager) HandleDevicesOnline(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
 	var errors []error
 	for _, device := range devices {
-		userID, err := subscriptionData.linkedAccount.OriginCloud.AccessToken.GetSubject()
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot get userID for set device(%v) online: %v", device.ID, err))
-			continue
-		}
 		authCtx := pbCQRS.AuthorizationContext{
-			UserId:   userID,
 			DeviceId: device.ID,
 		}
-
-		err = s.updateCloudStatus(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), device.ID, true, authCtx, header.SequenceNumber)
+		err := s.updateCloudStatus(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), device.ID, true, authCtx, header.SequenceNumber)
 
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to online: %v", device.ID, err))
@@ -214,17 +201,11 @@ func (s *SubscribeManager) HandleDevicesOnline(ctx context.Context, subscription
 func (s *SubscribeManager) HandleDevicesOffline(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
 	var errors []error
 	for _, device := range devices {
-		userID, err := subscriptionData.linkedAccount.OriginCloud.AccessToken.GetSubject()
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot get userID for set device(%v) offline: %v", device.ID, err))
-			continue
-		}
 		authCtx := pbCQRS.AuthorizationContext{
-			UserId:   userID,
 			DeviceId: device.ID,
 		}
 
-		err = s.updateCloudStatus(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), device.ID, false, authCtx, header.SequenceNumber)
+		err := s.updateCloudStatus(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), device.ID, false, authCtx, header.SequenceNumber)
 
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %v", device.ID, err))

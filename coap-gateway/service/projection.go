@@ -67,17 +67,17 @@ func (m *resourceCtx) onResourceChangedLocked() {
 	}
 }
 
-func (m *resourceCtx) TriggerSignIn() {
+func (m *resourceCtx) TriggerSignIn(ctx context.Context) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if m.isPublished {
 		m.onResourcePublishedLocked()
-		m.onUpdateResourceLocked()
+		m.onUpdateResourceLocked(ctx)
 	}
 }
 
-func (m *resourceCtx) onUpdateResourceLocked() {
+func (m *resourceCtx) onUpdateResourceLocked(ctx context.Context) {
 	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
@@ -87,7 +87,7 @@ func (m *resourceCtx) onUpdateResourceLocked() {
 			return
 		}
 		updatePending := m.resourceUpdatePendings[0]
-		err := client.updateContent(context.Background(), m.resource, &updatePending)
+		err := client.updateContent(ctx, m.resource, &updatePending)
 		if err != nil {
 			log.Errorf("DeviceId: %v, ResourceId: %v: cannot perform update: %v", m.resource.DeviceId, m.resource.Id, err)
 			return
@@ -96,7 +96,7 @@ func (m *resourceCtx) onUpdateResourceLocked() {
 	}
 }
 
-func (m *resourceCtx) onRetrieveResourceLocked() {
+func (m *resourceCtx) onRetrieveResourceLocked(ctx context.Context) {
 	client := m.server.clientContainerByDeviceID.Find(m.resource.DeviceId)
 	if client == nil {
 		return
@@ -106,7 +106,7 @@ func (m *resourceCtx) onRetrieveResourceLocked() {
 			return
 		}
 		retrievePending := m.resourceRetrievePendings[0]
-		err := client.retrieveContent(context.Background(), m.resource, &retrievePending)
+		err := client.retrieveContent(ctx, m.resource, &retrievePending)
 		if err != nil {
 			log.Errorf("DeviceId: %v, ResourceId: %v: cannot perform retrieve: %v", m.resource.DeviceId, m.resource.Id, err)
 			return
@@ -266,9 +266,14 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	m.onResourceRetrievedLocked(resourceRetrieved)
 
 	m.resourceUpdatePendings = append(m.resourceUpdatePendings, resourceUpdatePendings...)
-	m.onUpdateResourceLocked()
 	m.resourceRetrievePendings = append(m.resourceRetrievePendings, resourceRetrievePendings...)
-	m.onRetrieveResourceLocked()
+	ctx, err := m.server.ctxWithServiceToken(ctx)
+	if err != nil {
+		log.Errorf("cannot update/restrieve resource /%v/%v: %v", m.resource.GetDeviceId(), m.resource.GetHref(), err)
+		return nil
+	}
+	m.onUpdateResourceLocked(ctx)
+	m.onRetrieveResourceLocked(ctx)
 
 	return nil
 }

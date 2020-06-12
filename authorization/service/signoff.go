@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/kit/log"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -15,32 +14,12 @@ func (s *Service) SignOff(ctx context.Context, request *pb.SignOffRequest) (*pb.
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
+	_, err := checkReq(tx, request)
 	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign off: %v", err))
-	}
-	userID, err := parseSubFromJwtToken(token)
-	if err != nil {
-		log.Debugf("cannot parse user from jwt token: %v", err)
-		userID = request.UserId
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot sign off: %v", err))
 	}
 
-	if userID == "" {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign off: invalid UserId"))
-	}
-
-	d, ok, err := tx.Retrieve(request.DeviceId, userID)
-	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot sign off: %v", err.Error()))
-	}
-	if !ok {
-		return nil, logAndReturnError(status.Errorf(codes.NotFound, "cannot sign off: not found"))
-	}
-	if d.AccessToken != token {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign off: unexpected access token"))
-	}
-
-	err = tx.Delete(d.DeviceID, userID)
+	err = tx.Delete(request.GetDeviceId(), request.GetUserId())
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot sign off: %v", err.Error()))
 	}

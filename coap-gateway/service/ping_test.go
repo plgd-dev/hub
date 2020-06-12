@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"bytes"
@@ -9,39 +9,26 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp"
 
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/codec/cbor"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_resourcePingHandler(t *testing.T) {
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	deviceDB := t.Name() + "_deviceDB"
-	resourceDB := t.Name() + "_resourceDB"
+	shutdown := setUp(t)
+	defer shutdown()
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownDA := testCreateResourceAggregate(t, deviceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownDA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
 	defer co.Close()
 
 	type args struct {
-		ping *oicwkping // nill means get, otherwise it is ping
+		ping interface{} // nill means get, otherwise it is ping
 	}
 	tests := []struct {
 		name      string
@@ -51,8 +38,8 @@ func Test_resourcePingHandler(t *testing.T) {
 		{
 			name: "invalid interval",
 			args: args{
-				ping: &oicwkping{
-					Interval: 0,
+				ping: map[interface{}]interface{}{
+					"in": 0,
 				},
 			},
 			wantsCode: coapCodes.BadRequest,
@@ -65,8 +52,8 @@ func Test_resourcePingHandler(t *testing.T) {
 		{
 			name: "ping",
 			args: args{
-				ping: &oicwkping{
-					Interval: 1,
+				ping: map[interface{}]interface{}{
+					"in": 1,
 				},
 			},
 			wantsCode: coapCodes.Valid,
@@ -77,6 +64,7 @@ func Test_resourcePingHandler(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
 			var req *pool.Message
+			var err error
 			if tt.args.ping != nil {
 				out, err := cbor.Encode(tt.args.ping)
 				require.NoError(t, err)

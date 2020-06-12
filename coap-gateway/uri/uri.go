@@ -14,4 +14,5 @@ const (
 	ResourceDirectory  = Base + "/rd"
 	ResourceDiscovery  = Base + "/res"
 	ResourcePing       = Base + "/ping"
+	ResourceRoute      = Base + "/route"
 )

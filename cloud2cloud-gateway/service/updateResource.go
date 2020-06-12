@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
@@ -49,37 +50,37 @@ func (rh *RequestHandler) onSecondTimeout(ctx context.Context, w http.ResponseWr
 	return http.StatusAccepted, nil
 }
 
-func statusToHttpStatus(status pbRA.Status) int {
+func statusToHttpStatus(status pbGRPC.Status) int {
 	switch status {
-	case pbRA.Status_UNKNOWN:
+	case pbGRPC.Status_UNKNOWN:
 		return http.StatusBadRequest
-	case pbRA.Status_OK:
+	case pbGRPC.Status_OK:
 		return http.StatusOK
-	case pbRA.Status_BAD_REQUEST:
+	case pbGRPC.Status_BAD_REQUEST:
 		return http.StatusBadRequest
-	case pbRA.Status_UNAUTHORIZED:
+	case pbGRPC.Status_UNAUTHORIZED:
 		return http.StatusUnauthorized
-	case pbRA.Status_FORBIDDEN:
+	case pbGRPC.Status_FORBIDDEN:
 		return http.StatusForbidden
-	case pbRA.Status_NOT_FOUND:
+	case pbGRPC.Status_NOT_FOUND:
 		return http.StatusNotFound
-	case pbRA.Status_UNAVAILABLE:
+	case pbGRPC.Status_UNAVAILABLE:
 		return http.StatusServiceUnavailable
-	case pbRA.Status_NOT_IMPLEMENTED:
+	case pbGRPC.Status_NOT_IMPLEMENTED:
 		return http.StatusNotImplemented
-	case pbRA.Status_ACCEPTED:
+	case pbGRPC.Status_ACCEPTED:
 		return http.StatusAccepted
-	case pbRA.Status_ERROR:
+	case pbGRPC.Status_ERROR:
 		return http.StatusInternalServerError
 	}
 	return http.StatusInternalServerError
 }
 
 func clientUpdateSendResponse(w http.ResponseWriter, deviceID, resourceID string, processed raEvents.ResourceUpdated) (int, error) {
-	statusCode := statusToHttpStatus(processed.Status)
+	statusCode := statusToHttpStatus(pbGRPC.RAStatus2Status(processed.Status))
 
 	if processed.Content != nil {
-		content, err := unmarshalContent(processed.Content)
+		content, err := unmarshalContent(pbGRPC.RAContent2Content(processed.Content))
 		if err != nil {
 			logAndWriteErrorResponse(fmt.Errorf("cannot make action on resource content changed: %w", err), statusCode, w)
 			return statusCode, nil

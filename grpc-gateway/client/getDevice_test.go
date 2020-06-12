@@ -9,9 +9,10 @@ import (
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/cloud/grpc-gateway/client"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	test "github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,20 +27,22 @@ func (a *testApplication) GetRootCertificateAuthorities() ([]*x509.Certificate, 
 	return a.cas, nil
 }
 
-func NewTestDeviceSimulator(deviceID, deviceName string)client.DeviceDetails {
+func NewTestDeviceSimulator(deviceID, deviceName string) client.DeviceDetails {
 	return client.DeviceDetails{
 		ID: deviceID,
 		Device: pb.Device{
-			Id:       deviceID,
-			Name:     deviceName,
-			IsOnline: true,
+			Id:         deviceID,
+			Name:       deviceName,
+			Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
+			IsOnline:   true,
+			Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 		},
-		Resources: grpcTest.SortResources(grpcTest.ConvertSchemaToPb(deviceID, grpcTest.GetAllBackendResourceLinks())),
+		Resources: test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks())),
 	}
 }
 
 func TestClient_GetDevice(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		token    string
 		deviceID string
@@ -47,7 +50,7 @@ func TestClient_GetDevice(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want   client.DeviceDetails
+		want    client.DeviceDetails
 		wantErr bool
 	}{
 		{
@@ -56,7 +59,7 @@ func TestClient_GetDevice(t *testing.T) {
 				token:    authTest.UserToken,
 				deviceID: deviceID,
 			},
-			want: NewTestDeviceSimulator(deviceID, grpcTest.TestDeviceName),
+			want: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
 		},
 		{
 			name: "not-found",
@@ -72,13 +75,13 @@ func TestClient_GetDevice(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -91,7 +94,10 @@ func TestClient_GetDevice(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			got.Resources = grpcTest.SortResources(got.Resources)
+			got.Resources = test.SortResources(got.Resources)
+			for i := range got.Resources {
+				got.Resources[i].InstanceId = 0
+			}
 			require.Equal(t, tt.want, got)
 		})
 	}

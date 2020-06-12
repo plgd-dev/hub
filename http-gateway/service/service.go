@@ -3,18 +3,19 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"regexp"
 
-	"github.com/fullstorydev/grpchan/inprocgrpc"
 	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcService "github.com/go-ocf/cloud/grpc-gateway/service"
 	"github.com/go-ocf/cloud/http-gateway/uri"
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/kit/security/certManager"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func logError(err error) { log.Error(err) }
@@ -26,16 +27,11 @@ type Server struct {
 	requestHandler    *RequestHandler
 	ln                net.Listener
 	listenCertManager certManager.CertManager
-	ch                *inprocgrpc.Channel
+	rdConn            *grpc.ClientConn
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(config string) (*Server, error) {
-	cfg, err := ParseConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
+func New(cfg Config) (*Server, error) {
 	log.Info(cfg.String())
 
 	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
@@ -53,16 +49,15 @@ func New(config string) (*Server, error) {
 		log.Fatalf("cannot listen tls and serve: %w", err)
 	}
 
-	grpcServerHandler, err := grpcService.NewRequestHandlerFromConfig(cfg.HandlerConfig, dialCertManager.GetClientTLSConfig())
+	rdConn, err := grpc.Dial(
+		cfg.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
+	)
 	if err != nil {
-		log.Fatalf("cannot listen tls and serve: %w", err)
+		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
-
-	var ch inprocgrpc.Channel
-	pb.RegisterHandlerGrpcGateway(&ch, grpcServerHandler)
-	grpcClient := pb.NewGrpcGatewayChannelClient(&ch)
-
-	client, err := client.NewClient(cfg.AccessTokenURL, grpcClient)
+	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
+	client, err := client.NewClient("http://localhost", resourceDirectoryClient)
 	if err != nil {
 		log.Fatalf("cannot initialize new client: %w", err)
 	}
@@ -82,7 +77,7 @@ func New(config string) (*Server, error) {
 		requestHandler:    requestHandler,
 		ln:                ln,
 		listenCertManager: listenCertManager,
-		ch:                &ch,
+		rdConn:            rdConn,
 	}
 
 	return &server, nil
@@ -101,6 +96,7 @@ func (s *Server) Shutdown() error {
 			s.OnClose()
 		}
 	}
+	s.rdConn.Close()
 	if s.listenCertManager != nil {
 		s.listenCertManager.Close()
 	}

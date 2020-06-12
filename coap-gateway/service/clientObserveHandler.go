@@ -8,6 +8,7 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
@@ -15,7 +16,6 @@ import (
 	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -59,7 +59,7 @@ func cleanStartResourceObservation(client *Client, deviceID, resourceID string, 
 func SendResourceContentToObserver(client *Client, contentCtx *pbRA.ResourceChanged, observe uint32, deviceID, resourceID string, token message.Token) {
 	if contentCtx.GetStatus() != pbRA.Status_OK {
 		cleanStartResourceObservation(client, deviceID, resourceID, token)
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource %v, device response: %v", deviceID, resourceID, contentCtx.GetStatus()), coapconv.StatusToCoapCode(contentCtx.GetStatus(), coapCodes.GET), token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource %v, device response: %v", deviceID, resourceID, contentCtx.GetStatus()), coapconv.StatusToCoapCode(pbGRPC.RAStatus2Status(contentCtx.GetStatus()), coapCodes.GET), token)
 		return
 	}
 
@@ -88,10 +88,10 @@ func SendResourceContentToObserver(client *Client, contentCtx *pbRA.ResourceChan
 
 func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx authCtx, deviceID, resourceID string) {
 	userIdsFilter := []string(nil)
-	if authCtx.UserId != "" {
-		userIdsFilter = []string{authCtx.UserId}
+	if authCtx.UserID != "" {
+		userIdsFilter = []string{authCtx.UserID}
 	}
-	getUserDevicesClient, err := client.server.asClient.GetUserDevices(kitNetGrpc.CtxWithToken(req.Context, authCtx.AccessToken), &pbAS.GetUserDevicesRequest{
+	getUserDevicesClient, err := client.server.asClient.GetUserDevices(req.Context, &pbAS.GetUserDevicesRequest{
 		UserIdsFilter:   userIdsFilter,
 		DeviceIdsFilter: []string{deviceID},
 	})

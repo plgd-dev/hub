@@ -11,7 +11,10 @@
         "LISTEN_ACME_DEVICE_ID":"adebc667-1f2b-41e3-bf5c-6d6eabc68cc6",
         "LISTEN_ACME_DIRECTORY_URL":"https://localhost:10443/acme/acme/directory",
         "TEST_COAP_GW_OVERWRITE_LISTEN_ACME_DIRECTORY_URL": "https://localhost:10443/acme/ocf.gw/directory",
-        //"GOFLAGS":"-mod=vendor",
+        // "GOFLAGS":"-mod=vendor",
+        // "GRPC_VERBOSITY":"DEBUG",
+        // "GRPC_GO_LOG_VERBOSITY_LEVEL":99,
+        // "GRPC_GO_LOG_SEVERITY_LEVEL":"info",
     },
     "go.testTimeout": "180s",
     "go.buildFlags": [

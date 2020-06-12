@@ -21,8 +21,7 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 
 	vars := mux.Vars(r)
 	interfaceQueryString := r.URL.Query().Get(uri.InterfaceQueryKey)
-	ctx, cancel := requestHandler.makeCtx(r)
-	defer cancel()
+	ctx := requestHandler.makeCtx(r)
 
 	var response interface{}
 	err := requestHandler.client.UpdateResource(ctx, vars[uri.DeviceIDKey], vars[uri.ResourceLinkHrefKey], body, &response, client.WithInterface(interfaceQueryString))

@@ -165,14 +165,16 @@ func (i *iterator) Next(s *persistence.AuthorizedDevice) bool {
 }
 
 func (i *iterator) Err() error {
-	return i.iter.Err()
+	if i.iter != nil {
+		return i.iter.Err()
+	}
+	return i.err
 }
 
 func (i *iterator) Close() {
-	if i.iter == nil {
-		return
+	if i.iter != nil {
+		i.err = i.iter.Close(i.ctx)
 	}
-	i.err = i.iter.Close(i.ctx)
 }
 
 func makeRecord(d *persistence.AuthorizedDevice) bson.M {

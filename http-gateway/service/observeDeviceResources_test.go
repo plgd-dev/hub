@@ -8,13 +8,14 @@ import (
 	"testing"
 
 	"github.com/go-ocf/cloud/http-gateway/uri"
+	testCfg "github.com/go-ocf/cloud/test/config"
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/client"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/cloud/http-gateway/service"
 	"github.com/go-ocf/cloud/http-gateway/test"
+	cloudTest "github.com/go-ocf/cloud/test"
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gorilla/websocket"
@@ -24,24 +25,24 @@ import (
 )
 
 func TestDeviceResourcesObservation(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	//set up
 	ctx, cancel := context.WithTimeout(context.Background(), 2*test.TestTimeout)
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
-	webTearDown := test.NewTestHTTPGW(t, test.NewTestBackendConfig().String())
+	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
 	//onboard
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: cloudTest.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
 
 	// create web socket connection
 	wsConn := webSocketConnection(t, GetDeviceResourcesObservationUri(deviceID))

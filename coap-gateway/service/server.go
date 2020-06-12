@@ -9,17 +9,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-ocf/kit/security/oauth/manager"
+
 	"github.com/panjf2000/ants"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	notificationRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/go-coap/v2/message"
@@ -31,6 +32,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp"
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 
 	"github.com/go-ocf/kit/log"
 	cache "github.com/patrickmn/go-cache"
@@ -53,8 +55,7 @@ type Server struct {
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
-	rsClient pbRS.ResourceShadowClient
-	rdClient pbRD.ResourceDirectoryClient
+	rdClient pbGRPC.GrpcGatewayClient
 
 	clientContainer               *ClientContainer
 	clientContainerByDeviceID     *clientContainerByDeviceID
@@ -63,6 +64,7 @@ type Server struct {
 	observeResourceContainer      *observeResourceContainer
 	goroutinesPool                *ants.Pool
 	oicPingCache                  *cache.Cache
+	oauthMgr                      *manager.Manager
 
 	projection      *projectionRA.Projection
 	coapServer      *tcp.Server
@@ -85,20 +87,35 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	oicPingCache.OnEvicted(pingOnEvicted)
 
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create oauth manager: %v", err)
+	}
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	raConn, err := grpc.Dial(
+		config.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	asConn, err := grpc.Dial(
+		config.AuthServerAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	asClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -119,8 +136,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		listener = l
 		isTLSListener = true
 	}
-	rdClient := pbRD.NewResourceDirectoryClient(rdConn)
-	rsClient := pbRS.NewResourceShadowClient(rdConn)
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
 	var keepAlive *keepalive.KeepAlive
 	if config.KeepaliveEnable {
@@ -165,8 +181,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		IsTLSListener: isTLSListener,
 		raClient:      raClient,
 		asClient:      asClient,
-		rsClient:      rsClient,
 		rdClient:      rdClient,
+		oauthMgr:      oauthMgr,
 
 		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},
 		clientContainerByDeviceID:     newClientContainerByDeviceID(),
@@ -232,7 +248,7 @@ func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
 
 	switch {
-	case strings.HasPrefix(path, resourceRoute):
+	case strings.HasPrefix("/"+path, uri.ResourceRoute):
 		resourceRouteHandler(s, req, client)
 	default:
 		deviceID := getDeviceID(client)
@@ -266,6 +282,15 @@ func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
+func (server *Server) ctxWithServiceToken(ctx context.Context) (context.Context, error) {
+	serviceToken, err := server.oauthMgr.GetToken(ctx)
+	if err != nil {
+		return ctx, fmt.Errorf("cannot get service token: %v", err)
+
+	}
+	return kitNetGrpc.CtxWithToken(ctx, serviceToken.AccessToken), nil
+}
+
 func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
@@ -275,7 +300,8 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			return
 		}
 
-		ctx := kitNetCoap.CtxWithToken(r.Context, client.loadAuthorizationContext().AccessToken)
+		authCtx := client.loadAuthorizationContext()
+		ctx := kitNetCoap.CtxWithToken(r.Context, authCtx.AccessToken)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
@@ -283,6 +309,13 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
+		r.Context, err = server.ctxWithServiceToken(r.Context)
+		if err != nil {
+			client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, r.Token)
+			client.Close()
+			return
+		}
+		r.Context = kitNetGrpc.CtxWithUserID(r.Context, authCtx.UserID)
 		next.ServeCOAP(w, r)
 	})
 }
@@ -351,5 +384,6 @@ func (server *Server) Serve() error {
 func (server *Server) Shutdown() error {
 	defer server.wgDone.Wait()
 	server.coapServer.Stop()
+	server.oauthMgr.Close()
 	return server.listener.Close()
 }

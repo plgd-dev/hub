@@ -19,13 +19,23 @@ import (
 	c2cTest "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	"github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
+
+func setUp(ctx context.Context, t *testing.T) func() {
+	td := test.SetUp(ctx, t)
+	c2cTD := c2cTest.SetUp(t)
+	return func() {
+		c2cTD()
+		td()
+	}
+}
 
 type sortLinksByHref []interface{}
 
@@ -72,9 +82,9 @@ func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 			"di":   deviceID,
 			"dmn":  []interface{}{},
 			"dmno": "",
-			"if":   interface{}(nil),
+			"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
 			"n":    deviceName,
-			"rt":   interface{}(nil),
+			"rt":   []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
 		},
 		"links": []interface{}{
 			map[interface{}]interface{}{
@@ -138,7 +148,7 @@ func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 }
 
 func TestRequestHandler_RetrieveDevice(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		uri    string
 		accept string
@@ -158,7 +168,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
-			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
+			want:            getDeviceAllRepresentation(deviceID, test.TestDeviceName),
 		},
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID,
@@ -168,7 +178,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppOcfCbor.String(),
-			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
+			want:            getDeviceAllRepresentation(deviceID, test.TestDeviceName),
 		},
 		{
 			name: "notFound",
@@ -178,7 +188,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
-			want:            "cannot retrieve device: cannot retrieve device(" + DeviceIDNotFound + ") [base]: cannot get devices: rpc error: code = NotFound desc = cannot get devices contents: not found",
+			want:            "cannot retrieve device: cannot retrieve device(" + DeviceIDNotFound + ") [base]: cannot get devices: rpc error: code = NotFound desc = not found",
 		},
 		{
 			name: "invalidAccept",
@@ -198,7 +208,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
-			want:            getDeviceAllRepresentation(deviceID, grpcTest.TestDeviceName),
+			want:            getDeviceAllRepresentation(deviceID, test.TestDeviceName),
 		},
 	}
 
@@ -206,16 +216,16 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := c2cTest.SetUp(ctx, t)
+	tearDown := setUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

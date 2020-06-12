@@ -27,6 +27,7 @@ var testUnauthorizedUser = "testUnauthorizedUser"
 func TestAggregateHandle_PublishResource(t *testing.T) {
 	type args struct {
 		request *pb.PublishResourceRequest
+		userID  string
 	}
 	test := []struct {
 		name    string
@@ -37,7 +38,8 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				request: testMakePublishResourceRequest("dev0", "res0", "user0"),
+				request: testMakePublishResourceRequest("dev0", "res0"),
+				userID:  "user0",
 			},
 			want:    codes.OK,
 			wantErr: false,
@@ -45,7 +47,8 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakePublishResourceRequest("dev0", "res0", "user0"),
+				request: testMakePublishResourceRequest("dev0", "res0"),
+				userID:  "user0",
 			},
 			want:    codes.OK,
 			wantErr: false,
@@ -78,9 +81,9 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			deviceIds, _, err := testListDevicesOfUserFunc(ctx, "a0", tt.args.request.AuthorizationContext.UserId)
-			ag, err := NewAggregate(ctx, tt.args.request.ResourceId, deviceIds, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
-			assert.NoError(t, err)
+			deviceIds, _, err := testListDevicesOfUserFunc(ctx, "a0", tt.args.userID)
+			ag, err := NewAggregate(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request.ResourceId, deviceIds, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+			require.NoError(t, err)
 			_, events, err := ag.PublishResource(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -97,13 +100,13 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore *mongodb.EventStore, deviceId, resourceId, userId string, expStatusCode codes.Code, hasErr bool) {
-	pc := testMakePublishResourceRequest(deviceId, resourceId, userId)
+func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore *mongodb.EventStore, deviceID, resourceID, userID string, expStatusCode codes.Code, hasErr bool) {
+	pc := testMakePublishResourceRequest(deviceID, resourceID)
 
-	deviceIds, _, err := testListDevicesOfUserFunc(ctx, "a0", userId)
+	deviceIds, _, err := testListDevicesOfUserFunc(ctx, "a0", userID)
 	assert.NoError(t, err)
 
-	ag, err := NewAggregate(ctx, resourceId, deviceIds, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(kitNetGrpc.CtxWithUserID(ctx, userID), resourceID, deviceIds, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	resp, events, err := ag.PublishResource(ctx, pc)
 	if hasErr {
@@ -114,22 +117,25 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nat
 	} else {
 		require.NoError(t, err)
 		if err == nil && !assert.NotNil(t, resp.AuditContext) {
-			assert.Equal(t, userId, resp.AuditContext.UserId)
-			assert.Equal(t, deviceId, resp.AuditContext.DeviceId)
+			assert.Equal(t, userID, resp.AuditContext.UserId)
+			assert.Equal(t, deviceID, resp.AuditContext.DeviceId)
 		}
-		err = publishEvents(ctx, publisher, deviceId, resourceId, events)
+		err = publishEvents(ctx, publisher, deviceID, resourceID, events)
 		assert.NoError(t, err)
 	}
 }
 
 func TestAggregateDuplicitPublishResource(t *testing.T) {
+	deviceID := "dupDeviceId"
+	resourceID := "dupResourceId"
+	userID := "dupResourceId"
 	var cmconfig certManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "token")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -141,21 +147,17 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 
 	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(tlsConfig))
 
-	deviceId := "dupDeviceId"
-	resourceId := "dupResourceId"
-	userId := "dupResourceId"
-
-	ag, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
-	pc1 := testMakePublishResourceRequest(deviceId, resourceId, userId)
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	require.NoError(t, err)
+	pc1 := testMakePublishResourceRequest(deviceID, resourceID)
 
 	resp1, events, err := ag.PublishResource(ctx, pc1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
-	pc2 := testMakePublishResourceRequest(deviceId, resourceId, userId)
+	ag2, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	require.NoError(t, err)
+	pc2 := testMakePublishResourceRequest(deviceID, resourceID)
 	resp2, events, err := ag2.PublishResource(ctx, pc2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
@@ -164,13 +166,16 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 }
 
 func TestAggregateHandleUnpublishResource(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
 	var cmconfig certManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -193,22 +198,18 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	deviceId := "dev0"
-	resourceId := "res0"
-	userId := "user0"
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceId, resourceId, userId, codes.OK, false)
+	pc := testMakeUnpublishResourceRequest(deviceID, resourceID)
 
-	pc := testMakeUnpublishResourceRequest(deviceId, resourceId, userId)
-
-	ag, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	resp, events, err := ag.UnpublishResource(ctx, pc)
 	assert.NoError(t, err)
-	assert.Equal(t, userId, resp.AuditContext.UserId)
-	assert.Equal(t, deviceId, resp.AuditContext.DeviceId)
+	assert.Equal(t, userID, resp.AuditContext.UserId)
+	assert.Equal(t, deviceID, resp.AuditContext.DeviceId)
 
-	err = publishEvents(ctx, publisher, deviceId, resourceId, events)
+	err = publishEvents(ctx, publisher, deviceID, resourceID, events)
 	assert.NoError(t, err)
 
 	resp, events, err = ag.UnpublishResource(ctx, pc)
@@ -219,16 +220,16 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	assert.Empty(t, events)
 }
 
-func testGetResourceId(deviceId, href string) string {
-	return uuid.NewV5(uuid.NamespaceURL, deviceId+href).String()
+func testGetResourceId(deviceID, href string) string {
+	return uuid.NewV5(uuid.NamespaceURL, deviceID+href).String()
 }
 
-func testMakePublishResourceRequest(deviceId, resourceId, userId string) *pb.PublishResourceRequest {
+func testMakePublishResourceRequest(deviceID, resourceID string) *pb.PublishResourceRequest {
 	href := "/oic/p"
 	r := pb.PublishResourceRequest{
-		ResourceId:           resourceId,
-		Resource:             testNewResource(href, deviceId, resourceId),
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+		ResourceId:           resourceID,
+		Resource:             testNewResource(href, deviceID, resourceID),
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		TimeToLive:           1,
 		CommandMetadata: &pb.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
@@ -238,10 +239,10 @@ func testMakePublishResourceRequest(deviceId, resourceId, userId string) *pb.Pub
 	return &r
 }
 
-func testMakeUnpublishResourceRequest(deviceId, resourceId string, userId string) *pb.UnpublishResourceRequest {
+func testMakeUnpublishResourceRequest(deviceID, resourceID string) *pb.UnpublishResourceRequest {
 	r := pb.UnpublishResourceRequest{
-		ResourceId:           resourceId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+		ResourceId:           resourceID,
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		CommandMetadata: &pb.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -250,11 +251,11 @@ func testMakeUnpublishResourceRequest(deviceId, resourceId string, userId string
 	return &r
 }
 
-func testMakeNotifyResourceChangedRequest(deviceId, resourceId string, userId string, seqNum uint64) *pb.NotifyResourceChangedRequest {
+func testMakeNotifyResourceChangedRequest(deviceID, resourceID string, seqNum uint64) *pb.NotifyResourceChangedRequest {
 
 	r := pb.NotifyResourceChangedRequest{
-		ResourceId:           resourceId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+		ResourceId:           resourceID,
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		Content: &pb.Content{
 			Data: []byte("hello world"),
 		},
@@ -266,12 +267,12 @@ func testMakeNotifyResourceChangedRequest(deviceId, resourceId string, userId st
 	return &r
 }
 
-func testMakeUpdateResourceRequest(deviceId, resourceId, resourceInterface, userId, correlationId string) *pb.UpdateResourceRequest {
+func testMakeUpdateResourceRequest(deviceID, resourceID, resourceInterface, correlationId string) *pb.UpdateResourceRequest {
 	r := pb.UpdateResourceRequest{
-		ResourceId:           resourceId,
+		ResourceId:           resourceID,
 		ResourceInterface:    resourceInterface,
 		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		Content: &pb.Content{
 			Data: []byte("hello world"),
 		},
@@ -283,11 +284,11 @@ func testMakeUpdateResourceRequest(deviceId, resourceId, resourceInterface, user
 	return &r
 }
 
-func testMakeRetrieveResourceRequest(deviceId, resourceId string, userId string, correlationId string) *pb.RetrieveResourceRequest {
+func testMakeRetrieveResourceRequest(deviceID, resourceID string, correlationId string) *pb.RetrieveResourceRequest {
 	r := pb.RetrieveResourceRequest{
-		ResourceId:           resourceId,
+		ResourceId:           resourceID,
 		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		CommandMetadata: &pb.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -296,11 +297,11 @@ func testMakeRetrieveResourceRequest(deviceId, resourceId string, userId string,
 	return &r
 }
 
-func testMakeConfirmResourceUpdateRequest(deviceId, resourceId, userId, correlationId string) *pb.ConfirmResourceUpdateRequest {
+func testMakeConfirmResourceUpdateRequest(deviceID, resourceID, correlationId string) *pb.ConfirmResourceUpdateRequest {
 	r := pb.ConfirmResourceUpdateRequest{
-		ResourceId:           resourceId,
+		ResourceId:           resourceID,
 		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		Content: &pb.Content{
 			Data: []byte("hello world"),
 		},
@@ -313,11 +314,11 @@ func testMakeConfirmResourceUpdateRequest(deviceId, resourceId, userId, correlat
 	return &r
 }
 
-func testMakeConfirmResourceRetrieveRequest(deviceId, resourceId, userId, correlationId string) *pb.ConfirmResourceRetrieveRequest {
+func testMakeConfirmResourceRetrieveRequest(deviceID, resourceID, correlationId string) *pb.ConfirmResourceRetrieveRequest {
 	r := pb.ConfirmResourceRetrieveRequest{
-		ResourceId:           resourceId,
+		ResourceId:           resourceID,
 		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		Content: &pb.Content{
 			Data: []byte("hello world"),
 		},
@@ -330,23 +331,22 @@ func testMakeConfirmResourceRetrieveRequest(deviceId, resourceId, userId, correl
 	return &r
 }
 
-func testNewAuthorizationContext(deviceId string, userId string) *pb.AuthorizationContext {
+func testNewAuthorizationContext(deviceID string) *pb.AuthorizationContext {
 	ac := pb.AuthorizationContext{
-		DeviceId: deviceId,
-		UserId:   userId,
+		DeviceId: deviceID,
 	}
 	return &ac
 }
 
-func testNewResource(href string, deviceId string, resourceId string) *pb.Resource {
+func testNewResource(href string, deviceID string, resourceID string) *pb.Resource {
 	return &pb.Resource{
-		Id:                    resourceId,
+		Id:                    resourceID,
 		Href:                  href,
 		ResourceTypes:         []string{"oic.wk.d", "x.org.iotivity.device"},
 		Interfaces:            []string{"oic.if.baseline"},
-		DeviceId:              deviceId,
+		DeviceId:              deviceID,
 		InstanceId:            1,
-		Anchor:                "ocf://" + deviceId + "/oic/p",
+		Anchor:                "ocf://" + deviceID + "/oic/p",
 		Policies:              &pb.Policies{1},
 		Title:                 "device",
 		SupportedContentTypes: []string{message.TextPlain.String()},
@@ -354,9 +354,9 @@ func testNewResource(href string, deviceId string, resourceId string) *pb.Resour
 }
 
 func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
-	deviceId := "dev0"
-	resourceId := "res0"
-	userId := "user0"
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
 
 	type args struct {
 		req *pb.NotifyResourceChangedRequest
@@ -373,8 +373,8 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&pb.NotifyResourceChangedRequest{
-					ResourceId:           resourceId,
-					AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+					ResourceId:           resourceID,
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
 				},
 			},
 			wantResp:       false,
@@ -385,7 +385,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				testMakeNotifyResourceChangedRequest(deviceId, resourceId, userId, 3),
+				testMakeNotifyResourceChangedRequest(deviceID, resourceID, 3),
 			},
 			wantResp:       true,
 			wantEvents:     true,
@@ -395,7 +395,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		{
 			name: "valid - duplicit",
 			args: args{
-				testMakeNotifyResourceChangedRequest(deviceId, resourceId, userId, 2),
+				testMakeNotifyResourceChangedRequest(deviceID, resourceID, 2),
 			},
 			wantResp:       true,
 			wantEvents:     false,
@@ -405,7 +405,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		{
 			name: "valid - new content",
 			args: args{
-				testMakeNotifyResourceChangedRequest(deviceId, resourceId, userId, 5),
+				testMakeNotifyResourceChangedRequest(deviceID, resourceID, 5),
 			},
 			wantResp:       true,
 			wantEvents:     true,
@@ -419,7 +419,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -436,9 +436,9 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceId, resourceId, userId, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -462,9 +462,9 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 }
 
 func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
-	deviceId := "dev0"
-	resourceId := "res0"
-	userId := "user0"
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
 
 	type args struct {
 		req *pb.UpdateResourceRequest
@@ -481,8 +481,8 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&pb.UpdateResourceRequest{
-					ResourceId:           resourceId,
-					AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+					ResourceId:           resourceID,
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
 				},
 			},
 			wantResp:       false,
@@ -493,7 +493,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				testMakeUpdateResourceRequest(deviceId, resourceId, "", userId, "123"),
+				testMakeUpdateResourceRequest(deviceID, resourceID, "", "123"),
 			},
 			wantResp:       true,
 			wantEvents:     true,
@@ -503,7 +503,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		{
 			name: "valid with resource interface",
 			args: args{
-				testMakeUpdateResourceRequest(deviceId, resourceId, "oic.if.baseline", userId, "123"),
+				testMakeUpdateResourceRequest(deviceID, resourceID, "oic.if.baseline", "123"),
 			},
 			wantResp:       true,
 			wantEvents:     true,
@@ -518,7 +518,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -535,9 +535,9 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceId, resourceId, userId, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -561,9 +561,9 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 }
 
 func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
-	deviceId := "dev0"
-	resourceId := "res0"
-	userId := "user0"
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
 
 	type args struct {
 		req *pb.ConfirmResourceUpdateRequest
@@ -580,8 +580,8 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&pb.ConfirmResourceUpdateRequest{
-					ResourceId:           resourceId,
-					AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+					ResourceId:           resourceID,
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
 				},
 			},
 			wantResp:       false,
@@ -592,7 +592,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				testMakeConfirmResourceUpdateRequest(deviceId, resourceId, userId, "123"),
+				testMakeConfirmResourceUpdateRequest(deviceID, resourceID, "123"),
 			},
 			wantResp:       true,
 			wantEvents:     true,
@@ -607,7 +607,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -625,9 +625,9 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceId, resourceId, userId, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -651,9 +651,9 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 }
 
 func Test_aggregate_HandleRetrieveResource(t *testing.T) {
-	deviceId := "dev0"
-	resourceId := "res0"
-	userId := "user0"
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
 
 	type args struct {
 		req *pb.RetrieveResourceRequest
@@ -670,8 +670,8 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&pb.RetrieveResourceRequest{
-					ResourceId:           resourceId,
-					AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+					ResourceId:           resourceID,
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
 				},
 			},
 			wantResp:       false,
@@ -682,7 +682,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				testMakeRetrieveResourceRequest(deviceId, resourceId, userId, "123"),
+				testMakeRetrieveResourceRequest(deviceID, resourceID, "123"),
 			},
 			wantResp:       true,
 			wantEvents:     true,
@@ -696,7 +696,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -713,9 +713,9 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceId, resourceId, userId, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -739,9 +739,9 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 }
 
 func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
-	deviceId := "dev0"
-	resourceId := "res0"
-	userId := "user0"
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
 
 	type args struct {
 		req *pb.ConfirmResourceRetrieveRequest
@@ -758,8 +758,8 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&pb.ConfirmResourceRetrieveRequest{
-					ResourceId:           resourceId,
-					AuthorizationContext: testNewAuthorizationContext(deviceId, userId),
+					ResourceId:           resourceID,
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
 				},
 			},
 			wantResp:       false,
@@ -770,7 +770,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				testMakeConfirmResourceRetrieveRequest(deviceId, resourceId, userId, "123"),
+				testMakeConfirmResourceRetrieveRequest(deviceID, resourceID, "123"),
 			},
 			wantResp:       true,
 			wantEvents:     true,
@@ -785,7 +785,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
@@ -803,9 +803,9 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceId, resourceId, userId, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(ctx, resourceId, []string{deviceId}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -828,8 +828,8 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	}
 }
 
-func testListDevicesOfUserFunc(ctx context.Context, correlationId, userId string) ([]string, codes.Code, error) {
-	if userId == testUnauthorizedUser {
+func testListDevicesOfUserFunc(ctx context.Context, correlationId, userID string) ([]string, codes.Code, error) {
+	if userID == testUnauthorizedUser {
 		return nil, codes.Unauthenticated, fmt.Errorf("unauthorized access")
 	}
 	deviceIds := []string{"dev0", "dupDeviceId"}

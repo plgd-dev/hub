@@ -62,12 +62,6 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		signUp.AuthorizationCode = signUp.AuthorizationCodeLegacy
 	}
 
-	err = validateSignUp(signUp)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapCodes.BadRequest, r.Token)
-		return
-	}
-
 	response, err := client.server.asClient.SignUp(r.Context, &pbAS.SignUpRequest{
 		DeviceId:              signUp.DeviceID,
 		AuthorizationCode:     signUp.AuthorizationCode,
@@ -77,9 +71,14 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), r.Token)
 		return
 	}
+	ctx, err := client.server.ctxWithServiceToken(r.Context)
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, r.Token)
+		client.Close()
+		return
+	}
 
-	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithToken(r.Context, response.AccessToken), signUp.DeviceID, pbCQRS.AuthorizationContext{
-		UserId:   response.UserId,
+	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithUserID(ctx, response.UserId), signUp.DeviceID, pbCQRS.AuthorizationContext{
 		DeviceId: signUp.DeviceID,
 	})
 	if err != nil {
@@ -165,9 +164,10 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.BadRequest, req.Token)
 		return
 	}
-	_, err = client.server.asClient.SignOff(kitNetGrpc.CtxWithToken(req.Context, accessToken), &pbAS.SignOffRequest{
-		DeviceId: deviceID,
-		UserId:   userID,
+	_, err = client.server.asClient.SignOff(req.Context, &pbAS.SignOffRequest{
+		DeviceId:    deviceID,
+		UserId:      userID,
+		AccessToken: accessToken,
 	})
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)

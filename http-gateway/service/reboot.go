@@ -10,8 +10,7 @@ import (
 
 func (requestHandler *RequestHandler) rebootDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	ctx, cancel := requestHandler.makeCtx(r)
-	defer cancel()
+	ctx := requestHandler.makeCtx(r)
 	err := requestHandler.client.Reboot(ctx, vars[uri.DeviceIDKey])
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot reboot device: %w", err))

@@ -17,6 +17,7 @@ import (
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/net/http"
 
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
@@ -121,7 +122,7 @@ func (m *resourceCtx) onResourceChangedLocked(ctx context.Context) error {
 	if m.content.GetStatus() != pbRA.Status_OK {
 		eventType = events.EventType_SubscriptionCanceled
 	} else {
-		rep, err = unmarshalContent(m.content.GetContent())
+		rep, err = unmarshalContent(pbGRPC.RAContent2Content(m.content.GetContent()))
 		if err != nil {
 			return fmt.Errorf("cannot make action on resource content changed: %w", err)
 		}

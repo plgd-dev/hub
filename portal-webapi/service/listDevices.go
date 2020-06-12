@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/sdk/schema"
 	"github.com/valyala/fasthttp"
 )
 
@@ -25,9 +25,9 @@ type State struct {
 }
 
 type Device struct {
-	Id       string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Resource *pbDD.Resource `protobuf:"bytes,2,opt,name=resource" json:"resource,omitempty"`
-	State    *State         `protobuf:"bytes,3,opt,name=state" json:"state,omitempty"`
+	Id       string        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Resource schema.Device `protobuf:"bytes,2,opt,name=resource" json:"resource,omitempty"`
+	State    *State        `protobuf:"bytes,3,opt,name=state" json:"state,omitempty"`
 }
 
 func (r *RequestHandler) listDevices(ctx *fasthttp.RequestCtx, token, sub string) {
@@ -37,11 +37,7 @@ func (r *RequestHandler) listDevices(ctx *fasthttp.RequestCtx, token, sub string
 		log.Debugf("RequestHandler.listDevices takes %v", time.Since(t))
 	}()
 
-	getDevicesClient, err := r.ddClient.GetDevices(kitNetGrpc.CtxWithToken(context.Background(), token), &pbDD.GetDevicesRequest{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId: sub,
-		},
-	})
+	getDevicesClient, err := r.rdClient.GetDevices(kitNetGrpc.CtxWithToken(context.Background(), token), &pbGRPC.GetDevicesRequest{})
 
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot list device directory: %v", err), http.StatusBadRequest, ctx)
@@ -61,7 +57,7 @@ func (r *RequestHandler) listDevices(ctx *fasthttp.RequestCtx, token, sub string
 		}
 		devices[device.Id] = &Device{
 			Id:       device.Id,
-			Resource: device.Resource,
+			Resource: device.ToSchema(),
 			State: &State{
 				Id:       device.Id,
 				IsOnline: device.IsOnline,

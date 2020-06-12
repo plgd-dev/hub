@@ -25,46 +25,58 @@ func hasMatchingType(resourceTypes []string, typeFilter strings.Set) bool {
 }
 
 type Projection struct {
-	projection *projectionRA.Projection
-	cache      *cache.Cache
+	*projectionRA.Projection
+	cache *cache.Cache
 }
 
-func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, expiration time.Duration) (*Projection, error) {
-	projection, err := projectionRA.NewProjection(ctx, name, store, subscriber, NewResourceCtx())
+func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, newModelFunc eventstore.FactoryModelFunc, expiration time.Duration) (*Projection, error) {
+	projection, err := projectionRA.NewProjection(ctx, name, store, subscriber, newModelFunc)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server: %v", err)
 	}
 	cache := cache.New(expiration, expiration)
-	cache.OnEvicted(func(deviceId string, _ interface{}) {
-		projection.Unregister(deviceId)
+	cache.OnEvicted(func(deviceID string, _ interface{}) {
+		projection.Unregister(deviceID)
 	})
-	return &Projection{projection: projection, cache: cache}, nil
+	return &Projection{Projection: projection, cache: cache}, nil
 }
 
-func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIdsFilter, typeFilter, deviceIds strings.Set) (map[string]map[string]*resourceCtx, error) {
+func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIDsFilter, typeFilter, deviceIDs strings.Set) (map[string]map[string]*resourceCtx, error) {
 	models := make([]eventstore.Model, 0, 32)
 
-	for deviceId := range deviceIds {
-		loaded, err := p.projection.Register(ctx, deviceId)
+	for deviceID := range deviceIDs {
+		loaded, err := p.Register(ctx, deviceID)
 		if err != nil {
 			return nil, fmt.Errorf("cannot register to projection %v", err)
 		}
 		if !loaded {
 			defer func() {
-				p.projection.Unregister(deviceId)
+				p.Unregister(deviceID)
 			}()
 
 		}
-		p.cache.Set(deviceId, loaded, cache.DefaultExpiration)
-		if len(resourceIdsFilter) > 0 {
-			for resourceId := range resourceIdsFilter {
-				m := p.projection.Models(deviceId, resourceId)
+		p.cache.Set(deviceID, loaded, cache.DefaultExpiration)
+		if len(resourceIDsFilter) > 0 {
+			for resourceID := range resourceIDsFilter {
+				m := p.Models(deviceID, resourceID)
+				if !loaded && len(m) == 0 {
+					err := p.ForceUpdate(ctx, deviceID, resourceID)
+					if err == nil {
+						m = p.Models(deviceID, resourceID)
+					}
+				}
 				if len(m) > 0 {
 					models = append(models, m...)
 				}
 			}
 		} else {
-			m := p.projection.Models(deviceId, "")
+			m := p.Models(deviceID, "")
+			if !loaded && len(m) == 0 {
+				err := p.ForceUpdate(ctx, deviceID, "")
+				if err == nil {
+					m = p.Models(deviceID, "")
+				}
+			}
 			if len(m) > 0 {
 				models = append(models, m...)
 			}
@@ -74,18 +86,18 @@ func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIdsFilter, typ
 	clonedModels := make(map[string]map[string]*resourceCtx)
 	for _, m := range models {
 		model := m.(*resourceCtx).Clone()
-		if !model.snapshot.IsPublished {
+		if !model.isPublished {
 			continue
 		}
-		if !hasMatchingType(model.snapshot.Resource.ResourceTypes, typeFilter) {
+		if !hasMatchingType(model.resource.GetResourceTypes(), typeFilter) {
 			continue
 		}
-		resources, ok := clonedModels[model.snapshot.GroupId()]
+		resources, ok := clonedModels[model.resource.GetDeviceId()]
 		if !ok {
 			resources = make(map[string]*resourceCtx)
-			clonedModels[model.snapshot.GroupId()] = resources
+			clonedModels[model.resource.GetDeviceId()] = resources
 		}
-		resources[model.snapshot.AggregateId()] = model
+		resources[model.resource.GetId()] = model
 	}
 
 	return clonedModels, nil

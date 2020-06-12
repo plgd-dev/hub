@@ -10,9 +10,10 @@ import (
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/cloud/http-gateway/test"
 	"github.com/go-ocf/cloud/http-gateway/uri"
+	cloudTest "github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gorilla/websocket"
@@ -24,24 +25,24 @@ import (
 const ConResource = "/oc/con"
 
 func TestObserveResource(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*test.TestTimeout)
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := cloudTest.SetUp(ctx, t)
 
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: cloudTest.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	webTearDown := test.NewTestHTTPGW(t, test.NewTestBackendConfig().String())
+	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
 	testResourceObservation(t, deviceID)
@@ -60,7 +61,7 @@ func testResourceObservation(t *testing.T, deviceID string) {
 	evt := updateDeviceName{}
 	err = json.Decode(message, &evt)
 	require.NoError(t, err)
-	require.Equal(t, "devsim-"+grpcTest.MustGetHostname(), evt.Name)
+	require.Equal(t, "devsim-"+cloudTest.MustGetHostname(), evt.Name)
 
 	//first update
 	req := updateDeviceName{
@@ -94,7 +95,7 @@ func testResourceObservation(t *testing.T, deviceID string) {
 
 	//update back to old value
 	req = updateDeviceName{
-		Name: "devsim-" + grpcTest.MustGetHostname(),
+		Name: "devsim-" + cloudTest.MustGetHostname(),
 	}
 	res = updateDeviceName{}
 	UpdateResource(t, deviceID, uri.Device+ConResource, &req, &res)

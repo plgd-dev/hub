@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"context"
@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/status"
+
+	"github.com/go-ocf/cloud/resource-directory/service"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/kelseyhightower/envconfig"
@@ -14,45 +17,41 @@ import (
 	cbor "github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/security/certManager"
 
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mockEventStore "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/test"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 func TestDeviceDirectory_GetDevices(t *testing.T) {
 	type args struct {
-		request pbDD.GetDevicesRequest
+		request pb.GetDevicesRequest
 	}
 	tests := []struct {
 		name           string
 		args           args
-		wantResponse   map[string]*pbDD.Device
+		wantResponse   map[string]*pb.Device
 		wantStatusCode codes.Code
 		wantErr        bool
 	}{
 		{
 			name: "project_ONLINE",
 			args: args{
-				request: pbDD.GetDevicesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					StatusFilter:         []pbDD.Status{pbDD.Status_ONLINE},
+				request: pb.GetDevicesRequest{
+					StatusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_ONLINE},
 				},
 			},
 			wantStatusCode: codes.OK,
-			wantResponse: map[string]*pbDD.Device{
-				ddResource2.Resource.DeviceId: {
-					Id:       ddResource2.Resource.DeviceId,
-					Resource: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes),
-					IsOnline: true,
-				},
+			wantResponse: map[string]*pb.Device{
+				ddResource2.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes, true),
 				ddResource4.Resource.DeviceId: {
 					Id:       ddResource4.Resource.DeviceId,
 					IsOnline: true,
@@ -63,39 +62,21 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 		{
 			name: "project_OFFLINE",
 			args: args{
-				request: pbDD.GetDevicesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					StatusFilter:         []pbDD.Status{pbDD.Status_OFFLINE},
+				request: pb.GetDevicesRequest{
+					StatusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_OFFLINE},
 				},
 			},
 			wantStatusCode: codes.OK,
-			wantResponse: map[string]*pbDD.Device{
-				ddResource1.Resource.DeviceId: {
-					Id:       ddResource1.Resource.DeviceId,
-					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
-					IsOnline: false,
-				},
+			wantResponse: map[string]*pb.Device{
+				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
 			},
 		},
 		{
-			name: "project_ONLINE_OFFLINE",
-			args: args{
-				request: pbDD.GetDevicesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-				},
-			},
+			name:           "project_ONLINE_OFFLINE",
 			wantStatusCode: codes.OK,
-			wantResponse: map[string]*pbDD.Device{
-				ddResource1.Resource.DeviceId: {
-					Id:       ddResource1.Resource.DeviceId,
-					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
-					IsOnline: false,
-				},
-				ddResource2.Resource.DeviceId: {
-					Id:       ddResource2.Resource.DeviceId,
-					Resource: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes),
-					IsOnline: true,
-				},
+			wantResponse: map[string]*pb.Device{
+				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
+				ddResource2.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes, true),
 				ddResource4.Resource.DeviceId: {
 					Id:       ddResource4.Resource.DeviceId,
 					IsOnline: true,
@@ -105,9 +86,8 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 		{
 			name: "project_type_filter-not-found",
 			args: args{
-				request: pbDD.GetDevicesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					TypeFilter:           []string{"notFound"},
+				request: pb.GetDevicesRequest{
+					TypeFilter: []string{"notFound"},
 				},
 			},
 			wantStatusCode: codes.NotFound,
@@ -116,40 +96,26 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 		{
 			name: "project_type_filter",
 			args: args{
-				request: pbDD.GetDevicesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					TypeFilter:           []string{"x.test.d"},
+				request: pb.GetDevicesRequest{
+					TypeFilter: []string{"x.test.d"},
 				},
 			},
 			wantStatusCode: codes.OK,
-			wantResponse: map[string]*pbDD.Device{
-				ddResource1.Resource.DeviceId: {
-					Id:       ddResource1.Resource.DeviceId,
-					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
-					IsOnline: false,
-				},
-				ddResource2.Resource.DeviceId: {
-					Id:       ddResource2.Resource.DeviceId,
-					Resource: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes),
-					IsOnline: true,
-				},
+			wantResponse: map[string]*pb.Device{
+				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
+				ddResource2.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes, true),
 			},
 		},
 		{
 			name: "project_one_device",
 			args: args{
-				request: pbDD.GetDevicesRequest{
-					AuthorizationContext: &pbCQRS.AuthorizationContext{},
-					DeviceIdsFilter:      []string{ddResource1.Resource.DeviceId},
+				request: pb.GetDevicesRequest{
+					DeviceIdsFilter: []string{ddResource1.Resource.DeviceId},
 				},
 			},
 			wantStatusCode: codes.OK,
-			wantResponse: map[string]*pbDD.Device{
-				ddResource1.Resource.DeviceId: {
-					Id:       ddResource1.Resource.DeviceId,
-					Resource: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes),
-					IsOnline: false,
-				},
+			wantResponse: map[string]*pb.Device{
+				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
 			},
 		},
 	}
@@ -169,10 +135,15 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
-	resourceProjection, err := NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, time.Second)
+
+	subscriptions := service.NewSubscriptions()
+	updateNotificationContainer := notification.NewUpdateNotificationContainer()
+	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
+
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), time.Second)
 	require.NoError(t, err)
 
-	rd := NewDeviceDirectory(resourceProjection, []string{
+	rd := service.NewDeviceDirectory(resourceProjection, []string{
 		ddResource0.DeviceId,
 		ddResource1.DeviceId,
 		ddResource2.DeviceId,
@@ -181,24 +152,23 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 
 	for _, tt := range tests {
 		fn := func(t *testing.T) {
-			var got map[string]*pbDD.Device
-			statusCode, err := rd.GetDevices(context.Background(), &tt.args.request, func(device *pbDD.Device) error {
-				if got == nil {
-					got = make(map[string]*pbDD.Device)
-				}
-				got[device.Id] = device
-				return nil
-			})
+			var s testGrpcGateway_GetDevicesServer
+			err := rd.GetDevices(&tt.args.request, &s)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, tt.wantStatusCode, statusCode)
-			require.Equal(t, tt.wantResponse, got)
+			require.Equal(t, tt.wantStatusCode, status.Convert(err).Code())
+			require.Equal(t, tt.wantResponse, s.got)
 		}
 		t.Run(tt.name, fn)
 	}
+}
+
+type ResourceContent struct {
+	pbRA.Resource
+	pbRA.Content
 }
 
 type testGeneratePublishEvent struct {
@@ -226,11 +196,12 @@ func testMakeDeviceResource(deviceId string, href string, types []string) pbRA.R
 	}
 }
 
-func testMakeDeviceResouceProtobuf(deviceId string, types []string) *pbDD.Resource {
-	return &pbDD.Resource{
-		ResourceTypes: types,
-		Name:          "Name." + deviceId,
-		ManufacturerName: []*pbDD.LocalizedString{
+func testMakeDeviceResouceProtobuf(deviceId string, types []string, isOnline bool) *pb.Device {
+	return &pb.Device{
+		Id:    deviceId,
+		Types: types,
+		Name:  "Name." + deviceId,
+		ManufacturerName: []*pb.LocalizedString{
 			{
 				Language: "en",
 				Value:    "test device resource",
@@ -241,13 +212,14 @@ func testMakeDeviceResouceProtobuf(deviceId string, types []string) *pbDD.Resour
 			},
 		},
 		ModelNumber: "ModelNumber." + deviceId,
+		IsOnline:    isOnline,
 	}
 }
 
 var deviceResourceTypes = []string{"oic.wk.d", "x.test.d"}
 
 func testMakeDeviceResourceContent(deviceId string) pbRA.Content {
-	dr := testMakeDeviceResouceProtobuf(deviceId, deviceResourceTypes)
+	dr := testMakeDeviceResouceProtobuf(deviceId, deviceResourceTypes, false).ToSchema()
 
 	d, err := cbor.Encode(dr)
 	if err != nil {
@@ -325,4 +297,21 @@ func testCreateResourceDeviceEventstores() (resourceEventStore *mockEventStore.M
 	resourceEventStore.Append(ddResource4Cloud.DeviceId, ddResource4Cloud.Id, mockEvents.MakeResourceChangedEvent(ddResource4Cloud.Id, ddResource4Cloud.DeviceId, ddResource4Cloud.Content, cqrs.MakeEventMeta("a", 0, 1)))
 
 	return resourceEventStore
+}
+
+type testGrpcGateway_GetDevicesServer struct {
+	got map[string]*pb.Device
+	grpc.ServerStream
+}
+
+func (s *testGrpcGateway_GetDevicesServer) Context() context.Context {
+	return context.Background()
+}
+
+func (s *testGrpcGateway_GetDevicesServer) Send(d *pb.Device) error {
+	if s.got == nil {
+		s.got = make(map[string]*pb.Device)
+	}
+	s.got[d.Id] = d
+	return nil
 }

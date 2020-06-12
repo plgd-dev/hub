@@ -10,6 +10,7 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/codec/json"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
@@ -138,9 +139,9 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 		if resourceCtx.content.GetStatus() != pbRA.Status_OK && resourceCtx.content.GetStatus() != pbRA.Status_UNKNOWN {
 			rh.store.PopSubscription(r.Context(), s.ID)
 			rh.resourceProjection.Unregister(deviceID)
-			return statusToHttpStatus(resourceCtx.content.GetStatus()), fmt.Errorf("cannot prepare content to emit first event: %w", err)
+			return statusToHttpStatus(pbGRPC.RAStatus2Status(resourceCtx.content.GetStatus())), fmt.Errorf("cannot prepare content to emit first event: %w", err)
 		}
-		rep, err := unmarshalContent(resourceCtx.content.GetContent())
+		rep, err := unmarshalContent(pbGRPC.RAContent2Content(resourceCtx.content.GetContent()))
 		if err != nil {
 			rh.store.PopSubscription(r.Context(), s.ID)
 			rh.resourceProjection.Unregister(deviceID)

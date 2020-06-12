@@ -24,8 +24,7 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 	if skipShadowQueryString == "1" || strings.ToLower(skipShadowQueryString) == "true" {
 		ocfOpts = append(ocfOpts, client.WithSkipShadow())
 	}
-	ctx, cancel := requestHandler.makeCtx(r)
-	defer cancel()
+	ctx := requestHandler.makeCtx(r)
 	var rep interface{}
 	err := requestHandler.client.GetResource(ctx, vars[uri.DeviceIDKey], resourceLinkHref, &rep, ocfOpts...)
 	if err != nil {

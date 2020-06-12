@@ -23,10 +23,8 @@ import (
 	router "github.com/gorilla/mux"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
-	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
 )
 
 const resourceLinkHrefKey = "resourceLinkHref"
@@ -49,9 +47,7 @@ type RequestHandler struct {
 
 	asClient pbAS.AuthorizationServiceClient
 	raClient pbRA.ResourceAggregateClient
-	rsClient pbRS.ResourceShadowClient
-	rdClient pbRD.ResourceDirectoryClient
-	ddClient pbDD.DeviceDirectoryClient
+	rdClient pbGRPC.GrpcGatewayClient
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -65,9 +61,7 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 func NewRequestHandler(
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
-	rsClient pbRS.ResourceShadowClient,
-	rdClient pbRD.ResourceDirectoryClient,
-	ddClient pbDD.DeviceDirectoryClient,
+	rdClient pbGRPC.GrpcGatewayClient,
 	resourceProjection *projectionRA.Projection,
 	store store.Store,
 	updateNotificationContainer *raCqrs.UpdateNotificationContainer,
@@ -76,9 +70,7 @@ func NewRequestHandler(
 	return &RequestHandler{
 		asClient:                    asClient,
 		raClient:                    raClient,
-		rsClient:                    rsClient,
 		rdClient:                    rdClient,
-		ddClient:                    ddClient,
 		resourceProjection:          resourceProjection,
 		store:                       store,
 		updateNotificationContainer: updateNotificationContainer,

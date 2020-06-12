@@ -15,6 +15,7 @@ import (
 	cqrsMaintenance "github.com/go-ocf/cqrs/eventstore/maintenance"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/go-ocf/kit/security/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -53,7 +54,8 @@ func New(config Config, clientCertManager ClientCertManager, serverCertManager S
 	}
 	authClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
+	auth := NewAuth(config.JwksURL, dialTLSConfig)
+	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -100,4 +102,29 @@ func (s *Server) Serve() error {
 // Shutdown ends serving
 func (s *Server) Shutdown() {
 	s.sigs <- syscall.SIGTERM
+}
+
+func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
+		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
+			return jwt.NewScopeClaims()
+		})
+		ctx, err := interceptor(ctx, method)
+		if err != nil {
+			log.Errorf("auth interceptor: %v", err)
+			return ctx, err
+		}
+		userID, err := kitNetGrpc.UserIDFromMD(ctx)
+		if err != nil {
+			userID, err = kitNetGrpc.UserIDFromTokenMD(ctx)
+			if err == nil {
+				ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, userID)
+			}
+		}
+		if err != nil {
+			log.Errorf("auth cannot get userID: %v", err)
+			return ctx, err
+		}
+		return kitNetGrpc.CtxWithUserID(ctx, userID), nil
+	})
 }

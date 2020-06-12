@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"context"
@@ -7,33 +7,18 @@ import (
 
 	"github.com/go-ocf/go-coap/v2/tcp"
 
+	"github.com/go-ocf/cloud/coap-gateway/uri"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_clientObserveHandler(t *testing.T) {
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.Addr = "127.0.0.1:5684"
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
+	shutdown := setUp(t)
+	defer shutdown()
 
-	resourceDB := t.Name() + "_resourceDB"
-
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownRS := testCreateResourceDirectory(t, resourceDB, config.ResourceDirectoryAddr, config.AuthServerAddr)
-	defer shutdownRS()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
@@ -53,7 +38,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "invalid observe",
 			args: args{
-				path:    resourceRoute + "/dev0/res0",
+				path:    uri.ResourceRoute + "/dev0/res0",
 				observe: 123,
 				token:   nil,
 			},
@@ -63,7 +48,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "observe - not exist resource",
 			args: args{
-				path:    resourceRoute + "/dev0/res0",
+				path:    uri.ResourceRoute + "/dev0/res0",
 				observe: 0,
 				token:   nil,
 			},
@@ -73,7 +58,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "unobserve - not exist resource",
 			args: args{
-				path:    resourceRoute + "/dev0/res0",
+				path:    uri.ResourceRoute + "/dev0/res0",
 				observe: 1,
 				token:   nil,
 			},
@@ -83,7 +68,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "observe",
 			args: args{
-				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				path:    uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
 				observe: 0,
 				token:   []byte("observe"),
 			},
@@ -93,7 +78,7 @@ func Test_clientObserveHandler(t *testing.T) {
 		{
 			name: "unobserve",
 			args: args{
-				path:    resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				path:    uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
 				observe: 1,
 				token:   []byte("observe"),
 			},

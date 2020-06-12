@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/go-ocf/kit/log"
-
 	"github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/authorization/persistence"
 	"google.golang.org/grpc/codes"
@@ -18,7 +16,12 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	log.Debugf("Service.SignUp \"%v\"", request.AuthorizationCode)
+	if request.GetDeviceId() == "" {
+		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign up: invalid DeviceId"))
+	}
+	if request.GetAuthorizationCode() == "" {
+		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign up: invalid AuthorizationCode"))
+	}
 
 	token, err := s.deviceProvider.Exchange(ctx, request.AuthorizationProvider, request.AuthorizationCode)
 	if err != nil {

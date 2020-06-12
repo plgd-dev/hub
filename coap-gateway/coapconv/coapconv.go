@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"github.com/go-ocf/go-coap/v2/tcp"
 
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
@@ -17,9 +19,9 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 )
 
-func StatusToCoapCode(status pbRA.Status, cmdCode codes.Code) codes.Code {
+func StatusToCoapCode(status pbGRPC.Status, cmdCode codes.Code) codes.Code {
 	switch status {
-	case pbRA.Status_OK:
+	case pbGRPC.Status_OK:
 		switch cmdCode {
 		case codes.POST:
 			return codes.Changed
@@ -30,19 +32,19 @@ func StatusToCoapCode(status pbRA.Status, cmdCode codes.Code) codes.Code {
 		case codes.DELETE:
 			return codes.Deleted
 		}
-	case pbRA.Status_ACCEPTED:
+	case pbGRPC.Status_ACCEPTED:
 		return codes.Valid
-	case pbRA.Status_BAD_REQUEST:
+	case pbGRPC.Status_BAD_REQUEST:
 		return codes.BadRequest
-	case pbRA.Status_UNAUTHORIZED:
+	case pbGRPC.Status_UNAUTHORIZED:
 		return codes.Unauthorized
-	case pbRA.Status_FORBIDDEN:
+	case pbGRPC.Status_FORBIDDEN:
 		return codes.Forbidden
-	case pbRA.Status_NOT_FOUND:
+	case pbGRPC.Status_NOT_FOUND:
 		return codes.NotFound
-	case pbRA.Status_UNAVAILABLE:
+	case pbGRPC.Status_UNAVAILABLE:
 		return codes.ServiceUnavailable
-	case pbRA.Status_NOT_IMPLEMENTED:
+	case pbGRPC.Status_NOT_IMPLEMENTED:
 		return codes.NotImplemented
 	}
 	return codes.BadRequest
@@ -188,16 +190,29 @@ func MakeNotifyResourceChangedRequest(resourceId string, authCtx pbCQRS.Authoriz
 	}
 }
 
-func MakeUpdateResourceRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *mux.Message) pbRA.UpdateResourceRequest {
+func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.UpdateResourceValuesRequest {
 	content := MakeContent(req.Options, req.Body)
-	metadata := MakeCommandMetadata(req.SequenceNumber, connectionID)
+	var resourceInterface string
+	qs, err := req.Options.Queries()
+	if err == nil {
+		for _, q := range qs {
+			if strings.HasPrefix(q, "if=") {
+				resourceInterface = strings.TrimPrefix(q, "if=")
+				break
+			}
+		}
+	}
 
-	return pbRA.UpdateResourceRequest{
-		AuthorizationContext: &authCtx,
-		ResourceId:           resourceId,
-		CorrelationId:        correlationId,
-		Content:              &content,
-		CommandMetadata:      &metadata,
+	return &pbGRPC.UpdateResourceValuesRequest{
+		ResourceId: &pbGRPC.ResourceId{
+			DeviceId:         deviceID,
+			ResourceLinkHref: href,
+		},
+		Content: &pbGRPC.Content{
+			Data:        content.Data,
+			ContentType: content.ContentType,
+		},
+		ResourceInterface: resourceInterface,
 	}
 }
 

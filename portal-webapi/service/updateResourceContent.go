@@ -11,6 +11,7 @@ import (
 
 	"github.com/ugorji/go/codec"
 
+	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
@@ -32,6 +33,8 @@ func (r *RequestHandler) updateResourceContent(ctx *fasthttp.RequestCtx, token, 
 		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content: resourceId from uri"), http.StatusBadRequest, ctx)
 		return
 	}
+	deviceID, href := parseResourceID(resourceId)
+	resourceId = cqrs.MakeResourceId(deviceID, href)
 
 	if len(ctx.Request.Body()) == 0 {
 		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content: body is empty"), http.StatusBadRequest, ctx)
@@ -62,9 +65,6 @@ func (r *RequestHandler) updateResourceContent(ctx *fasthttp.RequestCtx, token, 
 	correlationId := correlationIdUUID.String()
 
 	response, err := r.raClient.UpdateResource(kitNetGrpc.CtxWithToken(context.Background(), token), &pbRA.UpdateResourceRequest{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId: sub,
-		},
 		ResourceId: resourceId,
 		Content: &pbRA.Content{
 			CoapContentFormat: int32(message.AppOcfCbor),

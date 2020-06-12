@@ -1,13 +1,12 @@
-package service
+package service_test
 
 import (
 	"testing"
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/stretchr/testify/assert"
 )
 
 type TestCoapSignUpResponse struct {
@@ -20,28 +19,15 @@ type TestCoapSignUpResponse struct {
 
 func TestSignUpPostHandler(t *testing.T) {
 	tbl := []testEl{
-		{"BadRequest0", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid deviceID`, nil}},
+		{"BadRequest0", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid DeviceId`, nil}},
 		{"BadRequest1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}},
-		{"Changed0", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: "1"}, nil}},
+		{"Changed0", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: "1"}, nil}},
 	}
 
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	deviceDB := t.Name() + "_deviceDB"
-	resourceDB := t.Name() + "_resourceDB"
+	shutdown := setUp(t)
+	defer shutdown()
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownDA := testCreateResourceAggregate(t, deviceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownDA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
@@ -60,35 +46,19 @@ func TestSignOffHandler(t *testing.T) {
 	tbl := []testEl{
 		{"BadRequest0", input{coapCodes.DELETE, `{}`, nil}, output{coapCodes.BadRequest, "invalid 'di'", nil}},
 		{"BadRequest1", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity}}, output{coapCodes.BadRequest, "invalid 'accesstoken'", nil}},
-		/* TODO: coap.URIQuery param has limit to 255 bytes, but jwt token has around 460. Token cannot be send by coap.URIQuery
-		{"Deleted0", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + oauthTest.UserToken}}, output{coapCodes.Deleted, nil, nil}},
-		{"Deleted1", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + oauthTest.UserToken, "uid=1"}}, output{coapCodes.Deleted, nil, nil}},
-		*/
+		{"Deleted0", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + oauthTest.DeviceAccessToken, "uid=1"}}, output{coapCodes.Deleted, nil, nil}},
 	}
 
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	deviceDB := t.Name() + "_deviceDB"
-	resourceDB := t.Name() + "_resourceDB"
+	shutdown := setUp(t)
+	defer shutdown()
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownDA := testCreateResourceAggregate(t, deviceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownDA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"Changed0", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"Changed0", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
 			// create record for signUp

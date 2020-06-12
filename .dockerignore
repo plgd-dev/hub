@@ -2,6 +2,7 @@
 .github
 .gitignore
 .travis.yml
+.tmp
 Makefile
 Dockerfile
 Dockerfile.test

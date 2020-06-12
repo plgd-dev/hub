@@ -5,17 +5,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ugorji/go/codec"
 
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/valyala/fasthttp"
 )
+
+func parseResourceID(v string) (string, string) {
+	vals := strings.SplitN(v, "/", 2)
+	if len(vals) < 3 {
+		return v, ""
+	}
+	return vals[1], vals[2]
+}
 
 func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub string) {
 	log.Debugf("RequestHandler.listResourceDirectory start")
@@ -31,11 +39,15 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 		return
 	}
 
-	retrieveResourcesValuesClient, err := r.rsClient.RetrieveResourcesValues(kitNetGrpc.CtxWithToken(context.Background(), token), &pbRS.RetrieveResourcesValuesRequest{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			UserId: sub,
+	deviceID, href := parseResourceID(resourceId)
+
+	retrieveResourcesValuesClient, err := r.rdClient.RetrieveResourcesValues(kitNetGrpc.CtxWithToken(context.Background(), token), &pbGRPC.RetrieveResourcesValuesRequest{
+		ResourceIdsFilter: []*pbGRPC.ResourceId{
+			{
+				DeviceId:         deviceID,
+				ResourceLinkHref: href,
+			},
 		},
-		ResourceIdsFilter: []string{resourceId},
 	})
 
 	if err != nil {
@@ -55,7 +67,7 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 			logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusBadRequest, ctx)
 			return
 		}
-		if resourceValue.ResourceId == resourceId && resourceValue.Content != nil {
+		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetResourceLinkHref() == href && resourceValue.Content != nil {
 			switch resourceValue.Content.ContentType {
 			case message.AppCBOR.String(), message.AppOcfCbor.String():
 				err := codec.NewDecoderBytes(resourceValue.Content.Data, new(codec.CborHandle)).Decode(&m)

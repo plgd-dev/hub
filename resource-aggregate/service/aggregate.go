@@ -13,6 +13,7 @@ import (
 	cqrsEvent "github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore/maintenance"
 	"github.com/go-ocf/kit/log"
+	"github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
 )
@@ -24,6 +25,7 @@ type aggregate struct {
 	resourceId    string
 	userDeviceIds strings.Set
 	eventstore    EventStore
+	userID        string
 }
 
 func (a *aggregate) factoryModel(context.Context) (cqrs.AggregateModel, error) {
@@ -38,12 +40,17 @@ func (a *aggregate) factoryModel(context.Context) (cqrs.AggregateModel, error) {
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
 func NewAggregate(ctx context.Context, resourceId string, userDeviceIds []string, SnapshotThreshold int, eventstore EventStore, retry cqrs.RetryFunc) (*aggregate, error) {
+	userID, err := grpc.UserIDFromMD(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create aggregate for resourced: invalid userID: %w", err)
+	}
 	deviceIds := make(strings.Set)
 	deviceIds.Add(userDeviceIds...)
 	a := &aggregate{
 		resourceId:    resourceId,
 		userDeviceIds: deviceIds,
 		eventstore:    eventstore,
+		userID:        userID,
 	}
 	cqrsAg, err := cqrs.NewAggregate(resourceId, retry, SnapshotThreshold, eventstore, a.factoryModel, log.Debugf)
 	if err != nil {
@@ -184,7 +191,7 @@ func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishReso
 	}
 	insertMaintenanceDbRecord(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext(), "")
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, "")
 	response = &pb.PublishResourceResponse{
 		AuditContext: &auditContext,
 		InstanceId:   instanceID,
@@ -196,6 +203,11 @@ func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishReso
 func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.UnpublishResourceRequest) (response *pb.UnpublishResourceResponse, events []cqrsEvent.Event, err error) {
 	if err = validateUnpublish(request); err != nil {
 		err = fmt.Errorf("invalid unpublish command: %w", err)
+		return
+	}
+	userID, err := grpc.UserIDFromMD(ctx)
+	if err != nil {
+		err = status.Errorf(codes.InvalidArgument, "cannot process unpublish command: invalid userID: %v", err)
 		return
 	}
 
@@ -211,7 +223,7 @@ func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.Unpublish
 		err = status.Errorf(codes.Internal, "unable remove instanceID: %v", err)
 	}
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext(), "")
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	response = &pb.UnpublishResourceResponse{
 		AuditContext: &auditContext,
 	}
@@ -232,7 +244,7 @@ func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *pb.Notif
 	}
 	insertMaintenanceDbRecord(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext(), "")
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, "")
 	response = &pb.NotifyResourceChangedResponse{
 		AuditContext: &auditContext,
 	}
@@ -253,7 +265,7 @@ func (a *aggregate) UpdateResource(ctx context.Context, request *pb.UpdateResour
 	}
 	insertMaintenanceDbRecord(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext(), request.CorrelationId)
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
 	response = &pb.UpdateResourceResponse{
 		AuditContext: &auditContext,
 	}
@@ -273,7 +285,7 @@ func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.Confi
 	}
 	insertMaintenanceDbRecord(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext(), request.CorrelationId)
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
 	response = &pb.ConfirmResourceUpdateResponse{
 		AuditContext: &auditContext,
 	}
@@ -294,7 +306,7 @@ func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveRe
 	}
 	insertMaintenanceDbRecord(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext(), request.CorrelationId)
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
 	response = &pb.RetrieveResourceResponse{
 		AuditContext: &auditContext,
 	}
@@ -314,7 +326,7 @@ func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.Con
 	}
 	insertMaintenanceDbRecord(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext(), request.CorrelationId)
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
 	response = &pb.ConfirmResourceRetrieveResponse{
 		AuditContext: &auditContext,
 	}

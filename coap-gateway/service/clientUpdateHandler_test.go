@@ -1,38 +1,24 @@
-package service
+package service_test
 
 import (
 	"bytes"
 	"context"
 	"io"
 	"testing"
-	"time"
 
+	"github.com/go-ocf/cloud/coap-gateway/uri"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_clientUpdateHandler(t *testing.T) {
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	config.RequestTimeout = time.Second * 7
-	config.Net = "tcp-tls"
-	resourceDB := t.Name() + "_resourceDB"
+	shutdown := setUp(t, true)
+	defer shutdown()
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST, true)
 	if co == nil {
 		return
 	}
@@ -49,18 +35,9 @@ func Test_clientUpdateHandler(t *testing.T) {
 		wantsCode coapCodes.Code
 	}{
 		{
-			name: "invalid href",
-			args: args{
-				href:          resourceRoute + TestAResourceHref,
-				contentFormat: message.TextPlain,
-				payload:       []byte{},
-			},
-			wantsCode: coapCodes.BadRequest,
-		},
-		{
 			name: "not found",
 			args: args{
-				href:          resourceRoute + "/a/b",
+				href:          uri.ResourceRoute + "/a/b",
 				contentFormat: message.TextPlain,
 				payload:       []byte{},
 			},
@@ -69,7 +46,7 @@ func Test_clientUpdateHandler(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				href:          resourceRoute + "/" + CertIdentity + TestAResourceHref,
+				href:          uri.ResourceRoute + "/" + CertIdentity + TestAResourceHref,
 				contentFormat: message.TextPlain,
 				payload:       []byte("data"),
 			},
@@ -89,7 +66,7 @@ func Test_clientUpdateHandler(t *testing.T) {
 			}
 			resp, err := co.Post(ctx, tt.args.href, tt.args.contentFormat, body)
 			require.NoError(t, err)
-			assert.Equal(t, tt.wantsCode, resp.Code())
+			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 		})
 	}
 }

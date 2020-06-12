@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/go-ocf/kit/security/certManager"
@@ -13,38 +12,37 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	authProvider "github.com/go-ocf/cloud/authorization/provider"
-	authConfig "github.com/go-ocf/cloud/authorization/service"
-	authService "github.com/go-ocf/cloud/authorization/test/service"
+	authService "github.com/go-ocf/cloud/authorization/test"
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/cloud/resource-aggregate/refImpl"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 )
 
 func TestPublishUnpublish(t *testing.T) {
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), "b")
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), authProvider.UserToken)
+
 	var config refImpl.Config
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
-	config.Service.AuthServerAddr = "localhost:7000"
+
+	authShutdown := authService.SetUp(t)
+	defer authShutdown()
+
+	config.Service.AuthServerAddr = testCfg.AUTH_HOST
+	config.Service.JwksURL = testCfg.JWKS_URL
+
 	clientCertManager, err := certManager.NewCertManager(config.Dial)
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
-
 	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
-	var authConfig authConfig.Config
-	envconfig.Process("", &authConfig)
-	authConfig.Addr = config.Service.AuthServerAddr
-
-	port := 9888
-	authServerShutdown := authService.NewAuthServer(t, authConfig)
-	defer authServerShutdown()
-	config.Service.Addr = "localhost:" + strconv.Itoa(port)
+	config.Service.Addr = "localhost:9888"
 	config.Service.SnapshotThreshold = 1
 
 	server, err := refImpl.Init(config)
@@ -111,7 +109,6 @@ func testMakeUnpublishResourceRequest(deviceId, resourceId, userId, accesstoken 
 func testNewAuthorizationContext(deviceId, userId, accessToken string) *pb.AuthorizationContext {
 	ac := pb.AuthorizationContext{
 		DeviceId: deviceId,
-		UserId:   userId,
 	}
 	return &ac
 }

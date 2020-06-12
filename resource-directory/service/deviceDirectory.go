@@ -1,35 +1,38 @@
 package service
 
 import (
-	"context"
 	"fmt"
 
-	pbDD "github.com/go-ocf/cloud/resource-directory/pb/device-directory"
 	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/go-ocf/sdk/schema"
+
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
+
 	"github.com/go-ocf/sdk/schema/cloud"
 
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 // hasMatchingStatus returns true for matching a device state.
-// An empty status_filter matches all device states.
-func hasMatchingStatus(isOnline bool, status_filter []pbDD.Status) bool {
-	if len(status_filter) == 0 {
+// An empty statusFilter matches all device states.
+func hasMatchingStatus(isOnline bool, statusFilter []pb.GetDevicesRequest_Status) bool {
+	if len(statusFilter) == 0 {
 		return true
 	}
-	for _, f := range status_filter {
+	for _, f := range statusFilter {
 		switch f {
-		case pbDD.Status_ONLINE:
+		case pb.GetDevicesRequest_ONLINE:
 			if isOnline {
 				return true
 			}
-		case pbDD.Status_OFFLINE:
+		case pb.GetDevicesRequest_OFFLINE:
 			if !isOnline {
 				return true
 			}
@@ -71,58 +74,77 @@ func decodeContent(content *pbRA.Content, v interface{}) error {
 }
 
 type Device struct {
-	pbDD.Device
+	ID                string
+	Resource          *schema.Device
+	IsOnline          bool
 	cloudStateUpdated bool
 }
 
-func updateDevice(dev Device, resource *resourceCtx) (Device, error) {
+func (d Device) ToProto() *pb.Device {
+	r := pb.SchemaDeviceToProto(d.Resource)
+	if r == nil {
+		r = &pb.Device{
+			Id: d.ID,
+		}
+	}
+	r.IsOnline = d.IsOnline
+	return r
+}
+
+func updateDevice(dev *Device, resource *resourceCtx) error {
 	cloudResourceTypes := make(strings.Set)
 	cloudResourceTypes.Add(cloud.StatusResourceTypes...)
-
 	switch {
-	case resource.snapshot.Resource.Href == "/oic/d":
-		var devContent pbDD.Resource
-		err := decodeContent(resource.snapshot.GetLatestResourceChange().GetContent(), &devContent)
+	case resource.resource.GetHref() == "/oic/d":
+		var devContent schema.Device
+		err := decodeContent(resource.content.GetContent(), &devContent)
 		if err != nil {
-			return dev, err
+			return err
 		}
 		dev.Resource = &devContent
-		dev.Id = resource.snapshot.GroupId()
-	case cloudResourceTypes.HasOneOf(resource.snapshot.Resource.ResourceTypes...):
+		if len(dev.Resource.ResourceTypes) == 0 {
+			dev.Resource.ResourceTypes = resource.resource.GetResourceTypes()
+		}
+		if len(dev.Resource.Interfaces) == 0 {
+			dev.Resource.Interfaces = resource.resource.GetInterfaces()
+		}
+		dev.ID = devContent.ID
+	case cloudResourceTypes.HasOneOf(resource.resource.GetResourceTypes()...):
 		var cloudStatus cloud.Status
-		err := decodeContent(resource.snapshot.GetLatestResourceChange().GetContent(), &cloudStatus)
+		err := decodeContent(resource.content.GetContent(), &cloudStatus)
 		if err != nil {
-			return dev, err
+			return err
 		}
 		dev.IsOnline = cloudStatus.Online
 		dev.cloudStateUpdated = true
 	}
-	return dev, nil
+	return nil
 }
 
-func filterDevicesByUserFilters(resourceValues map[string]map[string]*resourceCtx, req *pbDD.GetDevicesRequest) ([]Device, error) {
+func filterDevicesByUserFilters(resourceValues map[string]map[string]*resourceCtx, req *pb.GetDevicesRequest) ([]Device, error) {
 	devices := make([]Device, 0, len(resourceValues))
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
 	for deviceID, resources := range resourceValues {
 		var device Device
 		for _, resource := range resources {
-			dev, err := updateDevice(device, resource)
+			err := updateDevice(&device, resource)
 			if err != nil {
 				return nil, fmt.Errorf("cannot process device resources: %w", err)
 			}
-			device = dev
 		}
+		var resourceTypes []string
 		if device.Resource == nil {
-			device.Id = deviceID
+			device.ID = deviceID
+		} else {
+			resourceTypes = device.Resource.ResourceTypes
 		}
-		if !hasMatchingType(device.GetResource().GetResourceTypes(), typeFilter) {
+		if !hasMatchingType(resourceTypes, typeFilter) {
 			continue
 		}
 		if !device.cloudStateUpdated {
 			continue
 		}
-
 		if hasMatchingStatus(device.IsOnline, req.StatusFilter) {
 			devices = append(devices, device)
 		}
@@ -130,13 +152,26 @@ func filterDevicesByUserFilters(resourceValues map[string]map[string]*resourceCt
 	return devices, nil
 }
 
+// filterDevices returns filtered device ids that match filter.
+// An empty deviceIDsFilter matches all device ids.
+func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set {
+	if len(deviceIDsFilter) == 0 {
+		return deviceIds
+	}
+	result := make(strings.Set)
+	for _, deviceID := range deviceIDsFilter {
+		if deviceIds.HasOneOf(deviceID) {
+			result.Add(deviceID)
+		}
+	}
+	return result
+}
+
 // GetDevices provides list state of devices.
-func (dd *DeviceDirectory) GetDevices(ctx context.Context, req *pbDD.GetDevicesRequest, responseHandler func(*pbDD.Device) error) (statusCode codes.Code, err error) {
+func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) (err error) {
 	deviceIds := filterDevices(dd.userDeviceIds, req.DeviceIdsFilter)
 	if len(deviceIds) == 0 {
-		err = fmt.Errorf("not found")
-		statusCode = codes.NotFound
-		return
+		return status.Errorf(codes.NotFound, "not found")
 	}
 
 	resourceIdsFilter := make(strings.Set)
@@ -145,34 +180,26 @@ func (dd *DeviceDirectory) GetDevices(ctx context.Context, req *pbDD.GetDevicesR
 		resourceIdsFilter.Add(cqrs.MakeResourceId(deviceID, cloud.StatusHref))
 	}
 
-	resourceValues, err := dd.projection.GetResourceCtxs(ctx, resourceIdsFilter, nil, deviceIds)
+	resourceValues, err := dd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, nil, deviceIds)
 	if err != nil {
-		err = fmt.Errorf("cannot get resource links by device ids: %w", err)
-		statusCode = codes.Internal
-		return
+		return status.Errorf(codes.Internal, "cannot get resource links by device ids: %v", err)
 	}
 
 	devices, err := filterDevicesByUserFilters(resourceValues, req)
 	if err != nil {
-		statusCode = codes.Internal
-		return
+		return status.Errorf(codes.Internal, "cannot filter devices by status: %v", err)
 	}
 
 	if len(devices) == 0 {
-		err = fmt.Errorf("not found")
-		statusCode = codes.NotFound
-		return
+		return status.Errorf(codes.NotFound, "not found")
 	}
 
 	for _, device := range devices {
-		dev := device
-		if err = responseHandler(&dev.Device); err != nil {
-			err = fmt.Errorf("cannot retrieve resources values: %w", err)
-			statusCode = codes.Canceled
-			return
+		err := srv.Send(device.ToProto())
+		if err != nil {
+			return status.Errorf(codes.Canceled, "cannot send device: %v", err)
 		}
 	}
 
-	statusCode = codes.OK
-	return
+	return nil
 }

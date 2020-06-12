@@ -12,9 +12,10 @@ import (
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
 	"github.com/go-ocf/cloud/http-gateway/test"
 	"github.com/go-ocf/cloud/http-gateway/uri"
+	cloudTest "github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -22,23 +23,23 @@ import (
 )
 
 func TestUpdateResource(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: cloudTest.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	webTearDown := test.NewTestHTTPGW(t, test.NewTestBackendConfig().String())
+	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
 	request := map[string]interface{}{
@@ -72,23 +73,23 @@ func UpdateResource(t *testing.T, deviceID, uri string, request interface{}, res
 }
 
 func TestUpdateResourceInvalidAttribute(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(grpcTest.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: grpcTest.GetRootCertificatePool(t),
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: cloudTest.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c, deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	webTearDown := test.NewTestHTTPGW(t, test.NewTestBackendConfig().String())
+	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
 	request := map[string]interface{}{

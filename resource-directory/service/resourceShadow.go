@@ -1,23 +1,22 @@
 package service
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	pbRS "github.com/go-ocf/cloud/resource-directory/pb/resource-shadow"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 )
 
-func toResourceValue(m *resourceCtx) pbRS.ResourceValue {
-	return pbRS.ResourceValue{
-		ResourceId: m.snapshot.GetResource().GetId(),
-		DeviceId:   m.snapshot.GetResource().GetDeviceId(),
-		Href:       m.snapshot.GetResource().GetHref(),
-		Content:    m.snapshot.GetLatestResourceChange().GetContent(),
-		Types:      m.snapshot.GetResource().GetResourceTypes(),
-		Status:     m.snapshot.GetLatestResourceChange().GetStatus(),
+func toResourceValue(m *resourceCtx) pb.ResourceValue {
+	return pb.ResourceValue{
+		ResourceId: &pb.ResourceId{
+			ResourceLinkHref: m.resource.GetHref(),
+			DeviceId:         m.resource.GetDeviceId(),
+		},
+		Content: pb.RAContent2Content(m.content.GetContent()),
+		Types:   m.resource.GetResourceTypes(),
+		Status:  pb.RAStatus2Status(m.content.Status),
 	}
 }
 
@@ -33,55 +32,37 @@ func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShad
 	return &ResourceShadow{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-// filterDevices returns filtered device ids that match filter.
-// An empty deviceIdsFilter matches all device ids.
-func filterDevices(deviceIds strings.Set, deviceIdsFilter []string) strings.Set {
-	if len(deviceIdsFilter) == 0 {
-		return deviceIds
-	}
-	result := make(strings.Set)
-	for _, deviceId := range deviceIdsFilter {
-		if deviceIds.HasOneOf(deviceId) {
-			result.Add(deviceId)
-		}
-	}
-	return result
-}
-
-func (rd *ResourceShadow) RetrieveResourcesValues(ctx context.Context, req *pbRS.RetrieveResourcesValuesRequest, responseHandler func(*pbRS.ResourceValue) error) (statusCode codes.Code, err error) {
+func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
 	deviceIds := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
 	if len(deviceIds) == 0 {
-		err = fmt.Errorf("not found")
-		statusCode = codes.NotFound
-		return
+		return status.Errorf(codes.NotFound, "not found")
 	}
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
 	resourceIdsFilter := make(strings.Set)
-	resourceIdsFilter.Add(req.ResourceIdsFilter...)
+	for _, r := range req.ResourceIdsFilter {
+		resourceIdsFilter.Add(r.ID())
+	}
 
-	resourceValues, err := rd.projection.GetResourceCtxs(ctx, resourceIdsFilter, typeFilter, deviceIds)
+	resourceValues, err := rd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, typeFilter, deviceIds)
 	if err != nil {
-		err = fmt.Errorf("cannot retrieve resources values: %w", err)
-		statusCode = codes.Internal
-		return
+		return status.Errorf(codes.Internal, "cannot retrieve resources values: %v", err)
 	}
 	if len(resourceValues) == 0 {
-		err = fmt.Errorf("not found")
-		statusCode = codes.NotFound
-		return
+		return status.Errorf(codes.NotFound, "not found")
 	}
 
 	for _, resources := range resourceValues {
 		for _, resource := range resources {
+			if resource.content == nil {
+				continue
+			}
 			val := toResourceValue(resource)
-			if err = responseHandler(&val); err != nil {
-				err = fmt.Errorf("cannot retrieve resources values: %w", err)
-				statusCode = codes.Canceled
-				return
+			err = srv.Send(&val)
+			if err != nil {
+				return status.Errorf(codes.Canceled, "cannot retrieve resources values: %v", err)
 			}
 		}
 	}
-	statusCode = codes.OK
-	return
+	return nil
 }

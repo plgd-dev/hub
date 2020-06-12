@@ -9,22 +9,22 @@ import (
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/sdk/schema"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
 
 func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext) error {
-	devStatus := pbRA.Resource{
-		Id:            cqrsRA.MakeResourceId(deviceID, cloud.StatusHref),
+	devStatus := schema.ResourceLink{
 		Href:          cloud.StatusHref,
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,
-		DeviceId:      deviceID,
-		Policies: &pbRA.Policies{
-			BitFlags: 3,
+		DeviceID:      deviceID,
+		Policy: &schema.Policy{
+			BitMask: 3,
 		},
 		Title: "Cloud device status",
 	}
-	_, err := client.publishResource(ctx, &devStatus, int32(0), client.remoteAddrString(), client.coapConn.Sequence(), authCtx)
+	_, err := client.publishResource(ctx, devStatus, int32(0), client.remoteAddrString(), client.coapConn.Sequence(), authCtx)
 	return err
 }
 

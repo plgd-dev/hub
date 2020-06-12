@@ -3,9 +3,7 @@ package service
 import (
 	"fmt"
 	"reflect"
-	"time"
 
-	grpcService "github.com/go-ocf/cloud/grpc-gateway/service"
 	"github.com/go-ocf/kit/security/certManager"
 
 	"gopkg.in/yaml.v2"
@@ -16,10 +14,8 @@ type Config struct {
 	Address               string             `envconfig:"ADDRESS" default:"0.0.0.0:7000"`
 	Listen                certManager.Config `envconfig:"LISTEN"`
 	Dial                  certManager.Config `envconfig:"DIAL"`
-	DefaultRequestTimeout time.Duration      `envconfig:"DEFAULT_REQUEST_TIMEOUT" default:"1s"`
-	AccessTokenURL        string             `envconfig:"ACCESS_TOKEN_URL"`
 	JwksURL               string             `envconfig:"JWKS_URL"`
-	grpcService.HandlerConfig
+	ResourceDirectoryAddr string             `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
 }
 
 func ParseConfig(s string) (Config, error) {

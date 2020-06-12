@@ -1,19 +1,20 @@
 module github.com/go-ocf/cloud
 
-go 1.13
+go 1.14
 
 require (
+	github.com/awalterschulze/goderive v0.0.0-20200222153121-9a5b9356be09 // indirect
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fullstorydev/grpchan v1.0.1
-	github.com/go-chi/chi v4.1.0+incompatible
+	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap/v2 v2.0.0
-	github.com/go-ocf/kit v0.0.0-20200527102456-7ae9675557b2
-	github.com/go-ocf/sdk v0.0.0-20200527092432-478e59f33e2c
+	github.com/go-ocf/kit v0.0.0-20200604204211-eaddc7a1125c
+	github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.4.1
+	github.com/golang/protobuf v1.4.2
 	github.com/golang/snappy v0.0.2-0.20190904063534-ff6b7dc882cf
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.1
@@ -21,6 +22,8 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/jhump/goprotoc v0.2.0 // indirect
+	github.com/jhump/protoreflect v1.6.1 // indirect
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v1.0.2
@@ -35,10 +38,13 @@ require (
 	github.com/valyala/fasthttp v1.12.0
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/atomic v1.6.0
-	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
+	go.uber.org/zap v1.15.0
+	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
+	golang.org/x/tools v0.0.0-20200603170713-0310561d584d // indirect
 	google.golang.org/grpc v1.29.1
+	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 )
 

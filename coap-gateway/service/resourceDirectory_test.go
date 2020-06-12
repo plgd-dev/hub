@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"context"
@@ -6,11 +6,10 @@ import (
 
 	oauthTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/tcp"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,32 +88,20 @@ var tblResourceDirectory = []testEl{
 }
 
 func TestResourceDirectoryPostHandler(t *testing.T) {
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	resourceDB := t.Name() + "_resourceDB"
+	shutdown := setUp(t)
+	defer shutdown()
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	t.Run(signInEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignIn, signInEl, co)
 	})
@@ -137,32 +124,20 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 		{"NotExist4", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},
 	}
 
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	resourceDB := t.Name() + "_resourceDB"
+	shutdown := setUp(t)
+	defer shutdown()
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	t.Run(signInEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignIn, signInEl, co)
 	})
@@ -204,32 +179,20 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 		{"GetSelector", input{coapCodes.GET, ``, []string{}}, output{coapCodes.Content, TestGetSelector{}, nil}},
 	}
 
-	var config Config
-	err := envconfig.Process("", &config)
-	assert.NoError(t, err)
-	config.AuthServerAddr = "localhost:12345"
-	config.ResourceAggregateAddr = "localhost:12348"
-	config.ResourceDirectoryAddr = "localhost:12349"
-	resourceDB := t.Name() + "_resourceDB"
+	shutdown := setUp(t)
+	defer shutdown()
 
-	shutdownSA := testCreateAuthServer(t, config.AuthServerAddr)
-	defer shutdownSA()
-	shutdownRA := testCreateResourceAggregate(t, resourceDB, config.ResourceAggregateAddr, config.AuthServerAddr)
-	defer shutdownRA()
-	shutdownGW := testCreateCoapGateway(t, resourceDB, config)
-	defer shutdownGW()
-
-	co := testCoapDial(t, config.Addr, config.Net)
+	co := testCoapDial(t, testCfg.GW_HOST)
 	if co == nil {
 		return
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.UserToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	t.Run(signInEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignIn, signInEl, co)
 	})

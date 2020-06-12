@@ -10,8 +10,7 @@ import (
 
 func (requestHandler *RequestHandler) factoryResetDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	ctx, cancel := requestHandler.makeCtx(r)
-	defer cancel()
+	ctx := requestHandler.makeCtx(r)
 	err := requestHandler.client.FactoryReset(ctx, vars[uri.DeviceIDKey])
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot factory reset device: %w", err))

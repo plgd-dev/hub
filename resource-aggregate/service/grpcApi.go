@@ -15,8 +15,8 @@ import (
 	cqrsEvent "github.com/go-ocf/cqrs/event"
 	cqrsEventBus "github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/kit/log"
+	"github.com/go-ocf/kit/net/grpc"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 )
 
 //RequestHandler for handling incoming request
@@ -60,17 +60,17 @@ func logAndReturnError(err error) error {
 	return err
 }
 
-func (r RequestHandler) GetUsersDevices(ctx context.Context, authCtx *pb.AuthorizationContext) ([]string, error) {
-	userIdsFilter := []string(nil)
-	if authCtx.GetUserId() != "" {
-		userIdsFilter = []string{authCtx.GetUserId()}
+func (r RequestHandler) GetUsersDevices(ctx context.Context) ([]string, error) {
+	userID, err := grpc.UserIDFromMD(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create aggregate for resourced: invalid userID: %w", err)
 	}
-	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
+	token, err := grpc.TokenFromMD(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get users devices: %w", err)
 	}
 	getUserDevicesClient, err := r.authClient.GetUserDevices(kitNetGrpc.CtxWithToken(ctx, token), &pbAS.GetUserDevicesRequest{
-		UserIdsFilter: userIdsFilter,
+		UserIdsFilter: []string{userID},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot get users devices: %w", err)
@@ -94,7 +94,7 @@ func (r RequestHandler) GetUsersDevices(ctx context.Context, authCtx *pb.Authori
 }
 
 func (r RequestHandler) PublishResource(ctx context.Context, request *pb.PublishResourceRequest) (*pb.PublishResourceResponse, error) {
-	deviceIds, err := r.GetUsersDevices(ctx, request.GetAuthorizationContext())
+	deviceIds, err := r.GetUsersDevices(ctx)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot publish resource: %v", err))
 	}
@@ -117,7 +117,7 @@ func (r RequestHandler) PublishResource(ctx context.Context, request *pb.Publish
 }
 
 func (r RequestHandler) UnpublishResource(ctx context.Context, request *pb.UnpublishResourceRequest) (*pb.UnpublishResourceResponse, error) {
-	deviceIds, err := r.GetUsersDevices(ctx, request.GetAuthorizationContext())
+	deviceIds, err := r.GetUsersDevices(ctx)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot unpublish resource: %v", err))
 	}
@@ -140,7 +140,7 @@ func (r RequestHandler) UnpublishResource(ctx context.Context, request *pb.Unpub
 }
 
 func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *pb.NotifyResourceChangedRequest) (*pb.NotifyResourceChangedResponse, error) {
-	deviceIds, err := r.GetUsersDevices(ctx, request.GetAuthorizationContext())
+	deviceIds, err := r.GetUsersDevices(ctx)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot notify resource content changed: %v", err))
 	}
@@ -163,7 +163,7 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *pb.N
 }
 
 func (r RequestHandler) UpdateResource(ctx context.Context, request *pb.UpdateResourceRequest) (*pb.UpdateResourceResponse, error) {
-	deviceIds, err := r.GetUsersDevices(ctx, request.GetAuthorizationContext())
+	deviceIds, err := r.GetUsersDevices(ctx)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot update resource content: %v", err))
 	}
@@ -186,7 +186,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *pb.UpdateRe
 }
 
 func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *pb.ConfirmResourceUpdateRequest) (*pb.ConfirmResourceUpdateResponse, error) {
-	deviceIds, err := r.GetUsersDevices(ctx, request.GetAuthorizationContext())
+	deviceIds, err := r.GetUsersDevices(ctx)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot notify resource content update processed: %v", err))
 	}
@@ -209,7 +209,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *pb.C
 }
 
 func (r RequestHandler) RetrieveResource(ctx context.Context, request *pb.RetrieveResourceRequest) (*pb.RetrieveResourceResponse, error) {
-	deviceIds, err := r.GetUsersDevices(ctx, request.GetAuthorizationContext())
+	deviceIds, err := r.GetUsersDevices(ctx)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot retrieve resource content: %v", err))
 	}
@@ -232,7 +232,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *pb.Retrie
 }
 
 func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *pb.ConfirmResourceRetrieveRequest) (*pb.ConfirmResourceRetrieveResponse, error) {
-	deviceIds, err := r.GetUsersDevices(ctx, request.GetAuthorizationContext())
+	deviceIds, err := r.GetUsersDevices(ctx)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot notify resource content retrieve processed: %v", err))
 	}

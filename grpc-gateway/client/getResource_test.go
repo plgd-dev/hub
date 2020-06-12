@@ -9,12 +9,13 @@ import (
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/cloud/grpc-gateway/client"
-	grpcTest "github.com/go-ocf/cloud/grpc-gateway/test"
+	"github.com/go-ocf/cloud/test"
+	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_GetResource(t *testing.T) {
-	deviceID := grpcTest.MustFindDeviceByName(grpcTest.TestDeviceName)
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		token    string
 		deviceID string
@@ -35,7 +36,7 @@ func TestClient_GetResource(t *testing.T) {
 				href:     "/oc/con",
 			},
 			want: map[interface{}]interface{}{
-				"n": grpcTest.TestDeviceName,
+				"n": test.TestDeviceName,
 			},
 		},
 		{
@@ -47,7 +48,7 @@ func TestClient_GetResource(t *testing.T) {
 				opts:     []client.GetOption{client.WithSkipShadow()},
 			},
 			want: map[interface{}]interface{}{
-				"n": grpcTest.TestDeviceName,
+				"n": test.TestDeviceName,
 			},
 		},
 		{
@@ -60,7 +61,7 @@ func TestClient_GetResource(t *testing.T) {
 			},
 			wantErr: false,
 			want: map[interface{}]interface{}{
-				"n":  grpcTest.TestDeviceName,
+				"n":  test.TestDeviceName,
 				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"rt": []interface{}{"oic.wk.con"},
 			},
@@ -75,7 +76,7 @@ func TestClient_GetResource(t *testing.T) {
 			},
 			wantErr: false,
 			want: map[interface{}]interface{}{
-				"n":  grpcTest.TestDeviceName,
+				"n":  test.TestDeviceName,
 				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"rt": []interface{}{"oic.wk.con"},
 			},
@@ -95,13 +96,13 @@ func TestClient_GetResource(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
 
-	tearDown := grpcTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
 
-	shutdownDevSim := grpcTest.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, grpcTest.GW_HOST, grpcTest.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
