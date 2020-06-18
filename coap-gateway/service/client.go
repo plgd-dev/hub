@@ -70,7 +70,7 @@ func (client *Client) popResourceSubscription(token string) *grpcClient.Resource
 	return tmp
 }
 
-func (client *Client) cancelResourceSubscription(token string) (bool, error) {
+func (client *Client) cancelResourceSubscription(token string, wantWait bool) (bool, error) {
 	s := client.popResourceSubscription(token)
 	if s == nil {
 		return false, nil
@@ -79,11 +79,13 @@ func (client *Client) cancelResourceSubscription(token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	wait()
+	if wantWait {
+		wait()
+	}
 	return true, nil
 }
 
-func (client *Client) popObserveResourceContainer() map[string]*grpcClient.ResourceSubscription {
+func (client *Client) popResourceSubscriptions() map[string]*grpcClient.ResourceSubscription {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	tmp := client.observeResourceContainer
@@ -300,7 +302,7 @@ func (client *Client) OnClose() {
 	client.server.oicPingCache.Delete(client.remoteAddrString())
 
 	client.cleanObservedResources()
-	observeResourceContainer := client.popObserveResourceContainer()
+	observeResourceContainer := client.popResourceSubscriptions()
 	for _, o := range observeResourceContainer {
 		o.Cancel()
 	}
@@ -321,10 +323,7 @@ func (client *Client) OnClose() {
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.DeviceId, err)
 		}
 
-		wait, err := client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
-		if err == nil {
-			wait()
-		}
+		client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
 	}
 }
 

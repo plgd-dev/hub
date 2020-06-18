@@ -101,13 +101,13 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		return
 	}
 	token := req.Token.String()
-	client.cancelResourceSubscription(token)
+	client.cancelResourceSubscription(token, true)
 
 	seqNum := uint32(2)
 	h := resourceSubscriptionHandlers{
 		onChange: func(ctx context.Context, resourceChanged *pb.Event_ResourceChanged) error {
 			if resourceChanged.GetStatus() != pbGRPC.Status_OK {
-				client.cancelResourceSubscription(token)
+				client.cancelResourceSubscription(token, false)
 				client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %v", authCtx.DeviceId, deviceID, href, resourceChanged.GetStatus()), coapconv.StatusToCoapCode(resourceChanged.GetStatus(), coapCodes.GET), req.Token)
 				return nil
 			}
@@ -145,7 +145,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 
 func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx authCtx, deviceID, href string) {
 	token := req.Token.String()
-	cancelled, err := client.cancelResourceSubscription(token)
+	cancelled, err := client.cancelResourceSubscription(token, true)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation /%v%v: %v", authCtx.DeviceId, deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
@@ -159,7 +159,7 @@ func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cli
 
 func clientResetObservationHandler(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx pbCQRS.AuthorizationContext) {
 	token := req.Token.String()
-	cancelled, err := client.cancelResourceSubscription(token)
+	cancelled, err := client.cancelResourceSubscription(token, true)
 	if err != nil {
 		log.Errorf("cannot reset resource observation: %v", err)
 		return
