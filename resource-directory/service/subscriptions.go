@@ -330,13 +330,6 @@ func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Ev
 	return pb.ResourceLink{}, 0, false
 }
 
-func makeContent(content *pbRA.Content) pb.Content {
-	return pb.Content{
-		ContentType: content.ContentType,
-		Data:        content.Data,
-	}
-}
-
 func (s *subscriptions) OnResourcePublished(ctx context.Context, link pb.ResourceLink, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
@@ -421,6 +414,48 @@ func (s *subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_
 	return nil
 }
 
+func (s *subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, retrievePending.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[retrievePending.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfRetrievePendingResource(ctx, retrievePending, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource retrieve pending event: %v", errors)
+	}
+	return nil
+}
+
+func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, retrieved.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[retrieved.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfRetrievedResource(ctx, retrieved, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource retrieved event: %v", errors)
+	}
+	return nil
+}
+
 func (s *subscriptions) OnDeviceOnline(ctx context.Context, deviceID string, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
@@ -464,11 +499,13 @@ func (s *subscriptions) OnDeviceOffline(ctx context.Context, deviceID string, ve
 	return nil
 }
 
-func (s *subscriptions) OnResourceContentChanged(ctx context.Context, deviceID, href string, content pb.Content, version uint64) error {
+func (s *subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
+	deviceID := resourceChanged.GetResourceId().GetDeviceId()
+	href := resourceChanged.GetResourceId().GetHref()
 	for userID, userSubs := range s.resourceSubscriptions {
 		if !s.userDevicesManager.IsUserDevice(userID, deviceID) {
 			continue
@@ -479,7 +516,7 @@ func (s *subscriptions) OnResourceContentChanged(ctx context.Context, deviceID, 
 		}
 		subs := res[href]
 		for _, sub := range subs {
-			if err := sub.NotifyOfContentChangedResource(ctx, content, version); err != nil {
+			if err := sub.NotifyOfContentChangedResource(ctx, resourceChanged, version); err != nil {
 				errors = append(errors, err)
 			}
 		}

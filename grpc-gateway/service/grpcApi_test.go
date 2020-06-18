@@ -41,8 +41,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/1",
+						DeviceId: deviceID,
+						Href:     "/light/1",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -63,8 +63,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/1",
+						DeviceId: deviceID,
+						Href:     "/light/1",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -85,8 +85,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/1",
+						DeviceId: deviceID,
+						Href:     "/light/1",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -106,8 +106,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/oic/d",
+						DeviceId: deviceID,
+						Href:     "/oic/d",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -120,12 +120,12 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid ResourceLinkHref",
+			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/unknown",
+						DeviceId: deviceID,
+						Href:     "/unknown",
 					},
 				},
 			},
@@ -179,8 +179,8 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/2",
+						DeviceId: deviceID,
+						Href:     "/light/2",
 					},
 				},
 			},
@@ -192,8 +192,8 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/oic/d",
+						DeviceId: deviceID,
+						Href:     "/oic/d",
 					},
 				},
 			},
@@ -201,12 +201,12 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName},
 		},
 		{
-			name: "invalid ResourceLinkHref",
+			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/unknown",
+						DeviceId: deviceID,
+						Href:     "/unknown",
 					},
 				},
 			},

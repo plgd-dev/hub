@@ -22,13 +22,41 @@ type ResourceUnpublishedHandler = interface {
 	SubscriptionHandler
 }
 
+// ResourceUpdatePendingHandler handler of events
+type ResourceUpdatePendingHandler = interface {
+	HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error
+	SubscriptionHandler
+}
+
+// ResourceUpdatedHandler handler of events
+type ResourceUpdatedHandler = interface {
+	HandleResourceUpdated(ctx context.Context, val *pb.Event_ResourceUpdated) error
+	SubscriptionHandler
+}
+
+// ResourceRetrievePendingHandler handler of events
+type ResourceRetrievePendingHandler = interface {
+	HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error
+	SubscriptionHandler
+}
+
+// ResourceRetrievedHandler handler of events
+type ResourceRetrievedHandler = interface {
+	HandleResourceRetrieved(ctx context.Context, val *pb.Event_ResourceRetrieved) error
+	SubscriptionHandler
+}
+
 // DeviceSubscription subscription.
 type DeviceSubscription struct {
-	client                     pb.GrpcGateway_SubscribeForEventsClient
-	subscriptionID             string
-	handle                     SubscriptionHandler
-	resourcePublishedHandler   ResourcePublishedHandler
-	resourceUnpublishedHandler ResourceUnpublishedHandler
+	client                         pb.GrpcGateway_SubscribeForEventsClient
+	subscriptionID                 string
+	resourcePublishedHandler       ResourcePublishedHandler
+	resourceUnpublishedHandler     ResourceUnpublishedHandler
+	resourceUpdatePendingHandler   ResourceUpdatePendingHandler
+	resourceUpdatedHandler         ResourceUpdatedHandler
+	resourceRetrievePendingHandler ResourceRetrievePendingHandler
+	resourceRetrievedHandler       ResourceRetrievedHandler
+	closeErrorHandler              SubscriptionHandler
 
 	wait     func()
 	canceled uint32
@@ -37,8 +65,18 @@ type DeviceSubscription struct {
 // NewDeviceSubscription creates new devices subscriptions to listen events: resource published, resource unpublished.
 // JWT token must be stored in context for grpc call.
 func (c *Client) NewDeviceSubscription(ctx context.Context, deviceID string, handle SubscriptionHandler) (*DeviceSubscription, error) {
+	return NewDeviceSubscription(ctx, deviceID, handle, handle, c.gateway)
+}
+
+// NewDeviceSubscription creates new devices subscriptions to listen events: resource published, resource unpublished.
+// JWT token must be stored in context for grpc call.
+func NewDeviceSubscription(ctx context.Context, deviceID string, closeErrorHandler SubscriptionHandler, handle SubscriptionHandler, gwClient pb.GrpcGatewayClient) (*DeviceSubscription, error) {
 	var resourcePublishedHandler ResourcePublishedHandler
 	var resourceUnpublishedHandler ResourceUnpublishedHandler
+	var resourceUpdatePendingHandler ResourceUpdatePendingHandler
+	var resourceUpdatedHandler ResourceUpdatedHandler
+	var resourceRetrievePendingHandler ResourceRetrievePendingHandler
+	var resourceRetrievedHandler ResourceRetrievedHandler
 	filterEvents := make([]pb.SubscribeForEvents_DeviceEventFilter_Event, 0, 1)
 	if v, ok := handle.(ResourcePublishedHandler); ok {
 		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED)
@@ -48,11 +86,32 @@ func (c *Client) NewDeviceSubscription(ctx context.Context, deviceID string, han
 		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED)
 		resourceUnpublishedHandler = v
 	}
-
-	if resourcePublishedHandler == nil && resourceUnpublishedHandler == nil {
-		return nil, fmt.Errorf("invalid handler - it's supports: ResourcePublishedHandler, ResourceUnpublishedHandler")
+	if v, ok := handle.(ResourceUpdatePendingHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING)
+		resourceUpdatePendingHandler = v
 	}
-	client, err := c.gateway.SubscribeForEvents(ctx)
+	if v, ok := handle.(ResourceUpdatedHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED)
+		resourceUpdatedHandler = v
+	}
+	if v, ok := handle.(ResourceRetrievePendingHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING)
+		resourceRetrievePendingHandler = v
+	}
+	if v, ok := handle.(ResourceRetrievedHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED)
+		resourceRetrievedHandler = v
+	}
+
+	if resourcePublishedHandler == nil &&
+		resourceUnpublishedHandler == nil &&
+		resourceUpdatePendingHandler == nil &&
+		resourceUpdatedHandler == nil &&
+		resourceRetrievePendingHandler == nil &&
+		resourceRetrievedHandler == nil {
+		return nil, fmt.Errorf("invalid handler - it's supports: ResourcePublishedHandler, ResourceUnpublishedHandler, ResourceUpdatePendingHandler, ResourceUpdatedHandler, ResourceRetrievePendingHandler, ResourceRetrievedHandler")
+	}
+	client, err := gwClient.SubscribeForEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -82,12 +141,16 @@ func (c *Client) NewDeviceSubscription(ctx context.Context, deviceID string, han
 
 	var wg sync.WaitGroup
 	sub := &DeviceSubscription{
-		client:                     client,
-		handle:                     handle,
-		subscriptionID:             ev.GetSubscriptionId(),
-		resourcePublishedHandler:   resourcePublishedHandler,
-		resourceUnpublishedHandler: resourceUnpublishedHandler,
-		wait:                       wg.Wait,
+		client:                         client,
+		closeErrorHandler:              closeErrorHandler,
+		subscriptionID:                 ev.GetSubscriptionId(),
+		resourcePublishedHandler:       resourcePublishedHandler,
+		resourceUnpublishedHandler:     resourceUnpublishedHandler,
+		resourceUpdatePendingHandler:   resourceUpdatePendingHandler,
+		resourceUpdatedHandler:         resourceUpdatedHandler,
+		resourceRetrievePendingHandler: resourceRetrievePendingHandler,
+		resourceRetrievedHandler:       resourceRetrievedHandler,
+		wait:                           wg.Wait,
 	}
 	wg.Add(1)
 	go func() {
@@ -100,7 +163,7 @@ func (c *Client) NewDeviceSubscription(ctx context.Context, deviceID string, han
 
 // Cancel cancels subscription.
 func (s *DeviceSubscription) Cancel() (wait func(), err error) {
-	if !atomic.CompareAndSwapUint32(&s.canceled, s.canceled, 1) {
+	if !atomic.CompareAndSwapUint32(&s.canceled, 0, 1) {
 		return s.wait, nil
 	}
 	err = s.client.CloseSend()
@@ -120,12 +183,12 @@ func (s *DeviceSubscription) runRecv() {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
 			s.Cancel()
-			s.handle.OnClose()
+			s.closeErrorHandler.OnClose()
 			return
 		}
 		if err != nil {
 			s.Cancel()
-			s.handle.Error(err)
+			s.closeErrorHandler.Error(err)
 			return
 		}
 		cancel := ev.GetSubscriptionCanceled()
@@ -133,9 +196,10 @@ func (s *DeviceSubscription) runRecv() {
 			s.Cancel()
 			reason := cancel.GetReason()
 			if reason == "" {
-				s.handle.OnClose()
+				s.closeErrorHandler.OnClose()
+				return
 			}
-			s.handle.Error(fmt.Errorf(reason))
+			s.closeErrorHandler.Error(fmt.Errorf(reason))
 			return
 		}
 
@@ -143,19 +207,47 @@ func (s *DeviceSubscription) runRecv() {
 			err = s.resourcePublishedHandler.HandleResourcePublished(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
-				s.handle.Error(err)
+				s.closeErrorHandler.Error(err)
 				return
 			}
 		} else if ct := ev.GetResourceUnpublished(); ct != nil {
 			err = s.resourceUnpublishedHandler.HandleResourceUnpublished(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
-				s.handle.Error(err)
+				s.closeErrorHandler.Error(err)
+				return
+			}
+		} else if ct := ev.GetResourceUpdatePending(); ct != nil {
+			err = s.resourceUpdatePendingHandler.HandleResourceUpdatePending(s.client.Context(), ct)
+			if err != nil {
+				s.Cancel()
+				s.closeErrorHandler.Error(err)
+				return
+			}
+		} else if ct := ev.GetResourceUpdated(); ct != nil {
+			err = s.resourceUpdatedHandler.HandleResourceUpdated(s.client.Context(), ct)
+			if err != nil {
+				s.Cancel()
+				s.closeErrorHandler.Error(err)
+				return
+			}
+		} else if ct := ev.GetResourceRetrievePending(); ct != nil {
+			err = s.resourceRetrievePendingHandler.HandleResourceRetrievePending(s.client.Context(), ct)
+			if err != nil {
+				s.Cancel()
+				s.closeErrorHandler.Error(err)
+				return
+			}
+		} else if ct := ev.GetResourceRetrieved(); ct != nil {
+			err = s.resourceRetrievedHandler.HandleResourceRetrieved(s.client.Context(), ct)
+			if err != nil {
+				s.Cancel()
+				s.closeErrorHandler.Error(err)
 				return
 			}
 		} else {
 			s.Cancel()
-			s.handle.Error(fmt.Errorf("unknown event occurs on recv resource content changed: %+v", ev))
+			s.closeErrorHandler.Error(fmt.Errorf("unknown event %T occurs on recv resource: %+v", ev, ev))
 			return
 		}
 	}

@@ -57,11 +57,10 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	for _, f := range s.resourceEvent.FilterEvents {
 		switch f {
 		case pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED:
-			if res.content.GetStatus() != pbRA.Status_OK && res.content.GetStatus() != pbRA.Status_UNKNOWN {
-				return fmt.Errorf("unable to subscribe to resource %v%v: device response: %v", res.resource.GetDeviceId(), res.resource.GetHref(), res.content.GetStatus())
+			if res.content.GetStatus() == pbRA.Status_UNKNOWN {
+				continue
 			}
-			content := makeContent(res.content.GetContent())
-			err := s.NotifyOfContentChangedResource(ctx, content, res.onResourceChangedVersion)
+			err := res.onResourceChangedLocked(ctx, s.NotifyOfContentChangedResource)
 			if err != nil {
 				return fmt.Errorf("cannot send resource content changed: %w", err)
 			}
@@ -75,12 +74,12 @@ func (s *resourceSubscription) DeviceID() string {
 }
 
 func (s *resourceSubscription) Href() string {
-	return s.resourceEvent.GetResourceId().GetResourceLinkHref()
+	return s.resourceEvent.GetResourceId().GetHref()
 }
 
-func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Context, content pb.Content, version uint64) error {
-	deviceID := s.resourceEvent.GetResourceId().GetDeviceId()
-	href := s.resourceEvent.GetResourceId().GetResourceLinkHref()
+func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {
+	deviceID := resourceChanged.GetResourceId().GetDeviceId()
+	href := resourceChanged.GetResourceId().GetHref()
 	if s.FilterByVersion(deviceID, href, "res", version) {
 		return nil
 	}
@@ -95,14 +94,8 @@ func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Contex
 	}
 	return s.Send(ctx, pb.Event{
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceContentChanged{
-			ResourceContentChanged: &pb.Event_ResourceChanged{
-				ResourceId: &pb.ResourceId{
-					DeviceId:         deviceID,
-					ResourceLinkHref: href,
-				},
-				Content: &content,
-			},
+		Type: &pb.Event_ResourceChanged_{
+			ResourceChanged: &resourceChanged,
 		},
 	})
 }

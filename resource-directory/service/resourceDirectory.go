@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -25,6 +27,8 @@ func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, sr
 	if len(deviceIds) == 0 {
 		return status.Errorf(codes.NotFound, "not found")
 	}
+	fmt.Println(deviceIds)
+
 	typeFilter := make(strings.Set)
 	typeFilter.Add(in.TypeFilter...)
 	resourceIdsFilter := make(strings.Set)

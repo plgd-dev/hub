@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"github.com/go-ocf/cqrs/eventbus"
 	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
+	"github.com/go-ocf/kit/security/oauth/manager"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
@@ -62,13 +64,18 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot listen and serve: %v", err)
 	}
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	oauthMgr, err := manager.NewManagerFromConfiguration(svc.OAuth, clientTLS)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
+	}
+
+	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	authConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	authConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}

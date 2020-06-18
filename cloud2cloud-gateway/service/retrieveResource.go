@@ -33,9 +33,9 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 	switch contentQuery {
 	case ContentQueryBaseValue:
 		deviceID := routeVars[deviceIDKey]
-		href := routeVars[resourceLinkHrefKey]
+		href := routeVars[HrefKey]
 		code, err := rh.RetrieveResourceBase(ctx, w, pbGRPC.ResourceId{
-			DeviceId: deviceID, ResourceLinkHref: href}, encoder)
+			DeviceId: deviceID, Href: href}, encoder)
 		if err != nil {
 			err = fmt.Errorf("cannot retrieve resource(deviceID: %v, Href: %v): %w", deviceID, href, err)
 		}

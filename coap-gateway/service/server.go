@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"reflect"
@@ -11,18 +10,14 @@ import (
 
 	"github.com/go-ocf/kit/security/oauth/manager"
 
-	"github.com/panjf2000/ants"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
+	"github.com/go-ocf/cloud/grpc-gateway/client"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	notificationRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/cqrs/eventbus"
-	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
@@ -57,20 +52,15 @@ type Server struct {
 	asClient pbAS.AuthorizationServiceClient
 	rdClient pbGRPC.GrpcGatewayClient
 
-	clientContainer               *ClientContainer
-	clientContainerByDeviceID     *clientContainerByDeviceID
-	updateNotificationContainer   *notificationRA.UpdateNotificationContainer
-	retrieveNotificationContainer *notificationRA.RetrieveNotificationContainer
-	observeResourceContainer      *observeResourceContainer
-	goroutinesPool                *ants.Pool
-	oicPingCache                  *cache.Cache
-	oauthMgr                      *manager.Manager
+	clientContainer *ClientContainer
+	oicPingCache    *cache.Cache
+	oauthMgr        *manager.Manager
 
-	projection      *projectionRA.Projection
-	coapServer      *tcp.Server
-	listener        tcp.Listener
-	authInterceptor kitNetCoap.Interceptor
-	wgDone          *sync.WaitGroup
+	userDevicesSubscription *client.UsersDevicesSubscription
+	coapServer              *tcp.Server
+	listener                tcp.Listener
+	authInterceptor         kitNetCoap.Interceptor
+	wgDone                  *sync.WaitGroup
 }
 
 type DialCertManager = interface {
@@ -82,7 +72,7 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, authInterceptor kitNetCoap.Interceptor, store eventstore.EventStore, subscriber eventbus.Subscriber, pool *ants.Pool) *Server {
+func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, authInterceptor kitNetCoap.Interceptor) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -184,23 +174,15 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		rdClient:      rdClient,
 		oauthMgr:      oauthMgr,
 
-		clientContainer:               &ClientContainer{sessions: make(map[string]*Client)},
-		clientContainerByDeviceID:     newClientContainerByDeviceID(),
-		updateNotificationContainer:   notificationRA.NewUpdateNotificationContainer(),
-		retrieveNotificationContainer: notificationRA.NewRetrieveNotificationContainer(),
-		observeResourceContainer:      newObserveResourceContainer(),
-		goroutinesPool:                pool,
-		oicPingCache:                  oicPingCache,
-		listener:                      listener,
-		authInterceptor:               authInterceptor,
-		wgDone:                        new(sync.WaitGroup),
+		userDevicesSubscription: client.NewUsersDevicesSubscription(rdClient),
+
+		clientContainer: &ClientContainer{sessions: make(map[string]*Client)},
+		oicPingCache:    oicPingCache,
+		listener:        listener,
+		authInterceptor: authInterceptor,
+		wgDone:          new(sync.WaitGroup),
 	}
 
-	projection, err := projectionRA.NewProjection(context.Background(), fmt.Sprintf("%v:%v", config.FQDN, config.ExternalPort), store, subscriber, newResourceCtx(&s))
-	if err != nil {
-		log.Fatalf("cannot create projection for server: %v", err)
-	}
-	s.projection = projection
 	s.setupCoapServer()
 
 	return &s
@@ -282,15 +264,6 @@ func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
-func (server *Server) ctxWithServiceToken(ctx context.Context) (context.Context, error) {
-	serviceToken, err := server.oauthMgr.GetToken(ctx)
-	if err != nil {
-		return ctx, fmt.Errorf("cannot get service token: %v", err)
-
-	}
-	return kitNetGrpc.CtxWithToken(ctx, serviceToken.AccessToken), nil
-}
-
 func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
@@ -309,13 +282,13 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
-		r.Context, err = server.ctxWithServiceToken(r.Context)
+		serviceToken, err := server.oauthMgr.GetToken(r.Context)
 		if err != nil {
-			client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, r.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, r.Token)
 			client.Close()
 			return
 		}
-		r.Context = kitNetGrpc.CtxWithUserID(r.Context, authCtx.UserID)
+		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.UserID)
 		next.ServeCOAP(w, r)
 	})
 }

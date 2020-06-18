@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-ocf/cloud/authorization/oauth"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/oauth2"
@@ -77,7 +78,7 @@ func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, da
 func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
 	l := store.LinkedAccount{
 		TargetURL: r.FormValue("target_url"),
-		TargetCloud: store.OAuth{
+		TargetCloud: oauth.Config{
 			LinkedCloudID: r.FormValue("target_linked_cloud_id"),
 		},
 	}

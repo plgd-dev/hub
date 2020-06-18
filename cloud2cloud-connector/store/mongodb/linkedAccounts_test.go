@@ -25,16 +25,12 @@ func TestStore_InsertLinkedAccount(t *testing.T) {
 				sub: store.LinkedAccount{
 					ID:        "testID",
 					TargetURL: "testTargetURL",
-					TargetCloud: store.OAuth{
+					TargetCloud: store.Token{
 						LinkedCloudID: "testLinkedCloudID",
 						AccessToken:   "testAccessToken",
 						RefreshToken:  "testRefreshToken",
 					},
-					OriginCloud: store.OAuth{
-						LinkedCloudID: "testLinkedCloudID",
-						AccessToken:   "testAccessToken",
-						RefreshToken:  "testRefreshToken",
-					},
+					UserID: "userID",
 				},
 			},
 		},
@@ -78,16 +74,12 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 				sub: store.LinkedAccount{
 					ID:        "testID1",
 					TargetURL: "testTargetURL",
-					TargetCloud: store.OAuth{
+					TargetCloud: store.Token{
 						LinkedCloudID: "testLinkedCloudID",
 						AccessToken:   "testAccessToken",
 						RefreshToken:  "testRefreshToken",
 					},
-					OriginCloud: store.OAuth{
-						LinkedCloudID: "testLinkedCloudID",
-						AccessToken:   "testAccessToken",
-						RefreshToken:  "testRefreshToken",
-					},
+					UserID: "userID",
 				},
 			},
 			wantErr: true,
@@ -98,16 +90,12 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 				sub: store.LinkedAccount{
 					ID:        "testID",
 					TargetURL: "testTargetURL",
-					TargetCloud: store.OAuth{
+					TargetCloud: store.Token{
 						LinkedCloudID: "testLinkedCloudID",
 						AccessToken:   "testAccessToken",
 						RefreshToken:  "testRefreshToken",
 					},
-					OriginCloud: store.OAuth{
-						LinkedCloudID: "testLinkedCloudID",
-						AccessToken:   "testAccessToken",
-						RefreshToken:  "testRefreshToken",
-					},
+					UserID: "userID",
 				},
 			},
 		},
@@ -127,16 +115,12 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
 		ID:        "testID",
 		TargetURL: "testTargetURL",
-		TargetCloud: store.OAuth{
+		TargetCloud: store.Token{
 			LinkedCloudID: "testLinkedCloudID",
 			AccessToken:   "testAccessToken",
 			RefreshToken:  "testRefreshToken",
 		},
-		OriginCloud: store.OAuth{
-			LinkedCloudID: "testLinkedCloudID",
-			AccessToken:   "testAccessToken",
-			RefreshToken:  "testRefreshToken",
-		},
+		UserID: "userID",
 	})
 	require.NoError(err)
 
@@ -190,16 +174,12 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
 		ID:        "testID",
 		TargetURL: "testTargetURL",
-		TargetCloud: store.OAuth{
+		TargetCloud: store.Token{
 			LinkedCloudID: "testLinkedCloudID",
 			AccessToken:   "testAccessToken",
 			RefreshToken:  "testRefreshToken",
 		},
-		OriginCloud: store.OAuth{
-			LinkedCloudID: "testLinkedCloudID",
-			AccessToken:   "testAccessToken",
-			RefreshToken:  "testRefreshToken",
-		},
+		UserID: "userID",
 	})
 	require.NoError(err)
 
@@ -232,16 +212,12 @@ func TestStore_LoadLinkedAccounts(t *testing.T) {
 		{
 			ID:        "testID",
 			TargetURL: "testTargetURL",
-			TargetCloud: store.OAuth{
+			TargetCloud: store.Token{
 				LinkedCloudID: "testLinkedCloudID",
 				AccessToken:   "testAccessToken",
 				RefreshToken:  "testRefreshToken",
 			},
-			OriginCloud: store.OAuth{
-				LinkedCloudID: "testLinkedCloudID",
-				AccessToken:   "testAccessToken",
-				RefreshToken:  "testRefreshToken",
-			},
+			UserID: "userID",
 		},
 	}
 

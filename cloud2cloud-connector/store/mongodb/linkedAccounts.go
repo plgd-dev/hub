@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,58 +11,18 @@ import (
 
 const resLinkedAccountCName = "linkedAccounts"
 
-type dbOAuth struct {
-	LinkedCloudID string
-	AccessToken   string
-	RefreshToken  string
-	Expiry        int64
-}
-
-type dbLinkedAccount struct {
-	ID          string `bson:"_id"`
-	TargetURL   string
-	TargetCloud dbOAuth
-	OriginCloud dbOAuth
-}
-
-func makeDBLinkedAccount(sub store.LinkedAccount) dbLinkedAccount {
-	targetExpiry := int64(0)
-	if !sub.TargetCloud.Expiry.IsZero() {
-		targetExpiry = sub.TargetCloud.Expiry.UnixNano()
-	}
-	originExpiry := int64(0)
-	if !sub.TargetCloud.Expiry.IsZero() {
-		originExpiry = sub.OriginCloud.Expiry.UnixNano()
-	}
-
-	return dbLinkedAccount{
-		ID:        sub.ID,
-		TargetURL: sub.TargetURL,
-		TargetCloud: dbOAuth{
-			LinkedCloudID: sub.TargetCloud.LinkedCloudID,
-			AccessToken:   string(sub.TargetCloud.AccessToken),
-			RefreshToken:  sub.TargetCloud.RefreshToken,
-			Expiry:        targetExpiry,
-		},
-		OriginCloud: dbOAuth{
-			LinkedCloudID: sub.OriginCloud.LinkedCloudID,
-			AccessToken:   string(sub.OriginCloud.AccessToken),
-			RefreshToken:  sub.OriginCloud.RefreshToken,
-			Expiry:        originExpiry,
-		},
-	}
-
-}
-
 func validateLinkedAccount(sub store.LinkedAccount) error {
 	if sub.ID == "" {
 		return fmt.Errorf("cannot save linked account: invalid ID")
 	}
+	if sub.UserID == "" {
+		return fmt.Errorf("cannot save linked account: invalid UserID")
+	}
 	if sub.TargetCloud.LinkedCloudID == "" {
-		return fmt.Errorf("cannot save linked account: invalid ConfigId")
+		return fmt.Errorf("cannot save linked account: invalid TargetCloud.LinkedCloudID")
 	}
 	if sub.TargetCloud.AccessToken == "" && sub.TargetCloud.RefreshToken == "" {
-		return fmt.Errorf("cannot save linked account: invalid AccessToken and RefreshToken")
+		return fmt.Errorf("cannot save linked account: invalid TargetCloud.AccessToken and TargetCloud.RefreshToken")
 	}
 	if sub.TargetURL == "" {
 		return fmt.Errorf("cannot save linked account: invalid TargetURL")
@@ -77,10 +36,9 @@ func (s *Store) InsertLinkedAccount(ctx context.Context, sub store.LinkedAccount
 		return err
 	}
 
-	dbSub := makeDBLinkedAccount(sub)
 	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
 
-	if _, err := col.InsertOne(ctx, dbSub); err != nil {
+	if _, err := col.InsertOne(ctx, sub); err != nil {
 		return fmt.Errorf("cannot insert linked account: %v", err)
 	}
 	return nil
@@ -91,10 +49,9 @@ func (s *Store) UpdateLinkedAccount(ctx context.Context, sub store.LinkedAccount
 	if err != nil {
 		return err
 	}
-	dbSub := makeDBLinkedAccount(sub)
-	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
 
-	if res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": dbSub}); err != nil {
+	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
+	if res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub}); err != nil {
 		return fmt.Errorf("cannot update linked account: %v", err)
 	} else {
 		if res.MatchedCount == 0 {
@@ -150,30 +107,13 @@ type iterator struct {
 }
 
 func (i *iterator) Next(ctx context.Context, s *store.LinkedAccount) bool {
-	var sub dbLinkedAccount
-
 	if !i.iter.Next(ctx) {
 		return false
 	}
 
-	err := i.iter.Decode(&sub)
+	err := i.iter.Decode(s)
 	if err != nil {
 		return false
-	}
-
-	s.ID = sub.ID
-	s.TargetURL = sub.TargetURL
-	s.TargetCloud.LinkedCloudID = sub.TargetCloud.LinkedCloudID
-	s.TargetCloud.AccessToken = store.AccessToken(sub.TargetCloud.AccessToken)
-	s.TargetCloud.RefreshToken = sub.TargetCloud.RefreshToken
-	if sub.TargetCloud.Expiry != 0 {
-		s.TargetCloud.Expiry = time.Unix(-1, sub.TargetCloud.Expiry)
-	}
-	s.OriginCloud.LinkedCloudID = sub.OriginCloud.LinkedCloudID
-	s.OriginCloud.AccessToken = store.AccessToken(sub.OriginCloud.AccessToken)
-	s.OriginCloud.RefreshToken = sub.OriginCloud.RefreshToken
-	if sub.OriginCloud.Expiry != 0 {
-		s.OriginCloud.Expiry = time.Unix(-1, sub.OriginCloud.Expiry)
 	}
 
 	return true

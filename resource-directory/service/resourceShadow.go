@@ -11,8 +11,8 @@ import (
 func toResourceValue(m *resourceCtx) pb.ResourceValue {
 	return pb.ResourceValue{
 		ResourceId: &pb.ResourceId{
-			ResourceLinkHref: m.resource.GetHref(),
-			DeviceId:         m.resource.GetDeviceId(),
+			Href:     m.resource.GetHref(),
+			DeviceId: m.resource.GetDeviceId(),
 		},
 		Content: pb.RAContent2Content(m.content.GetContent()),
 		Types:   m.resource.GetResourceTypes(),

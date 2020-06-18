@@ -29,7 +29,6 @@ import (
 type RequestHandler struct {
 	authServiceClient       pbAS.AuthorizationServiceClient
 	resourceAggregateClient pbRA.ResourceAggregateClient
-	fqdn                    string
 
 	resourceProjection            *Projection
 	subscriptions                 *subscriptions
@@ -149,7 +148,6 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		closeFunc,
 		svc.ClientConfiguration.ClientConfigurationResponse,
 		userDevicesManager,
-		svc.FQDN,
 	)
 	h.clientTLS = clientTLS
 	return h, nil
@@ -167,7 +165,6 @@ func NewRequestHandler(
 	closeFunc func(),
 	clientConfiguration pb.ClientConfigurationResponse,
 	userDevicesManager *clientAS.UserDevicesManager,
-	fqdn string,
 ) *RequestHandler {
 	return &RequestHandler{
 		authServiceClient:             authServiceClient,
@@ -180,7 +177,6 @@ func NewRequestHandler(
 		closeFunc:                     closeFunc,
 		clientConfiguration:           clientConfiguration,
 		userDevicesManager:            userDevicesManager,
-		fqdn:                          fqdn,
 	}
 }
 

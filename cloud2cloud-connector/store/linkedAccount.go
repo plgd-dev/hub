@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -16,7 +15,7 @@ func (t AccessToken) String() string {
 	return string(t)
 }
 
-type OAuth struct {
+type Token struct {
 	LinkedCloudID string
 	AccessToken   AccessToken
 	RefreshToken  string
@@ -35,45 +34,37 @@ func (h *LinkedCloudsHandler) Handle(ctx context.Context, iter LinkedCloudIter) 
 	return iter.Err()
 }
 
-func (o OAuth) Refresh(ctx context.Context, s Store) (OAuth, error) {
+func (o Token) Refresh(ctx context.Context, cfg oauth2.Config) (Token, bool, error) {
+	if o.IsValidAccessToken() {
+		return o, false, nil
+	}
 	if o.Expiry.IsZero() {
-		return o, nil
+		return o, false, nil
 	}
-	var h LinkedCloudsHandler
-	err := s.LoadLinkedClouds(ctx, Query{ID: o.LinkedCloudID}, &h)
-	if err != nil {
-		return o, err
-	}
-	if len(h.LinkedClouds) != 1 {
-		return o, fmt.Errorf("linked cloud %v not found", o.LinkedCloudID)
-	}
-	l := h.LinkedClouds[0]
-	c := l.ToOAuth2Config()
 	restoredToken := oauth2.Token{
 		RefreshToken: o.RefreshToken,
 	}
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, http.DefaultClient)
-	tokenSource := c.TokenSource(ctx, &restoredToken)
+	tokenSource := cfg.TokenSource(ctx, &restoredToken)
 	token, err := tokenSource.Token()
 	if err != nil {
-		return o, err
+		return o, false, err
 	}
-	return OAuth{
+	return Token{
 		LinkedCloudID: o.LinkedCloudID,
 		AccessToken:   AccessToken(token.AccessToken),
 		Expiry:        token.Expiry,
 		RefreshToken:  token.RefreshToken,
-	}, nil
+	}, true, nil
 }
 
-func (o OAuth) IsValidAccessToken() bool {
+func (o Token) IsValidAccessToken() bool {
 	if o.Expiry.IsZero() || o.Expiry.UnixNano() > time.Now().UnixNano() {
 		return true
 	}
 	return false
 }
 
-func (o OAuth) GetAccessToken() (AccessToken, error) {
+func (o Token) GetAccessToken() (AccessToken, error) {
 	if o.IsValidAccessToken() {
 		return o.AccessToken, nil
 	}
@@ -111,37 +102,30 @@ func (t AccessToken) GetSubject() (string, error) {
 }
 
 type LinkedAccount struct {
-	ID          string
+	ID          string `bson:"_id"`
+	UserID      string
 	TargetURL   string
-	TargetCloud OAuth
-	OriginCloud OAuth
+	TargetCloud Token
 }
 
-func (l LinkedAccount) RefreshTokens(ctx context.Context, s Store) (LinkedAccount, error) {
-	if l.TargetCloud.IsValidAccessToken() && l.OriginCloud.IsValidAccessToken() {
+/*
+func (l LinkedAccount) RefreshToken(ctx context.Context, cfg oauth2.Config) (LinkedAccount, bool, error) {
+	if l.TargetCloud.IsValidAccessToken() {
 		return l, nil
 	}
 	t := l.TargetCloud
-	o := l.OriginCloud
 	var err error
 	if !t.IsValidAccessToken() {
-		t, err = t.Refresh(ctx, s)
+		t, err = t.Refresh(ctx, cfg)
 		if err != nil {
 			return l, fmt.Errorf("cannot refreash target cloud access token: %v", err)
 		}
 	}
-	if !o.IsValidAccessToken() {
-		o, err = o.Refresh(ctx, s)
-		if err != nil {
-			return l, fmt.Errorf("cannot refresh target cloud access token: %v", err)
-		}
-	}
 	l.TargetCloud = t
-	l.OriginCloud = o
-
 	err = s.UpdateLinkedAccount(ctx, l)
 	if err != nil {
 		return l, fmt.Errorf("cannot store updated linked account: %v", err)
 	}
 	return l, nil
 }
+*/

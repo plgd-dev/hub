@@ -27,7 +27,7 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
-const resourceLinkHrefKey = "resourceLinkHref"
+const HrefKey = "Href"
 const subscriptionIDKey = "subscriptionID"
 const deviceIDKey = "deviceID"
 
@@ -134,7 +134,7 @@ func getEncoder(contentType string) (func(v interface{}) ([]byte, error), error)
 	return nil, fmt.Errorf("invalid %v header(%v)", events.ContentTypeKey, contentType)
 }
 
-func makeResourceLinkHref(path []string) string {
+func makeHref(path []string) string {
 	return "/" + strings.Join(path, "/")
 }
 
@@ -164,7 +164,7 @@ func resourceSubscriptionMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[deviceIDKey] = paths[0]
-		rm.Vars[resourceLinkHrefKey] = makeResourceLinkHref(paths[1 : len(paths)-2])
+		rm.Vars[HrefKey] = makeHref(paths[1 : len(paths)-2])
 		rm.Vars[subscriptionIDKey] = paths[len(paths)-1]
 		return true
 	}
@@ -178,7 +178,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[deviceIDKey] = paths[0]
-		rm.Vars[resourceLinkHrefKey] = makeResourceLinkHref(paths[1:])
+		rm.Vars[HrefKey] = makeHref(paths[1:])
 		return true
 	}
 	return false
@@ -223,7 +223,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 				rm.Vars = make(map[string]string)
 			}
 			rm.Vars[deviceIDKey] = paths[0]
-			rm.Vars[resourceLinkHrefKey] = makeResourceLinkHref(paths[1 : len(paths)-1])
+			rm.Vars[HrefKey] = makeHref(paths[1 : len(paths)-1])
 			return true
 		}
 		return false

@@ -89,7 +89,7 @@ func Test_clientResetHandler(t *testing.T) {
 				msg.SetObserve(tt.args.observe)
 				resp, err := co.Do(msg)
 				require.NoError(t, err)
-				assert.Equal(t, tt.wantsCode, resp.Code())
+				assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 			}
 			time.Sleep(time.Second) // to avoid reorder test case
 		})

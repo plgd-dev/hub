@@ -30,8 +30,8 @@ func (c *Client) UpdateResource(
 	}
 	r := pb.UpdateResourceValuesRequest{
 		ResourceId: &pb.ResourceId{
-			DeviceId:         deviceID,
-			ResourceLinkHref: href,
+			DeviceId: deviceID,
+			Href:     href,
 		},
 		ResourceInterface: cfg.resourceInterface,
 		Content: &pb.Content{

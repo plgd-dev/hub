@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
@@ -63,14 +62,13 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
 	}
-	req.Context, err = client.server.ctxWithServiceToken(req.Context)
+	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 	if err != nil {
-		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
 		client.Close()
 		return
 	}
-
-	req.Context = kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID)
+	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.UserID)
 	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
@@ -79,43 +77,33 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 
-	oldDeviceID := client.storeAuthorizationContext(authCtx)
+	oldAuthCtx := client.replaceAuthorizationContext(authCtx)
 	newDevice := false
 
 	switch {
-	case oldDeviceID == "":
+	case oldAuthCtx.GetDeviceId() == "":
 		newDevice = true
-	case oldDeviceID != signIn.DeviceID:
-		err := client.server.projection.Unregister(oldDeviceID)
-		client.server.clientContainerByDeviceID.Remove(oldDeviceID)
+	case oldAuthCtx.GetDeviceId() != signIn.DeviceID:
+		wait, err := client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
+		wait()
 		newDevice = true
 	}
 
 	if newDevice {
-		client.server.clientContainerByDeviceID.Add(signIn.DeviceID, client)
-		loaded, err := client.server.projection.Register(context.Background(), signIn.DeviceID)
+		sub := &deviceSubscriptionHandlers{
+			Client:   client,
+			deviceID: signIn.DeviceID,
+		}
+		_, err := client.server.userDevicesSubscription.Create(req.Context, signIn.UserID, signIn.DeviceID, sub)
 		if err != nil {
-			client.server.projection.Unregister(signIn.DeviceID)
-			client.server.clientContainerByDeviceID.Remove(signIn.DeviceID)
-
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
-		}
-		if !loaded {
-			models := client.server.projection.Models(signIn.DeviceID, "")
-			if len(models) == 0 {
-				log.Errorf("cannot load models for deviceID %v", signIn.DeviceID)
-			} else {
-				for _, r := range models {
-					r.(*resourceCtx).TriggerSignIn(req.Context)
-				}
-			}
 		}
 	}
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
@@ -133,23 +121,29 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 		return
 	}
 
-	authCtxOld := client.loadAuthorizationContext()
-	if authCtxOld.DeviceId != "" {
-		req.Context, err = client.server.ctxWithServiceToken(req.Context)
+	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
+	if oldAuthCtx.DeviceId != "" {
+		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
-		req.Context = kitNetGrpc.CtxWithUserID(req.Context, authCtxOld.UserID)
-		err = client.UpdateCloudDeviceStatus(req.Context, authCtxOld.DeviceId, authCtxOld.AuthorizationContext, false)
+		req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), oldAuthCtx.UserID)
+		err = client.UpdateCloudDeviceStatus(req.Context, oldAuthCtx.DeviceId, oldAuthCtx.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtxOld.DeviceId, err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceId(), err)
 			return
 		}
 
-		client.storeAuthorizationContext(authCtx{})
+		wait, err := client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
+		}
+		wait()
 	}
 
 	client.sendResponse(coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}) // empty object

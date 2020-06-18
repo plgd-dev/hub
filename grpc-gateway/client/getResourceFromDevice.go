@@ -17,8 +17,8 @@ func (c *Client) getResourceFromDevice(
 ) error {
 	r := pbGW.RetrieveResourceFromDeviceRequest{
 		ResourceId: &pbGW.ResourceId{
-			DeviceId:         deviceID,
-			ResourceLinkHref: href,
+			DeviceId: deviceID,
+			Href:     href,
 		},
 		ResourceInterface: resourceInterface,
 	}

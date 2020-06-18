@@ -128,7 +128,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-	resourceID := cqrsRA.MakeResourceId(deviceID, routeVars[resourceLinkHrefKey])
+	resourceID := cqrsRA.MakeResourceId(deviceID, routeVars[HrefKey])
 	correlationIdUUID, err := uuid.NewV4()
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot create correlationId for update resource %v.%v: %w", deviceID, resourceID, err)

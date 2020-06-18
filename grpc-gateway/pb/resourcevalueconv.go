@@ -31,7 +31,7 @@ func RAStatus2Status(s pbRA.Status) Status {
 }
 
 func (r *ResourceId) ID() string {
-	return cqrs.MakeResourceId(r.GetDeviceId(), r.GetResourceLinkHref())
+	return cqrs.MakeResourceId(r.GetDeviceId(), r.GetHref())
 }
 
 func RAContent2Content(s *pbRA.Content) *Content {

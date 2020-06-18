@@ -24,7 +24,7 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 	ctx := requestHandler.makeCtx(r)
 
 	var response interface{}
-	err := requestHandler.client.UpdateResource(ctx, vars[uri.DeviceIDKey], vars[uri.ResourceLinkHrefKey], body, &response, client.WithInterface(interfaceQueryString))
+	err := requestHandler.client.UpdateResource(ctx, vars[uri.DeviceIDKey], vars[uri.HrefKey], body, &response, client.WithInterface(interfaceQueryString))
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot update resource: %w", err))
 		return

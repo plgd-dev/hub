@@ -11,54 +11,20 @@ import (
 
 const resLinkedCloudCName = "LinkedCloud"
 
-type dbEndpoint struct {
-	AuthUrl  string
-	TokenUrl string
-}
-
-type dbLinkedCloud struct {
-	Id           string `bson:"_id"`
-	Name         string
-	ClientId     string
-	ClientSecret string
-	Scopes       []string
-	Endpoint     dbEndpoint
-	Audience     string
-}
-
-func makeDBLinkedCloud(sub store.LinkedCloud) dbLinkedCloud {
-	return dbLinkedCloud{
-		Id:           sub.ID,
-		Name:         sub.Name,
-		ClientId:     sub.ClientID,
-		ClientSecret: sub.ClientSecret,
-		Scopes:       sub.Scopes,
-		Audience:     sub.Audience,
-		Endpoint: dbEndpoint{
-			AuthUrl:  sub.Endpoint.AuthUrl,
-			TokenUrl: sub.Endpoint.TokenUrl,
-		},
-	}
-
-}
-
 func validateLinkedCloud(sub store.LinkedCloud) error {
 	if sub.ID == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid Id")
 	}
-	if sub.ClientID == "" {
+	if sub.OAuth.ClientID == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid ClientId")
 	}
-	if sub.ClientSecret == "" {
+	if sub.OAuth.ClientSecret == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid ClientSecret")
 	}
-	if len(sub.Scopes) == 0 {
-		return fmt.Errorf("cannot save linked cloud: invalid Scopes")
-	}
-	if sub.Endpoint.AuthUrl == "" {
+	if sub.OAuth.Endpoint.AuthURL == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid AuthUrl")
 	}
-	if sub.Endpoint.TokenUrl == "" {
+	if sub.OAuth.Endpoint.TokenURL == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid TokenUrl")
 	}
 	return nil
@@ -70,10 +36,8 @@ func (s *Store) UpdateLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 		return err
 	}
 
-	dbSub := makeDBLinkedCloud(sub)
 	col := s.client.Database(s.DBName()).Collection(resLinkedCloudCName)
-
-	res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": dbSub})
+	res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub})
 	if err != nil {
 		return fmt.Errorf("cannot save linked cloud: %v", err)
 	}
@@ -89,21 +53,20 @@ func (s *Store) InsertLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 		return err
 	}
 
-	dbSub := makeDBLinkedCloud(sub)
 	col := s.client.Database(s.DBName()).Collection(resLinkedCloudCName)
 
-	if _, err := col.InsertOne(ctx, dbSub); err != nil {
+	if _, err := col.InsertOne(ctx, sub); err != nil {
 		return fmt.Errorf("cannot save linked cloud: %v", err)
 	}
 	return nil
 }
 
-func (s *Store) RemoveLinkedCloud(ctx context.Context, LinkedCloudId string) error {
-	if LinkedCloudId == "" {
+func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudId string) error {
+	if linkedCloudId == "" {
 		return fmt.Errorf("cannot remove linked cloud: invalid LinkedCloudId")
 	}
 
-	res, err := s.client.Database(s.DBName()).Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": LinkedCloudId})
+	res, err := s.client.Database(s.DBName()).Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudId})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked cloud: %v", err)
 	}
@@ -144,25 +107,12 @@ type linkedCloudIterator struct {
 }
 
 func (i *linkedCloudIterator) Next(ctx context.Context, s *store.LinkedCloud) bool {
-	var sub dbLinkedCloud
-
 	if !i.iter.Next(ctx) {
 		return false
 	}
-
-	err := i.iter.Decode(&sub)
+	err := i.iter.Decode(s)
 	if err != nil {
 		return false
-	}
-	s.ID = sub.Id
-	s.Name = sub.Name
-	s.ClientID = sub.ClientId
-	s.ClientSecret = sub.ClientSecret
-	s.Scopes = sub.Scopes
-	s.Audience = sub.Audience
-	s.Endpoint = store.Endpoint{
-		AuthUrl:  sub.Endpoint.AuthUrl,
-		TokenUrl: sub.Endpoint.TokenUrl,
 	}
 
 	return true

@@ -71,14 +71,14 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), r.Token)
 		return
 	}
-	ctx, err := client.server.ctxWithServiceToken(r.Context)
+	serviceToken, err := client.server.oauthMgr.GetToken(r.Context)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, r.Token)
 		client.Close()
 		return
 	}
 
-	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithUserID(ctx, response.UserId), signUp.DeviceID, pbCQRS.AuthorizationContext{
+	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithUserID(r.Context, response.UserId), serviceToken.AccessToken), signUp.DeviceID, pbCQRS.AuthorizationContext{
 		DeviceId: signUp.DeviceID,
 	})
 	if err != nil {
@@ -173,6 +173,6 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
 		return
 	}
-	client.storeAuthorizationContext(authCtx{})
+	client.replaceAuthorizationContext(authCtx{})
 	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
 }

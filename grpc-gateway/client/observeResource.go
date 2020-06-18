@@ -30,8 +30,8 @@ func (c *Client) ObserveResource(
 	}
 
 	sub, err := c.NewResourceSubscription(ctx, pb.ResourceId{
-		DeviceId:         deviceID,
-		ResourceLinkHref: href,
+		DeviceId: deviceID,
+		Href:     href,
 	}, &observationHandler{
 		codec: cfg.codec,
 		obs:   handler,

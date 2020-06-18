@@ -41,7 +41,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.ResourceLinkHrefKey] = "/" + strings.Join(paths[1:], "/")
+		rm.Vars[uri.HrefKey] = "/" + strings.Join(paths[1:], "/")
 		return true
 	}
 	return false
@@ -54,7 +54,7 @@ func wsResourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.ResourceLinkHrefKey] = "/" + strings.Join(paths[1:], "/")
+		rm.Vars[uri.HrefKey] = "/" + strings.Join(paths[1:], "/")
 		return true
 	}
 	return false

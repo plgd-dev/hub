@@ -52,7 +52,7 @@ func Test_clientObserveHandler(t *testing.T) {
 				observe: 0,
 				token:   nil,
 			},
-			wantsCode: coapCodes.BadRequest,
+			wantsCode: coapCodes.Unauthorized,
 		},
 
 		{
@@ -101,7 +101,7 @@ func Test_clientObserveHandler(t *testing.T) {
 			}
 			resp, err := co.Do(req)
 			require.NoError(t, err)
-			assert.Equal(t, tt.wantsCode, resp.Code())
+			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 		})
 	}
 }

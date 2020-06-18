@@ -7,7 +7,7 @@ const (
 	Devices string = Version + "/devices"
 	Device  string = Devices + "/{{ .DeviceId }}"
 
-	ResourceValues string = Devices + "/{{ .DeviceId }}/{{ .ResourceLinkHref }}"
+	ResourceValues string = Devices + "/{{ .DeviceId }}/{{ .Href }}"
 
 	DevicesSubscriptions string = Devices + "/subscriptions"
 	DevicesSubscription  string = Devices + "/subscriptions/{{ .SubscriptionID }}"
@@ -15,6 +15,6 @@ const (
 	DeviceSubscriptions string = Devices + "​/{{ .DeviceId }}/subscriptions"
 	DeviceSubscription  string = Devices + "/{{ .DeviceId }}/subscriptions/{{ .SubscriptionID }}"
 
-	ResourceSubscriptions string = Devices + "/{{ .DeviceId }}/{{ .ResourceLinkHref }}/subscriptions"
-	ResourceSubscription  string = Devices + "/{{ .DeviceId }}/{{ .ResourceLinkHref }}/subscriptions/{{ .SubscriptionID }}"
+	ResourceSubscriptions string = Devices + "/{{ .DeviceId }}/{{ .Href }}/subscriptions"
+	ResourceSubscription  string = Devices + "/{{ .DeviceId }}/{{ .Href }}/subscriptions/{{ .SubscriptionID }}"
 )

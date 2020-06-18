@@ -14,7 +14,7 @@ import (
 func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	resourceLinkHref := parseResourceLinkHref(vars[uri.ResourceLinkHrefKey])
+	Href := parseHref(vars[uri.HrefKey])
 	interfaceQueryKeyString := r.URL.Query().Get(uri.InterfaceQueryKey)
 	skipShadowQueryString := r.URL.Query().Get(uri.SkipShadowQueryKey)
 	ocfOpts := make([]client.GetOption, 0, 2)
@@ -26,7 +26,7 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 	}
 	ctx := requestHandler.makeCtx(r)
 	var rep interface{}
-	err := requestHandler.client.GetResource(ctx, vars[uri.DeviceIDKey], resourceLinkHref, &rep, ocfOpts...)
+	err := requestHandler.client.GetResource(ctx, vars[uri.DeviceIDKey], Href, &rep, ocfOpts...)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot get resource: %w", err))
 		return
@@ -35,7 +35,7 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 	jsonResponseWriter(w, rep)
 }
 
-func parseResourceLinkHref(linkQueryHref string) string {
+func parseHref(linkQueryHref string) string {
 	if idx := strings.IndexByte(linkQueryHref, '?'); idx >= 0 {
 		return linkQueryHref[:idx]
 	}

@@ -7,9 +7,10 @@ import (
 	"sync/atomic"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	grpcClient "github.com/go-ocf/cloud/grpc-gateway/client"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
@@ -40,21 +41,65 @@ type Client struct {
 
 	observedResources     map[string]map[int64]observedResource // [deviceID][instanceID]
 	observedResourcesLock sync.Mutex
-	authCtx               authCtx
-	authContextLock       sync.Mutex
+
+	observeResourceContainer map[string]*grpcClient.ResourceSubscription // [token]
+
+	mutex   sync.Mutex
+	authCtx authCtx
 }
 
 //newClient create and initialize client
 func newClient(server *Server, client *tcp.ClientConn) *Client {
 	return &Client{
-		server:            server,
-		coapConn:          client,
-		observedResources: make(map[string]map[int64]observedResource),
+		server:                   server,
+		coapConn:                 client,
+		observedResources:        make(map[string]map[int64]observedResource),
+		observeResourceContainer: make(map[string]*grpcClient.ResourceSubscription),
 	}
 }
 
 func (client *Client) remoteAddrString() string {
 	return client.coapConn.RemoteAddr().String()
+}
+
+func (client *Client) popResourceSubscription(token string) *grpcClient.ResourceSubscription {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	tmp := client.observeResourceContainer[token]
+	delete(client.observeResourceContainer, token)
+	return tmp
+}
+
+func (client *Client) cancelResourceSubscription(token string) (bool, error) {
+	s := client.popResourceSubscription(token)
+	if s == nil {
+		return false, nil
+	}
+	wait, err := s.Cancel()
+	if err != nil {
+		return false, err
+	}
+	wait()
+	return true, nil
+}
+
+func (client *Client) popObserveResourceContainer() map[string]*grpcClient.ResourceSubscription {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	tmp := client.observeResourceContainer
+	client.observeResourceContainer = make(map[string]*grpcClient.ResourceSubscription)
+	return tmp
+}
+
+func (client *Client) insertResourceSubscription(token string, res *grpcClient.ResourceSubscription) error {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	_, ok := client.observeResourceContainer[token]
+	if ok {
+		return fmt.Errorf("resource subscription already exist")
+	}
+	client.observeResourceContainer[token] = res
+	return nil
 }
 
 func (client *Client) observeResource(ctx context.Context, res *pbRA.Resource, allowDuplicit bool) (err error) {
@@ -88,7 +133,7 @@ func (client *Client) getResourceContent(ctx context.Context, obsRes *pbRA.Resou
 		client.Close()
 	}
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []*pbRA.Resource{obsRes})
+		client.unpublishResources(ctx, []string{obsRes.GetId()})
 	}
 }
 
@@ -111,7 +156,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 				client.Close()
 			}
 			if req.Code() == coapCodes.NotFound {
-				client.unpublishResources(req.Context(), []*pbRA.Resource{obsRes})
+				client.unpublishResources(req.Context(), []string{obsRes.GetId()})
 			}
 		})
 		if err != nil {
@@ -126,21 +171,22 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 	return nil
 }
 
-func (client *Client) getObservedResources(deviceID string, instanceIDs []int64, matches []*pbRA.Resource) []*pbRA.Resource {
+func (client *Client) getObservedResources(deviceID string, instanceIDs []int64) []string {
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 
 	getAllDeviceIDMatches := len(instanceIDs) == 0
+	matches := make([]string, 0, 16)
 
 	if deviceResourcesMap, ok := client.observedResources[deviceID]; ok {
 		if getAllDeviceIDMatches {
 			for _, value := range deviceResourcesMap {
-				matches = append(matches, value.res)
+				matches = append(matches, value.res.GetId())
 			}
 		} else {
 			for _, instanceID := range instanceIDs {
 				if resource, ok := deviceResourcesMap[instanceID]; ok {
-					matches = append(matches, resource.res)
+					matches = append(matches, resource.res.GetId())
 				}
 			}
 		}
@@ -172,8 +218,8 @@ func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Obs
 	return obs
 }
 
-func (client *Client) unobserveResources(ctx context.Context, rscs []*pbRA.Resource, rscsUnpublished map[string]bool) {
-	observartions := client.unobserveAndRemoveResources(rscs, rscsUnpublished)
+func (client *Client) unobserveResources(ctx context.Context, resourceIDs []string, rscsUnpublished map[string]bool) {
+	observartions := client.unobserveAndRemoveResources(resourceIDs, rscsUnpublished)
 	for _, obs := range observartions {
 		obs.Cancel(ctx)
 	}
@@ -188,39 +234,39 @@ func (client *Client) Close() error {
 	return nil
 }
 
-func (client *Client) unobserveAndRemoveResources(rscs []*pbRA.Resource, rscsUnpublished map[string]bool) []*tcp.Observation {
+func (client *Client) unobserveAndRemoveResources(resourceIDs []string, rscsUnpublished map[string]bool) []*tcp.Observation {
 	observartions := make([]*tcp.Observation, 0, 32)
 
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 
-	for _, resource := range rscs {
-		if del, ok := rscsUnpublished[resource.Id]; ok && del {
-			log.Debugf("DeviceId: %v, ResourceId: %v: delete resource", resource.DeviceId, resource.Id)
+	for _, resourceID := range resourceIDs {
+		if del, ok := rscsUnpublished[resourceID]; ok && del {
+			log.Debugf("ResourceId: %v: delete resource", resourceID)
 		} else {
-			log.Debugf("DeviceId: %v, ResourceId: %v: unobserve resource", resource.DeviceId, resource.Id)
+			log.Debugf("ResourceId: %v: unobserve resource", resourceID)
+		}
+		var instanceID int64
+		var deviceID string
+		for devID, devs := range client.observedResources {
+			for insID, r := range devs {
+				if r.res.GetId() == resourceID {
+					instanceID = insID
+					deviceID = devID
+					break
+				}
+			}
 		}
 
-		obs := client.popObservation(resource.DeviceId, resource.InstanceId)
+		obs := client.popObservation(deviceID, instanceID)
 		if obs != nil {
 			observartions = append(observartions, obs)
 		}
-		if rscsUnpublished[resource.Id] {
-			client.removeResource(resource.DeviceId, resource.InstanceId)
+		if rscsUnpublished[resourceID] {
+			client.removeResource(deviceID, instanceID)
 		}
 	}
 	return observartions
-}
-
-// cleanObservedResourcesOfDevices remove all pbRA observations requested from device to cloud.
-func (client *Client) cleanObservedResourcesOfDevices() {
-	obs, _ := client.server.observeResourceContainer.PopByRemoteAddr(client.remoteAddrString())
-	for _, ob := range obs {
-		err := client.server.projection.Unregister(ob.deviceID)
-		if err != nil {
-			log.Errorf("cannot unregister observed device %v from projection: %v", ob.deviceID, err)
-		}
-	}
 }
 
 func (client *Client) popObservedResources() []*tcp.Observation {
@@ -234,11 +280,6 @@ func (client *Client) popObservedResources() []*tcp.Observation {
 				observartions = append(observartions, obs)
 			}
 			client.removeResource(deviceID, instanceID)
-		}
-		client.server.clientContainerByDeviceID.Remove(deviceID)
-		err := client.server.projection.Unregister(deviceID)
-		if err != nil {
-			log.Errorf("DeviceId %v: cannot unregister device from projection: %v", deviceID, err)
 		}
 	}
 	return observartions
@@ -259,69 +300,70 @@ func (client *Client) OnClose() {
 	client.server.oicPingCache.Delete(client.remoteAddrString())
 
 	client.cleanObservedResources()
+	observeResourceContainer := client.popObserveResourceContainer()
+	for _, o := range observeResourceContainer {
+		o.Cancel()
+	}
 
-	client.cleanObservedResourcesOfDevices()
+	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
 
-	authCtx := client.loadAuthorizationContext()
-
-	if client.authCtx.DeviceId != "" {
+	if oldAuthCtx.DeviceId != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
 		defer cancel()
-		ctx, err := client.server.ctxWithServiceToken(ctx)
+		token, err := client.server.oauthMgr.GetToken(ctx)
 		if err != nil {
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.DeviceId, err)
 			return
 		}
-		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(ctx, authCtx.UserID), authCtx.DeviceId, authCtx.AuthorizationContext, false)
+		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), oldAuthCtx.UserID), oldAuthCtx.DeviceId, oldAuthCtx.AuthorizationContext, false)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", authCtx.DeviceId, err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.DeviceId, err)
+		}
+
+		wait, err := client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
+		if err == nil {
+			wait()
 		}
 	}
 }
 
-func (client *Client) storeAuthorizationContext(authCtx authCtx) (oldDeviceID string) {
-	log.Debugf("Authorization context stored for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceId(), authCtx.UserID)
-	client.authContextLock.Lock()
-	defer client.authContextLock.Unlock()
+func (client *Client) replaceAuthorizationContext(authCtx authCtx) (oldDeviceID authCtx) {
+	log.Debugf("Authorization context replaced for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceId(), authCtx.UserID)
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
 	oldAuthContext := client.authCtx
 	client.authCtx = authCtx
-	return oldAuthContext.DeviceId
+	return oldAuthContext
 }
 
 func (client *Client) loadAuthorizationContext() authCtx {
-	client.authContextLock.Lock()
-	defer client.authContextLock.Unlock()
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
 	return client.authCtx
 }
 
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
 	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
-	ctx, err := client.server.ctxWithServiceToken(notification.Context())
-	if err != nil {
-		return fmt.Errorf("cannot notify resource content changed: %v", err)
-	}
+
 	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
-	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
+	_, err := client.server.raClient.NotifyResourceChanged(notification.Context(), &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource content changed: %v", err)
 	}
 	return nil
 }
 
-func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource, reqContentUpdate *raEvents.ResourceUpdatePending) error {
-	if reqContentUpdate.AuditContext == nil {
-		return fmt.Errorf("invalid AuditContext of resource update pending request")
-	}
-	if resource.Id == cqrsRA.MakeResourceId(resource.DeviceId, cloud.StatusHref) {
+func (client *Client) updateResource(ctx context.Context, event *pb.Event_ResourceUpdatePending) error {
+	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	if event.GetResourceId().GetHref() == cloud.StatusHref {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
 		msg.SetCode(coapCodes.MethodNotAllowed)
 		msg.SetSequence(client.coapConn.Sequence())
 		defer pool.ReleaseMessage(msg)
-
-		request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
+		request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
 		_, err := client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 		if err != nil {
 			return err
@@ -331,7 +373,7 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 
 	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceUpdateRequest(ctx, resource.Href, &reqContentUpdate.ResourceUpdatePending)
+	req, err := coapconv.NewCoapResourceUpdateRequest(ctx, event)
 	if err != nil {
 		return err
 	}
@@ -346,12 +388,12 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []*pbRA.Resource{resource})
+		client.unpublishResources(ctx, []string{resourceID})
 	}
 
 	authCtx := client.loadAuthorizationContext()
 
-	request := coapconv.MakeConfirmResourceUpdateRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 	if err != nil {
 		return err
@@ -360,18 +402,16 @@ func (client *Client) updateContent(ctx context.Context, resource *pbRA.Resource
 	return nil
 }
 
-func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resource, reqContentUpdate *raEvents.ResourceRetrievePending) error {
-	if reqContentUpdate.AuditContext == nil {
-		return fmt.Errorf("invalid AuditContext of resource retrieve pending request")
-	}
-	if resource.Id == cqrsRA.MakeResourceId(resource.DeviceId, cloud.StatusHref) {
+func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_ResourceRetrievePending) error {
+	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	if event.GetResourceId().GetHref() == cloud.StatusHref {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
 		msg.SetCode(coapCodes.Content)
 		msg.SetSequence(client.coapConn.Sequence())
 		defer pool.ReleaseMessage(msg)
 
-		request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), msg)
+		request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
 		_, err := client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 		if err != nil {
 			return err
@@ -381,7 +421,7 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 
 	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceRetrieveRequest(ctx, resource.Href, &reqContentUpdate.ResourceRetrievePending)
+	req, err := coapconv.NewCoapResourceRetrieveRequest(ctx, event)
 	if err != nil {
 		return err
 	}
@@ -396,11 +436,11 @@ func (client *Client) retrieveContent(ctx context.Context, resource *pbRA.Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []*pbRA.Resource{resource})
+		client.unpublishResources(ctx, []string{resourceID})
 	}
 
 	authCtx := client.loadAuthorizationContext()
-	request := coapconv.MakeConfirmResourceRetrieveRequest(resource.Id, reqContentUpdate.AuditContext.CorrelationId, authCtx.AuthorizationContext, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 	if err != nil {
 		return err
@@ -444,10 +484,10 @@ func (client *Client) publishResource(ctx context.Context, link schema.ResourceL
 	return link, nil
 }
 
-func (client *Client) unpublishResource(ctx context.Context, resource *pbRA.Resource, authCtx pbCQRS.AuthorizationContext, rscsUnpublished map[string]bool) map[string]bool {
+func (client *Client) unpublishResource(ctx context.Context, resourceID string, authCtx pbCQRS.AuthorizationContext, rscsUnpublished map[string]bool) map[string]bool {
 	_, err := client.server.raClient.UnpublishResource(ctx, &pbRA.UnpublishResourceRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resource.Id,
+		ResourceId:           resourceID,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			ConnectionId: client.remoteAddrString(),
 			Sequence:     client.coapConn.Sequence(),
@@ -456,22 +496,22 @@ func (client *Client) unpublishResource(ctx context.Context, resource *pbRA.Reso
 	if err != nil {
 		// unpublish resource is not critical -> resource is still accessible,
 		// but next update of device resource will returns 'not found; and it triggers again unpublish.
-		log.Errorf("DeviceId: %v, ResourceId: %v: cannot unpublish resource: %v", resource.DeviceId, resource.Id, err)
-		rscsUnpublished[resource.Id] = false
+		log.Errorf("ResourceId: %v: cannot unpublish resource: %v", resourceID, err)
+		rscsUnpublished[resourceID] = false
 		return rscsUnpublished
 	}
 
-	rscsUnpublished[resource.Id] = true
+	rscsUnpublished[resourceID] = true
 	return rscsUnpublished
 }
 
-func (client *Client) unpublishResources(ctx context.Context, rscs []*pbRA.Resource) {
+func (client *Client) unpublishResources(ctx context.Context, resourceIDs []string) {
 	rscsUnpublished := make(map[string]bool, 32)
 	authCtx := client.loadAuthorizationContext()
 
-	for _, resource := range rscs {
-		rscsUnpublished = client.unpublishResource(ctx, resource, authCtx.AuthorizationContext, rscsUnpublished)
+	for _, resourceID := range resourceIDs {
+		rscsUnpublished = client.unpublishResource(ctx, resourceID, authCtx.AuthorizationContext, rscsUnpublished)
 	}
 
-	client.unobserveResources(ctx, rscs, rscsUnpublished)
+	client.unobserveResources(ctx, resourceIDs, rscsUnpublished)
 }

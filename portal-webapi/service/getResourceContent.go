@@ -44,8 +44,8 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 	retrieveResourcesValuesClient, err := r.rdClient.RetrieveResourcesValues(kitNetGrpc.CtxWithToken(context.Background(), token), &pbGRPC.RetrieveResourcesValuesRequest{
 		ResourceIdsFilter: []*pbGRPC.ResourceId{
 			{
-				DeviceId:         deviceID,
-				ResourceLinkHref: href,
+				DeviceId: deviceID,
+				Href:     href,
 			},
 		},
 	})
@@ -67,7 +67,7 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 			logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusBadRequest, ctx)
 			return
 		}
-		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetResourceLinkHref() == href && resourceValue.Content != nil {
+		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetHref() == href && resourceValue.Content != nil {
 			switch resourceValue.Content.ContentType {
 			case message.AppCBOR.String(), message.AppOcfCbor.String():
 				err := codec.NewDecoderBytes(resourceValue.Content.Data, new(codec.CborHandle)).Decode(&m)

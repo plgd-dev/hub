@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-ocf/cloud/authorization/oauth"
 	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
 	"github.com/go-ocf/cloud/authorization/provider"
 	"github.com/go-ocf/kit/log"
@@ -14,8 +15,8 @@ import (
 type Config struct {
 	Log log.Config
 
-	Device provider.Config      `envconfig:"DEVICE" env:"DEVICE"`
-	SDK    provider.OAuthConfig `envconfig:"SDK_OAUTH" env:"SDK_OAUTH"`
+	Device provider.Config `envconfig:"DEVICE" env:"DEVICE"`
+	SDK    oauth.Config    `envconfig:"SDK_OAUTH" env:"SDK_OAUTH"`
 
 	MongoDB  mongodb.Config     `envconfig:"MONGODB" env:"MONGODB"`
 	Listen   certManager.Config `envconfig:"LISTEN" env:"LISTEN"`

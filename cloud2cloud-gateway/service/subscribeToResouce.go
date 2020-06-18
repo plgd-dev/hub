@@ -94,7 +94,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-	href := routeVars[resourceLinkHrefKey]
+	href := routeVars[HrefKey]
 
 	err := rh.IsAuthorized(r.Context(), r, deviceID)
 	if err != nil {

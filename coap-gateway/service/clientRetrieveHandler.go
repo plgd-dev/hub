@@ -13,6 +13,7 @@ import (
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/go-coap/v2/mux"
 	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -85,8 +86,8 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	retrieveResourcesValuesClient, err := client.server.rdClient.RetrieveResourcesValues(ctx, &pbGRPC.RetrieveResourcesValuesRequest{
 		ResourceIdsFilter: []*pbGRPC.ResourceId{
 			{
-				DeviceId:         deviceID,
-				ResourceLinkHref: href,
+				DeviceId: deviceID,
+				Href:     href,
 			},
 		},
 	})
@@ -102,7 +103,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 		if err != nil {
 			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
 		}
-		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetResourceLinkHref() == href && resourceValue.Content != nil {
+		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetHref() == href && resourceValue.Content != nil {
 			return resourceValue.Content, coapCodes.Content, nil
 		}
 	}
@@ -110,10 +111,11 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 }
 
 func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href, resourceInterface string) (*pbGRPC.Content, coapCodes.Code, error) {
-	processed, err := client.server.rdClient.RetrieveResourceFromDevice(req.Context, &pbGRPC.RetrieveResourceFromDeviceRequest{
+	authCtx := client.loadAuthorizationContext()
+	processed, err := client.server.rdClient.RetrieveResourceFromDevice(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID), &pbGRPC.RetrieveResourceFromDeviceRequest{
 		ResourceId: &pbGRPC.ResourceId{
-			DeviceId:         deviceID,
-			ResourceLinkHref: href,
+			DeviceId: deviceID,
+			Href:     href,
 		},
 		ResourceInterface: resourceInterface,
 	})
