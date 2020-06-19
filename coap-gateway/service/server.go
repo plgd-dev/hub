@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-ocf/kit/security/oauth/manager"
+	kitSync "github.com/go-ocf/kit/sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -51,9 +52,9 @@ type Server struct {
 	asClient pbAS.AuthorizationServiceClient
 	rdClient pbGRPC.GrpcGatewayClient
 
-	clientContainer *ClientContainer
-	oicPingCache    *cache.Cache
-	oauthMgr        *manager.Manager
+	clients      *kitSync.Map
+	oicPingCache *cache.Cache
+	oauthMgr     *manager.Manager
 
 	coapServer      *tcp.Server
 	listener        tcp.Listener
@@ -172,7 +173,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		rdClient:      rdClient,
 		oauthMgr:      oauthMgr,
 
-		clientContainer: &ClientContainer{sessions: make(map[string]*Client)},
+		clients:         kitSync.NewMap(),
 		oicPingCache:    oicPingCache,
 		listener:        listener,
 		authInterceptor: authInterceptor,
@@ -196,7 +197,7 @@ func getDeviceID(client *Client) string {
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(s mux.ResponseWriter, req *mux.Message, client *Client)) {
-	client, ok := server.clientContainer.Find(s.Client().RemoteAddr().String())
+	client, ok := ToClient(server.clients.Load(s.Client().RemoteAddr().String()))
 	if !ok {
 		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
 	}
@@ -237,16 +238,16 @@ func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn) {
 	remoteAddr := coapConn.RemoteAddr().String()
 	coapConn.AddOnClose(func() {
-		if client, ok := server.clientContainer.Pop(remoteAddr); ok {
+		if client, ok := ToClient(server.clients.PullOut(remoteAddr)); ok {
 			client.OnClose()
 		}
 	})
-	server.clientContainer.Add(remoteAddr, newClient(server, coapConn))
+	server.clients.Store(remoteAddr, newClient(server, coapConn))
 }
 
 func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		client, ok := ToClient(server.clients.Load(w.Client().RemoteAddr().String()))
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
@@ -262,7 +263,7 @@ func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 
 func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := server.clientContainer.Find(w.Client().RemoteAddr().String())
+		client, ok := ToClient(server.clients.Load(w.Client().RemoteAddr().String()))
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), coapCodes.InternalServerError, r.Token)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/go-ocf/cloud/grpc-gateway/client"
@@ -40,7 +39,6 @@ const pendingDeviceSubscriptionToken = "pending"
 type Client struct {
 	server   *Server
 	coapConn *tcp.ClientConn
-	isClosed int32
 
 	observedResources     map[string]map[int64]observedResource // [deviceID][instanceID]
 	observedResourcesLock sync.Mutex
@@ -61,6 +59,17 @@ func newClient(server *Server, client *tcp.ClientConn) *Client {
 		resourceSubscriptions: kitSync.NewMap(),
 		deviceSubscriptions:   kitSync.NewMap(),
 	}
+}
+
+func ToClient(v interface{}, ok bool) (*Client, bool) {
+	if !ok {
+		return nil, false
+	}
+	if v == nil {
+		return nil, false
+	}
+	c, ok := v.(*Client)
+	return c, ok
 }
 
 func (client *Client) remoteAddrString() string {
@@ -302,9 +311,7 @@ func (client *Client) cancelDeviceSubscriptions(wantWait bool) {
 func (client *Client) OnClose() {
 	log.Debugf("close client %v", client.coapConn.RemoteAddr())
 
-	atomic.StoreInt32(&client.isClosed, 1)
 	client.server.oicPingCache.Delete(client.remoteAddrString())
-
 	client.cleanObservedResources()
 	client.cancelResourceSubscriptions(false)
 	client.cancelDeviceSubscriptions(false)
