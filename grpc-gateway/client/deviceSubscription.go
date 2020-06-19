@@ -252,3 +252,17 @@ func (s *DeviceSubscription) runRecv() {
 		}
 	}
 }
+
+func ToDeviceSubscription(v interface{}, ok bool) *DeviceSubscription {
+	if !ok {
+		return nil
+	}
+	if v == nil {
+		return nil
+	}
+	s, ok := v.(*DeviceSubscription)
+	if ok {
+		return s
+	}
+	return nil
+}

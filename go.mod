@@ -10,7 +10,7 @@ require (
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap/v2 v2.0.0
-	github.com/go-ocf/kit v0.0.0-20200604204211-eaddc7a1125c
+	github.com/go-ocf/kit v0.0.0-20200619072822-dacb9f365b43
 	github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1

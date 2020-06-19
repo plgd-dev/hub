@@ -117,11 +117,11 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		},
 		onError: func(err error) {
 			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %w", authCtx.DeviceId, deviceID, href, err), coapCodes.Unauthorized, req.Token)
-			client.popResourceSubscription(token)
+			client.resourceSubscriptions.Delete(token)
 		},
 		onClose: func() {
 			log.Debugf("resource /%v%v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", deviceID, href)
-			client.popResourceSubscription(token)
+			client.resourceSubscriptions.Delete(token)
 		},
 	}
 
@@ -134,9 +134,10 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		return
 	}
 
-	err = client.insertResourceSubscription(token, sub)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: %v", authCtx.DeviceId, deviceID, href, err), coapCodes.BadRequest, req.Token)
+	_, loaded := client.resourceSubscriptions.LoadOrStore(token, sub)
+	if loaded {
+		sub.Cancel()
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: resource subscription with token %v already exist", authCtx.DeviceId, deviceID, href, token), coapCodes.BadRequest, req.Token)
 		return
 	}
 

@@ -18,6 +18,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	kitSync "github.com/go-ocf/kit/sync"
 	"github.com/go-ocf/sdk/schema"
 	"github.com/go-ocf/sdk/schema/cloud"
 )
@@ -33,6 +34,8 @@ type authCtx struct {
 	UserID      string
 }
 
+const pendingDeviceSubscriptionToken = "pending"
+
 //Client a setup of connection
 type Client struct {
 	server   *Server
@@ -42,7 +45,8 @@ type Client struct {
 	observedResources     map[string]map[int64]observedResource // [deviceID][instanceID]
 	observedResourcesLock sync.Mutex
 
-	observeResourceContainer map[string]*grpcClient.ResourceSubscription // [token]
+	resourceSubscriptions *kitSync.Map // [token]
+	deviceSubscriptions   *kitSync.Map // [token]
 
 	mutex   sync.Mutex
 	authCtx authCtx
@@ -51,10 +55,11 @@ type Client struct {
 //newClient create and initialize client
 func newClient(server *Server, client *tcp.ClientConn) *Client {
 	return &Client{
-		server:                   server,
-		coapConn:                 client,
-		observedResources:        make(map[string]map[int64]observedResource),
-		observeResourceContainer: make(map[string]*grpcClient.ResourceSubscription),
+		server:                server,
+		coapConn:              client,
+		observedResources:     make(map[string]map[int64]observedResource),
+		resourceSubscriptions: kitSync.NewMap(),
+		deviceSubscriptions:   kitSync.NewMap(),
 	}
 }
 
@@ -62,16 +67,8 @@ func (client *Client) remoteAddrString() string {
 	return client.coapConn.RemoteAddr().String()
 }
 
-func (client *Client) popResourceSubscription(token string) *grpcClient.ResourceSubscription {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	tmp := client.observeResourceContainer[token]
-	delete(client.observeResourceContainer, token)
-	return tmp
-}
-
 func (client *Client) cancelResourceSubscription(token string, wantWait bool) (bool, error) {
-	s := client.popResourceSubscription(token)
+	s := grpcClient.ToResourceSubscription(client.resourceSubscriptions.PullOut(token))
 	if s == nil {
 		return false, nil
 	}
@@ -83,25 +80,6 @@ func (client *Client) cancelResourceSubscription(token string, wantWait bool) (b
 		wait()
 	}
 	return true, nil
-}
-
-func (client *Client) popResourceSubscriptions() map[string]*grpcClient.ResourceSubscription {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	tmp := client.observeResourceContainer
-	client.observeResourceContainer = make(map[string]*grpcClient.ResourceSubscription)
-	return tmp
-}
-
-func (client *Client) insertResourceSubscription(token string, res *grpcClient.ResourceSubscription) error {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	_, ok := client.observeResourceContainer[token]
-	if ok {
-		return fmt.Errorf("resource subscription already exist")
-	}
-	client.observeResourceContainer[token] = res
-	return nil
 }
 
 func (client *Client) observeResource(ctx context.Context, res *pbRA.Resource, allowDuplicit bool) (err error) {
@@ -294,6 +272,32 @@ func (client *Client) cleanObservedResources() {
 	}
 }
 
+func (client *Client) cancelResourceSubscriptions(wantWait bool) {
+	resourceSubscriptions := client.resourceSubscriptions.PullOutAll()
+	for _, v := range resourceSubscriptions {
+		o := grpcClient.ToResourceSubscription(v, true)
+		wait, err := o.Cancel()
+		if err != nil {
+			log.Errorf("cannot cancel resource subscription: %v", err)
+		} else if wantWait {
+			wait()
+		}
+	}
+}
+
+func (client *Client) cancelDeviceSubscriptions(wantWait bool) {
+	deviceSubscriptions := client.deviceSubscriptions.PullOutAll()
+	for _, v := range deviceSubscriptions {
+		o := grpcClient.ToDeviceSubscription(v, true)
+		wait, err := o.Cancel()
+		if err != nil {
+			log.Errorf("cannot cancel device subscription: %v", err)
+		} else if wantWait {
+			wait()
+		}
+	}
+}
+
 // OnClose action when coap connection was closed.
 func (client *Client) OnClose() {
 	log.Debugf("close client %v", client.coapConn.RemoteAddr())
@@ -302,10 +306,8 @@ func (client *Client) OnClose() {
 	client.server.oicPingCache.Delete(client.remoteAddrString())
 
 	client.cleanObservedResources()
-	observeResourceContainer := client.popResourceSubscriptions()
-	for _, o := range observeResourceContainer {
-		o.Cancel()
-	}
+	client.cancelResourceSubscriptions(false)
+	client.cancelDeviceSubscriptions(false)
 
 	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
 
@@ -322,8 +324,6 @@ func (client *Client) OnClose() {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.DeviceId, err)
 		}
-
-		client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
 	}
 }
 

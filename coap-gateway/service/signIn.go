@@ -1,10 +1,13 @@
 package service
 
 import (
+	"context"
 	"fmt"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
+	grpcClient "github.com/go-ocf/cloud/grpc-gateway/client"
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
@@ -83,25 +86,37 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	switch {
 	case oldAuthCtx.GetDeviceId() == "":
 		newDevice = true
-	case oldAuthCtx.GetDeviceId() != signIn.DeviceID:
-		wait, err := client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
-			client.Close()
-			return
-		}
-		wait()
+	case oldAuthCtx.GetDeviceId() != signIn.DeviceID || oldAuthCtx.UserID != signIn.UserID:
+		client.cancelResourceSubscriptions(true)
+		client.cancelDeviceSubscriptions(true)
 		newDevice = true
 	}
 
 	if newDevice {
-		sub := &deviceSubscriptionHandlers{
-			Client:   client,
-			deviceID: signIn.DeviceID,
+		h := deviceSubscriptionHandlers{
+			onResourceUpdatePending: func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
+				return client.updateResource(ctx, val)
+			},
+			onResourceRetrievePending: func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
+				return client.retrieveResource(ctx, val)
+			},
+			onClose: func() {
+				log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", signIn.DeviceID)
+			},
+			onError: func(err error) {
+				log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) ends with error: %v", err)
+				client.Close()
+			},
 		}
-		_, err := client.server.userDevicesSubscription.Create(req.Context, signIn.UserID, signIn.DeviceID, sub)
+		sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %v", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
+		}
+		_, loaded := client.deviceSubscriptions.LoadOrStore(pendingDeviceSubscriptionToken, sub)
+		if loaded {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot store device %v pending subscription: device subscription with token %v already exist", signIn.DeviceID, pendingDeviceSubscriptionToken), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
@@ -121,6 +136,8 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 		return
 	}
 
+	client.cancelResourceSubscriptions(true)
+	client.cancelDeviceSubscriptions(true)
 	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
 	if oldAuthCtx.DeviceId != "" {
 		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
@@ -136,14 +153,6 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceId(), err)
 			return
 		}
-
-		wait, err := client.server.userDevicesSubscription.Cancel(oldAuthCtx.UserID, oldAuthCtx.GetDeviceId())
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError, req.Token)
-			client.Close()
-			return
-		}
-		wait()
 	}
 
 	client.sendResponse(coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}) // empty object

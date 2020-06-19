@@ -15,7 +15,6 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	"github.com/go-ocf/cloud/grpc-gateway/client"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
@@ -56,11 +55,10 @@ type Server struct {
 	oicPingCache    *cache.Cache
 	oauthMgr        *manager.Manager
 
-	userDevicesSubscription *client.UsersDevicesSubscription
-	coapServer              *tcp.Server
-	listener                tcp.Listener
-	authInterceptor         kitNetCoap.Interceptor
-	wgDone                  *sync.WaitGroup
+	coapServer      *tcp.Server
+	listener        tcp.Listener
+	authInterceptor kitNetCoap.Interceptor
+	wgDone          *sync.WaitGroup
 }
 
 type DialCertManager = interface {
@@ -173,8 +171,6 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		asClient:      asClient,
 		rdClient:      rdClient,
 		oauthMgr:      oauthMgr,
-
-		userDevicesSubscription: client.NewUsersDevicesSubscription(rdClient),
 
 		clientContainer: &ClientContainer{sessions: make(map[string]*Client)},
 		oicPingCache:    oicPingCache,
