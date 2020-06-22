@@ -14,22 +14,22 @@ import (
 	kitHttp "github.com/go-ocf/kit/net/http"
 )
 
-func (s *SubscribeManager) subscribeToResource(ctx context.Context, l store.LinkedAccount, correlationID, signingSecret, deviceID, resourceHrefLink string) (string, error) {
+func (s *SubscribeManager) subscribeToResource(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID, resourceHrefLink string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+"/"+resourceHrefLink+"/subscriptions", correlationID, events.SubscriptionRequest{
 		URL:           s.eventsURL,
 		EventTypes:    []events.EventType{events.EventType_ResourceChanged},
 		SigningSecret: signingSecret,
-	}, l)
+	}, linkedAccount, linkedCloud)
 	if err != nil {
-		return "", fmt.Errorf("cannot subscribe to device %v for %v: %v", deviceID, l.ID, err)
+		return "", fmt.Errorf("cannot subscribe to device %v for %v: %v", deviceID, linkedAccount.ID, err)
 	}
 	return resp.SubscriptionId, nil
 }
 
-func cancelResourceSubscription(ctx context.Context, l store.LinkedAccount, deviceID, resourceID, subscriptionID string) error {
-	err := cancelSubscription(ctx, "/devices/"+deviceID+"/"+resourceID+"/subscriptions/"+subscriptionID, l)
+func cancelResourceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, resourceID, subscriptionID string) error {
+	err := cancelSubscription(ctx, "/devices/"+deviceID+"/"+resourceID+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
-		return fmt.Errorf("cannot cancel resource subscription for %v: %v", l.ID, err)
+		return fmt.Errorf("cannot cancel resource subscription for %v: %v", linkedAccount.ID, err)
 	}
 	return nil
 }
@@ -45,7 +45,7 @@ func (s *SubscribeManager) HandleResourceChangedEvent(ctx context.Context, subsc
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err := s.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.NotifyResourceChangedRequest{
+	_, err := s.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithUserID(ctx, subscriptionData.linkedAccount.UserID), &pbRA.NotifyResourceChangedRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: subscriptionData.subscription.DeviceID,
 		},

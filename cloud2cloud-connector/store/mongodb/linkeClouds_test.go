@@ -180,7 +180,10 @@ type testLinkedCloudHandler struct {
 
 func (h *testLinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCloudIter) (err error) {
 	var sub store.LinkedCloud
-	for iter.Next(ctx, &sub) {
+	for {
+		if !iter.Next(ctx, &sub) {
+			break
+		}
 		h.lcs = append(h.lcs, sub)
 	}
 	return iter.Err()

@@ -7,10 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/authorization/oauth"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/patrickmn/go-cache"
-	"golang.org/x/oauth2"
 )
 
 type LinkedCloudHandler struct {
@@ -36,61 +34,57 @@ func generateRandomString(n int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func (rh *RequestHandler) GetLinkedCloud(ctx context.Context, data LinkedAccountData) (store.LinkedCloud, error) {
-	switch data.State {
-	case LinkedAccountState_START:
-		return rh.originCloud, nil
-	case LinkedAccountState_PROVISIONED_ORIGIN_CLOUD:
-		var h LinkedCloudHandler
-		err := rh.store.LoadLinkedClouds(ctx, store.Query{ID: data.LinkedAccount.TargetCloud.LinkedCloudID}, &h)
-		if err != nil {
-			return store.LinkedCloud{}, fmt.Errorf("cannot find linked cloud with ID %v: %v", data.LinkedAccount.TargetCloud.LinkedCloudID, err)
-		}
-		return h.linkedCloud, nil
+func (rh *RequestHandler) GetLinkedCloud(ctx context.Context, linkedCloudID string) (store.LinkedCloud, error) {
+	var h LinkedCloudHandler
+	err := rh.store.LoadLinkedClouds(ctx, store.Query{ID: linkedCloudID}, &h)
+	if err != nil {
+		return store.LinkedCloud{}, fmt.Errorf("cannot find linked cloud with ID %v: %v", linkedCloudID, err)
 	}
-	return store.LinkedCloud{}, fmt.Errorf("state %v cannot provide linked cloud", data.State)
+	return h.linkedCloud, nil
 }
 
-func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, data LinkedAccountData) (int, error) {
-	linkedCloud, err := rh.GetLinkedCloud(r.Context(), data)
+func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (int, error) {
+	linkedCloud, err := rh.GetLinkedCloud(r.Context(), linkedAccount.LinkedCloudID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	oauth := linkedCloud.ToOAuth2Config()
-	oauth.RedirectURL = rh.oauthCallback
 	t, err := generateRandomString(32)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot generate random token")
 	}
-	err = rh.provisionCache.Add(t, data, cache.DefaultExpiration)
+	err = rh.provisionCache.Add(t, provisionCacheData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+	}, cache.DefaultExpiration)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot store key - collision")
 	}
-	url := oauth.AuthCodeURL(t, oauth2.AccessTypeOffline)
-	if linkedCloud.Audience != "" {
-		//"https://portal.shared.pluggedin.cloud"
-		url = oauth.AuthCodeURL(t, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("audience", linkedCloud.Audience))
-	}
+	url := linkedCloud.OAuth.AuthCodeURL(t)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	return http.StatusOK, nil
 }
 
 func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
-	l := store.LinkedAccount{
-		TargetURL: r.FormValue("target_url"),
-		TargetCloud: oauth.Config{
-			LinkedCloudID: r.FormValue("target_linked_cloud_id"),
-		},
+	_, userID, err := ParseAuth(r.Header.Get("Authorization"))
+	if err != nil {
+		return http.StatusUnauthorized, fmt.Errorf("cannot get usedID from Authorization header: %w", err)
 	}
-	if l.TargetURL == "" {
+	linkedCloud, err := rh.GetLinkedCloud(r.Context(), r.FormValue("target_linked_cloud_id"))
+	if err != nil {
+		return http.StatusBadRequest, fmt.Errorf("invaid param target_linked_cloud_id: %w", err)
+	}
+	linkedAccount := store.LinkedAccount{
+		TargetURL:     r.FormValue("target_url"),
+		LinkedCloudID: r.FormValue("target_linked_cloud_id"),
+		UserID:        userID,
+	}
+	if linkedAccount.TargetURL == "" {
 		return http.StatusBadRequest, fmt.Errorf("invalid target_url")
 	}
-	if l.TargetCloud.LinkedCloudID == "" {
+	if linkedAccount.LinkedCloudID == "" {
 		return http.StatusBadRequest, fmt.Errorf("invalid target_linked_cloud_id")
 	}
-
-	data := LinkedAccountData{LinkedAccount: l}
-	return rh.HandleOAuth(w, r, data)
+	return rh.HandleOAuth(w, r, linkedAccount, linkedCloud)
 }
 
 func (rh *RequestHandler) AddLinkedAccount(w http.ResponseWriter, r *http.Request) {

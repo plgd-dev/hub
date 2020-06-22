@@ -16,10 +16,9 @@ func (t AccessToken) String() string {
 }
 
 type Token struct {
-	LinkedCloudID string
-	AccessToken   AccessToken
-	RefreshToken  string
-	Expiry        time.Time
+	AccessToken  AccessToken
+	RefreshToken string
+	Expiry       time.Time
 }
 
 type LinkedCloudsHandler struct {
@@ -27,8 +26,11 @@ type LinkedCloudsHandler struct {
 }
 
 func (h *LinkedCloudsHandler) Handle(ctx context.Context, iter LinkedCloudIter) (err error) {
-	var s LinkedCloud
-	for iter.Next(ctx, &s) {
+	for {
+		var s LinkedCloud
+		if !iter.Next(ctx, &s) {
+			break
+		}
 		h.LinkedClouds = append(h.LinkedClouds, s)
 	}
 	return iter.Err()
@@ -50,10 +52,9 @@ func (o Token) Refresh(ctx context.Context, cfg oauth2.Config) (Token, bool, err
 		return o, false, err
 	}
 	return Token{
-		LinkedCloudID: o.LinkedCloudID,
-		AccessToken:   AccessToken(token.AccessToken),
-		Expiry:        token.Expiry,
-		RefreshToken:  token.RefreshToken,
+		AccessToken:  AccessToken(token.AccessToken),
+		Expiry:       token.Expiry,
+		RefreshToken: token.RefreshToken,
 	}, true, nil
 }
 
@@ -102,10 +103,11 @@ func (t AccessToken) GetSubject() (string, error) {
 }
 
 type LinkedAccount struct {
-	ID          string `bson:"_id"`
-	UserID      string
-	TargetURL   string
-	TargetCloud Token
+	ID            string `bson:"_id"`
+	LinkedCloudID string `bson:"linkedcloudid"`
+	UserID        string
+	TargetURL     string
+	TargetCloud   Token
 }
 
 /*

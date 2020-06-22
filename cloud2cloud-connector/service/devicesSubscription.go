@@ -16,8 +16,7 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-func (s *SubscribeManager) subscribeToDevices(ctx context.Context, l store.LinkedAccount, correlationID, signingSecret string) (string, error) {
-
+func (s *SubscribeManager) subscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/subscriptions", correlationID, events.SubscriptionRequest{
 		URL: s.eventsURL,
 		EventTypes: []events.EventType{
@@ -25,17 +24,17 @@ func (s *SubscribeManager) subscribeToDevices(ctx context.Context, l store.Linke
 			events.EventType_DevicesOnline, events.EventType_DevicesOffline,
 		},
 		SigningSecret: signingSecret,
-	}, l)
+	}, linkedAccount, linkedCloud)
 	if err != nil {
 		return "", err
 	}
 	return resp.SubscriptionId, nil
 }
 
-func cancelDevicesSubscription(ctx context.Context, l store.LinkedAccount, subscriptionID string) error {
-	err := cancelSubscription(ctx, "/devices/subscriptions/"+subscriptionID, l)
+func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionID string) error {
+	err := cancelSubscription(ctx, "/devices/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
-		return fmt.Errorf("cannot cancel devices subscription for %v: %v", l.ID, err)
+		return fmt.Errorf("cannot cancel devices subscription for %v: %v", linkedAccount.ID, err)
 	}
 	return nil
 }
@@ -73,9 +72,10 @@ func (s *SubscribeManager) publishCloudDeviceStatus(ctx context.Context, deviceI
 func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
 	var errors []error
 	for _, device := range devices {
-		ctx := kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.OriginCloud.AccessToken.String())
+		ctx := kitNetGrpc.CtxWithUserID(ctx, d.linkedAccount.UserID)
 		_, err := s.asClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
 			DeviceId: device.ID,
+			UserId:   d.linkedAccount.UserID,
 		})
 		if err != nil {
 			errors = append(errors, err)
@@ -108,12 +108,13 @@ func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscr
 		}
 		err = s.cache.Add(correlationID, subscriptionData{
 			linkedAccount: d.linkedAccount,
+			linkedCloud:   d.linkedCloud,
 			subscription:  sub,
 		}, cache.DefaultExpiration)
 		if err != nil {
 			return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
 		}
-		sub.SubscriptionID, err = s.subscribeToDevice(ctx, d.linkedAccount, correlationID, signingSecret, device.ID)
+		sub.SubscriptionID, err = s.subscribeToDevice(ctx, d.linkedAccount, d.linkedCloud, correlationID, signingSecret, device.ID)
 		if err != nil {
 			s.cache.Delete(correlationID)
 			errors = append(errors, fmt.Errorf("cannot subscribe to device %v: %v", device.ID, err))
@@ -121,18 +122,14 @@ func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscr
 		}
 		_, err = s.store.FindOrCreateSubscription(ctx, sub)
 		if err != nil {
-			cancelDevicesSubscription(ctx, d.linkedAccount, sub.SubscriptionID)
+			cancelDevicesSubscription(ctx, d.linkedAccount, d.linkedCloud, sub.SubscriptionID)
 			errors = append(errors, fmt.Errorf("cannot store subscription to DB: %v", err))
 			continue
 		}
-		loaded, err := s.resourceProjection.Register(ctx, device.ID)
+		err = s.devicesSubscription.Add(ctx, device.ID, d.linkedAccount, d.linkedCloud)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot register device %v to resource projection: %v", device.ID, err))
 			continue
-		}
-		if !loaded {
-			// we want to be only once registered in projection.
-			s.resourceProjection.Unregister(device.ID)
 		}
 	}
 	if len(errors) > 0 {
@@ -142,13 +139,11 @@ func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscr
 }
 
 func (s *SubscribeManager) HandleDevicesUnregistered(ctx context.Context, subscriptionData subscriptionData, correlationID string, devices events.DevicesUnregistered) error {
-	userID, err := subscriptionData.linkedAccount.OriginCloud.AccessToken.GetSubject()
-	if err != nil {
-		return fmt.Errorf("cannot get userID: %v", err)
-	}
+	userID := subscriptionData.linkedAccount.UserID
 	var errors []error
+	ctx = kitNetGrpc.CtxWithUserID(ctx, userID)
 	for _, device := range devices {
-		err := cancelDeviceSubscription(ctx, subscriptionData.linkedAccount, device.ID, subscriptionData.subscription.SubscriptionID)
+		err := cancelDeviceSubscription(ctx, subscriptionData.linkedAccount, subscriptionData.linkedCloud, device.ID, subscriptionData.subscription.SubscriptionID)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot cancel subscription to device %v: %v", device.ID, err))
 		}
@@ -157,15 +152,14 @@ func (s *SubscribeManager) HandleDevicesUnregistered(ctx context.Context, subscr
 			errors = append(errors, fmt.Errorf("cannot remove device %v subscription: %v", device.ID, err))
 		}
 		s.cache.Delete(correlationID)
-		_, err = s.asClient.RemoveDevice(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), &pbAS.RemoveDeviceRequest{
+		_, err = s.asClient.RemoveDevice(ctx, &pbAS.RemoveDeviceRequest{
 			DeviceId: device.ID,
 			UserId:   userID,
 		})
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot remove device  %v from user: %v", device.ID, err))
 		}
-
-		err = s.resourceProjection.Unregister(device.ID)
+		err = s.devicesSubscription.Delete(userID, device.ID)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot unregister device %v from resource projection: %v", device.ID, err))
 		}
@@ -184,7 +178,7 @@ func (s *SubscribeManager) HandleDevicesOnline(ctx context.Context, subscription
 		authCtx := pbCQRS.AuthorizationContext{
 			DeviceId: device.ID,
 		}
-		err := s.updateCloudStatus(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), device.ID, true, authCtx, header.SequenceNumber)
+		err := s.updateCloudStatus(ctx, device.ID, true, authCtx, header.SequenceNumber)
 
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to online: %v", device.ID, err))
@@ -205,7 +199,7 @@ func (s *SubscribeManager) HandleDevicesOffline(ctx context.Context, subscriptio
 			DeviceId: device.ID,
 		}
 
-		err := s.updateCloudStatus(kitNetGrpc.CtxWithToken(ctx, subscriptionData.linkedAccount.OriginCloud.AccessToken.String()), device.ID, false, authCtx, header.SequenceNumber)
+		err := s.updateCloudStatus(ctx, device.ID, false, authCtx, header.SequenceNumber)
 
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %v", device.ID, err))

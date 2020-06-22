@@ -23,12 +23,12 @@ func TestStore_InsertLinkedAccount(t *testing.T) {
 			name: "valid",
 			args: args{
 				sub: store.LinkedAccount{
-					ID:        "testID",
-					TargetURL: "testTargetURL",
+					ID:            "testID",
+					TargetURL:     "testTargetURL",
+					LinkedCloudID: "testLinkedCloudID",
 					TargetCloud: store.Token{
-						LinkedCloudID: "testLinkedCloudID",
-						AccessToken:   "testAccessToken",
-						RefreshToken:  "testRefreshToken",
+						AccessToken:  "testAccessToken",
+						RefreshToken: "testRefreshToken",
 					},
 					UserID: "userID",
 				},
@@ -72,12 +72,12 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 			name: "not found",
 			args: args{
 				sub: store.LinkedAccount{
-					ID:        "testID1",
-					TargetURL: "testTargetURL",
+					ID:            "testID1",
+					TargetURL:     "testTargetURL",
+					LinkedCloudID: "testLinkedCloudID",
 					TargetCloud: store.Token{
-						LinkedCloudID: "testLinkedCloudID",
-						AccessToken:   "testAccessToken",
-						RefreshToken:  "testRefreshToken",
+						AccessToken:  "testAccessToken",
+						RefreshToken: "testRefreshToken",
 					},
 					UserID: "userID",
 				},
@@ -88,12 +88,12 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 			name: "valid",
 			args: args{
 				sub: store.LinkedAccount{
-					ID:        "testID",
-					TargetURL: "testTargetURL",
+					ID:            "testID",
+					TargetURL:     "testTargetURL",
+					LinkedCloudID: "testLinkedCloudID",
 					TargetCloud: store.Token{
-						LinkedCloudID: "testLinkedCloudID",
-						AccessToken:   "testAccessToken",
-						RefreshToken:  "testRefreshToken",
+						AccessToken:  "testAccessToken",
+						RefreshToken: "testRefreshToken",
 					},
 					UserID: "userID",
 				},
@@ -113,12 +113,12 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
-		ID:        "testID",
-		TargetURL: "testTargetURL",
+		ID:            "testID",
+		TargetURL:     "testTargetURL",
+		LinkedCloudID: "testLinkedCloudID",
 		TargetCloud: store.Token{
-			LinkedCloudID: "testLinkedCloudID",
-			AccessToken:   "testAccessToken",
-			RefreshToken:  "testRefreshToken",
+			AccessToken:  "testAccessToken",
+			RefreshToken: "testRefreshToken",
 		},
 		UserID: "userID",
 	})
@@ -172,12 +172,12 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
-		ID:        "testID",
-		TargetURL: "testTargetURL",
+		ID:            "testID",
+		TargetURL:     "testTargetURL",
+		LinkedCloudID: "testLinkedCloudID",
 		TargetCloud: store.Token{
-			LinkedCloudID: "testLinkedCloudID",
-			AccessToken:   "testAccessToken",
-			RefreshToken:  "testRefreshToken",
+			AccessToken:  "testAccessToken",
+			RefreshToken: "testRefreshToken",
 		},
 		UserID: "userID",
 	})
@@ -200,8 +200,11 @@ type testLinkedAccountHandler struct {
 }
 
 func (h *testLinkedAccountHandler) Handle(ctx context.Context, iter store.LinkedAccountIter) (err error) {
-	var sub store.LinkedAccount
-	for iter.Next(ctx, &sub) {
+	for {
+		var sub store.LinkedAccount
+		if !iter.Next(ctx, &sub) {
+			break
+		}
 		h.accs = append(h.accs, sub)
 	}
 	return iter.Err()
@@ -210,12 +213,12 @@ func (h *testLinkedAccountHandler) Handle(ctx context.Context, iter store.Linked
 func TestStore_LoadLinkedAccounts(t *testing.T) {
 	linkedAccounts := []store.LinkedAccount{
 		{
-			ID:        "testID",
-			TargetURL: "testTargetURL",
+			ID:            "testID",
+			TargetURL:     "testTargetURL",
+			LinkedCloudID: "testLinkedCloudID",
 			TargetCloud: store.Token{
-				LinkedCloudID: "testLinkedCloudID",
-				AccessToken:   "testAccessToken",
-				RefreshToken:  "testRefreshToken",
+				AccessToken:  "testAccessToken",
+				RefreshToken: "testRefreshToken",
 			},
 			UserID: "userID",
 		},

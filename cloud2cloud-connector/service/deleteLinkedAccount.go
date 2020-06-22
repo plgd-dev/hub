@@ -21,9 +21,18 @@ func (rh *RequestHandler) deleteLinkedAccount(w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, fmt.Errorf("cannot load linked account: not found")
 	}
 
+	var ch LinkedCloudHandler
+	err = rh.store.LoadLinkedClouds(r.Context(), store.Query{ID: h.linkedAccount.LinkedCloudID}, &ch)
+	if err != nil {
+		return http.StatusBadRequest, fmt.Errorf("cannot load linked cloud: %v", err)
+	}
+	if !ch.set {
+		return http.StatusBadRequest, fmt.Errorf("cannot load linked cloud: not found")
+	}
+
 	var errors []error
 
-	err = rh.subManager.StopSubscriptions(r.Context(), h.linkedAccount)
+	err = rh.subManager.StopSubscriptions(r.Context(), h.linkedAccount, ch.linkedCloud)
 	if err != nil {
 		errors = append(errors, err)
 	}

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -18,8 +17,9 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
+	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
 
 //Server handle HTTP request
@@ -28,21 +28,6 @@ type Server struct {
 	cfg     Config
 	handler *RequestHandler
 	ln      net.Listener
-}
-
-type loadDeviceSubscriptionsHandler struct {
-	resourceProjection *projectionRA.Projection
-}
-
-func (h *loadDeviceSubscriptionsHandler) Handle(ctx context.Context, iter connectorStore.SubscriptionIter) error {
-	var sub connectorStore.Subscription
-	for iter.Next(ctx, &sub) {
-		_, err := h.resourceProjection.Register(ctx, sub.DeviceID)
-		if err != nil {
-			log.Errorf("cannot register device %v subscription to resource projection: %v", sub.DeviceID, err)
-		}
-	}
-	return iter.Err()
 }
 
 type DialCertManager = interface {
@@ -57,56 +42,51 @@ type ListenCertManager = interface {
 func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, resourceEventStore cqrsEventStore.EventStore, resourceSubscriber eventbus.Subscriber, store connectorStore.Store) *Server {
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-	listenTLSConfig.ClientAuth = tls.NoClientCert
 
 	ln, err := tls.Listen("tcp", config.Addr, listenTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot listen and serve: %v", err)
 	}
 
-	oauthMgr, err := manager.NewManagerFromConfiguration(svc.OAuth, clientTLS)
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
+		log.Fatalf("cannot create oauth manager: %w", err)
 	}
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	raConn, err := grpc.Dial(config.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	authConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	authConn, err := grpc.Dial(config.AuthServerAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	authClient := pbAS.NewAuthorizationServiceClient(authConn)
+	asClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	ctx := context.Background()
-
-	resourceProjection, err := projectionRA.NewProjection(ctx, config.FQDN, resourceEventStore, resourceSubscriber, newResourceCtx(store, raClient))
+	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-
-	// load resource subscriptions
-	h := loadDeviceSubscriptionsHandler{
-		resourceProjection: resourceProjection,
-	}
-	err = store.LoadSubscriptions(ctx, []connectorStore.SubscriptionQuery{
-		{
-			Type: connectorStore.Type_Device,
-		},
-	}, &h)
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
 	_, err = url.Parse(config.OAuthCallback)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	requestHandler := NewRequestHandler(config.OriginCloud, config.OAuthCallback, NewSubscriptionManager(config.EventsURL, authClient, raClient, store, resourceProjection), authClient, raClient, resourceProjection, store)
+	devicesSubscription := NewDevicesSubscription(rdClient, raClient)
+	requestHandler := NewRequestHandler(config.OAuthCallback, NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription), asClient, raClient, store)
 
 	server := Server{
 		server:  NewHTTP(requestHandler),

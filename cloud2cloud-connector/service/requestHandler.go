@@ -12,7 +12,6 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-connector/uri"
 	"github.com/go-ocf/kit/log"
 
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	router "github.com/gorilla/mux"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
@@ -22,12 +21,15 @@ import (
 const linkedCloudIdKey = "linkedCloudId"
 const linkedAccountIdKey = "linkedCloudId"
 
+type provisionCacheData struct {
+	linkedAccount store.LinkedAccount
+	linkedCloud   store.LinkedCloud
+}
+
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	originCloud        store.LinkedCloud
-	oauthCallback      string
-	resourceProjection *projectionRA.Projection
-	store              store.Store
+	oauthCallback string
+	store         store.Store
 
 	asClient pbAS.AuthorizationServiceClient
 	raClient pbRA.ResourceAggregateClient
@@ -45,23 +47,19 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 
 //NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
-	originCloud store.LinkedCloud,
 	oauthCallback string,
 	subManager *SubscribeManager,
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
-	resourceProjection *projectionRA.Projection,
 	store store.Store,
 ) *RequestHandler {
 	return &RequestHandler{
-		originCloud:        originCloud,
-		oauthCallback:      oauthCallback,
-		subManager:         subManager,
-		asClient:           asClient,
-		raClient:           raClient,
-		resourceProjection: resourceProjection,
-		store:              store,
-		provisionCache:     cache.New(5*time.Minute, 10*time.Minute),
+		oauthCallback:  oauthCallback,
+		subManager:     subManager,
+		asClient:       asClient,
+		raClient:       raClient,
+		store:          store,
+		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
 	}
 }
 

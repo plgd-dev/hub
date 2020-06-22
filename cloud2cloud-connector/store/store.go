@@ -5,7 +5,8 @@ import (
 )
 
 type Query struct {
-	ID string
+	ID            string
+	LinkedCloudID string
 }
 
 type LinkedAccountIter interface {

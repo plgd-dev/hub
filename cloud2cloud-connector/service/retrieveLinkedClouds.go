@@ -9,13 +9,19 @@ import (
 )
 
 type LinkedCloudsHandler struct {
-	linkedClouds []store.LinkedCloud
+	linkedClouds map[string]store.LinkedCloud
 }
 
 func (h *LinkedCloudsHandler) Handle(ctx context.Context, iter store.LinkedCloudIter) (err error) {
-	var s store.LinkedCloud
-	for iter.Next(ctx, &s) {
-		h.linkedClouds = append(h.linkedClouds, s)
+	for {
+		var s store.LinkedCloud
+		if !iter.Next(ctx, &s) {
+			break
+		}
+		if h.linkedClouds == nil {
+			h.linkedClouds = make(map[string]store.LinkedCloud)
+		}
+		h.linkedClouds[s.ID] = s
 	}
 	return iter.Err()
 }

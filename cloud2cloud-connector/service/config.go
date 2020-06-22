@@ -13,6 +13,7 @@ type Config struct {
 	grpc.Config
 	AuthServerAddr        string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
 	ResourceAggregateAddr string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
+	ResourceDirectoryAddr string         `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
 	FQDN                  string         `envconfig:"FQDN" default:"cloud2cloud.pluggedin.cloud"`
 	OAuthCallback         string         `envconfig:"OAUTH_CALLBACK" required:"true"`
 	EventsURL             string         `envconfig:"EVENTS_URL" required:"true"`

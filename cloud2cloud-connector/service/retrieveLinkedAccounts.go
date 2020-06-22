@@ -13,8 +13,11 @@ type LinkedAccountsHandler struct {
 }
 
 func (h *LinkedAccountsHandler) Handle(ctx context.Context, iter store.LinkedAccountIter) (err error) {
-	var s store.LinkedAccount
-	for iter.Next(ctx, &s) {
+	for {
+		var s store.LinkedAccount
+		if !iter.Next(ctx, &s) {
+			break
+		}
 		h.linkedAccounts = append(h.linkedAccounts, s)
 	}
 	return iter.Err()

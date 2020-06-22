@@ -18,8 +18,8 @@ func validateLinkedAccount(sub store.LinkedAccount) error {
 	if sub.UserID == "" {
 		return fmt.Errorf("cannot save linked account: invalid UserID")
 	}
-	if sub.TargetCloud.LinkedCloudID == "" {
-		return fmt.Errorf("cannot save linked account: invalid TargetCloud.LinkedCloudID")
+	if sub.LinkedCloudID == "" {
+		return fmt.Errorf("cannot save linked account: invalid LinkedCloudID")
 	}
 	if sub.TargetCloud.AccessToken == "" && sub.TargetCloud.RefreshToken == "" {
 		return fmt.Errorf("cannot save linked account: invalid TargetCloud.AccessToken and TargetCloud.RefreshToken")
@@ -83,6 +83,8 @@ func (s *Store) LoadLinkedAccounts(ctx context.Context, query store.Query, h sto
 	switch {
 	case query.ID != "":
 		iter, err = col.Find(ctx, bson.M{"_id": query.ID})
+	case query.LinkedCloudID != "":
+		iter, err = col.Find(ctx, bson.M{"linkedcloudid": query.LinkedCloudID})
 	default:
 		iter, err = col.Find(ctx, bson.M{})
 	}
