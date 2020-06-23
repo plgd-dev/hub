@@ -20,20 +20,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const Cloud2cloud_GW_HOST = "localhost:9090"
-
-func SetUp(t *testing.T) (TearDown func()) {
+func MakeConfig(t *testing.T) refImpl.Config {
 	var cfg refImpl.Config
 	err := envconfig.Process("", &cfg)
 	require.NoError(t, err)
-	cfg.Service.Addr = Cloud2cloud_GW_HOST
+	cfg.Service.Addr = testCfg.C2C_GW_HOST
 	cfg.JwksURL = testCfg.JWKS_URL
 	cfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	cfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	cfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.Service.FQDN = "cloud2cloud-gateway-" + t.Name()
 	cfg.Listen.Acme.DisableVerifyClientCertificate = true
-	return NewC2CGateway(t, cfg)
+	return cfg
+}
+
+func SetUp(t *testing.T) (TearDown func()) {
+	return NewC2CGateway(t, MakeConfig(t))
 }
 
 func NewC2CGateway(t *testing.T, cfg refImpl.Config) func() {
@@ -59,7 +61,7 @@ func NewRequest(method, url string, body io.Reader) *requestBuilder {
 	b := requestBuilder{
 		method:      method,
 		body:        body,
-		uri:         fmt.Sprintf("https://%s%s", Cloud2cloud_GW_HOST, url),
+		uri:         fmt.Sprintf("https://%s%s", testCfg.C2C_GW_HOST, url),
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
 		queryParams: make(map[string]string),

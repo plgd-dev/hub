@@ -25,14 +25,18 @@ const HTTP_GW_Port = 7000
 const HTTP_GW_Host = "0.0.0.0"
 const TestTimeout = 10 * time.Second
 
-func SetUp(t *testing.T) (TearDown func()) {
+func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	envconfig.Process("", &cfg)
 	cfg.Address = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
 	cfg.Listen.Acme.DisableVerifyClientCertificate = true
 	cfg.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.JwksURL = testCfg.JWKS_URL
-	return NewTestHTTPGW(t, cfg)
+	return cfg
+}
+
+func SetUp(t *testing.T) (TearDown func()) {
+	return NewTestHTTPGW(t, MakeConfig(t))
 }
 
 func NewTestHTTPGW(t *testing.T, cfg service.Config) func() {

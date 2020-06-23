@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(t *testing.T) (TearDown func()) {
+func MakeConfig(t *testing.T) refImpl.Config {
 	var grpcCfg refImpl.Config
 	err := envconfig.Process("", &grpcCfg)
 	require.NoError(t, err)
@@ -18,7 +18,11 @@ func SetUp(t *testing.T) (TearDown func()) {
 	grpcCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	grpcCfg.JwksURL = testCfg.JWKS_URL
 	grpcCfg.Listen.Acme.DisableVerifyClientCertificate = true
-	return NewGrpcGateway(t, grpcCfg)
+	return grpcCfg
+}
+
+func SetUp(t *testing.T) (TearDown func()) {
+	return NewGrpcGateway(t, MakeConfig(t))
 }
 
 func NewGrpcGateway(t *testing.T, cfg refImpl.Config) func() {

@@ -541,6 +541,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					ContentType: message.AppOcfCbor.String(),
 					Data:        []byte("\277estate\364epower\000dnameeLight\377"),
 				},
+				Status: pb.Status_OK,
 			},
 		},
 	}
@@ -653,6 +654,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 							ContentType: message.AppOcfCbor.String(),
 							Data:        []byte("\277estate\364epower\030cdnameeLight\377"),
 						},
+						Status: pb.Status_OK,
 					},
 				},
 			}
@@ -734,6 +736,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 							ContentType: message.AppOcfCbor.String(),
 							Data:        []byte("\277estate\364epower\000dnameeLight\377"),
 						},
+						Status: pb.Status_OK,
 					},
 				},
 			}

@@ -32,14 +32,18 @@ func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, 
 	return s, nil
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func MakeConfig(t *testing.T) service.Config {
 	var authCfg service.Config
 	err := envconfig.Process("", &authCfg)
 	require.NoError(t, err)
 	authCfg.Addr = testCfg.AUTH_HOST
 	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
 	authCfg.Device.Provider = "test"
-	return NewAuthServer(t, authCfg)
+	return authCfg
+}
+
+func SetUp(t *testing.T) (TearDown func()) {
+	return NewAuthServer(t, MakeConfig(t))
 }
 
 func NewAuthServer(t *testing.T, config service.Config) func() {

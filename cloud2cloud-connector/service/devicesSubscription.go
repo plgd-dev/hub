@@ -16,7 +16,7 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-func (s *SubscribeManager) subscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret string) (string, error) {
+func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/subscriptions", correlationID, events.SubscriptionRequest{
 		URL: s.eventsURL,
 		EventTypes: []events.EventType{
@@ -39,7 +39,7 @@ func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAc
 	return nil
 }
 
-func (s *SubscribeManager) publishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext, sequence uint64) error {
+func (s *SubscriptionManager) publishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext, sequence uint64) error {
 	resource := pbRA.Resource{
 		Id:            raCqrs.MakeResourceId(deviceID, cloud.StatusHref),
 		Href:          cloud.StatusHref,
@@ -69,7 +69,48 @@ func (s *SubscribeManager) publishCloudDeviceStatus(ctx context.Context, deviceI
 	return nil
 }
 
-func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
+func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	signingSecret, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+	}
+	corID, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("cannot generate correlationID for devices subscription: %v", err)
+	}
+	correlationID := corID.String()
+	sub := store.Subscription{
+		Type:            store.Type_Device,
+		LinkedAccountID: linkedAccount.ID,
+		DeviceID:        deviceID,
+		SigningSecret:   signingSecret,
+	}
+	err = s.cache.Add(correlationID, subscriptionData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+		subscription:  sub,
+	}, cache.DefaultExpiration)
+	if err != nil {
+		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
+	}
+	sub.SubscriptionID, err = s.subscribeToDevice(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID)
+	if err != nil {
+		s.cache.Delete(correlationID)
+		return fmt.Errorf("cannot subscribe to device %v: %v", deviceID, err)
+	}
+	_, err = s.store.FindOrCreateSubscription(ctx, sub)
+	if err != nil {
+		cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.SubscriptionID)
+		return fmt.Errorf("cannot store subscription to DB: %v", err)
+	}
+	err = s.devicesSubscription.Add(ctx, deviceID, linkedAccount, linkedCloud)
+	if err != nil {
+		return fmt.Errorf("cannot register device %v to resource projection: %v", deviceID, err)
+	}
+	return nil
+}
+
+func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d subscriptionData, devices events.DevicesRegistered, header events.EventHeader) error {
 	var errors []error
 	for _, device := range devices {
 		ctx := kitNetGrpc.CtxWithUserID(ctx, d.linkedAccount.UserID)
@@ -90,45 +131,12 @@ func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscr
 			errors = append(errors, err)
 			continue
 		}
-
-		signingSecret, err := generateRandomString(32)
-		if err != nil {
-			return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
-		}
-		corID, err := uuid.NewV4()
-		if err != nil {
-			return fmt.Errorf("cannot generate correlationID for devices subscription: %v", err)
-		}
-		correlationID := corID.String()
-		sub := store.Subscription{
-			Type:            store.Type_Device,
-			LinkedAccountID: d.linkedAccount.ID,
-			DeviceID:        device.ID,
-			SigningSecret:   signingSecret,
-		}
-		err = s.cache.Add(correlationID, subscriptionData{
-			linkedAccount: d.linkedAccount,
-			linkedCloud:   d.linkedCloud,
-			subscription:  sub,
-		}, cache.DefaultExpiration)
-		if err != nil {
-			return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
-		}
-		sub.SubscriptionID, err = s.subscribeToDevice(ctx, d.linkedAccount, d.linkedCloud, correlationID, signingSecret, device.ID)
-		if err != nil {
-			s.cache.Delete(correlationID)
-			errors = append(errors, fmt.Errorf("cannot subscribe to device %v: %v", device.ID, err))
+		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
 			continue
 		}
-		_, err = s.store.FindOrCreateSubscription(ctx, sub)
+		err = s.SubscribeToDevice(ctx, device.ID, d.linkedAccount, d.linkedCloud)
 		if err != nil {
-			cancelDevicesSubscription(ctx, d.linkedAccount, d.linkedCloud, sub.SubscriptionID)
-			errors = append(errors, fmt.Errorf("cannot store subscription to DB: %v", err))
-			continue
-		}
-		err = s.devicesSubscription.Add(ctx, device.ID, d.linkedAccount, d.linkedCloud)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot register device %v to resource projection: %v", device.ID, err))
+			errors = append(errors, err)
 			continue
 		}
 	}
@@ -138,7 +146,7 @@ func (s *SubscribeManager) HandleDevicesRegistered(ctx context.Context, d subscr
 	return nil
 }
 
-func (s *SubscribeManager) HandleDevicesUnregistered(ctx context.Context, subscriptionData subscriptionData, correlationID string, devices events.DevicesUnregistered) error {
+func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, subscriptionData subscriptionData, correlationID string, devices events.DevicesUnregistered) error {
 	userID := subscriptionData.linkedAccount.UserID
 	var errors []error
 	ctx = kitNetGrpc.CtxWithUserID(ctx, userID)
@@ -172,7 +180,7 @@ func (s *SubscribeManager) HandleDevicesUnregistered(ctx context.Context, subscr
 }
 
 // HandleDevicesOnline sets device online to resource aggregate and register device to projection.
-func (s *SubscribeManager) HandleDevicesOnline(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
+func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
 	var errors []error
 	for _, device := range devices {
 		authCtx := pbCQRS.AuthorizationContext{
@@ -192,7 +200,7 @@ func (s *SubscribeManager) HandleDevicesOnline(ctx context.Context, subscription
 }
 
 // HandleDevicesOffline sets device off to resource aggregate and unregister device to projection.
-func (s *SubscribeManager) HandleDevicesOffline(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
+func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
 	var errors []error
 	for _, device := range devices {
 		authCtx := pbCQRS.AuthorizationContext{
@@ -212,7 +220,7 @@ func (s *SubscribeManager) HandleDevicesOffline(ctx context.Context, subscriptio
 	return nil
 }
 
-func (s *SubscribeManager) HandleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
+func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
 		return fmt.Errorf("cannot handle device event: %v", err)

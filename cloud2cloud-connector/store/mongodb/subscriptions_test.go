@@ -193,7 +193,7 @@ type testSubscriptionHandler struct {
 func (h *testSubscriptionHandler) Handle(ctx context.Context, iter store.SubscriptionIter) (err error) {
 	for {
 		var sub store.Subscription
-		if iter.Next(ctx, &sub) {
+		if !iter.Next(ctx, &sub) {
 			break
 		}
 		h.subs = append(h.subs, sub)

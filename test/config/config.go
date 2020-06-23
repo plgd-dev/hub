@@ -12,6 +12,8 @@ const GW_HOST = "localhost:55684"
 const RESOURCE_AGGREGATE_HOST = "localhost:9083"
 const RESOURCE_DIRECTORY_HOST = "localhost:9082"
 const GRPC_HOST = "localhost:9084"
+const C2C_CONNECTOR_HOST = "localhost:9085"
+const C2C_GW_HOST = "localhost:9086"
 const TEST_TIMEOUT = time.Second * 15
 const OAUTH_MANAGER_CLIENT_ID = "service"
 

@@ -320,6 +320,79 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 	require.Equal(t, expectedEvent, ev)
 
+	expectedEvents = ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
+	for _, e := range expectedEvents {
+		err = client.Send(&pb.SubscribeForEvents{
+			Token: "testToken",
+			FilterBy: &pb.SubscribeForEvents_ResourceEvent{
+				ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
+					ResourceId: &pb.ResourceId{
+						DeviceId: e.GetResourceChanged().GetResourceId().GetDeviceId(),
+						Href:     e.GetResourceChanged().GetResourceId().GetHref(),
+					},
+					FilterEvents: []pb.SubscribeForEvents_ResourceEventFilter_Event{
+						pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED,
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+		ev, err := client.Recv()
+		require.NoError(t, err)
+		expectedEvent := &pb.Event{
+			SubscriptionId: ev.SubscriptionId,
+			Type: &pb.Event_OperationProcessed_{
+				OperationProcessed: &pb.Event_OperationProcessed{
+					Token: "testToken",
+					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+					},
+				},
+			},
+		}
+		require.Equal(t, expectedEvent, ev)
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
+		//require.Equal(t, e, ev)
+		require.Equal(t, e.GetResourceChanged().GetStatus(), ev.GetResourceChanged().GetStatus())
+
+		err = client.Send(&pb.SubscribeForEvents{
+			Token: "testToken",
+			FilterBy: &pb.SubscribeForEvents_CancelSubscription_{
+				CancelSubscription: &pb.SubscribeForEvents_CancelSubscription{
+					SubscriptionId: ev.GetSubscriptionId(),
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		expectedEvent = &pb.Event{
+			SubscriptionId: ev.SubscriptionId,
+			Type: &pb.Event_SubscriptionCanceled_{
+				SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
+			},
+		}
+		require.Equal(t, expectedEvent, ev)
+
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		expectedEvent = &pb.Event{
+			SubscriptionId: ev.SubscriptionId,
+			Type: &pb.Event_OperationProcessed_{
+				OperationProcessed: &pb.Event_OperationProcessed{
+					Token: "testToken",
+					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+					},
+				},
+			},
+		}
+		require.Equal(t, expectedEvent, ev)
+	}
+
 	err = client.CloseSend()
 	require.NoError(t, err)
 }
@@ -446,6 +519,28 @@ func ResourceLinksToExpectedPublishEvents(deviceID string, links []schema.Resour
 	e := make(map[string]*pb.Event)
 	for _, l := range links {
 		e[deviceID+l.Href] = ResourceLinkToPublishEvent(deviceID, 0, l)
+	}
+	return e
+}
+
+func ResourceLinkToResourceChangedEvent(deviceID string, l schema.ResourceLink) *pb.Event {
+	return &pb.Event{
+		Type: &pb.Event_ResourceChanged_{
+			ResourceChanged: &pb.Event_ResourceChanged{
+				ResourceId: &pb.ResourceId{
+					DeviceId: deviceID,
+					Href:     l.Href,
+				},
+				Status: pb.Status_OK,
+			},
+		},
+	}
+}
+
+func ResourceLinksToExpectedResourceChangedEvents(deviceID string, links []schema.ResourceLink) map[string]*pb.Event {
+	e := make(map[string]*pb.Event)
+	for _, l := range links {
+		e[deviceID+l.Href] = ResourceLinkToResourceChangedEvent(deviceID, l)
 	}
 	return e
 }

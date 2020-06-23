@@ -34,7 +34,11 @@ func (e Events) NeedPullDevices() bool {
 	if len(set) != 0 {
 		return true
 	}
-	set = makeMap(events.AllDeviceSubscriptions...)
+	return false
+}
+
+func (e Events) NeedPullDevice() bool {
+	set := makeMap(events.AllDeviceSubscriptions...)
 	for _, v := range e.Device {
 		delete(set, v)
 	}
@@ -44,7 +48,7 @@ func (e Events) NeedPullDevices() bool {
 	return false
 }
 
-func (e Events) NeedPullDevicesWithContent() bool {
+func (e Events) NeedPullResources() bool {
 	set := makeMap(events.AllResourceSubscriptions...)
 	for _, v := range e.Resource {
 		delete(set, v)

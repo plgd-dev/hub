@@ -23,7 +23,7 @@ const AuthorizationHeader string = "Authorization"
 const AcceptHeader string = "Accept"
 const Cloud2cloudConnectorConnectionId string = "cloud2cloud-connector"
 
-type SubscribeManager struct {
+type SubscriptionManager struct {
 	eventsURL           string
 	store               store.Store
 	raClient            pbRA.ResourceAggregateClient
@@ -37,8 +37,8 @@ func NewSubscriptionManager(
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
 	store store.Store,
-	devicesSubscription *DevicesSubscription) *SubscribeManager {
-	return &SubscribeManager{
+	devicesSubscription *DevicesSubscription) *SubscriptionManager {
+	return &SubscriptionManager{
 		eventsURL:           EventsURL,
 		store:               store,
 		raClient:            raClient,
@@ -120,7 +120,7 @@ func (h *SubscriptionHandler) Handle(ctx context.Context, iter store.Subscriptio
 	return iter.Err()
 }
 
-func (s *SubscribeManager) HandleEvent(ctx context.Context, header events.EventHeader, body []byte) (int, error) {
+func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.EventHeader, body []byte) (int, error) {
 	var subData subscriptionData
 	var err error
 	data, ok := s.cache.Get(header.CorrelationID)
@@ -148,7 +148,8 @@ func (s *SubscribeManager) HandleEvent(ctx context.Context, header events.EventH
 		if err != nil {
 			return http.StatusGone, fmt.Errorf("cannot load linked account %v for subscription %v: %v", subData.subscription.LinkedAccountID, header.SubscriptionID, err)
 		}
-		if !h.ok {
+		if !lh.ok {
+			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{SubscriptionID: header.SubscriptionID})
 			return http.StatusGone, fmt.Errorf("unknown linked account %v subscription %v", subData.subscription.LinkedAccountID, subData.subscription.SubscriptionID)
 		}
 		var ch LinkedCloudHandler
@@ -157,6 +158,8 @@ func (s *SubscribeManager) HandleEvent(ctx context.Context, header events.EventH
 			return http.StatusGone, fmt.Errorf("cannot load linked cloud %v for subscription %v: %v", lh.linkedAccount.LinkedCloudID, subData.subscription.SubscriptionID, err)
 		}
 		if !ch.set {
+			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: lh.linkedAccount.ID})
+			s.store.RemoveLinkedAccount(ctx, lh.linkedAccount.ID)
 			return http.StatusGone, fmt.Errorf("unknown linked cloud %v subscription %v", lh.linkedAccount.LinkedCloudID, subData.subscription.SubscriptionID)
 		}
 		subData.linkedAccount = lh.linkedAccount
@@ -172,6 +175,10 @@ func (s *SubscribeManager) HandleEvent(ctx context.Context, header events.EventH
 		header.EventTimestamp, body) {
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v: %v", header.SubscriptionID, err)
 	}
+	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.store)
+	if err != nil {
+		return http.StatusGone, fmt.Errorf("cannot refresh token: %w", err)
+	}
 
 	s.cache.Set(header.CorrelationID, subData, cache.DefaultExpiration)
 	if header.EventType == events.EventType_SubscriptionCanceled {
@@ -185,7 +192,6 @@ func (s *SubscribeManager) HandleEvent(ctx context.Context, header events.EventH
 	switch subData.subscription.Type {
 	case store.Type_Devices:
 		err = s.HandleDevicesEvent(ctx, header, body, subData)
-
 	case store.Type_Device:
 		err = s.HandleDeviceEvent(ctx, header, body, subData)
 	case store.Type_Resource:
@@ -214,7 +220,7 @@ func (h *LinkedAccountHandler) Handle(ctx context.Context, iter store.LinkedAcco
 	return fmt.Errorf("not found")
 }
 
-func (s *SubscribeManager) HandleCancelEvent(ctx context.Context, header events.EventHeader, linkedAccount store.LinkedAccount) error {
+func (s *SubscriptionManager) HandleCancelEvent(ctx context.Context, header events.EventHeader, linkedAccount store.LinkedAccount) error {
 	var h SubscriptionHandler
 	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{SubscriptionID: header.SubscriptionID}}, &h)
 	if err != nil {
@@ -232,7 +238,7 @@ type subscriptionData struct {
 	subscription  store.Subscription
 }
 
-func (s *SubscribeManager) StartSubscriptions(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func (s *SubscriptionManager) StartSubscriptions(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	signingSecret, err := generateRandomString(32)
 	if err != nil {
 		return fmt.Errorf("cannot generate signingSecret for start subscriptions: %v", err)
@@ -284,7 +290,7 @@ func (h *SubscriptionsHandler) Handle(ctx context.Context, iter store.Subscripti
 	return iter.Err()
 }
 
-func (s *SubscribeManager) StopSubscriptions(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func (s *SubscriptionManager) StopSubscriptions(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var h SubscriptionsHandler
 	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{LinkedAccountID: linkedAccount.ID}}, &h)
 	if err != nil {
@@ -298,10 +304,7 @@ func (s *SubscribeManager) StopSubscriptions(ctx context.Context, linkedAccount 
 	if err != nil {
 		return fmt.Errorf("cannot delete subscriptions: %v", err)
 	}
-	linkedAccount, err = RefreshToken(ctx, linkedAccount, linkedCloud, s.store)
-	if err != nil {
-		return fmt.Errorf("cannot refresh token: %w", err)
-	}
+
 	var errors []error
 	for _, sub := range h.subscriptions {
 		switch sub.Type {

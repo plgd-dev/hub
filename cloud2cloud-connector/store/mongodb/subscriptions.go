@@ -11,7 +11,7 @@ import (
 )
 
 const subscriptionCName = "Subscription"
-const hrefKey = "resourcehref"
+const hrefKey = "href"
 const linkedAccountIDKey = "linkedAccountID"
 const deviceIDKey = "deviceid"
 const signingSecretKey = "signingsecret"
@@ -38,11 +38,11 @@ var subscriptionDeviceHrefQueryIndex = bson.D{
 
 type dbSubscription struct {
 	SubscriptionID  string `bson:"_id"`
-	LinkedAccountID string `bson:linkedAccountIDKey`
-	DeviceID        string `bson:deviceIDKey`
-	Href            string `bson:hrefKey`
-	Type            string `bson:typeKey`
-	SigningSecret   string `bson:signingSecretKey`
+	LinkedAccountID string `bson:"linkedAccountID"`
+	DeviceID        string `bson:"deviceid"`
+	Href            string `bson:"href"`
+	Type            string `bson:"type"`
+	SigningSecret   string `bson:"signingsecret"`
 }
 
 func makeDBSubscription(sub store.Subscription) dbSubscription {
@@ -124,11 +124,8 @@ func (s *Store) FindOrCreateSubscription(ctx context.Context, sub store.Subscrip
 		return store.Subscription{}, fmt.Errorf("invalid LinkedAccountID")
 	}
 	q := bson.M{
-		//"_id": sub.SubscriptionID,
-		"$and": []bson.M{
-			{linkedAccountIDKey: sub.LinkedAccountID},
-			{typeKey: sub.Type},
-		},
+		linkedAccountIDKey: sub.LinkedAccountID,
+		typeKey:            sub.Type,
 	}
 	switch sub.Type {
 	case "":
@@ -155,7 +152,9 @@ func (s *Store) FindOrCreateSubscription(ctx context.Context, sub store.Subscrip
 	opts := options.FindOneAndUpdateOptions{}
 	opts.SetUpsert(true)
 	opts.SetReturnDocument(options.ReturnDocument(options.After))
-	res := col.FindOneAndUpdate(ctx, q, bson.M{"$setOnInsert": dbSub}, &opts)
+	res := col.FindOneAndUpdate(ctx, bson.M{
+		"$and": []bson.M{q},
+	}, bson.M{"$setOnInsert": dbSub}, &opts)
 	if res.Err() != nil {
 		return store.Subscription{}, fmt.Errorf("cannot find and create for device subscription: %v", res.Err())
 	}

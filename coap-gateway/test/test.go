@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(t *testing.T, withTLS ...bool) (TearDown func()) {
+func MakeConfig(t *testing.T, withTLS ...bool) refImpl.Config {
 	var gwCfg refImpl.Config
 	err := envconfig.Process("", &gwCfg)
 	require.NoError(t, err)
@@ -26,7 +26,11 @@ func SetUp(t *testing.T, withTLS ...bool) (TearDown func()) {
 	gwCfg.Service.FQDN = "coap-gateway-" + t.Name()
 	gwCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	gwCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	return NewCoapGateway(t, gwCfg)
+	return gwCfg
+}
+
+func SetUp(t *testing.T, withTLS ...bool) (TearDown func()) {
+	return NewCoapGateway(t, MakeConfig(t, withTLS...))
 }
 
 // NewCoapGateway creates test coap-gateway.

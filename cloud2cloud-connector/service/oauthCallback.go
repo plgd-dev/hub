@@ -51,6 +51,9 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store linked account for url %v: %v", linkedAccount.TargetURL, err)
 	}
+	if provisionCacheData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
+		return http.StatusOK, nil
+	}
 	err = rh.subManager.StartSubscriptions(r.Context(), linkedAccount, provisionCacheData.linkedCloud)
 	if err != nil {
 		rh.store.RemoveLinkedAccount(r.Context(), linkedAccount.ID)

@@ -35,7 +35,7 @@ type RequestHandler struct {
 	raClient pbRA.ResourceAggregateClient
 
 	provisionCache *cache.Cache
-	subManager     *SubscribeManager
+	subManager     *SubscriptionManager
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -48,7 +48,7 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 //NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
 	oauthCallback string,
-	subManager *SubscribeManager,
+	subManager *SubscriptionManager,
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
 	store store.Store,

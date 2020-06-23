@@ -14,7 +14,7 @@ import (
 	kitHttp "github.com/go-ocf/kit/net/http"
 )
 
-func (s *SubscribeManager) subscribeToResource(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID, resourceHrefLink string) (string, error) {
+func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID, resourceHrefLink string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+"/"+resourceHrefLink+"/subscriptions", correlationID, events.SubscriptionRequest{
 		URL:           s.eventsURL,
 		EventTypes:    []events.EventType{events.EventType_ResourceChanged},
@@ -34,7 +34,7 @@ func cancelResourceSubscription(ctx context.Context, linkedAccount store.LinkedA
 	return nil
 }
 
-func (s *SubscribeManager) HandleResourceChangedEvent(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, body []byte) error {
+func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, subscriptionData subscriptionData, header events.EventHeader, body []byte) error {
 	coapContentFormat := int32(-1)
 	switch header.ContentType {
 	case message.AppCBOR.String():
@@ -68,7 +68,7 @@ func (s *SubscribeManager) HandleResourceChangedEvent(ctx context.Context, subsc
 
 }
 
-func (s *SubscribeManager) HandleResourceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
+func (s *SubscriptionManager) HandleResourceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
 	switch header.EventType {
 	case events.EventType_ResourceChanged:
 		return s.HandleResourceChangedEvent(ctx, subscriptionData, header, body)

@@ -19,7 +19,7 @@ import (
 	cache "github.com/patrickmn/go-cache"
 )
 
-func (s *SubscribeManager) subscribeToDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID string) (string, error) {
+func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
 		URL: s.eventsURL,
 		EventTypes: []events.EventType{
@@ -42,7 +42,7 @@ func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAcc
 	return nil
 }
 
-func (s *SubscribeManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, sequence uint64) error {
+func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, sequence uint64) error {
 	status := cloud.Status{
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,
@@ -79,8 +79,46 @@ func trimDeviceIDFromHref(deviceID, href string) string {
 	return href
 }
 
+func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	signingSecret, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+	}
+	correlationID, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("cannot generate correlationID for device subscription: %v", err)
+	}
+
+	sub := store.Subscription{
+		Type:            store.Type_Resource,
+		LinkedAccountID: linkedAccount.ID,
+		DeviceID:        deviceID,
+		Href:            href,
+		SigningSecret:   signingSecret,
+	}
+	err = s.cache.Add(correlationID.String(), subscriptionData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+		subscription:  sub,
+	}, cache.DefaultExpiration)
+	if err != nil {
+		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
+	}
+	sub.SubscriptionID, err = s.subscribeToResource(ctx, linkedAccount, linkedCloud, correlationID.String(), signingSecret, deviceID, href)
+	if err != nil {
+		s.cache.Delete(correlationID.String())
+		return fmt.Errorf("cannot subscribe to device %v resource %v: %v", deviceID, href, err)
+	}
+	_, err = s.store.FindOrCreateSubscription(ctx, sub)
+	if err != nil {
+		cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.SubscriptionID)
+		return fmt.Errorf("cannot store resource subscription to DB: %v", err)
+	}
+	return nil
+}
+
 // HandleResourcesPublished publish resources to resource aggregate and subscribes to resources.
-func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
+func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
 	var errors []error
 	for _, link := range links {
 		endpoints := make([]*pbRA.EndpointInformation, 0, 4)
@@ -119,42 +157,12 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 			errors = append(errors, fmt.Errorf("cannot publish resource: %v", err))
 			continue
 		}
-
-		signingSecret, err := generateRandomString(32)
-		if err != nil {
-			return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
-		}
-		correlationID, err := uuid.NewV4()
-		if err != nil {
-			return fmt.Errorf("cannot generate correlationID for device subscription: %v", err)
-		}
-
-		sub := store.Subscription{
-			Type:            store.Type_Resource,
-			LinkedAccountID: d.linkedAccount.ID,
-			DeviceID:        link.DeviceID,
-			Href:            href,
-			SigningSecret:   signingSecret,
-		}
-		err = s.cache.Add(correlationID.String(), subscriptionData{
-			linkedAccount: d.linkedAccount,
-			linkedCloud:   d.linkedCloud,
-			subscription:  sub,
-		}, cache.DefaultExpiration)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot cache subscription for device subscriptions: %v", err))
+		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
 			continue
 		}
-		sub.SubscriptionID, err = s.subscribeToResource(ctx, d.linkedAccount, d.linkedCloud, correlationID.String(), signingSecret, link.DeviceID, href)
+		err = s.SubscribeToResource(ctx, link.DeviceID, href, d.linkedAccount, d.linkedCloud)
 		if err != nil {
-			s.cache.Delete(correlationID.String())
-			errors = append(errors, fmt.Errorf("cannot subscribe to device %v resource %v: %v", link.DeviceID, href, err))
-			continue
-		}
-		_, err = s.store.FindOrCreateSubscription(ctx, sub)
-		if err != nil {
-			cancelResourceSubscription(ctx, d.linkedAccount, d.linkedCloud, sub.DeviceID, sub.Href, sub.SubscriptionID)
-			errors = append(errors, fmt.Errorf("cannot store resource subscription to DB: %v", err))
+			errors = append(errors, err)
 			continue
 		}
 	}
@@ -165,7 +173,7 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 }
 
 // HandleResourcesUnpublished unpublish resources from resource aggregate and cancel resources subscriptions.
-func (s *SubscribeManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
+func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
 	var errors []error
 	for _, link := range links {
 		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
@@ -200,7 +208,7 @@ func (s *SubscribeManager) HandleResourcesUnpublished(ctx context.Context, d sub
 }
 
 // HandleDeviceEvent handles device events.
-func (s *SubscribeManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
+func (s *SubscriptionManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
 		return fmt.Errorf("cannot get content reader: %v", err)

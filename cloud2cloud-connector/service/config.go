@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security/oauth/manager"
@@ -17,6 +18,8 @@ type Config struct {
 	FQDN                  string         `envconfig:"FQDN" default:"cloud2cloud.pluggedin.cloud"`
 	OAuthCallback         string         `envconfig:"OAUTH_CALLBACK" required:"true"`
 	EventsURL             string         `envconfig:"EVENTS_URL" required:"true"`
+	PullDevicesDisabled   bool           `envconfig:"PULL_DEVICES_DISABLED" default:"false"`
+	PullDevicesInterval   time.Duration  `envconfig:"PULL_DEVICES_INTERVAL" default:"5s"`
 	OAuth                 manager.Config `envconfig:"OAUTH"`
 }
 
