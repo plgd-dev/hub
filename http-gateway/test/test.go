@@ -23,7 +23,7 @@ import (
 
 const HTTP_GW_Port = 7000
 const HTTP_GW_Host = "0.0.0.0"
-const TestTimeout = 10 * time.Second
+const TestTimeout = 20 * time.Second
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
