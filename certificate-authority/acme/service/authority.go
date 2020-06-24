@@ -86,8 +86,6 @@ func (s *authority) Sign(cr *x509.CertificateRequest, opts provisioner.Options, 
 // LoadProvisionerByID calls out to the SignAuthority interface to load a
 // provisioner by ID.
 func (s *authority) LoadProvisionerByID(ID string) (provisioner.Interface, error) {
-	fmt.Println("SignAuthority.LoadProvisionerByID", ID)
-
 	v := strings.Split(ID, "/")
 	if len(v) < 2 {
 		return nil, fmt.Errorf("invalid ID %v of provisioner", ID)

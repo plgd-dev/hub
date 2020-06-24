@@ -24,9 +24,6 @@ func validateLinkedAccount(sub store.LinkedAccount) error {
 	if sub.TargetCloud.AccessToken == "" && sub.TargetCloud.RefreshToken == "" {
 		return fmt.Errorf("cannot save linked account: invalid TargetCloud.AccessToken and TargetCloud.RefreshToken")
 	}
-	if sub.TargetURL == "" {
-		return fmt.Errorf("cannot save linked account: invalid TargetURL")
-	}
 	return nil
 }
 
@@ -90,6 +87,9 @@ func (s *Store) LoadLinkedAccounts(ctx context.Context, query store.Query, h sto
 	}
 	if err == mongo.ErrNilDocument {
 		return nil
+	}
+	if err != nil {
+		return err
 	}
 
 	i := iterator{

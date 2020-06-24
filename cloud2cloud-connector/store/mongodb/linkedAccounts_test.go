@@ -24,7 +24,6 @@ func TestStore_InsertLinkedAccount(t *testing.T) {
 			args: args{
 				sub: store.LinkedAccount{
 					ID:            "testID",
-					TargetURL:     "testTargetURL",
 					LinkedCloudID: "testLinkedCloudID",
 					TargetCloud: store.Token{
 						AccessToken:  "testAccessToken",
@@ -73,7 +72,6 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 			args: args{
 				sub: store.LinkedAccount{
 					ID:            "testID1",
-					TargetURL:     "testTargetURL",
 					LinkedCloudID: "testLinkedCloudID",
 					TargetCloud: store.Token{
 						AccessToken:  "testAccessToken",
@@ -88,8 +86,8 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 			name: "valid",
 			args: args{
 				sub: store.LinkedAccount{
-					ID:            "testID",
-					TargetURL:     "testTargetURL",
+					ID: "testID",
+
 					LinkedCloudID: "testLinkedCloudID",
 					TargetCloud: store.Token{
 						AccessToken:  "testAccessToken",
@@ -113,8 +111,8 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
-		ID:            "testID",
-		TargetURL:     "testTargetURL",
+		ID: "testID",
+
 		LinkedCloudID: "testLinkedCloudID",
 		TargetCloud: store.Token{
 			AccessToken:  "testAccessToken",
@@ -172,8 +170,8 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
-		ID:            "testID",
-		TargetURL:     "testTargetURL",
+		ID: "testID",
+
 		LinkedCloudID: "testLinkedCloudID",
 		TargetCloud: store.Token{
 			AccessToken:  "testAccessToken",
@@ -213,8 +211,8 @@ func (h *testLinkedAccountHandler) Handle(ctx context.Context, iter store.Linked
 func TestStore_LoadLinkedAccounts(t *testing.T) {
 	linkedAccounts := []store.LinkedAccount{
 		{
-			ID:            "testID",
-			TargetURL:     "testTargetURL",
+			ID: "testID",
+
 			LinkedCloudID: "testLinkedCloudID",
 			TargetCloud: store.Token{
 				AccessToken:  "testAccessToken",

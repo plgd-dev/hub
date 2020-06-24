@@ -130,6 +130,9 @@ func (s *Store) LoadDevicesSubscriptions(ctx context.Context, query store.Device
 		if err == mongo.ErrNilDocument {
 			return nil
 		}
+		if err != nil {
+			return err
+		}
 		_, errUpd := col.UpdateMany(ctx, q, bson.M{
 			"$set": bson.M{
 				lastCheckKey: time.Now().Unix(),

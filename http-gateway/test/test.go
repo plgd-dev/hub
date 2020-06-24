@@ -36,10 +36,10 @@ func MakeConfig(t *testing.T) service.Config {
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return NewTestHTTPGW(t, MakeConfig(t))
+	return New(t, MakeConfig(t))
 }
 
-func NewTestHTTPGW(t *testing.T, cfg service.Config) func() {
+func New(t *testing.T, cfg service.Config) func() {
 	service, err := service.New(cfg)
 	require.NoError(t, err)
 	var wg sync.WaitGroup

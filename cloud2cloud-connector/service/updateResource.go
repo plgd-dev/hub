@@ -28,11 +28,11 @@ func makeHTTPEndpoint(url, deviceID, href string) string {
 func updateDeviceResource(ctx context.Context, deviceID, href, contentType string, content []byte, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, pbRA.Status, error) {
 	client := linkedCloud.GetHTTPClient()
 	r, w := io.Pipe()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, makeHTTPEndpoint(linkedAccount.TargetURL, deviceID, href), r)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, makeHTTPEndpoint(linkedCloud.C2CURL, deviceID, href), r)
 	if err != nil {
 		return "", nil, pbRA.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %v", err)
 	}
-	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_CBOR+","+events.ContentType_VNDOCFCBOR)
+	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, contentType)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
 

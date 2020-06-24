@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +17,7 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
+	"github.com/go-ocf/kit/net/http/transport"
 	"github.com/go-ocf/sdk/schema"
 )
 
@@ -39,7 +41,15 @@ type incrementSubscriptionSequenceNumberFunc func(ctx context.Context, subscript
 func emitEvent(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error) {
 	log.Debugf("emitEvent: %v: %+v", eventType, s)
 	defer log.Debugf("emitEvent done: %v: %+v", eventType, s)
-	client := netHttp.Client{}
+
+	trans := transport.NewDefaultTransport()
+	trans.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	client := netHttp.Client{
+		Transport: trans,
+	}
 	encoder, err := getEncoder(s.ContentType)
 	if err != nil {
 		return false, fmt.Errorf("cannot get encoder: %w", err)

@@ -2,19 +2,26 @@ package test
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/go-ocf/kit/codec/cbor"
+	"github.com/go-ocf/kit/net/http/transport"
 	"github.com/go-ocf/kit/security/certManager"
+	"github.com/jtacoma/uritemplates"
 	"go.uber.org/atomic"
 
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -35,6 +42,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	authService "github.com/go-ocf/cloud/authorization/test"
+	c2cgwService "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
 	grpcgwService "github.com/go-ocf/cloud/grpc-gateway/test"
 )
 
@@ -150,16 +158,18 @@ func ClearDB(ctx context.Context, t *testing.T) {
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	ClearDB(ctx, t)
 	authShutdown := authService.SetUp(t)
-	rdShutdown := rdService.SetUp(t)
 	raShutdown := raService.SetUp(t)
+	rdShutdown := rdService.SetUp(t)
 	gwShutdown := coapgwService.SetUp(t)
 	grpcShutdown := grpcgwService.SetUp(t)
+	c2cgwShutdown := c2cgwService.SetUp(t)
 
 	return func() {
+		c2cgwShutdown()
 		grpcShutdown()
 		gwShutdown()
-		raShutdown()
 		rdShutdown()
+		raShutdown()
 		authShutdown()
 	}
 }
@@ -570,4 +580,78 @@ func SortResources(s []pb.ResourceLink) []pb.ResourceLink {
 	v := SortResourcesByHref(s)
 	sort.Sort(v)
 	return v
+}
+
+func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
+	b := HTTPRequestBuilder{
+		method:      method,
+		body:        body,
+		uri:         url,
+		uriParams:   make(map[string]interface{}),
+		header:      make(map[string]string),
+		queryParams: make(map[string]string),
+	}
+	return &b
+}
+
+type HTTPRequestBuilder struct {
+	method      string
+	body        io.Reader
+	uri         string
+	uriParams   map[string]interface{}
+	header      map[string]string
+	queryParams map[string]string
+}
+
+func (c *HTTPRequestBuilder) AuthToken(token string) *HTTPRequestBuilder {
+	c.header["Authorization"] = fmt.Sprintf("bearer %s", token)
+	return c
+}
+
+func (c *HTTPRequestBuilder) AddQuery(key, value string) *HTTPRequestBuilder {
+	c.queryParams[key] = value
+	return c
+}
+
+func (c *HTTPRequestBuilder) AddHeader(key, value string) *HTTPRequestBuilder {
+	c.header[key] = value
+	return c
+}
+
+func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
+	tmp, err := uritemplates.Parse(c.uri)
+	require.NoError(t, err)
+	uri, err := tmp.Expand(c.uriParams)
+	require.NoError(t, err)
+	url, err := url.Parse(uri)
+	require.NoError(t, err)
+	query := url.Query()
+
+	token, err := kitNetGrpc.TokenFromOutgoingMD(ctx)
+	if err == nil {
+		c.AuthToken(token)
+	}
+
+	for k, v := range c.queryParams {
+		query.Set(k, v)
+	}
+	url.RawQuery = query.Encode()
+	request, _ := http.NewRequestWithContext(ctx, c.method, url.String(), c.body)
+	for k, v := range c.header {
+		request.Header.Add(k, v)
+	}
+	return request
+}
+
+func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
+	trans := transport.NewDefaultTransport()
+	trans.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	c := http.Client{
+		Transport: trans,
+	}
+	resp, err := c.Do(req)
+	require.NoError(t, err)
+	return resp
 }

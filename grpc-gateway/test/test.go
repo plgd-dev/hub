@@ -22,12 +22,11 @@ func MakeConfig(t *testing.T) refImpl.Config {
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return NewGrpcGateway(t, MakeConfig(t))
+	return New(t, MakeConfig(t))
 }
 
-func NewGrpcGateway(t *testing.T, cfg refImpl.Config) func() {
-	t.Log("NewGrpcGateway")
-	defer t.Log("NewGrpcGateway done")
+func New(t *testing.T, cfg refImpl.Config) func() {
+
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 

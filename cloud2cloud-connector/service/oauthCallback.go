@@ -49,7 +49,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	linkedAccount.ID = id.String()
 	err = rh.store.InsertLinkedAccount(r.Context(), linkedAccount)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot store linked account for url %v: %v", linkedAccount.TargetURL, err)
+		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %v", linkedAccount, err)
 	}
 	if provisionCacheData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		return http.StatusOK, nil
@@ -57,7 +57,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	err = rh.subManager.StartSubscriptions(r.Context(), linkedAccount, provisionCacheData.linkedCloud)
 	if err != nil {
 		rh.store.RemoveLinkedAccount(r.Context(), linkedAccount.ID)
-		return http.StatusBadRequest, fmt.Errorf("cannot start subscriptions %v: %v", linkedAccount.TargetURL, err)
+		return http.StatusBadRequest, fmt.Errorf("cannot start subscriptions %+v: %v", linkedAccount, err)
 	}
 	return http.StatusOK, nil
 }

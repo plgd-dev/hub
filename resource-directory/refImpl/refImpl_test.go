@@ -17,7 +17,7 @@ func TestInit(t *testing.T) {
 	authCfg.Addr = "localhost:12345"
 	authCfg.HTTPAddr = "localhost:12346"
 	authCfg.Device.Provider = "test"
-	authShutdown := authService.NewAuthServer(t, authCfg)
+	authShutdown := authService.New(t, authCfg)
 	defer authShutdown()
 
 	var config refImpl.Config

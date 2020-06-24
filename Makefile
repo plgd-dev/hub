@@ -49,6 +49,12 @@ make-nats:
 		--name=nats \
 		-v $(shell pwd)/.tmp/step-ca/data/certs:/certs \
 		nats --tls --tlsverify --tlscert=/certs/nats/nats.crt --tlskey=/certs/nats/nats.key --tlscacert=/certs/root_ca.crt
+	docker run \
+	    -d \
+		--network=host \
+		--name=nats-cloud-connector \
+		-v $(shell pwd)/.tmp/step-ca/data/certs:/certs \
+		nats --port 34222 --tls --tlsverify --tlscert=/certs/nats/nats.crt --tlskey=/certs/nats/nats.key --tlscacert=/certs/root_ca.crt
 
 make-mongo:
 	sleep 1
@@ -88,6 +94,7 @@ clean:
 	docker rm -f step-ca-test || true
 	docker rm -f mongo || true
 	docker rm -f nats || true
+	docker rm -f nats-cloud-connector || true
 	docker rm -f devsim || true
 	rm -rf ./.tmp/step-ca || true
 	rm -rf ./.tmp/mongo || true

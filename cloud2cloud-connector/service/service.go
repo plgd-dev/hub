@@ -87,7 +87,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 
 	devicesSubscription := NewDevicesSubscription(rdClient, raClient)
-	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription)
+	err = devicesSubscription.Load(store)
+	if err != nil {
+		log.Fatalf("cannot create server: %v", err)
+	}
+
+	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback)
 	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store)
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
@@ -96,19 +101,21 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		go func() {
 			defer wg.Done()
 			parent := ctx
-			for {
+			for func() bool {
 				ctx, cancel := context.WithTimeout(parent, config.PullDevicesInterval)
 				defer cancel()
-				err := pullDevices(ctx, store, asClient, raClient, devicesSubscription, subscriptionManager)
+				err := pullDevices(ctx, store, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback)
 				if err != nil {
 					log.Errorf("cannot pull devices: %v", err)
 				}
 				select {
 				case <-ctx.Done():
 					if ctx.Err() == context.Canceled {
-						return
+						return false
 					}
 				}
+				return true
+			}() {
 			}
 		}()
 	}
@@ -126,12 +133,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 // Serve starts the service's HTTP server and blocks.
 func (s *Server) Serve() error {
-	s.cancel()
-	s.doneWg.Wait()
 	return s.server.Serve(s.ln)
 }
 
 // Shutdown ends serving
 func (s *Server) Shutdown() error {
+	s.cancel()
+	s.doneWg.Wait()
 	return s.server.Shutdown(context.Background())
 }

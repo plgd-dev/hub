@@ -43,10 +43,10 @@ func MakeConfig(t *testing.T) service.Config {
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return NewAuthServer(t, MakeConfig(t))
+	return New(t, MakeConfig(t))
 }
 
-func NewAuthServer(t *testing.T, config service.Config) func() {
+func New(t *testing.T, config service.Config) func() {
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()

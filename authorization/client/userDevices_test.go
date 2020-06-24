@@ -97,7 +97,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	require.NoError(t, err)
 	cfg.Addr = "localhost:1234"
 
-	shutdown := authService.NewAuthServer(t, cfg)
+	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
 	var acmeCfg certManager.Config
@@ -215,7 +215,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	require.NoError(t, err)
 	cfg.Addr = "localhost:1234"
 
-	shutdown := authService.NewAuthServer(t, cfg)
+	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
 	var acmeCfg certManager.Config
@@ -306,7 +306,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	require.NoError(t, err)
 	cfg.Addr = "localhost:1234"
 
-	shutdown := authService.NewAuthServer(t, cfg)
+	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
 	var acmeCfg certManager.Config

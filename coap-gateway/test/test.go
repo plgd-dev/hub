@@ -30,13 +30,12 @@ func MakeConfig(t *testing.T, withTLS ...bool) refImpl.Config {
 }
 
 func SetUp(t *testing.T, withTLS ...bool) (TearDown func()) {
-	return NewCoapGateway(t, MakeConfig(t, withTLS...))
+	return New(t, MakeConfig(t, withTLS...))
 }
 
-// NewCoapGateway creates test coap-gateway.
-func NewCoapGateway(t *testing.T, cfg refImpl.Config) func() {
-	t.Log("newCoapGateway")
-	defer t.Log("newCoapGateway done")
+// New creates test coap-gateway.
+func New(t *testing.T, cfg refImpl.Config) func() {
+
 	c, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 

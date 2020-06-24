@@ -39,8 +39,9 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			name: "not found",
 			args: args{
 				sub: store.LinkedCloud{
-					ID:   "testIDnotFound",
-					Name: "testName",
+					ID:     "testIDnotFound",
+					Name:   "testName",
+					C2CURL: "testTargetURL",
 					OAuth: oauth.Config{
 						ClientID:     "testClientID",
 						ClientSecret: "testClientSecret",
@@ -58,8 +59,9 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			name: "valid",
 			args: args{
 				sub: store.LinkedCloud{
-					ID:   "testID",
-					Name: "testNameUpdated",
+					ID:     "testID",
+					Name:   "testNameUpdated",
+					C2CURL: "testTargetURL",
 					OAuth: oauth.Config{
 						ClientID:     "testClientID",
 						ClientSecret: "testClientSecret",
@@ -86,8 +88,9 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
-		ID:   "testID",
-		Name: "testName",
+		ID:     "testID",
+		Name:   "testName",
+		C2CURL: "testTargetURL",
 		OAuth: oauth.Config{
 			ClientID:     "testClientID",
 			ClientSecret: "testClientSecret",
@@ -148,8 +151,9 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
-		ID:   "testID",
-		Name: "testName",
+		ID:     "testID",
+		Name:   "testName",
+		C2CURL: "testTargetURL",
 		OAuth: oauth.Config{
 			ClientID:     "testClientID",
 			ClientSecret: "testClientSecret",
@@ -192,8 +196,9 @@ func (h *testLinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCl
 func TestStore_LoadLinkedClouds(t *testing.T) {
 	lcs := []store.LinkedCloud{
 		{
-			ID:   "testID",
-			Name: "testName",
+			ID:     "testID",
+			Name:   "testName",
+			C2CURL: "testTargetURL",
 			OAuth: oauth.Config{
 				ClientID:     "testClientID",
 				ClientSecret: "testClientSecret",
@@ -205,8 +210,9 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 			},
 		},
 		{
-			ID:   "testID2",
-			Name: "testName",
+			ID:     "testID2",
+			Name:   "testName",
+			C2CURL: "testTargetURL",
 			OAuth: oauth.Config{
 				ClientID:     "testClientID",
 				ClientSecret: "testClientSecret",

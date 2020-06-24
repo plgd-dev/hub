@@ -71,7 +71,7 @@ func (h *gatewayHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 		Id:               h.deviceID,
 		Name:             h.deviceName,
 		IsOnline:         true,
-		ManufacturerName: []*pb.LocalizedString{&pb.LocalizedString{Value: TestManufacturer, Language: "en"}},
+		ManufacturerName: []*pb.LocalizedString{{Value: TestManufacturer, Language: "en"}},
 	}
 	err := srv.Send(&v)
 	if err != nil {

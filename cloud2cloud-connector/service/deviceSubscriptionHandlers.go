@@ -58,7 +58,80 @@ func getKey(userID, deviceID string) string {
 	return userID + "." + deviceID
 }
 
-func (c *DevicesSubscription) Add(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+type loadDevicesHandler struct {
+	linkedAccounts       map[string]store.LinkedAccount
+	linkedClouds         map[string]store.LinkedCloud
+	deleteSubs           []string
+	deleteLinkedAccounts []string
+	devicesSubscription  *DevicesSubscription
+}
+
+func (h *loadDevicesHandler) Handle(ctx context.Context, iter store.SubscriptionIter) (err error) {
+	for {
+		var s store.Subscription
+		if !iter.Next(ctx, &s) {
+			break
+		}
+		linkedAccount, ok := h.linkedAccounts[s.LinkedAccountID]
+		if !ok {
+			h.deleteSubs = append(h.deleteSubs, s.SubscriptionID)
+			continue
+		}
+		linkedCloud, ok := h.linkedClouds[linkedAccount.LinkedCloudID]
+		if !ok {
+			h.deleteSubs = append(h.deleteLinkedAccounts, s.LinkedAccountID)
+			continue
+		}
+		err = h.devicesSubscription.Add(s.DeviceID, linkedAccount, linkedCloud)
+		if err != nil {
+			log.Errorf("cannot register for retrieve/update events of device %v: %v", s.DeviceID, err)
+		}
+	}
+	return iter.Err()
+}
+
+func (c *DevicesSubscription) Load(s store.Store) error {
+	ctx := context.Background()
+	lh := LinkedCloudsHandler{
+		linkedClouds: make(map[string]store.LinkedCloud),
+	}
+	err := s.LoadLinkedClouds(ctx, store.Query{}, &lh)
+	if err != nil {
+		return fmt.Errorf("cannot load linked clouds: %v", err)
+	}
+	la := LinkedAccountHandler{
+		linkedAccounts: make(map[string]store.LinkedAccount),
+	}
+	err = s.LoadLinkedAccounts(ctx, store.Query{}, &la)
+	if err != nil {
+		return fmt.Errorf("cannot load linked clouds: %v", err)
+	}
+	h := loadDevicesHandler{
+		linkedAccounts: la.linkedAccounts,
+		linkedClouds:   lh.linkedClouds,
+	}
+
+	err = s.LoadSubscriptions(ctx, []store.SubscriptionQuery{{Type: store.Type_Resource}}, &h)
+	for _, ID := range h.deleteSubs {
+		errDel := s.RemoveSubscriptions(ctx, store.SubscriptionQuery{SubscriptionID: ID})
+		if errDel != nil {
+			log.Errorf("cannot delete subscription %v: %v", ID, errDel)
+		}
+	}
+	for _, ID := range h.deleteLinkedAccounts {
+		errDel := s.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: ID})
+		if errDel != nil {
+			log.Errorf("cannot delete subscription for linked account %v: %v", ID, errDel)
+		}
+		errDel = s.RemoveLinkedAccount(ctx, ID)
+		if errDel != nil {
+			log.Errorf("cannot delete linked account %v: %v", ID, errDel)
+		}
+	}
+	return err
+}
+
+func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var s deviceSubscription
 	key := getKey(linkedAccount.UserID, deviceID)
 	v, loaded := c.data.LoadOrStore(key, &s)
@@ -82,7 +155,7 @@ func (c *DevicesSubscription) Add(ctx context.Context, deviceID string, linkedAc
 			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		},
 	}
-	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithUserID(ctx, linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
+	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithUserID(context.Background(), linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
 	if err != nil {
 		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)

@@ -106,7 +106,6 @@ type LinkedAccount struct {
 	ID            string `bson:"_id"`
 	LinkedCloudID string `bson:"linkedcloudid"`
 	UserID        string
-	TargetURL     string
 	TargetCloud   Token
 }
 

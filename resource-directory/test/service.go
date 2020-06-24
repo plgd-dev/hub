@@ -18,7 +18,6 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	rdCfg.Addr = testCfg.RESOURCE_DIRECTORY_HOST
 	rdCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	rdCfg.Service.FQDN = "resource-directory-" + t.Name()
-	rdCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	rdCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	rdCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	rdCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
@@ -29,12 +28,11 @@ func MakeConfig(t *testing.T) refImpl.Config {
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return NewResourceDirectory(t, MakeConfig(t))
+	return New(t, MakeConfig(t))
 }
 
-func NewResourceDirectory(t *testing.T, cfg refImpl.Config) func() {
-	t.Log("NewResourceDirectory")
-	defer t.Log("NewResourceDirectory done")
+func New(t *testing.T, cfg refImpl.Config) func() {
+
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 

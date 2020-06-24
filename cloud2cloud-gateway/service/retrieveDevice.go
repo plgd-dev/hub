@@ -114,6 +114,8 @@ func unmarshalContent(c *pbGRPC.Content) (interface{}, error) {
 		}
 	case message.TextPlain.String():
 		m = string(c.Data)
+	case "":
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("cannot unmarshal resource content: unknown content type (%v)", c.GetContentType())
 	}

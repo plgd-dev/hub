@@ -100,10 +100,10 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 	}
 	_, err = s.store.FindOrCreateSubscription(ctx, sub)
 	if err != nil {
-		cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.SubscriptionID)
+		cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, deviceID, sub.SubscriptionID)
 		return fmt.Errorf("cannot store subscription to DB: %v", err)
 	}
-	err = s.devicesSubscription.Add(ctx, deviceID, linkedAccount, linkedCloud)
+	err = s.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot register device %v to resource projection: %v", deviceID, err)
 	}

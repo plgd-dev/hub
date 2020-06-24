@@ -21,12 +21,11 @@ func MakeConfig(t *testing.T) refImpl.Config {
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return NewResourceAggregate(t, MakeConfig(t))
+	return New(t, MakeConfig(t))
 }
 
-func NewResourceAggregate(t *testing.T, cfg refImpl.Config) func() {
-	t.Log("NewResourceAggregate")
-	defer t.Log("NewResourceAggregate done")
+func New(t *testing.T, cfg refImpl.Config) func() {
+
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 

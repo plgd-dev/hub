@@ -27,7 +27,7 @@ func makeMap(evs ...events.EventType) map[events.EventType]bool {
 }
 
 func (e Events) NeedPullDevices() bool {
-	set := makeMap(events.AllDevicesSubscriptions...)
+	set := makeMap(events.AllDevicesEvents...)
 	for _, v := range e.Devices {
 		delete(set, v)
 	}
@@ -38,7 +38,7 @@ func (e Events) NeedPullDevices() bool {
 }
 
 func (e Events) NeedPullDevice() bool {
-	set := makeMap(events.AllDeviceSubscriptions...)
+	set := makeMap(events.AllDeviceEvents...)
 	for _, v := range e.Device {
 		delete(set, v)
 	}
@@ -49,7 +49,7 @@ func (e Events) NeedPullDevice() bool {
 }
 
 func (e Events) NeedPullResources() bool {
-	set := makeMap(events.AllResourceSubscriptions...)
+	set := makeMap(events.AllResourceEvents...)
 	for _, v := range e.Resource {
 		delete(set, v)
 	}
@@ -63,14 +63,15 @@ type LinkedCloud struct {
 	ID                           string       `json:"Id" bson:"_id"`
 	Name                         string       `json:"Name"`
 	OAuth                        oauth.Config `json:"OAuth"`
-	RootCA                       []string     `json:"RootCA"`
+	RootCAs                      []string     `json:"RootCAs"`
 	InsecureSkipVerify           bool         `json:"InsecureSkipVerify"`
 	SupportedSubscriptionsEvents Events       `json:"SupportedSubscriptionEvents"`
+	C2CURL                       string       `json:"C2CURL"`
 }
 
 func (l LinkedCloud) GetHTTPClient() *http.Client {
 	pool := x509.NewCertPool()
-	for _, ca := range l.RootCA {
+	for _, ca := range l.RootCAs {
 		pool.AppendCertsFromPEM([]byte(ca))
 	}
 	t := transport.NewDefaultTransport()

@@ -30,6 +30,7 @@ type SubscriptionManager struct {
 	asClient            pbAS.AuthorizationServiceClient
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
+	oauthCallback       string
 }
 
 func NewSubscriptionManager(
@@ -37,7 +38,8 @@ func NewSubscriptionManager(
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
 	store store.Store,
-	devicesSubscription *DevicesSubscription) *SubscriptionManager {
+	devicesSubscription *DevicesSubscription,
+	oauthCallback string) *SubscriptionManager {
 	return &SubscriptionManager{
 		eventsURL:           EventsURL,
 		store:               store,
@@ -45,6 +47,7 @@ func NewSubscriptionManager(
 		asClient:            asClient,
 		devicesSubscription: devicesSubscription,
 		cache:               cache.New(time.Minute*10, time.Minute*5),
+		oauthCallback:       oauthCallback,
 	}
 }
 
@@ -53,12 +56,12 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 
 	r, w := io.Pipe()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, linkedAccount.TargetURL+kitHttp.CanonicalHref(href), r)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, linkedCloud.C2CURL+kitHttp.CanonicalHref(href), r)
 	if err != nil {
 		return resp, fmt.Errorf("cannot create post request: %v", err)
 	}
 	req.Header.Set(events.CorrelationIDKey, correlationID)
-	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_CBOR+","+events.ContentType_VNDOCFCBOR)
+	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, events.ContentType_JSON)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
 
@@ -74,7 +77,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 		return resp, fmt.Errorf("cannot post: %v", err)
 	}
 	defer httpResp.Body.Close()
-	if httpResp.StatusCode != http.StatusOK {
+	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusCreated {
 		return resp, fmt.Errorf("unexpected statusCode %v", httpResp.StatusCode)
 	}
 	err = json.ReadFrom(httpResp.Body, &resp)
@@ -86,12 +89,12 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 
 func cancelSubscription(ctx context.Context, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	client := linkedCloud.GetHTTPClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedAccount.TargetURL+kitHttp.CanonicalHref(href), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.C2CURL+kitHttp.CanonicalHref(href), nil)
 	if err != nil {
 		return fmt.Errorf("cannot create delete request: %v", err)
 	}
 	req.Header.Set("Token", linkedAccount.ID)
-	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_CBOR+","+events.ContentType_VNDOCFCBOR)
+	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
 
 	httpResp, err := client.Do(req)
@@ -129,7 +132,6 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 		subData.subscription.SubscriptionID = header.SubscriptionID
 		newSubscription, err := s.store.FindOrCreateSubscription(ctx, subData.subscription)
 		if err != nil {
-			cancelDevicesSubscription(ctx, subData.linkedAccount, subData.linkedCloud, subData.subscription.SubscriptionID)
 			return http.StatusGone, fmt.Errorf("cannot store subscription to DB: %v", err)
 		}
 		subData.subscription = newSubscription
@@ -148,21 +150,22 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 		if err != nil {
 			return http.StatusGone, fmt.Errorf("cannot load linked account %v for subscription %v: %v", subData.subscription.LinkedAccountID, header.SubscriptionID, err)
 		}
-		if !lh.ok {
+		if len(lh.linkedAccounts) == 0 {
 			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{SubscriptionID: header.SubscriptionID})
 			return http.StatusGone, fmt.Errorf("unknown linked account %v subscription %v", subData.subscription.LinkedAccountID, subData.subscription.SubscriptionID)
 		}
+		linkedAccount := lh.linkedAccounts[subData.subscription.LinkedAccountID]
 		var ch LinkedCloudHandler
-		err = s.store.LoadLinkedClouds(ctx, store.Query{ID: lh.linkedAccount.LinkedCloudID}, &ch)
+		err = s.store.LoadLinkedClouds(ctx, store.Query{ID: linkedAccount.LinkedCloudID}, &ch)
 		if err != nil {
-			return http.StatusGone, fmt.Errorf("cannot load linked cloud %v for subscription %v: %v", lh.linkedAccount.LinkedCloudID, subData.subscription.SubscriptionID, err)
+			return http.StatusGone, fmt.Errorf("cannot load linked cloud %v for subscription %v: %v", linkedAccount.LinkedCloudID, subData.subscription.SubscriptionID, err)
 		}
 		if !ch.set {
-			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: lh.linkedAccount.ID})
-			s.store.RemoveLinkedAccount(ctx, lh.linkedAccount.ID)
-			return http.StatusGone, fmt.Errorf("unknown linked cloud %v subscription %v", lh.linkedAccount.LinkedCloudID, subData.subscription.SubscriptionID)
+			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: linkedAccount.ID})
+			s.store.RemoveLinkedAccount(ctx, linkedAccount.ID)
+			return http.StatusGone, fmt.Errorf("unknown linked cloud %v subscription %v", linkedAccount.LinkedCloudID, subData.subscription.SubscriptionID)
 		}
-		subData.linkedAccount = lh.linkedAccount
+		subData.linkedAccount = linkedAccount
 		subData.linkedCloud = ch.linkedCloud
 	}
 
@@ -175,7 +178,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 		header.EventTimestamp, body) {
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v: %v", header.SubscriptionID, err)
 	}
-	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.store)
+	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
 	if err != nil {
 		return http.StatusGone, fmt.Errorf("cannot refresh token: %w", err)
 	}
@@ -206,18 +209,21 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 }
 
 type LinkedAccountHandler struct {
-	linkedAccount store.LinkedAccount
-	ok            bool
+	linkedAccounts map[string]store.LinkedAccount
 }
 
 func (h *LinkedAccountHandler) Handle(ctx context.Context, iter store.LinkedAccountIter) (err error) {
-	var s store.LinkedAccount
-	if iter.Next(ctx, &s) {
-		h.ok = true
-		h.linkedAccount = s
-		return iter.Err()
+	for {
+		var s store.LinkedAccount
+		if !iter.Next(ctx, &s) {
+			break
+		}
+		if h.linkedAccounts == nil {
+			h.linkedAccounts = make(map[string]store.LinkedAccount)
+		}
+		h.linkedAccounts[s.ID] = s
 	}
-	return fmt.Errorf("not found")
+	return iter.Err()
 }
 
 func (s *SubscriptionManager) HandleCancelEvent(ctx context.Context, header events.EventHeader, linkedAccount store.LinkedAccount) error {

@@ -94,6 +94,9 @@ func clientUpdateSendResponse(w http.ResponseWriter, deviceID, resourceID string
 			w.WriteHeader(statusCode)
 			w.Write(v)
 			return statusCode, nil
+		case nil:
+			w.WriteHeader(statusCode)
+			return statusCode, nil
 		default:
 			err = jsonResponseWriterEncoder(w, content, statusCode)
 			if err != nil {

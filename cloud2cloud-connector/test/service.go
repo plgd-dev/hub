@@ -1,8 +1,9 @@
-package service
+package test
 
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/refImpl"
 	testCfg "github.com/go-ocf/cloud/test/config"
@@ -20,15 +21,17 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	cfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	cfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	cfg.Listen.Acme.DisableVerifyClientCertificate = true
+	cfg.Service.PullDevicesInterval = time.Second
 	return cfg
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return NewCoapGateway(t, MakeConfig(t))
+	return New(t, MakeConfig(t))
 }
 
 // NewC2CConnector creates test c2c-connector.
-func NewCoapGateway(t *testing.T, cfg refImpl.Config) func() {
+func New(t *testing.T, cfg refImpl.Config) func() {
 	t.Log("newC2CConnector")
 	defer t.Log("newC2CConnector done")
 	c, err := refImpl.Init(cfg)

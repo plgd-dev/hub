@@ -12,6 +12,7 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/codec/json"
+	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 
@@ -147,11 +148,13 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 			rh.resourceProjection.Unregister(deviceID)
 			return http.StatusBadRequest, fmt.Errorf("cannot prepare content to emit first event: %w", err)
 		}
-		_, err = emitEvent(r.Context(), events.EventType_ResourceChanged, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
+		remove, err := emitEvent(r.Context(), events.EventType_ResourceChanged, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
 		if err != nil {
-			rh.store.PopSubscription(r.Context(), s.ID)
-			rh.resourceProjection.Unregister(deviceID)
-			return http.StatusBadRequest, fmt.Errorf("cannot emit event: %w", err)
+			if remove {
+				rh.resourceProjection.Unregister(deviceID)
+				rh.store.PopSubscription(r.Context(), deviceID)
+			}
+			log.Errorf("subscribeToResource: cannot emit event: %w", err)
 		}
 	}
 

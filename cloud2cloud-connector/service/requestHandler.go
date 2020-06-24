@@ -65,7 +65,7 @@ func NewRequestHandler(
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Debugf("%v %v", r.Method, r.RequestURI)
+		log.Infof("%v %v %+v", r.Method, r.RequestURI, r.Header)
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
@@ -78,6 +78,7 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler) *http.Server {
 	r := router.NewRouter()
+	r.StrictSlash(true)
 	r.Use(loggingMiddleware)
 
 	// health check

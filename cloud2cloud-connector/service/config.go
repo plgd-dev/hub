@@ -15,9 +15,8 @@ type Config struct {
 	AuthServerAddr        string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
 	ResourceAggregateAddr string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
 	ResourceDirectoryAddr string         `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
-	FQDN                  string         `envconfig:"FQDN" default:"cloud2cloud.pluggedin.cloud"`
-	OAuthCallback         string         `envconfig:"OAUTH_CALLBACK" required:"true"`
-	EventsURL             string         `envconfig:"EVENTS_URL" required:"true"`
+	OAuthCallback         string         `envconfig:"OAUTH_CALLBACK"`
+	EventsURL             string         `envconfig:"EVENTS_URL"`
 	PullDevicesDisabled   bool           `envconfig:"PULL_DEVICES_DISABLED" default:"false"`
 	PullDevicesInterval   time.Duration  `envconfig:"PULL_DEVICES_INTERVAL" default:"5s"`
 	OAuth                 manager.Config `envconfig:"OAUTH"`

@@ -262,7 +262,7 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 			want: []store.Subscription{subs[1]},
 		},
 		{
-			name: "allDeviceSubscriptions",
+			name: "AllDeviceEvents",
 			args: args{
 				queries: []store.SubscriptionQuery{{Type: store.Type_Device}},
 			},

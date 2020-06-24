@@ -17,7 +17,7 @@ func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 		return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
 	}
 
-	rd := NewResourceDirectory(r.resourceProjection, deviceIDs)
+	rd := New(r.resourceProjection, deviceIDs)
 	err = rd.GetResourceLinks(req, srv)
 	if err != nil {
 		return logAndReturnError(err)

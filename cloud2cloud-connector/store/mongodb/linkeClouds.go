@@ -15,6 +15,9 @@ func validateLinkedCloud(sub store.LinkedCloud) error {
 	if sub.ID == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid Id")
 	}
+	if sub.C2CURL == "" {
+		return fmt.Errorf("cannot save linked cloud: invalid C2CURL")
+	}
 	if sub.OAuth.ClientID == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid ClientId")
 	}
@@ -88,6 +91,9 @@ func (s *Store) LoadLinkedClouds(ctx context.Context, query store.Query, h store
 	}
 	if err == mongo.ErrNilDocument {
 		return nil
+	}
+	if err != nil {
+		return err
 	}
 
 	i := linkedCloudIterator{

@@ -20,9 +20,9 @@ const (
 	EventType_SubscriptionCanceled EventType = "subscription_cancelled"
 )
 
-var AllDevicesSubscriptions = []EventType{EventType_DevicesOnline, EventType_DevicesOffline, EventType_DevicesRegistered, EventType_DevicesUnregistered}
-var AllDeviceSubscriptions = []EventType{EventType_ResourcesPublished, EventType_ResourcesUnpublished}
-var AllResourceSubscriptions = []EventType{EventType_ResourceChanged}
+var AllDevicesEvents = []EventType{EventType_DevicesOnline, EventType_DevicesOffline, EventType_DevicesRegistered, EventType_DevicesUnregistered}
+var AllDeviceEvents = []EventType{EventType_ResourcesPublished, EventType_ResourcesUnpublished}
+var AllResourceEvents = []EventType{EventType_ResourceChanged}
 
 type SubscriptionRequest struct {
 	URL           string      `json:"eventsUrl"`

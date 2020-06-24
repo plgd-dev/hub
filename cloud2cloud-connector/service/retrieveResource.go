@@ -21,11 +21,11 @@ import (
 
 func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, pbRA.Status, error) {
 	client := linkedCloud.GetHTTPClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, makeHTTPEndpoint(linkedAccount.TargetURL, deviceID, href), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, makeHTTPEndpoint(linkedCloud.C2CURL, deviceID, href), nil)
 	if err != nil {
 		return "", nil, pbRA.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %v", err)
 	}
-	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_CBOR+","+events.ContentType_VNDOCFCBOR)
+	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
 	httpResp, err := client.Do(req)
 	if err != nil {

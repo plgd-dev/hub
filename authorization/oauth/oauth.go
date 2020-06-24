@@ -31,8 +31,8 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 }
 
 type Endpoint struct {
-	AuthURL  string `json:"AuthUrl" envconfig:"AUTH_URL" env:"AUTH_URL"`
-	TokenURL string `json:"TokenUrl" envconfig:"TOKEN_URL" env:"TOKEN_URL"`
+	AuthURL   string    `json:"AuthUrl" envconfig:"AUTH_URL" env:"AUTH_URL"`
+	TokenURL  string    `json:"TokenUrl" envconfig:"TOKEN_URL" env:"TOKEN_URL"`
 	AuthStyle AuthStyle `envconfig:"AUTH_STYLE" env:"AUTH_STYLE"`
 }
 
@@ -55,8 +55,8 @@ func (c Config) ToOAuth2() oauth2.Config {
 		RedirectURL:  c.RedirectURL,
 		Scopes:       c.Scopes,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  c.Endpoint.AuthURL,
-			TokenURL: c.Endpoint.TokenURL,
+			AuthURL:   c.Endpoint.AuthURL,
+			TokenURL:  c.Endpoint.TokenURL,
 			AuthStyle: c.Endpoint.AuthStyle.ToOAuth2(),
 		},
 	}

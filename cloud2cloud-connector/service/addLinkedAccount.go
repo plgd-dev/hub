@@ -59,7 +59,11 @@ func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, li
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot store key - collision")
 	}
-	url := linkedCloud.OAuth.AuthCodeURL(t)
+	oauthCfg := linkedCloud.OAuth
+	if oauthCfg.RedirectURL == "" {
+		oauthCfg.RedirectURL = rh.oauthCallback
+	}
+	url := oauthCfg.AuthCodeURL(t)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	return http.StatusOK, nil
 }
@@ -69,20 +73,16 @@ func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return http.StatusUnauthorized, fmt.Errorf("cannot get usedID from Authorization header: %w", err)
 	}
-	linkedCloud, err := rh.GetLinkedCloud(r.Context(), r.FormValue("target_linked_cloud_id"))
+	linkedCloud, err := rh.GetLinkedCloud(r.Context(), r.FormValue("cloud_id"))
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("invaid param target_linked_cloud_id: %w", err)
+		return http.StatusBadRequest, fmt.Errorf("invaid param cloud_id: %w", err)
 	}
 	linkedAccount := store.LinkedAccount{
-		TargetURL:     r.FormValue("target_url"),
-		LinkedCloudID: r.FormValue("target_linked_cloud_id"),
+		LinkedCloudID: r.FormValue("cloud_id"),
 		UserID:        userID,
 	}
-	if linkedAccount.TargetURL == "" {
-		return http.StatusBadRequest, fmt.Errorf("invalid target_url")
-	}
 	if linkedAccount.LinkedCloudID == "" {
-		return http.StatusBadRequest, fmt.Errorf("invalid target_linked_cloud_id")
+		return http.StatusBadRequest, fmt.Errorf("invalid cloud_id")
 	}
 	return rh.HandleOAuth(w, r, linkedAccount, linkedCloud)
 }
