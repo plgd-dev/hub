@@ -15,8 +15,8 @@ func validateLinkedCloud(sub store.LinkedCloud) error {
 	if sub.ID == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid Id")
 	}
-	if sub.C2CURL == "" {
-		return fmt.Errorf("cannot save linked cloud: invalid C2CURL")
+	if sub.Endpoint.URL == "" {
+		return fmt.Errorf("cannot save linked cloud: invalid URL")
 	}
 	if sub.OAuth.ClientID == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid ClientId")

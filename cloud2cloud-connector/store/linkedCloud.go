@@ -59,25 +59,37 @@ func (e Events) NeedPullResources() bool {
 	return false
 }
 
+type Endpoint struct {
+	URL                string   `json:"URL"`
+	RootCAs            []string `json:"RootCAs"`
+	InsecureSkipVerify bool     `json:"InsecureSkipVerify"`
+	UseSystemCAs       bool     `json:"UseSystemCAs"`
+}
+
 type LinkedCloud struct {
 	ID                           string       `json:"Id" bson:"_id"`
 	Name                         string       `json:"Name"`
 	OAuth                        oauth.Config `json:"OAuth"`
-	RootCAs                      []string     `json:"RootCAs"`
-	InsecureSkipVerify           bool         `json:"InsecureSkipVerify"`
 	SupportedSubscriptionsEvents Events       `json:"SupportedSubscriptionEvents"`
-	C2CURL                       string       `json:"C2CURL"`
+	Endpoint                     Endpoint     `json:"Endpoint"`
 }
 
 func (l LinkedCloud) GetHTTPClient() *http.Client {
-	pool := x509.NewCertPool()
-	for _, ca := range l.RootCAs {
+	var pool *x509.CertPool
+	if l.Endpoint.UseSystemCAs {
+		pool, _ = x509.SystemCertPool()
+	}
+	if pool == nil {
+		pool = x509.NewCertPool()
+	}
+
+	for _, ca := range l.Endpoint.RootCAs {
 		pool.AppendCertsFromPEM([]byte(ca))
 	}
 	t := transport.NewDefaultTransport()
 	t.TLSClientConfig = &tls.Config{
 		RootCAs:            pool,
-		InsecureSkipVerify: l.InsecureSkipVerify,
+		InsecureSkipVerify: l.Endpoint.InsecureSkipVerify,
 	}
 	return &http.Client{
 		Transport: t,

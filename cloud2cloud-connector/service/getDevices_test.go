@@ -49,8 +49,11 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	}
 
 	linkedCloud := store.LinkedCloud{
-		Name:   t.Name(),
-		C2CURL: "https://" + testCfg.C2C_GW_HOST + c2cGwUri.Version,
+		Name: t.Name(),
+		Endpoint: store.Endpoint{
+			URL:     "https://" + testCfg.C2C_GW_HOST + c2cGwUri.Version,
+			RootCAs: rootCAs,
+		},
 		OAuth: oauth.Config{
 			ClientID:     testCfg.OAUTH_MANAGER_CLIENT_ID,
 			ClientSecret: "testClientSecret",
@@ -60,7 +63,6 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 				TokenURL: testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL,
 			},
 		},
-		RootCAs:                      rootCAs,
 		SupportedSubscriptionsEvents: supportedEvents,
 	}
 	data, err := json.Encode(linkedCloud)

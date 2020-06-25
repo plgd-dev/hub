@@ -100,7 +100,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 	userID := linkedAccount.UserID
 	connectionID := "c2c-connector-pull:" + userID + "/devices:" + connectionIDRand.String()
 	client := linkedCloud.GetHTTPClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkedCloud.C2CURL+"/devices", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkedCloud.Endpoint.URL+"/devices", nil)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 	userID := linkedAccount.UserID
 	connectionID := "c2c-connector-pull:" + userID + "/devices?content=all:" + connectionIDRand.String()
 	client := linkedCloud.GetHTTPClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkedCloud.C2CURL+"/devices?content=all", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkedCloud.Endpoint.URL+"/devices?content=all", nil)
 	if err != nil {
 		return err
 	}

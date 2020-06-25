@@ -39,9 +39,11 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			name: "not found",
 			args: args{
 				sub: store.LinkedCloud{
-					ID:     "testIDnotFound",
-					Name:   "testName",
-					C2CURL: "testTargetURL",
+					ID:   "testIDnotFound",
+					Name: "testName",
+					Endpoint: store.Endpoint{
+						URL: "testTargetURL",
+					},
 					OAuth: oauth.Config{
 						ClientID:     "testClientID",
 						ClientSecret: "testClientSecret",
@@ -59,9 +61,11 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			name: "valid",
 			args: args{
 				sub: store.LinkedCloud{
-					ID:     "testID",
-					Name:   "testNameUpdated",
-					C2CURL: "testTargetURL",
+					ID:   "testID",
+					Name: "testNameUpdated",
+					Endpoint: store.Endpoint{
+						URL: "testTargetURL",
+					},
 					OAuth: oauth.Config{
 						ClientID:     "testClientID",
 						ClientSecret: "testClientSecret",
@@ -88,9 +92,11 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
-		ID:     "testID",
-		Name:   "testName",
-		C2CURL: "testTargetURL",
+		ID:   "testID",
+		Name: "testName",
+		Endpoint: store.Endpoint{
+			URL: "testTargetURL",
+		},
 		OAuth: oauth.Config{
 			ClientID:     "testClientID",
 			ClientSecret: "testClientSecret",
@@ -151,9 +157,11 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
-		ID:     "testID",
-		Name:   "testName",
-		C2CURL: "testTargetURL",
+		ID:   "testID",
+		Name: "testName",
+		Endpoint: store.Endpoint{
+			URL: "testTargetURL",
+		},
 		OAuth: oauth.Config{
 			ClientID:     "testClientID",
 			ClientSecret: "testClientSecret",
@@ -196,9 +204,11 @@ func (h *testLinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCl
 func TestStore_LoadLinkedClouds(t *testing.T) {
 	lcs := []store.LinkedCloud{
 		{
-			ID:     "testID",
-			Name:   "testName",
-			C2CURL: "testTargetURL",
+			ID:   "testID",
+			Name: "testName",
+			Endpoint: store.Endpoint{
+				URL: "testTargetURL",
+			},
 			OAuth: oauth.Config{
 				ClientID:     "testClientID",
 				ClientSecret: "testClientSecret",
@@ -210,9 +220,11 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 			},
 		},
 		{
-			ID:     "testID2",
-			Name:   "testName",
-			C2CURL: "testTargetURL",
+			ID:   "testID2",
+			Name: "testName",
+			Endpoint: store.Endpoint{
+				URL: "testTargetURL",
+			},
 			OAuth: oauth.Config{
 				ClientID:     "testClientID",
 				ClientSecret: "testClientSecret",

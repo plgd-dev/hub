@@ -56,7 +56,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 
 	r, w := io.Pipe()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, linkedCloud.C2CURL+kitHttp.CanonicalHref(href), r)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), r)
 	if err != nil {
 		return resp, fmt.Errorf("cannot create post request: %v", err)
 	}
@@ -89,7 +89,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 
 func cancelSubscription(ctx context.Context, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	client := linkedCloud.GetHTTPClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.C2CURL+kitHttp.CanonicalHref(href), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), nil)
 	if err != nil {
 		return fmt.Errorf("cannot create delete request: %v", err)
 	}
