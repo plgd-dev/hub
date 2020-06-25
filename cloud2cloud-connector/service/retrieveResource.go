@@ -33,23 +33,7 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	}
 	defer httpResp.Body.Close()
 	if httpResp.StatusCode != http.StatusOK {
-		status := pbRA.Status_UNKNOWN
-		switch status {
-		case http.StatusAccepted:
-			status = pbRA.Status_ACCEPTED
-		case http.StatusOK:
-			status = pbRA.Status_OK
-		case http.StatusBadRequest:
-			status = pbRA.Status_BAD_REQUEST
-		case http.StatusNotFound:
-			status = pbRA.Status_NOT_FOUND
-		case http.StatusNotImplemented:
-			status = pbRA.Status_NOT_IMPLEMENTED
-		case http.StatusForbidden:
-			status = pbRA.Status_FORBIDDEN
-		case http.StatusUnauthorized:
-			status = pbRA.Status_UNAUTHORIZED
-		}
+		status := pbRA.HTTPStatus2Status(httpResp.StatusCode)
 		return "", nil, status, fmt.Errorf("unexpected statusCode %v", httpResp.StatusCode)
 	}
 	respContentType := httpResp.Header.Get(events.ContentTypeKey)

@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	connectorStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/security/oauth/manager"
@@ -37,6 +38,28 @@ type DialCertManager = interface {
 
 type ListenCertManager = interface {
 	GetServerTLSConfig() *tls.Config
+}
+
+func runDevicePulling(ctx context.Context,
+	config Config,
+	s store.Store,
+	asClient pbAS.AuthorizationServiceClient,
+	raClient pbRA.ResourceAggregateClient,
+	devicesSubscription *DevicesSubscription,
+	subscriptionManager *SubscriptionManager) bool {
+	ctx, cancel := context.WithTimeout(ctx, config.PullDevicesInterval)
+	defer cancel()
+	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback)
+	if err != nil {
+		log.Errorf("cannot pull devices: %v", err)
+	}
+	select {
+	case <-ctx.Done():
+		if ctx.Err() == context.Canceled {
+			return false
+		}
+	}
+	return true
 }
 
 //New create new Server with provided store and bus
@@ -100,22 +123,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			parent := ctx
-			for func() bool {
-				ctx, cancel := context.WithTimeout(parent, config.PullDevicesInterval)
-				defer cancel()
-				err := pullDevices(ctx, store, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback)
-				if err != nil {
-					log.Errorf("cannot pull devices: %v", err)
-				}
-				select {
-				case <-ctx.Done():
-					if ctx.Err() == context.Canceled {
-						return false
-					}
-				}
-				return true
-			}() {
+			for runDevicePulling(ctx, config, store, asClient, raClient, devicesSubscription, subscriptionManager) {
 			}
 		}()
 	}
