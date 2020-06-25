@@ -81,7 +81,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	defer resp.Body.Close()
 
 	// for pulling
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 3)
 
 	return func() {
 		cloud2()
