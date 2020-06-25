@@ -253,16 +253,13 @@ func (s *DeviceSubscription) runRecv() {
 	}
 }
 
-func ToDeviceSubscription(v interface{}, ok bool) *DeviceSubscription {
+func ToDeviceSubscription(v interface{}, ok bool) (*DeviceSubscription, bool) {
 	if !ok {
-		return nil
+		return nil, false
 	}
 	if v == nil {
-		return nil
+		return nil, false
 	}
 	s, ok := v.(*DeviceSubscription)
-	if ok {
-		return s
-	}
-	return nil
+	return s, ok
 }

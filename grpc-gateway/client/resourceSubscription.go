@@ -174,16 +174,13 @@ func (s *ResourceSubscription) runRecv() {
 	}
 }
 
-func ToResourceSubscription(v interface{}, ok bool) *ResourceSubscription {
+func ToResourceSubscription(v interface{}, ok bool) (*ResourceSubscription, bool) {
 	if !ok {
-		return nil
+		return nil, false
 	}
 	if v == nil {
-		return nil
+		return nil, false
 	}
 	s, ok := v.(*ResourceSubscription)
-	if ok {
-		return s
-	}
-	return nil
+	return s, ok
 }

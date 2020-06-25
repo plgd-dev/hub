@@ -77,8 +77,8 @@ func (client *Client) remoteAddrString() string {
 }
 
 func (client *Client) cancelResourceSubscription(token string, wantWait bool) (bool, error) {
-	s := grpcClient.ToResourceSubscription(client.resourceSubscriptions.PullOut(token))
-	if s == nil {
+	s, ok := grpcClient.ToResourceSubscription(client.resourceSubscriptions.PullOut(token))
+	if !ok {
 		return false, nil
 	}
 	wait, err := s.Cancel()
@@ -284,7 +284,10 @@ func (client *Client) cleanObservedResources() {
 func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 	resourceSubscriptions := client.resourceSubscriptions.PullOutAll()
 	for _, v := range resourceSubscriptions {
-		o := grpcClient.ToResourceSubscription(v, true)
+		o, ok := grpcClient.ToResourceSubscription(v, true)
+		if !ok {
+			continue
+		}
 		wait, err := o.Cancel()
 		if err != nil {
 			log.Errorf("cannot cancel resource subscription: %v", err)
@@ -297,7 +300,10 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 func (client *Client) cancelDeviceSubscriptions(wantWait bool) {
 	deviceSubscriptions := client.deviceSubscriptions.PullOutAll()
 	for _, v := range deviceSubscriptions {
-		o := grpcClient.ToDeviceSubscription(v, true)
+		o, ok := grpcClient.ToDeviceSubscription(v, true)
+		if !ok {
+			continue
+		}
 		wait, err := o.Cancel()
 		if err != nil {
 			log.Errorf("cannot cancel device subscription: %v", err)
