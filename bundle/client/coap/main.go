@@ -132,6 +132,7 @@ func main() {
 	di := flag.String("di", "testUtility", "device id")
 	uid := flag.String("uid", "", "user id")
 	href := flag.String("href", "", "href")
+	resIf := flag.String("if", "", "interface")
 	get := flag.Bool("get", false, "get resource(default)")
 	discover := flag.Bool("discover", true, "discover resources in cloud")
 	discoverRt := flag.String("rt", "", "resource type")
@@ -218,7 +219,13 @@ func main() {
 		<-sigs
 		fmt.Println("exiting")
 	case *get:
-		resp, err := co.Get(context.Background(), *href)
+		var opts message.Options
+		if *resIf != "" {
+			v := "if=" + *resIf
+			buf := make([]byte, len(v))
+			opts, _, _ = opts.AddString(buf, message.URIQuery, v)
+		}
+		resp, err := co.Get(context.Background(), *href, opts...)
 		if err != nil {
 			log.Fatalf("cannot get value: %v", err)
 		}

@@ -16,6 +16,7 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/log"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
 )
 
@@ -178,6 +179,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 		header.EventTimestamp, body) {
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v: %v", header.SubscriptionID, err)
 	}
+	ctx = kitNetGrpc.CtxWithUserID(ctx, subData.linkedAccount.UserID)
 	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
 	if err != nil {
 		return http.StatusGone, fmt.Errorf("cannot refresh token: %w", err)

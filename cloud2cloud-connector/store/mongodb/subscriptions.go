@@ -172,20 +172,23 @@ func (s *Store) FindOrCreateSubscription(ctx context.Context, sub store.Subscrip
 }
 
 func (s *Store) RemoveSubscriptions(ctx context.Context, query store.SubscriptionQuery) error {
-	if query.DeviceID != "" {
-		return fmt.Errorf("remove by DeviceID is not supported")
-	}
-	if query.Href != "" {
-		return fmt.Errorf("remove by Href is not supported")
-	}
 	if query.Type != "" {
 		return fmt.Errorf("remove by Type is not supported")
 	}
 	q := bson.M{}
 	if query.SubscriptionID != "" {
 		q["_id"] = query.SubscriptionID
-	} else if query.LinkedAccountID == "" {
+	} else if query.LinkedAccountID != "" {
 		q[linkedAccountIDKey] = query.LinkedAccountID
+		if query.DeviceID != "" {
+			q[deviceIDKey] = query.DeviceID
+		}
+		if query.DeviceID != "" && query.Href != "" {
+			q[hrefKey] = query.Href
+		}
+	}
+	if len(q) == 0 {
+		return fmt.Errorf("remove all subscriptions is not supported")
 	}
 	_, err := s.client.Database(s.DBName()).Collection(subscriptionCName).DeleteMany(ctx, q)
 	if err != nil {

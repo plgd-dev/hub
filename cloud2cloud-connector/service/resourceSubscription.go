@@ -10,7 +10,6 @@ import (
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
 )
 
@@ -45,7 +44,7 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err := s.raClient.NotifyResourceChanged(kitNetGrpc.CtxWithUserID(ctx, subscriptionData.linkedAccount.UserID), &pbRA.NotifyResourceChangedRequest{
+	_, err := s.raClient.NotifyResourceChanged(ctx, &pbRA.NotifyResourceChangedRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: subscriptionData.subscription.DeviceID,
 		},

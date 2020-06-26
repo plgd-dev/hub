@@ -121,6 +121,7 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
 	var errors []error
 	for _, link := range links {
+		link.DeviceID = d.subscription.DeviceID
 		endpoints := make([]*pbRA.EndpointInformation, 0, 4)
 		for _, endpoint := range link.GetEndpoints() {
 			endpoints = append(endpoints, &pbRA.EndpointInformation{
@@ -176,6 +177,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
 	var errors []error
 	for _, link := range links {
+		link.DeviceID = d.subscription.DeviceID
 		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
 		_, err := s.raClient.UnpublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.UnpublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
@@ -190,12 +192,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot unpublish resource: %v", err))
 		}
-		err = cancelResourceSubscription(ctx, d.linkedAccount, d.linkedCloud, link.DeviceID, href, header.SubscriptionID)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot unsubscribe to resource: %v", err))
-		}
-
-		err = s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{SubscriptionID: header.SubscriptionID})
+		err = s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: d.linkedAccount.ID, DeviceID: link.DeviceID, Href: href})
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot remove device %v resource %v: %v", link.DeviceID, href, err))
 		}

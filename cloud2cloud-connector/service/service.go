@@ -65,11 +65,19 @@ func runDevicePulling(ctx context.Context,
 //New create new Server with provided store and bus
 func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, store connectorStore.Store) *Server {
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
-	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-
-	ln, err := tls.Listen("tcp", config.Addr, listenTLSConfig)
-	if err != nil {
-		log.Fatalf("cannot listen and serve: %v", err)
+	var ln net.Listener
+	var err error
+	if listenCertManager != nil {
+		listenTLSConfig := listenCertManager.GetServerTLSConfig()
+		ln, err = tls.Listen("tcp", config.Addr, listenTLSConfig)
+		if err != nil {
+			log.Fatalf("cannot listen and serve: %v", err)
+		}
+	} else {
+		ln, err = net.Listen("tcp", config.Addr)
+		if err != nil {
+			log.Fatalf("cannot listen and serve: %v", err)
+		}
 	}
 
 	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
