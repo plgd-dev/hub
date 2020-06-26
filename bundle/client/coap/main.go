@@ -132,7 +132,7 @@ func main() {
 	di := flag.String("di", "testUtility", "device id")
 	uid := flag.String("uid", "", "user id")
 	href := flag.String("href", "", "href")
-	get := flag.Bool("get", true, "get resource(default)")
+	get := flag.Bool("get", false, "get resource(default)")
 	discover := flag.Bool("discover", true, "discover resources in cloud")
 	discoverRt := flag.String("rt", "", "resource type")
 	observe := flag.Bool("observe", false, "observe resource")
@@ -197,7 +197,9 @@ func main() {
 
 	switch {
 	case *update:
-		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), os.Stdin)
+		b := bytes.NewBuffer(make([]byte, 0, 124))
+		b.ReadFrom(os.Stdin)
+		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), bytes.NewReader(b.Bytes()))
 		if err != nil {
 			log.Fatalf("cannot get value: %v", err)
 		}
@@ -215,6 +217,12 @@ func main() {
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs
 		fmt.Println("exiting")
+	case *get:
+		resp, err := co.Get(context.Background(), *href)
+		if err != nil {
+			log.Fatalf("cannot get value: %v", err)
+		}
+		decodePayload(resp)
 	case *discover:
 		var opts message.Options
 		if *discoverRt != "" {
@@ -225,12 +233,6 @@ func main() {
 		resp, err := co.Get(context.Background(), "/oic/res", opts...)
 		if err != nil {
 			log.Fatalf("cannot discover value: %v", err)
-		}
-		decodePayload(resp)
-	case *get:
-		resp, err := co.Get(context.Background(), *href)
-		if err != nil {
-			log.Fatalf("cannot get value: %v", err)
 		}
 		decodePayload(resp)
 	default:

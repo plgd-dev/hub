@@ -192,8 +192,8 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
-		for _, link := range dev.Links {
-			if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
+		if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
+			for _, link := range dev.Links {
 				link.DeviceID = deviceID
 				link.Href = removeDeviceIDFromHref(link.Href)
 				err := publishResource(ctx, p.raClient, userID, link, pbCQRS.CommandMetadata{
@@ -205,23 +205,23 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 				if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
 					continue
 				}
-				if ph.subs[store.Type_Resource][link.DeviceID][link.Href] {
+				if ph.subs[store.Type_Resource][deviceID][link.Href] {
 					continue
 				}
-				err = p.subscriptionManager.SubscribeToResource(ctx, link.DeviceID, link.Href, linkedAccount, linkedCloud)
+				err = p.subscriptionManager.SubscribeToResource(ctx, deviceID, link.Href, linkedAccount, linkedCloud)
 				if err != nil {
 					errors = append(errors, err)
 					continue
 				}
-			} else {
-				if ph.subs[store.Type_Device][link.DeviceID][""] {
-					continue
-				}
-				err = p.subscriptionManager.SubscribeToDevice(ctx, link.DeviceID, linkedAccount, linkedCloud)
-				if err != nil {
-					errors = append(errors, err)
-					continue
-				}
+			}
+		} else {
+			if ph.subs[store.Type_Device][deviceID][""] {
+				continue
+			}
+			err = p.subscriptionManager.SubscribeToDevice(ctx, deviceID, linkedAccount, linkedCloud)
+			if err != nil {
+				errors = append(errors, err)
+				continue
 			}
 		}
 	}

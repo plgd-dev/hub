@@ -102,7 +102,7 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 		return fmt.Errorf("cannot delete: %v", err)
 	}
 	defer httpResp.Body.Close()
-	if httpResp.StatusCode != http.StatusOK {
+	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unexpected statusCode %v", httpResp.StatusCode)
 	}
 	return nil

@@ -21,6 +21,8 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	cfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	cfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	cfg.Service.OAuthCallback = testCfg.C2C_CONNECTOR_OAUTH_CALLBACK
+	cfg.Service.EventsURL = testCfg.C2C_CONNECTOR_EVENTS_URL
 	cfg.Listen.Acme.DisableVerifyClientCertificate = true
 	cfg.Service.PullDevicesInterval = time.Second
 	return cfg
