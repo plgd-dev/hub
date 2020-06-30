@@ -86,7 +86,7 @@ clean:
 	rm -rf ./.tmp/mongo || true
 
 proto/generate: $(SUBDIRS)
-push: $(SUBDIRS)
+push: resource-directory
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
