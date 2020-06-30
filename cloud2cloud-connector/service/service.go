@@ -46,10 +46,12 @@ func runDevicePulling(ctx context.Context,
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
-	subscriptionManager *SubscriptionManager) bool {
+	subscriptionManager *SubscriptionManager,
+	triggerPullDevice func(pullDevice),
+) bool {
 	ctx, cancel := context.WithTimeout(ctx, config.PullDevicesInterval)
 	defer cancel()
-	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback)
+	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback, triggerPullDevice)
 	if err != nil {
 		log.Errorf("cannot pull devices: %v", err)
 	}
@@ -123,18 +125,26 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback)
+	staticDeviceEvents := NewStaticDeviceEvents(raClient, config.PullStaticDeviceEvents.MaxParallelGets, config.PullStaticDeviceEvents.CacheSize, config.PullStaticDeviceEvents.Timeout)
+	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, staticDeviceEvents.Trigger)
 	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	if !config.PullDevicesDisabled {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for runDevicePulling(ctx, config, store, asClient, raClient, devicesSubscription, subscriptionManager) {
+			for runDevicePulling(ctx, config, store, asClient, raClient, devicesSubscription, subscriptionManager, staticDeviceEvents.Trigger) {
 			}
 		}()
 	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		staticDeviceEvents.Run(ctx, subscriptionManager)
+	}()
+
 	server := Server{
 		server:  NewHTTP(requestHandler),
 		cfg:     config,

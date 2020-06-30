@@ -42,7 +42,7 @@ func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAcc
 	return nil
 }
 
-func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, sequence uint64) error {
+func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, cmdMetadata pbCQRS.CommandMetadata) error {
 	status := cloud.Status{
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,
@@ -60,11 +60,8 @@ func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID st
 			CoapContentFormat: int32(message.AppOcfCbor),
 			Data:              data,
 		},
-		Status: pbRA.Status_OK,
-		CommandMetadata: &pbCQRS.CommandMetadata{
-			ConnectionId: Cloud2cloudConnectorConnectionId,
-			Sequence:     sequence,
-		},
+		Status:               pbRA.Status_OK,
+		CommandMetadata:      &cmdMetadata,
 		AuthorizationContext: &authContext,
 	}
 
@@ -104,14 +101,14 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 	if err != nil {
 		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
 	}
-	sub.SubscriptionID, err = s.subscribeToResource(ctx, linkedAccount, linkedCloud, correlationID.String(), signingSecret, deviceID, href)
+	sub.ID, err = s.subscribeToResource(ctx, linkedAccount, linkedCloud, correlationID.String(), signingSecret, deviceID, href)
 	if err != nil {
 		s.cache.Delete(correlationID.String())
 		return fmt.Errorf("cannot subscribe to device %v resource %v: %v", deviceID, href, err)
 	}
 	_, err = s.store.FindOrCreateSubscription(ctx, sub)
 	if err != nil {
-		cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.SubscriptionID)
+		cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID)
 		return fmt.Errorf("cannot store resource subscription to DB: %v", err)
 	}
 	return nil
@@ -150,7 +147,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 				EndpointInformations:  endpoints,
 			},
 			CommandMetadata: &pbCQRS.CommandMetadata{
-				ConnectionId: Cloud2cloudConnectorConnectionId,
+				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,
 			},
 		})
@@ -185,7 +182,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 			},
 			ResourceId: raCqrs.MakeResourceId(link.GetDeviceID(), kitHttp.CanonicalHref(href)),
 			CommandMetadata: &pbCQRS.CommandMetadata{
-				ConnectionId: Cloud2cloudConnectorConnectionId,
+				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,
 			},
 		})

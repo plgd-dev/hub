@@ -37,7 +37,7 @@ var subscriptionDeviceHrefQueryIndex = bson.D{
 }
 
 type dbSubscription struct {
-	SubscriptionID  string `bson:"_id"`
+	ID              string `bson:"_id"`
 	LinkedAccountID string `bson:"linkedAccountID"`
 	DeviceID        string `bson:"deviceid"`
 	Href            string `bson:"href"`
@@ -47,7 +47,7 @@ type dbSubscription struct {
 
 func makeDBSubscription(sub store.Subscription) dbSubscription {
 	return dbSubscription{
-		SubscriptionID:  sub.SubscriptionID,
+		ID:              sub.ID,
 		LinkedAccountID: sub.LinkedAccountID,
 		DeviceID:        sub.DeviceID,
 		Href:            sub.Href,
@@ -63,8 +63,8 @@ func (s *Store) LoadSubscriptions(ctx context.Context, queries []store.Subscript
 	bsonQueries := make([]bson.M, 0, 32)
 	for _, query := range queries {
 		tmp := bson.M{}
-		if query.SubscriptionID != "" {
-			tmp["_id"] = query.SubscriptionID
+		if query.ID != "" {
+			tmp["_id"] = query.ID
 		}
 		if query.LinkedAccountID != "" {
 			tmp[linkedAccountIDKey] = query.LinkedAccountID
@@ -117,8 +117,8 @@ func (s *Store) LoadSubscriptions(ctx context.Context, queries []store.Subscript
 }
 
 func (s *Store) FindOrCreateSubscription(ctx context.Context, sub store.Subscription) (store.Subscription, error) {
-	if sub.SubscriptionID == "" {
-		return store.Subscription{}, fmt.Errorf("invalid SubscriptionID")
+	if sub.ID == "" {
+		return store.Subscription{}, fmt.Errorf("invalid ID")
 	}
 	if sub.LinkedAccountID == "" {
 		return store.Subscription{}, fmt.Errorf("invalid LinkedAccountID")
@@ -164,7 +164,7 @@ func (s *Store) FindOrCreateSubscription(ctx context.Context, sub store.Subscrip
 	if err != nil {
 		return store.Subscription{}, fmt.Errorf("cannot devcode all device subscription: %v", err)
 	}
-	if storedSub.SubscriptionID != dbSub.SubscriptionID {
+	if storedSub.ID != dbSub.ID {
 		return store.Subscription{}, fmt.Errorf("cannet create duplicit subscription of type %v:%v:%v", dbSub.Type, dbSub.DeviceID, dbSub.Href)
 	}
 
@@ -176,8 +176,8 @@ func (s *Store) RemoveSubscriptions(ctx context.Context, query store.Subscriptio
 		return fmt.Errorf("remove by Type is not supported")
 	}
 	q := bson.M{}
-	if query.SubscriptionID != "" {
-		q["_id"] = query.SubscriptionID
+	if query.ID != "" {
+		q["_id"] = query.ID
 	} else if query.LinkedAccountID != "" {
 		q[linkedAccountIDKey] = query.LinkedAccountID
 		if query.DeviceID != "" {
@@ -218,7 +218,7 @@ func (i *subscriptionIterator) Next(ctx context.Context, s *store.Subscription) 
 
 	s.LinkedAccountID = sub.LinkedAccountID
 	s.DeviceID = sub.DeviceID
-	s.SubscriptionID = sub.SubscriptionID
+	s.ID = sub.ID
 	s.Href = sub.Href
 	s.Type = store.Type(sub.Type)
 	s.SigningSecret = sub.SigningSecret

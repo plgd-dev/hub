@@ -47,6 +47,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 		return http.StatusInternalServerError, err
 	}
 	linkedAccount.ID = id.String()
+	//time.Sleep(time.Second * 10)
 	err = rh.store.InsertLinkedAccount(r.Context(), linkedAccount)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %v", linkedAccount, err)

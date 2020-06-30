@@ -8,10 +8,9 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-ocf/kit/log"
-
-	"github.com/gofrs/uuid"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
@@ -40,6 +39,7 @@ type pullDevicesHandler struct {
 	linkedClouds        map[string]store.LinkedCloud
 	subscriptionManager *SubscriptionManager
 	oauthCallback       string
+	triggerPullDevice   func(pullDevice)
 }
 
 func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) (map[string]bool, error) {
@@ -91,19 +91,13 @@ func (h *pullSubsHandler) Handle(ctx context.Context, iter store.SubscriptionIte
 	return iter.Err()
 }
 
-func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	var errors []error
-	connectionIDRand, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-	userID := linkedAccount.UserID
-	connectionID := "c2c-connector-pull:" + userID + "/devices:" + connectionIDRand.String()
+func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, v interface{}) error {
 	client := linkedCloud.GetHTTPClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkedCloud.Endpoint.URL+"/devices", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
+
 	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
 	req.Header.Set("Accept", "application/json")
 	resp, err := client.Do(req)
@@ -111,14 +105,57 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 		return err
 	}
 	defer resp.Body.Close()
-	var devices []RetrieveDeviceWithLinksResponse
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	err = json.Decode(buf, &devices)
+	err = json.Decode(buf, v)
 	if err != nil {
 		return fmt.Errorf("cannot decode body(%v): %w", string(buf), err)
+	}
+	return nil
+}
+
+func publishDeviceResources(ctx context.Context, raClient pbRA.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, resourcesSubs map[string]map[string]bool, dev RetrieveDeviceWithLinksResponse) error {
+	var errors []error
+	userID := linkedAccount.UserID
+	for _, link := range dev.Links {
+		link.DeviceID = deviceID
+		link.Href = removeDeviceIDFromHref(link.Href)
+		err := publishResource(ctx, raClient, userID, link, pbCQRS.CommandMetadata{
+			ConnectionId: linkedAccount.ID,
+			Sequence:     uint64(time.Now().UnixNano()),
+		})
+		if err != nil {
+			errors = append(errors, fmt.Errorf("cannot publish respource %+v: %w", link, err))
+			continue
+		}
+		if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+			continue
+		}
+		if resourcesSubs[deviceID][link.Href] {
+			continue
+		}
+		err = subscriptionManager.SubscribeToResource(ctx, deviceID, link.Href, linkedAccount, linkedCloud)
+		if err != nil {
+			errors = append(errors, err)
+			continue
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("%+v", errors)
+	}
+	return nil
+}
+
+func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	var errors []error
+	userID := linkedAccount.UserID
+
+	var devices []RetrieveDeviceWithLinksResponse
+	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices", linkedAccount, linkedCloud, &devices)
+	if err != nil {
+		return err
 	}
 
 	ph := pullSubsHandler{
@@ -155,7 +192,8 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 				}
 
 				err = publishCloudDeviceStatus(ctx, p.raClient, userID, deviceID, pbCQRS.CommandMetadata{
-					ConnectionId: connectionID,
+					ConnectionId: linkedAccount.ID,
+					Sequence:     uint64(time.Now().UnixNano()),
 				})
 				if err != nil {
 					errors = append(errors, fmt.Errorf("cannot publish cloud status: %v: %w", deviceID, err))
@@ -170,7 +208,8 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			}
 
 			err = updateCloudStatus(ctx, p.raClient, userID, deviceID, online, pbCQRS.CommandMetadata{
-				ConnectionId: connectionID,
+				ConnectionId: linkedAccount.ID,
+				Sequence:     uint64(time.Now().UnixNano()),
 			})
 			if err != nil {
 				errors = append(errors, fmt.Errorf("cannot update cloud status: %v: %w", deviceID, err))
@@ -192,32 +231,24 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
-		if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
-			for _, link := range dev.Links {
-				link.DeviceID = deviceID
-				link.Href = removeDeviceIDFromHref(link.Href)
-				err := publishResource(ctx, p.raClient, userID, link, pbCQRS.CommandMetadata{
-					ConnectionId: connectionID,
-				})
-				if err != nil {
-					errors = append(errors, fmt.Errorf("cannot update cloud status: %+v: %w", link, err))
-				}
-				if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
-					continue
-				}
-				if ph.subs[store.Type_Resource][deviceID][link.Href] {
-					continue
-				}
-				err = p.subscriptionManager.SubscribeToResource(ctx, deviceID, link.Href, linkedAccount, linkedCloud)
-				if err != nil {
-					errors = append(errors, err)
-					continue
-				}
+		if linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
+			p.triggerPullDevice(pullDevice{
+				linkedAccount: linkedAccount,
+				linkedCloud:   linkedCloud,
+				deviceID:      deviceID,
+			})
+		} else if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
+			err := publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, p.subscriptionManager, ph.subs[store.Type_Resource], dev)
+			if err != nil {
+				errors = append(errors, err)
+				continue
 			}
 		} else {
 			if ph.subs[store.Type_Device][deviceID][""] {
 				continue
 			}
+			//time.Sleep(time.Second * 2)
+			fmt.Printf("SubscribeToDevice %v %+v\n", deviceID, dev)
 			err = p.subscriptionManager.SubscribeToDevice(ctx, deviceID, linkedAccount, linkedCloud)
 			if err != nil {
 				errors = append(errors, err)
@@ -249,33 +280,14 @@ func removeDeviceIDFromHref(href string) string {
 
 func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var errors []error
-	connectionIDRand, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
 	userID := linkedAccount.UserID
-	connectionID := "c2c-connector-pull:" + userID + "/devices?content=all:" + connectionIDRand.String()
-	client := linkedCloud.GetHTTPClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, linkedCloud.Endpoint.URL+"/devices?content=all", nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
-	req.Header.Set("Accept", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+
 	var devices []RetrieveDeviceContentAllResponse
-	buf, err := ioutil.ReadAll(resp.Body)
+	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices?content=all", linkedAccount, linkedCloud, &devices)
 	if err != nil {
 		return err
 	}
-	err = json.Decode(buf, &devices)
-	if err != nil {
-		return fmt.Errorf("cannot decode body(%v): %w", string(buf), err)
-	}
+
 	ctx = kitNetGrpc.CtxWithUserID(ctx, userID)
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
@@ -295,7 +307,8 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 				"application/json",
 				body,
 				pbCQRS.CommandMetadata{
-					ConnectionId: connectionID,
+					ConnectionId: linkedAccount.ID,
+					Sequence:     uint64(time.Now().UnixNano()),
 				},
 			)
 			log.Debugf("notifyResourceChanged %v%v: %v", deviceID, link.Href, string(body))
@@ -385,7 +398,8 @@ func pullDevices(ctx context.Context, s store.Store,
 	raClient pbRA.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
-	oauthCallback string) error {
+	oauthCallback string,
+	triggerPullDevice func(pullDevice)) error {
 
 	var lh LinkedCloudsHandler
 	err := s.LoadLinkedClouds(ctx, store.Query{}, &lh)
@@ -401,6 +415,7 @@ func pullDevices(ctx context.Context, s store.Store,
 		subscriptionManager: subscriptionManager,
 		linkedClouds:        lh.linkedClouds,
 		oauthCallback:       oauthCallback,
+		triggerPullDevice:   triggerPullDevice,
 	}
 	return s.LoadLinkedAccounts(ctx, store.Query{}, &h)
 }

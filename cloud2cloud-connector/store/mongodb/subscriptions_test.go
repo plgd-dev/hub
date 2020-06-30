@@ -24,13 +24,13 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Devices - valid",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "0",
+					ID:              "0",
 					Type:            store.Type_Devices,
 					LinkedAccountID: "testLinkedAccountID",
 				},
 			},
 			want: store.Subscription{
-				SubscriptionID:  "0",
+				ID:              "0",
 				Type:            store.Type_Devices,
 				LinkedAccountID: "testLinkedAccountID",
 			},
@@ -39,13 +39,13 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Devices - valid - duplicit with same LinkedAccountID",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "0",
+					ID:              "0",
 					Type:            store.Type_Devices,
 					LinkedAccountID: "testLinkedAccountID",
 				},
 			},
 			want: store.Subscription{
-				SubscriptionID:  "0",
+				ID:              "0",
 				Type:            store.Type_Devices,
 				LinkedAccountID: "testLinkedAccountID",
 			},
@@ -54,7 +54,7 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Devices - error - duplicit with different LinkedAccountID",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "1",
+					ID:              "1",
 					Type:            store.Type_Devices,
 					LinkedAccountID: "testLinkedAccountID",
 				},
@@ -65,14 +65,14 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Device - valid",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "1",
+					ID:              "1",
 					Type:            store.Type_Device,
 					LinkedAccountID: "testLinkedAccountID",
 					DeviceID:        "testDeviceID",
 				},
 			},
 			want: store.Subscription{
-				SubscriptionID:  "1",
+				ID:              "1",
 				Type:            store.Type_Device,
 				LinkedAccountID: "testLinkedAccountID",
 				DeviceID:        "testDeviceID",
@@ -83,14 +83,14 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Device - valid - duplicit with same LinkedAccountID",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "1",
+					ID:              "1",
 					Type:            store.Type_Device,
 					LinkedAccountID: "testLinkedAccountID",
 					DeviceID:        "testDeviceID",
 				},
 			},
 			want: store.Subscription{
-				SubscriptionID:  "1",
+				ID:              "1",
 				Type:            store.Type_Device,
 				LinkedAccountID: "testLinkedAccountID",
 				DeviceID:        "testDeviceID",
@@ -100,7 +100,7 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Device - error - duplicit with different LinkedAccountID",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "2",
+					ID:              "2",
 					Type:            store.Type_Device,
 					LinkedAccountID: "testLinkedAccountID",
 					DeviceID:        "testDeviceID",
@@ -112,7 +112,7 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Resource - valid",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "2",
+					ID:              "2",
 					Type:            store.Type_Resource,
 					LinkedAccountID: "testLinkedAccountID",
 					DeviceID:        "testDeviceID",
@@ -120,7 +120,7 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 				},
 			},
 			want: store.Subscription{
-				SubscriptionID:  "2",
+				ID:              "2",
 				Type:            store.Type_Resource,
 				LinkedAccountID: "testLinkedAccountID",
 				DeviceID:        "testDeviceID",
@@ -132,7 +132,7 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Resource - valid - duplicit with same LinkedAccountID",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "2",
+					ID:              "2",
 					Type:            store.Type_Resource,
 					LinkedAccountID: "testLinkedAccountID",
 					DeviceID:        "testDeviceID",
@@ -140,7 +140,7 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 				},
 			},
 			want: store.Subscription{
-				SubscriptionID:  "2",
+				ID:              "2",
 				Type:            store.Type_Resource,
 				LinkedAccountID: "testLinkedAccountID",
 				DeviceID:        "testDeviceID",
@@ -151,7 +151,7 @@ func TestStore_FindOrCreateSubscription(t *testing.T) {
 			name: "Type_Resource - error - duplicit with different LinkedAccountID",
 			args: args{
 				sub: store.Subscription{
-					SubscriptionID:  "3",
+					ID:              "3",
 					Type:            store.Type_Resource,
 					LinkedAccountID: "testLinkedAccountID",
 					DeviceID:        "testDeviceID",
@@ -205,18 +205,18 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 
 	subs := []store.Subscription{
 		{
-			SubscriptionID:  "0",
+			ID:              "0",
 			Type:            store.Type_Devices,
 			LinkedAccountID: "testLinkedAccountID",
 		},
 		{
-			SubscriptionID:  "1",
+			ID:              "1",
 			Type:            store.Type_Device,
 			LinkedAccountID: "testLinkedAccountID",
 			DeviceID:        "testDeviceID",
 		},
 		{
-			SubscriptionID:  "2",
+			ID:              "2",
 			Type:            store.Type_Resource,
 			LinkedAccountID: "testLinkedAccountID",
 			DeviceID:        "testDeviceID",
@@ -236,7 +236,7 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 		{
 			name: "bySubscriptionID",
 			args: args{
-				queries: []store.SubscriptionQuery{{SubscriptionID: "2"}},
+				queries: []store.SubscriptionQuery{{ID: "2"}},
 			},
 			want: []store.Subscription{subs[2]},
 		},
@@ -303,18 +303,18 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 func TestStore_RemoveSubscriptions(t *testing.T) {
 	subs := []store.Subscription{
 		{
-			SubscriptionID:  "0",
+			ID:              "0",
 			Type:            store.Type_Devices,
 			LinkedAccountID: "testLinkedAccountID",
 		},
 		{
-			SubscriptionID:  "1",
+			ID:              "1",
 			Type:            store.Type_Device,
 			LinkedAccountID: "testLinkedAccountID",
 			DeviceID:        "testDeviceID",
 		},
 		{
-			SubscriptionID:  "2",
+			ID:              "2",
 			Type:            store.Type_Resource,
 			LinkedAccountID: "testLinkedAccountID",
 			DeviceID:        "testDeviceID",

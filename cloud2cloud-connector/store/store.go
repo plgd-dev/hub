@@ -28,7 +28,7 @@ type LinkedCloudHandler interface {
 }
 
 type SubscriptionQuery struct {
-	SubscriptionID  string
+	ID              string
 	LinkedAccountID string
 	DeviceID        string
 	Href            string

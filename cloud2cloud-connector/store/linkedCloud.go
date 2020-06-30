@@ -13,9 +13,10 @@ import (
 )
 
 type Events struct {
-	Devices  []events.EventType `json:"Devices"`
-	Device   []events.EventType `json:"Device"`
-	Resource []events.EventType `json:"Resource"`
+	Devices            []events.EventType `json:"Devices"`
+	Device             []events.EventType `json:"Device"`
+	Resource           []events.EventType `json:"Resource"`
+	StaticDeviceEvents bool               `json:"StaticDeviceEvents"`
 }
 
 func makeMap(evs ...events.EventType) map[events.EventType]bool {
@@ -43,7 +44,7 @@ func (e Events) NeedPullDevice() bool {
 		delete(set, v)
 	}
 	if len(set) != 0 {
-		return true
+		return true && !e.StaticDeviceEvents
 	}
 	return false
 }

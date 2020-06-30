@@ -9,7 +9,7 @@ const (
 )
 
 type Subscription struct {
-	SubscriptionID  string
+	ID              string
 	Type            Type
 	LinkedAccountID string
 	DeviceID        string

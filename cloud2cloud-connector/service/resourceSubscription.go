@@ -50,7 +50,7 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 		},
 		ResourceId: raCqrs.MakeResourceId(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),
 		CommandMetadata: &pbCQRS.CommandMetadata{
-			ConnectionId: Cloud2cloudConnectorConnectionId,
+			ConnectionId: subscriptionData.linkedAccount.ID + "." + subscriptionData.subscription.ID,
 			Sequence:     header.SequenceNumber,
 		},
 		Content: &pbRA.Content{

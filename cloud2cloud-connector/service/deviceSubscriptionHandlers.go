@@ -74,7 +74,7 @@ func (h *loadDevicesHandler) Handle(ctx context.Context, iter store.Subscription
 		}
 		linkedAccount, ok := h.linkedAccounts[s.LinkedAccountID]
 		if !ok {
-			h.deleteSubs = append(h.deleteSubs, s.SubscriptionID)
+			h.deleteSubs = append(h.deleteSubs, s.ID)
 			continue
 		}
 		linkedCloud, ok := h.linkedClouds[linkedAccount.LinkedCloudID]
@@ -113,7 +113,7 @@ func (c *DevicesSubscription) Load(s store.Store) error {
 
 	err = s.LoadSubscriptions(ctx, []store.SubscriptionQuery{{Type: store.Type_Resource}}, &h)
 	for _, ID := range h.deleteSubs {
-		errDel := s.RemoveSubscriptions(ctx, store.SubscriptionQuery{SubscriptionID: ID})
+		errDel := s.RemoveSubscriptions(ctx, store.SubscriptionQuery{ID: ID})
 		if errDel != nil {
 			log.Errorf("cannot delete subscription %v: %v", ID, errDel)
 		}

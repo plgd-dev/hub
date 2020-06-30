@@ -201,6 +201,24 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "pull resource, devices + static device events",
+			args: args{
+				events: store.Events{
+					StaticDeviceEvents: true,
+				},
+			},
+		},
+		{
+			name: "resource, devices events + static device events",
+			args: args{
+				events: store.Events{
+					Devices:            events.AllDevicesEvents,
+					Resource:           events.AllResourceEvents,
+					StaticDeviceEvents: true,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

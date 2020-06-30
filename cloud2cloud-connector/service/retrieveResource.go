@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-ocf/go-coap/v2/message"
 
@@ -68,8 +69,8 @@ func retrieveResource(ctx context.Context, raClient pbRA.ResourceAggregateClient
 		ResourceId:    raCqrs.MakeResourceId(deviceID, href),
 		CorrelationId: e.GetCorrelationId(),
 		CommandMetadata: &pbCQRS.CommandMetadata{
-			ConnectionId: Cloud2cloudConnectorConnectionId,
-			//Sequence:     header.SequenceNumber,
+			ConnectionId: linkedAccount.ID,
+			Sequence:     uint64(time.Now().UnixNano()),
 		},
 		Content: &pbRA.Content{
 			Data:              content,

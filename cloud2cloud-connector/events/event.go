@@ -33,7 +33,7 @@ var ContentType_VNDOCFCBOR = message.AppOcfCbor.String()
 
 type EventHeader struct {
 	CorrelationID   string
-	SubscriptionID  string
+	ID              string
 	ContentType     string
 	EventType       EventType
 	SequenceNumber  uint64
@@ -111,7 +111,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 
 	return EventHeader{
 		CorrelationID:   correlationID,
-		SubscriptionID:  subscriptionID,
+		ID:              subscriptionID,
 		ContentType:     contentType,
 		EventType:       eventType,
 		SequenceNumber:  sequenceNumber,
