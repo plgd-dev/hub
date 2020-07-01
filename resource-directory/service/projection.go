@@ -8,6 +8,7 @@ import (
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
+	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/strings"
 	cache "github.com/patrickmn/go-cache"
 )
@@ -36,6 +37,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	}
 	cache := cache.New(expiration, expiration)
 	cache.OnEvicted(func(deviceId string, _ interface{}) {
+		log.Debugf("device %v was remove from the cache", deviceId)
 		projection.Unregister(deviceId)
 	})
 	return &Projection{projection: projection, cache: cache}, nil
@@ -52,7 +54,6 @@ func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIdsFilter, typ
 			defer func() {
 				p.projection.Unregister(deviceId)
 			}()
-
 		}
 		p.cache.Set(deviceId, created, cache.DefaultExpiration)
 		if len(resourceIdsFilter) > 0 {
