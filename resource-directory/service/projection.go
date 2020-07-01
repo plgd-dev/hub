@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
@@ -28,7 +27,6 @@ func hasMatchingType(resourceTypes []string, typeFilter strings.Set) bool {
 type Projection struct {
 	projection *projectionRA.Projection
 	cache      *cache.Cache
-	mutex      sync.Mutex
 }
 
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, expiration time.Duration) (*Projection, error) {
@@ -45,21 +43,18 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 
 func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIdsFilter, typeFilter, deviceIds strings.Set) (map[string]map[string]*resourceCtx, error) {
 	models := make([]eventstore.Model, 0, 32)
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
 	for deviceId := range deviceIds {
-		loaded, err := p.projection.Register(ctx, deviceId)
+		created, err := p.projection.Register(ctx, deviceId)
 		if err != nil {
 			return nil, fmt.Errorf("cannot register to projection %v", err)
 		}
-		if !loaded {
+		if !created {
 			defer func() {
 				p.projection.Unregister(deviceId)
 			}()
 
 		}
-		p.cache.Set(deviceId, loaded, cache.DefaultExpiration)
+		p.cache.Set(deviceId, created, cache.DefaultExpiration)
 		if len(resourceIdsFilter) > 0 {
 			for resourceId := range resourceIdsFilter {
 				m := p.projection.Models(deviceId, resourceId)
