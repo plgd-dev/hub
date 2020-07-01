@@ -11,7 +11,6 @@ import (
 	"github.com/go-ocf/kit/log"
 
 	raCqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	kitSync "github.com/go-ocf/kit/sync"
 )
 
 // Projection projects events from resource aggregate.
@@ -76,14 +75,14 @@ func newProjection(ctx context.Context, name string, store eventstore.EventStore
 // ForceUpdate invokes update registered resource model from evenstore.
 func (p *projection) forceUpdate(ctx context.Context, deviceID string, query []eventstore.SnapshotQuery) error {
 	v, ok := p.refCountMap.LoadWithFunc(deviceID, func(v interface{}) interface{} {
-		r := v.(*kitSync.RefCounter)
+		r := v.(*RefCounter)
 		r.Acquire()
 		return r
 	})
 	if !ok {
 		return fmt.Errorf("cannot force update projection for %v: not found", deviceID)
 	}
-	r := v.(*kitSync.RefCounter)
+	r := v.(*RefCounter)
 	defer r.Release(ctx)
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
@@ -97,6 +96,23 @@ func (p *projection) forceUpdate(ctx context.Context, deviceID string, query []e
 }
 
 func (p *projection) models(query []eventstore.SnapshotQuery) []eventstore.Model {
+	for _, q := range query {
+		if q.GroupId != "" {
+			v, ok := p.refCountMap.LoadWithFunc(q.GroupId, func(v interface{}) interface{} {
+				r := v.(*RefCounter)
+				r.Acquire()
+				return r
+			})
+			if !ok {
+				continue
+			}
+			r := v.(*RefCounter)
+			defer r.Release(context.Background())
+			d := r.Data().(*deviceProjection)
+			d.mutex.Lock()
+			defer d.mutex.Unlock()
+		}
+	}
 	return p.cqrsProjection.Models(query)
 }
 
@@ -106,11 +122,11 @@ type deviceProjection struct {
 
 func (p *projection) register(ctx context.Context, deviceID string, query []eventstore.SnapshotQuery) (created bool, err error) {
 	v, loaded := p.refCountMap.LoadOrStoreWithFunc(deviceID, func(v interface{}) interface{} {
-		r := v.(*kitSync.RefCounter)
+		r := v.(*RefCounter)
 		r.Acquire()
 		return r
 	}, func() interface{} {
-		return kitSync.NewRefCounter(&deviceProjection{}, func(ctx context.Context, data interface{}) error {
+		return NewRefCounter(&deviceProjection{}, func(ctx context.Context, data interface{}) error {
 			p.refCountMap.Delete(deviceID)
 			topics, updateSubscriber := p.topicManager.Remove(deviceID)
 			if updateSubscriber {
@@ -124,7 +140,7 @@ func (p *projection) register(ctx context.Context, deviceID string, query []even
 			})
 		})
 	})
-	r := v.(*kitSync.RefCounter)
+	r := v.(*RefCounter)
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -151,14 +167,14 @@ func (p *projection) register(ctx context.Context, deviceID string, query []even
 
 func (p *projection) unregister(deviceID string) error {
 	v, ok := p.refCountMap.LoadWithFunc(deviceID, func(v interface{}) interface{} {
-		r := v.(*kitSync.RefCounter)
+		r := v.(*RefCounter)
 		r.Acquire()
 		return r
 	})
 	if !ok {
 		return fmt.Errorf("cannot unregister projection for %v: not found", deviceID)
 	}
-	r := v.(*kitSync.RefCounter)
+	r := v.(*RefCounter)
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
