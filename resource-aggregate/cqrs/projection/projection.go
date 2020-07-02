@@ -87,8 +87,8 @@ func (p *projection) forceUpdate(ctx context.Context, deviceID string, query []e
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	log.Debug("projection.forceUpdate %v", deviceID)
-	defer log.Debug("projection.forceUpdate %v done", deviceID)
+	log.Debugf("projection.forceUpdate %v", deviceID)
+	defer log.Debugf("projection.forceUpdate %v done", deviceID)
 
 	err := p.cqrsProjection.Project(ctx, query)
 	if err != nil {
@@ -150,8 +150,8 @@ func (p *projection) register(ctx context.Context, deviceID string, query []even
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	log.Debug("projection.register %v", deviceID)
-	defer log.Debug("projection.register %v done", deviceID)
+	log.Debugf("projection.register %v", deviceID)
+	defer log.Debugf("projection.register %v done", deviceID)
 	if loaded {
 		return false, nil
 	}
@@ -186,8 +186,8 @@ func (p *projection) unregister(deviceID string) error {
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	log.Debug("projection.unregister %v", deviceID)
-	defer log.Debug("projection.unregister %v done", deviceID)
+	log.Debugf("projection.unregister %v", deviceID)
+	defer log.Debugf("projection.unregister %v done", deviceID)
 	p.release(r)
 	return p.release(r)
 }
