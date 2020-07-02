@@ -51,9 +51,7 @@ func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIdsFilter, typ
 			return nil, fmt.Errorf("cannot register to projection %v", err)
 		}
 		if !created {
-			log.Debugf("Projection.GetResourceCtxs.Unregister %v", deviceId)
 			defer func(ID string) {
-				log.Debugf("Projection.GetResourceCtxs.Unregister %v", ID)
 				p.projection.Unregister(ID)
 			}(deviceId)
 		}

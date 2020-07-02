@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	pbRD "github.com/go-ocf/cloud/resource-directory/pb/resource-directory"
+	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/strings"
 )
 
@@ -50,9 +51,11 @@ func (rd *ResourceDirectory) GetResourceLinks(ctx context.Context, in *pbRD.GetR
 		return
 	}
 
+	links := make([]pbRD.ResourceLink, 0, 32)
 	for _, resources := range resourceValues {
 		for _, resource := range resources {
 			resourceLink := toResourceLink(resource)
+			links = append(links, resourceLink)
 			if err = responseHandler(&resourceLink); err != nil {
 				err = fmt.Errorf("cannot handle response: %w", err)
 				statusCode = codes.Canceled
@@ -60,6 +63,7 @@ func (rd *ResourceDirectory) GetResourceLinks(ctx context.Context, in *pbRD.GetR
 			}
 		}
 	}
+	log.Debugf("DeviceDirectory.GetResourceLinks send links %+v", links)
 	statusCode = codes.OK
 	return
 }

@@ -61,7 +61,7 @@ type projection struct {
 }
 
 func newProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc, getTopics GetTopicsFunc) (*projection, error) {
-	cqrsProjection, err := cqrs.NewProjection(ctx, store, name, subscriber, factoryModel, log.Debugf)
+	cqrsProjection, err := cqrs.NewProjection(ctx, store, name, subscriber, factoryModel, func(template string, args ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create Projection: %w", err)
 	}
@@ -87,8 +87,6 @@ func (p *projection) forceUpdate(ctx context.Context, deviceID string, query []e
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	log.Debugf("projection.forceUpdate %v", deviceID)
-	defer log.Debugf("projection.forceUpdate %v done", deviceID)
 
 	err := p.cqrsProjection.Project(ctx, query)
 	if err != nil {
@@ -150,8 +148,6 @@ func (p *projection) register(ctx context.Context, deviceID string, query []even
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	log.Debugf("projection.register %v", deviceID)
-	defer log.Debugf("projection.register %v done", deviceID)
 	if loaded {
 		return false, nil
 	}
@@ -186,8 +182,6 @@ func (p *projection) unregister(deviceID string) error {
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	log.Debugf("projection.unregister %v", deviceID)
-	defer log.Debugf("projection.unregister %v done", deviceID)
 	p.release(r)
 	return p.release(r)
 }

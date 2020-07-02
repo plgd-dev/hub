@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
 
@@ -72,9 +73,11 @@ func (rd *ResourceShadow) RetrieveResourcesValues(ctx context.Context, req *pbRS
 		return
 	}
 
+	res := make([]pbRS.ResourceValue, 0, 32)
 	for _, resources := range resourceValues {
 		for _, resource := range resources {
 			val := toResourceValue(resource)
+			res = append(res, val)
 			if err = responseHandler(&val); err != nil {
 				err = fmt.Errorf("cannot retrieve resources values: %w", err)
 				statusCode = codes.Canceled
@@ -82,6 +85,7 @@ func (rd *ResourceShadow) RetrieveResourcesValues(ctx context.Context, req *pbRS
 			}
 		}
 	}
+	log.Debugf("DeviceDirectory.RetrieveResourcesValues send resources %+v", res)
 	statusCode = codes.OK
 	return
 }
