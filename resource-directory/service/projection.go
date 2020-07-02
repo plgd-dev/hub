@@ -50,10 +50,9 @@ func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIDsFilter, typ
 			return nil, fmt.Errorf("cannot register to projection %v", err)
 		}
 		if !loaded {
-			defer func() {
-				p.Unregister(deviceID)
-			}()
-
+			defer func(ID string) {
+				p.Unregister(ID)
+			}(deviceID)
 		}
 		p.cache.Set(deviceID, loaded, cache.DefaultExpiration)
 		if len(resourceIDsFilter) > 0 {
