@@ -63,7 +63,7 @@ func (rd *ResourceDirectory) GetResourceLinks(ctx context.Context, in *pbRD.GetR
 			}
 		}
 	}
-	log.Debugf("DeviceDirectory.GetResourceLinks send links %+v", links)
+	log.Debugf("ResourceDirectory.GetResourceLinks send links %+v", links)
 	statusCode = codes.OK
 	return
 }

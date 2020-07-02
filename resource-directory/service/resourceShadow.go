@@ -85,7 +85,7 @@ func (rd *ResourceShadow) RetrieveResourcesValues(ctx context.Context, req *pbRS
 			}
 		}
 	}
-	log.Debugf("DeviceDirectory.RetrieveResourcesValues send resources %+v", res)
+	log.Debugf("ResourceShadow.RetrieveResourcesValues send resources %+v", res)
 	statusCode = codes.OK
 	return
 }
