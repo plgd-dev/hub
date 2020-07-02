@@ -69,17 +69,19 @@ func (m *Map) LoadOrStoreWithFunc(key interface{}, onLoadFunc func(value interfa
 
 // Replace replaces the existing value with a new value and returns old value for the key.
 func (m *Map) Replace(key, value interface{}) (oldValue interface{}, oldLoaded bool) {
-	return m.ReplaceWithFunc(key, nil, func() interface{} { return value })
+	return m.ReplaceWithFunc(key, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) { return value, false })
 }
 
-func (m *Map) ReplaceWithFunc(key interface{}, onLoadFunc func(value interface{}) interface{}, createFunc func() interface{}) (oldValue interface{}, oldLoaded bool) {
+func (m *Map) ReplaceWithFunc(key interface{}, onReplaceFunc func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool)) (oldValue interface{}, oldLoaded bool) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	v, ok := m.data[key]
-	m.data[key] = createFunc()
-	if ok && onLoadFunc != nil {
-		v = onLoadFunc(v)
+	newValue, del := onReplaceFunc(v, ok)
+	if del {
+		delete(m.data, key)
+		return v, ok
 	}
+	m.data[key] = newValue
 	return v, ok
 }
 

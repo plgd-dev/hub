@@ -83,7 +83,7 @@ func (p *projection) forceUpdate(ctx context.Context, deviceID string, query []e
 		return fmt.Errorf("cannot force update projection for %v: not found", deviceID)
 	}
 	r := v.(*RefCounter)
-	defer r.Release(ctx)
+	defer p.release(r)
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -95,29 +95,39 @@ func (p *projection) forceUpdate(ctx context.Context, deviceID string, query []e
 	return nil
 }
 
-func (p *projection) models(query []eventstore.SnapshotQuery) []eventstore.Model {
-	for _, q := range query {
-		if q.GroupId != "" {
-			v, ok := p.refCountMap.LoadWithFunc(q.GroupId, func(v interface{}) interface{} {
-				r := v.(*RefCounter)
-				r.Acquire()
-				return r
-			})
-			if !ok {
-				continue
-			}
-			r := v.(*RefCounter)
-			defer r.Release(context.Background())
-			d := r.Data().(*deviceProjection)
-			d.mutex.Lock()
-			defer d.mutex.Unlock()
+func (p *projection) release(v *RefCounter) error {
+	data := v.Data().(*deviceProjection)
+	deviceID := data.deviceID
+	p.refCountMap.ReplaceWithFunc(deviceID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		o := oldValue.(*RefCounter)
+		d := o.Data().(*deviceProjection)
+		o.Release(context.Background())
+		return o, d.released
+	})
+	if !data.released {
+		return nil
+	}
+	p.refCountMap.Delete(deviceID)
+	topics, updateSubscriber := p.topicManager.Remove(deviceID)
+	if updateSubscriber {
+		err := p.cqrsProjection.SubscribeTo(topics)
+		if err != nil {
+			log.Errorf("cannot change topics for projection device %v: %w", deviceID, err)
 		}
 	}
+	return p.cqrsProjection.Forget([]eventstore.SnapshotQuery{
+		{GroupId: deviceID},
+	})
+}
+
+func (p *projection) models(query []eventstore.SnapshotQuery) []eventstore.Model {
 	return p.cqrsProjection.Models(query)
 }
 
 type deviceProjection struct {
-	mutex sync.Mutex
+	mutex    sync.Mutex
+	released bool
+	deviceID string
 }
 
 func (p *projection) register(ctx context.Context, deviceID string, query []eventstore.SnapshotQuery) (created bool, err error) {
@@ -126,18 +136,12 @@ func (p *projection) register(ctx context.Context, deviceID string, query []even
 		r.Acquire()
 		return r
 	}, func() interface{} {
-		return NewRefCounter(&deviceProjection{}, func(ctx context.Context, data interface{}) error {
-			p.refCountMap.Delete(deviceID)
-			topics, updateSubscriber := p.topicManager.Remove(deviceID)
-			if updateSubscriber {
-				err := p.cqrsProjection.SubscribeTo(topics)
-				if err != nil {
-					log.Errorf("cannot change topics for projection device %v: %w", deviceID, err)
-				}
-			}
-			return p.cqrsProjection.Forget([]eventstore.SnapshotQuery{
-				{GroupId: deviceID},
-			})
+		return NewRefCounter(&deviceProjection{
+			deviceID: deviceID,
+		}, func(ctx context.Context, data interface{}) error {
+			d := data.(*deviceProjection)
+			d.released = true
+			return nil
 		})
 	})
 	r := v.(*RefCounter)
@@ -151,14 +155,14 @@ func (p *projection) register(ctx context.Context, deviceID string, query []even
 	if updateSubscriber {
 		err := p.cqrsProjection.SubscribeTo(topics)
 		if err != nil {
-			r.Release(ctx)
+			p.release(r)
 			return false, fmt.Errorf("cannot register device %v: %w", deviceID, err)
 		}
 	}
 
 	err = p.cqrsProjection.Project(ctx, query)
 	if err != nil {
-		r.Release(ctx)
+		p.release(r)
 		return false, fmt.Errorf("cannot register device %v: %w", deviceID, err)
 	}
 
@@ -178,7 +182,6 @@ func (p *projection) unregister(deviceID string) error {
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	ctx := context.Background()
-	r.Release(ctx)
-	return r.Release(ctx)
+	p.release(r)
+	return p.release(r)
 }
