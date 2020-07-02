@@ -158,11 +158,13 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
 			continue
 		}
-		err = s.SubscribeToResource(ctx, link.DeviceID, href, d.linkedAccount, d.linkedCloud)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
+		s.triggerTask(Task{
+			taskType:      TaskType_SubscribeToResource,
+			linkedAccount: d.linkedAccount,
+			linkedCloud:   d.linkedCloud,
+			deviceID:      link.DeviceID,
+			href:          href,
+		})
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%v", errors)

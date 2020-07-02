@@ -61,8 +61,6 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	//time.Sleep(time.Second)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.GetDevices(ctx, tt.args.req)

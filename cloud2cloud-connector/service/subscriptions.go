@@ -31,7 +31,7 @@ type SubscriptionManager struct {
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
 	oauthCallback       string
-	triggerPullDevice   func(pullDevice)
+	triggerTask         func(Task)
 }
 
 func NewSubscriptionManager(
@@ -41,7 +41,7 @@ func NewSubscriptionManager(
 	store store.Store,
 	devicesSubscription *DevicesSubscription,
 	oauthCallback string,
-	triggerPullDevice func(pullDevice)) *SubscriptionManager {
+	triggerTask func(Task)) *SubscriptionManager {
 	return &SubscriptionManager{
 		eventsURL:           EventsURL,
 		store:               store,
@@ -50,7 +50,7 @@ func NewSubscriptionManager(
 		devicesSubscription: devicesSubscription,
 		cache:               cache.New(time.Minute*10, time.Minute*5),
 		oauthCallback:       oauthCallback,
-		triggerPullDevice:   triggerPullDevice,
+		triggerTask:         triggerTask,
 	}
 }
 

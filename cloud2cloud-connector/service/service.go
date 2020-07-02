@@ -47,11 +47,11 @@ func runDevicePulling(ctx context.Context,
 	raClient pbRA.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
-	triggerPullDevice func(pullDevice),
+	triggerTask func(Task),
 ) bool {
 	ctx, cancel := context.WithTimeout(ctx, config.PullDevicesInterval)
 	defer cancel()
-	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback, triggerPullDevice)
+	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback, triggerTask)
 	if err != nil {
 		log.Errorf("cannot pull devices: %v", err)
 	}
@@ -125,8 +125,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	staticDeviceEvents := NewStaticDeviceEvents(raClient, config.PullStaticDeviceEvents.MaxParallelGets, config.PullStaticDeviceEvents.CacheSize, config.PullStaticDeviceEvents.Timeout)
-	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, staticDeviceEvents.Trigger)
+	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallelGets, config.TaskProcessor.CacheSize, config.TaskProcessor.Interval)
+	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger)
 	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -135,14 +135,14 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for runDevicePulling(ctx, config, store, asClient, raClient, devicesSubscription, subscriptionManager, staticDeviceEvents.Trigger) {
+			for runDevicePulling(ctx, config, store, asClient, raClient, devicesSubscription, subscriptionManager, taskProcessor.Trigger) {
 			}
 		}()
 	}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		staticDeviceEvents.Run(ctx, subscriptionManager)
+		taskProcessor.Run(ctx, subscriptionManager)
 	}()
 
 	server := Server{

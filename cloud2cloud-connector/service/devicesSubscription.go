@@ -118,7 +118,8 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d sub
 			continue
 		}
 		if d.linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
-			s.triggerPullDevice(pullDevice{
+			s.triggerTask(Task{
+				taskType:      TaskType_PullDevice,
 				linkedAccount: d.linkedAccount,
 				linkedCloud:   d.linkedCloud,
 				deviceID:      device.ID,
@@ -128,11 +129,12 @@ func (s *SubscriptionManager) HandleDevicesRegistered(ctx context.Context, d sub
 		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
 			continue
 		}
-		err = s.SubscribeToDevice(ctx, device.ID, d.linkedAccount, d.linkedCloud)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
+		s.triggerTask(Task{
+			taskType:      TaskType_SubscribeToDevice,
+			linkedAccount: d.linkedAccount,
+			linkedCloud:   d.linkedCloud,
+			deviceID:      device.ID,
+		})
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%v", errors)

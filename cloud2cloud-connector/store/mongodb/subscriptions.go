@@ -162,10 +162,10 @@ func (s *Store) FindOrCreateSubscription(ctx context.Context, sub store.Subscrip
 	var storedSub dbSubscription
 	err := res.Decode(&storedSub)
 	if err != nil {
-		return store.Subscription{}, fmt.Errorf("cannot devcode all device subscription: %v", err)
+		return store.Subscription{}, fmt.Errorf("cannot decode subscription: %v", err)
 	}
 	if storedSub.ID != dbSub.ID {
-		return store.Subscription{}, fmt.Errorf("cannet create duplicit subscription of type %v:%v:%v", dbSub.Type, dbSub.DeviceID, dbSub.Href)
+		return store.Subscription{}, fmt.Errorf("cannot create duplicit subscription of type %v:%v:%v", dbSub.Type, dbSub.DeviceID, dbSub.Href)
 	}
 
 	return sub, nil

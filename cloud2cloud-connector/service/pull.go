@@ -39,7 +39,7 @@ type pullDevicesHandler struct {
 	linkedClouds        map[string]store.LinkedCloud
 	subscriptionManager *SubscriptionManager
 	oauthCallback       string
-	triggerPullDevice   func(pullDevice)
+	triggerTask         func(Task)
 }
 
 func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) (map[string]bool, error) {
@@ -116,7 +116,7 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 	return nil
 }
 
-func publishDeviceResources(ctx context.Context, raClient pbRA.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, resourcesSubs map[string]map[string]bool, dev RetrieveDeviceWithLinksResponse) error {
+func publishDeviceResources(ctx context.Context, raClient pbRA.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, resourcesSubs map[string]map[string]bool, dev RetrieveDeviceWithLinksResponse, triggerTask func(Task)) error {
 	var errors []error
 	userID := linkedAccount.UserID
 	for _, link := range dev.Links {
@@ -136,11 +136,13 @@ func publishDeviceResources(ctx context.Context, raClient pbRA.ResourceAggregate
 		if resourcesSubs[deviceID][link.Href] {
 			continue
 		}
-		err = subscriptionManager.SubscribeToResource(ctx, deviceID, link.Href, linkedAccount, linkedCloud)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
+		triggerTask(Task{
+			taskType:      TaskType_SubscribeToResource,
+			linkedAccount: linkedAccount,
+			linkedCloud:   linkedCloud,
+			deviceID:      deviceID,
+			href:          link.Href,
+		})
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%+v", errors)
@@ -232,13 +234,14 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		if linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
-			p.triggerPullDevice(pullDevice{
+			p.triggerTask(Task{
+				taskType:      TaskType_PullDevice,
 				linkedAccount: linkedAccount,
 				linkedCloud:   linkedCloud,
 				deviceID:      deviceID,
 			})
 		} else if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
-			err := publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, p.subscriptionManager, ph.subs[store.Type_Resource], dev)
+			err := publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, p.subscriptionManager, ph.subs[store.Type_Resource], dev, p.triggerTask)
 			if err != nil {
 				errors = append(errors, err)
 				continue
@@ -247,13 +250,12 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			if ph.subs[store.Type_Device][deviceID][""] {
 				continue
 			}
-			//time.Sleep(time.Second * 2)
-			fmt.Printf("SubscribeToDevice %v %+v\n", deviceID, dev)
-			err = p.subscriptionManager.SubscribeToDevice(ctx, deviceID, linkedAccount, linkedCloud)
-			if err != nil {
-				errors = append(errors, err)
-				continue
-			}
+			p.triggerTask(Task{
+				taskType:      TaskType_SubscribeToDevice,
+				linkedAccount: linkedAccount,
+				linkedCloud:   linkedCloud,
+				deviceID:      deviceID,
+			})
 		}
 	}
 	if len(errors) > 0 {
@@ -399,7 +401,7 @@ func pullDevices(ctx context.Context, s store.Store,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
 	oauthCallback string,
-	triggerPullDevice func(pullDevice)) error {
+	triggerTask func(Task)) error {
 
 	var lh LinkedCloudsHandler
 	err := s.LoadLinkedClouds(ctx, store.Query{}, &lh)
@@ -415,7 +417,7 @@ func pullDevices(ctx context.Context, s store.Store,
 		subscriptionManager: subscriptionManager,
 		linkedClouds:        lh.linkedClouds,
 		oauthCallback:       oauthCallback,
-		triggerPullDevice:   triggerPullDevice,
+		triggerTask:         triggerTask,
 	}
 	return s.LoadLinkedAccounts(ctx, store.Query{}, &h)
 }

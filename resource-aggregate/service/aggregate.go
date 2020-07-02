@@ -52,7 +52,7 @@ func NewAggregate(ctx context.Context, resourceId string, userDeviceIds []string
 		eventstore:    eventstore,
 		userID:        userID,
 	}
-	cqrsAg, err := cqrs.NewAggregate(resourceId, retry, SnapshotThreshold, eventstore, a.factoryModel, log.Debugf)
+	cqrsAg, err := cqrs.NewAggregate(resourceId, retry, SnapshotThreshold, eventstore, a.factoryModel, func(template string, args ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}
