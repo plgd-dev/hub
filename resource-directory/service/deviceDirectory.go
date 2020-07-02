@@ -10,6 +10,7 @@ import (
 	coap "github.com/go-ocf/go-coap"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
+	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
 
@@ -163,6 +164,8 @@ func (dd *DeviceDirectory) GetDevices(ctx context.Context, req *pbDD.GetDevicesR
 		statusCode = codes.NotFound
 		return
 	}
+
+	log.Debugf("DeviceDirectory.GetDevices send devices %+v", devices)
 
 	for _, device := range devices {
 		dev := device
