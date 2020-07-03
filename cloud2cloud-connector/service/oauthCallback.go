@@ -54,11 +54,12 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	if provisionCacheData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		return http.StatusOK, nil
 	}
-	err = rh.subManager.StartSubscriptions(r.Context(), linkedAccount, provisionCacheData.linkedCloud)
-	if err != nil {
-		rh.store.RemoveLinkedAccount(r.Context(), linkedAccount.ID)
-		return http.StatusBadRequest, fmt.Errorf("cannot start subscriptions %+v: %v", linkedAccount, err)
-	}
+	rh.triggerTask(Task{
+		taskType:      TaskType_SubscribeToDevices,
+		linkedAccount: linkedAccount,
+		linkedCloud:   provisionCacheData.linkedCloud,
+	})
+
 	return http.StatusOK, nil
 }
 

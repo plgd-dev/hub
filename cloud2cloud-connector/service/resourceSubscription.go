@@ -11,7 +11,47 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	kitHttp "github.com/go-ocf/kit/net/http"
+	"github.com/gofrs/uuid"
+	"github.com/patrickmn/go-cache"
 )
+
+func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	signingSecret, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+	}
+	correlationID, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("cannot generate correlationID for device subscription: %v", err)
+	}
+
+	sub := store.Subscription{
+		Type:            store.Type_Resource,
+		LinkedAccountID: linkedAccount.ID,
+		DeviceID:        deviceID,
+		Href:            href,
+		SigningSecret:   signingSecret,
+	}
+	err = s.cache.Add(correlationID.String(), subscriptionData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+		subscription:  sub,
+	}, cache.DefaultExpiration)
+	if err != nil {
+		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
+	}
+	sub.ID, err = s.subscribeToResource(ctx, linkedAccount, linkedCloud, correlationID.String(), signingSecret, deviceID, href)
+	if err != nil {
+		s.cache.Delete(correlationID.String())
+		return fmt.Errorf("cannot subscribe to device %v resource %v: %v", deviceID, href, err)
+	}
+	_, err = s.store.FindOrCreateSubscription(ctx, sub)
+	if err != nil {
+		cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID)
+		return fmt.Errorf("cannot store resource subscription to DB: %v", err)
+	}
+	return nil
+}
 
 func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID, resourceHrefLink string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+"/"+resourceHrefLink+"/subscriptions", correlationID, events.SubscriptionRequest{

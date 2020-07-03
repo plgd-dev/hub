@@ -17,6 +17,7 @@ type TaskType string
 
 const (
 	TaskType_PullDevice          TaskType = "pulldevice"
+	TaskType_SubscribeToDevices  TaskType = "subdevices"
 	TaskType_SubscribeToDevice   TaskType = "subdevice"
 	TaskType_SubscribeToResource TaskType = "subresource"
 )
@@ -33,19 +34,21 @@ type TaskProcessor struct {
 	tasksChan     chan Task
 	wg            *sync.WaitGroup
 	poolGets      *semaphore.Weighted
-	interval      time.Duration
+	timeout       time.Duration
 	raClient      pbRA.ResourceAggregateClient
 	pulledDevices *kitSync.Map //[userid+deviceID]
+	delay         time.Duration
 }
 
-func NewTaskProcessor(raClient pbRA.ResourceAggregateClient, maxParallelGets int64, cacheSize int, interval time.Duration) *TaskProcessor {
+func NewTaskProcessor(raClient pbRA.ResourceAggregateClient, maxParallelGets int64, cacheSize int, timeout, delay time.Duration) *TaskProcessor {
 	return &TaskProcessor{
 		pulledDevices: kitSync.NewMap(),
 		tasksChan:     make(chan Task, cacheSize),
 		wg:            &sync.WaitGroup{},
 		poolGets:      semaphore.NewWeighted(maxParallelGets),
-		interval:      interval,
+		timeout:       timeout,
 		raClient:      raClient,
+		delay:         delay,
 	}
 }
 
@@ -82,7 +85,10 @@ func (h *TaskProcessor) runTask(ctx context.Context, e Task, subscriptionManager
 	go func() {
 		defer h.wg.Done()
 		defer h.poolGets.Release(1)
-		ctx, cancel := context.WithTimeout(context.Background(), h.interval)
+		if h.delay > 0 {
+			time.Sleep(h.delay)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), h.timeout)
 		defer cancel()
 		switch e.taskType {
 		case TaskType_PullDevice:
@@ -98,7 +104,12 @@ func (h *TaskProcessor) runTask(ctx context.Context, e Task, subscriptionManager
 		case TaskType_SubscribeToDevice:
 			err := subscriptionManager.SubscribeToDevice(ctx, e.deviceID, e.linkedAccount, e.linkedCloud)
 			if err != nil {
-				log.Errorf("cannot run task subscribe to resource: %w", err)
+				log.Errorf("cannot run task subscribe to device: %w", err)
+			}
+		case TaskType_SubscribeToDevices:
+			err := subscriptionManager.SubscribeToDevices(ctx, e.linkedAccount, e.linkedCloud)
+			if err != nil {
+				log.Errorf("cannot run task subscribe to devices: %w", err)
 			}
 		}
 	}()
@@ -106,7 +117,7 @@ func (h *TaskProcessor) runTask(ctx context.Context, e Task, subscriptionManager
 }
 
 func (h *TaskProcessor) readTask(ctx context.Context, subscriptionManager *SubscriptionManager) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, h.interval)
+	ctx, cancel := context.WithTimeout(ctx, h.timeout)
 	defer cancel()
 	select {
 	case e := <-h.tasksChan:
@@ -129,7 +140,7 @@ func (h *TaskProcessor) Run(ctx context.Context, subscriptionManager *Subscripti
 		for process {
 			select {
 			case e := <-h.tasksChan:
-				ctx, cancel := context.WithTimeout(ctx, h.interval)
+				ctx, cancel := context.WithTimeout(ctx, h.timeout)
 				defer cancel()
 				err := h.runTask(ctx, e, subscriptionManager)
 				if err != nil {

@@ -36,6 +36,7 @@ type RequestHandler struct {
 
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
+	triggerTask    func(Task)
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -52,6 +53,7 @@ func NewRequestHandler(
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
 	store store.Store,
+	triggerTask func(Task),
 ) *RequestHandler {
 	return &RequestHandler{
 		oauthCallback:  oauthCallback,
@@ -60,6 +62,7 @@ func NewRequestHandler(
 		raClient:       raClient,
 		store:          store,
 		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
+		triggerTask:    triggerTask,
 	}
 }
 

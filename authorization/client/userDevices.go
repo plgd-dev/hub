@@ -59,12 +59,12 @@ func NewUserDevicesManager(fn TriggerFunc, asClient pbAS.AuthorizationServiceCli
 	return m
 }
 
-func (d *UserDevicesManager) getRef(userID string, create bool) (_ *kitSync.RefCounter, created bool) {
+func (d *UserDevicesManager) getRef(userID string, update bool) (_ *kitSync.RefCounter, created bool) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	u, ok := d.users[userID]
 	created = false
-	if !ok && create {
+	if !ok && update {
 		u = kitSync.NewRefCounter(&userDevices{
 			devices: make(map[string]bool),
 			userID:  userID,
@@ -85,24 +85,17 @@ func (d *UserDevicesManager) getRef(userID string, create bool) (_ *kitSync.RefC
 
 // Acquire acquires reference counter by 1 for userID.
 func (d *UserDevicesManager) Acquire(ctx context.Context, userID string) error {
-	_, created := d.getRef(userID, true)
-	if created {
-		userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
-		if err != nil {
-			d.Release(userID)
-			return err
-		}
-		d.trigger <- triggerUserDevice{
-			userID:      userID,
-			userDevices: userDevices,
-			create:      true,
-		}
-	} else {
-		d.trigger <- triggerUserDevice{
-			userID: userID,
-		}
+	d.getRef(userID, true)
+	userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
+	if err != nil {
+		d.Release(userID)
+		return err
 	}
-
+	d.trigger <- triggerUserDevice{
+		userID:      userID,
+		userDevices: userDevices,
+		update:      true,
+	}
 	return nil
 }
 
@@ -118,7 +111,7 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 		d.trigger <- triggerUserDevice{
 			userID:      userID,
 			userDevices: userDevices,
-			create:      true,
+			update:      true,
 		}
 		d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
 		return userDevices[userID], nil
@@ -256,7 +249,7 @@ func (d *UserDevicesManager) onTick(ctx context.Context, timeout time.Duration, 
 func (d *UserDevicesManager) onTrigger(ctx context.Context, timeout time.Duration, expiration time.Duration, t triggerUserDevice) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	if t.create {
+	if t.update {
 		for userID, devices := range t.userDevices {
 			added, removed, all := d.updateDevices(ctx, userID, devices, time.Now().Add(expiration))
 			d.fn(ctx, t.userID, added, removed, all)
@@ -292,7 +285,7 @@ func (d *UserDevicesManager) Close() {
 type triggerUserDevice struct {
 	userID      string
 	userDevices map[string][]string
-	create      bool
+	update      bool
 }
 
 type userDevices struct {

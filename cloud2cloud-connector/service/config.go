@@ -10,9 +10,10 @@ import (
 )
 
 type TaskProcessorConfig struct {
-	CacheSize       int           `envconfig:"CACHE_SIZE" default:"2048"`
-	Interval        time.Duration `envconfig:"INTERVAL" default:"5s"`
-	MaxParallelGets int64         `envconfig:"MAX_PARALLEL_GETS" default:"128"`
+	CacheSize   int           `envconfig:"CACHE_SIZE" default:"2048"`
+	Timeout     time.Duration `envconfig:"TIMEOUT" default:"5s"`
+	MaxParallel int64         `envconfig:"MAX_PARALLEL" default:"128"`
+	Delay       time.Duration `envconfig:"DELAY"` // Used for CTT test with 10s.
 }
 
 //Config represent application configuration

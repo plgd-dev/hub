@@ -125,9 +125,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallelGets, config.TaskProcessor.CacheSize, config.TaskProcessor.Interval)
+	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize, config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger)
-	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store)
+	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup

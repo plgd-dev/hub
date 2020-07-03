@@ -15,6 +15,43 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
+func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	signingSecret, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("cannot generate signingSecret for start subscriptions: %v", err)
+	}
+	corID, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("cannot generate correlationID for start subscriptions: %v", err)
+	}
+	correlationID := corID.String()
+
+	sub := store.Subscription{
+		Type:            store.Type_Devices,
+		LinkedAccountID: linkedAccount.ID,
+		SigningSecret:   signingSecret,
+	}
+	err = s.cache.Add(correlationID, subscriptionData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+		subscription:  sub,
+	}, cache.DefaultExpiration)
+	if err != nil {
+		return fmt.Errorf("cannot cache subscription for start subscriptions: %v", err)
+	}
+	sub.ID, err = s.subscribeToDevices(ctx, linkedAccount, linkedCloud, correlationID, signingSecret)
+	if err != nil {
+		s.cache.Delete(correlationID)
+		return fmt.Errorf("cannot subscribe to devices for %v: %v", linkedAccount.ID, err)
+	}
+	_, err = s.store.FindOrCreateSubscription(ctx, sub)
+	if err != nil {
+		cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.ID)
+		return fmt.Errorf("cannot store subscription to DB: %v", err)
+	}
+	return nil
+}
+
 func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/subscriptions", correlationID, events.SubscriptionRequest{
 		URL: s.eventsURL,
@@ -61,47 +98,6 @@ func (s *SubscriptionManager) publishCloudDeviceStatus(ctx context.Context, devi
 	_, err := s.raClient.PublishResource(ctx, &request)
 	if err != nil {
 		return fmt.Errorf("cannot process command publish resource: %v", err)
-	}
-	return nil
-}
-
-func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	signingSecret, err := generateRandomString(32)
-	if err != nil {
-		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
-	}
-	corID, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("cannot generate correlationID for devices subscription: %v", err)
-	}
-	correlationID := corID.String()
-	sub := store.Subscription{
-		Type:            store.Type_Device,
-		LinkedAccountID: linkedAccount.ID,
-		DeviceID:        deviceID,
-		SigningSecret:   signingSecret,
-	}
-	err = s.cache.Add(correlationID, subscriptionData{
-		linkedAccount: linkedAccount,
-		linkedCloud:   linkedCloud,
-		subscription:  sub,
-	}, cache.DefaultExpiration)
-	if err != nil {
-		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
-	}
-	sub.ID, err = s.subscribeToDevice(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID)
-	if err != nil {
-		s.cache.Delete(correlationID)
-		return fmt.Errorf("cannot subscribe to device %v: %v", deviceID, err)
-	}
-	_, err = s.store.FindOrCreateSubscription(ctx, sub)
-	if err != nil {
-		cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, deviceID, sub.ID)
-		return fmt.Errorf("cannot store subscription to DB: %v", err)
-	}
-	err = s.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
-	if err != nil {
-		return fmt.Errorf("cannot register device %v to resource projection: %v", deviceID, err)
 	}
 	return nil
 }

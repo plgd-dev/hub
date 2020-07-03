@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gofrs/uuid"
 	"github.com/patrickmn/go-cache"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
@@ -72,7 +71,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 		defer w.Close()
 		err := json.WriteTo(w, reqBody)
 		if err != nil {
-			log.Errorf("cannot encode to json: %v", err)
+			log.Errorf("cannot encode %+v to json: %v", reqBody, err)
 		}
 	}()
 	httpResp, err := client.Do(req)
@@ -184,13 +183,14 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	ctx = kitNetGrpc.CtxWithUserID(ctx, subData.linkedAccount.UserID)
 	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
 	if err != nil {
-		return http.StatusGone, fmt.Errorf("cannot refresh token: %w", err)
+		return http.StatusInternalServerError, fmt.Errorf("cannot refresh token: %w", err)
 	}
 
 	s.cache.Set(header.CorrelationID, subData, cache.DefaultExpiration)
 	if header.EventType == events.EventType_SubscriptionCanceled {
 		err := s.HandleCancelEvent(ctx, header, subData.linkedAccount)
 		if err != nil {
+			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{ID: header.ID})
 			return http.StatusGone, fmt.Errorf("cannot cancel subscription: %v", err)
 		}
 		return http.StatusOK, nil
@@ -204,10 +204,10 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	case store.Type_Resource:
 		err = s.HandleResourceEvent(ctx, header, body, subData)
 	default:
-		return http.StatusGone, fmt.Errorf("cannot handle event %v: handler not found", header.EventType)
+		return http.StatusBadRequest, fmt.Errorf("cannot handle event %v: handler not found", header.EventType)
 	}
 	if err != nil {
-		return http.StatusGone, err
+		return http.StatusBadRequest, err
 	}
 	return http.StatusOK, nil
 }
@@ -246,43 +246,6 @@ type subscriptionData struct {
 	linkedAccount store.LinkedAccount
 	linkedCloud   store.LinkedCloud
 	subscription  store.Subscription
-}
-
-func (s *SubscriptionManager) StartSubscriptions(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	signingSecret, err := generateRandomString(32)
-	if err != nil {
-		return fmt.Errorf("cannot generate signingSecret for start subscriptions: %v", err)
-	}
-	corID, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("cannot generate correlationID for start subscriptions: %v", err)
-	}
-	correlationID := corID.String()
-
-	sub := store.Subscription{
-		Type:            store.Type_Devices,
-		LinkedAccountID: linkedAccount.ID,
-		SigningSecret:   signingSecret,
-	}
-	err = s.cache.Add(correlationID, subscriptionData{
-		linkedAccount: linkedAccount,
-		linkedCloud:   linkedCloud,
-		subscription:  sub,
-	}, cache.DefaultExpiration)
-	if err != nil {
-		return fmt.Errorf("cannot cache subscription for start subscriptions: %v", err)
-	}
-	sub.ID, err = s.subscribeToDevices(ctx, linkedAccount, linkedCloud, correlationID, signingSecret)
-	if err != nil {
-		s.cache.Delete(correlationID)
-		return fmt.Errorf("cannot subscribe to devices for %v: %v", linkedAccount.ID, err)
-	}
-	_, err = s.store.FindOrCreateSubscription(ctx, sub)
-	if err != nil {
-		cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.ID)
-		return fmt.Errorf("cannot store subscription to DB: %v", err)
-	}
-	return nil
 }
 
 type SubscriptionsHandler struct {

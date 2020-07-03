@@ -19,6 +19,47 @@ import (
 	cache "github.com/patrickmn/go-cache"
 )
 
+func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	signingSecret, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+	}
+	corID, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("cannot generate correlationID for devices subscription: %v", err)
+	}
+	correlationID := corID.String()
+	sub := store.Subscription{
+		Type:            store.Type_Device,
+		LinkedAccountID: linkedAccount.ID,
+		DeviceID:        deviceID,
+		SigningSecret:   signingSecret,
+	}
+	err = s.cache.Add(correlationID, subscriptionData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+		subscription:  sub,
+	}, cache.DefaultExpiration)
+	if err != nil {
+		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
+	}
+	sub.ID, err = s.subscribeToDevice(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID)
+	if err != nil {
+		s.cache.Delete(correlationID)
+		return fmt.Errorf("cannot subscribe to device %v: %v", deviceID, err)
+	}
+	_, err = s.store.FindOrCreateSubscription(ctx, sub)
+	if err != nil {
+		cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, deviceID, sub.ID)
+		return fmt.Errorf("cannot store subscription to DB: %v", err)
+	}
+	err = s.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
+	if err != nil {
+		return fmt.Errorf("cannot register device %v to resource projection: %v", deviceID, err)
+	}
+	return nil
+}
+
 func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
 		URL: s.eventsURL,
@@ -76,49 +117,12 @@ func trimDeviceIDFromHref(deviceID, href string) string {
 	return href
 }
 
-func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	signingSecret, err := generateRandomString(32)
-	if err != nil {
-		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
-	}
-	correlationID, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("cannot generate correlationID for device subscription: %v", err)
-	}
-
-	sub := store.Subscription{
-		Type:            store.Type_Resource,
-		LinkedAccountID: linkedAccount.ID,
-		DeviceID:        deviceID,
-		Href:            href,
-		SigningSecret:   signingSecret,
-	}
-	err = s.cache.Add(correlationID.String(), subscriptionData{
-		linkedAccount: linkedAccount,
-		linkedCloud:   linkedCloud,
-		subscription:  sub,
-	}, cache.DefaultExpiration)
-	if err != nil {
-		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
-	}
-	sub.ID, err = s.subscribeToResource(ctx, linkedAccount, linkedCloud, correlationID.String(), signingSecret, deviceID, href)
-	if err != nil {
-		s.cache.Delete(correlationID.String())
-		return fmt.Errorf("cannot subscribe to device %v resource %v: %v", deviceID, href, err)
-	}
-	_, err = s.store.FindOrCreateSubscription(ctx, sub)
-	if err != nil {
-		cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID)
-		return fmt.Errorf("cannot store resource subscription to DB: %v", err)
-	}
-	return nil
-}
-
 // HandleResourcesPublished publish resources to resource aggregate and subscribes to resources.
 func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
 	var errors []error
 	for _, link := range links {
-		link.DeviceID = d.subscription.DeviceID
+		deviceID := d.subscription.DeviceID
+		link.DeviceID = deviceID
 		endpoints := make([]*pbRA.EndpointInformation, 0, 4)
 		for _, endpoint := range link.GetEndpoints() {
 			endpoints = append(endpoints, &pbRA.EndpointInformation{
