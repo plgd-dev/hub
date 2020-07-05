@@ -76,7 +76,7 @@ func NewRequestHandler(
 }
 
 func logAndReturnError(err error) error {
-	if errors.As(err, &io.EOF) {
+	if errors.Is(err, io.EOF) {
 		return err
 	}
 	log.Errorf("%v", err)
