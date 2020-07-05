@@ -187,11 +187,11 @@ func NewRequestHandler(
 }
 
 func logAndReturnError(err error) error {
-	if errors.As(err, &io.EOF) {
+	if errors.Is(err, io.EOF) {
 		log.Debugf("%v", err)
 		return err
 	}
-	if errors.As(err, &context.Canceled) {
+	if errors.Is(err, context.Canceled) {
 		log.Debugf("%v", err)
 		return err
 	}
