@@ -5,7 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
+
 	"github.com/go-ocf/kit/log"
 
 	"github.com/gorilla/mux"
@@ -29,7 +30,7 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
 
-	s, code, err := rh.makeSubscription(w, r, oapiStore.Type_Device, userID, []events.EventType{
+	s, code, err := rh.makeSubscription(w, r, store.Type_Device, userID, []events.EventType{
 		events.EventType_ResourcesPublished,
 		events.EventType_ResourcesUnpublished,
 	})

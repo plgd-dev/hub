@@ -17,7 +17,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	grpcCfg.Addr = testCfg.GRPC_HOST
 	grpcCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	grpcCfg.JwksURL = testCfg.JWKS_URL
-	grpcCfg.Listen.Acme.DisableVerifyClientCertificate = true
+	grpcCfg.Listen.File.DisableVerifyClientCertificate = true
 	return grpcCfg
 }
 

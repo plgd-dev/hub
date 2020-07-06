@@ -103,7 +103,7 @@ func (t AccessToken) GetSubject() (string, error) {
 }
 
 type LinkedAccount struct {
-	ID            string `bson:"_id"`
+	ID            string `json:"Id" bson:"_id"`
 	LinkedCloudID string `bson:"linkedcloudid"`
 	UserID        string
 	TargetCloud   Token

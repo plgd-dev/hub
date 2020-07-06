@@ -7,8 +7,6 @@ import (
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 
-	oapiConStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
-
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,7 +27,7 @@ type dbDevicesSub struct {
 	ID                    string `bson:"_id"`
 	URL                   string
 	CorrelationID         string // uuid
-	Type                  oapiConStore.Type
+	Type                  store.Type
 	ContentType           string
 	EventTypes            []events.EventType
 	DeviceID              string `bson:"deviceid"`
@@ -119,7 +117,7 @@ func (s *Store) LoadDevicesSubscriptions(ctx context.Context, query store.Device
 		iter, err = col.Find(ctx, bson.M{"_id": query.SubscriptionID})
 	case !query.LastCheck.IsZero():
 		q := bson.M{
-			typeKey: oapiConStore.Type_Devices,
+			typeKey: store.Type_Devices,
 			lastCheckKey: bson.M{
 				"$lt": query.LastCheck.Unix(),
 			},

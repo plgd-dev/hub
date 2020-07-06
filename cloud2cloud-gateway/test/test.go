@@ -20,7 +20,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	cfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	cfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.Service.FQDN = "cloud2cloud-gateway-" + t.Name()
-	cfg.Listen.Acme.DisableVerifyClientCertificate = true
+	cfg.Listen.File.DisableVerifyClientCertificate = true
 	return cfg
 }
 

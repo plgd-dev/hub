@@ -29,7 +29,7 @@ func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	envconfig.Process("", &cfg)
 	cfg.Address = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
-	cfg.Listen.Acme.DisableVerifyClientCertificate = true
+	cfg.Listen.File.DisableVerifyClientCertificate = true
 	cfg.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.JwksURL = testCfg.JWKS_URL
 	return cfg

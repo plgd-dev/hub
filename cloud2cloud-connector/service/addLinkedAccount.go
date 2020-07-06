@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -34,19 +35,10 @@ func generateRandomString(n int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func (rh *RequestHandler) GetLinkedCloud(ctx context.Context, linkedCloudID string) (store.LinkedCloud, error) {
-	var h LinkedCloudHandler
-	err := rh.store.LoadLinkedClouds(ctx, store.Query{ID: linkedCloudID}, &h)
-	if err != nil {
-		return store.LinkedCloud{}, fmt.Errorf("cannot find linked cloud with ID %v: %v", linkedCloudID, err)
-	}
-	return h.linkedCloud, nil
-}
-
 func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (int, error) {
-	linkedCloud, err := rh.GetLinkedCloud(r.Context(), linkedAccount.LinkedCloudID)
-	if err != nil {
-		return http.StatusInternalServerError, err
+	linkedCloud, ok := rh.store.LoadCloud(linkedAccount.LinkedCloudID)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("cannot find linked cloud with ID %v: not found", linkedAccount.LinkedCloudID)
 	}
 	t, err := generateRandomString(32)
 	if err != nil {
@@ -73,12 +65,14 @@ func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return http.StatusUnauthorized, fmt.Errorf("cannot get usedID from Authorization header: %w", err)
 	}
-	linkedCloud, err := rh.GetLinkedCloud(r.Context(), r.FormValue("cloud_id"))
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("invaid param cloud_id: %w", err)
+	vars := mux.Vars(r)
+	cloudID := vars[cloudIDKey]
+	linkedCloud, ok := rh.store.LoadCloud(cloudID)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("invaid param cloud_id %v: not found", linkedCloud)
 	}
 	linkedAccount := store.LinkedAccount{
-		LinkedCloudID: r.FormValue("cloud_id"),
+		LinkedCloudID: cloudID,
 		UserID:        userID,
 	}
 	if linkedAccount.LinkedCloudID == "" {

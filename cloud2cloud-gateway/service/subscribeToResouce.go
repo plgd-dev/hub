@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
+
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/codec/json"
@@ -54,7 +54,7 @@ type SubscriptionResponse struct {
 	SubscriptionID string `json:"subscriptionId"`
 }
 
-func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Request, typ oapiStore.Type, userID string, validEventTypes []events.EventType) (store.Subscription, int, error) {
+func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Request, typ store.Type, userID string, validEventTypes []events.EventType) (store.Subscription, int, error) {
 	var res store.Subscription
 	var req events.SubscriptionRequest
 	err := json.ReadFrom(r.Body, &req)
@@ -107,7 +107,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
 
-	s, code, err := rh.makeSubscription(w, r, oapiStore.Type_Resource, userID, []events.EventType{events.EventType_ResourceChanged})
+	s, code, err := rh.makeSubscription(w, r, store.Type_Resource, userID, []events.EventType{events.EventType_ResourceChanged})
 	if err != nil {
 		return code, err
 	}

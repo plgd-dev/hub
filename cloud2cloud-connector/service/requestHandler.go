@@ -18,8 +18,8 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
-const linkedCloudIdKey = "linkedCloudId"
-const linkedAccountIdKey = "linkedCloudId"
+const cloudIDKey = "CloudId"
+const accountIDKey = "AccountId"
 
 type provisionCacheData struct {
 	linkedAccount store.LinkedAccount
@@ -29,7 +29,7 @@ type provisionCacheData struct {
 //RequestHandler for handling incoming request
 type RequestHandler struct {
 	oauthCallback string
-	store         store.Store
+	store         *Store
 
 	asClient pbAS.AuthorizationServiceClient
 	raClient pbRA.ResourceAggregateClient
@@ -52,7 +52,7 @@ func NewRequestHandler(
 	subManager *SubscriptionManager,
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
-	store store.Store,
+	store *Store,
 	triggerTask func(Task),
 ) *RequestHandler {
 	return &RequestHandler{
@@ -87,25 +87,18 @@ func NewHTTP(requestHandler *RequestHandler) *http.Server {
 	// health check
 	r.HandleFunc("/", healthCheck).Methods("GET")
 
-	s := r.PathPrefix(uri.LinkedClouds).Subrouter()
-
 	// retrieve all linked clouds
-	s.HandleFunc("", requestHandler.RetrieveLinkedClouds).Methods("GET")
+	r.HandleFunc(uri.LinkedClouds, requestHandler.RetrieveLinkedClouds).Methods("GET")
 	// add linked cloud
-	s.HandleFunc("", requestHandler.AddLinkedCloud).Methods("POST")
+	r.HandleFunc(uri.LinkedClouds, requestHandler.AddLinkedCloud).Methods("POST")
 	// delete linked cloud
-	s.HandleFunc("/{"+linkedCloudIdKey+"}", requestHandler.DeleteLinkedCloud).Methods("DELETE")
-
-	s = r.PathPrefix(uri.LinkedAccounts).Subrouter()
+	r.HandleFunc(uri.LinkedCloud, requestHandler.DeleteLinkedCloud).Methods("DELETE")
 	// add linked account
-	s.HandleFunc("", requestHandler.AddLinkedAccount).Methods("GET")
-	// retrieve all linked accounts
-	s.HandleFunc("/retrieve", requestHandler.RetrieveLinkedAccounts).Methods("GET")
+	r.HandleFunc(uri.LinkedAccounts, requestHandler.AddLinkedAccount).Methods("GET")
 	// delete linked cloud
-	s.HandleFunc("/{"+linkedAccountIdKey+"}", requestHandler.DeleteLinkedAccount).Methods("DELETE")
-
+	r.HandleFunc(uri.LinkedAccount, requestHandler.DeleteLinkedAccount).Methods("DELETE")
 	// notify linked cloud
-	r.HandleFunc(uri.NotifyLinkedAccount, requestHandler.NotifyLinkedAccount).Methods("POST")
+	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods("POST")
 
 	// OAuthCallback
 	oauthURL, _ := url.Parse(requestHandler.oauthCallback)

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cqrs/eventstore"
@@ -167,7 +166,7 @@ func (h *EventHandler) processResourceEvent(e Event) error {
 	err := h.store.LoadSubscriptions(
 		context.Background(),
 		store.SubscriptionQuery{
-			Type:     oapiStore.Type_Resource,
+			Type:     store.Type_Resource,
 			DeviceID: e.DeviceID,
 			Href:     e.Href,
 		},
@@ -251,7 +250,7 @@ func (h *EventHandler) processDeviceEvent(e Event) error {
 	err := h.store.LoadSubscriptions(
 		context.Background(),
 		store.SubscriptionQuery{
-			Type:     oapiStore.Type_Device,
+			Type:     store.Type_Device,
 			DeviceID: e.DeviceID,
 		},
 		newDeviceSubscriptionHandler(h.store, h.goroutinePoolGo, e),

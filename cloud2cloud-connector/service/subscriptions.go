@@ -22,9 +22,28 @@ import (
 const AuthorizationHeader string = "Authorization"
 const AcceptHeader string = "Accept"
 
+type Type string
+
+const (
+	Type_Devices  Type = "devices"
+	Type_Device   Type = "device"
+	Type_Resource Type = "resource"
+)
+
+type Subscription struct {
+	ID              string
+	Type            Type
+	LinkedAccountID string
+	LinkedCloudID   string
+	DeviceID        string
+	Href            string
+	SigningSecret   string
+	CorrelationID   string
+}
+
 type SubscriptionManager struct {
 	eventsURL           string
-	store               store.Store
+	store               *Store
 	raClient            pbRA.ResourceAggregateClient
 	asClient            pbAS.AuthorizationServiceClient
 	cache               *cache.Cache
@@ -37,7 +56,7 @@ func NewSubscriptionManager(
 	EventsURL string,
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
-	store store.Store,
+	store *Store,
 	devicesSubscription *DevicesSubscription,
 	oauthCallback string,
 	triggerTask func(Task)) *SubscriptionManager {
@@ -110,75 +129,39 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	return nil
 }
 
-type SubscriptionHandler struct {
-	subscription store.Subscription
-	ok           bool
-}
-
-func (h *SubscriptionHandler) Handle(ctx context.Context, iter store.SubscriptionIter) (err error) {
-	var s store.Subscription
-	if iter.Next(ctx, &s) {
-		h.ok = true
-		h.subscription = s
-		return iter.Err()
-	}
-	return iter.Err()
-}
-
 func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.EventHeader, body []byte) (int, error) {
 	var subData subscriptionData
 	var err error
 	data, ok := s.cache.Get(header.CorrelationID)
 	if ok {
+		s.cache.Delete(header.CorrelationID)
 		subData = data.(subscriptionData)
 		subData.subscription.ID = header.ID
-		newSubscription, err := s.store.FindOrCreateSubscription(ctx, subData.subscription)
+		newSubscription, loaded, err := s.store.LoadOrCreateSubscription(subData.subscription)
 		if err != nil {
 			return http.StatusGone, fmt.Errorf("cannot store subscription to DB: %v", err)
 		}
-		subData.subscription = newSubscription
+		if loaded && newSubscription.subscription.ID != header.ID {
+			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: duplicit subscription(CorrelationID %v, ID: %v)", header.CorrelationID, header.ID, newSubscription.subscription.CorrelationID, newSubscription.subscription.ID)
+		}
+		subData.subscription = newSubscription.subscription
 	} else {
-		var h SubscriptionHandler
-		err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{ID: header.ID}}, &h)
-		if err != nil {
+		newSubscription, ok := s.store.LoadSubscription(header.ID)
+		if !ok {
 			return http.StatusGone, fmt.Errorf("cannot load subscription from DB: %v", err)
 		}
-		if !h.ok {
-			return http.StatusGone, fmt.Errorf("unknown subscription %v, eventType %v", header.ID, header.EventType)
-		}
-		subData.subscription = h.subscription
-		var lh LinkedAccountHandler
-		err = s.store.LoadLinkedAccounts(ctx, store.Query{ID: subData.subscription.LinkedAccountID}, &lh)
-		if err != nil {
-			return http.StatusGone, fmt.Errorf("cannot load linked account %v for subscription %v: %v", subData.subscription.LinkedAccountID, header.ID, err)
-		}
-		if len(lh.linkedAccounts) == 0 {
-			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{ID: header.ID})
-			return http.StatusGone, fmt.Errorf("unknown linked account %v subscription %v", subData.subscription.LinkedAccountID, subData.subscription.ID)
-		}
-		linkedAccount := lh.linkedAccounts[subData.subscription.LinkedAccountID]
-		var ch LinkedCloudHandler
-		err = s.store.LoadLinkedClouds(ctx, store.Query{ID: linkedAccount.LinkedCloudID}, &ch)
-		if err != nil {
-			return http.StatusGone, fmt.Errorf("cannot load linked cloud %v for subscription %v: %v", linkedAccount.LinkedCloudID, subData.subscription.ID, err)
-		}
-		if !ch.set {
-			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: linkedAccount.ID})
-			s.store.RemoveLinkedAccount(ctx, linkedAccount.ID)
-			return http.StatusGone, fmt.Errorf("unknown linked cloud %v subscription %v", linkedAccount.LinkedCloudID, subData.subscription.ID)
-		}
-		subData.linkedAccount = linkedAccount
-		subData.linkedCloud = ch.linkedCloud
+		subData = newSubscription
 	}
 
 	// verify event signature
-	if header.EventSignature != events.CalculateEventSignature(subData.subscription.SigningSecret,
+	calcEventSignature := events.CalculateEventSignature(subData.subscription.SigningSecret,
 		header.ContentType,
 		header.EventType,
 		header.ID,
 		header.SequenceNumber,
-		header.EventTimestamp, body) {
-		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v: %v", header.ID, err)
+		header.EventTimestamp, body)
+	if header.EventSignature != calcEventSignature {
+		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v(%+v != %+v, %s): not match", header.ID, subData.subscription, header, body)
 	}
 	ctx = kitNetGrpc.CtxWithUserID(ctx, subData.linkedAccount.UserID)
 	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
@@ -186,22 +169,20 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 		return http.StatusInternalServerError, fmt.Errorf("cannot refresh token: %w", err)
 	}
 
-	s.cache.Set(header.CorrelationID, subData, cache.DefaultExpiration)
 	if header.EventType == events.EventType_SubscriptionCanceled {
 		err := s.HandleCancelEvent(ctx, header, subData.linkedAccount)
 		if err != nil {
-			s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{ID: header.ID})
 			return http.StatusGone, fmt.Errorf("cannot cancel subscription: %v", err)
 		}
 		return http.StatusOK, nil
 	}
 
 	switch subData.subscription.Type {
-	case store.Type_Devices:
+	case Type_Devices:
 		err = s.HandleDevicesEvent(ctx, header, body, subData)
-	case store.Type_Device:
+	case Type_Device:
 		err = s.HandleDeviceEvent(ctx, header, body, subData)
-	case store.Type_Resource:
+	case Type_Resource:
 		err = s.HandleResourceEvent(ctx, header, body, subData)
 	default:
 		return http.StatusBadRequest, fmt.Errorf("cannot handle event %v: handler not found", header.EventType)
@@ -231,76 +212,15 @@ func (h *LinkedAccountHandler) Handle(ctx context.Context, iter store.LinkedAcco
 }
 
 func (s *SubscriptionManager) HandleCancelEvent(ctx context.Context, header events.EventHeader, linkedAccount store.LinkedAccount) error {
-	var h SubscriptionHandler
-	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{ID: header.ID}}, &h)
-	if err != nil {
-		return fmt.Errorf("cannot load subscription from DB: %v", err)
+	_, ok := s.store.PullOutSubscription(header.ID)
+	if !ok {
+		return fmt.Errorf("cannot cancel subscription %v: not found", header.ID)
 	}
-	if !h.ok {
-		return fmt.Errorf("unknown subscription %v, eventType %v", header.ID, header.EventType)
-	}
-	return s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{ID: header.ID})
+	return nil
 }
 
 type subscriptionData struct {
 	linkedAccount store.LinkedAccount
 	linkedCloud   store.LinkedCloud
-	subscription  store.Subscription
-}
-
-type SubscriptionsHandler struct {
-	subscriptions []store.Subscription
-}
-
-func (h *SubscriptionsHandler) Handle(ctx context.Context, iter store.SubscriptionIter) (err error) {
-	for {
-		var s store.Subscription
-		if !iter.Next(ctx, &s) {
-			break
-		}
-		h.subscriptions = append(h.subscriptions, s)
-	}
-	return iter.Err()
-}
-
-func (s *SubscriptionManager) StopSubscriptions(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	var h SubscriptionsHandler
-	err := s.store.LoadSubscriptions(ctx, []store.SubscriptionQuery{{LinkedAccountID: linkedAccount.ID}}, &h)
-	if err != nil {
-		return fmt.Errorf("cannot load subscriptions: %v", err)
-	}
-	if len(h.subscriptions) == 0 {
-		return nil
-	}
-
-	err = s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: linkedAccount.ID})
-	if err != nil {
-		return fmt.Errorf("cannot delete subscriptions: %v", err)
-	}
-
-	var errors []error
-	for _, sub := range h.subscriptions {
-		switch sub.Type {
-		case store.Type_Devices:
-			err = cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.ID)
-			if err != nil {
-				errors = append(errors, err)
-			}
-		case store.Type_Device:
-			err = cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.ID)
-			if err != nil {
-				errors = append(errors, err)
-			}
-		case store.Type_Resource:
-			err = cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID)
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%v", errors)
-	}
-
-	return nil
+	subscription  Subscription
 }

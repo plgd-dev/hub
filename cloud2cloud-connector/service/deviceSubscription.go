@@ -20,6 +20,9 @@ import (
 )
 
 func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	if _, loaded := s.store.LoadDeviceSubscription(linkedAccount.LinkedCloudID, linkedAccount.ID, deviceID); loaded {
+		return nil
+	}
 	signingSecret, err := generateRandomString(32)
 	if err != nil {
 		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
@@ -29,17 +32,20 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 		return fmt.Errorf("cannot generate correlationID for devices subscription: %v", err)
 	}
 	correlationID := corID.String()
-	sub := store.Subscription{
-		Type:            store.Type_Device,
+	sub := Subscription{
+		Type:            Type_Device,
 		LinkedAccountID: linkedAccount.ID,
 		DeviceID:        deviceID,
 		SigningSecret:   signingSecret,
+		LinkedCloudID:   linkedCloud.ID,
+		CorrelationID:   correlationID,
 	}
-	err = s.cache.Add(correlationID, subscriptionData{
+	data := subscriptionData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
 		subscription:  sub,
-	}, cache.DefaultExpiration)
+	}
+	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
 	if err != nil {
 		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
 	}
@@ -48,7 +54,7 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 		s.cache.Delete(correlationID)
 		return fmt.Errorf("cannot subscribe to device %v: %v", deviceID, err)
 	}
-	_, err = s.store.FindOrCreateSubscription(ctx, sub)
+	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
 		cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, deviceID, sub.ID)
 		return fmt.Errorf("cannot store subscription to DB: %v", err)
@@ -166,7 +172,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			taskType:      TaskType_SubscribeToResource,
 			linkedAccount: d.linkedAccount,
 			linkedCloud:   d.linkedCloud,
-			deviceID:      link.DeviceID,
+			deviceID:      deviceID,
 			href:          href,
 		})
 	}
@@ -195,9 +201,9 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot unpublish resource: %v", err))
 		}
-		err = s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: d.linkedAccount.ID, DeviceID: link.DeviceID, Href: href})
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot remove device %v resource %v: %v", link.DeviceID, href, err))
+		_, ok := s.store.PullOutResource(d.linkedAccount.LinkedCloudID, d.linkedAccount.ID, link.DeviceID, href)
+		if !ok {
+			errors = append(errors, fmt.Errorf("cannot remove device %v resource %v: not found", link.DeviceID, href))
 		}
 		s.cache.Delete(header.CorrelationID)
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiConStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -39,7 +38,7 @@ type DBSub struct {
 	ID             string `bson:"_id"`
 	URL            string
 	CorrelationID  string // uuid
-	Type           oapiConStore.Type
+	Type           store.Type
 	ContentType    string
 	EventTypes     []events.EventType
 	DeviceID       string `bson:"deviceid"`
@@ -82,14 +81,14 @@ func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) er
 		return fmt.Errorf("invalid UserID")
 	}
 	switch sub.Type {
-	case oapiConStore.Type_Device:
+	case store.Type_Device:
 		if sub.DeviceID == "" {
 			return fmt.Errorf("invalid DeviceID for device subscription type")
 		}
 		if sub.Href != "" {
 			return fmt.Errorf("invalid Href for device subscription type")
 		}
-	case oapiConStore.Type_Resource:
+	case store.Type_Resource:
 		if sub.DeviceID == "" {
 			return fmt.Errorf("invalid DeviceID for resource subscription type")
 		}

@@ -409,7 +409,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 	pool := security.NewDefaultCertPool(nil)
-	dat, err := ioutil.ReadFile(os.Getenv("LISTEN_ACME_CA_POOL"))
+	dat, err := ioutil.ReadFile(os.Getenv("LISTEN_FILE_CA_POOL"))
 	require.NoError(t, err)
 	ok := pool.AppendCertsFromPEM(dat)
 	require.True(t, ok)
@@ -417,7 +417,7 @@ func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 }
 
 func GetRootCertificateAuthorities(t *testing.T) []*x509.Certificate {
-	dat, err := ioutil.ReadFile(os.Getenv("LISTEN_ACME_CA_POOL"))
+	dat, err := ioutil.ReadFile(os.Getenv("LISTEN_FILE_CA_POOL"))
 	require.NoError(t, err)
 	r := make([]*x509.Certificate, 0, 4)
 	for {

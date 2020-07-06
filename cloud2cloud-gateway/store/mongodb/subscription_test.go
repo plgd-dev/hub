@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	oapiConStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 
@@ -50,7 +49,7 @@ func TestStore_SaveSubscription(t *testing.T) {
 					Href:           "resourcehref",
 					SigningSecret:  "signingSecret",
 					UserID:         "userID",
-					Type:           oapiConStore.Type_Resource,
+					Type:           store.Type_Resource,
 				},
 			},
 		},
@@ -68,7 +67,7 @@ func TestStore_SaveSubscription(t *testing.T) {
 					Href:           "resourcehref",
 					SigningSecret:  "signingSecret",
 					UserID:         "userID",
-					Type:           oapiConStore.Type_Resource,
+					Type:           store.Type_Resource,
 				},
 			},
 		},
@@ -86,7 +85,7 @@ func TestStore_SaveSubscription(t *testing.T) {
 					Href:           "resourcehref",
 					UserID:         "userID",
 					SigningSecret:  "signingSecret",
-					Type:           oapiConStore.Type_Resource,
+					Type:           store.Type_Resource,
 				},
 			},
 		},
@@ -104,7 +103,7 @@ func TestStore_SaveSubscription(t *testing.T) {
 					Href:           "resourcehref",
 					SigningSecret:  "signingSecret",
 					UserID:         "userID",
-					Type:           oapiConStore.Type_Resource,
+					Type:           store.Type_Resource,
 				},
 			},
 			wantErr: true,
@@ -144,7 +143,7 @@ func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
 		Href:           "resourcehref",
 		SigningSecret:  "signingSecret",
 		UserID:         "userID",
-		Type:           oapiConStore.Type_Resource,
+		Type:           store.Type_Resource,
 	}
 
 	type args struct {
@@ -215,7 +214,7 @@ func TestStore_PopSubscription(t *testing.T) {
 		Href:           "resourcehref",
 		SigningSecret:  "signingSecret",
 		UserID:         "userID",
-		Type:           oapiConStore.Type_Resource,
+		Type:           store.Type_Resource,
 	}
 
 	type args struct {
@@ -294,7 +293,7 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 		Href:           "resourcehref",
 		SigningSecret:  "signingSecret",
 		UserID:         "userID",
-		Type:           oapiConStore.Type_Resource,
+		Type:           store.Type_Resource,
 	}
 
 	type args struct {
@@ -319,7 +318,7 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 			name: "valid1",
 			args: args{
 				query: store.SubscriptionQuery{
-					Type:     oapiConStore.Type_Resource,
+					Type:     store.Type_Resource,
 					DeviceID: sub.DeviceID,
 				},
 			},
@@ -329,7 +328,7 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 			name: "valid2",
 			args: args{
 				query: store.SubscriptionQuery{
-					Type:     oapiConStore.Type_Resource,
+					Type:     store.Type_Resource,
 					DeviceID: sub.DeviceID,
 					Href:     sub.Href,
 				},

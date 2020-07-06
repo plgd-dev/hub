@@ -10,7 +10,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	connectorStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/security/oauth/manager"
@@ -42,7 +41,7 @@ type ListenCertManager = interface {
 
 func runDevicePulling(ctx context.Context,
 	config Config,
-	s store.Store,
+	s *Store,
 	asClient pbAS.AuthorizationServiceClient,
 	raClient pbRA.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
@@ -65,7 +64,7 @@ func runDevicePulling(ctx context.Context,
 }
 
 //New create new Server with provided store and bus
-func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, store connectorStore.Store) *Server {
+func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, db connectorStore.Store) *Server {
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 	var ln net.Listener
 	var err error
@@ -118,13 +117,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-
-	devicesSubscription := NewDevicesSubscription(rdClient, raClient)
-	err = devicesSubscription.Load(store)
+	store, err := NewStore(context.Background(), db)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 
+	devicesSubscription := NewDevicesSubscription(rdClient, raClient)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize, config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger)
 	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)

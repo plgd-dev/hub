@@ -36,16 +36,12 @@ func (rh *RequestHandler) addLinkedCloud(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot decode body: %v", err)
 	}
-	if l.ID == "" {
-		uuid, err1 := uuid.NewV4()
-		if err1 != nil {
-			return http.StatusBadRequest, fmt.Errorf("cannot generate uuid %v", err1)
-		}
-		l.ID = uuid.String()
-		err = rh.store.InsertLinkedCloud(r.Context(), l)
-	} else {
-		err = rh.store.UpdateLinkedCloud(r.Context(), l)
+	uuid, err1 := uuid.NewV4()
+	if err1 != nil {
+		return http.StatusBadRequest, fmt.Errorf("cannot generate uuid %v", err1)
 	}
+	l.ID = uuid.String()
+	l, _, err = rh.store.LoadOrCreateCloud(r.Context(), l)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}

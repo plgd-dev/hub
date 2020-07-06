@@ -5,7 +5,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/pem"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -75,13 +77,20 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	var linkCloud store.LinkedCloud
 	err = json.ReadFrom(resp.Body, &linkCloud)
 	require.NoError(t, err)
-	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.LinkedAccounts+"?cloud_id="+linkCloud.ID, nil).AuthToken(provider.UserToken).Build(ctx, t)
+	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(provider.UserToken).Build(ctx, t)
 	resp = test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 
 	// for pulling
 	time.Sleep(time.Second * 6)
+
+	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(provider.UserToken).Build(ctx, t)
+	resp = test.DoHTTPRequest(t, req)
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	fmt.Println(string(b))
 
 	return func() {
 		cloud2()
@@ -175,6 +184,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 				},
 			},
 		},
+
 		{
 			name: "resource events + device,devices pulling",
 			args: args{
@@ -183,6 +193,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 				},
 			},
 		},
+
 		{
 			name: "resource, device events + devices pulling",
 			args: args{
@@ -192,6 +203,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 				},
 			},
 		},
+
 		{
 			name: "device, devices events + resource pulling",
 			args: args{

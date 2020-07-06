@@ -12,7 +12,9 @@ type Subscription struct {
 	ID              string
 	Type            Type
 	LinkedAccountID string
+	LinkedCloudID   string
 	DeviceID        string
 	Href            string
 	SigningSecret   string
+	CorrelationID   string
 }

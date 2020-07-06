@@ -16,6 +16,9 @@ import (
 )
 
 func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	if _, loaded := s.store.LoadDevicesSubscription(linkedAccount.LinkedCloudID, linkedAccount.ID); loaded {
+		return nil
+	}
 	signingSecret, err := generateRandomString(32)
 	if err != nil {
 		return fmt.Errorf("cannot generate signingSecret for start subscriptions: %v", err)
@@ -26,16 +29,19 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 	}
 	correlationID := corID.String()
 
-	sub := store.Subscription{
-		Type:            store.Type_Devices,
+	sub := Subscription{
+		Type:            Type_Devices,
 		LinkedAccountID: linkedAccount.ID,
 		SigningSecret:   signingSecret,
+		LinkedCloudID:   linkedCloud.ID,
+		CorrelationID:   correlationID,
 	}
-	err = s.cache.Add(correlationID, subscriptionData{
+	data := subscriptionData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
 		subscription:  sub,
-	}, cache.DefaultExpiration)
+	}
+	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
 	if err != nil {
 		return fmt.Errorf("cannot cache subscription for start subscriptions: %v", err)
 	}
@@ -44,7 +50,7 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 		s.cache.Delete(correlationID)
 		return fmt.Errorf("cannot subscribe to devices for %v: %v", linkedAccount.ID, err)
 	}
-	_, err = s.store.FindOrCreateSubscription(ctx, sub)
+	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
 		cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.ID)
 		return fmt.Errorf("cannot store subscription to DB: %v", err)
@@ -142,12 +148,12 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 	userID := subscriptionData.linkedAccount.UserID
 	var errors []error
 	for _, device := range devices {
-		err := s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{LinkedAccountID: subscriptionData.linkedAccount.ID, DeviceID: device.ID})
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot remove device %v subscription: %v", device.ID, err))
+		_, ok := s.store.PullOutDevice(subscriptionData.linkedAccount.LinkedCloudID, subscriptionData.linkedAccount.ID, device.ID)
+		if !ok {
+			errors = append(errors, fmt.Errorf("cannot remove device %v subscription: not found", device.ID))
 		}
 		s.cache.Delete(correlationID)
-		_, err = s.asClient.RemoveDevice(ctx, &pbAS.RemoveDeviceRequest{
+		_, err := s.asClient.RemoveDevice(ctx, &pbAS.RemoveDeviceRequest{
 			DeviceId: device.ID,
 			UserId:   userID,
 		})
