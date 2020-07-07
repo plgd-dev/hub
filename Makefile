@@ -81,7 +81,7 @@ test: env
 		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME=coap.crt \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME=coap.key \
-		-e ACME_DB_DIR=/home/certificate-authority
+		-e ACME_DB_DIR=/home/certificate-authority \
 		cloud-test \
 		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 	cp $(shell pwd)/.tmp/home/coverage.txt $(shell pwd)/coverage.txt
