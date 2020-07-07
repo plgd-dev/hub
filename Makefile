@@ -19,7 +19,7 @@ cloud-test:
 		-f Dockerfile.test \
 		.
 
-certificates:
+certificates: cloud-test
 	mkdir -p $(shell pwd)/.tmp/certs
 	docker run \
 		--network=host \
@@ -60,7 +60,7 @@ env: clean certificates nats mongo
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
-test: env cloud-test
+test: env
 	docker run \
 		--network=host \
 		-v $(shell pwd)/.tmp/certs:/certs \
