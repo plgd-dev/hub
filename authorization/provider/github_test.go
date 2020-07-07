@@ -10,6 +10,7 @@ import (
 
 	"io"
 
+	"github.com/go-ocf/cloud/authorization/oauth"
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 )
@@ -93,13 +94,13 @@ func TestGithubFailure(t *testing.T) {
 }
 
 func newGithubOAuth(server *httptest.Server) Provider {
-	endpoint := Endpoint{
+	endpoint := oauth.Endpoint{
 		AuthURL:  server.URL + "/oauth/authorize",
 		TokenURL: server.URL + "/oauth/access_token",
 	}
 	Config := Config{
 		Provider: "github",
-		OAuth2: OAuthConfig{
+		OAuth2: oauth.Config{
 			ClientID:     "clientId",
 			ClientSecret: "clientSecret",
 			RedirectURL:  "",

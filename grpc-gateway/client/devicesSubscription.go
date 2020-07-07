@@ -125,7 +125,7 @@ func (c *Client) NewDevicesSubscription(ctx context.Context, handle Subscription
 
 // Cancel cancels subscription.
 func (s *DevicesSubscription) Cancel() (wait func(), err error) {
-	if !atomic.CompareAndSwapUint32(&s.canceled, s.canceled, 1) {
+	if !atomic.CompareAndSwapUint32(&s.canceled, 0, 1) {
 		return s.wait, nil
 	}
 	err = s.client.CloseSend()

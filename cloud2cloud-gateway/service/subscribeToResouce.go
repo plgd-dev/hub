@@ -8,10 +8,11 @@ import (
 	"net/url"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
+
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/codec/json"
+	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 
@@ -53,7 +54,7 @@ type SubscriptionResponse struct {
 	SubscriptionID string `json:"subscriptionId"`
 }
 
-func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Request, typ oapiStore.Type, userID string, validEventTypes []events.EventType) (store.Subscription, int, error) {
+func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Request, typ store.Type, userID string, validEventTypes []events.EventType) (store.Subscription, int, error) {
 	var res store.Subscription
 	var req events.SubscriptionRequest
 	err := json.ReadFrom(r.Body, &req)
@@ -94,7 +95,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-	href := routeVars[resourceLinkHrefKey]
+	href := routeVars[HrefKey]
 
 	err := rh.IsAuthorized(r.Context(), r, deviceID)
 	if err != nil {
@@ -106,7 +107,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
 
-	s, code, err := rh.makeSubscription(w, r, oapiStore.Type_Resource, userID, []events.EventType{events.EventType_ResourceChanged})
+	s, code, err := rh.makeSubscription(w, r, store.Type_Resource, userID, []events.EventType{events.EventType_ResourceChanged})
 	if err != nil {
 		return code, err
 	}
@@ -147,11 +148,13 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 			rh.resourceProjection.Unregister(deviceID)
 			return http.StatusBadRequest, fmt.Errorf("cannot prepare content to emit first event: %w", err)
 		}
-		_, err = emitEvent(r.Context(), events.EventType_ResourceChanged, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
+		remove, err := emitEvent(r.Context(), events.EventType_ResourceChanged, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
 		if err != nil {
-			rh.store.PopSubscription(r.Context(), s.ID)
-			rh.resourceProjection.Unregister(deviceID)
-			return http.StatusBadRequest, fmt.Errorf("cannot emit event: %w", err)
+			if remove {
+				rh.resourceProjection.Unregister(deviceID)
+				rh.store.PopSubscription(r.Context(), deviceID)
+			}
+			log.Errorf("subscribeToResource: cannot emit event: %w", err)
 		}
 	}
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,6 +17,8 @@ func TestInit(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 	var cfg Config
+	err = envconfig.Process("", &cfg)
+	require.NoError(t, err)
 	cfg = testSignerCerts(t, dir, cfg)
 
 	type args struct {
@@ -39,6 +42,7 @@ func TestInit(t *testing.T) {
 					SignerPrivateKey:    cfg.SignerPrivateKey,
 					SignerValidDuration: time.Hour * 10,
 					Addr:                ":1234",
+					AcmeDBDir:           cfg.AcmeDBDir,
 				},
 			},
 			wantServer: true,
@@ -57,7 +61,6 @@ func TestInit(t *testing.T) {
 				assert.NotEmpty(t, got)
 			} else {
 				assert.Empty(t, got)
-
 			}
 		})
 	}

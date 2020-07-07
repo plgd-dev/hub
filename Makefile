@@ -2,7 +2,7 @@ SHELL = /bin/bash
 SIMULATOR_NAME_SUFFIX ?= $(shell hostname)
 
 SUBDIRS := resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
-.PHONY: $(SUBDIRS) push proto/generate clean build test env make-mongo make-nats make-ca cloud-build
+.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
 
 default: build
 
@@ -19,78 +19,83 @@ cloud-test:
 		-f Dockerfile.test \
 		.
 
-make-ca:
-	docker pull ocfcloud/step-ca:vnext
-	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
-		sudo sh -c 'echo net.ipv4.ip_unprivileged_port_start=0 > /etc/sysctl.d/50-unprivileged-ports.conf'; \
-		sudo sysctl --system; \
-	fi
-	mkdir -p ./.tmp/step-ca/data/secrets
-	echo "password" > ./.tmp/step-ca/data/secrets/password
+certificates: cloud-test
+	mkdir -p $(shell pwd)/.tmp/certs
 	docker run \
-		-it \
-		-v "$(shell pwd)"/.tmp/step-ca/data:/home/step --user $(shell id -u):$(shell id -g) \
-		ocfcloud/step-ca:vnext \
-		/bin/bash -c "step ca init -dns localhost -address=:10443 -provisioner=test@localhost -name test -password-file ./secrets/password && step ca provisioner add acme --type ACME && step ca provisioner add ocf.gw --type ACME"
-	docker run \
-		-d \
 		--network=host \
-		--name=step-ca-test \
-		-v /etc/nsswitch.conf:/etc/nsswitch.conf \
-		-v "$(shell pwd)"/.tmp/step-ca/data:/home/step --user $(shell id -u):$(shell id -g) \
-		ocfcloud/step-ca:vnext
+		-v $(shell pwd)/.tmp/certs:/certs \
+		--user $(shell id -u):$(shell id -g) \
+		cloud-test \
+		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key && cert-tool --cmd.generateIdentityCertificate=adebc667-1f2b-41e3-bf5c-6d6eabc68cc6 --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+	cat $(shell pwd)/.tmp/certs/http.crt > $(shell pwd)/.tmp/certs/mongo.key
+	cat $(shell pwd)/.tmp/certs/http.key >> $(shell pwd)/.tmp/certs/mongo.key
 
-make-nats:
-	sleep 1
-	docker exec -it step-ca-test /bin/bash -c "mkdir -p certs/nats && step ca certificate localhost certs/nats/nats.crt certs/nats/nats.key --provisioner acme"
+nats: certificates
 	docker run \
 	    -d \
 		--network=host \
 		--name=nats \
-		-v $(shell pwd)/.tmp/step-ca/data/certs:/certs \
-		nats --tls --tlsverify --tlscert=/certs/nats/nats.crt --tlskey=/certs/nats/nats.key --tlscacert=/certs/root_ca.crt
+		-v $(shell pwd)/.tmp/certs:/certs \
+		--user $(shell id -u):$(shell id -g) \
+		nats --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+	docker run \
+	    -d \
+		--network=host \
+		--name=nats-cloud-connector \
+		-v $(shell pwd)/.tmp/certs:/certs \
+		--user $(shell id -u):$(shell id -g) \
+		nats --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 
-make-mongo:
-	sleep 1
+mongo: certificates
 	mkdir -p $(shell pwd)/.tmp/mongo
-	docker exec -it step-ca-test /bin/bash -c "mkdir -p certs/mongo && step ca certificate localhost certs/mongo/mongo.crt certs/mongo/mongo.key --provisioner acme && cat certs/mongo/mongo.crt >> certs/mongo/mongo.key"
 	docker run \
 	    -d \
 		--network=host \
 		--name=mongo \
 		-v $(shell pwd)/.tmp/mongo:/data/db \
-		-v $(shell pwd)/.tmp/step-ca/data/certs:/certs --user $(shell id -u):$(shell id -g) \
-		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile certs/mongo/mongo.key
+		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
+		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
-env: clean make-ca make-nats make-mongo
+env: clean certificates nats mongo
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
-test: env cloud-test
+test: env
+	mkdir -p $(shell pwd)/.tmp/home
+	mkdir -p $(shell pwd)/.tmp/home/certificate-authority
 	docker run \
 		--network=host \
-		-v $(shell pwd)/.tmp/step-ca/data/certs/root_ca.crt:/root_ca.crt \
-		-e DIAL_ACME_CA_POOL=/root_ca.crt \
-		-e DIAL_ACME_DOMAINS="localhost" \
-		-e DIAL_ACME_DIRECTORY_URL="https://localhost:10443/acme/acme/directory" \
-		-e LISTEN_ACME_CA_POOL=/root_ca.crt \
-		-e LISTEN_ACME_DOMAINS="localhost" \
-		-e LISTEN_ACME_DEVICE_ID="adebc667-1f2b-41e3-bf5c-6d6eabc68cc6" \
-		-e LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/acme/directory" \
-		-e TEST_COAP_GW_OVERWRITE_LISTEN_ACME_DIRECTORY_URL="https://localhost:10443/acme/ocf.gw/directory" \
-		--mount type=bind,source="$(shell pwd)",target=/shared \
+		-v $(shell pwd)/.tmp/certs:/certs \
+		-v $(shell pwd)/.tmp/home:/home \
+		--user $(shell id -u):$(shell id -g) \
+		-e HOME=/home \
+		-e DIAL_TYPE="file" \
+		-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \
+		-e DIAL_FILE_CERT_DIR_PATH=/certs \
+		-e DIAL_FILE_CERT_NAME=http.crt \
+		-e DIAL_FILE_CERT_KEY_NAME=http.key \
+		-e LISTEN_TYPE="file" \
+		-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
+		-e LISTEN_FILE_CERT_DIR_PATH=/certs \
+		-e LISTEN_FILE_CERT_NAME=http.crt \
+		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
+		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME=coap.crt \
+		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME=coap.key \
+		-e ACME_DB_DIR=/home/certificate-authority \
 		cloud-test \
-		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/shared/coverage.txt
+		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
+	cp $(shell pwd)/.tmp/home/coverage.txt $(shell pwd)/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 
 clean:
-	docker rm -f step-ca-test || true
 	docker rm -f mongo || true
 	docker rm -f nats || true
+	docker rm -f nats-cloud-connector || true
 	docker rm -f devsim || true
-	rm -rf ./.tmp/step-ca || true
+	rm -rf ./.tmp/certs || true
 	rm -rf ./.tmp/mongo || true
+	rm -rf ./.tmp/home || true
 
 proto/generate: $(SUBDIRS)
 push: cloud-build $(SUBDIRS)

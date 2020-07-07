@@ -75,7 +75,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), time.Second)
 	require.NoError(t, err)
 
-	rd := service.NewResourceDirectory(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
+	rd := service.New(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
 
 	for _, tt := range test {
 		fn := func(t *testing.T) {

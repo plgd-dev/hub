@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"time"
 
@@ -185,6 +187,14 @@ func NewRequestHandler(
 }
 
 func logAndReturnError(err error) error {
+	if errors.Is(err, io.EOF) {
+		log.Debugf("%v", err)
+		return err
+	}
+	if errors.Is(err, context.Canceled) {
+		log.Debugf("%v", err)
+		return err
+	}
 	log.Errorf("%v", err)
 	return err
 }

@@ -22,7 +22,7 @@ message GetResourceLinksRequest {
 
 message ResourceId {
   string device_id = 1;
-  string resource_link_href = 2;
+  string href = 2;
 }
 
 // RetrieveResourceFromDeviceRequest retrieve value from device
@@ -77,6 +77,8 @@ message SubscribeForEvents {
       RESOURCE_UNPUBLISHED = 1;
       RESOURCE_UPDATE_PENDING = 2;
       RESOURCE_UPDATED = 3;
+      RESOURCE_RETRIEVE_PENDING = 4;
+      RESOURCE_RETRIEVED = 5;
     }
     repeated Event filter_events = 2;
   }
@@ -135,6 +137,17 @@ message Event {
     Status status = 3;
     string correlation_id = 4;
   }
+  message ResourceRetrievePending {
+    ResourceId resource_id = 1;
+    string resource_interface = 2;
+    string correlation_id = 3;
+  }
+  message ResourceRetrieved {
+    ResourceId resource_id = 1;
+    Content content = 2;
+    Status status = 3;
+    string correlation_id = 4;
+  }
   message OperationProcessed {
     message ErrorStatus {
       enum Code {
@@ -160,11 +173,13 @@ message Event {
     DeviceOffline device_offline = 6;
     ResourcePublished resource_published = 7;
     ResourceUnpublished resource_unpublished = 8;
-    ResourceChanged resource_content_changed = 9;
+    ResourceChanged resource_changed = 9;
     OperationProcessed operation_processed = 10;
     SubscriptionCanceled subscription_canceled = 11;
     ResourceUpdatePending resource_update_pending = 12;
     ResourceUpdated resource_updated = 13;
+    ResourceRetrievePending resource_retrieve_pending = 14;
+    ResourceRetrieved resource_retrieved = 15;
   }
 
 }

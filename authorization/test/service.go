@@ -32,17 +32,21 @@ func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, 
 	return s, nil
 }
 
-func SetUp(t *testing.T) (TearDown func()) {
+func MakeConfig(t *testing.T) service.Config {
 	var authCfg service.Config
 	err := envconfig.Process("", &authCfg)
 	require.NoError(t, err)
 	authCfg.Addr = testCfg.AUTH_HOST
 	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
 	authCfg.Device.Provider = "test"
-	return NewAuthServer(t, authCfg)
+	return authCfg
 }
 
-func NewAuthServer(t *testing.T, config service.Config) func() {
+func SetUp(t *testing.T) (TearDown func()) {
+	return New(t, MakeConfig(t))
+}
+
+func New(t *testing.T, config service.Config) func() {
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()

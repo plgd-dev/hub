@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,11 +12,11 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
+	"github.com/go-ocf/kit/net/http/transport"
 	"github.com/go-ocf/sdk/schema"
 )
 
@@ -39,7 +40,15 @@ type incrementSubscriptionSequenceNumberFunc func(ctx context.Context, subscript
 func emitEvent(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error) {
 	log.Debugf("emitEvent: %v: %+v", eventType, s)
 	defer log.Debugf("emitEvent done: %v: %+v", eventType, s)
-	client := netHttp.Client{}
+
+	trans := transport.NewDefaultTransport()
+	trans.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	client := netHttp.Client{
+		Transport: trans,
+	}
 	encoder, err := getEncoder(s.ContentType)
 	if err != nil {
 		return false, fmt.Errorf("cannot get encoder: %w", err)
@@ -157,7 +166,7 @@ func (h *EventHandler) processResourceEvent(e Event) error {
 	err := h.store.LoadSubscriptions(
 		context.Background(),
 		store.SubscriptionQuery{
-			Type:     oapiStore.Type_Resource,
+			Type:     store.Type_Resource,
 			DeviceID: e.DeviceID,
 			Href:     e.Href,
 		},
@@ -241,7 +250,7 @@ func (h *EventHandler) processDeviceEvent(e Event) error {
 	err := h.store.LoadSubscriptions(
 		context.Background(),
 		store.SubscriptionQuery{
-			Type:     oapiStore.Type_Device,
+			Type:     store.Type_Device,
 			DeviceID: e.DeviceID,
 		},
 		newDeviceSubscriptionHandler(h.store, h.goroutinePoolGo, e),

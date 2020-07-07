@@ -7,21 +7,15 @@ const (
 
 	// GET - retrieve all linked clouds
 	// POST - add linked cloud
-	LinkedClouds string = Version + "/linkedclouds"
-
+	LinkedClouds string = Version + "/clouds"
 	// DELETE - delete linked cloud
-	LinkedCloud string = LinkedClouds + "/{{ .LinkedCloudId }}"
-
-	// GET - add linked account - params: target_url, target_linked_cloud_id
-	LinkedAccounts string = Version + "/linkedaccounts"
-	// GET - retrieve all linked accounts
-	RetrieveLinkedAccounts string = Version + "/linkedaccounts/retrieve"
-
+	LinkedCloud string = LinkedClouds + "/{CloudId}"
+	// GET - add linked account - params: cloud_id
+	LinkedAccounts string = LinkedCloud + "/accounts"
 	// DELETE - delete linked account
-	LinkedAccount string = LinkedAccounts + "/{{ .LinkedAccountId }}"
-
+	LinkedAccount string = LinkedAccounts + "/{AccountId}"
 	// POST - new events from target cloud subscriptions
-	NotifyLinkedAccount string = Version + "/linkedaccountsevents"
+	Events string = Version + "/events"
 
 	// GET
 	//OAuthCallback = is loaded from ENV var

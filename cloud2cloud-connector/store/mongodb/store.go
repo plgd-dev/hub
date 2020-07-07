@@ -71,14 +71,6 @@ func NewStoreWithSession(ctx context.Context, client *mongo.Client, dbPrefix str
 		dbPrefix: dbPrefix,
 	}
 
-	col := s.client.Database(s.DBName()).Collection(subscriptionCName)
-
-	err := ensureIndex(ctx, col, typeQueryIndex, subscriptionLinkAccountQueryIndex, subscriptionDeviceQueryIndex, subscriptionDeviceHrefQueryIndex)
-	if err != nil {
-		client.Disconnect(ctx)
-		return nil, fmt.Errorf("cannot ensure index for device subscription: %v", err)
-	}
-
 	return s, nil
 }
 
@@ -115,9 +107,6 @@ func (s *Store) Clear(ctx context.Context) error {
 		errors = append(errors, err)
 	}
 	if err := s.client.Database(s.DBName()).Collection(resLinkedCloudCName).Drop(ctx); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.client.Database(s.DBName()).Collection(subscriptionCName).Drop(ctx); err != nil {
 		errors = append(errors, err)
 	}
 	if len(errors) > 0 {

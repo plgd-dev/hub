@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-	"golang.org/x/oauth2"
 )
 
 type LinkedCloudHandler struct {
@@ -35,61 +35,50 @@ func generateRandomString(n int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func (rh *RequestHandler) GetLinkedCloud(ctx context.Context, data LinkedAccountData) (store.LinkedCloud, error) {
-	switch data.State {
-	case LinkedAccountState_START:
-		return rh.originCloud, nil
-	case LinkedAccountState_PROVISIONED_ORIGIN_CLOUD:
-		var h LinkedCloudHandler
-		err := rh.store.LoadLinkedClouds(ctx, store.Query{ID: data.LinkedAccount.TargetCloud.LinkedCloudID}, &h)
-		if err != nil {
-			return store.LinkedCloud{}, fmt.Errorf("cannot find linked cloud with ID %v: %v", data.LinkedAccount.TargetCloud.LinkedCloudID, err)
-		}
-		return h.linkedCloud, nil
+func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (int, error) {
+	linkedCloud, ok := rh.store.LoadCloud(linkedAccount.LinkedCloudID)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("cannot find linked cloud with ID %v: not found", linkedAccount.LinkedCloudID)
 	}
-	return store.LinkedCloud{}, fmt.Errorf("state %v cannot provide linked cloud", data.State)
-}
-
-func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, data LinkedAccountData) (int, error) {
-	linkedCloud, err := rh.GetLinkedCloud(r.Context(), data)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	oauth := linkedCloud.ToOAuth2Config()
-	oauth.RedirectURL = rh.oauthCallback
 	t, err := generateRandomString(32)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot generate random token")
 	}
-	err = rh.provisionCache.Add(t, data, cache.DefaultExpiration)
+	err = rh.provisionCache.Add(t, provisionCacheData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+	}, cache.DefaultExpiration)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot store key - collision")
 	}
-	url := oauth.AuthCodeURL(t, oauth2.AccessTypeOffline)
-	if linkedCloud.Audience != "" {
-		//"https://portal.shared.pluggedin.cloud"
-		url = oauth.AuthCodeURL(t, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("audience", linkedCloud.Audience))
+	oauthCfg := linkedCloud.OAuth
+	if oauthCfg.RedirectURL == "" {
+		oauthCfg.RedirectURL = rh.oauthCallback
 	}
+	url := oauthCfg.AuthCodeURL(t)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	return http.StatusOK, nil
 }
 
 func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
-	l := store.LinkedAccount{
-		TargetURL: r.FormValue("target_url"),
-		TargetCloud: store.OAuth{
-			LinkedCloudID: r.FormValue("target_linked_cloud_id"),
-		},
+	_, userID, err := ParseAuth(r.Header.Get("Authorization"))
+	if err != nil {
+		return http.StatusUnauthorized, fmt.Errorf("cannot get usedID from Authorization header: %w", err)
 	}
-	if l.TargetURL == "" {
-		return http.StatusBadRequest, fmt.Errorf("invalid target_url")
+	vars := mux.Vars(r)
+	cloudID := vars[cloudIDKey]
+	linkedCloud, ok := rh.store.LoadCloud(cloudID)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("invaid param cloud_id %v: not found", linkedCloud)
 	}
-	if l.TargetCloud.LinkedCloudID == "" {
-		return http.StatusBadRequest, fmt.Errorf("invalid target_linked_cloud_id")
+	linkedAccount := store.LinkedAccount{
+		LinkedCloudID: cloudID,
+		UserID:        userID,
 	}
-
-	data := LinkedAccountData{LinkedAccount: l}
-	return rh.HandleOAuth(w, r, data)
+	if linkedAccount.LinkedCloudID == "" {
+		return http.StatusBadRequest, fmt.Errorf("invalid cloud_id")
+	}
+	return rh.HandleOAuth(w, r, linkedAccount, linkedCloud)
 }
 
 func (rh *RequestHandler) AddLinkedAccount(w http.ResponseWriter, r *http.Request) {

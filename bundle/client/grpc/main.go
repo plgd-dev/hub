@@ -122,8 +122,8 @@ func main() {
 		}
 		resp, err := ocfGW.UpdateResourcesValues(ctx, &pbGW.UpdateResourceValuesRequest{
 			ResourceId: &pbGW.ResourceId{
-				DeviceId:         *deviceID,
-				ResourceLinkHref: *href,
+				DeviceId: *deviceID,
+				Href:     *href,
 			},
 			Content: &pbGW.Content{
 				ContentType: message.MediaType(*contentFormat).String(),
@@ -176,8 +176,8 @@ func main() {
 		var resourceIdsFilter []*pbGW.ResourceId
 		if *href != "" {
 			resourceIdsFilter = append(resourceIdsFilter, &pbGW.ResourceId{
-				DeviceId:         *deviceID,
-				ResourceLinkHref: *href,
+				DeviceId: *deviceID,
+				Href:     *href,
 			})
 		}
 		getClient, err := ocfGW.RetrieveResourcesValues(ctx, &pbGW.RetrieveResourcesValuesRequest{

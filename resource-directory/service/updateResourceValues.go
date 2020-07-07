@@ -108,7 +108,7 @@ func (r *RequestHandler) UpdateResourcesValues(ctx context.Context, req *pb.Upda
 		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot update resource: invalid ResourceId"))
 	}
 	deviceID := req.GetResourceId().GetDeviceId()
-	href := req.GetResourceId().GetResourceLinkHref()
+	href := req.GetResourceId().GetHref()
 	errorMsg := fmt.Sprintf("cannot update resource /%v%v", deviceID, href) + ": %v"
 
 	correlationIDUUID, err := uuid.NewV4()

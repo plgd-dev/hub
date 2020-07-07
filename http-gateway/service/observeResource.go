@@ -32,7 +32,7 @@ func (d resourceObservationResolver) StartObservation(r *http.Request, ws *webso
 	}
 	vars := mux.Vars(r)
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), getAccessToken(r.Header))
-	id, err := d.requestHandler.client.ObserveResource(ctx, vars[uri.DeviceIDKey], vars[uri.ResourceLinkHrefKey], &ob)
+	id, err := d.requestHandler.client.ObserveResource(ctx, vars[uri.DeviceIDKey], vars[uri.HrefKey], &ob)
 	if err != nil {
 		return nil, err
 	}

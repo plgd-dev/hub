@@ -170,9 +170,7 @@ func resourceDirectoryUnpublishHandler(s mux.ResponseWriter, req *mux.Message, c
 		return
 	}
 
-	rscs := make([]*pbRA.Resource, 0, 32)
-
-	rscs = client.getObservedResources(deviceID, inss, rscs)
+	rscs := client.getObservedResources(deviceID, inss)
 	if len(rscs) == 0 {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot found resources for the DELETE request parameters - with device ID and instance IDs %v, ", queries), coapCodes.BadRequest, req.Token)
 		return

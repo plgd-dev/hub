@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
+
+	"github.com/go-ocf/kit/log"
 
 	"github.com/gorilla/mux"
 )
@@ -28,7 +30,7 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
 
-	s, code, err := rh.makeSubscription(w, r, oapiStore.Type_Device, userID, []events.EventType{
+	s, code, err := rh.makeSubscription(w, r, store.Type_Device, userID, []events.EventType{
 		events.EventType_ResourcesPublished,
 		events.EventType_ResourcesUnpublished,
 	})
@@ -69,11 +71,13 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 			rep = makeLinksRepresentation(eventType, models)
 		}
 
-		_, err = emitEvent(r.Context(), eventType, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
+		remove, err := emitEvent(r.Context(), eventType, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
 		if err != nil {
-			rh.resourceProjection.Unregister(deviceID)
-			rh.store.PopSubscription(r.Context(), s.ID)
-			return http.StatusBadRequest, fmt.Errorf("cannot emit event: %w", err)
+			if remove {
+				rh.resourceProjection.Unregister(deviceID)
+				rh.store.PopSubscription(r.Context(), s.ID)
+			}
+			log.Errorf("subscribeToDevice: cannot emit event: %v", err)
 		}
 	}
 

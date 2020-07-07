@@ -24,7 +24,7 @@ func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb
 		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot retrieve resource from device: invalid ResourceId"))
 	}
 	deviceID := req.GetResourceId().GetDeviceId()
-	href := req.GetResourceId().GetResourceLinkHref()
+	href := req.GetResourceId().GetHref()
 	errorMsg := fmt.Sprintf("cannot retrieve resource from device /%v%v", deviceID, href) + ": %v"
 
 	correlationIDUUID, err := uuid.NewV4()

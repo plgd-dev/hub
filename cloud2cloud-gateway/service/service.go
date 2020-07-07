@@ -11,7 +11,6 @@ import (
 	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
 
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -140,11 +139,11 @@ func New(
 	}
 
 	// load subscriptions to projection
-	err = subscriptionStore.LoadSubscriptions(ctx, store.SubscriptionQuery{Type: oapiStore.Type_Resource}, newResourceSubscriptionLoader(resourceProjection))
+	err = subscriptionStore.LoadSubscriptions(ctx, store.SubscriptionQuery{Type: store.Type_Resource}, newResourceSubscriptionLoader(resourceProjection))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	err = subscriptionStore.LoadSubscriptions(ctx, store.SubscriptionQuery{Type: oapiStore.Type_Device}, newDeviceSubscriptionLoader(resourceProjection))
+	err = subscriptionStore.LoadSubscriptions(ctx, store.SubscriptionQuery{Type: store.Type_Device}, newDeviceSubscriptionLoader(resourceProjection))
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}

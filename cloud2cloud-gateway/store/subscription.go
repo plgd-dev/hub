@@ -4,14 +4,21 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
+)
+
+type Type string
+
+const (
+	Type_Devices  Type = "devices"
+	Type_Device   Type = "device"
+	Type_Resource Type = "resource"
 )
 
 type Subscription struct {
 	ID             string // Id
 	URL            string // href
 	CorrelationID  string // uuid
-	Type           store.Type
+	Type           Type
 	ContentType    string // application/json or application/vnd.ocf+cbor
 	EventTypes     []events.EventType
 	DeviceID       string // filled for device and resource events

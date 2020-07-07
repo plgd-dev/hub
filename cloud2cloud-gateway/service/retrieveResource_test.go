@@ -17,7 +17,6 @@ import (
 	"github.com/go-ocf/kit/codec/json"
 
 	"github.com/go-ocf/cloud/authorization/provider"
-	c2cTest "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/cloud/test"
@@ -48,7 +47,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID + cloud.StatusHref,
 			args: args{
-				uri:    uri.Devices + "/" + deviceID + cloud.StatusHref,
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + cloud.StatusHref,
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -62,7 +61,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID + cloud.StatusHref,
 			args: args{
-				uri:    uri.Devices + "/" + deviceID + cloud.StatusHref,
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + cloud.StatusHref,
 				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -76,7 +75,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID + "/light/1",
 			args: args{
-				uri:    uri.Devices + "/" + deviceID + "/light/1",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1",
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -90,7 +89,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID + "/light/1",
 			args: args{
-				uri:    uri.Devices + "/" + deviceID + "/light/1",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1",
 				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -104,7 +103,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "notFound",
 			args: args{
-				uri:    uri.Devices + "/" + deviceID + "/notFound",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/notFound",
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusNotFound,
@@ -114,7 +113,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "invalidAccept",
 			args: args{
-				uri:    uri.Devices + "/" + deviceID + "/light/1",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1",
 				accept: "application/invalid",
 			},
 			wantCode:        http.StatusBadRequest,
@@ -124,7 +123,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "//" + deviceID + cloud.StatusHref + "/",
 			args: args{
-				uri:    uri.Devices + "//" + deviceID + cloud.StatusHref + "/",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "//" + deviceID + cloud.StatusHref + "/",
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -141,7 +140,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := setUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -155,8 +154,8 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := c2cTest.NewRequest(http.MethodGet, tt.args.uri, nil).AddHeader("Accept", tt.args.accept).Build(ctx, t)
-			resp := c2cTest.DoHTTPRequest(t, req)
+			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).AddHeader("Accept", tt.args.accept).Build(ctx, t)
+			resp := test.DoHTTPRequest(t, req)
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer resp.Body.Close()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))

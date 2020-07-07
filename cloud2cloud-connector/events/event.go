@@ -29,12 +29,11 @@ const AcceptEncodingKey = "Accept-Encoding"
 const ContentEncodingKey = "Content-Encoding"
 
 var ContentType_JSON = message.AppJSON.String()
-var ContentType_CBOR = message.AppCBOR.String()
 var ContentType_VNDOCFCBOR = message.AppOcfCbor.String()
 
 type EventHeader struct {
 	CorrelationID   string
-	SubscriptionID  string
+	ID              string
 	ContentType     string
 	EventType       EventType
 	SequenceNumber  uint64
@@ -72,7 +71,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 			return h, fmt.Errorf("invalid " + ContentTypeKey)
 		}
 	case ContentType_JSON:
-	case ContentType_CBOR:
+	case ContentType_VNDOCFCBOR:
 	default:
 		return h, fmt.Errorf("invalid "+ContentTypeKey+"(%v)", contentType)
 	}
@@ -112,7 +111,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 
 	return EventHeader{
 		CorrelationID:   correlationID,
-		SubscriptionID:  subscriptionID,
+		ID:              subscriptionID,
 		ContentType:     contentType,
 		EventType:       eventType,
 		SequenceNumber:  sequenceNumber,
@@ -145,7 +144,7 @@ func (h EventHeader) GetContentDecoder() (func(w []byte, v interface{}) error, e
 	switch h.ContentType {
 	case ContentType_JSON:
 		decoder = json.Decode
-	case ContentType_CBOR, ContentType_VNDOCFCBOR:
+	case ContentType_VNDOCFCBOR:
 		decoder = cbor.Decode
 	}
 	if decoder == nil {

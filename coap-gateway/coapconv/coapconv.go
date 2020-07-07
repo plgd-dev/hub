@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-ocf/go-coap/v2/tcp"
 
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
@@ -91,33 +92,33 @@ func MakeMediaType(coapContentFormat int32, contentType string) (message.MediaTy
 	}
 }
 
-func NewCoapResourceUpdateRequest(ctx context.Context, href string, reqContentUpdate *pbRA.ResourceUpdatePending) (*pool.Message, error) {
-	mediaType, err := MakeMediaType(reqContentUpdate.Content.CoapContentFormat, reqContentUpdate.Content.ContentType)
+func NewCoapResourceUpdateRequest(ctx context.Context, event *pb.Event_ResourceUpdatePending) (*pool.Message, error) {
+	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())
 	if err != nil {
 		return nil, fmt.Errorf("invalid content type for update content: %v", err)
 	}
-	if reqContentUpdate.Content == nil {
+	if event.Content == nil {
 		return nil, fmt.Errorf("invalid content for update content")
 	}
 
-	req, err := tcp.NewPostRequest(ctx, href, mediaType, bytes.NewReader(reqContentUpdate.GetContent().GetData()))
+	req, err := tcp.NewPostRequest(ctx, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
 	if err != nil {
 		return nil, err
 	}
-	if reqContentUpdate.GetResourceInterface() != "" {
-		req.AddOptionString(message.URIQuery, "if="+reqContentUpdate.GetResourceInterface())
+	if event.GetResourceInterface() != "" {
+		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
 	}
 
 	return req, nil
 }
 
-func NewCoapResourceRetrieveRequest(ctx context.Context, href string, resRetrieve *pbRA.ResourceRetrievePending) (*pool.Message, error) {
-	req, err := tcp.NewGetRequest(ctx, href)
+func NewCoapResourceRetrieveRequest(ctx context.Context, event *pb.Event_ResourceRetrievePending) (*pool.Message, error) {
+	req, err := tcp.NewGetRequest(ctx, event.GetResourceId().GetHref())
 	if err != nil {
 		return nil, err
 	}
-	if resRetrieve.GetResourceInterface() != "" {
-		req.AddOptionString(message.URIQuery, "if="+resRetrieve.GetResourceInterface())
+	if event.GetResourceInterface() != "" {
+		req.AddOptionString(message.URIQuery, "if="+event.GetResourceInterface())
 	}
 
 	return req, nil
@@ -205,8 +206,8 @@ func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.
 
 	return &pbGRPC.UpdateResourceValuesRequest{
 		ResourceId: &pbGRPC.ResourceId{
-			DeviceId:         deviceID,
-			ResourceLinkHref: href,
+			DeviceId: deviceID,
+			Href:     href,
 		},
 		Content: &pbGRPC.Content{
 			Data:        content.Data,

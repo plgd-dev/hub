@@ -5,7 +5,8 @@ import (
 )
 
 type Query struct {
-	ID string
+	ID            string
+	LinkedCloudID string
 }
 
 type LinkedAccountIter interface {
@@ -26,23 +27,6 @@ type LinkedCloudHandler interface {
 	Handle(ctx context.Context, iter LinkedCloudIter) (err error)
 }
 
-type SubscriptionQuery struct {
-	SubscriptionID  string
-	LinkedAccountID string
-	DeviceID        string
-	Href            string
-	Type            Type
-}
-
-type SubscriptionIter interface {
-	Next(ctx context.Context, sub *Subscription) bool
-	Err() error
-}
-
-type SubscriptionHandler interface {
-	Handle(ctx context.Context, iter SubscriptionIter) (err error)
-}
-
 type Store interface {
 	UpdateLinkedCloud(ctx context.Context, sub LinkedCloud) error
 	InsertLinkedCloud(ctx context.Context, sub LinkedCloud) error
@@ -53,8 +37,4 @@ type Store interface {
 	InsertLinkedAccount(ctx context.Context, sub LinkedAccount) error
 	RemoveLinkedAccount(ctx context.Context, LinkedAccountId string) error
 	LoadLinkedAccounts(ctx context.Context, query Query, h LinkedAccountHandler) error
-
-	LoadSubscriptions(ctx context.Context, query []SubscriptionQuery, h SubscriptionHandler) error
-	FindOrCreateSubscription(ctx context.Context, sub Subscription) (Subscription, error)
-	RemoveSubscriptions(ctx context.Context, query SubscriptionQuery) error
 }

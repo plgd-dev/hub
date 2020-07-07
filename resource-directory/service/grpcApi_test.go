@@ -42,8 +42,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/1",
+						DeviceId: deviceID,
+						Href:     "/light/1",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -64,8 +64,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/1",
+						DeviceId: deviceID,
+						Href:     "/light/1",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -86,8 +86,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/1",
+						DeviceId: deviceID,
+						Href:     "/light/1",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -107,8 +107,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/oic/d",
+						DeviceId: deviceID,
+						Href:     "/oic/d",
 					},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -121,12 +121,12 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid ResourceLinkHref",
+			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/unknown",
+						DeviceId: deviceID,
+						Href:     "/unknown",
 					},
 				},
 			},
@@ -183,8 +183,8 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/light/2",
+						DeviceId: deviceID,
+						Href:     "/light/2",
 					},
 				},
 			},
@@ -196,8 +196,8 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/oic/d",
+						DeviceId: deviceID,
+						Href:     "/oic/d",
 					},
 				},
 			},
@@ -205,12 +205,12 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName},
 		},
 		{
-			name: "invalid ResourceLinkHref",
+			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: "/unknown",
+						DeviceId: deviceID,
+						Href:     "/unknown",
 					},
 				},
 			},
@@ -500,8 +500,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		FilterBy: &pb.SubscribeForEvents_ResourceEvent{
 			ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
 				ResourceId: &pb.ResourceId{
-					DeviceId:         deviceID,
-					ResourceLinkHref: "/light/2",
+					DeviceId: deviceID,
+					Href:     "/light/2",
 				},
 				FilterEvents: []pb.SubscribeForEvents_ResourceEventFilter_Event{
 					pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED,
@@ -531,16 +531,17 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: subContentChangedID,
-		Type: &pb.Event_ResourceContentChanged{
-			ResourceContentChanged: &pb.Event_ResourceChanged{
+		Type: &pb.Event_ResourceChanged_{
+			ResourceChanged: &pb.Event_ResourceChanged{
 				ResourceId: &pb.ResourceId{
-					DeviceId:         deviceID,
-					ResourceLinkHref: "/light/2",
+					DeviceId: deviceID,
+					Href:     "/light/2",
 				},
 				Content: &pb.Content{
 					ContentType: message.AppOcfCbor.String(),
 					Data:        []byte("\277estate\364epower\000dnameeLight\377"),
 				},
+				Status: pb.Status_OK,
 			},
 		},
 	}
@@ -577,8 +578,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
 		ResourceId: &pb.ResourceId{
-			DeviceId:         deviceID,
-			ResourceLinkHref: "/light/2",
+			DeviceId: deviceID,
+			Href:     "/light/2",
 		},
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
@@ -605,8 +606,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				Type: &pb.Event_ResourceUpdatePending_{
 					ResourceUpdatePending: &pb.Event_ResourceUpdatePending{
 						ResourceId: &pb.ResourceId{
-							DeviceId:         deviceID,
-							ResourceLinkHref: "/light/2",
+							DeviceId: deviceID,
+							Href:     "/light/2",
 						},
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
@@ -631,8 +632,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				Type: &pb.Event_ResourceUpdated_{
 					ResourceUpdated: &pb.Event_ResourceUpdated{
 						ResourceId: &pb.ResourceId{
-							DeviceId:         deviceID,
-							ResourceLinkHref: "/light/2",
+							DeviceId: deviceID,
+							Href:     "/light/2",
 						},
 						Status:        pb.Status_OK,
 						CorrelationId: updCorrelationID,
@@ -640,19 +641,20 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				},
 			}
 			require.Equal(t, expectedEvent, ev)
-		case ev.GetResourceContentChanged() != nil:
+		case ev.GetResourceChanged() != nil:
 			expectedEvent = &pb.Event{
 				SubscriptionId: subContentChangedID,
-				Type: &pb.Event_ResourceContentChanged{
-					ResourceContentChanged: &pb.Event_ResourceChanged{
+				Type: &pb.Event_ResourceChanged_{
+					ResourceChanged: &pb.Event_ResourceChanged{
 						ResourceId: &pb.ResourceId{
-							DeviceId:         deviceID,
-							ResourceLinkHref: "/light/2",
+							DeviceId: deviceID,
+							Href:     "/light/2",
 						},
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
 							Data:        []byte("\277estate\364epower\030cdnameeLight\377"),
 						},
+						Status: pb.Status_OK,
 					},
 				},
 			}
@@ -661,8 +663,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	}
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
 		ResourceId: &pb.ResourceId{
-			DeviceId:         deviceID,
-			ResourceLinkHref: "/light/2",
+			DeviceId: deviceID,
+			Href:     "/light/2",
 		},
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
@@ -686,8 +688,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				Type: &pb.Event_ResourceUpdatePending_{
 					ResourceUpdatePending: &pb.Event_ResourceUpdatePending{
 						ResourceId: &pb.ResourceId{
-							DeviceId:         deviceID,
-							ResourceLinkHref: "/light/2",
+							DeviceId: deviceID,
+							Href:     "/light/2",
 						},
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
@@ -712,8 +714,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				Type: &pb.Event_ResourceUpdated_{
 					ResourceUpdated: &pb.Event_ResourceUpdated{
 						ResourceId: &pb.ResourceId{
-							DeviceId:         deviceID,
-							ResourceLinkHref: "/light/2",
+							DeviceId: deviceID,
+							Href:     "/light/2",
 						},
 						Status:        pb.Status_OK,
 						CorrelationId: updCorrelationID,
@@ -721,25 +723,99 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				},
 			}
 			require.Equal(t, expectedEvent, ev)
-		case ev.GetResourceContentChanged() != nil:
+		case ev.GetResourceChanged() != nil:
 			expectedEvent = &pb.Event{
 				SubscriptionId: subContentChangedID,
-				Type: &pb.Event_ResourceContentChanged{
-					ResourceContentChanged: &pb.Event_ResourceChanged{
+				Type: &pb.Event_ResourceChanged_{
+					ResourceChanged: &pb.Event_ResourceChanged{
 						ResourceId: &pb.ResourceId{
-							DeviceId:         deviceID,
-							ResourceLinkHref: "/light/2",
+							DeviceId: deviceID,
+							Href:     "/light/2",
 						},
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
 							Data:        []byte("\277estate\364epower\000dnameeLight\377"),
 						},
+						Status: pb.Status_OK,
 					},
 				},
 			}
 			require.Equal(t, expectedEvent, ev)
 		}
 	}
+
+	err = client.Send(&pb.SubscribeForEvents{
+		Token: "receivePending + resourceReceived",
+		FilterBy: &pb.SubscribeForEvents_DeviceEvent{
+			DeviceEvent: &pb.SubscribeForEvents_DeviceEventFilter{
+				DeviceId: deviceID,
+				FilterEvents: []pb.SubscribeForEvents_DeviceEventFilter_Event{
+					pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_OperationProcessed_{
+			OperationProcessed: &pb.Event_OperationProcessed{
+				Token: "receivePending + resourceReceived",
+				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+				},
+			},
+		},
+	}
+	require.Equal(t, expectedEvent, ev)
+	subReceivedID := ev.SubscriptionId
+
+	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
+		ResourceId: &pb.ResourceId{
+			DeviceId: deviceID,
+			Href:     "/light/2",
+		},
+	})
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: subReceivedID,
+		Type: &pb.Event_ResourceRetrievePending_{
+			ResourceRetrievePending: &pb.Event_ResourceRetrievePending{
+				ResourceId: &pb.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/2",
+				},
+				CorrelationId: ev.GetResourceRetrievePending().GetCorrelationId(),
+			},
+		},
+	}
+	require.Equal(t, expectedEvent, ev)
+	recvCorrelationID := ev.GetResourceRetrievePending().GetCorrelationId()
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: subReceivedID,
+		Type: &pb.Event_ResourceRetrieved_{
+			ResourceRetrieved: &pb.Event_ResourceRetrieved{
+				ResourceId: &pb.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/2",
+				},
+				Content: &pb.Content{
+					ContentType: message.AppOcfCbor.String(),
+					Data:        []byte("\277estate\364epower\000dnameeLight\377"),
+				},
+				Status:        pb.Status_OK,
+				CorrelationId: recvCorrelationID,
+			},
+		},
+	}
+	require.Equal(t, expectedEvent, ev)
 
 	shutdownDevSim()
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-ocf/kit/security/certManager"
 
+	"github.com/go-ocf/cloud/authorization/oauth"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
@@ -38,14 +39,19 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			name: "not found",
 			args: args{
 				sub: store.LinkedCloud{
-					ID:           "testIDnotFound",
-					Name:         "testName",
-					ClientID:     "testClientID",
-					ClientSecret: "testClientSecret",
-					Scopes:       []string{"testScopes"},
+					ID:   "testIDnotFound",
+					Name: "testName",
 					Endpoint: store.Endpoint{
-						AuthUrl:  "testAuthUrl",
-						TokenUrl: "testTokenUrl",
+						URL: "testTargetURL",
+					},
+					OAuth: oauth.Config{
+						ClientID:     "testClientID",
+						ClientSecret: "testClientSecret",
+						Scopes:       []string{"testScopes"},
+						Endpoint: oauth.Endpoint{
+							AuthURL:  "testAuthUrl",
+							TokenURL: "testTokenUrl",
+						},
 					},
 				},
 			},
@@ -55,15 +61,19 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			name: "valid",
 			args: args{
 				sub: store.LinkedCloud{
-					ID:           "testID",
-					Name:         "testNameUpdated",
-					ClientID:     "testClientID",
-					ClientSecret: "testClientSecret",
-					Scopes:       []string{"testScopes"},
-					Audience:     "testAudience",
+					ID:   "testID",
+					Name: "testNameUpdated",
 					Endpoint: store.Endpoint{
-						AuthUrl:  "testAuthUrl",
-						TokenUrl: "testTokenUrl",
+						URL: "testTargetURL",
+					},
+					OAuth: oauth.Config{
+						ClientID:     "testClientID",
+						ClientSecret: "testClientSecret",
+						Scopes:       []string{"testScopes"},
+						Endpoint: oauth.Endpoint{
+							AuthURL:  "testAuthUrl",
+							TokenURL: "testTokenUrl",
+						},
 					},
 				},
 			},
@@ -82,14 +92,19 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
-		ID:           "testID",
-		Name:         "testName",
-		ClientID:     "testClientID",
-		ClientSecret: "testClientSecret",
-		Scopes:       []string{"testScopes"},
+		ID:   "testID",
+		Name: "testName",
 		Endpoint: store.Endpoint{
-			AuthUrl:  "testAuthUrl",
-			TokenUrl: "testTokenUrl",
+			URL: "testTargetURL",
+		},
+		OAuth: oauth.Config{
+			ClientID:     "testClientID",
+			ClientSecret: "testClientSecret",
+			Scopes:       []string{"testScopes"},
+			Endpoint: oauth.Endpoint{
+				AuthURL:  "testAuthUrl",
+				TokenURL: "testTokenUrl",
+			},
 		},
 	})
 	require.NoError(err)
@@ -142,14 +157,19 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 	assert := assert.New(t)
 
 	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
-		ID:           "testID",
-		Name:         "testName",
-		ClientID:     "testClientID",
-		ClientSecret: "testClientSecret",
-		Scopes:       []string{"testScopes"},
+		ID:   "testID",
+		Name: "testName",
 		Endpoint: store.Endpoint{
-			AuthUrl:  "testAuthUrl",
-			TokenUrl: "testTokenUrl",
+			URL: "testTargetURL",
+		},
+		OAuth: oauth.Config{
+			ClientID:     "testClientID",
+			ClientSecret: "testClientSecret",
+			Scopes:       []string{"testScopes"},
+			Endpoint: oauth.Endpoint{
+				AuthURL:  "testAuthUrl",
+				TokenURL: "testTokenUrl",
+			},
 		},
 	})
 	require.NoError(err)
@@ -172,34 +192,47 @@ type testLinkedCloudHandler struct {
 
 func (h *testLinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCloudIter) (err error) {
 	var sub store.LinkedCloud
-	for iter.Next(ctx, &sub) {
+	for {
+		if !iter.Next(ctx, &sub) {
+			break
+		}
 		h.lcs = append(h.lcs, sub)
 	}
 	return iter.Err()
 }
 
 func TestStore_LoadLinkedClouds(t *testing.T) {
-	lcs := []store.LinkedCloud{{
-		ID:           "testID",
-		Name:         "testName",
-		ClientID:     "testClientID",
-		ClientSecret: "testClientSecret",
-		Scopes:       []string{"testScopes"},
-		Audience:     "testAudience",
-		Endpoint: store.Endpoint{
-			AuthUrl:  "testAuthUrl",
-			TokenUrl: "testTokenUrl",
-		},
-	},
+	lcs := []store.LinkedCloud{
 		{
-			ID:           "testID2",
-			Name:         "testName",
-			ClientID:     "testClientID",
-			ClientSecret: "testClientSecret",
-			Scopes:       []string{"testScopes"},
+			ID:   "testID",
+			Name: "testName",
 			Endpoint: store.Endpoint{
-				AuthUrl:  "testAuthUrl",
-				TokenUrl: "testTokenUrl",
+				URL: "testTargetURL",
+			},
+			OAuth: oauth.Config{
+				ClientID:     "testClientID",
+				ClientSecret: "testClientSecret",
+				Scopes:       []string{"testScopes"},
+				Endpoint: oauth.Endpoint{
+					AuthURL:  "testAuthUrl",
+					TokenURL: "testTokenUrl",
+				},
+			},
+		},
+		{
+			ID:   "testID2",
+			Name: "testName",
+			Endpoint: store.Endpoint{
+				URL: "testTargetURL",
+			},
+			OAuth: oauth.Config{
+				ClientID:     "testClientID",
+				ClientSecret: "testClientSecret",
+				Scopes:       []string{"testScopes"},
+				Endpoint: oauth.Endpoint{
+					AuthURL:  "testAuthUrl",
+					TokenURL: "testTokenUrl",
+				},
 			},
 		},
 	}

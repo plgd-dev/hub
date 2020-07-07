@@ -50,8 +50,8 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				req: &pb.RetrieveResourcesValuesRequest{
 					ResourceIdsFilter: []*pb.ResourceId{
 						{
-							DeviceId:         deviceID,
-							ResourceLinkHref: cloud.StatusHref,
+							DeviceId: deviceID,
+							Href:     cloud.StatusHref,
 						},
 					},
 				},
@@ -59,8 +59,8 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 			want: []*pb.ResourceValue{
 				{
 					ResourceId: &pb.ResourceId{
-						DeviceId:         deviceID,
-						ResourceLinkHref: cloud.StatusHref,
+						DeviceId: deviceID,
+						Href:     cloud.StatusHref,
 					},
 					Types: cloud.StatusResourceTypes,
 					Content: &pb.Content{

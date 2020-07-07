@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -75,6 +76,9 @@ func NewRequestHandler(
 }
 
 func logAndReturnError(err error) error {
+	if errors.Is(err, io.EOF) {
+		return err
+	}
 	log.Errorf("%v", err)
 	return err
 }

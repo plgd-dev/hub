@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/kit/log"
 )
 
 type subscription struct {
@@ -44,8 +43,6 @@ func (s *subscription) ID() string {
 }
 
 func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version uint64) bool {
-	log.Debugf("subscription.filterByVersion(%v, %v, %v)", deviceID, href, version)
-
 	resourceID := cqrsRA.MakeResourceId(deviceID, href+"."+typeEvent)
 
 	s.eventVersionsLock.Lock()
@@ -53,15 +50,12 @@ func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version
 	v, ok := s.eventVersions[resourceID]
 	if !ok {
 		s.eventVersions[resourceID] = version
-		log.Debugf("subscription.filterByVersion(%v, %v, %v) false", deviceID, href, version)
 		return false
 	}
 	if v >= version {
-		log.Debugf("subscription.filterByVersion(%v, %v, %v) true", deviceID, href, version)
 		return true
 	}
 	s.eventVersions[resourceID] = version
-	log.Debugf("subscription.filterByVersion(%v, %v, %v) false", deviceID, href, version)
 	return false
 }
 
@@ -123,9 +117,6 @@ func (s *subscription) Close(reason error) error {
 }
 
 func (s *subscription) unregisterProjections() error {
-	log.Debugf("subscription.unregisterProjections %v", s.ID())
-	defer log.Debugf("subscription.unregisterProjections %v done", s.ID())
-
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

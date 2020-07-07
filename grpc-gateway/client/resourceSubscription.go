@@ -10,6 +10,26 @@ import (
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 )
 
+type CloseErrorHandler struct {
+	onClose func()
+	onError func(err error)
+}
+
+func (s *CloseErrorHandler) OnClose() {
+	s.onClose()
+}
+
+func (s *CloseErrorHandler) Error(err error) {
+	s.onError(err)
+}
+
+func NewCloseErrorHandler(onClose func(), onError func(err error)) *CloseErrorHandler {
+	return &CloseErrorHandler{
+		onClose: onClose,
+		onError: onError,
+	}
+}
+
 // SubscriptionHandler handler of events.
 type SubscriptionHandler = interface {
 	OnClose()
@@ -26,7 +46,7 @@ type ResourceContentChangedHandler = interface {
 type ResourceSubscription struct {
 	client                        pb.GrpcGateway_SubscribeForEventsClient
 	subscriptionID                string
-	handle                        SubscriptionHandler
+	closeErrorHandler             SubscriptionHandler
 	resourceContentChangedHandler ResourceContentChangedHandler
 
 	wait     func()
@@ -36,6 +56,12 @@ type ResourceSubscription struct {
 // NewResourceSubscription creates new resource content changed subscription.
 // JWT token must be stored in context for grpc call.
 func (c *Client) NewResourceSubscription(ctx context.Context, resourceID pb.ResourceId, handle SubscriptionHandler) (*ResourceSubscription, error) {
+	return NewResourceSubscription(ctx, resourceID, handle, handle, c.gateway)
+}
+
+// NewResourceSubscription creates new resource content changed subscription.
+// JWT token must be stored in context for grpc call.
+func NewResourceSubscription(ctx context.Context, resourceID pb.ResourceId, closeErrorHandler SubscriptionHandler, handle SubscriptionHandler, gwClient pb.GrpcGatewayClient) (*ResourceSubscription, error) {
 	var resourceContentChangedHandler ResourceContentChangedHandler
 	filterEvents := make([]pb.SubscribeForEvents_ResourceEventFilter_Event, 0, 1)
 	if v, ok := handle.(ResourceContentChangedHandler); ok {
@@ -46,7 +72,7 @@ func (c *Client) NewResourceSubscription(ctx context.Context, resourceID pb.Reso
 	if resourceContentChangedHandler == nil {
 		return nil, fmt.Errorf("invalid handler - it's supports: ResourceContentChangedHandler")
 	}
-	client, err := c.gateway.SubscribeForEvents(ctx)
+	client, err := gwClient.SubscribeForEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +103,7 @@ func (c *Client) NewResourceSubscription(ctx context.Context, resourceID pb.Reso
 	var wg sync.WaitGroup
 	sub := &ResourceSubscription{
 		client:                        client,
-		handle:                        handle,
+		closeErrorHandler:             closeErrorHandler,
 		subscriptionID:                ev.GetSubscriptionId(),
 		resourceContentChangedHandler: resourceContentChangedHandler,
 		wait:                          wg.Wait,
@@ -93,7 +119,7 @@ func (c *Client) NewResourceSubscription(ctx context.Context, resourceID pb.Reso
 
 // Cancel cancels subscription.
 func (s *ResourceSubscription) Cancel() (wait func(), err error) {
-	if !atomic.CompareAndSwapUint32(&s.canceled, s.canceled, 1) {
+	if !atomic.CompareAndSwapUint32(&s.canceled, 0, 1) {
 		return s.wait, nil
 	}
 	err = s.client.CloseSend()
@@ -113,12 +139,12 @@ func (s *ResourceSubscription) runRecv() {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
 			s.Cancel()
-			s.handle.OnClose()
+			s.closeErrorHandler.OnClose()
 			return
 		}
 		if err != nil {
 			s.Cancel()
-			s.handle.Error(err)
+			s.closeErrorHandler.Error(err)
 			return
 		}
 		cancel := ev.GetSubscriptionCanceled()
@@ -126,23 +152,35 @@ func (s *ResourceSubscription) runRecv() {
 			s.Cancel()
 			reason := cancel.GetReason()
 			if reason == "" {
-				s.handle.OnClose()
+				s.closeErrorHandler.OnClose()
+				return
 			}
-			s.handle.Error(fmt.Errorf(reason))
+			s.closeErrorHandler.Error(fmt.Errorf(reason))
 			return
 		}
 
-		if ct := ev.GetResourceContentChanged(); ct != nil {
+		if ct := ev.GetResourceChanged(); ct != nil {
 			err = s.resourceContentChangedHandler.HandleResourceContentChanged(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
-				s.handle.Error(err)
+				s.closeErrorHandler.Error(err)
 				return
 			}
 		} else {
 			s.Cancel()
-			s.handle.Error(fmt.Errorf("unknown event occurs on recv resource content changed: %+v", ev))
+			s.closeErrorHandler.Error(fmt.Errorf("unknown event occurs on recv resource content changed: %+v", ev))
 			return
 		}
 	}
+}
+
+func ToResourceSubscription(v interface{}, ok bool) (*ResourceSubscription, bool) {
+	if !ok {
+		return nil, false
+	}
+	if v == nil {
+		return nil, false
+	}
+	s, ok := v.(*ResourceSubscription)
+	return s, ok
 }

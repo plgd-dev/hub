@@ -24,10 +24,10 @@ push: build-servicecontainer
 	docker push ocfcloud/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
-	protoc -I=. -I=${GOPATH}/src --gogofaster_out=${GOPATH}/src pb/clientConfiguration.proto
-	protoc -I=. -I=${GOPATH}/src --gogofaster_out=${GOPATH}/src pb/devices.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=plugins=grpc:${GOPATH}/src --grpchan_out=${GOPATH}/src pb/service.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src pb/errdetails/errorDetails.proto
+	protoc -I=. -I=${GOPATH}/src --gogofaster_out=${GOPATH}/src $(shell pwd)/pb/clientConfiguration.proto
+	protoc -I=. -I=${GOPATH}/src --gogofaster_out=${GOPATH}/src $(shell pwd)/pb/devices.proto
+	protoc -I=. -I=${GOPATH}/src --go_out=plugins=grpc:${GOPATH}/src --grpchan_out=${GOPATH}/src $(shell pwd)/pb/service.proto
+	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/errdetails/errorDetails.proto
 
 .PHONY: build-servicecontainer build push proto/generate
 

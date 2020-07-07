@@ -12,6 +12,7 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
+	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -19,7 +20,54 @@ import (
 	cache "github.com/patrickmn/go-cache"
 )
 
-func (s *SubscribeManager) subscribeToDevice(ctx context.Context, l store.LinkedAccount, correlationID, signingSecret, deviceID string) (string, error) {
+func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+	if _, loaded := s.store.LoadDeviceSubscription(linkedAccount.LinkedCloudID, linkedAccount.ID, deviceID); loaded {
+		return nil
+	}
+	signingSecret, err := generateRandomString(32)
+	if err != nil {
+		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+	}
+	corID, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("cannot generate correlationID for devices subscription: %v", err)
+	}
+	correlationID := corID.String()
+	sub := Subscription{
+		Type:            Type_Device,
+		LinkedAccountID: linkedAccount.ID,
+		DeviceID:        deviceID,
+		SigningSecret:   signingSecret,
+		LinkedCloudID:   linkedCloud.ID,
+		CorrelationID:   correlationID,
+	}
+	data := subscriptionData{
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+		subscription:  sub,
+	}
+	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
+	if err != nil {
+		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
+	}
+	sub.ID, err = s.subscribeToDevice(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID)
+	if err != nil {
+		s.cache.Delete(correlationID)
+		return fmt.Errorf("cannot subscribe to device %v: %v", deviceID, err)
+	}
+	_, _, err = s.store.LoadOrCreateSubscription(sub)
+	if err != nil {
+		cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, deviceID, sub.ID)
+		return fmt.Errorf("cannot store subscription to DB: %v", err)
+	}
+	err = s.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
+	if err != nil {
+		return fmt.Errorf("cannot register device %v to resource projection: %v", deviceID, err)
+	}
+	return nil
+}
+
+func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, correlationID, signingSecret, deviceID string) (string, error) {
 	resp, err := subscribe(ctx, "/devices/"+deviceID+"/subscriptions", correlationID, events.SubscriptionRequest{
 		URL: s.eventsURL,
 		EventTypes: []events.EventType{
@@ -27,22 +75,22 @@ func (s *SubscribeManager) subscribeToDevice(ctx context.Context, l store.Linked
 			events.EventType_ResourcesUnpublished,
 		},
 		SigningSecret: signingSecret,
-	}, l)
+	}, linkedAccount, linkedCloud)
 	if err != nil {
-		return "", fmt.Errorf("cannot subscribe to device %v for %v: %v", deviceID, l.ID, err)
+		return "", fmt.Errorf("cannot subscribe to device %v for %v: %v", deviceID, linkedAccount.ID, err)
 	}
 	return resp.SubscriptionId, nil
 }
 
-func cancelDeviceSubscription(ctx context.Context, l store.LinkedAccount, deviceID, subscriptionID string) error {
-	err := cancelSubscription(ctx, "/devices/"+deviceID+"/subscriptions/"+subscriptionID, l)
+func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, subscriptionID string) error {
+	err := cancelSubscription(ctx, "/devices/"+deviceID+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
-		return fmt.Errorf("cannot cancel device subscription for %v: %v", l.ID, err)
+		return fmt.Errorf("cannot cancel device subscription for %v: %v", linkedAccount.ID, err)
 	}
 	return nil
 }
 
-func (s *SubscribeManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, sequence uint64) error {
+func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, cmdMetadata pbCQRS.CommandMetadata) error {
 	status := cloud.Status{
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,
@@ -60,11 +108,8 @@ func (s *SubscribeManager) updateCloudStatus(ctx context.Context, deviceID strin
 			CoapContentFormat: int32(message.AppOcfCbor),
 			Data:              data,
 		},
-		Status: pbRA.Status_OK,
-		CommandMetadata: &pbCQRS.CommandMetadata{
-			ConnectionId: Cloud2cloudConnectorConnectionId,
-			Sequence:     sequence,
-		},
+		Status:               pbRA.Status_OK,
+		CommandMetadata:      &cmdMetadata,
 		AuthorizationContext: &authContext,
 	}
 
@@ -80,9 +125,11 @@ func trimDeviceIDFromHref(deviceID, href string) string {
 }
 
 // HandleResourcesPublished publish resources to resource aggregate and subscribes to resources.
-func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
+func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesPublished) error {
 	var errors []error
 	for _, link := range links {
+		deviceID := d.subscription.DeviceID
+		link.DeviceID = deviceID
 		endpoints := make([]*pbRA.EndpointInformation, 0, 4)
 		for _, endpoint := range link.GetEndpoints() {
 			endpoints = append(endpoints, &pbRA.EndpointInformation{
@@ -92,7 +139,7 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 		}
 		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
 		resourceId := raCqrs.MakeResourceId(link.DeviceID, kitHttp.CanonicalHref(href))
-		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
+		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,
 			},
@@ -111,7 +158,7 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 				EndpointInformations:  endpoints,
 			},
 			CommandMetadata: &pbCQRS.CommandMetadata{
-				ConnectionId: Cloud2cloudConnectorConnectionId,
+				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,
 			},
 		})
@@ -119,43 +166,16 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 			errors = append(errors, fmt.Errorf("cannot publish resource: %v", err))
 			continue
 		}
-
-		signingSecret, err := generateRandomString(32)
-		if err != nil {
-			return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+			continue
 		}
-		correlationID, err := uuid.NewV4()
-		if err != nil {
-			return fmt.Errorf("cannot generate correlationID for device subscription: %v", err)
-		}
-
-		sub := store.Subscription{
-			Type:            store.Type_Resource,
-			LinkedAccountID: d.linkedAccount.ID,
-			DeviceID:        link.DeviceID,
-			Href:            href,
-			SigningSecret:   signingSecret,
-		}
-		err = s.cache.Add(correlationID.String(), subscriptionData{
+		s.triggerTask(Task{
+			taskType:      TaskType_SubscribeToResource,
 			linkedAccount: d.linkedAccount,
-			subscription:  sub,
-		}, cache.DefaultExpiration)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot cache subscription for device subscriptions: %v", err))
-			continue
-		}
-		sub.SubscriptionID, err = s.subscribeToResource(ctx, d.linkedAccount, correlationID.String(), signingSecret, link.DeviceID, href)
-		if err != nil {
-			s.cache.Delete(correlationID.String())
-			errors = append(errors, fmt.Errorf("cannot subscribe to device %v resource %v: %v", link.DeviceID, href, err))
-			continue
-		}
-		_, err = s.store.FindOrCreateSubscription(ctx, sub)
-		if err != nil {
-			cancelResourceSubscription(ctx, d.linkedAccount, sub.DeviceID, sub.Href, sub.SubscriptionID)
-			errors = append(errors, fmt.Errorf("cannot store resource subscription to DB: %v", err))
-			continue
-		}
+			linkedCloud:   d.linkedCloud,
+			deviceID:      deviceID,
+			href:          href,
+		})
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%v", errors)
@@ -164,31 +184,27 @@ func (s *SubscribeManager) HandleResourcesPublished(ctx context.Context, d subsc
 }
 
 // HandleResourcesUnpublished unpublish resources from resource aggregate and cancel resources subscriptions.
-func (s *SubscribeManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
+func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d subscriptionData, header events.EventHeader, links events.ResourcesUnpublished) error {
 	var errors []error
 	for _, link := range links {
+		link.DeviceID = d.subscription.DeviceID
 		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
-		_, err := s.raClient.UnpublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.OriginCloud.AccessToken.String()), &pbRA.UnpublishResourceRequest{
+		_, err := s.raClient.UnpublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.UnpublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,
 			},
 			ResourceId: raCqrs.MakeResourceId(link.GetDeviceID(), kitHttp.CanonicalHref(href)),
 			CommandMetadata: &pbCQRS.CommandMetadata{
-				ConnectionId: Cloud2cloudConnectorConnectionId,
+				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,
 			},
 		})
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot unpublish resource: %v", err))
 		}
-		err = cancelResourceSubscription(ctx, d.linkedAccount, link.DeviceID, href, header.SubscriptionID)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot unsubscribe to resource: %v", err))
-		}
-
-		err = s.store.RemoveSubscriptions(ctx, store.SubscriptionQuery{SubscriptionID: header.SubscriptionID})
-		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot remove device %v resource %v: %v", link.DeviceID, href, err))
+		_, ok := s.store.PullOutResource(d.linkedAccount.LinkedCloudID, d.linkedAccount.ID, link.DeviceID, href)
+		if !ok {
+			log.Debugf("HandleResourcesUnpublished: cannot remove device %v resource %v subscription: not found", link.DeviceID, href)
 		}
 		s.cache.Delete(header.CorrelationID)
 	}
@@ -199,7 +215,7 @@ func (s *SubscribeManager) HandleResourcesUnpublished(ctx context.Context, d sub
 }
 
 // HandleDeviceEvent handles device events.
-func (s *SubscribeManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
+func (s *SubscriptionManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
 		return fmt.Errorf("cannot get content reader: %v", err)

@@ -31,7 +31,6 @@ import (
 	"github.com/go-ocf/cqrs/event"
 	"github.com/go-ocf/cqrs/eventstore"
 	cqrsMongodb "github.com/go-ocf/cqrs/eventstore/mongodb"
-	"github.com/go-ocf/kit/log"
 )
 
 const instanceIdsCollection = "instanceIds"
@@ -69,7 +68,7 @@ func NewEventStore(config Config, goroutinePoolGo eventstore.GoroutinePoolGoFunc
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 
-	es, err := cqrsMongodb.NewEventStoreWithClient(ctx, client, config.DatabaseName, "events", config.BatchSize, goroutinePoolGo, config.marshalerFunc, config.unmarshalerFunc, log.Debugf)
+	es, err := cqrsMongodb.NewEventStoreWithClient(ctx, client, config.DatabaseName, "events", config.BatchSize, goroutinePoolGo, config.marshalerFunc, config.unmarshalerFunc, nil)
 	if err != nil {
 		return nil, err
 	}

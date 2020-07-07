@@ -10,7 +10,7 @@ require (
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
 	github.com/go-ocf/go-coap/v2 v2.0.0
-	github.com/go-ocf/kit v0.0.0-20200604204211-eaddc7a1125c
+	github.com/go-ocf/kit v0.0.0-20200702075537-01631a881369
 	github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
@@ -38,7 +38,7 @@ require (
 	github.com/valyala/fasthttp v1.12.0
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/atomic v1.6.0
-	go.uber.org/zap v1.15.0
+	go.uber.org/zap v1.15.0 // indirect
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a

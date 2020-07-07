@@ -114,6 +114,8 @@ func unmarshalContent(c *pbGRPC.Content) (interface{}, error) {
 		}
 	case message.TextPlain.String():
 		m = string(c.Data)
+	case "":
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("cannot unmarshal resource content: unknown content type (%v)", c.GetContentType())
 	}
@@ -151,7 +153,7 @@ func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceI
 			allResources[content.GetResourceId().GetDeviceId()] = make([]Representation, 0, 32)
 		}
 		allResources[content.GetResourceId().GetDeviceId()] = append(allResources[content.GetResourceId().GetDeviceId()], Representation{
-			Href:           getHref(content.GetResourceId().GetDeviceId(), content.GetResourceId().GetResourceLinkHref()),
+			Href:           getHref(content.GetResourceId().GetDeviceId(), content.GetResourceId().GetHref()),
 			Representation: rep,
 			Status:         content.GetStatus(),
 		})

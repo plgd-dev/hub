@@ -51,11 +51,11 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				req: &pb.RetrieveResourcesValuesRequest{
 					ResourceIdsFilter: []*pb.ResourceId{
 						{
-							DeviceId:         Resource1.DeviceId,
-							ResourceLinkHref: Resource1.Href,
+							DeviceId: Resource1.DeviceId,
+							Href:     Resource1.Href,
 						}, {
-							DeviceId:         Resource2.DeviceId,
-							ResourceLinkHref: Resource2.Href,
+							DeviceId: Resource2.DeviceId,
+							Href:     Resource2.Href,
 						},
 					},
 				},
@@ -63,16 +63,16 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource1.DeviceId,
-						ResourceLinkHref: Resource1.Href,
+						DeviceId: Resource1.DeviceId,
+						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
 				Resource2.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource2.DeviceId,
-						ResourceLinkHref: Resource2.Href,
+						DeviceId: Resource2.DeviceId,
+						Href:     Resource2.Href,
 					},
 					Content: pb.RAContent2Content(&Resource2.Content),
 					Types:   Resource2.ResourceTypes,
@@ -90,16 +90,16 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource1.DeviceId,
-						ResourceLinkHref: Resource1.Href,
+						DeviceId: Resource1.DeviceId,
+						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
 				Resource3.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource3.DeviceId,
-						ResourceLinkHref: Resource3.Href,
+						DeviceId: Resource3.DeviceId,
+						Href:     Resource3.Href,
 					},
 					Content: pb.RAContent2Content(&Resource3.Content),
 					Types:   Resource3.ResourceTypes,
@@ -117,16 +117,16 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource1.DeviceId,
-						ResourceLinkHref: Resource1.Href,
+						DeviceId: Resource1.DeviceId,
+						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
 				Resource2.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource2.DeviceId,
-						ResourceLinkHref: Resource2.Href,
+						DeviceId: Resource2.DeviceId,
+						Href:     Resource2.Href,
 					},
 					Content: pb.RAContent2Content(&Resource2.Content),
 					Types:   Resource2.ResourceTypes,
@@ -145,8 +145,8 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource1.DeviceId,
-						ResourceLinkHref: Resource1.Href,
+						DeviceId: Resource1.DeviceId,
+						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
@@ -162,24 +162,24 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			want: map[string]*pb.ResourceValue{
 				Resource1.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource1.DeviceId,
-						ResourceLinkHref: Resource1.Href,
+						DeviceId: Resource1.DeviceId,
+						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
 				Resource2.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource2.DeviceId,
-						ResourceLinkHref: Resource2.Href,
+						DeviceId: Resource2.DeviceId,
+						Href:     Resource2.Href,
 					},
 					Content: pb.RAContent2Content(&Resource2.Content),
 					Types:   Resource2.ResourceTypes,
 				},
 				Resource3.Id: {
 					ResourceId: &pb.ResourceId{
-						DeviceId:         Resource3.DeviceId,
-						ResourceLinkHref: Resource3.Href,
+						DeviceId: Resource3.DeviceId,
+						Href:     Resource3.Href,
 					},
 					Content: pb.RAContent2Content(&Resource3.Content),
 					Types:   Resource3.ResourceTypes,
@@ -243,6 +243,6 @@ func (s *testGrpcGateway_RetrieveResourcesValuesServer) Send(d *pb.ResourceValue
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceValue)
 	}
-	s.got[cqrs.MakeResourceId(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetResourceLinkHref())] = d
+	s.got[cqrs.MakeResourceId(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetHref())] = d
 	return nil
 }

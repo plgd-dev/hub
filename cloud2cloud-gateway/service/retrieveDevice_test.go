@@ -16,7 +16,6 @@ import (
 	"github.com/go-ocf/kit/codec/json"
 
 	"github.com/go-ocf/cloud/authorization/provider"
-	c2cTest "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/cloud/test"
@@ -27,15 +26,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
-
-func setUp(ctx context.Context, t *testing.T) func() {
-	td := test.SetUp(ctx, t)
-	c2cTD := c2cTest.SetUp(t)
-	return func() {
-		c2cTD()
-		td()
-	}
-}
 
 type sortLinksByHref []interface{}
 
@@ -163,7 +153,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID,
 			args: args{
-				uri:    uri.Devices + "/" + deviceID,
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -173,7 +163,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "CBOR: " + uri.Devices + "/" + deviceID,
 			args: args{
-				uri:    uri.Devices + "/" + deviceID,
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
 				accept: message.AppOcfCbor.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -183,7 +173,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "notFound",
 			args: args{
-				uri:    uri.Devices + "/" + DeviceIDNotFound,
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + DeviceIDNotFound,
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusNotFound,
@@ -193,7 +183,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "invalidAccept",
 			args: args{
-				uri:    uri.Devices + "/" + deviceID,
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID,
 				accept: "application/invalid",
 			},
 			wantCode:        http.StatusBadRequest,
@@ -203,7 +193,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 		{
 			name: "JSON: " + uri.Devices + "//" + deviceID + "/",
 			args: args{
-				uri:    uri.Devices + "//" + deviceID + "/",
+				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "//" + deviceID + "/",
 				accept: message.AppJSON.String(),
 			},
 			wantCode:        http.StatusOK,
@@ -216,7 +206,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
-	tearDown := setUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -230,8 +220,8 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := c2cTest.NewRequest(http.MethodGet, tt.args.uri, nil).AddHeader("Accept", tt.args.accept).Build(ctx, t)
-			resp := c2cTest.DoHTTPRequest(t, req)
+			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).AddHeader("Accept", tt.args.accept).Build(ctx, t)
+			resp := test.DoHTTPRequest(t, req)
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer resp.Body.Close()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))

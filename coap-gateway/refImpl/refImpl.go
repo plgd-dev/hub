@@ -9,30 +9,21 @@ import (
 
 	"github.com/go-ocf/cloud/coap-gateway/service"
 	"github.com/go-ocf/cloud/coap-gateway/uri"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
-	"github.com/panjf2000/ants"
 )
 
 type Config struct {
-	Service           service.Config
-	GoRoutinePoolSize int                   `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
-	Nats              nats.Config           `envconfig:"NATS"`
-	MongoDB           mongodb.Config        `envconfig:"MONGODB"`
-	Dial              certManager.Config    `envconfig:"DIAL"`
-	Listen            certManager.OcfConfig `envconfig:"LISTEN"`
-	ListenWithoutTLS  bool                  `envconfig:"LISTEN_WITHOUT_TLS"`
-	Log               log.Config            `envconfig:"LOG"`
+	Service          service.Config
+	Dial             certManager.Config    `envconfig:"DIAL"`
+	Listen           certManager.OcfConfig `envconfig:"LISTEN"`
+	ListenWithoutTLS bool                  `envconfig:"LISTEN_WITHOUT_TLS"`
+	Log              log.Config            `envconfig:"LOG"`
 }
 
 type RefImpl struct {
-	pool              *ants.Pool
-	eventstore        *mongodb.EventStore
 	service           *service.Server
-	subscriber        *nats.Subscriber
 	dialCertManager   certManager.CertManager
 	listenCertManager certManager.CertManager
 }
@@ -59,24 +50,8 @@ func InitWithAuthInterceptor(config Config, dialCertManager certManager.CertMana
 
 	log.Info(config.String())
 
-	dialTLSConfig := dialCertManager.GetClientTLSConfig()
-
-	pool, err := ants.NewPool(config.GoRoutinePoolSize)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create goroutine pool: %v", err)
-	}
-
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(dialTLSConfig))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create mongodb eventstore %v", err)
-	}
-
-	subscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("coap-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(dialTLSConfig))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create nats publisher %v", err)
-	}
-
 	var listenCertManager certManager.CertManager
+	var err error
 	if !config.ListenWithoutTLS {
 		listenCertManager, err = certManager.NewOcfCertManager(config.Listen)
 		if err != nil {
@@ -86,10 +61,7 @@ func InitWithAuthInterceptor(config Config, dialCertManager certManager.CertMana
 	}
 
 	return &RefImpl{
-		pool:              pool,
-		eventstore:        eventstore,
-		service:           service.New(config.Service, dialCertManager, listenCertManager, auth, eventstore, subscriber, pool),
-		subscriber:        subscriber,
+		service:           service.New(config.Service, dialCertManager, listenCertManager, auth),
 		dialCertManager:   dialCertManager,
 		listenCertManager: listenCertManager,
 	}, nil
@@ -103,9 +75,6 @@ func (r *RefImpl) Serve() error {
 // Shutdown shutdowns the service.
 func (r *RefImpl) Shutdown() error {
 	err := r.service.Shutdown()
-	r.eventstore.Close(context.Background())
-	r.subscriber.Close()
-	r.pool.Release()
 	r.dialCertManager.Close()
 	if r.listenCertManager != nil {
 		r.listenCertManager.Close()

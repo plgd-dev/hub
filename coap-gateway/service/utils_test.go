@@ -239,8 +239,6 @@ func testCoapDial(t *testing.T, host string, withTLS ...bool) *tcp.ClientConn {
 	var config certManager.OcfConfig
 	err := envconfig.Process("LISTEN", &config)
 	assert.NoError(t, err)
-	config.Acme.DeviceID = CertIdentity
-
 	listenCertManager, err := certManager.NewOcfCertManager(config)
 	require.NoError(t, err)
 

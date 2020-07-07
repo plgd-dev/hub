@@ -8,7 +8,7 @@ import (
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	oapiStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
+
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"google.golang.org/grpc/status"
@@ -53,7 +53,7 @@ func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Requ
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
 
-	s, code, err := rh.makeSubscription(w, r, oapiStore.Type_Devices, userID, []events.EventType{
+	s, code, err := rh.makeSubscription(w, r, store.Type_Devices, userID, []events.EventType{
 		events.EventType_DevicesRegistered,
 		events.EventType_DevicesUnregistered,
 		events.EventType_DevicesOnline,

@@ -28,8 +28,9 @@ type Config struct {
 	Addr                string        `envconfig:"ADDR" default:"0.0.0.0:10443"`
 	FQDN                string        `envconfig:"FQDN" default:"acme.ca.ocf.cloud"`
 	Domains             []string      `envconfig:"DOMAINS"`
-	SignerCertificate   string        `envconfig:"SIGNER_CERTIFICATE" required:"True"`
-	SignerPrivateKey    string        `envconfig:"SIGNER_PRIVATE_KEY" required:"True"`
+	AcmeDBDir           string        `envconfig:"ACME_DB_DIR"`
+	SignerCertificate   string        `envconfig:"SIGNER_CERTIFICATE"`
+	SignerPrivateKey    string        `envconfig:"SIGNER_PRIVATE_KEY"`
 	SignerValidDuration time.Duration `envconfig:"SIGNER_VALID_DURATION" default:"87600h"`
 }
 
@@ -77,7 +78,7 @@ func NewRefImplFromConfig(config Config) (*RefImpl, error) {
 		pemSigner: signer,
 	}
 
-	h, err := service.NewHandler(config.FQDN, addr.GetPort(), []service.Signer{selfSigner})
+	h, err := service.NewHandler(config.FQDN, config.AcmeDBDir, addr.GetPort(), []service.Signer{selfSigner})
 	if err != nil {
 		return nil, err
 	}

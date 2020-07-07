@@ -10,19 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(t *testing.T) (TearDown func()) {
+func MakeConfig(t *testing.T) refImpl.Config {
 	var raCfg refImpl.Config
 	err := envconfig.Process("", &raCfg)
 	require.NoError(t, err)
 	raCfg.Service.Addr = testCfg.RESOURCE_AGGREGATE_HOST
 	raCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	raCfg.Service.JwksURL = testCfg.JWKS_URL
-	return NewResourceAggregate(t, raCfg)
+	return raCfg
 }
 
-func NewResourceAggregate(t *testing.T, cfg refImpl.Config) func() {
-	t.Log("NewResourceAggregate")
-	defer t.Log("NewResourceAggregate done")
+func SetUp(t *testing.T) (TearDown func()) {
+	return New(t, MakeConfig(t))
+}
+
+func New(t *testing.T, cfg refImpl.Config) func() {
+
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 

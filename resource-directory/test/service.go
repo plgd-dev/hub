@@ -11,26 +11,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetUp(t *testing.T) (TearDown func()) {
+func MakeConfig(t *testing.T) refImpl.Config {
 	var rdCfg refImpl.Config
 	err := envconfig.Process("", &rdCfg)
 	require.NoError(t, err)
 	rdCfg.Addr = testCfg.RESOURCE_DIRECTORY_HOST
 	rdCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	rdCfg.Service.FQDN = "resource-directory-" + t.Name()
-	rdCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	rdCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	rdCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	rdCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	rdCfg.UserDevicesManagerTickFrequency = time.Second
-	rdCfg.UserDevicesManagerExpiration = time.Second
+	rdCfg.UserDevicesManagerTickFrequency = time.Millisecond * 500
+	rdCfg.UserDevicesManagerExpiration = time.Millisecond * 500
 	rdCfg.JwksURL = testCfg.JWKS_URL
-	return NewResourceDirectory(t, rdCfg)
+	return rdCfg
 }
 
-func NewResourceDirectory(t *testing.T, cfg refImpl.Config) func() {
-	t.Log("NewResourceDirectory")
-	defer t.Log("NewResourceDirectory done")
+func SetUp(t *testing.T) (TearDown func()) {
+	return New(t, MakeConfig(t))
+}
+
+func New(t *testing.T, cfg refImpl.Config) func() {
+
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 

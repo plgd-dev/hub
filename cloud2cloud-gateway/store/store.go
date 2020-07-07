@@ -5,15 +5,13 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 )
 
 type SubscriptionQuery struct {
 	SubscriptionID string
 	DeviceID       string
 	Href           string
-	Type           store.Type
+	Type           Type
 }
 
 type DevicesSubscriptionQuery struct {

@@ -11,7 +11,7 @@ import (
 	"github.com/smallstep/nosql"
 )
 
-func NewHandler(FQDN string, port uint16, signers []Signer) (http.Handler, error) {
+func NewHandler(FQDN string, dir string, port uint16, signers []Signer) (http.Handler, error) {
 	// Using chi as the main router
 	mux := chi.NewRouter()
 	handler := http.Handler(mux)
@@ -30,7 +30,7 @@ func NewHandler(FQDN string, port uint16, signers []Signer) (http.Handler, error
 		signers: sigs,
 	}
 
-	db, err := nosql.New("badger", "acmeDB")
+	db, err := nosql.New("badger", dir)
 	if err != nil {
 		return nil, err
 	}

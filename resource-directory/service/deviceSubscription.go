@@ -73,7 +73,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 }
 
 func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
-	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetResourceLinkHref(), "res", version) {
+	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
 	var found bool
@@ -94,7 +94,7 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 }
 
 func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
-	if s.FilterByVersion(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetResourceLinkHref(), "res", version) {
+	if s.FilterByVersion(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
 	var found bool
@@ -110,6 +110,48 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdated_{
 			ResourceUpdated: &updated,
+		},
+	})
+}
+
+func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
+	if s.FilterByVersion(retrievePending.GetResourceId().GetDeviceId(), retrievePending.GetResourceId().GetHref(), "res", version) {
+		return nil
+	}
+	var found bool
+	for _, f := range s.deviceEvent.GetFilterEvents() {
+		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING {
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	return s.Send(ctx, pb.Event{
+		SubscriptionId: s.ID(),
+		Type: &pb.Event_ResourceRetrievePending_{
+			ResourceRetrievePending: &retrievePending,
+		},
+	})
+}
+
+func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
+	if s.FilterByVersion(retrieved.GetResourceId().GetDeviceId(), retrieved.GetResourceId().GetHref(), "res", version) {
+		return nil
+	}
+	var found bool
+	for _, f := range s.deviceEvent.GetFilterEvents() {
+		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED {
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	return s.Send(ctx, pb.Event{
+		SubscriptionId: s.ID(),
+		Type: &pb.Event_ResourceRetrieved_{
+			ResourceRetrieved: &retrieved,
 		},
 	})
 }
@@ -156,6 +198,18 @@ func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context)
 	return nil
 }
 
+func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Context) error {
+	models := s.resourceProjection.Models(s.DeviceID(), "")
+	for _, model := range models {
+		c := model.(*resourceCtx).Clone()
+		err := c.onResourceRetrievePendingLocked(ctx, s.NotifyOfRetrievePendingResource)
+		if err != nil {
+			return fmt.Errorf("cannot send resource update pending: %w", err)
+		}
+	}
+	return nil
+}
+
 func (s *deviceSubscription) Init(ctx context.Context, currentDevices map[string]bool) error {
 	if !currentDevices[s.DeviceID()] {
 		return fmt.Errorf("device %v not found", s.DeviceID())
@@ -173,7 +227,9 @@ func (s *deviceSubscription) Init(ctx context.Context, currentDevices map[string
 			err = s.initSendResourcesUnpublished(ctx)
 		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING:
 			err = s.initSendResourcesUpdatePending(ctx)
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED:
+		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING:
+			err = s.initSendResourcesRetrievePending(ctx)
+		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED:
 			// do nothing
 		}
 		if err != nil {
