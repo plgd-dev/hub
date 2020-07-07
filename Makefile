@@ -61,10 +61,13 @@ env: clean certificates nats mongo
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
 test: env
+	mkdir -p $(shell pwd)/.tmp/home
 	docker run \
 		--network=host \
 		-v $(shell pwd)/.tmp/certs:/certs \
+		-v $(shell pwd)/.tmp/home:/home \
 		--user $(shell id -u):$(shell id -g) \
+		-e HOME=/home \
 		-e DIAL_TYPE="file" \
 		-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \
 		-e DIAL_FILE_CERT_DIR_PATH=/certs \
@@ -77,9 +80,9 @@ test: env
 		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME=coap.crt \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME=coap.key \
-		--mount type=bind,source="$(shell pwd)",target=/shared \
 		cloud-test \
-		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/shared/coverage.txt
+		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
+	cp $(shell pwd)/.tmp/home/coverage.txt $(shell pwd)/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 
