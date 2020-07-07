@@ -14,7 +14,8 @@
 		"LISTEN_FILE_CERT_NAME": "http.crt",
 		"LISTEN_FILE_CERT_KEY_NAME": "http.key",
 		"TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME": "coap.crt",
-		"TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME": "coap.key",
+        "TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME": "coap.key",
+        "ACME_DB_DIR": "${workspaceFolder}/.tmp/home/certificate-authority"
         // "GOMAXPROCS": 1,
         // "GOFLAGS":"-race",
         // "GRPC_VERBOSITY":"DEBUG",

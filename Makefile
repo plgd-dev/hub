@@ -62,6 +62,7 @@ env: clean certificates nats mongo
 
 test: env
 	mkdir -p $(shell pwd)/.tmp/home
+	mkdir -p $(shell pwd)/.tmp/home/certificate-authority
 	docker run \
 		--network=host \
 		-v $(shell pwd)/.tmp/certs:/certs \
@@ -80,6 +81,7 @@ test: env
 		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME=coap.crt \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME=coap.key \
+		-e ACME_DB_DIR=/home/certificate-authority
 		cloud-test \
 		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 	cp $(shell pwd)/.tmp/home/coverage.txt $(shell pwd)/coverage.txt
@@ -93,6 +95,7 @@ clean:
 	docker rm -f devsim || true
 	rm -rf ./.tmp/certs || true
 	rm -rf ./.tmp/mongo || true
+	rm -rf ./.tmp/home || true
 
 proto/generate: $(SUBDIRS)
 push: cloud-build $(SUBDIRS)
