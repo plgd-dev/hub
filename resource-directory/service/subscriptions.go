@@ -231,12 +231,7 @@ func (s *subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devi
 	}
 	userSubs[sub.ID()] = sub
 
-	initSubs, ok := s.initSubscriptions[userID]
-	if !ok {
-		initSubs = make(map[string]Subscriber)
-		s.initSubscriptions[userID] = initSubs
-	}
-	initSubs[sub.ID()] = sub
+	s.insertToInitSubscriptions(sub)
 	s.allSubscriptions[sub.ID()] = sub
 	return nil
 }
@@ -265,12 +260,7 @@ func (s *subscriptions) InsertDeviceSubscription(ctx context.Context, sub *devic
 	}
 	devSubs[sub.ID()] = sub
 
-	initSubs, ok := s.initSubscriptions[userID]
-	if !ok {
-		initSubs = make(map[string]Subscriber)
-		s.initSubscriptions[userID] = initSubs
-	}
-	initSubs[sub.ID()] = sub
+	s.insertToInitSubscriptions(sub)
 	s.allSubscriptions[sub.ID()] = sub
 	return nil
 }
@@ -304,13 +294,7 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 		devSubs[href] = resSubs
 	}
 	resSubs[sub.ID()] = sub
-
-	initSubs, ok := s.initSubscriptions[userID]
-	if !ok {
-		initSubs = make(map[string]Subscriber)
-		s.initSubscriptions[userID] = initSubs
-	}
-	initSubs[sub.ID()] = sub
+	s.insertToInitSubscriptions(sub)
 	s.allSubscriptions[sub.ID()] = sub
 	return nil
 }

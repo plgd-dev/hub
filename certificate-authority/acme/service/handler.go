@@ -9,7 +9,6 @@ import (
 	"github.com/smallstep/certificates/acme"
 	acmeAPI "github.com/smallstep/certificates/acme/api"
 	"github.com/smallstep/nosql"
-	"github.com/smallstep/nosql/database"
 )
 
 func NewHandler(FQDN string, dir string, port uint16, signers []Signer) (http.Handler, error) {
@@ -31,7 +30,7 @@ func NewHandler(FQDN string, dir string, port uint16, signers []Signer) (http.Ha
 		signers: sigs,
 	}
 
-	db, err := nosql.New("badger", "acmeDB", database.WithValueDir(dir))
+	db, err := nosql.New("badger", dir)
 	if err != nil {
 		return nil, err
 	}
