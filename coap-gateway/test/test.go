@@ -30,7 +30,7 @@ func MakeConfig(t *testing.T, withTLS ...bool) refImpl.Config {
 
 	gwCfg.Listen.File.TLSCertFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")
 	gwCfg.Listen.File.TLSKeyFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME")
-
+	gwCfg.Listen.File.DisableVerifyClientCertificate = true
 	return gwCfg
 }
 

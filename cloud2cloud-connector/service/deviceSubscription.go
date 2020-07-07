@@ -12,6 +12,7 @@ import (
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
+	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/sdk/schema/cloud"
@@ -203,7 +204,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 		}
 		_, ok := s.store.PullOutResource(d.linkedAccount.LinkedCloudID, d.linkedAccount.ID, link.DeviceID, href)
 		if !ok {
-			errors = append(errors, fmt.Errorf("cannot remove device %v resource %v: not found", link.DeviceID, href))
+			log.Debugf("HandleResourcesUnpublished: cannot remove device %v resource %v subscription: not found", link.DeviceID, href)
 		}
 		s.cache.Delete(header.CorrelationID)
 	}

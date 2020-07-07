@@ -10,6 +10,7 @@ import (
 	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/gofrs/uuid"
 	"github.com/patrickmn/go-cache"
@@ -150,7 +151,7 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 	for _, device := range devices {
 		_, ok := s.store.PullOutDevice(subscriptionData.linkedAccount.LinkedCloudID, subscriptionData.linkedAccount.ID, device.ID)
 		if !ok {
-			errors = append(errors, fmt.Errorf("cannot remove device %v subscription: not found", device.ID))
+			log.Debugf("HandleDevicesUnregistered: cannot remove device %v subscription: not found", device.ID)
 		}
 		s.cache.Delete(correlationID)
 		_, err := s.asClient.RemoveDevice(ctx, &pbAS.RemoveDeviceRequest{

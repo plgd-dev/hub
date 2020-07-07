@@ -37,7 +37,7 @@ func cancelLinkedAccountSubscription(ctx context.Context, cloud store.LinkedClou
 			}()
 		}
 		device.resources.Range(func(_, resourceI interface{}) bool {
-			resource := resourceI.(*DeviceData)
+			resource := resourceI.(*ResourceData)
 			if resource.isSubscribed {
 				wg.Add(1)
 				go func() {
