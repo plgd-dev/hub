@@ -39,6 +39,7 @@ func TestInit(t *testing.T) {
 					SignerPrivateKey:    cfg.SignerPrivateKey,
 					SignerValidDuration: time.Hour * 10,
 					Addr:                ":1234",
+					AcmeDBDir:           "acmeDB",
 				},
 			},
 			wantServer: true,
@@ -57,7 +58,6 @@ func TestInit(t *testing.T) {
 				assert.NotEmpty(t, got)
 			} else {
 				assert.Empty(t, got)
-
 			}
 		})
 	}
