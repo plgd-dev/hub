@@ -134,12 +134,12 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	var err error
 	data, ok := s.cache.Get(header.CorrelationID)
 	if ok {
-		s.cache.Delete(header.CorrelationID)
 		subData = data.(subscriptionData)
 		subData.subscription.ID = header.ID
 		newSubscription, loaded, err := s.store.LoadOrCreateSubscription(subData.subscription)
+		s.cache.Delete(header.CorrelationID)
 		if err != nil {
-			return http.StatusGone, fmt.Errorf("cannot store subscription to DB: %v", err)
+			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: %v", header.CorrelationID, header.ID, err)
 		}
 		if loaded && newSubscription.subscription.ID != header.ID {
 			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: duplicit subscription(CorrelationID %v, ID: %v)", header.CorrelationID, header.ID, newSubscription.subscription.CorrelationID, newSubscription.subscription.ID)
@@ -148,7 +148,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	} else {
 		newSubscription, ok := s.store.LoadSubscription(header.ID)
 		if !ok {
-			return http.StatusGone, fmt.Errorf("cannot load subscription from DB: %v", err)
+			return http.StatusGone, fmt.Errorf("cannot load subscription(CorrelationID: %v, ID: %v) from DB: not found", header.CorrelationID, header.ID)
 		}
 		subData = newSubscription
 	}
