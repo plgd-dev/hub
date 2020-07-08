@@ -69,7 +69,7 @@ func handleSubscription(ctx context.Context, rh *RequestHandler, sub store.Devic
 
 	devicesUnregistered := make(map[string]events.Device)
 	for _, dev := range sub.LastDevicesRegistered {
-		dev, ok := devicesRegistered[dev.ID]
+		_, ok := devicesRegistered[dev.ID]
 		if ok {
 			delete(devicesRegistered, dev.ID)
 		} else {
