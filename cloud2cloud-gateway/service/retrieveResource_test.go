@@ -22,7 +22,6 @@ import (
 	"github.com/go-ocf/cloud/test"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -44,34 +43,6 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		wantCode        int
 		want            interface{}
 	}{
-		{
-			name: "JSON: " + uri.Devices + "/" + deviceID + cloud.StatusHref,
-			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + cloud.StatusHref,
-				accept: message.AppJSON.String(),
-			},
-			wantCode:        http.StatusOK,
-			wantContentType: message.AppJSON.String(),
-			want: map[interface{}]interface{}{
-				"rt":     []interface{}{"x.cloud.device.status"},
-				"if":     []interface{}{"oic.if.baseline"},
-				"online": true,
-			},
-		},
-		{
-			name: "CBOR: " + uri.Devices + "/" + deviceID + cloud.StatusHref,
-			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + cloud.StatusHref,
-				accept: message.AppOcfCbor.String(),
-			},
-			wantCode:        http.StatusOK,
-			wantContentType: message.AppOcfCbor.String(),
-			want: map[interface{}]interface{}{
-				"rt":     []interface{}{"x.cloud.device.status"},
-				"if":     []interface{}{"oic.if.baseline"},
-				"online": true,
-			},
-		},
 		{
 			name: "JSON: " + uri.Devices + "/" + deviceID + "/light/1",
 			args: args{
@@ -119,20 +90,6 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantCode:        http.StatusBadRequest,
 			wantContentType: "text/plain",
 			want:            "cannot retrieve resource: cannot retrieve: invalid accept header([application/invalid])",
-		},
-		{
-			name: "JSON: " + uri.Devices + "//" + deviceID + cloud.StatusHref + "/",
-			args: args{
-				uri:    "https://" + testCfg.C2C_GW_HOST + uri.Devices + "//" + deviceID + cloud.StatusHref + "/",
-				accept: message.AppJSON.String(),
-			},
-			wantCode:        http.StatusOK,
-			wantContentType: message.AppJSON.String(),
-			want: map[interface{}]interface{}{
-				"rt":     []interface{}{"x.cloud.device.status"},
-				"if":     []interface{}{"oic.if.baseline"},
-				"online": true,
-			},
 		},
 	}
 

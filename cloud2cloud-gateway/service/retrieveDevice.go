@@ -12,6 +12,7 @@ import (
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/sdk/schema"
+	"github.com/go-ocf/sdk/schema/cloud"
 
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
@@ -72,6 +73,9 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter 
 		}
 		if err != nil {
 			return nil, fmt.Errorf("cannot get resource links: %w", err)
+		}
+		if resourceLink.GetHref() == cloud.StatusHref {
+			continue
 		}
 		_, ok := resourceLinks[resourceLink.GetDeviceId()]
 		if !ok {
@@ -141,6 +145,9 @@ func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceI
 		}
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
+		}
+		if content.GetResourceId().GetHref() == cloud.StatusHref {
+			continue
 		}
 		rep, err := unmarshalContent(content.GetContent())
 		if err != nil {
