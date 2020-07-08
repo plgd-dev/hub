@@ -358,9 +358,13 @@ func (client *Client) loadAuthorizationContext() authCtx {
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
 	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
-
+	token, err := client.server.oauthMgr.GetToken(notification.Context())
+	if err != nil {
+		return fmt.Errorf("cannot notify resource content changed: %v", err)
+	}
+	ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(notification.Context(), token.AccessToken), authCtx.UserID)
 	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
-	_, err := client.server.raClient.NotifyResourceChanged(notification.Context(), &request)
+	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource content changed: %v", err)
 	}
@@ -496,10 +500,20 @@ func (client *Client) publishResource(ctx context.Context, link schema.ResourceL
 	return link, nil
 }
 
-func (client *Client) unpublishResource(ctx context.Context, resourceID string, authCtx pbCQRS.AuthorizationContext, rscsUnpublished map[string]bool) map[string]bool {
-	_, err := client.server.raClient.UnpublishResource(ctx, &pbRA.UnpublishResourceRequest{
-		AuthorizationContext: &authCtx,
-		ResourceId:           resourceID,
+func (client *Client) unpublishResource(ctx context.Context, resourceID string, rscsUnpublished map[string]bool) map[string]bool {
+	authCtx := client.loadAuthorizationContext()
+	token, err := client.server.oauthMgr.GetToken(ctx)
+	if err != nil {
+		log.Errorf("ResourceId: %v: cannot unpublish resource: %v", resourceID, err)
+		rscsUnpublished[resourceID] = false
+		return rscsUnpublished
+	}
+	ctx = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.UserID)
+	_, err = client.server.raClient.UnpublishResource(ctx, &pbRA.UnpublishResourceRequest{
+		AuthorizationContext: &pbCQRS.AuthorizationContext{
+			DeviceId: authCtx.DeviceId,
+		},
+		ResourceId: resourceID,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			ConnectionId: client.remoteAddrString(),
 			Sequence:     client.coapConn.Sequence(),
@@ -519,10 +533,9 @@ func (client *Client) unpublishResource(ctx context.Context, resourceID string, 
 
 func (client *Client) unpublishResources(ctx context.Context, resourceIDs []string) {
 	rscsUnpublished := make(map[string]bool, 32)
-	authCtx := client.loadAuthorizationContext()
 
 	for _, resourceID := range resourceIDs {
-		rscsUnpublished = client.unpublishResource(ctx, resourceID, authCtx.AuthorizationContext, rscsUnpublished)
+		rscsUnpublished = client.unpublishResource(ctx, resourceID, rscsUnpublished)
 	}
 
 	client.unobserveResources(ctx, resourceIDs, rscsUnpublished)
