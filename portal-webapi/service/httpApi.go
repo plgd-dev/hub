@@ -81,10 +81,10 @@ func NewHTTP(requestHandler *RequestHandler) *router.Router {
 	router.GET(uri.Resources, func(ctx *fasthttp.RequestCtx) {
 		validateRequest(ctx, requestHandler.listResources)
 	})
-	router.GET(uri.Resources+"/:resourceId", func(ctx *fasthttp.RequestCtx) {
+	router.GET(uri.Resources+"/*resourceId", func(ctx *fasthttp.RequestCtx) {
 		validateRequest(ctx, requestHandler.getResourceContent)
 	})
-	router.PUT(uri.Resources+"/:resourceId", func(ctx *fasthttp.RequestCtx) {
+	router.PUT(uri.Resources+"/*resourceId", func(ctx *fasthttp.RequestCtx) {
 		validateRequest(ctx, requestHandler.updateResourceContent)
 	})
 	router.GET(uri.Healthcheck, requestHandler.healthcheck)

@@ -18,11 +18,14 @@ import (
 )
 
 func parseResourceID(v string) (string, string) {
+	if len(v) > 0 && v[0] == '/' {
+		v = v[1:]
+	}
 	vals := strings.SplitN(v, "/", 2)
-	if len(vals) < 3 {
+	if len(vals) < 2 {
 		return v, ""
 	}
-	return vals[1], vals[2]
+	return vals[0], "/" + vals[1]
 }
 
 func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub string) {
