@@ -87,16 +87,6 @@ func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 				"rt": []interface{}{"oic.wk.con"},
 			},
 			map[interface{}]interface{}{
-				"di":   deviceID,
-				"href": "/" + deviceID + "/oic/cloud/s",
-				"if":   []interface{}{"oic.if.baseline"},
-				"p": map[interface{}]interface{}{
-					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
-				},
-				"rt":    []interface{}{"x.cloud.device.status"},
-				"title": "Cloud device status",
-			},
-			map[interface{}]interface{}{
 				"di":   "" + deviceID + "",
 				"href": "/" + deviceID + "/light/1",
 				"if":   []interface{}{"oic.if.rw", "oic.if.baseline"},
