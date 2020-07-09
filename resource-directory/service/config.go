@@ -16,12 +16,13 @@ type ClientCfg struct {
 
 // Config represent application configuration
 type Config struct {
-	OAuth                 manager.Config `envconfig:"OAUTH"`
-	AuthServerAddr        string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
-	ResourceAggregateAddr string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
-	FQDN                  string         `envconfig:"FQDN" default:"grpcgw.ocf.cloud"`
-	TimeoutForRequests    time.Duration  `envconfig:"TIMEOUT_FOR_REQUESTS"  default:"10s"`
-	ClientConfiguration   ClientCfg      `envconfig:"CLIENT_CONFIGURATION"`
+	OAuth                     manager.Config `envconfig:"OAUTH"`
+	AuthServerAddr            string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
+	ResourceAggregateAddr     string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
+	FQDN                      string         `envconfig:"FQDN" default:"grpcgw.ocf.cloud"`
+	TimeoutForRequests        time.Duration  `envconfig:"TIMEOUT_FOR_REQUESTS"  default:"10s"`
+	ClientConfiguration       ClientCfg      `envconfig:"CLIENT_CONFIGURATION"`
+	ProjectionCacheExpiration time.Duration  `envconfig:"PROJECTION_CACHE_EXPIRATION" default:"1m"`
 }
 
 //String return string representation of Config

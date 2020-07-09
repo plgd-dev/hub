@@ -125,7 +125,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 	if err != nil {
 		return nil, fmt.Errorf("cannot create uuid for projection %w", err)
 	}
-	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), time.Second)
+	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), svc.ProjectionCacheExpiration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
