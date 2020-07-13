@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	"github.com/go-ocf/cqrs/eventbus"
 	"github.com/go-ocf/cqrs/eventstore"
@@ -41,46 +42,44 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	return &Projection{Projection: projection, cache: cache}, nil
 }
 
-func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIDsFilter, typeFilter, deviceIDs strings.Set) (map[string]map[string]*resourceCtx, error) {
+func (p *Projection) getModels(ctx context.Context, deviceID, resourceID string) ([]eventstore.Model, error) {
+	loaded, err := p.Register(ctx, deviceID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot register to projection for device %v: %v", deviceID, err)
+	}
+	if loaded {
+		p.cache.Set(deviceID, loaded, cache.DefaultExpiration)
+	} else {
+		defer func(ID string) {
+			p.Unregister(ID)
+		}(deviceID)
+	}
+	m := p.Models(deviceID, resourceID)
+	if !loaded && len(m) == 0 {
+		err := p.ForceUpdate(ctx, deviceID, resourceID)
+		if err == nil {
+			m = p.Models(deviceID, resourceID)
+		}
+	}
+	return m, nil
+}
+
+func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIDsFilter []*pb.ResourceId, typeFilter, deviceIDs strings.Set) (map[string]map[string]*resourceCtx, error) {
 	models := make([]eventstore.Model, 0, 32)
+	for _, res := range resourceIDsFilter {
+		m, err := p.getModels(ctx, res.GetDeviceId(), res.ID())
+		if err != nil {
+			return nil, err
+		}
+		models = append(models, m...)
+	}
 
 	for deviceID := range deviceIDs {
-		loaded, err := p.Register(ctx, deviceID)
+		m, err := p.getModels(ctx, deviceID, "")
 		if err != nil {
-			return nil, fmt.Errorf("cannot register to projection %v", err)
+			return nil, err
 		}
-		if loaded {
-			p.cache.Set(deviceID, loaded, cache.DefaultExpiration)
-		} else {
-			defer func(ID string) {
-				p.Unregister(ID)
-			}(deviceID)
-		}
-		if len(resourceIDsFilter) > 0 {
-			for resourceID := range resourceIDsFilter {
-				m := p.Models(deviceID, resourceID)
-				if !loaded && len(m) == 0 {
-					err := p.ForceUpdate(ctx, deviceID, resourceID)
-					if err == nil {
-						m = p.Models(deviceID, resourceID)
-					}
-				}
-				if len(m) > 0 {
-					models = append(models, m...)
-				}
-			}
-		} else {
-			m := p.Models(deviceID, "")
-			if !loaded && len(m) == 0 {
-				err := p.ForceUpdate(ctx, deviceID, "")
-				if err == nil {
-					m = p.Models(deviceID, "")
-				}
-			}
-			if len(m) > 0 {
-				models = append(models, m...)
-			}
-		}
+		models = append(models, m...)
 	}
 
 	clonedModels := make(map[string]map[string]*resourceCtx)
