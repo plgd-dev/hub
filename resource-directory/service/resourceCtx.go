@@ -80,6 +80,9 @@ func (m *resourceCtx) onResourceUnpublishedLocked(ctx context.Context) error {
 }
 
 func (m *resourceCtx) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error) error {
+	if len(m.resourceUpdatePendings) == 0 {
+		return nil
+	}
 	log.Debugf("onResourceUpdatePending %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	for idx := range m.resourceUpdatePendings {
 		p := m.resourceUpdatePendings[idx]
@@ -120,6 +123,9 @@ func (m *resourceCtx) sendEventResourceUpdated(ctx context.Context, resourcesUpd
 }
 
 func (m *resourceCtx) onResourceRetrievePendingLocked(ctx context.Context, do func(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error) error {
+	if len(m.resourceRetrievePendings) == 0 {
+		return nil
+	}
 	log.Debugf("onResourceRetrievePending %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	for idx := range m.resourceRetrievePendings {
 		p := m.resourceRetrievePendings[idx]
@@ -183,6 +189,9 @@ func (m *resourceCtx) onCloudStatusChangedLocked(ctx context.Context) error {
 }
 
 func (m *resourceCtx) onResourceUpdatedLocked(ctx context.Context, updateProcessed []raEvents.ResourceUpdated) error {
+	if len(updateProcessed) == 0 {
+		return nil
+	}
 	log.Debugf("onResourceUpdatedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	for _, up := range updateProcessed {
 		notify := m.updateNotificationContainer.Find(up.GetAuditContext().GetCorrelationId())
@@ -198,6 +207,9 @@ func (m *resourceCtx) onResourceUpdatedLocked(ctx context.Context, updateProcess
 }
 
 func (m *resourceCtx) onResourceRetrievedLocked(ctx context.Context, resourceRetrieved []raEvents.ResourceRetrieved) error {
+	if len(resourceRetrieved) == 0 {
+		return nil
+	}
 	log.Debugf("onResourceRetrievedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	for _, up := range resourceRetrieved {
 		notify := m.retrieveNotificationContainer.Find(up.AuditContext.CorrelationId)
@@ -229,7 +241,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var anyEventProcessed bool
 	for iter.Next(ctx, &eu) {
 		anyEventProcessed = true
-		fmt.Printf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v\n", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
+		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v\n", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
 		m.version = eu.Version
 		switch eu.EventType {
 		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
