@@ -241,7 +241,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var anyEventProcessed bool
 	for iter.Next(ctx, &eu) {
 		anyEventProcessed = true
-		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v\n", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
+		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
 		m.version = eu.Version
 		switch eu.EventType {
 		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
