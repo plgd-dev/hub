@@ -129,7 +129,7 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
