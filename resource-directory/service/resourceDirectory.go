@@ -28,9 +28,8 @@ func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, sr
 
 	typeFilter := make(strings.Set)
 	typeFilter.Add(in.TypeFilter...)
-	resourceIdsFilter := make(strings.Set)
 
-	resourceValues, err := rd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, typeFilter, deviceIds)
+	resourceValues, err := rd.projection.GetResourceCtxs(srv.Context(), nil, typeFilter, deviceIds)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resource links by device ids: %v", err)
 	}

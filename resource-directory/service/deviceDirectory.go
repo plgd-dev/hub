@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
 	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
@@ -174,13 +173,12 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 		return status.Errorf(codes.NotFound, "not found")
 	}
 
-	resourceIdsFilter := make(strings.Set)
+	resourceIdsFilter := make([]*pb.ResourceId, 0, 64)
 	for deviceID := range deviceIds {
-		resourceIdsFilter.Add(cqrs.MakeResourceId(deviceID, "/oic/d"))
-		resourceIdsFilter.Add(cqrs.MakeResourceId(deviceID, cloud.StatusHref))
+		resourceIdsFilter = append(resourceIdsFilter, &pb.ResourceId{DeviceId: deviceID, Href: "/oic/d"}, &pb.ResourceId{DeviceId: deviceID, Href: cloud.StatusHref})
 	}
 
-	resourceValues, err := dd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, nil, deviceIds)
+	resourceValues, err := dd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, nil, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resource links by device ids: %v", err)
 	}

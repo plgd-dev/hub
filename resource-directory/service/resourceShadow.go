@@ -35,13 +35,23 @@ func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShad
 func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
 	deviceIds := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
 	if len(deviceIds) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		return status.Errorf(codes.NotFound, "device ids filter doesn't match any devices")
 	}
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
-	resourceIdsFilter := make(strings.Set)
-	for _, r := range req.ResourceIdsFilter {
-		resourceIdsFilter.Add(r.ID())
+
+	// validate access to resource
+	resourceIdsFilter := make([]*pb.ResourceId, 0, 64)
+	for _, res := range req.GetResourceIdsFilter() {
+		if len(filterDevices(rd.userDeviceIds, []string{res.GetDeviceId()})) > 0 {
+			resourceIdsFilter = append(resourceIdsFilter, res)
+		}
+	}
+	if len(resourceIdsFilter) == 0 && len(req.GetResourceIdsFilter()) > 0 && len(req.GetDeviceIdsFilter()) == 0 {
+		return status.Errorf(codes.NotFound, "resource ids filter doesn't match any resources")
+	}
+	if len(req.GetResourceIdsFilter()) > 0 && len(req.GetDeviceIdsFilter()) == 0 {
+		deviceIds = strings.MakeSet()
 	}
 
 	resourceValues, err := rd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, typeFilter, deviceIds)
