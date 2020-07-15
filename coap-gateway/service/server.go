@@ -44,9 +44,9 @@ type Server struct {
 	DisablePeerTCPSignalMessageCSMs bool
 	SendErrorTextInResponse         bool
 	RequestTimeout                  time.Duration
-	ConnectionsHeartBeat            time.Duration
 	BlockWiseTransfer               bool
 	BlockWiseTransferSZX            blockwise.SZX
+	ReconnectInterval               time.Duration
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
@@ -60,6 +60,9 @@ type Server struct {
 	listener        tcp.Listener
 	authInterceptor kitNetCoap.Interceptor
 	wgDone          *sync.WaitGroup
+	asConn          *grpc.ClientConn
+	rdConn          *grpc.ClientConn
+	raConn          *grpc.ClientConn
 }
 
 type DialCertManager = interface {
@@ -162,16 +165,20 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		DisableTCPSignalMessageCSM:      config.DisableTCPSignalMessageCSM,
 		DisablePeerTCPSignalMessageCSMs: config.DisablePeerTCPSignalMessageCSMs,
 		SendErrorTextInResponse:         config.SendErrorTextInResponse,
-		ConnectionsHeartBeat:            config.ConnectionsHeartBeat,
 		BlockWiseTransfer:               !config.DisableBlockWiseTransfer,
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
+		ReconnectInterval:               config.ReconnectInterval,
 
 		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,
 		raClient:      raClient,
 		asClient:      asClient,
 		rdClient:      rdClient,
-		oauthMgr:      oauthMgr,
+		asConn:        asConn,
+		rdConn:        rdConn,
+		raConn:        raConn,
+
+		oauthMgr: oauthMgr,
 
 		clients:         kitSync.NewMap(),
 		oicPingCache:    oicPingCache,
@@ -346,7 +353,14 @@ func (server *Server) tlsEnabled() bool {
 // Serve starts a coapgateway on the configured address in *Server.
 func (server *Server) Serve() error {
 	server.wgDone.Add(1)
-	defer server.wgDone.Done()
+	defer func() {
+		defer server.wgDone.Done()
+		server.oauthMgr.Close()
+		server.asConn.Close()
+		server.rdConn.Close()
+		server.raConn.Close()
+		server.listener.Close()
+	}()
 	return server.coapServer.Serve(server.listener)
 }
 
@@ -354,6 +368,5 @@ func (server *Server) Serve() error {
 func (server *Server) Shutdown() error {
 	defer server.wgDone.Wait()
 	server.coapServer.Stop()
-	server.oauthMgr.Close()
-	return server.listener.Close()
+	return nil
 }

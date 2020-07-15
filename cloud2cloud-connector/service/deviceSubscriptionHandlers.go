@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	grpcClient "github.com/go-ocf/cloud/grpc-gateway/client"
@@ -36,21 +39,21 @@ func (h *deviceSubscriptionHandlers) OnClose() {
 	h.onClose()
 }
 
-type deviceSubscription struct {
-	*grpcClient.DeviceSubscription
-}
-
 type DevicesSubscription struct {
-	data     *kitSync.Map // //[deviceID]*deviceSubscription
-	rdClient pb.GrpcGatewayClient
-	raClient pbRA.ResourceAggregateClient
+	ctx               context.Context
+	data              *kitSync.Map // //[deviceID]*deviceSubscription
+	rdClient          pb.GrpcGatewayClient
+	raClient          pbRA.ResourceAggregateClient
+	reconnectInterval time.Duration
 }
 
-func NewDevicesSubscription(rdClient pb.GrpcGatewayClient, raClient pbRA.ResourceAggregateClient) *DevicesSubscription {
+func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient pbRA.ResourceAggregateClient, reconnectInterval time.Duration) *DevicesSubscription {
 	return &DevicesSubscription{
-		data:     kitSync.NewMap(),
-		rdClient: rdClient,
-		raClient: raClient,
+		data:              kitSync.NewMap(),
+		rdClient:          rdClient,
+		raClient:          raClient,
+		reconnectInterval: reconnectInterval,
+		ctx:               ctx,
 	}
 }
 
@@ -59,13 +62,12 @@ func getKey(userID, deviceID string) string {
 }
 
 func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	var s deviceSubscription
+	var s atomic.Value
 	key := getKey(linkedAccount.UserID, deviceID)
-	v, loaded := c.data.LoadOrStore(key, &s)
+	_, loaded := c.data.LoadOrStore(key, &s)
 	if loaded {
 		return nil
 	}
-	sub := v.(*deviceSubscription)
 	h := deviceSubscriptionHandlers{
 		onResourceUpdatePending: func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
 			return updateResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
@@ -80,14 +82,33 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 		onError: func(err error) {
 			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) ends with error: %v", deviceID, err)
 			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
+			if !strings.Contains(err.Error(), "transport is closing") {
+				return
+			}
+			for {
+				log.Debugf("reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending)")
+				err = c.Add(deviceID, linkedAccount, linkedCloud)
+				if err == nil {
+					return
+				}
+				if !strings.Contains(err.Error(), "connection refused") {
+					log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) cannot reconnect: %v", deviceID, err)
+					return
+				}
+				select {
+				case <-c.ctx.Done():
+					return
+				case <-time.After(c.reconnectInterval):
+				}
+			}
 		},
 	}
-	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithUserID(context.Background(), linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
+	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithUserID(c.ctx, linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
 	if err != nil {
 		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)
 	}
-	sub.DeviceSubscription = devSub
+	s.Store(devSub)
 	return nil
 }
 
@@ -97,11 +118,15 @@ func (c *DevicesSubscription) Delete(userID, deviceID string) error {
 	if !ok {
 		return nil
 	}
-	sub := v.(*deviceSubscription)
-	if sub.DeviceSubscription == nil {
+	s := v.(*atomic.Value).Load()
+	if s == nil {
 		return nil
 	}
-	wait, err := sub.DeviceSubscription.Cancel()
+	sub := s.(*grpcClient.DeviceSubscription)
+	if sub == nil {
+		return nil
+	}
+	wait, err := sub.Cancel()
 	if err != nil {
 		return err
 	}

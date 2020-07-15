@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/go-ocf/cloud/grpc-gateway/client"
@@ -74,6 +75,10 @@ func ToClient(v interface{}, ok bool) (*Client, bool) {
 
 func (client *Client) remoteAddrString() string {
 	return client.coapConn.RemoteAddr().String()
+}
+
+func (client *Client) Context() context.Context {
+	return client.coapConn.Context()
 }
 
 func (client *Client) cancelResourceSubscription(token string, wantWait bool) (bool, error) {
@@ -300,7 +305,7 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 func (client *Client) cancelDeviceSubscriptions(wantWait bool) {
 	deviceSubscriptions := client.deviceSubscriptions.PullOutAll()
 	for _, v := range deviceSubscriptions {
-		o, ok := grpcClient.ToDeviceSubscription(v, true)
+		o, ok := grpcClient.ToDeviceSubscription(v.(*atomic.Value).Load(), true)
 		if !ok {
 			continue
 		}

@@ -99,6 +99,8 @@ func emitEvent(ctx context.Context, eventType events.EventType, s store.Subscrip
 		timestamp,
 		body,
 	))
+	req.Header.Set("Connection", "close")
+	req.Close = true
 
 	resp, err := client.Do(req)
 	if err != nil {

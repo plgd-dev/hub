@@ -97,6 +97,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 		shutdownDevSim()
 		cloud1Conn.Close()
 		cloud1()
+
 	}
 }
 
@@ -128,7 +129,7 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
@@ -140,6 +141,7 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
+	defer conn.Close()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -213,6 +215,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 				},
 			},
 		},
+
 		{
 			name: "pull resource, devices + static device events",
 			args: args{

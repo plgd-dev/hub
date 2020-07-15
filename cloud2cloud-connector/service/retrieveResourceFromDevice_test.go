@@ -86,6 +86,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
+	defer conn.Close()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

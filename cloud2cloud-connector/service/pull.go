@@ -75,6 +75,9 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 
 	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Connection", "close")
+	req.Close = true
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

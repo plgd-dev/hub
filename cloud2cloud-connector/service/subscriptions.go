@@ -85,6 +85,8 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, events.ContentType_JSON)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
+	req.Header.Set("Connection", "close")
+	req.Close = true
 
 	go func() {
 		defer w.Close()
@@ -117,6 +119,8 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	req.Header.Set("Token", linkedAccount.ID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
+	req.Header.Set("Connection", "close")
+	req.Close = true
 
 	httpResp, err := client.Do(req)
 	if err != nil {
