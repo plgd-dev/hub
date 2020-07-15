@@ -8,8 +8,7 @@ import (
 )
 
 func ParseAuth(auth string) (token, sub string, err error) {
-	prefix := auth[:7]
-	if strings.HasPrefix(strings.ToLower(prefix), "bearer ") {
+	if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
 		rawToken := auth[7:]
 		sub, err = parseSubFromJwtToken(rawToken)
 		if err != nil {

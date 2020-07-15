@@ -6,12 +6,15 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sync"
 
 	"google.golang.org/grpc"
 
 	connectorStore "github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/go-ocf/cloud/cloud2cloud-connector/uri"
 	"github.com/go-ocf/kit/log"
+	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/kit/security/oauth/manager"
 	"google.golang.org/grpc/credentials"
 
@@ -128,7 +131,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	ctx, cancel := context.WithCancel(context.Background())
 	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize, config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
-	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger)
+	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger, config.ResubscribeInterval)
 	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
 
 	var wg sync.WaitGroup
@@ -145,9 +148,26 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		defer wg.Done()
 		taskProcessor.Run(ctx, subscriptionManager)
 	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		subscriptionManager.Run(ctx)
+	}()
 
+	oauthURL, _ := url.Parse(config.OAuthCallback)
+	auth := kitNetHttp.NewInterceptor(config.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, kitNetHttp.RequestMatcher{
+		Method: http.MethodGet,
+		URI:    regexp.MustCompile(regexp.QuoteMeta(oauthURL.Path)),
+	}, kitNetHttp.RequestMatcher{
+		Method: http.MethodPost,
+		URI:    regexp.MustCompile(regexp.QuoteMeta(oauthURL.Path)),
+	}, kitNetHttp.RequestMatcher{
+		Method: http.MethodPost,
+		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.Events)),
+	},
+	)
 	server := Server{
-		server:   NewHTTP(requestHandler),
+		server:   NewHTTP(requestHandler, auth),
 		cfg:      config,
 		handler:  requestHandler,
 		ln:       ln,
@@ -176,4 +196,27 @@ func (s *Server) Shutdown() error {
 	s.cancel()
 	s.doneWg.Wait()
 	return s.server.Shutdown(context.Background())
+}
+
+var authRules = map[string][]kitNetHttp.AuthArgs{
+	http.MethodGet: {
+		{
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
+		},
+	},
+	http.MethodPost: {
+		{
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
+		},
+	},
+	http.MethodDelete: {
+		{
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
+		},
+	},
+	http.MethodPut: {
+		{
+			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
+		},
+	},
 }

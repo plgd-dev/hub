@@ -156,3 +156,7 @@ func (s *Store) DumpLinkedAccounts() []provisionCacheData {
 func (s *Store) DumpDevices() []subscriptionData {
 	return s.cache.DumpDevices()
 }
+
+func (s *Store) DumpTasks() []Task {
+	return s.cache.DumpTasks()
+}

@@ -107,33 +107,21 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 	http.MethodGet: {
 		{
 			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			Scopes: []*regexp.Regexp{
-				regexp.MustCompile(`openid`),
-			},
 		},
 	},
 	http.MethodPost: {
 		{
 			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			Scopes: []*regexp.Regexp{
-				regexp.MustCompile(`openid`),
-			},
 		},
 	},
 	http.MethodDelete: {
 		{
 			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			Scopes: []*regexp.Regexp{
-				regexp.MustCompile(`openid`),
-			},
 		},
 	},
 	http.MethodPut: {
 		{
 			URI: regexp.MustCompile(regexp.QuoteMeta(uri.API) + `\/.*`),
-			Scopes: []*regexp.Regexp{
-				regexp.MustCompile(`openid`),
-			},
 		},
 	},
 }

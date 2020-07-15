@@ -50,6 +50,7 @@ type SubscriptionManager struct {
 	devicesSubscription *DevicesSubscription
 	oauthCallback       string
 	triggerTask         func(Task)
+	interval            time.Duration
 }
 
 func NewSubscriptionManager(
@@ -59,7 +60,9 @@ func NewSubscriptionManager(
 	store *Store,
 	devicesSubscription *DevicesSubscription,
 	oauthCallback string,
-	triggerTask func(Task)) *SubscriptionManager {
+	triggerTask func(Task),
+	interval time.Duration,
+) *SubscriptionManager {
 	return &SubscriptionManager{
 		eventsURL:           EventsURL,
 		store:               store,
@@ -69,6 +72,7 @@ func NewSubscriptionManager(
 		cache:               cache.New(time.Minute*10, time.Minute*5),
 		oauthCallback:       oauthCallback,
 		triggerTask:         triggerTask,
+		interval:            interval,
 	}
 }
 
@@ -227,4 +231,23 @@ type subscriptionData struct {
 	linkedAccount store.LinkedAccount
 	linkedCloud   store.LinkedCloud
 	subscription  Subscription
+}
+
+func (s *SubscriptionManager) Run(ctx context.Context) {
+	for {
+		for _, task := range s.store.DumpTasks() {
+			s.triggerTask(task)
+		}
+		for _, data := range s.store.DumpDevices() {
+			err := s.devicesSubscription.Add(data.subscription.DeviceID, data.linkedAccount, data.linkedCloud)
+			if err != nil {
+				log.Errorf("cannot add device %v from subscriptions to devicesSubscription: %v", data.subscription.DeviceID, err)
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(s.interval):
+		}
+	}
 }
