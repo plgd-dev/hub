@@ -61,6 +61,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.Service.EventsURL = C2C_CONNECTOR_EVENTS_URL
 	c2cConnectorCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
 	c2cConnectorCfg.Service.ResourceDirectoryAddr = RESOURCE_DIRECTORY_HOST
+	c2cConnectorCfg.Service.JwksURL = JWKS_URL
 	c2cConnectorShutdown := New(t, c2cConnectorCfg)
 
 	return func() {

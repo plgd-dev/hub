@@ -70,7 +70,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)
 
-	req := test.NewHTTPRequest(http.MethodPost, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).Build(ctx, t)
+	req := test.NewHTTPRequest(http.MethodPost, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(provider.UserToken).Build(ctx, t)
 	resp := test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
@@ -93,6 +93,11 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	fmt.Println(string(b))
 
 	return func() {
+		req := test.NewHTTPRequest(http.MethodDelete, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(provider.UserToken).Build(ctx, t)
+		resp := test.DoHTTPRequest(t, req)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		defer resp.Body.Close()
+
 		cloud2()
 		shutdownDevSim()
 		cloud1Conn.Close()

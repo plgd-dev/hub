@@ -368,12 +368,6 @@ func pullDevices(ctx context.Context, s *Store,
 			}
 		}(d.linkedAccount, d.linkedCloud)
 	}
-	for _, data := range s.DumpDevices() {
-		err := devicesSubscription.Add(data.subscription.DeviceID, data.linkedAccount, data.linkedCloud)
-		if err != nil {
-			log.Errorf("cannot add device %v from subscriptions to devicesSubscription: %v", data.subscription.DeviceID, err)
-		}
-	}
 
 	wg.Wait()
 	return nil

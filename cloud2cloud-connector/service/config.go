@@ -27,7 +27,9 @@ type Config struct {
 	PullDevicesDisabled   bool                `envconfig:"PULL_DEVICES_DISABLED" default:"false"`
 	PullDevicesInterval   time.Duration       `envconfig:"PULL_DEVICES_INTERVAL" default:"5s"`
 	TaskProcessor         TaskProcessorConfig `envconfig:"TASK_PROCESSOR"`
-	ReconnectInterval     time.Duration       `envconfig:"RECONNECT_TIMEOUT" default:"10s"`
+	ReconnectInterval     time.Duration       `envconfig:"RECONNECT_INTERVAL" default:"10s"`
+	ResubscribeInterval   time.Duration       `envconfig:"RESUBSCRIBE_INTERVAL" default:"10s"`
+	JwksURL               string              `envconfig:"JWKS_URL"`
 	OAuth                 manager.Config      `envconfig:"OAUTH"`
 }
 

@@ -58,6 +58,21 @@ func (d *ResourceData) Dump() interface{} {
 	return out
 }
 
+func (d *ResourceData) DumpTasks(linkedCloud store.LinkedCloud, linkedAccount store.LinkedAccount, deviceID, href string) []Task {
+	out := make([]Task, 0, 32)
+	_, ok := d.Subscription()
+	if !ok {
+		out = append(out, Task{
+			taskType:      TaskType_SubscribeToResource,
+			linkedCloud:   linkedCloud,
+			linkedAccount: linkedAccount,
+			deviceID:      deviceID,
+			href:          href,
+		})
+	}
+	return out
+}
+
 type DeviceData struct {
 	resources *kitSync.Map
 
@@ -121,13 +136,8 @@ func (d *DeviceData) Subscription() (Subscription, bool) {
 
 func (d *DeviceData) Dump() interface{} {
 	out := make(map[interface{}]interface{})
-	makeData := make(map[interface{}]*ResourceData)
-	d.resources.Range(func(key, resourceI interface{}) bool {
-		makeData[key] = resourceI.(*ResourceData)
-		return true
-	})
 	resources := make(map[interface{}]interface{})
-	for key, resource := range makeData {
+	for key, resource := range d.DumpResources() {
 		resources[key] = resource.Dump()
 	}
 	if sub, ok := d.Subscription(); ok {
@@ -135,6 +145,40 @@ func (d *DeviceData) Dump() interface{} {
 	}
 	if len(resources) > 0 {
 		out["resources"] = resources
+	}
+	return out
+}
+
+func (d *DeviceData) DumpResources() map[string]*ResourceData {
+	out := make(map[string]*ResourceData)
+	d.resources.Range(func(key, resourceI interface{}) bool {
+		out[key.(string)] = resourceI.(*ResourceData)
+		return true
+	})
+	return out
+}
+
+func (d *DeviceData) DumpTasks(linkedCloud store.LinkedCloud, linkedAccount store.LinkedAccount, deviceID string) []Task {
+	out := make([]Task, 0, 32)
+	if !linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() && !linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
+		_, ok := d.Subscription()
+		if !ok {
+			out = append(out, Task{
+				taskType:      TaskType_SubscribeToDevice,
+				linkedCloud:   linkedCloud,
+				linkedAccount: linkedAccount,
+				deviceID:      deviceID,
+			})
+		}
+	}
+	if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+		return out
+	}
+	for href, resource := range d.DumpResources() {
+		v := resource.DumpTasks(linkedCloud, linkedAccount, deviceID, href)
+		if len(v) > 0 {
+			out = append(out, v...)
+		}
 	}
 	return out
 }
@@ -210,13 +254,8 @@ func (d *LinkedAccountData) LinkedAccount() store.LinkedAccount {
 
 func (d *LinkedAccountData) Dump() interface{} {
 	out := make(map[interface{}]interface{})
-	makeDevData := make(map[interface{}]*DeviceData)
-	d.devices.Range(func(key, deviceI interface{}) bool {
-		makeDevData[key] = deviceI.(*DeviceData)
-		return true
-	})
 	devs := make(map[interface{}]interface{})
-	for key, device := range makeDevData {
+	for key, device := range d.DumpDevices() {
 		devs[key] = device.Dump()
 	}
 	if sub, ok := d.Subscription(); ok {
@@ -226,6 +265,40 @@ func (d *LinkedAccountData) Dump() interface{} {
 		out["devices"] = devs
 	}
 	out["account"] = d.LinkedAccount()
+	return out
+}
+
+func (d *LinkedAccountData) DumpDevices() map[string]*DeviceData {
+	out := make(map[string]*DeviceData)
+	d.devices.Range(func(key, deviceI interface{}) bool {
+		out[key.(string)] = deviceI.(*DeviceData)
+		return true
+	})
+	return out
+}
+
+func (d *LinkedAccountData) DumpTasks(linkedCloud store.LinkedCloud) []Task {
+	out := make([]Task, 0, 32)
+	linkedAccount := d.LinkedAccount()
+	if !linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
+		_, ok := d.Subscription()
+		if !ok {
+			out = append(out, Task{
+				taskType:      TaskType_SubscribeToDevices,
+				linkedCloud:   linkedCloud,
+				linkedAccount: linkedAccount,
+			})
+		}
+	}
+	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() && linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+		return out
+	}
+	for deviceID, device := range d.DumpDevices() {
+		v := device.DumpTasks(linkedCloud, linkedAccount, deviceID)
+		if len(v) > 0 {
+			out = append(out, v...)
+		}
+	}
 	return out
 }
 
@@ -243,20 +316,37 @@ func NewCloudData(linkedCloud store.LinkedCloud) *CloudData {
 
 func (d *CloudData) Dump() interface{} {
 	out := make(map[interface{}]interface{})
-	makeAccData := make(map[interface{}]*LinkedAccountData)
-	d.linkedAccounts.Range(func(key, linkedAccountI interface{}) bool {
-		makeAccData[key] = linkedAccountI.(*LinkedAccountData)
-		return true
-	})
 	accs := make(map[interface{}]interface{})
-	for key, linkedAccountI := range makeAccData {
-		linkedAccount := linkedAccountI
+	for key, linkedAccount := range d.DumpLinkedAccounts() {
 		accs[key] = linkedAccount.Dump()
 	}
 	if len(accs) > 0 {
 		out["accounts"] = accs
 	}
 	out["cloud"] = d.linkedCloud
+	return out
+}
+
+func (d *CloudData) DumpLinkedAccounts() map[string]*LinkedAccountData {
+	out := make(map[string]*LinkedAccountData)
+	d.linkedAccounts.Range(func(key, linkedAccountI interface{}) bool {
+		out[key.(string)] = linkedAccountI.(*LinkedAccountData)
+		return true
+	})
+	return out
+}
+
+func (d *CloudData) DumpTasks() []Task {
+	out := make([]Task, 0, 32)
+	if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() && d.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() && d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
+		return out
+	}
+	for _, linkedAccount := range d.DumpLinkedAccounts() {
+		v := linkedAccount.DumpTasks(d.linkedCloud)
+		if len(v) > 0 {
+			out = append(out, v...)
+		}
+	}
 	return out
 }
 
@@ -455,20 +545,18 @@ func cleanUpLinkedAccountsSubcriptions(s *Cache, linkedAccount *LinkedAccountDat
 	if linkedAccount.isSubscribed {
 		s.subscriptionsByID.Delete(linkedAccount.subscription.ID)
 	}
-	linkedAccount.devices.Range(func(_, deviceI interface{}) bool {
-		cleanUpDeviceSubcriptions(s, deviceI.(*DeviceData))
-		return true
-	})
+	for _, device := range linkedAccount.DumpDevices() {
+		cleanUpDeviceSubcriptions(s, device)
+	}
 }
 
 func cleanUpDeviceSubcriptions(s *Cache, device *DeviceData) {
 	if device.isSubscribed {
 		s.subscriptionsByID.Delete(device.subscription.ID)
 	}
-	device.resources.Range(func(_, resourceI interface{}) bool {
-		cleanUpResourceSubcription(s, resourceI.(*ResourceData))
-		return true
-	})
+	for _, resource := range device.DumpResources() {
+		cleanUpResourceSubcription(s, resource)
+	}
 }
 
 func (s *Cache) PullOutCloud(cloudID string) (*CloudData, bool) {
@@ -477,11 +565,9 @@ func (s *Cache) PullOutCloud(cloudID string) (*CloudData, bool) {
 		return nil, ok
 	}
 	cloud := cloudI.(*CloudData)
-	cloud.linkedAccounts.Range(func(_, linkedAccountI interface{}) bool {
-		linkedAccount := linkedAccountI.(*LinkedAccountData)
+	for _, linkedAccount := range cloud.DumpLinkedAccounts() {
 		cleanUpLinkedAccountsSubcriptions(s, linkedAccount)
-		return true
-	})
+	}
 	return cloud, true
 }
 
@@ -528,14 +614,18 @@ func (s *Cache) PullOutResource(cloudID, linkedAccountID, deviceID, href string)
 	return resource, true
 }
 
-func (s *Cache) Dump() interface{} {
-	out := make(map[interface{}]interface{})
+func (s *Cache) DumpClouds() map[string]*CloudData {
+	out := make(map[string]*CloudData)
 	s.clouds.Range(func(key, cloudI interface{}) bool {
-		out[key] = cloudI.(*CloudData)
+		out[key.(string)] = cloudI.(*CloudData)
 		return true
 	})
-	for key, cloudI := range out {
-		cloud := cloudI.(*CloudData)
+	return out
+}
+
+func (s *Cache) Dump() interface{} {
+	out := make(map[interface{}]interface{})
+	for key, cloud := range s.DumpClouds() {
 		out[key] = cloud.Dump()
 	}
 	return out
@@ -543,49 +633,44 @@ func (s *Cache) Dump() interface{} {
 
 func (s *Cache) DumpLinkedAccounts() []provisionCacheData {
 	out := make([]provisionCacheData, 0, 32)
-	clouds := make(map[interface{}]*CloudData)
-	s.clouds.Range(func(key, cloudI interface{}) bool {
-		clouds[key] = cloudI.(*CloudData)
-		return true
-	})
-	for _, cloud := range clouds {
-		cloud.linkedAccounts.Range(func(key, linkeAccountI interface{}) bool {
-			linkedAccount := linkeAccountI.(*LinkedAccountData)
+	for _, cloud := range s.DumpClouds() {
+		for _, linkedAccount := range cloud.DumpLinkedAccounts() {
 			out = append(out, provisionCacheData{
 				linkedCloud:   cloud.linkedCloud,
 				linkedAccount: linkedAccount.LinkedAccount(),
 			})
-			return true
-		})
+		}
 	}
 	return out
 }
 
 func (s *Cache) DumpDevices() []subscriptionData {
 	out := make([]subscriptionData, 0, 32)
-	clouds := make(map[interface{}]*CloudData)
-	s.clouds.Range(func(key, cloudI interface{}) bool {
-		clouds[key] = cloudI.(*CloudData)
-		return true
-	})
-	for _, cloud := range clouds {
-		cloud.linkedAccounts.Range(func(key, linkeAccountI interface{}) bool {
-			linkedAccount := linkeAccountI.(*LinkedAccountData)
-			linkedAccount.devices.Range(func(key, deviceI interface{}) bool {
-				device := deviceI.(*DeviceData)
+	for _, cloud := range s.DumpClouds() {
+		for _, linkedAccount := range cloud.DumpLinkedAccounts() {
+			for _, device := range linkedAccount.DumpDevices() {
 				sub, ok := device.Subscription()
 				if !ok {
-					return true
+					continue
 				}
 				out = append(out, subscriptionData{
 					linkedCloud:   cloud.linkedCloud,
 					linkedAccount: linkedAccount.LinkedAccount(),
 					subscription:  sub,
 				})
-				return true
-			})
-			return true
-		})
+			}
+		}
+	}
+	return out
+}
+
+func (s *Cache) DumpTasks() []Task {
+	out := make([]Task, 0, 32)
+	for _, cloud := range s.DumpClouds() {
+		v := cloud.DumpTasks()
+		if len(v) > 0 {
+			out = append(out, v...)
+		}
 	}
 	return out
 }

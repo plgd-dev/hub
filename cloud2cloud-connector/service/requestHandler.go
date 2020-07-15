@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/uri"
 	"github.com/go-ocf/kit/log"
+	kitNetHttp "github.com/go-ocf/kit/net/http"
 
 	router "github.com/gorilla/mux"
 
@@ -79,10 +82,13 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler) *http.Server {
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) *http.Server {
 	r := router.NewRouter()
 	r.StrictSlash(true)
 	r.Use(loggingMiddleware)
+	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
+	}))
 
 	// health check
 	r.HandleFunc("/", healthCheck).Methods("GET")
