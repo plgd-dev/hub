@@ -30,6 +30,9 @@ type Server struct {
 	handler             *RequestHandler
 	ln                  net.Listener
 	devicesSubscription *devicesSubscription
+	raConn              *grpc.ClientConn
+	rdConn              *grpc.ClientConn
+	asConn              *grpc.ClientConn
 }
 
 type ResourceSubscriptionLoader struct {
@@ -158,6 +161,9 @@ func New(
 		handler:             requestHandler,
 		ln:                  ln,
 		devicesSubscription: devicesSubscription,
+		raConn:              raConn,
+		rdConn:              rdConn,
+		asConn:              asConn,
 	}
 
 	return &server
@@ -166,9 +172,13 @@ func New(
 // Serve starts the service's HTTP server and blocks.
 func (s *Server) Serve() error {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	defer func() {
+		cancel()
+		s.raConn.Close()
+		s.rdConn.Close()
+		s.asConn.Close()
+	}()
 	go s.devicesSubscription.Serve(ctx, s.cfg.DevicesCheckInterval)
-
 	return s.server.Serve(s.ln)
 }
 

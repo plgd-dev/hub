@@ -27,6 +27,7 @@ type Config struct {
 	PullDevicesDisabled   bool                `envconfig:"PULL_DEVICES_DISABLED" default:"false"`
 	PullDevicesInterval   time.Duration       `envconfig:"PULL_DEVICES_INTERVAL" default:"5s"`
 	TaskProcessor         TaskProcessorConfig `envconfig:"TASK_PROCESSOR"`
+	ReconnectInterval     time.Duration       `envconfig:"RECONNECT_TIMEOUT" default:"10s"`
 	OAuth                 manager.Config      `envconfig:"OAUTH"`
 }
 

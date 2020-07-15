@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync/atomic"
+	"time"
 
 	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
@@ -103,10 +106,51 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 			onClose: func() {
 				log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", signIn.DeviceID)
 			},
-			onError: func(err error) {
-				log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) ends with error: %v", err)
+		}
+		h.onError = func(err error) {
+			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) ends with error: %v", signIn.DeviceID, err)
+			if !strings.Contains(err.Error(), "transport is closing") {
 				client.Close()
-			},
+				return
+			}
+			client.deviceSubscriptions.Delete(pendingDeviceSubscriptionToken)
+			for {
+				log.Debugf("reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending)")
+				var devSub atomic.Value
+				_, loaded := client.deviceSubscriptions.LoadOrStore(pendingDeviceSubscriptionToken, &devSub)
+				if loaded {
+					return
+				}
+				sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
+				if err != nil {
+					client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %v", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
+					client.Close()
+					return
+				}
+				if err == nil {
+					devSub.Store(sub)
+					return
+				}
+				client.deviceSubscriptions.Delete(pendingDeviceSubscriptionToken)
+				if !strings.Contains(err.Error(), "connection refused") {
+					client.Close()
+					log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) cannot reconnect: %v", signIn.DeviceID, err)
+					return
+				}
+				select {
+				case <-client.Context().Done():
+					client.Close()
+					return
+				case <-time.After(client.server.ReconnectInterval):
+				}
+			}
+		}
+		var devSub atomic.Value
+		_, loaded := client.deviceSubscriptions.LoadOrStore(pendingDeviceSubscriptionToken, &devSub)
+		if loaded {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot store device %v pending subscription: device subscription with token %v already exist", signIn.DeviceID, pendingDeviceSubscriptionToken), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
 		}
 		sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
 		if err != nil {
@@ -114,12 +158,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 			client.Close()
 			return
 		}
-		_, loaded := client.deviceSubscriptions.LoadOrStore(pendingDeviceSubscriptionToken, sub)
-		if loaded {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot store device %v pending subscription: device subscription with token %v already exist", signIn.DeviceID, pendingDeviceSubscriptionToken), coapCodes.InternalServerError, req.Token)
-			client.Close()
-			return
-		}
+		devSub.Store(sub)
 	}
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }

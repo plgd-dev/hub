@@ -22,6 +22,6 @@ type Config struct {
 	DisableTCPSignalMessageCSM      bool           `envconfig:"DISABLE_TCP_SIGNAL_MESSAGE_CSM"  default:"false"`
 	DisablePeerTCPSignalMessageCSMs bool           `envconfig:"DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS"  default:"true"`
 	SendErrorTextInResponse         bool           `envconfig:"ERROR_IN_RESPONSE"  default:"true"`
-	ConnectionsHeartBeat            time.Duration  `envconfig:"CONNECTIONS_HEART_BEAT"  default:"4s"`
 	OAuth                           manager.Config `envconfig:"OAUTH"`
+	ReconnectInterval               time.Duration  `envconfig:"RECONNECT_TIMEOUT" default:"10s"`
 }

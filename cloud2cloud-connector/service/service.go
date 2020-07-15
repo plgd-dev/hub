@@ -23,12 +23,15 @@ import (
 
 //Server handle HTTP request
 type Server struct {
-	server  *http.Server
-	cfg     Config
-	handler *RequestHandler
-	ln      net.Listener
-	cancel  context.CancelFunc
-	doneWg  *sync.WaitGroup
+	server   *http.Server
+	cfg      Config
+	handler  *RequestHandler
+	ln       net.Listener
+	cancel   context.CancelFunc
+	doneWg   *sync.WaitGroup
+	raConn   *grpc.ClientConn
+	authConn *grpc.ClientConn
+	rdConn   *grpc.ClientConn
 }
 
 type DialCertManager = interface {
@@ -122,12 +125,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	devicesSubscription := NewDevicesSubscription(rdClient, raClient)
+	ctx, cancel := context.WithCancel(context.Background())
+	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize, config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger)
 	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
 
-	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	if !config.PullDevicesDisabled {
 		wg.Add(1)
@@ -144,12 +147,15 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}()
 
 	server := Server{
-		server:  NewHTTP(requestHandler),
-		cfg:     config,
-		handler: requestHandler,
-		ln:      ln,
-		cancel:  cancel,
-		doneWg:  &wg,
+		server:   NewHTTP(requestHandler),
+		cfg:      config,
+		handler:  requestHandler,
+		ln:       ln,
+		cancel:   cancel,
+		doneWg:   &wg,
+		raConn:   raConn,
+		rdConn:   rdConn,
+		authConn: authConn,
 	}
 
 	return &server
@@ -157,6 +163,11 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 // Serve starts the service's HTTP server and blocks.
 func (s *Server) Serve() error {
+	defer func() {
+		s.raConn.Close()
+		s.rdConn.Close()
+		s.authConn.Close()
+	}()
 	return s.server.Serve(s.ln)
 }
 

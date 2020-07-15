@@ -29,10 +29,11 @@ type EventStore interface {
 
 //Server handle HTTP request
 type Server struct {
-	server  *kitNetGrpc.Server
-	cfg     Config
-	handler *RequestHandler
-	sigs    chan os.Signal
+	server   *kitNetGrpc.Server
+	cfg      Config
+	handler  *RequestHandler
+	sigs     chan os.Signal
+	authConn *grpc.ClientConn
 }
 
 type ClientCertManager = interface {
@@ -64,10 +65,11 @@ func New(config Config, clientCertManager ClientCertManager, serverCertManager S
 	pb.RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	server := Server{
-		server:  grpcServer,
-		cfg:     config,
-		handler: requestHandler,
-		sigs:    make(chan os.Signal, 1),
+		server:   grpcServer,
+		cfg:      config,
+		handler:  requestHandler,
+		sigs:     make(chan os.Signal, 1),
+		authConn: authConn,
 	}
 
 	return &server
@@ -91,6 +93,7 @@ func (s *Server) serveWithHandlingSignal(serve func() error) error {
 
 	s.server.Stop()
 	wg.Wait()
+	s.authConn.Close()
 	return err
 }
 

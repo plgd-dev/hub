@@ -28,6 +28,9 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	}
 	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
+	req.Header.Set("Connection", "close")
+	req.Close = true
+
 	httpResp, err := client.Do(req)
 	if err != nil {
 		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot post: %v", err)
