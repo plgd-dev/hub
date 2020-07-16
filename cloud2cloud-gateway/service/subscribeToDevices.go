@@ -1,54 +1,17 @@
 package service
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"net/http"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"google.golang.org/grpc/status"
+	"github.com/go-ocf/kit/log"
 )
 
-func (rh *RequestHandler) GetUsersDevices(ctx context.Context, r *http.Request) ([]string, error) {
-	token, err := getAccessToken(r)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get users devices: %w", err)
-	}
-
-	client, err := rh.asClient.GetUserDevices(kitNetGrpc.CtxWithToken(ctx, token), &pbAS.GetUserDevicesRequest{})
-	if err != nil {
-		return nil, status.Errorf(status.Convert(err).Code(), "cannot get users devices: %v", err)
-	}
-	defer client.CloseSend()
-	userDevices := make([]string, 0, 32)
-	for {
-		userDevice, err := client.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, status.Errorf(status.Convert(err).Code(), "cannot get users devices: %v", err)
-		}
-		userDevices = append(userDevices, userDevice.GetDeviceId())
-	}
-	return userDevices, nil
-}
-
 func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Request) (int, error) {
-	userDevices, err := rh.GetUsersDevices(r.Context(), r)
-	if err != nil {
-		return http.StatusUnauthorized, err
-	}
-	if len(userDevices) == 0 {
-		return http.StatusForbidden, fmt.Errorf("cannot get user devices: empty")
-	}
-
-	token, userID, err := parseAuth(r.Header.Get("Authorization"))
+	_, userID, err := parseAuth(r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
@@ -63,22 +26,19 @@ func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Requ
 		return code, err
 	}
 
-	subscription := store.DevicesSubscription{
-		Subscription: s,
-		AccessToken:  token,
-	}
-
-	err = rh.store.SaveDevicesSubscription(r.Context(), subscription)
+	err = rh.subMgr.Store(r.Context(), s)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot save subscription: %w", err)
+		return http.StatusBadRequest, fmt.Errorf("cannot store subscription: %w", err)
 	}
-
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
-		SubscriptionID: subscription.ID,
+		SubscriptionID: s.ID,
 	}, http.StatusCreated)
 	if err != nil {
-		rh.store.PopSubscription(r.Context(), subscription.ID)
 		return http.StatusBadRequest, fmt.Errorf("cannot write response: %w", err)
+	}
+	err = rh.subMgr.Connect(s.ID)
+	if err != nil {
+		log.Errorf("cannot store subscription: %v", err)
 	}
 
 	return http.StatusOK, nil

@@ -1,37 +1,28 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 	"github.com/go-ocf/kit/log"
 	"github.com/gorilla/mux"
 )
 
-func (rh *RequestHandler) unsubscribeFromDevice(w http.ResponseWriter, r *http.Request) (int, error) {
-	routeVars := mux.Vars(r)
-	deviceID := routeVars[deviceIDKey]
-	subscriptionID := routeVars[subscriptionIDKey]
-	err := rh.IsAuthorized(r.Context(), r, deviceID)
+func (rh *RequestHandler) unsubscribe(w http.ResponseWriter, r *http.Request) (int, error) {
+	_, userID, err := parseAuth(r.Header.Get("Authorization"))
 	if err != nil {
-		return http.StatusUnauthorized, err
+		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
+	routeVars := mux.Vars(r)
+	subscriptionID := routeVars[subscriptionIDKey]
 
-	sub, err := rh.store.PopSubscription(r.Context(), subscriptionID)
+	sub, err := rh.subMgr.PullOut(r.Context(), subscriptionID, userID)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
+	w.WriteHeader(http.StatusAccepted)
 
-	err = rh.resourceProjection.Unregister(deviceID)
-	if err != nil {
-		log.Errorf("cannot unregister resource projection for %v: %v", deviceID, err)
-	}
-
-	_, err = emitEvent(r.Context(), events.EventType_SubscriptionCanceled, sub, func(ctx context.Context, subscriptionID string) (uint64, error) {
-		return sub.SequenceNumber, nil
-	}, nil)
+	err = cancelSubscription(r.Context(), sub)
 	if err != nil {
 		log.Errorf("cannot emit event: %v", err)
 	}
@@ -44,10 +35,8 @@ func (rh *RequestHandler) unsubscribeFromDevice(w http.ResponseWriter, r *http.R
 }
 
 func (rh *RequestHandler) UnsubscribeFromDevice(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.unsubscribeFromDevice(w, r)
+	statusCode, err := rh.unsubscribe(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot unsubscribe from device: %w", err), statusCode, w)
-	} else {
-		w.WriteHeader(http.StatusAccepted)
 	}
 }

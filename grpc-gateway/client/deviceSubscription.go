@@ -70,7 +70,7 @@ func (c *Client) NewDeviceSubscription(ctx context.Context, deviceID string, han
 
 // NewDeviceSubscription creates new devices subscriptions to listen events: resource published, resource unpublished.
 // JWT token must be stored in context for grpc call.
-func NewDeviceSubscription(ctx context.Context, deviceID string, closeErrorHandler SubscriptionHandler, handle SubscriptionHandler, gwClient pb.GrpcGatewayClient) (*DeviceSubscription, error) {
+func NewDeviceSubscription(ctx context.Context, deviceID string, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*DeviceSubscription, error) {
 	var resourcePublishedHandler ResourcePublishedHandler
 	var resourceUnpublishedHandler ResourceUnpublishedHandler
 	var resourceUpdatePendingHandler ResourceUpdatePendingHandler
@@ -247,7 +247,7 @@ func (s *DeviceSubscription) runRecv() {
 			}
 		} else {
 			s.Cancel()
-			s.closeErrorHandler.Error(fmt.Errorf("unknown event %T occurs on recv resource: %+v", ev, ev))
+			s.closeErrorHandler.Error(fmt.Errorf("unknown event %T occurs on recv device events: %+v", ev, ev))
 			return
 		}
 	}

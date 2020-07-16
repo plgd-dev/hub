@@ -155,7 +155,7 @@ func getAccessToken(r *http.Request) (string, error) {
 }
 
 func retrieveWithCallback(w http.ResponseWriter, r *http.Request, callback callbackFunc) (int, error) {
-	accessToken, err := getAccessToken(r)
+	_, userID, err := parseAuth(r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusUnauthorized, err
 	}
@@ -165,7 +165,7 @@ func retrieveWithCallback(w http.ResponseWriter, r *http.Request, callback callb
 		return http.StatusBadRequest, fmt.Errorf("cannot retrieve: %w", err)
 	}
 
-	return callback(kitNetGrpc.CtxWithToken(r.Context(), accessToken), w, mux.Vars(r), getContentQueryValue(r.URL), encoder)
+	return callback(kitNetGrpc.CtxWithUserID(r.Context(), userID), w, mux.Vars(r), getContentQueryValue(r.URL), encoder)
 }
 
 func (rh *RequestHandler) RetrieveDevices(w http.ResponseWriter, r *http.Request) {

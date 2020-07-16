@@ -1,54 +1,19 @@
 package service
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/codec/json"
 	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/gofrs/uuid"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 	"github.com/gorilla/mux"
 )
-
-func (rh *RequestHandler) IsAuthorized(ctx context.Context, r *http.Request, deviceID string) error {
-	token, err := getAccessToken(r)
-	if err != nil {
-		return fmt.Errorf("cannot authorized: cannot get users devices: %w", err)
-	}
-
-	getUserDevicesClient, err := rh.asClient.GetUserDevices(kitNetGrpc.CtxWithToken(ctx, token), &pbAS.GetUserDevicesRequest{
-		DeviceIdsFilter: []string{deviceID},
-	})
-	if err != nil {
-		return fmt.Errorf("cannot authorized: cannot get users devices: %w", err)
-	}
-	defer getUserDevicesClient.CloseSend()
-	for {
-		userDevice, err := getUserDevicesClient.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("cannot authorized: cannot get users devices: %w", err)
-		}
-		if userDevice.DeviceId == deviceID {
-			return nil
-		}
-	}
-	return fmt.Errorf("cannot authorized: access denied")
-}
 
 type SubscriptionResponse struct {
 	SubscriptionID string `json:"subscriptionId"`
@@ -97,11 +62,6 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 	deviceID := routeVars[deviceIDKey]
 	href := routeVars[HrefKey]
 
-	err := rh.IsAuthorized(r.Context(), r, deviceID)
-	if err != nil {
-		return http.StatusUnauthorized, err
-	}
-
 	_, userID, err := parseAuth(r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
@@ -111,60 +71,22 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return code, err
 	}
-
-	_, err = rh.resourceProjection.Register(r.Context(), deviceID)
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot register to resource projection: %w", err)
-	}
-	resourceID := cqrsRA.MakeResourceId(deviceID, href)
-	models := rh.resourceProjection.Models(deviceID, resourceID)
-	if len(models) == 0 {
-		err = rh.resourceProjection.ForceUpdate(r.Context(), deviceID, resourceID)
-		if err != nil {
-			rh.resourceProjection.Unregister(deviceID)
-			return http.StatusBadRequest, fmt.Errorf("cannot load resource: %w", err)
-		}
-	}
-
 	s.DeviceID = deviceID
 	s.Href = href
 
-	err = rh.store.SaveSubscription(r.Context(), s)
+	err = rh.subMgr.Store(r.Context(), s)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot save subscription: %w", err)
+		return http.StatusBadRequest, fmt.Errorf("cannot store subscription: %w", err)
 	}
-
-	models = rh.resourceProjection.Models(deviceID, resourceID)
-	for _, m := range models {
-		resourceCtx := m.(*resourceCtx).Clone()
-		if resourceCtx.content.GetStatus() != pbRA.Status_OK && resourceCtx.content.GetStatus() != pbRA.Status_UNKNOWN {
-			rh.store.PopSubscription(r.Context(), s.ID)
-			rh.resourceProjection.Unregister(deviceID)
-			return statusToHttpStatus(pbGRPC.RAStatus2Status(resourceCtx.content.GetStatus())), fmt.Errorf("cannot prepare content to emit first event: %w", err)
-		}
-		rep, err := unmarshalContent(pbGRPC.RAContent2Content(resourceCtx.content.GetContent()))
-		if err != nil {
-			rh.store.PopSubscription(r.Context(), s.ID)
-			rh.resourceProjection.Unregister(deviceID)
-			return http.StatusBadRequest, fmt.Errorf("cannot prepare content to emit first event: %w", err)
-		}
-		remove, err := emitEvent(r.Context(), events.EventType_ResourceChanged, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
-		if err != nil {
-			if remove {
-				rh.resourceProjection.Unregister(deviceID)
-				rh.store.PopSubscription(r.Context(), deviceID)
-			}
-			log.Errorf("subscribeToResource: cannot emit event: %w", err)
-		}
-	}
-
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: s.ID,
 	}, http.StatusCreated)
 	if err != nil {
-		rh.store.PopSubscription(r.Context(), s.ID)
-		rh.resourceProjection.Unregister(deviceID)
 		return http.StatusBadRequest, fmt.Errorf("cannot write response: %w", err)
+	}
+	err = rh.subMgr.Connect(s.ID)
+	if err != nil {
+		log.Errorf("cannot store subscription: %v", err)
 	}
 
 	return http.StatusOK, nil

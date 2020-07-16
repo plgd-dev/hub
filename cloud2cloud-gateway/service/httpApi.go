@@ -6,25 +6,19 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 
-	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	router "github.com/gorilla/mux"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 const HrefKey = "Href"
@@ -40,14 +34,8 @@ type ListDevicesOfUserFunc func(ctx context.Context, correlationID, userID, acce
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	resourceProjection          *projectionRA.Projection
-	store                       store.Store
-	updateNotificationContainer *raCqrs.UpdateNotificationContainer
-	timeoutForRequests          time.Duration
-
-	asClient pbAS.AuthorizationServiceClient
-	raClient pbRA.ResourceAggregateClient
 	rdClient pbGRPC.GrpcGatewayClient
+	subMgr   *SubscriptionManager
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -59,22 +47,12 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 
 //NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
-	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
 	rdClient pbGRPC.GrpcGatewayClient,
-	resourceProjection *projectionRA.Projection,
-	store store.Store,
-	updateNotificationContainer *raCqrs.UpdateNotificationContainer,
-	timeoutForRequests time.Duration,
+	subMgr *SubscriptionManager,
 ) *RequestHandler {
 	return &RequestHandler{
-		asClient:                    asClient,
-		raClient:                    raClient,
-		rdClient:                    rdClient,
-		resourceProjection:          resourceProjection,
-		store:                       store,
-		updateNotificationContainer: updateNotificationContainer,
-		timeoutForRequests:          timeoutForRequests,
+		rdClient: rdClient,
+		subMgr:   subMgr,
 	}
 }
 

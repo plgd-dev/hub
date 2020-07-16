@@ -20,7 +20,6 @@ func TestInit(t *testing.T) {
 	os.Setenv("TOKEN_URL", "TOKEN_URL")
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
-	config.GoRoutinePoolSize = 1
 
 	got, err := Init(config)
 	require.NoError(t, err)

@@ -1,8 +1,6 @@
 package store
 
 import (
-	"time"
-
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 )
 
@@ -20,20 +18,10 @@ type Subscription struct {
 	CorrelationID  string // uuid
 	Type           Type
 	ContentType    string // application/json or application/vnd.ocf+cbor
-	EventTypes     []events.EventType
+	EventTypes     events.EventTypes
 	DeviceID       string // filled for device and resource events
 	Href           string // filled for resource events
 	SequenceNumber uint64
 	UserID         string
 	SigningSecret  string
-}
-
-type DevicesSubscription struct {
-	// EventTypes = [devices_registered, devices_unregistered, devices_online, devices_offline]
-	Subscription
-	AccessToken           string
-	LastDevicesRegistered events.DevicesRegistered
-	LastDevicesOnline     events.DevicesOnline
-	LastDevicesOffline    events.DevicesOffline
-	LastCheck             time.Time
 }

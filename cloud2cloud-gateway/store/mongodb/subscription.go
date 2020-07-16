@@ -40,7 +40,7 @@ type DBSub struct {
 	CorrelationID  string // uuid
 	Type           store.Type
 	ContentType    string
-	EventTypes     []events.EventType
+	EventTypes     events.EventTypes
 	DeviceID       string `bson:"deviceid"`
 	Href           string `bson:"href"`
 	SequenceNumber uint64 `bson:"sequencenumber"`

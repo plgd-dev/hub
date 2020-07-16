@@ -16,8 +16,6 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	require.NoError(t, err)
 	cfg.Service.Addr = testCfg.C2C_GW_HOST
 	cfg.JwksURL = testCfg.JWKS_URL
-	cfg.Service.AuthServerAddr = testCfg.AUTH_HOST
-	cfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	cfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
 	cfg.Service.FQDN = "cloud2cloud-gateway-" + t.Name()
 	cfg.Listen.File.DisableVerifyClientCertificate = true
