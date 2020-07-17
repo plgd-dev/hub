@@ -70,13 +70,19 @@ func (m *resourceCtx) Clone() *resourceCtx {
 func (m *resourceCtx) onResourcePublishedLocked(ctx context.Context) error {
 	log.Debugf("onResourcePublishedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	link := pb.RAResourceToProto(m.resource)
-	return m.subscriptions.OnResourcePublished(ctx, link, m.onResourcePublishedVersion)
+	return m.subscriptions.OnResourcePublished(ctx, ResourceLink{
+		link:    link,
+		version: m.onResourcePublishedVersion,
+	})
 }
 
 func (m *resourceCtx) onResourceUnpublishedLocked(ctx context.Context) error {
 	log.Debugf("onResourceUnpublishedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	link := pb.RAResourceToProto(m.resource)
-	return m.subscriptions.OnResourceUnpublished(ctx, link, m.onResourceUnpublishedVersion)
+	return m.subscriptions.OnResourceUnpublished(ctx, ResourceLink{
+		link:    link,
+		version: m.onResourceUnpublishedVersion,
+	})
 }
 
 func (m *resourceCtx) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error) error {
@@ -183,9 +189,15 @@ func (m *resourceCtx) onCloudStatusChangedLocked(ctx context.Context) error {
 		return err
 	}
 	if online {
-		return m.subscriptions.OnDeviceOnline(ctx, m.resource.GetDeviceId(), m.onResourceChangedVersion)
+		return m.subscriptions.OnDeviceOnline(ctx, DeviceIDVersion{
+			deviceID: m.resource.GetDeviceId(),
+			version:  m.onResourceChangedVersion,
+		})
 	}
-	return m.subscriptions.OnDeviceOffline(ctx, m.resource.GetDeviceId(), m.onResourceChangedVersion)
+	return m.subscriptions.OnDeviceOffline(ctx, DeviceIDVersion{
+		deviceID: m.resource.GetDeviceId(),
+		version:  m.onResourceChangedVersion,
+	})
 }
 
 func (m *resourceCtx) onResourceUpdatedLocked(ctx context.Context, updateProcessed []raEvents.ResourceUpdated) error {

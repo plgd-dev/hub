@@ -6,25 +6,19 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 
-	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
 	router "github.com/gorilla/mux"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
 )
 
 const HrefKey = "Href"
@@ -40,14 +34,9 @@ type ListDevicesOfUserFunc func(ctx context.Context, correlationID, userID, acce
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	resourceProjection          *projectionRA.Projection
-	store                       store.Store
-	updateNotificationContainer *raCqrs.UpdateNotificationContainer
-	timeoutForRequests          time.Duration
-
-	asClient pbAS.AuthorizationServiceClient
-	raClient pbRA.ResourceAggregateClient
-	rdClient pbGRPC.GrpcGatewayClient
+	rdClient  pbGRPC.GrpcGatewayClient
+	subMgr    *SubscriptionManager
+	emitEvent emitEventFunc
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -59,22 +48,14 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 
 //NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
-	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
 	rdClient pbGRPC.GrpcGatewayClient,
-	resourceProjection *projectionRA.Projection,
-	store store.Store,
-	updateNotificationContainer *raCqrs.UpdateNotificationContainer,
-	timeoutForRequests time.Duration,
+	subMgr *SubscriptionManager,
+	emitEvent emitEventFunc,
 ) *RequestHandler {
 	return &RequestHandler{
-		asClient:                    asClient,
-		raClient:                    raClient,
-		rdClient:                    rdClient,
-		resourceProjection:          resourceProjection,
-		store:                       store,
-		updateNotificationContainer: updateNotificationContainer,
-		timeoutForRequests:          timeoutForRequests,
+		rdClient:  rdClient,
+		subMgr:    subMgr,
+		emitEvent: emitEvent,
 	}
 }
 
@@ -123,15 +104,16 @@ func getResponseWriterEncoder(accept []string) (responseWriterEncoderFunc, error
 	return nil, fmt.Errorf("invalid accept header(%v)", accept)
 }
 
-func getEncoder(contentType string) (func(v interface{}) ([]byte, error), error) {
-	switch contentType {
-	case events.ContentType_JSON:
-		return json.Encode, nil
-	case events.ContentType_VNDOCFCBOR:
-		return cbor.Encode, nil
+func getEncoder(accept []string) (func(v interface{}) ([]byte, error), string, error) {
+	for _, v := range accept {
+		switch v {
+		case events.ContentType_JSON:
+			return json.Encode, events.ContentType_JSON, nil
+		case events.ContentType_VNDOCFCBOR:
+			return cbor.Encode, events.ContentType_VNDOCFCBOR, nil
+		}
 	}
-
-	return nil, fmt.Errorf("invalid %v header(%v)", events.ContentTypeKey, contentType)
+	return nil, "", fmt.Errorf("invalid %v header(%v)", events.AcceptKey, accept)
 }
 
 func makeHref(path []string) string {
@@ -196,25 +178,23 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// health check
 	r.HandleFunc("/", healthCheck).Methods("GET")
 
-	s := r.PathPrefix(uri.Devices).Subrouter()
-
 	// retrieve all devices
-	s.HandleFunc("", requestHandler.RetrieveDevices).Methods("GET")
+	r.HandleFunc(uri.Devices, requestHandler.RetrieveDevices).Methods("GET")
 
 	// devices subscription
-	s.HandleFunc("/subscriptions", requestHandler.SubscribeToDevices).Methods("POST")
-	s.HandleFunc("/subscriptions/{"+subscriptionIDKey+"}", requestHandler.RetrieveDevicesSubscription).Methods("GET")
-	s.HandleFunc("/subscriptions/{"+subscriptionIDKey+"}", requestHandler.UnsubscribeFromDevices).Methods("DELETE")
+	r.HandleFunc(uri.DevicesSubscriptions, requestHandler.SubscribeToDevices).Methods("POST")
+	r.HandleFunc(uri.DevicesSubscription, requestHandler.RetrieveDevicesSubscription).Methods("GET")
+	r.HandleFunc(uri.DevicesSubscription, requestHandler.UnsubscribeFromDevices).Methods("DELETE")
 
 	// retrieve device
-	s1 := s.PathPrefix("/").Subrouter()
-	s1.HandleFunc("/{"+deviceIDKey+"}", requestHandler.RetrieveDevice).Methods("GET")
+	r.HandleFunc(uri.Device, requestHandler.RetrieveDevice).Methods("GET")
 
 	// device subscription
-	s1.HandleFunc("/{"+deviceIDKey+"}/subscriptions", requestHandler.SubscribeToDevice).Methods("POST")
-	s1.HandleFunc("/{"+deviceIDKey+"}/subscriptions/{"+subscriptionIDKey+"}", requestHandler.RetrieveDeviceSubscription).Methods("GET")
-	s1.HandleFunc("/{"+deviceIDKey+"}/subscriptions/{"+subscriptionIDKey+"}", requestHandler.UnsubscribeFromDevice).Methods("DELETE")
+	r.HandleFunc(uri.DeviceSubscriptions, requestHandler.SubscribeToDevice).Methods("POST")
+	r.HandleFunc(uri.DeviceSubscription, requestHandler.RetrieveDeviceSubscription).Methods("GET")
+	r.HandleFunc(uri.DeviceSubscription, requestHandler.UnsubscribeFromDevice).Methods("DELETE")
 
+	s1 := r.PathPrefix(uri.Device).Subrouter()
 	// resource subscription
 	s1.MatcherFunc(func(r *http.Request, rm *router.RouteMatch) bool {
 		paths := splitDevicePath(r.RequestURI)

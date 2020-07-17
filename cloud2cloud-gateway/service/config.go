@@ -12,13 +12,12 @@ import (
 //Config represent application configuration
 type Config struct {
 	grpc.Config
-	AuthServerAddr        string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
-	ResourceAggregateAddr string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
 	ResourceDirectoryAddr string         `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
 	FQDN                  string         `envconfig:"FQDN" default:"cloud2cloud.pluggedin.cloud"`
-	DevicesCheckInterval  time.Duration  `envconfig:"ALL_DEVICES_CHECK_INTERVAL" default:"3s"`
-	TimeoutForRequests    time.Duration  `envconfig:"TIMEOUT_FOR_REQUESTS"  default:"10s"`
+	ReconnectInterval     time.Duration  `envconfig:"RECONNECT_INTERVAL" default:"10s"`
+	JwksURL               string         `envconfig:"JWKS_URL"`
 	OAuth                 manager.Config `envconfig:"OAUTH"`
+	EmitEventTimeout      time.Duration  `envconfig:"EMIT_EVENT_TIMEOUT" default:"5s"`
 }
 
 //String return string representation of Config

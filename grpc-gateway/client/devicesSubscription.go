@@ -13,36 +13,32 @@ import (
 // DeviceOnlineHandler handler of events.
 type DeviceOnlineHandler = interface {
 	HandleDeviceOnline(ctx context.Context, val *pb.Event_DeviceOnline) error
-	SubscriptionHandler
 }
 
 // DeviceOfflineHandler handler of events.
 type DeviceOfflineHandler = interface {
 	HandleDeviceOffline(ctx context.Context, val *pb.Event_DeviceOffline) error
-	SubscriptionHandler
 }
 
 // DeviceRegisteredHandler handler of events.
 type DeviceRegisteredHandler = interface {
 	HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error
-	SubscriptionHandler
 }
 
 // DeviceUnregisteredHandler handler of events.
 type DeviceUnregisteredHandler = interface {
 	HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error
-	SubscriptionHandler
 }
 
 // DevicesSubscription subscription.
 type DevicesSubscription struct {
 	client                    pb.GrpcGateway_SubscribeForEventsClient
 	subscriptionID            string
-	handle                    SubscriptionHandler
 	deviceOnlineHandler       DeviceOnlineHandler
 	deviceOfflineHandler      DeviceOfflineHandler
 	deviceRegisteredHandler   DeviceRegisteredHandler
 	deviceUnregisteredHandler DeviceUnregisteredHandler
+	closeErrorHandler         SubscriptionHandler
 
 	wait     func()
 	canceled uint32
@@ -51,6 +47,12 @@ type DevicesSubscription struct {
 // NewDevicesSubscription creates new devices subscriptions to listen events: device online, device offline, device registered, device unregistered.
 // JWT token must be stored in context for grpc call.
 func (c *Client) NewDevicesSubscription(ctx context.Context, handle SubscriptionHandler) (*DevicesSubscription, error) {
+	return NewDevicesSubscription(ctx, handle, handle, c.gateway)
+}
+
+// NewDevicesSubscription creates new devices subscriptions to listen events: device online, device offline, device registered, device unregistered.
+// JWT token must be stored in context for grpc call.
+func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*DevicesSubscription, error) {
 	var deviceOnlineHandler DeviceOnlineHandler
 	var deviceOfflineHandler DeviceOfflineHandler
 	var deviceRegisteredHandler DeviceRegisteredHandler
@@ -74,9 +76,9 @@ func (c *Client) NewDevicesSubscription(ctx context.Context, handle Subscription
 	}
 
 	if deviceOnlineHandler == nil && deviceOfflineHandler == nil && deviceRegisteredHandler == nil && deviceUnregisteredHandler == nil {
-		return nil, fmt.Errorf("invalid handler - it's supports: ResourceContentChangedHandler")
+		return nil, fmt.Errorf("invalid handler - it's supports: DeviceOnlineHandler, DeviceOfflineHandler, DeviceRegisteredHandler, DeviceUnregisteredHandler")
 	}
-	client, err := c.gateway.SubscribeForEvents(ctx)
+	client, err := gwClient.SubscribeForEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +108,7 @@ func (c *Client) NewDevicesSubscription(ctx context.Context, handle Subscription
 	var wg sync.WaitGroup
 	sub := &DevicesSubscription{
 		client:                    client,
-		handle:                    handle,
+		closeErrorHandler:         closeErrorHandler,
 		subscriptionID:            ev.GetSubscriptionId(),
 		deviceOnlineHandler:       deviceOnlineHandler,
 		deviceOfflineHandler:      deviceOfflineHandler,
@@ -144,20 +146,22 @@ func (s *DevicesSubscription) runRecv() {
 	for {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
-			s.handle.OnClose()
+			s.Cancel()
+			s.closeErrorHandler.OnClose()
 			return
 		}
 		if err != nil {
-			s.handle.Error(err)
+			s.Cancel()
+			s.closeErrorHandler.Error(err)
 			return
 		}
 		cancel := ev.GetSubscriptionCanceled()
 		if cancel != nil {
 			reason := cancel.GetReason()
 			if reason == "" {
-				s.handle.OnClose()
+				s.closeErrorHandler.OnClose()
 			}
-			s.handle.Error(fmt.Errorf(reason))
+			s.closeErrorHandler.Error(fmt.Errorf(reason))
 			return
 		}
 
@@ -165,33 +169,33 @@ func (s *DevicesSubscription) runRecv() {
 			err = s.deviceOnlineHandler.HandleDeviceOnline(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
-				s.handle.Error(err)
+				s.closeErrorHandler.Error(err)
 				return
 			}
 		} else if ct := ev.GetDeviceOffline(); ct != nil {
 			err = s.deviceOfflineHandler.HandleDeviceOffline(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
-				s.handle.Error(err)
+				s.closeErrorHandler.Error(err)
 				return
 			}
 		} else if ct := ev.GetDeviceRegistered(); ct != nil {
 			err = s.deviceRegisteredHandler.HandleDeviceRegistered(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
-				s.handle.Error(err)
+				s.closeErrorHandler.Error(err)
 				return
 			}
 		} else if ct := ev.GetDeviceUnregistered(); ct != nil {
 			err = s.deviceUnregisteredHandler.HandleDeviceUnregistered(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
-				s.handle.Error(err)
+				s.closeErrorHandler.Error(err)
 				return
 			}
 		} else {
 			s.Cancel()
-			s.handle.Error(fmt.Errorf("unknown event occurs on recv resource content changed: %+v", ev))
+			s.closeErrorHandler.Error(fmt.Errorf("unknown event occurs %T on recv devices events: %+v", ev, ev))
 			return
 		}
 	}

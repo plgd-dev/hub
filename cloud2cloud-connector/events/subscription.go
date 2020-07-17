@@ -24,6 +24,17 @@ var AllDevicesEvents = []EventType{EventType_DevicesOnline, EventType_DevicesOff
 var AllDeviceEvents = []EventType{EventType_ResourcesPublished, EventType_ResourcesUnpublished}
 var AllResourceEvents = []EventType{EventType_ResourceChanged}
 
+type EventTypes []EventType
+
+func (e EventTypes) Has(ev EventType) bool {
+	for _, v := range e {
+		if v == ev {
+			return true
+		}
+	}
+	return false
+}
+
 type SubscriptionRequest struct {
 	URL           string      `json:"eventsUrl"`
 	EventTypes    []EventType `json:"eventTypes"`

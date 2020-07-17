@@ -13,8 +13,8 @@ import (
 )
 
 type DeviceResourceObservationEvent struct {
-	Resource schema.ResourceLink `json:"resource"`
-	Event    string              `json:"event"`
+	Resources []schema.ResourceLink `json:"resources"`
+	Event     string                `json:"event"`
 }
 
 func (requestHandler *RequestHandler) startDeviceResourcesObservation(w http.ResponseWriter, r *http.Request) {
@@ -64,14 +64,13 @@ func ToDeviceResourcesObservationEvent(e client.DeviceResourcesObservationEvent_
 }
 
 func (d *deviceResourcesObservation) Handle(ctx context.Context, event client.DeviceResourcesObservationEvent) error {
+	links := make([]schema.ResourceLink, 0, 32)
+	for _, l := range event.Links {
+		links = append(links, l.ToSchema())
+	}
 	evt := DeviceResourceObservationEvent{
-		Resource: schema.ResourceLink{
-			ResourceTypes: event.Link.GetTypes(),
-			Interfaces:    event.Link.GetInterfaces(),
-			Href:          event.Link.GetHref(),
-			DeviceID:      event.Link.GetDeviceId(),
-		},
-		Event: ToDeviceResourcesObservationEvent(event.Event),
+		Resources: links,
+		Event:     ToDeviceResourcesObservationEvent(event.Event),
 	}
 	d.Write(evt)
 	return nil

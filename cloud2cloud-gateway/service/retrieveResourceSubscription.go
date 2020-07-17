@@ -1,39 +1,23 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 
 	"github.com/gorilla/mux"
 )
 
-type retrieveResourceSubscriptionHandler struct {
-	s store.Subscription
-}
-
-func (c *retrieveResourceSubscriptionHandler) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	for iter.Next(ctx, &c.s) {
-		return nil
+func (rh *RequestHandler) retrieveSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
+	_, userID, err := parseAuth(r.Header.Get("Authorization"))
+	if err != nil {
+		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}
-	return fmt.Errorf("not found")
-}
-
-func (rh *RequestHandler) retrieveResourceSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
-	deviceID := routeVars[deviceIDKey]
 	subscriptionID := routeVars[subscriptionIDKey]
-	err := rh.IsAuthorized(r.Context(), r, deviceID)
-	if err != nil {
-		return http.StatusUnauthorized, err
-	}
 
-	res := retrieveResourceSubscriptionHandler{}
-	err = rh.store.LoadSubscriptions(r.Context(), store.SubscriptionQuery{SubscriptionID: subscriptionID}, &res)
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot load subscription %v: %w", subscriptionID, err)
+	_, ok := rh.subMgr.Load(subscriptionID, userID)
+	if !ok {
+		return http.StatusNotFound, fmt.Errorf("not found")
 	}
 
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
@@ -47,7 +31,7 @@ func (rh *RequestHandler) retrieveResourceSubscription(w http.ResponseWriter, r 
 }
 
 func (rh *RequestHandler) RetrieveResourceSubscription(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.retrieveResourceSubscription(w, r)
+	statusCode, err := rh.retrieveSubscription(w, r)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource subscription: %w", err), statusCode, w)
 	}

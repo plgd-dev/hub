@@ -50,16 +50,16 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 	wsConn := webSocketConnection(t, GetDevicesObservationUri())
 	defer closeWebSocketConnection(t, wsConn)
 	expEvt := service.DeviceEvent{
-		DeviceId: deviceID,
-		Status:   service.ToDevicesObservationEvent(client.DevicesObservationEvent_ONLINE),
+		DeviceIDs: []string{deviceID},
+		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_ONLINE),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 
 	//Second event
 	shutdownDevSim()
 	expEvt = service.DeviceEvent{
-		DeviceId: deviceID,
-		Status:   service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE),
+		DeviceIDs: []string{deviceID},
+		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 }
@@ -70,8 +70,7 @@ func testDeviceEvent(t *testing.T, conn *websocket.Conn, expect service.DeviceEv
 	evt := service.DeviceEvent{}
 	err = json.Decode(message, &evt)
 	require.NoError(t, err)
-	require.Equal(t, expect.DeviceId, evt.DeviceId)
-	require.Equal(t, expect.Status, evt.Status)
+	require.Equal(t, expect, evt)
 }
 
 func GetDevicesObservationUri() string {

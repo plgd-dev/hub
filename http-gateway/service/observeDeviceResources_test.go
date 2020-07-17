@@ -69,9 +69,9 @@ func readMessage(t *testing.T, conn *websocket.Conn, messages *sync.Map) {
 		err = json.Decode(message, &event)
 		require.NoError(t, err)
 		if event.Event == service.ToDeviceResourcesObservationEvent(client.DeviceResourcesObservationEvent_ADDED) {
-			messages.Store(event.Resource.Href, event)
+			messages.Store("added", event)
 		} else if event.Event == service.ToDeviceResourcesObservationEvent(client.DeviceResourcesObservationEvent_REMOVED) {
-			messages.Delete(event.Resource.Href)
+			messages.Delete("deleted")
 		}
 	}
 }

@@ -26,9 +26,14 @@ func (s *deviceSubscription) DeviceID() string {
 	return s.deviceEvent.GetDeviceId()
 }
 
-func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link pb.ResourceLink, version uint64) error {
-	if s.FilterByVersion(link.GetDeviceId(), link.GetHref(), "res", version) {
-		return nil
+type ResourceLink struct {
+	link    pb.ResourceLink
+	version uint64
+}
+
+func (s *deviceSubscription) IsPublishedResourceFiltered(l ResourceLink) bool {
+	if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
+		return true
 	}
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
@@ -37,21 +42,36 @@ func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link
 		}
 	}
 	if !found {
+		return true
+	}
+	return false
+}
+
+func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, links []ResourceLink) error {
+	toSend := make([]*pb.ResourceLink, 0, 32)
+	for _, l := range links {
+		if s.IsPublishedResourceFiltered(l) {
+			continue
+		}
+		link := l.link
+		toSend = append(toSend, &link)
+	}
+	if len(toSend) == 0 {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourcePublished_{
 			ResourcePublished: &pb.Event_ResourcePublished{
-				Link: &link,
+				Links: toSend,
 			},
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, link pb.ResourceLink, version uint64) error {
-	if s.FilterByVersion(link.GetDeviceId(), link.GetHref(), "res", version) {
-		return nil
+func (s *deviceSubscription) IsUnpublishedResourceFiltered(l ResourceLink) bool {
+	if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
+		return true
 	}
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
@@ -60,13 +80,28 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 		}
 	}
 	if !found {
+		return true
+	}
+	return false
+}
+
+func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, links []ResourceLink) error {
+	toSend := make([]*pb.ResourceLink, 0, 32)
+	for _, l := range links {
+		if s.IsUnpublishedResourceFiltered(l) {
+			continue
+		}
+		link := l.link
+		toSend = append(toSend, &link)
+	}
+	if len(toSend) == 0 {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUnpublished_{
 			ResourceUnpublished: &pb.Event_ResourceUnpublished{
-				Link: &link,
+				Links: toSend,
 			},
 		},
 	})
@@ -158,30 +193,35 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 
 func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
 	models := s.resourceProjection.Models(s.DeviceID(), "")
+	toSend := make([]ResourceLink, 0, 32)
 	for _, model := range models {
-		link, version, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, model)
+		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, model)
 		if !ok {
 			continue
 		}
-		err := s.NotifyOfPublishedResource(ctx, link, version)
-		if err != nil {
-			return fmt.Errorf("cannot send resource published: %w", err)
-		}
+		toSend = append(toSend, link)
 	}
+	err := s.NotifyOfPublishedResource(ctx, toSend)
+	if err != nil {
+		return fmt.Errorf("cannot send resource published: %w", err)
+	}
+
 	return nil
 }
 
 func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) error {
 	models := s.resourceProjection.Models(s.DeviceID(), "")
+	toSend := make([]ResourceLink, 0, 32)
 	for _, model := range models {
-		link, version, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED, model)
+		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED, model)
 		if !ok {
 			continue
 		}
-		err := s.NotifyOfUnpublishedResource(ctx, link, version)
-		if err != nil {
-			return fmt.Errorf("cannot send resource published: %w", err)
-		}
+		toSend = append(toSend, link)
+	}
+	err := s.NotifyOfUnpublishedResource(ctx, toSend)
+	if err != nil {
+		return fmt.Errorf("cannot send resource published: %w", err)
 	}
 	return nil
 }

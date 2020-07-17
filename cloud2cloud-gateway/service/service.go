@@ -5,80 +5,29 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"time"
+	"sync"
 
-	"github.com/go-ocf/cqrs/eventbus"
-	cqrsEventStore "github.com/go-ocf/cqrs/eventstore"
 	"github.com/go-ocf/kit/log"
+	"github.com/go-ocf/kit/security/oauth/manager"
 
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
 	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 )
 
 //Server handle HTTP request
 type Server struct {
-	server              *http.Server
-	cfg                 Config
-	handler             *RequestHandler
-	ln                  net.Listener
-	devicesSubscription *devicesSubscription
-	raConn              *grpc.ClientConn
-	rdConn              *grpc.ClientConn
-	asConn              *grpc.ClientConn
-}
-
-type ResourceSubscriptionLoader struct {
-	projection *projectionRA.Projection
-}
-
-func newResourceSubscriptionLoader(projection *projectionRA.Projection) *ResourceSubscriptionLoader {
-	return &ResourceSubscriptionLoader{projection: projection}
-}
-
-func (l *ResourceSubscriptionLoader) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	for {
-		var s store.Subscription
-		if !iter.Next(ctx, &s) {
-			break
-		}
-		_, err := l.projection.Register(ctx, s.DeviceID)
-		if err != nil {
-			log.Errorf("cannot register to resource projection for resource subscription %v: %v", s.ID, err)
-		}
-	}
-	return iter.Err()
-}
-
-type DeviceSubscriptionLoader struct {
-	resourceProjection *projectionRA.Projection
-}
-
-func newDeviceSubscriptionLoader(resourceProjection *projectionRA.Projection) *DeviceSubscriptionLoader {
-	return &DeviceSubscriptionLoader{
-		resourceProjection: resourceProjection,
-	}
-}
-
-func (l *DeviceSubscriptionLoader) Handle(ctx context.Context, iter store.SubscriptionIter) error {
-	for {
-		var s store.Subscription
-		if !iter.Next(ctx, &s) {
-			break
-		}
-		_, err := l.resourceProjection.Register(ctx, s.DeviceID)
-		if err != nil {
-			log.Errorf("cannot register to resource projection for device subscription %v: %v", s.ID, err)
-		}
-	}
-	return iter.Err()
+	server  *http.Server
+	cfg     Config
+	handler *RequestHandler
+	ln      net.Listener
+	rdConn  *grpc.ClientConn
+	cancel  context.CancelFunc
+	doneWg  *sync.WaitGroup
 }
 
 type DialCertManager = interface {
@@ -95,10 +44,7 @@ func New(
 	dialCertManager DialCertManager,
 	listenCertManager ListenCertManager,
 	authInterceptor kitNetHttp.Interceptor,
-	resourceEventStore cqrsEventStore.EventStore,
-	resourceSubscriber eventbus.Subscriber,
 	subscriptionStore store.Store,
-	goroutinePoolGo GoroutinePoolGoFunc,
 ) *Server {
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
@@ -109,61 +55,44 @@ func New(
 		log.Fatalf("cannot listen and serve: %v", err)
 	}
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
 	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
+		log.Fatalf("cannot create oauth manager: %w", err)
 	}
-	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
+	emitEvent := createEmitEventFunc(dialTLSConfig, config.EmitEventTimeout)
 
-	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	ctx, cancel := context.WithCancel(context.Background())
+	subMgr := NewSubscriptionManager(ctx, subscriptionStore, rdClient, config.ReconnectInterval, emitEvent)
+	err = subMgr.LoadSubscriptions()
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	asClient := pbAS.NewAuthorizationServiceClient(asConn)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		subMgr.Run()
+	}()
 
-	if config.DevicesCheckInterval < time.Millisecond*200 {
-		log.Fatalf("cannot create server: invalid config.DevicesCheckInterval %v", config.DevicesCheckInterval)
-	}
-
-	ctx := context.Background()
-
-	syncPoolHandler := NewGoroutinePoolHandler(goroutinePoolGo, newEventHandler(subscriptionStore, goroutinePoolGo), func(err error) { log.Errorf("%v", err) })
-	updateNotificationContainer := raCqrs.NewUpdateNotificationContainer()
-
-	resourceProjection, err := projectionRA.NewProjection(ctx, config.FQDN, resourceEventStore, resourceSubscriber, newResourceCtx(syncPoolHandler, updateNotificationContainer))
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
-
-	// load subscriptions to projection
-	err = subscriptionStore.LoadSubscriptions(ctx, store.SubscriptionQuery{Type: store.Type_Resource}, newResourceSubscriptionLoader(resourceProjection))
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
-	err = subscriptionStore.LoadSubscriptions(ctx, store.SubscriptionQuery{Type: store.Type_Device}, newDeviceSubscriptionLoader(resourceProjection))
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
-
-	requestHandler := NewRequestHandler(asClient, raClient, rdClient, resourceProjection, subscriptionStore, updateNotificationContainer, config.TimeoutForRequests)
-
-	devicesSubscription := newDevicesSubscription(requestHandler, goroutinePoolGo)
+	requestHandler := NewRequestHandler(rdClient, subMgr, emitEvent)
 
 	server := Server{
-		server:              NewHTTP(requestHandler, authInterceptor),
-		cfg:                 config,
-		handler:             requestHandler,
-		ln:                  ln,
-		devicesSubscription: devicesSubscription,
-		raConn:              raConn,
-		rdConn:              rdConn,
-		asConn:              asConn,
+		server:  NewHTTP(requestHandler, authInterceptor),
+		cfg:     config,
+		handler: requestHandler,
+		ln:      ln,
+		rdConn:  rdConn,
+		cancel:  cancel,
+		doneWg:  &wg,
 	}
 
 	return &server
@@ -171,18 +100,15 @@ func New(
 
 // Serve starts the service's HTTP server and blocks.
 func (s *Server) Serve() error {
-	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {
-		cancel()
-		s.raConn.Close()
+		s.doneWg.Wait()
 		s.rdConn.Close()
-		s.asConn.Close()
 	}()
-	go s.devicesSubscription.Serve(ctx, s.cfg.DevicesCheckInterval)
 	return s.server.Serve(s.ln)
 }
 
 // Shutdown ends serving
 func (s *Server) Shutdown() error {
+	s.cancel()
 	return s.server.Shutdown(context.Background())
 }

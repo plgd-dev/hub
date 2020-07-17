@@ -39,7 +39,6 @@ type SubscriptionHandler = interface {
 // ResourceContentChangedHandler handler of events.
 type ResourceContentChangedHandler = interface {
 	HandleResourceContentChanged(ctx context.Context, val *pb.Event_ResourceChanged) error
-	SubscriptionHandler
 }
 
 // ResourceSubscription subscription.
@@ -61,7 +60,7 @@ func (c *Client) NewResourceSubscription(ctx context.Context, resourceID pb.Reso
 
 // NewResourceSubscription creates new resource content changed subscription.
 // JWT token must be stored in context for grpc call.
-func NewResourceSubscription(ctx context.Context, resourceID pb.ResourceId, closeErrorHandler SubscriptionHandler, handle SubscriptionHandler, gwClient pb.GrpcGatewayClient) (*ResourceSubscription, error) {
+func NewResourceSubscription(ctx context.Context, resourceID pb.ResourceId, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*ResourceSubscription, error) {
 	var resourceContentChangedHandler ResourceContentChangedHandler
 	filterEvents := make([]pb.SubscribeForEvents_ResourceEventFilter_Event, 0, 1)
 	if v, ok := handle.(ResourceContentChangedHandler); ok {
@@ -168,7 +167,7 @@ func (s *ResourceSubscription) runRecv() {
 			}
 		} else {
 			s.Cancel()
-			s.closeErrorHandler.Error(fmt.Errorf("unknown event occurs on recv resource content changed: %+v", ev))
+			s.closeErrorHandler.Error(fmt.Errorf("unknown event occurs %T on recv resource events: %+v", ev, ev))
 			return
 		}
 	}

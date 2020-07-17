@@ -72,7 +72,7 @@ func NewStoreWithSession(ctx context.Context, client *mongo.Client, dbPrefix str
 	}
 
 	subCol := s.client.Database(s.DBName()).Collection(subscriptionsCName)
-	err := ensureIndex(ctx, subCol, typeQueryIndex, typeDeviceIDQueryIndex, typeResourceIDQueryIndex, devicesLastCheckKeySubscriptionQueryIndex)
+	err := ensureIndex(ctx, subCol, typeQueryIndex, typeDeviceIDQueryIndex, typeResourceIDQueryIndex)
 	if err != nil {
 		client.Disconnect(ctx)
 		return nil, fmt.Errorf("cannot ensure index for device subscription: %w", err)

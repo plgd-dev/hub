@@ -7,27 +7,20 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/panjf2000/ants"
-
 	"github.com/go-ocf/cloud/cloud2cloud-gateway/service"
 	storeMongodb "github.com/go-ocf/cloud/cloud2cloud-gateway/store/mongodb"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/go-ocf/kit/log"
 	kitNetHttp "github.com/go-ocf/kit/net/http"
 	"github.com/go-ocf/kit/security/certManager"
 )
 
 type Config struct {
-	Log               log.Config     `envconfig:"LOG"`
-	ResourceMongoDB   mongodb.Config `envconfig:"MONGODB"`
-	ResourceNats      nats.Config    `envconfig:"NATS"`
-	Service           service.Config
-	GoRoutinePoolSize int `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
-	StoreMongoDB      storeMongodb.Config
-	Dial              certManager.Config `envconfig:"DIAL"`
-	Listen            certManager.Config `envconfig:"LISTEN"`
-	JwksURL           string             `envconfig:"JWKS_URL"`
+	Log          log.Config `envconfig:"LOG"`
+	Service      service.Config
+	StoreMongoDB storeMongodb.Config
+	Dial         certManager.Config `envconfig:"DIAL"`
+	Listen       certManager.Config `envconfig:"LISTEN"`
+	JwksURL      string             `envconfig:"JWKS_URL"`
 }
 
 //String return string representation of Config
@@ -51,21 +44,6 @@ func Init(config Config) (*RefImpl, error) {
 	}
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 
-	pool, err := ants.NewPool(config.GoRoutinePoolSize)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
-	}
-
-	resourceEventstore, err := mongodb.NewEventStore(config.ResourceMongoDB, pool.Submit, mongodb.WithTLS(dialTLSConfig))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
-	}
-
-	resourceSubscriber, err := nats.NewSubscriber(config.ResourceNats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialTLSConfig))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create resource kafka subscriber %w", err)
-	}
-
 	substore, err := storeMongodb.NewStore(context.Background(), config.StoreMongoDB, storeMongodb.WithTLS(dialTLSConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb substore %w", err)
@@ -81,7 +59,7 @@ func Init(config Config) (*RefImpl, error) {
 	auth := kitNetHttp.NewInterceptor(config.JwksURL, dialCertManager.GetClientTLSConfig(), authRules)
 
 	return &RefImpl{
-		server:            service.New(config.Service, dialCertManager, listenCertManager, auth, resourceEventstore, resourceSubscriber, substore, pool.Submit),
+		server:            service.New(config.Service, dialCertManager, listenCertManager, auth, substore),
 		dialCertManager:   dialCertManager,
 		listenCertManager: listenCertManager,
 	}, nil

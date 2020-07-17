@@ -13,7 +13,7 @@ const DeviceResourcesObservationEvent_ADDED DeviceResourcesObservationEvent_type
 const DeviceResourcesObservationEvent_REMOVED DeviceResourcesObservationEvent_type = 1
 
 type DeviceResourcesObservationEvent struct {
-	Link  pb.ResourceLink
+	Links []*pb.ResourceLink
 	Event DeviceResourcesObservationEvent_type
 }
 
@@ -30,14 +30,14 @@ type deviceResourcesObservation struct {
 
 func (o *deviceResourcesObservation) HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error {
 	return o.h.Handle(ctx, DeviceResourcesObservationEvent{
-		Link:  *val.GetLink(),
+		Links: val.GetLinks(),
 		Event: DeviceResourcesObservationEvent_ADDED,
 	})
 }
 
 func (o *deviceResourcesObservation) HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error {
 	return o.h.Handle(ctx, DeviceResourcesObservationEvent{
-		Link:  *val.GetLink(),
+		Links: val.GetLinks(),
 		Event: DeviceResourcesObservationEvent_REMOVED,
 	})
 }

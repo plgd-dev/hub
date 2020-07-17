@@ -12,18 +12,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func makeOnlineOfflineRepresentation(deviceID string) interface{} {
-	return []map[string]string{{"di": deviceID}}
-}
-
 func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Request) (int, error) {
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
-
-	err := rh.IsAuthorized(r.Context(), r, deviceID)
-	if err != nil {
-		return http.StatusUnauthorized, err
-	}
 
 	_, userID, err := parseAuth(r.Header.Get("Authorization"))
 	if err != nil {
@@ -38,58 +29,20 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 		return code, err
 	}
 	s.DeviceID = deviceID
-
-	_, err = rh.resourceProjection.Register(r.Context(), deviceID)
+	err = rh.subMgr.Store(r.Context(), s)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot register to resource projection: %w", err)
+		return http.StatusBadRequest, fmt.Errorf("cannot store subscription: %w", err)
 	}
-	models := rh.resourceProjection.Models(deviceID, "")
-	if len(models) == 0 {
-		err = rh.resourceProjection.ForceUpdate(r.Context(), deviceID, "")
-		if err != nil {
-			rh.resourceProjection.Unregister(deviceID)
-			return http.StatusBadRequest, fmt.Errorf("cannot load resources for device: %w", err)
-		}
-	}
-
-	err = rh.store.SaveSubscription(r.Context(), s)
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot save subscription: %w", err)
-	}
-
-	models = rh.resourceProjection.Models(deviceID, "")
-	if len(models) == 0 {
-		rh.resourceProjection.Unregister(deviceID)
-		rh.store.PopSubscription(r.Context(), s.ID)
-		return http.StatusBadRequest, fmt.Errorf("cannot load resources for device and device: %w", err)
-	}
-
-	for _, eventType := range s.EventTypes {
-		var rep interface{}
-		switch eventType {
-		case events.EventType_ResourcesPublished, events.EventType_ResourcesUnpublished:
-			rep = makeLinksRepresentation(eventType, models)
-		}
-
-		remove, err := emitEvent(r.Context(), eventType, s, rh.store.IncrementSubscriptionSequenceNumber, rep)
-		if err != nil {
-			if remove {
-				rh.resourceProjection.Unregister(deviceID)
-				rh.store.PopSubscription(r.Context(), s.ID)
-			}
-			log.Errorf("subscribeToDevice: cannot emit event: %v", err)
-		}
-	}
-
 	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: s.ID,
 	}, http.StatusCreated)
 	if err != nil {
-		rh.resourceProjection.Unregister(deviceID)
-		rh.store.PopSubscription(r.Context(), s.ID)
 		return http.StatusBadRequest, fmt.Errorf("cannot write response: %w", err)
 	}
-
+	err = rh.subMgr.Connect(s.ID)
+	if err != nil {
+		log.Errorf("cannot store subscription: %v", err)
+	}
 	return http.StatusOK, nil
 }
 

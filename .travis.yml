@@ -1,7 +1,7 @@
 language: generic
-
+dist: bionic
 services:
-  - docker
+  - docker-bionic
 
 jobs:
   include:

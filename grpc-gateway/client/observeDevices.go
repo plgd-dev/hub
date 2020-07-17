@@ -15,8 +15,8 @@ const DevicesObservationEvent_REGISTERED DevicesObservationEvent_type = 2
 const DevicesObservationEvent_UNREGISTERED DevicesObservationEvent_type = 3
 
 type DevicesObservationEvent struct {
-	DeviceID string
-	Event    DevicesObservationEvent_type
+	DeviceIDs []string
+	Event     DevicesObservationEvent_type
 }
 
 type DevicesObservationHandler = interface {
@@ -32,29 +32,29 @@ type devicesObservation struct {
 
 func (o *devicesObservation) HandleDeviceOnline(ctx context.Context, val *pb.Event_DeviceOnline) error {
 	return o.h.Handle(ctx, DevicesObservationEvent{
-		DeviceID: val.DeviceId,
-		Event:    DevicesObservationEvent_ONLINE,
+		DeviceIDs: val.GetDeviceIds(),
+		Event:     DevicesObservationEvent_ONLINE,
 	})
 }
 
 func (o *devicesObservation) HandleDeviceOffline(ctx context.Context, val *pb.Event_DeviceOffline) error {
 	return o.h.Handle(ctx, DevicesObservationEvent{
-		DeviceID: val.DeviceId,
-		Event:    DevicesObservationEvent_OFFLINE,
+		DeviceIDs: val.GetDeviceIds(),
+		Event:     DevicesObservationEvent_OFFLINE,
 	})
 }
 
 func (o *devicesObservation) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
 	return o.h.Handle(ctx, DevicesObservationEvent{
-		DeviceID: val.DeviceId,
-		Event:    DevicesObservationEvent_REGISTERED,
+		DeviceIDs: val.GetDeviceIds(),
+		Event:     DevicesObservationEvent_REGISTERED,
 	})
 }
 
 func (o *devicesObservation) HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error {
 	return o.h.Handle(ctx, DevicesObservationEvent{
-		DeviceID: val.DeviceId,
-		Event:    DevicesObservationEvent_UNREGISTERED,
+		DeviceIDs: val.GetDeviceIds(),
+		Event:     DevicesObservationEvent_UNREGISTERED,
 	})
 }
 
