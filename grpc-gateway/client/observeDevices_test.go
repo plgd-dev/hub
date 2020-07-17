@@ -38,10 +38,23 @@ func TestObserveDevices(t *testing.T) {
 		DeviceIDs: []string{deviceID},
 		Event:     client.DevicesObservationEvent_REGISTERED,
 	}, res)
+
+	res = <-h.res
+	require.Equal(t, client.DevicesObservationEvent{
+		DeviceIDs: nil,
+		Event:     client.DevicesObservationEvent_UNREGISTERED,
+	}, res)
+
 	res = <-h.res
 	require.Equal(t, client.DevicesObservationEvent{
 		DeviceIDs: []string{deviceID},
 		Event:     client.DevicesObservationEvent_ONLINE,
+	}, res)
+
+	res = <-h.res
+	require.Equal(t, client.DevicesObservationEvent{
+		DeviceIDs: nil,
+		Event:     client.DevicesObservationEvent_OFFLINE,
 	}, res)
 
 	shutdownDevSim()
