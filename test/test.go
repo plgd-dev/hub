@@ -242,17 +242,19 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 	require.Equal(t, expectedEvent, ev)
 
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOnline_{
-			DeviceOnline: &pb.Event_DeviceOnline{
-				DeviceIds: []string{deviceID},
-			},
-		},
+	for {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		var endLoop bool
+		for _, ID := range ev.GetDeviceOnline().GetDeviceIds() {
+			if ID == deviceID {
+				endLoop = true
+			}
+		}
+		if endLoop {
+			break
+		}
 	}
-	require.Equal(t, expectedEvent, ev)
 
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "testToken",
