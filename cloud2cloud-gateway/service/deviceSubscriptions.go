@@ -11,7 +11,8 @@ import (
 )
 
 type deviceSubsciptionHandler struct {
-	subData *SubscriptionData
+	subData   *SubscriptionData
+	emitEvent emitEventFunc
 }
 
 func fixResourceLink(r schema.ResourceLink) schema.ResourceLink {
@@ -31,7 +32,7 @@ func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, 
 	if len(toSend) == 0 {
 		return nil
 	}
-	remove, err := emitEvent(ctx, events.EventType_ResourcesPublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
+	remove, err := h.emitEvent(ctx, events.EventType_ResourcesPublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
 	if err != nil {
 		log.Errorf("deviceSubsciptionHandler.HandleResourcePublished: cannot emit event: %v", err)
 	}
@@ -52,7 +53,7 @@ func (h *deviceSubsciptionHandler) HandleResourceUnpublished(ctx context.Context
 	if len(toSend) == 0 {
 		return nil
 	}
-	remove, err := emitEvent(ctx, events.EventType_ResourcesUnpublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
+	remove, err := h.emitEvent(ctx, events.EventType_ResourcesUnpublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
 	if err != nil {
 		log.Errorf("deviceSubsciptionHandler.HandleResourceUnpublished: cannot emit event: %v", err)
 	}

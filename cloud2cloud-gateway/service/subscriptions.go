@@ -48,9 +48,10 @@ func (s *SubscriptionData) Store(sub Subscription) {
 	s.sub = sub
 }
 
-func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, closeEventHandler *closeEventHandler) (Subscription, error) {
+func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
 	devsHandler := devicesSubsciptionHandler{
-		subData: s,
+		subData:   s,
+		emitEvent: emitEvent,
 	}
 	var eventHandler interface{}
 	switch {
@@ -114,9 +115,10 @@ func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, closeE
 	return client.NewDevicesSubscription(ctx, closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) createResourceSubscription(ctx context.Context, closeEventHandler *closeEventHandler) (Subscription, error) {
+func (s *SubscriptionData) createResourceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
 	resHandler := resourceSubsciptionHandler{
-		subData: s,
+		subData:   s,
+		emitEvent: emitEvent,
 	}
 	var eventHandler interface{}
 	switch {
@@ -131,9 +133,10 @@ func (s *SubscriptionData) createResourceSubscription(ctx context.Context, close
 	}, closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, closeEventHandler *closeEventHandler) (Subscription, error) {
+func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
 	devHandler := deviceSubsciptionHandler{
-		subData: s,
+		subData:   s,
+		emitEvent: emitEvent,
 	}
 	var eventHandler interface{}
 	switch {
@@ -153,7 +156,7 @@ func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, closeEv
 	return client.NewDeviceSubscription(ctx, s.data.DeviceID, closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) Connect(ctx context.Context, deleteSub func(ctx context.Context, subID, userID string) (store.Subscription, error)) error {
+func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID, userID string) (store.Subscription, error)) error {
 	if s.Subscription() != nil {
 		return fmt.Errorf("is already connected")
 	}
@@ -161,6 +164,7 @@ func (s *SubscriptionData) Connect(ctx context.Context, deleteSub func(ctx conte
 		ctx:       ctx,
 		deleteSub: deleteSub,
 		data:      s,
+		emitEvent: emitEvent,
 	}
 
 	ctx = kitNetGrpc.CtxWithUserID(ctx, s.Data().UserID)
@@ -168,17 +172,17 @@ func (s *SubscriptionData) Connect(ctx context.Context, deleteSub func(ctx conte
 	var sub Subscription
 	switch s.data.Type {
 	case store.Type_Devices:
-		sub, err = s.createDevicesSubscription(ctx, &closeEventHandler)
+		sub, err = s.createDevicesSubscription(ctx, emitEvent, &closeEventHandler)
 		if err != nil {
 			return err
 		}
 	case store.Type_Device:
-		sub, err = s.createDeviceSubscription(ctx, &closeEventHandler)
+		sub, err = s.createDeviceSubscription(ctx, emitEvent, &closeEventHandler)
 		if err != nil {
 			return err
 		}
 	case store.Type_Resource:
-		sub, err = s.createResourceSubscription(ctx, &closeEventHandler)
+		sub, err = s.createResourceSubscription(ctx, emitEvent, &closeEventHandler)
 		if err != nil {
 			return err
 		}
@@ -202,6 +206,7 @@ func (s *SubscriptionData) IncrementSequenceNumber(ctx context.Context) (uint64,
 
 type closeEventHandler struct {
 	ctx       context.Context
+	emitEvent emitEventFunc
 	deleteSub func(ctx context.Context, subID, userID string) (store.Subscription, error)
 	data      *SubscriptionData
 }
@@ -220,7 +225,7 @@ func (h *closeEventHandler) Error(err error) {
 	if !strings.Contains(err.Error(), "transport is closing") {
 		sub, errSub := h.deleteSub(h.ctx, data.ID, data.UserID)
 		if errSub == nil {
-			cancelSubscription(h.ctx, sub)
+			cancelSubscription(h.ctx, h.emitEvent, sub)
 		}
 		return
 	}
@@ -232,15 +237,17 @@ type SubscriptionManager struct {
 	store             store.Store
 	gwClient          pb.GrpcGatewayClient
 	reconnectInterval time.Duration
+	emitEvent         emitEventFunc
 }
 
-func NewSubscriptionManager(ctx context.Context, store store.Store, gwClient pb.GrpcGatewayClient, reconnectInterval time.Duration) *SubscriptionManager {
+func NewSubscriptionManager(ctx context.Context, store store.Store, gwClient pb.GrpcGatewayClient, reconnectInterval time.Duration, emitEvent emitEventFunc) *SubscriptionManager {
 	return &SubscriptionManager{
 		store:             store,
 		reconnectInterval: reconnectInterval,
 		subscriptions:     kitSync.NewMap(),
 		gwClient:          gwClient,
 		ctx:               ctx,
+		emitEvent:         emitEvent,
 	}
 }
 
@@ -290,7 +297,7 @@ func (s *SubscriptionManager) Connect(ID string) error {
 			return fmt.Errorf("already connected")
 		}
 	}
-	return sub.Connect(s.ctx, s.PullOut)
+	return sub.Connect(s.ctx, s.emitEvent, s.PullOut)
 }
 
 func (s *SubscriptionManager) Store(ctx context.Context, sub store.Subscription) error {
@@ -315,7 +322,7 @@ func (s *SubscriptionManager) Load(ID, userID string) (store.Subscription, bool)
 	return data, true
 }
 
-func cancelSubscription(ctx context.Context, sub store.Subscription) error {
+func cancelSubscription(ctx context.Context, emitEvent emitEventFunc, sub store.Subscription) error {
 	_, err := emitEvent(ctx, events.EventType_SubscriptionCanceled, sub, func(ctx context.Context) (uint64, error) {
 		return sub.SequenceNumber, nil
 	}, nil)
@@ -372,7 +379,7 @@ func (s *SubscriptionManager) Run() {
 			wg.Add(1)
 			go func(subData *SubscriptionData) {
 				defer wg.Done()
-				err := subData.Connect(s.ctx, s.PullOut)
+				err := subData.Connect(s.ctx, s.emitEvent, s.PullOut)
 				if err != nil {
 					log.Errorf("cannot connect %+v: %v", subData.Data(), err)
 				}

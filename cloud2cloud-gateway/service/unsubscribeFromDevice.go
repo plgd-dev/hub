@@ -22,7 +22,7 @@ func (rh *RequestHandler) unsubscribe(w http.ResponseWriter, r *http.Request) (i
 	}
 	w.WriteHeader(http.StatusAccepted)
 
-	err = cancelSubscription(r.Context(), sub)
+	err = cancelSubscription(r.Context(), rh.emitEvent, sub)
 	if err != nil {
 		log.Errorf("cannot emit event: %v", err)
 	}

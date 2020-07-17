@@ -17,6 +17,7 @@ type Config struct {
 	ReconnectInterval     time.Duration  `envconfig:"RECONNECT_INTERVAL" default:"10s"`
 	JwksURL               string         `envconfig:"JWKS_URL"`
 	OAuth                 manager.Config `envconfig:"OAUTH"`
+	EmitEventTimeout      time.Duration  `envconfig:"EMIT_EVENT_TIMEOUT" default:"5s"`
 }
 
 //String return string representation of Config

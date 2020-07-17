@@ -68,9 +68,10 @@ func New(
 		log.Fatalf("cannot create server: %v", err)
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
+	emitEvent := createEmitEventFunc(dialTLSConfig, config.EmitEventTimeout)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	subMgr := NewSubscriptionManager(ctx, subscriptionStore, rdClient, config.ReconnectInterval)
+	subMgr := NewSubscriptionManager(ctx, subscriptionStore, rdClient, config.ReconnectInterval, emitEvent)
 	err = subMgr.LoadSubscriptions()
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
@@ -82,7 +83,7 @@ func New(
 		subMgr.Run()
 	}()
 
-	requestHandler := NewRequestHandler(rdClient, subMgr)
+	requestHandler := NewRequestHandler(rdClient, subMgr, emitEvent)
 
 	server := Server{
 		server:  NewHTTP(requestHandler, authInterceptor),

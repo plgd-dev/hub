@@ -10,7 +10,8 @@ import (
 )
 
 type resourceSubsciptionHandler struct {
-	subData *SubscriptionData
+	subData   *SubscriptionData
+	emitEvent emitEventFunc
 }
 
 func (h *resourceSubsciptionHandler) HandleResourceContentChanged(ctx context.Context, val *pb.Event_ResourceChanged) error {
@@ -21,7 +22,7 @@ func (h *resourceSubsciptionHandler) HandleResourceContentChanged(ctx context.Co
 	if err != nil {
 		return fmt.Errorf("resourceSubsciptionHandler.HandleResourceContentChanged: cannot emit event: cannot unmarshal content: %w", err)
 	}
-	remove, err := emitEvent(ctx, events.EventType_ResourceChanged, h.subData.Data(), h.subData.IncrementSequenceNumber, rep)
+	remove, err := h.emitEvent(ctx, events.EventType_ResourceChanged, h.subData.Data(), h.subData.IncrementSequenceNumber, rep)
 	if err != nil {
 		log.Errorf("resourceSubsciptionHandler.HandleResourceContentChanged: cannot emit event: %v", err)
 	}
