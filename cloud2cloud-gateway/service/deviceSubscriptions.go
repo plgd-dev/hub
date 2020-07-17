@@ -29,7 +29,7 @@ func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, 
 		}
 		toSend = append(toSend, fixResourceLink(l.ToSchema()))
 	}
-	if len(toSend) == 0 {
+	if len(toSend) == 0 && len(val.GetLinks()) > 0 {
 		return nil
 	}
 	remove, err := h.emitEvent(ctx, events.EventType_ResourcesPublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
@@ -50,7 +50,7 @@ func (h *deviceSubsciptionHandler) HandleResourceUnpublished(ctx context.Context
 		}
 		toSend = append(toSend, fixResourceLink(l.ToSchema()))
 	}
-	if len(toSend) == 0 {
+	if len(toSend) == 0 && len(val.GetLinks()) > 0 {
 		return nil
 	}
 	remove, err := h.emitEvent(ctx, events.EventType_ResourcesUnpublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
