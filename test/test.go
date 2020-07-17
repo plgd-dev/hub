@@ -254,7 +254,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 	require.Equal(t, expectedEvent, ev)
 
-	time.Sleep(time.Second)
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "testToken",
 		FilterBy: &pb.SubscribeForEvents_DeviceEvent{
@@ -283,16 +282,24 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.Equal(t, expectedEvent, ev)
 	subOnPublishedID := ev.SubscriptionId
 
-	expectedEvent = ResourceLinkToPublishEvent(deviceID, 0, expectedResources)
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	ev.SubscriptionId = ""
-	for _, l := range ev.GetResourcePublished().GetLinks() {
-		l.InstanceId = 0
+	expectedLinks := make(map[string]*pb.ResourceLink)
+	for _, link := range ResourceLinksToPb(deviceID, expectedResources) {
+		expectedLinks[link.GetHref()] = link
 	}
-	ev.GetResourcePublished().Links = SortResources(ev.GetResourcePublished().GetLinks())
-	expectedEvent.GetResourcePublished().Links = SortResources(expectedEvent.GetResourcePublished().GetLinks())
-	require.Equal(t, expectedEvent, ev)
+	for {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		ev.SubscriptionId = ""
+		for _, l := range ev.GetResourcePublished().GetLinks() {
+			l.InstanceId = 0
+			expLink := expectedLinks[l.GetHref()]
+			require.Equal(t, expLink, l)
+			delete(expectedLinks, l.GetHref())
+		}
+		if len(expectedLinks) == 0 {
+			break
+		}
+	}
 
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "testToken",
