@@ -55,6 +55,12 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 
+	expEvt = service.DeviceEvent{
+		DeviceIDs: nil,
+		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE),
+	}
+	testDeviceEvent(t, wsConn, expEvt)
+
 	//Second event
 	shutdownDevSim()
 	expEvt = service.DeviceEvent{

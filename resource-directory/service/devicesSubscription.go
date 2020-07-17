@@ -24,43 +24,34 @@ func NewDevicesSubscription(id, userID string, send SendEventFunc, resourceProje
 	}
 }
 
-func (s *devicesSubscription) Init(ctx context.Context, currentDevices map[string]bool) error {
+func (s *devicesSubscription) update(ctx context.Context, currentDevices map[string]bool, init bool) error {
 	registeredDevices := make([]string, 0, 32)
 	onlineDevices := make([]string, 0, 32)
 	offlineDevices := make([]string, 0, 32)
 	for deviceID := range currentDevices {
-		var notifyRegistered, notifyOnline, notifyOffline bool
-		for _, f := range s.devicesEvent.GetFilterEvents() {
-			switch f {
-			case pb.SubscribeForEvents_DevicesEventFilter_REGISTERED:
-				notifyRegistered = true
-			case pb.SubscribeForEvents_DevicesEventFilter_ONLINE:
-				notifyOnline = true
-			case pb.SubscribeForEvents_DevicesEventFilter_OFFLINE:
-				notifyOffline = true
-			}
-		}
-		if notifyRegistered {
-			registeredDevices = append(registeredDevices, deviceID)
-		}
+		registeredDevices = append(registeredDevices, deviceID)
 		_, err := s.RegisterToProjection(ctx, deviceID)
 		if err != nil {
 			log.Errorf("cannot register to resource projection for %v: %v", deviceID, err)
 			continue
 		}
-		if notifyOnline {
-			onlineDevices = append(onlineDevices, deviceID)
-		}
-		if notifyOffline {
-			offlineDevices = append(offlineDevices, deviceID)
-		}
+		onlineDevices = append(onlineDevices, deviceID)
+		offlineDevices = append(offlineDevices, deviceID)
 	}
 
-	err := s.NotifyOfRegisteredDevice(ctx, registeredDevices)
-	if err != nil {
-		return err
+	if init || len(registeredDevices) > 0 {
+		err := s.NotifyOfRegisteredDevice(ctx, registeredDevices)
+		if err != nil {
+			return err
+		}
 	}
-	err = s.initNotifyOfOnlineDevice(ctx, onlineDevices)
+	if init {
+		err := s.NotifyOfUnregisteredDevice(ctx, []string{})
+		if err != nil {
+			return err
+		}
+	}
+	err := s.initNotifyOfOnlineDevice(ctx, onlineDevices)
 	if err != nil {
 		return err
 	}
@@ -69,6 +60,10 @@ func (s *devicesSubscription) Init(ctx context.Context, currentDevices map[strin
 		return err
 	}
 	return nil
+}
+
+func (s *devicesSubscription) Init(ctx context.Context, currentDevices map[string]bool) error {
+	return s.update(ctx, currentDevices, true)
 }
 
 func (s *devicesSubscription) Update(ctx context.Context, addedDevices, removedDevices map[string]bool) error {
@@ -81,20 +76,24 @@ func (s *devicesSubscription) Update(ctx context.Context, addedDevices, removedD
 			log.Errorf("cannot unregister resource from projection for %v: %v", deviceID, err)
 		}
 	}
-	for _, f := range s.devicesEvent.GetFilterEvents() {
-		switch f {
-		case pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED:
-			err := s.NotifyOfUnregisteredDevice(ctx, toSend)
-			if err != nil {
-				return fmt.Errorf("cannot send device unregistered: %w", err)
-			}
+	if len(toSend) > 0 {
+		err := s.NotifyOfUnregisteredDevice(ctx, toSend)
+		if err != nil {
+			return fmt.Errorf("cannot send device unregistered: %w", err)
 		}
 	}
-	return s.Init(ctx, addedDevices)
+	return s.update(ctx, addedDevices, false)
 }
 
 func (s *devicesSubscription) NotifyOfRegisteredDevice(ctx context.Context, deviceIDs []string) error {
-	if len(deviceIDs) == 0 {
+	var found bool
+	for _, f := range s.devicesEvent.GetFilterEvents() {
+		switch f {
+		case pb.SubscribeForEvents_DevicesEventFilter_REGISTERED:
+			found = true
+		}
+	}
+	if !found {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -108,7 +107,14 @@ func (s *devicesSubscription) NotifyOfRegisteredDevice(ctx context.Context, devi
 }
 
 func (s *devicesSubscription) NotifyOfUnregisteredDevice(ctx context.Context, deviceIDs []string) error {
-	if len(deviceIDs) == 0 {
+	var found bool
+	for _, f := range s.devicesEvent.GetFilterEvents() {
+		switch f {
+		case pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED:
+			found = true
+		}
+	}
+	if !found {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -126,10 +132,7 @@ type DeviceIDVersion struct {
 	version  uint64
 }
 
-func (s *devicesSubscription) IsFilteredOnlineDevice(d DeviceIDVersion) bool {
-	if s.FilterByVersion(d.deviceID, cloud.StatusHref, "devStatus", d.version) {
-		return true
-	}
+func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []DeviceIDVersion) error {
 	var found bool
 	for _, f := range s.devicesEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DevicesEventFilter_ONLINE {
@@ -137,20 +140,16 @@ func (s *devicesSubscription) IsFilteredOnlineDevice(d DeviceIDVersion) bool {
 		}
 	}
 	if !found {
-		return true
+		return nil
 	}
-	return false
-}
-
-func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []DeviceIDVersion) error {
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.IsFilteredOnlineDevice(d) {
+		if s.FilterByVersion(d.deviceID, cloud.StatusHref, "devStatus", d.version) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)
 	}
-	if len(toSend) == 0 {
+	if len(toSend) == 0 && len(devs) > 0 {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -163,10 +162,7 @@ func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []D
 	})
 }
 
-func (s *devicesSubscription) IsFilteredOfflineDevice(d DeviceIDVersion) bool {
-	if s.FilterByVersion(d.deviceID, cloud.StatusHref, "devStatus", d.version) {
-		return true
-	}
+func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []DeviceIDVersion) error {
 	var found bool
 	for _, f := range s.devicesEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DevicesEventFilter_OFFLINE {
@@ -174,20 +170,16 @@ func (s *devicesSubscription) IsFilteredOfflineDevice(d DeviceIDVersion) bool {
 		}
 	}
 	if !found {
-		return true
+		return nil
 	}
-	return false
-}
-
-func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []DeviceIDVersion) error {
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.IsFilteredOfflineDevice(d) {
+		if s.FilterByVersion(d.deviceID, cloud.StatusHref, "devStatus", d.version) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)
 	}
-	if len(toSend) == 0 {
+	if len(toSend) == 0 && len(devs) > 0 {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{

@@ -495,6 +495,16 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	}
 	require.Equal(t, expectedEvent, ev)
 
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceOffline_{
+			DeviceOffline: &pb.Event_DeviceOffline{},
+		},
+	}
+	require.Equal(t, expectedEvent, ev)
+
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "testToken",
 		FilterBy: &pb.SubscribeForEvents_ResourceEvent{

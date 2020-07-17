@@ -31,10 +31,7 @@ type ResourceLink struct {
 	version uint64
 }
 
-func (s *deviceSubscription) IsPublishedResourceFiltered(l ResourceLink) bool {
-	if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
-		return true
-	}
+func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, links []ResourceLink) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED {
@@ -42,21 +39,17 @@ func (s *deviceSubscription) IsPublishedResourceFiltered(l ResourceLink) bool {
 		}
 	}
 	if !found {
-		return true
+		return nil
 	}
-	return false
-}
-
-func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, links []ResourceLink) error {
 	toSend := make([]*pb.ResourceLink, 0, 32)
 	for _, l := range links {
-		if s.IsPublishedResourceFiltered(l) {
+		if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
 			continue
 		}
 		link := l.link
 		toSend = append(toSend, &link)
 	}
-	if len(toSend) == 0 {
+	if len(toSend) == 0 && len(links) > 0 {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -69,10 +62,7 @@ func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link
 	})
 }
 
-func (s *deviceSubscription) IsUnpublishedResourceFiltered(l ResourceLink) bool {
-	if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
-		return true
-	}
+func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, links []ResourceLink) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED {
@@ -80,21 +70,17 @@ func (s *deviceSubscription) IsUnpublishedResourceFiltered(l ResourceLink) bool 
 		}
 	}
 	if !found {
-		return true
+		return nil
 	}
-	return false
-}
-
-func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, links []ResourceLink) error {
 	toSend := make([]*pb.ResourceLink, 0, 32)
 	for _, l := range links {
-		if s.IsUnpublishedResourceFiltered(l) {
+		if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
 			continue
 		}
 		link := l.link
 		toSend = append(toSend, &link)
 	}
-	if len(toSend) == 0 {
+	if len(toSend) == 0 && len(links) > 0 {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -108,9 +94,6 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 }
 
 func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
-	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetHref(), "res", version) {
-		return nil
-	}
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING {
@@ -118,6 +101,9 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 		}
 	}
 	if !found {
+		return nil
+	}
+	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -129,9 +115,6 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 }
 
 func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
-	if s.FilterByVersion(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), "res", version) {
-		return nil
-	}
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED {
@@ -139,6 +122,9 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 		}
 	}
 	if !found {
+		return nil
+	}
+	if s.FilterByVersion(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -150,9 +136,6 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 }
 
 func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
-	if s.FilterByVersion(retrievePending.GetResourceId().GetDeviceId(), retrievePending.GetResourceId().GetHref(), "res", version) {
-		return nil
-	}
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING {
@@ -160,6 +143,9 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 		}
 	}
 	if !found {
+		return nil
+	}
+	if s.FilterByVersion(retrievePending.GetResourceId().GetDeviceId(), retrievePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
@@ -171,9 +157,6 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 }
 
 func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
-	if s.FilterByVersion(retrieved.GetResourceId().GetDeviceId(), retrieved.GetResourceId().GetHref(), "res", version) {
-		return nil
-	}
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED {
@@ -181,6 +164,9 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 		}
 	}
 	if !found {
+		return nil
+	}
+	if s.FilterByVersion(retrieved.GetResourceId().GetDeviceId(), retrieved.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
 	return s.Send(ctx, pb.Event{
