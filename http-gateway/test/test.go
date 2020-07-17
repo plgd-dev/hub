@@ -161,6 +161,7 @@ func CleanUpDeviceRepresentation(v interface{}) interface{} {
 			continue
 		}
 		delete(li, "ins")
+		delete(li, "id")
 	}
 	d["links"] = links
 	return d

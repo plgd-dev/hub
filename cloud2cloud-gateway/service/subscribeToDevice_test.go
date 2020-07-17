@@ -37,7 +37,7 @@ func TestRequestHandler_SubscribeToDevice(t *testing.T) {
 	wantContentType := message.AppJSON.String()
 	wantContent := true
 	wantEventType := events.EventType_ResourcesPublished
-	wantEventContent := test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks())
+	wantEventContent := test.ResourceLinksToPb(deviceID, test.TestDevsimResources)
 	eventType := events.EventType_ResourcesPublished
 	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/subscriptions"
 	accept := message.AppJSON.String()
@@ -93,6 +93,7 @@ func TestRequestHandler_SubscribeToDevice(t *testing.T) {
 				pl.Href = "/" + strings.Join(strings.Split(pl.GetHref(), "/")[2:], "/")
 				links = append(links, &pl)
 			}
+
 			assert.Equal(t, test.SortResources(wantEventContent), test.SortResources(links))
 			w.WriteHeader(http.StatusOK)
 			eventsServer.Close()
