@@ -171,7 +171,7 @@ func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceT
 }
 
 // GetResourceLinksViaCallback returns resource links of devices. JWT token must be stored in context for grpc call.
-func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(pb.ResourceLink)) error {
+func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(*pb.ResourceLink)) error {
 	it := c.GetResourceLinksIterator(ctx, deviceIDs, resourceTypes...)
 	defer it.Close()
 	for {
@@ -179,7 +179,7 @@ func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, res
 		if !it.Next(&v) {
 			break
 		}
-		callback(v)
+		callback(&v)
 	}
 	return it.Err
 }

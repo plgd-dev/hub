@@ -62,19 +62,10 @@ func toLocalizedStrings(s []*pb.LocalizedString) []schema.LocalizedString {
 	return r
 }
 
-func toResourceLink(s pb.ResourceLink) schema.ResourceLink {
-	return schema.ResourceLink{
-		ResourceTypes: s.GetTypes(),
-		Interfaces:    s.GetInterfaces(),
-		Href:          s.GetHref(),
-		DeviceID:      s.GetDeviceId(),
-	}
-}
-
-func toResourceLinks(s []pb.ResourceLink) []schema.ResourceLink {
+func toResourceLinks(s []*pb.ResourceLink) []schema.ResourceLink {
 	r := make([]schema.ResourceLink, 0, 16)
 	for _, v := range s {
-		r = append(r, toResourceLink(v))
+		r = append(r, v.ToSchema())
 	}
 	return r
 }

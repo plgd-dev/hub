@@ -101,15 +101,16 @@ func getResponseWriterEncoder(accept []string) (responseWriterEncoderFunc, error
 	return nil, fmt.Errorf("invalid accept header(%v)", accept)
 }
 
-func getEncoder(contentType string) (func(v interface{}) ([]byte, error), error) {
-	switch contentType {
-	case events.ContentType_JSON:
-		return json.Encode, nil
-	case events.ContentType_VNDOCFCBOR:
-		return cbor.Encode, nil
+func getEncoder(accept []string) (func(v interface{}) ([]byte, error), string, error) {
+	for _, v := range accept {
+		switch v {
+		case events.ContentType_JSON:
+			return json.Encode, events.ContentType_JSON, nil
+		case events.ContentType_VNDOCFCBOR:
+			return cbor.Encode, events.ContentType_VNDOCFCBOR, nil
+		}
 	}
-
-	return nil, fmt.Errorf("invalid %v header(%v)", events.ContentTypeKey, contentType)
+	return nil, "", fmt.Errorf("invalid %v header(%v)", events.AcceptKey, accept)
 }
 
 func makeHref(path []string) string {
@@ -174,25 +175,23 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// health check
 	r.HandleFunc("/", healthCheck).Methods("GET")
 
-	s := r.PathPrefix(uri.Devices).Subrouter()
-
 	// retrieve all devices
-	s.HandleFunc("", requestHandler.RetrieveDevices).Methods("GET")
+	r.HandleFunc(uri.Devices, requestHandler.RetrieveDevices).Methods("GET")
 
 	// devices subscription
-	s.HandleFunc("/subscriptions", requestHandler.SubscribeToDevices).Methods("POST")
-	s.HandleFunc("/subscriptions/{"+subscriptionIDKey+"}", requestHandler.RetrieveDevicesSubscription).Methods("GET")
-	s.HandleFunc("/subscriptions/{"+subscriptionIDKey+"}", requestHandler.UnsubscribeFromDevices).Methods("DELETE")
+	r.HandleFunc(uri.DevicesSubscriptions, requestHandler.SubscribeToDevices).Methods("POST")
+	r.HandleFunc(uri.DevicesSubscription, requestHandler.RetrieveDevicesSubscription).Methods("GET")
+	r.HandleFunc(uri.DevicesSubscription, requestHandler.UnsubscribeFromDevices).Methods("DELETE")
 
 	// retrieve device
-	s1 := s.PathPrefix("/").Subrouter()
-	s1.HandleFunc("/{"+deviceIDKey+"}", requestHandler.RetrieveDevice).Methods("GET")
+	r.HandleFunc(uri.Device, requestHandler.RetrieveDevice).Methods("GET")
 
 	// device subscription
-	s1.HandleFunc("/{"+deviceIDKey+"}/subscriptions", requestHandler.SubscribeToDevice).Methods("POST")
-	s1.HandleFunc("/{"+deviceIDKey+"}/subscriptions/{"+subscriptionIDKey+"}", requestHandler.RetrieveDeviceSubscription).Methods("GET")
-	s1.HandleFunc("/{"+deviceIDKey+"}/subscriptions/{"+subscriptionIDKey+"}", requestHandler.UnsubscribeFromDevice).Methods("DELETE")
+	r.HandleFunc(uri.DeviceSubscriptions, requestHandler.SubscribeToDevice).Methods("POST")
+	r.HandleFunc(uri.DeviceSubscription, requestHandler.RetrieveDeviceSubscription).Methods("GET")
+	r.HandleFunc(uri.DeviceSubscription, requestHandler.UnsubscribeFromDevice).Methods("DELETE")
 
+	s1 := r.PathPrefix(uri.Device).Subrouter()
 	// resource subscription
 	s1.MatcherFunc(func(r *http.Request, rm *router.RouteMatch) bool {
 		paths := splitDevicePath(r.RequestURI)

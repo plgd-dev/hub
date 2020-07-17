@@ -13,7 +13,7 @@ type DeviceDetails struct {
 	// Device basic content(oic.wk.d) of /oic/d resource.
 	Device pb.Device
 	// Resources list of the device resources.
-	Resources []pb.ResourceLink
+	Resources []*pb.ResourceLink
 }
 
 // GetDevices retrieves device details from the client.
@@ -40,7 +40,7 @@ func (c *Client) GetDevices(
 		return nil, err
 	}
 
-	err = c.GetResourceLinksViaCallback(ctx, ids, nil, func(v pb.ResourceLink) {
+	err = c.GetResourceLinksViaCallback(ctx, ids, nil, func(v *pb.ResourceLink) {
 		d, ok := devices[v.GetDeviceId()]
 		if ok {
 			d.Resources = append(d.Resources, v)

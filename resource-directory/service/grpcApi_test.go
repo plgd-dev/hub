@@ -21,7 +21,6 @@ import (
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/schema/cloud"
 )
 
 const TEST_TIMEOUT = time.Second * 3000
@@ -318,7 +317,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				{
 					Type: &pb.Event_DeviceRegistered_{
 						DeviceRegistered: &pb.Event_DeviceRegistered{
-							DeviceId: deviceID,
+							DeviceIds: []string{deviceID},
 						},
 					},
 				},
@@ -352,7 +351,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				{
 					Type: &pb.Event_DeviceOnline_{
 						DeviceOnline: &pb.Event_DeviceOnline{
-							DeviceId: deviceID,
+							DeviceIds: []string{deviceID},
 						},
 					},
 				},
@@ -384,12 +383,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/light/1")),
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/light/2")),
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/oic/p")),
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/oic/d")),
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink(cloud.StatusHref)),
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.FindResourceLink("/oc/con")),
+				test.ResourceLinkToPublishEvent(deviceID, 0, test.GetAllBackendResourceLinks()),
 			},
 		},
 	}
@@ -423,9 +417,15 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					ev, err := client.Recv()
 					require.NoError(t, err)
 					ev.SubscriptionId = w.SubscriptionId
-					link := ev.GetResourcePublished().GetLink()
-					if link != nil {
-						link.InstanceId = 0
+					if ev.GetResourcePublished() != nil {
+						links := ev.GetResourcePublished().GetLinks()
+						for _, link := range links {
+							link.InstanceId = 0
+						}
+						ev.GetResourcePublished().Links = test.SortResources(ev.GetResourcePublished().GetLinks())
+					}
+					if w.GetResourcePublished() != nil {
+						w.GetResourcePublished().Links = test.SortResources(w.GetResourcePublished().GetLinks())
 					}
 					require.Contains(t, tt.want, ev)
 				}
@@ -489,7 +489,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		Type: &pb.Event_DeviceOnline_{
 			DeviceOnline: &pb.Event_DeviceOnline{
-				DeviceId: deviceID,
+				DeviceIds: []string{deviceID},
 			},
 		},
 	}
@@ -825,7 +825,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: ev.SubscriptionId,
 		Type: &pb.Event_DeviceOffline_{
 			DeviceOffline: &pb.Event_DeviceOffline{
-				DeviceId: deviceID,
+				DeviceIds: []string{deviceID},
 			},
 		},
 	}

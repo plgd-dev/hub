@@ -26,7 +26,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    []pb.ResourceLink
+		want    []*pb.ResourceLink
 	}{
 		{
 			name: "valid",
@@ -61,7 +61,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				links := make([]pb.ResourceLink, 0, 1)
+				links := make([]*pb.ResourceLink, 0, 1)
 				for {
 					link, err := client.Recv()
 					if err == io.EOF {
@@ -69,7 +69,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 					}
 					require.NoError(t, err)
 					link.InstanceId = 0
-					links = append(links, *link)
+					links = append(links, link)
 				}
 				require.Equal(t, tt.want, test.SortResources(links))
 			}

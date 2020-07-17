@@ -17,7 +17,7 @@ type Subscription struct {
 	URL            string // href
 	CorrelationID  string // uuid
 	Type           Type
-	ContentType    string // application/json or application/vnd.ocf+cbor
+	Accept         []string // application/json or application/vnd.ocf+cbor
 	EventTypes     events.EventTypes
 	DeviceID       string // filled for device and resource events
 	Href           string // filled for resource events

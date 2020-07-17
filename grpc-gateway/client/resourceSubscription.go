@@ -39,7 +39,6 @@ type SubscriptionHandler = interface {
 // ResourceContentChangedHandler handler of events.
 type ResourceContentChangedHandler = interface {
 	HandleResourceContentChanged(ctx context.Context, val *pb.Event_ResourceChanged) error
-	SubscriptionHandler
 }
 
 // ResourceSubscription subscription.

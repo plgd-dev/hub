@@ -10,8 +10,8 @@ import (
 )
 
 type DeviceEvent struct {
-	DeviceId string `json:"deviceId"`
-	Status   string `json:"status"`
+	DeviceIDs []string `json:"deviceIds"`
+	Status    string   `json:"status"`
 }
 
 func (requestHandler *RequestHandler) startDevicesObservation(w http.ResponseWriter, r *http.Request) {
@@ -69,8 +69,8 @@ func (d *deviceObservation) Handle(ctx context.Context, event client.DevicesObse
 		return nil
 	}
 	evt := DeviceEvent{
-		DeviceId: event.DeviceID,
-		Status:   ToDevicesObservationEvent(event.Event),
+		DeviceIDs: event.DeviceIDs,
+		Status:    ToDevicesObservationEvent(event.Event),
 	}
 	d.Write(evt)
 	return nil

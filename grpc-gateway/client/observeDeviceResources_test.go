@@ -8,7 +8,6 @@ import (
 
 	authTest "github.com/go-ocf/cloud/authorization/provider"
 	client "github.com/go-ocf/cloud/grpc-gateway/client"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	test "github.com/go-ocf/cloud/test"
 	testCfg "github.com/go-ocf/cloud/test/config"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
@@ -37,32 +36,16 @@ func TestObserveDeviceResources(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-LOOP:
-	for {
-		select {
-		case res := <-h.res:
-			t.Logf("res %+v\n", res)
-			if res.Link.GetHref() == "/oic/d" {
-				require.Equal(t, client.DeviceResourcesObservationEvent{
-					Link: pb.ResourceLink{
-						Href:       "/oic/d",
-						Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-						Interfaces: []string{"oic.if.r", "oic.if.baseline"},
-						DeviceId:   deviceID,
-						InstanceId: res.Link.GetInstanceId(),
-						Policies: &pb.Policies{
-							BitFlags: 1,
-						},
-					},
-					Event: client.DeviceResourcesObservationEvent_ADDED,
-				}, res)
-				break LOOP
-			}
-		case <-time.After(TestTimeout):
-			t.Error("timeout")
-			break LOOP
+	select {
+	case res := <-h.res:
+		t.Logf("res %+v\n", res)
+		exp := test.ResourceLinkToPublishEvent(deviceID, 0, test.GetAllBackendResourceLinks())
+		for _, link := range res.Links {
+			link.InstanceId = 0
 		}
-
+		require.Equal(t, test.SortResources(exp.GetResourcePublished().GetLinks()), test.SortResources(res.Links))
+	case <-time.After(TestTimeout):
+		t.Error("timeout")
 	}
 }
 

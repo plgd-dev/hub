@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
 
@@ -48,7 +49,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 	res.EventTypes = eventTypes
 	res.URL = req.URL
 	res.CorrelationID = r.Header.Get(events.CorrelationIDKey)
-	res.ContentType = r.Header.Get(events.ContentTypeKey)
+	res.Accept = strings.Split(r.Header.Get(events.AcceptKey), ",")
 	res.UserID = userID
 	res.SigningSecret = req.SigningSecret
 	res.Type = typ

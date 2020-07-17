@@ -13,37 +13,31 @@ import (
 // ResourcePublishedHandler handler of events.
 type ResourcePublishedHandler = interface {
 	HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error
-	SubscriptionHandler
 }
 
 // ResourceUnpublishedHandler handler of events.
 type ResourceUnpublishedHandler = interface {
 	HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error
-	SubscriptionHandler
 }
 
 // ResourceUpdatePendingHandler handler of events
 type ResourceUpdatePendingHandler = interface {
 	HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error
-	SubscriptionHandler
 }
 
 // ResourceUpdatedHandler handler of events
 type ResourceUpdatedHandler = interface {
 	HandleResourceUpdated(ctx context.Context, val *pb.Event_ResourceUpdated) error
-	SubscriptionHandler
 }
 
 // ResourceRetrievePendingHandler handler of events
 type ResourceRetrievePendingHandler = interface {
 	HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error
-	SubscriptionHandler
 }
 
 // ResourceRetrievedHandler handler of events
 type ResourceRetrievedHandler = interface {
 	HandleResourceRetrieved(ctx context.Context, val *pb.Event_ResourceRetrieved) error
-	SubscriptionHandler
 }
 
 // DeviceSubscription subscription.

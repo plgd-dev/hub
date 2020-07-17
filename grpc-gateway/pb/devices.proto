@@ -103,22 +103,22 @@ message SubscribeForEvents {
 
 message Event {
   message DeviceRegistered {
-    string device_id = 1;
+    repeated string device_ids = 1;
   }
   message DeviceUnregistered {
-    string device_id = 1;
+    repeated string device_ids = 1;
   }
   message DeviceOnline {
-    string device_id = 1;
+    repeated string device_ids = 1;
   }
   message DeviceOffline {
-    string device_id = 1;
+    repeated string device_ids = 1;
   }
   message ResourcePublished {
-    ResourceLink link = 1;
+    repeated ResourceLink links = 1;
   }
   message ResourceUnpublished {
-    ResourceLink link = 2;
+    repeated ResourceLink links = 2;
   }
   message ResourceChanged {
     ResourceId resource_id = 1;

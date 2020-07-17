@@ -7,6 +7,7 @@ import (
 	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/sdk/schema"
+	"github.com/go-ocf/sdk/schema/cloud"
 )
 
 type deviceSubsciptionHandler struct {
@@ -20,7 +21,17 @@ func fixResourceLink(r schema.ResourceLink) schema.ResourceLink {
 }
 
 func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error {
-	remove, err := emitEvent(ctx, events.EventType_ResourcesPublished, h.subData.data, h.subData.IncrementSequenceNumber, []schema.ResourceLink{fixResourceLink(val.GetLink().ToSchema())})
+	toSend := make([]schema.ResourceLink, 0, 32)
+	for _, l := range val.GetLinks() {
+		if l.GetHref() == cloud.StatusHref {
+			continue
+		}
+		toSend = append(toSend, fixResourceLink(l.ToSchema()))
+	}
+	if len(toSend) == 0 {
+		return nil
+	}
+	remove, err := emitEvent(ctx, events.EventType_ResourcesPublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
 	if err != nil {
 		log.Errorf("deviceSubsciptionHandler.HandleResourcePublished: cannot emit event: %v", err)
 	}
@@ -31,7 +42,17 @@ func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, 
 }
 
 func (h *deviceSubsciptionHandler) HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error {
-	remove, err := emitEvent(ctx, events.EventType_ResourcesUnpublished, h.subData.data, h.subData.IncrementSequenceNumber, []schema.ResourceLink{fixResourceLink(val.GetLink().ToSchema())})
+	toSend := make([]schema.ResourceLink, 0, 32)
+	for _, l := range val.GetLinks() {
+		if l.GetHref() == cloud.StatusHref {
+			continue
+		}
+		toSend = append(toSend, fixResourceLink(l.ToSchema()))
+	}
+	if len(toSend) == 0 {
+		return nil
+	}
+	remove, err := emitEvent(ctx, events.EventType_ResourcesUnpublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
 	if err != nil {
 		log.Errorf("deviceSubsciptionHandler.HandleResourceUnpublished: cannot emit event: %v", err)
 	}

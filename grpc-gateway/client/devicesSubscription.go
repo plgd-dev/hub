@@ -13,25 +13,21 @@ import (
 // DeviceOnlineHandler handler of events.
 type DeviceOnlineHandler = interface {
 	HandleDeviceOnline(ctx context.Context, val *pb.Event_DeviceOnline) error
-	SubscriptionHandler
 }
 
 // DeviceOfflineHandler handler of events.
 type DeviceOfflineHandler = interface {
 	HandleDeviceOffline(ctx context.Context, val *pb.Event_DeviceOffline) error
-	SubscriptionHandler
 }
 
 // DeviceRegisteredHandler handler of events.
 type DeviceRegisteredHandler = interface {
 	HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error
-	SubscriptionHandler
 }
 
 // DeviceUnregisteredHandler handler of events.
 type DeviceUnregisteredHandler = interface {
 	HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error
-	SubscriptionHandler
 }
 
 // DevicesSubscription subscription.
@@ -80,7 +76,7 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	}
 
 	if deviceOnlineHandler == nil && deviceOfflineHandler == nil && deviceRegisteredHandler == nil && deviceUnregisteredHandler == nil {
-		return nil, fmt.Errorf("invalid handler - it's supports: ResourceContentChangedHandler")
+		return nil, fmt.Errorf("invalid handler - it's supports: DeviceOnlineHandler, DeviceOfflineHandler, DeviceRegisteredHandler, DeviceUnregisteredHandler")
 	}
 	client, err := gwClient.SubscribeForEvents(ctx)
 	if err != nil {

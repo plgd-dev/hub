@@ -21,6 +21,7 @@ import (
 const CorrelationIDKey = "Correlation-ID"
 const SubscriptionIDKey = "Subscription-ID"
 const ContentTypeKey = "Content-Type"
+const AcceptKey = "Accept"
 const EventTypeKey = "Event-Type"
 const SequenceNumberKey = "Sequence-Number"
 const EventTimestampKey = "Event-Timestamp"
@@ -45,9 +46,6 @@ type EventHeader struct {
 
 func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 	correlationID := r.Header.Get(CorrelationIDKey)
-	if correlationID == "" {
-		return h, fmt.Errorf("invalid " + CorrelationIDKey)
-	}
 	subscriptionID := r.Header.Get(SubscriptionIDKey)
 	if subscriptionID == "" {
 		return h, fmt.Errorf("invalid " + SubscriptionIDKey)

@@ -12,8 +12,16 @@ type devicesSubsciptionHandler struct {
 	subData *SubscriptionData
 }
 
+func makeDevicesRepresentation(deviceIDs []string) []map[string]string {
+	devices := make([]map[string]string, 0, 32)
+	for _, ID := range deviceIDs {
+		devices = append(devices, map[string]string{"di": ID})
+	}
+	return devices
+}
+
 func (h *devicesSubsciptionHandler) HandleDeviceOnline(ctx context.Context, val *pb.Event_DeviceOnline) error {
-	remove, err := emitEvent(ctx, events.EventType_DevicesOnline, h.subData.data, h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceId()))
+	remove, err := emitEvent(ctx, events.EventType_DevicesOnline, h.subData.Data(), h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceIds()))
 	if err != nil {
 		log.Errorf("devicesSubsciptionHandler.HandleDeviceOnline: cannot emit event: %v", err)
 	}
@@ -24,7 +32,7 @@ func (h *devicesSubsciptionHandler) HandleDeviceOnline(ctx context.Context, val 
 }
 
 func (h *devicesSubsciptionHandler) HandleDeviceOffline(ctx context.Context, val *pb.Event_DeviceOffline) error {
-	remove, err := emitEvent(ctx, events.EventType_DevicesOffline, h.subData.data, h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceId()))
+	remove, err := emitEvent(ctx, events.EventType_DevicesOffline, h.subData.Data(), h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceIds()))
 	if err != nil {
 		log.Errorf("devicesSubsciptionHandler.HandleDeviceOffline: cannot emit event: %v", err)
 	}
@@ -35,7 +43,7 @@ func (h *devicesSubsciptionHandler) HandleDeviceOffline(ctx context.Context, val
 }
 
 func (h *devicesSubsciptionHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
-	remove, err := emitEvent(ctx, events.EventType_DevicesRegistered, h.subData.data, h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceId()))
+	remove, err := emitEvent(ctx, events.EventType_DevicesRegistered, h.subData.Data(), h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceIds()))
 	if err != nil {
 		log.Errorf("devicesSubsciptionHandler.HandleDeviceRegistered: cannot emit event: %v", err)
 	}
@@ -46,7 +54,7 @@ func (h *devicesSubsciptionHandler) HandleDeviceRegistered(ctx context.Context, 
 }
 
 func (h *devicesSubsciptionHandler) HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error {
-	remove, err := emitEvent(ctx, events.EventType_DevicesUnregistered, h.subData.data, h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceId()))
+	remove, err := emitEvent(ctx, events.EventType_DevicesUnregistered, h.subData.Data(), h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceIds()))
 	if err != nil {
 		log.Errorf("devicesSubsciptionHandler.HandleDeviceUnregistered: cannot emit event: %v", err)
 	}

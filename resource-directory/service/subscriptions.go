@@ -299,32 +299,38 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 	return nil
 }
 
-func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Event, m eventstore.Model) (pb.ResourceLink, uint64, bool) {
+func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Event, m eventstore.Model) (ResourceLink, bool) {
 	c := m.(*resourceCtx).Clone()
 	switch eventType {
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
 		if c.isPublished {
-			return pb.RAResourceToProto(c.resource), c.onResourcePublishedVersion, true
+			return ResourceLink{
+				link:    pb.RAResourceToProto(c.resource),
+				version: c.onResourcePublishedVersion,
+			}, true
 		}
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
 		if !c.isPublished {
-			return pb.RAResourceToProto(c.resource), c.onResourceUnpublishedVersion, true
+			return ResourceLink{
+				link:    pb.RAResourceToProto(c.resource),
+				version: c.onResourceUnpublishedVersion,
+			}, true
 		}
 	}
-	return pb.ResourceLink{}, 0, false
+	return ResourceLink{}, false
 }
 
-func (s *subscriptions) OnResourcePublished(ctx context.Context, link pb.ResourceLink, version uint64) error {
+func (s *subscriptions) OnResourcePublished(ctx context.Context, l ResourceLink) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
 	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, link.DeviceId) {
+		if !s.userDevicesManager.IsUserDevice(userID, l.link.DeviceId) {
 			continue
 		}
-		for _, sub := range userSubs[link.DeviceId] {
-			if err := sub.NotifyOfPublishedResource(ctx, link, version); err != nil {
+		for _, sub := range userSubs[l.link.DeviceId] {
+			if err := sub.NotifyOfPublishedResource(ctx, []ResourceLink{l}); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -335,17 +341,17 @@ func (s *subscriptions) OnResourcePublished(ctx context.Context, link pb.Resourc
 	return nil
 }
 
-func (s *subscriptions) OnResourceUnpublished(ctx context.Context, link pb.ResourceLink, version uint64) error {
+func (s *subscriptions) OnResourceUnpublished(ctx context.Context, l ResourceLink) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
 	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, link.DeviceId) {
+		if !s.userDevicesManager.IsUserDevice(userID, l.link.DeviceId) {
 			continue
 		}
-		for _, sub := range userSubs[link.DeviceId] {
-			if err := sub.NotifyOfUnpublishedResource(ctx, link, version); err != nil {
+		for _, sub := range userSubs[l.link.DeviceId] {
+			if err := sub.NotifyOfUnpublishedResource(ctx, []ResourceLink{l}); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -440,17 +446,17 @@ func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Ev
 	return nil
 }
 
-func (s *subscriptions) OnDeviceOnline(ctx context.Context, deviceID string, version uint64) error {
+func (s *subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
 	for userID, userSubs := range s.devicesSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, deviceID) {
+		if !s.userDevicesManager.IsUserDevice(userID, dev.deviceID) {
 			continue
 		}
 		for _, sub := range userSubs {
-			if err := sub.NotifyOfOnlineDevice(ctx, deviceID, version); err != nil {
+			if err := sub.NotifyOfOnlineDevice(ctx, []DeviceIDVersion{dev}); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -462,17 +468,17 @@ func (s *subscriptions) OnDeviceOnline(ctx context.Context, deviceID string, ver
 	return nil
 }
 
-func (s *subscriptions) OnDeviceOffline(ctx context.Context, deviceID string, version uint64) error {
+func (s *subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
 	for userID, userSubs := range s.devicesSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, deviceID) {
+		if !s.userDevicesManager.IsUserDevice(userID, dev.deviceID) {
 			continue
 		}
 		for _, sub := range userSubs {
-			if err := sub.NotifyOfOfflineDevice(ctx, deviceID, version); err != nil {
+			if err := sub.NotifyOfOfflineDevice(ctx, []DeviceIDVersion{dev}); err != nil {
 				errors = append(errors, err)
 			}
 		}

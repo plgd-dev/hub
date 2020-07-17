@@ -39,7 +39,7 @@ type DBSub struct {
 	URL            string
 	CorrelationID  string // uuid
 	Type           store.Type
-	ContentType    string
+	Accept         []string
 	EventTypes     events.EventTypes
 	DeviceID       string `bson:"deviceid"`
 	Href           string `bson:"href"`
@@ -54,7 +54,7 @@ func makeDBSub(sub store.Subscription) DBSub {
 		URL:            sub.URL,
 		CorrelationID:  sub.CorrelationID,
 		Type:           sub.Type,
-		ContentType:    sub.ContentType,
+		Accept:         sub.Accept,
 		EventTypes:     sub.EventTypes,
 		DeviceID:       sub.DeviceID,
 		Href:           sub.Href,
@@ -81,6 +81,13 @@ func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) er
 		return fmt.Errorf("invalid UserID")
 	}
 	switch sub.Type {
+	case store.Type_Devices:
+		if sub.DeviceID != "" {
+			return fmt.Errorf("invalid DeviceID for devices subscription type")
+		}
+		if sub.Href != "" {
+			return fmt.Errorf("invalid Href for devices subscription type")
+		}
 	case store.Type_Device:
 		if sub.DeviceID == "" {
 			return fmt.Errorf("invalid DeviceID for device subscription type")
@@ -194,7 +201,7 @@ func convertToSubscription(sub DBSub) (s store.Subscription) {
 	s.URL = sub.URL
 	s.CorrelationID = sub.CorrelationID
 	s.Type = sub.Type
-	s.ContentType = sub.ContentType
+	s.Accept = sub.Accept
 	s.EventTypes = sub.EventTypes
 	s.DeviceID = sub.DeviceID
 	s.Href = sub.Href

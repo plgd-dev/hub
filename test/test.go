@@ -248,12 +248,13 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		SubscriptionId: ev.SubscriptionId,
 		Type: &pb.Event_DeviceOnline_{
 			DeviceOnline: &pb.Event_DeviceOnline{
-				DeviceId: deviceID,
+				DeviceIds: []string{deviceID},
 			},
 		},
 	}
 	require.Equal(t, expectedEvent, ev)
 
+	time.Sleep(time.Second)
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "testToken",
 		FilterBy: &pb.SubscribeForEvents_DeviceEvent{
@@ -280,26 +281,24 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 	expectedEvent.SubscriptionId = ev.SubscriptionId
 	require.Equal(t, expectedEvent, ev)
-	subOnPublishedId := ev.SubscriptionId
+	subOnPublishedID := ev.SubscriptionId
 
-	expectedEvents := ResourceLinksToExpectedPublishEvents(deviceID, expectedResources)
-
-	for len(expectedEvents) > 0 {
-		ev, err = client.Recv()
-		require.NoError(t, err)
-		ev.SubscriptionId = ""
-		key := ev.GetResourcePublished().GetLink().GetDeviceId() + ev.GetResourcePublished().GetLink().GetHref()
-		expectedEvents[key].GetResourcePublished().GetLink().InstanceId = ev.GetResourcePublished().GetLink().GetInstanceId()
-
-		require.Equal(t, expectedEvents[key], ev)
-		delete(expectedEvents, key)
+	expectedEvent = ResourceLinkToPublishEvent(deviceID, 0, expectedResources)
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	ev.SubscriptionId = ""
+	for _, l := range ev.GetResourcePublished().GetLinks() {
+		l.InstanceId = 0
 	}
+	ev.GetResourcePublished().Links = SortResources(ev.GetResourcePublished().GetLinks())
+	expectedEvent.GetResourcePublished().Links = SortResources(expectedEvent.GetResourcePublished().GetLinks())
+	require.Equal(t, expectedEvent, ev)
 
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "testToken",
 		FilterBy: &pb.SubscribeForEvents_CancelSubscription_{
 			CancelSubscription: &pb.SubscribeForEvents_CancelSubscription{
-				SubscriptionId: subOnPublishedId,
+				SubscriptionId: subOnPublishedID,
 			},
 		},
 	})
@@ -330,7 +329,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 	require.Equal(t, expectedEvent, ev)
 
-	expectedEvents = ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
+	expectedEvents := ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
 	for _, e := range expectedEvents {
 		err = client.Send(&pb.SubscribeForEvents{
 			Token: "testToken",
@@ -512,25 +511,21 @@ func EncodeToCbor(t *testing.T, v interface{}) []byte {
 	return d
 }
 
-func ResourceLinkToPublishEvent(deviceID string, instanceID int64, l schema.ResourceLink) *pb.Event {
-	link := pb.SchemaResourceLinkToProto(l)
-	link.DeviceId = deviceID
-	link.InstanceId = instanceID
+func ResourceLinkToPublishEvent(deviceID string, instanceID int64, links []schema.ResourceLink) *pb.Event {
+	out := make([]*pb.ResourceLink, 0, 32)
+	for _, l := range links {
+		link := pb.SchemaResourceLinkToProto(l)
+		link.DeviceId = deviceID
+		link.InstanceId = instanceID
+		out = append(out, &link)
+	}
 	return &pb.Event{
 		Type: &pb.Event_ResourcePublished_{
 			ResourcePublished: &pb.Event_ResourcePublished{
-				Link: &link,
+				Links: out,
 			},
 		},
 	}
-}
-
-func ResourceLinksToExpectedPublishEvents(deviceID string, links []schema.ResourceLink) map[string]*pb.Event {
-	e := make(map[string]*pb.Event)
-	for _, l := range links {
-		e[deviceID+l.Href] = ResourceLinkToPublishEvent(deviceID, 0, l)
-	}
-	return e
 }
 
 func ResourceLinkToResourceChangedEvent(deviceID string, l schema.ResourceLink) *pb.Event {
@@ -559,16 +554,17 @@ func GetAllBackendResourceLinks() []schema.ResourceLink {
 	return append(TestDevsimResources, TestDevsimBackendResources...)
 }
 
-func ResourceLinksToPb(deviceID string, s []schema.ResourceLink) []pb.ResourceLink {
-	r := make([]pb.ResourceLink, 0, len(s))
+func ResourceLinksToPb(deviceID string, s []schema.ResourceLink) []*pb.ResourceLink {
+	r := make([]*pb.ResourceLink, 0, len(s))
 	for _, l := range s {
 		l.DeviceID = deviceID
-		r = append(r, pb.SchemaResourceLinkToProto(l))
+		v := pb.SchemaResourceLinkToProto(l)
+		r = append(r, &v)
 	}
 	return r
 }
 
-type SortResourcesByHref []pb.ResourceLink
+type SortResourcesByHref []*pb.ResourceLink
 
 func (a SortResourcesByHref) Len() int      { return len(a) }
 func (a SortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
@@ -576,7 +572,7 @@ func (a SortResourcesByHref) Less(i, j int) bool {
 	return a[i].Href < a[j].Href
 }
 
-func SortResources(s []pb.ResourceLink) []pb.ResourceLink {
+func SortResources(s []*pb.ResourceLink) []*pb.ResourceLink {
 	v := SortResourcesByHref(s)
 	sort.Sort(v)
 	return v

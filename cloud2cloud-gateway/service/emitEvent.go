@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	netHttp "net/http"
 	"strconv"
 	"time"
@@ -31,7 +32,7 @@ func emitEvent(ctx context.Context, eventType events.EventType, s store.Subscrip
 	client := netHttp.Client{
 		Transport: trans,
 	}
-	encoder, err := getEncoder(s.ContentType)
+	encoder, contentType, err := getEncoder(s.Accept)
 	if err != nil {
 		return false, fmt.Errorf("cannot get encoder: %w", err)
 	}
@@ -42,7 +43,7 @@ func emitEvent(ctx context.Context, eventType events.EventType, s store.Subscrip
 
 	r, w := io.Pipe()
 
-	req, err := netHttp.NewRequest("POST", s.URL, r)
+	req, err := netHttp.NewRequestWithContext(ctx, http.MethodPost, s.URL, r)
 	if err != nil {
 		return false, fmt.Errorf("cannot create post request: %w", err)
 	}
@@ -58,7 +59,7 @@ func emitEvent(ctx context.Context, eventType events.EventType, s store.Subscrip
 		if err != nil {
 			return false, fmt.Errorf("cannot encode data to body: %w", err)
 		}
-		req.Header.Set(events.ContentTypeKey, s.ContentType)
+		req.Header.Set(events.ContentTypeKey, contentType)
 		go func() {
 			defer w.Close()
 			if len(body) > 0 {
