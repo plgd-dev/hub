@@ -86,8 +86,10 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
 		client := c.(*Client)
 		authCtx := client.loadAuthorizationContext()
-		client.Close()
-		log.Debugf("device %v token has been expired", authCtx.GetDeviceId())
+		if !authCtx.Expire.IsZero() && time.Now().After(authCtx.Expire) {
+			client.Close()
+			log.Debugf("device %v token has ben expired", authCtx.GetDeviceId())
+		}
 	})
 
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
