@@ -48,6 +48,10 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	coapResp := CoapSignInResp{
 		ExpiresIn: resp.ExpiresIn,
 	}
+	var expired time.Time
+	if resp.ExpiresIn > 0 {
+		expired = time.Now().Add(time.Second * time.Duration(resp.ExpiresIn))
+	}
 
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
@@ -67,7 +71,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		},
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
-		Expire:      time.Now().Add(time.Second * time.Duration(resp.ExpiresIn)),
+		Expire:      expired,
 	}
 	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 	if err != nil {
@@ -161,7 +165,11 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		}
 		devSub.Store(sub)
 	}
-	client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
+	if expired.IsZero() {
+		client.server.expirationClientCache.Delete(signIn.DeviceID)
+	} else {
+		client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
+	}
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }
 
