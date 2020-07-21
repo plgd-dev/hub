@@ -332,6 +332,7 @@ func (client *Client) OnClose() {
 	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
 
 	if oldAuthCtx.DeviceId != "" {
+		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
 		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
 		defer cancel()
 		token, err := client.server.oauthMgr.GetToken(ctx)

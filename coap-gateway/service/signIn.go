@@ -161,6 +161,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		}
 		devSub.Store(sub)
 	}
+	client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }
 
@@ -180,6 +181,7 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 	client.cancelDeviceSubscriptions(true)
 	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
 	if oldAuthCtx.DeviceId != "" {
+		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
 		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)

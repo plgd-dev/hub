@@ -55,9 +55,10 @@ type Server struct {
 	asClient pbAS.AuthorizationServiceClient
 	rdClient pbGRPC.GrpcGatewayClient
 
-	clients      *kitSync.Map
-	oicPingCache *cache.Cache
-	oauthMgr     *manager.Manager
+	clients               *kitSync.Map
+	oicPingCache          *cache.Cache
+	oauthMgr              *manager.Manager
+	expirationClientCache *cache.Cache
 
 	coapServer      *tcp.Server
 	listener        tcp.Listener
@@ -80,6 +81,14 @@ type ListenCertManager = interface {
 func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
+
+	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
+	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
+		client := c.(*Client)
+		authCtx := client.loadAuthorizationContext()
+		client.Close()
+		log.Debugf("device %v token has been expired", authCtx.GetDeviceId())
+	})
 
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
@@ -183,11 +192,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 		oauthMgr: oauthMgr,
 
-		clients:         kitSync.NewMap(),
-		oicPingCache:    oicPingCache,
-		listener:        listener,
-		authInterceptor: NewAuthInterceptor(),
-		wgDone:          new(sync.WaitGroup),
+		clients:               kitSync.NewMap(),
+		expirationClientCache: expirationClientCache,
+		oicPingCache:          oicPingCache,
+		listener:              listener,
+		authInterceptor:       NewAuthInterceptor(),
+		wgDone:                new(sync.WaitGroup),
 	}
 
 	s.setupCoapServer()
