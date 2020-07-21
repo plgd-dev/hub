@@ -71,13 +71,13 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provider.Provider) (*Server, error) {
 	serverCertManager, err := certManager.NewCertManager(cfg.Listen)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create server cert manager %v", err)
+		return nil, fmt.Errorf("cannot create server cert manager %w", err)
 	}
 	httpServerTLSConfig := serverCertManager.GetServerTLSConfig()
 	httpServerTLSConfig.ClientAuth = tls.NoClientCert
 	listener, err := tls.Listen("tcp", cfg.HTTPAddr, httpServerTLSConfig)
 	if err != nil {
-		return nil, fmt.Errorf("listening failed: %v", err)
+		return nil, fmt.Errorf("listening failed: %w", err)
 	}
 
 	service := newService(deviceProvider, sdkProvider, persistence)

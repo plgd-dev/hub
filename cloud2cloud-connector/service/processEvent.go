@@ -26,6 +26,6 @@ func (rh *RequestHandler) notifyLinkedAccount(w http.ResponseWriter, r *http.Req
 func (rh *RequestHandler) ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	statusCode, err := rh.notifyLinkedAccount(w, r)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot notify linked accounts: %v", err), statusCode, w)
+		logAndWriteErrorResponse(fmt.Errorf("cannot notify linked accounts: %w", err), statusCode, w)
 	}
 }

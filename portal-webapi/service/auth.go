@@ -11,7 +11,7 @@ import (
 func parseAuth(ctx *fasthttp.RequestCtx) (token, sub string, err error) {
 	token, sub, err = parseBearer(string(ctx.Request.Header.Peek("Authorization")))
 	if err != nil {
-		err = fmt.Errorf("cannot parse authentication header: %v", err)
+		err = fmt.Errorf("cannot parse authentication header: %w", err)
 	}
 	return
 }
@@ -21,7 +21,7 @@ func parseBearer(auth string) (token, sub string, err error) {
 		rawToken := auth[7:]
 		sub, err = parseSubFromJwtToken(rawToken)
 		if err != nil {
-			err = fmt.Errorf("cannot parse bearer: %v", err)
+			err = fmt.Errorf("cannot parse bearer: %w", err)
 			return
 		}
 		token = rawToken
@@ -46,7 +46,7 @@ func parseSubFromJwtToken(rawJwtToken string) (string, error) {
 	var claims claims
 	_, _, err := parser.ParseUnverified(rawJwtToken, &claims)
 	if err != nil {
-		return "", fmt.Errorf("cannot get sub from jwt token: %v", err)
+		return "", fmt.Errorf("cannot get sub from jwt token: %w", err)
 	}
 
 	if claims.Subject != "" {

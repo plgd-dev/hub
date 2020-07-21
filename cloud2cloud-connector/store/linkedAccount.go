@@ -88,7 +88,7 @@ func parseSubFromJwtToken(rawJwtToken string) (string, error) {
 	var claims claims
 	_, _, err := parser.ParseUnverified(rawJwtToken, &claims)
 	if err != nil {
-		return "", fmt.Errorf("cannot get subject from jwt token: %v", err)
+		return "", fmt.Errorf("cannot get subject from jwt token: %w", err)
 	}
 
 	if claims.Subject != "" {
@@ -119,13 +119,13 @@ func (l LinkedAccount) RefreshToken(ctx context.Context, cfg oauth2.Config) (Lin
 	if !t.IsValidAccessToken() {
 		t, err = t.Refresh(ctx, cfg)
 		if err != nil {
-			return l, fmt.Errorf("cannot refreash target cloud access token: %v", err)
+			return l, fmt.Errorf("cannot refreash target cloud access token: %w", err)
 		}
 	}
 	l.TargetCloud = t
 	err = s.UpdateLinkedAccount(ctx, l)
 	if err != nil {
-		return l, fmt.Errorf("cannot store updated linked account: %v", err)
+		return l, fmt.Errorf("cannot store updated linked account: %w", err)
 	}
 	return l, nil
 }

@@ -22,11 +22,11 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 
 	signingSecret, err := generateRandomString(32)
 	if err != nil {
-		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+		return fmt.Errorf("cannot generate signingSecret for device subscription: %w", err)
 	}
 	corID, err := uuid.NewV4()
 	if err != nil {
-		return fmt.Errorf("cannot generate correlationID for device subscription: %v", err)
+		return fmt.Errorf("cannot generate correlationID for device subscription: %w", err)
 	}
 
 	correlationID := corID.String()
@@ -46,17 +46,17 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 	}
 	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
 	if err != nil {
-		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
+		return fmt.Errorf("cannot cache subscription for device subscriptions: %w", err)
 	}
 	sub.ID, err = s.subscribeToResource(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID, href)
 	if err != nil {
 		s.cache.Delete(correlationID)
-		return fmt.Errorf("cannot subscribe to device %v resource %v: %v", deviceID, href, err)
+		return fmt.Errorf("cannot subscribe to device %v resource %v: %w", deviceID, href, err)
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
 		cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID)
-		return fmt.Errorf("cannot store resource subscription to DB: %v", err)
+		return fmt.Errorf("cannot store resource subscription to DB: %w", err)
 	}
 	return nil
 }
@@ -68,7 +68,7 @@ func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAcc
 		SigningSecret: signingSecret,
 	}, linkedAccount, linkedCloud)
 	if err != nil {
-		return "", fmt.Errorf("cannot subscribe to device %v for %v: %v", deviceID, linkedAccount.ID, err)
+		return "", fmt.Errorf("cannot subscribe to device %v for %v: %w", deviceID, linkedAccount.ID, err)
 	}
 	return resp.SubscriptionId, nil
 }
@@ -76,7 +76,7 @@ func (s *SubscriptionManager) subscribeToResource(ctx context.Context, linkedAcc
 func cancelResourceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, href, subscriptionID string) error {
 	err := cancelSubscription(ctx, "/devices/"+deviceID+href+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
-		return fmt.Errorf("cannot cancel resource subscription for %v: %v", linkedAccount.ID, err)
+		return fmt.Errorf("cannot cancel resource subscription for %v: %w", linkedAccount.ID, err)
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("cannot update resource aggregate (%v) resource (%v) content changed: %v", subscriptionData.subscription.DeviceID, subscriptionData.subscription.Href, err)
+		return fmt.Errorf("cannot update resource aggregate (%v) resource (%v) content changed: %w", subscriptionData.subscription.DeviceID, subscriptionData.subscription.Href, err)
 	}
 
 	return nil

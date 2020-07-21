@@ -32,7 +32,7 @@ func (r *RequestHandler) listResources(ctx *fasthttp.RequestCtx, token, sub stri
 	getResourceLinksClient, err := r.rdClient.GetResourceLinks(kitNetGrpc.CtxWithToken(context.Background(), token), &pbGRPC.GetResourceLinksRequest{})
 
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot list resource directory: %v", err), http.StatusBadRequest, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("cannot list resource directory: %w", err), http.StatusBadRequest, ctx)
 		return
 	}
 	defer getResourceLinksClient.CloseSend()
@@ -46,7 +46,7 @@ func (r *RequestHandler) listResources(ctx *fasthttp.RequestCtx, token, sub stri
 			break
 		}
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot list device directory: %v", err), http.StatusBadRequest, ctx)
+			logAndWriteErrorResponse(fmt.Errorf("cannot list device directory: %w", err), http.StatusBadRequest, ctx)
 			return
 		}
 

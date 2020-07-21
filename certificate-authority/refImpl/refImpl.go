@@ -37,7 +37,7 @@ type RefImpl struct {
 func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*RefImpl, error) {
 	listenCertManager, err := certManager.NewCertManager(config.Listen)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create listen cert manager %v", err)
+		return nil, fmt.Errorf("cannot create listen cert manager %w", err)
 	}
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
@@ -67,7 +67,7 @@ func (c Config) String() string {
 func Init(config Config) (*RefImpl, error) {
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create dial cert manager %v", err)
+		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}
 
 	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig(), "openid")

@@ -43,7 +43,7 @@ func toJson(v interface{}) ([]byte, error) {
 	h.BasicHandle.Canonical = true
 	err := codec.NewEncoder(bw, h).Encode(v)
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert to json: %v", err)
+		return nil, fmt.Errorf("cannot convert to json: %w", err)
 	}
 	return bw.Bytes(), nil
 }
@@ -51,7 +51,7 @@ func toJson(v interface{}) ([]byte, error) {
 func writeJson(v interface{}, statusCode int, ctx *fasthttp.RequestCtx) {
 	body, err := toJson(v)
 	if err != nil {
-		err = fmt.Errorf("cannot write body: %v", err)
+		err = fmt.Errorf("cannot write body: %w", err)
 		logAndWriteErrorResponse(err, fasthttp.StatusInternalServerError, ctx)
 		return
 	}
@@ -63,7 +63,7 @@ func writeJson(v interface{}, statusCode int, ctx *fasthttp.RequestCtx) {
 func validateRequest(ctx *fasthttp.RequestCtx, cbk func(ctx *fasthttp.RequestCtx, token, sub string)) {
 	token, sub, err := parseAuth(ctx)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("invalid request: %v", err), fasthttp.StatusUnauthorized, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("invalid request: %w", err), fasthttp.StatusUnauthorized, ctx)
 		return
 	}
 	cbk(ctx, token, sub)

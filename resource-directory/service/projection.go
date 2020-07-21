@@ -33,7 +33,7 @@ type Projection struct {
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, newModelFunc eventstore.FactoryModelFunc, expiration time.Duration) (*Projection, error) {
 	projection, err := projectionRA.NewProjection(ctx, name, store, subscriber, newModelFunc)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create server: %v", err)
+		return nil, fmt.Errorf("cannot create server: %w", err)
 	}
 	cache := cache.New(expiration, expiration)
 	cache.OnEvicted(func(deviceID string, _ interface{}) {
@@ -45,7 +45,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 func (p *Projection) getModels(ctx context.Context, deviceID, resourceID string) ([]eventstore.Model, error) {
 	loaded, err := p.Register(ctx, deviceID)
 	if err != nil {
-		return nil, fmt.Errorf("cannot register to projection for device %v: %v", deviceID, err)
+		return nil, fmt.Errorf("cannot register to projection for device %v: %w", deviceID, err)
 	}
 	if loaded {
 		p.cache.Set(deviceID, loaded, cache.DefaultExpiration)

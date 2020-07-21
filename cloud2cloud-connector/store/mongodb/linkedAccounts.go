@@ -36,7 +36,7 @@ func (s *Store) InsertLinkedAccount(ctx context.Context, sub store.LinkedAccount
 	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
 
 	if _, err := col.InsertOne(ctx, sub); err != nil {
-		return fmt.Errorf("cannot insert linked account: %v", err)
+		return fmt.Errorf("cannot insert linked account: %w", err)
 	}
 	return nil
 }
@@ -49,7 +49,7 @@ func (s *Store) UpdateLinkedAccount(ctx context.Context, sub store.LinkedAccount
 
 	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
 	if res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub}); err != nil {
-		return fmt.Errorf("cannot update linked account: %v", err)
+		return fmt.Errorf("cannot update linked account: %w", err)
 	} else {
 		if res.MatchedCount == 0 {
 			return fmt.Errorf("cannot update linked account: not found")
@@ -64,7 +64,7 @@ func (s *Store) RemoveLinkedAccount(ctx context.Context, linkedAccountId string)
 	}
 	res, err := s.client.Database(s.DBName()).Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountId})
 	if err != nil {
-		return fmt.Errorf("cannot remove linked account: %v", err)
+		return fmt.Errorf("cannot remove linked account: %w", err)
 	}
 	if res.DeletedCount == 0 {
 		return fmt.Errorf("cannot remove linked account: not found")

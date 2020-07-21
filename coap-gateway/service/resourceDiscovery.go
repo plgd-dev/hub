@@ -30,7 +30,7 @@ func makeListDevicesCommand(msg *mux.Message, authCtx pbCQRS.AuthorizationContex
 	for _, query := range queries {
 		values, err := url.ParseQuery(query)
 		if err != nil {
-			return nil, fmt.Errorf("cannot parse list devices query: %v", err)
+			return nil, fmt.Errorf("cannot parse list devices query: %w", err)
 		}
 		if di := values.Get("di"); di != "" {
 			deviceIdsFilter = append(deviceIdsFilter, di)
@@ -65,7 +65,7 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 			break
 		}
 		if err != nil {
-			return nil, status.Convert(err).Code(), fmt.Errorf("cannot create discovery response: %v", err)
+			return nil, status.Convert(err).Code(), fmt.Errorf("cannot create discovery response: %w", err)
 		}
 		d, ok := deviceRes[link.GetDeviceId()]
 		if !ok {
@@ -108,19 +108,19 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 	authCtx := client.loadAuthorizationContext()
 	request, err := makeListDevicesCommand(req, authCtx.AuthorizationContext)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %v", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID), request)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.DeviceId, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
 		return
 	}
 
 	discoveryResp, code, err := makeDiscoveryResp(client.server.IsTLSListener, client.server.FQDN+":"+strconv.Itoa(int(client.server.ExternalPort)), getResourceLinksClient)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %v", authCtx.DeviceId, err), coapconv.GrpcCode2CoapCode(code, coapCodes.GET), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.DeviceId, err), coapconv.GrpcCode2CoapCode(code, coapCodes.GET), req.Token)
 		return
 	}
 
@@ -144,12 +144,12 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %v", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(resp)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %v", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 

@@ -40,7 +40,7 @@ func (r *RequestHandler) listDevices(ctx *fasthttp.RequestCtx, token, sub string
 	getDevicesClient, err := r.rdClient.GetDevices(kitNetGrpc.CtxWithToken(context.Background(), token), &pbGRPC.GetDevicesRequest{})
 
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot list device directory: %v", err), http.StatusBadRequest, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("cannot list device directory: %w", err), http.StatusBadRequest, ctx)
 		return
 	}
 	defer getDevicesClient.CloseSend()
@@ -52,7 +52,7 @@ func (r *RequestHandler) listDevices(ctx *fasthttp.RequestCtx, token, sub string
 			break
 		}
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot list device directory: %v", err), http.StatusBadRequest, ctx)
+			logAndWriteErrorResponse(fmt.Errorf("cannot list device directory: %w", err), http.StatusBadRequest, ctx)
 			return
 		}
 		devices[device.Id] = &Device{

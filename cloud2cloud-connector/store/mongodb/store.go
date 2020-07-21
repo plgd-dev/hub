@@ -46,11 +46,11 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://"+cfg.Host).SetTLSConfig(cfg.tlsCfg))
 	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %v", err)
+		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %v", err)
+		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 
 	return NewStoreWithSession(ctx, client, cfg.DatabaseName)
@@ -88,7 +88,7 @@ func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) 
 				//index already exist, just skip error and continue
 				continue
 			}
-			return fmt.Errorf("cannot ensure indexes for eventstore: %v", err)
+			return fmt.Errorf("cannot ensure indexes for eventstore: %w", err)
 		}
 	}
 	return nil

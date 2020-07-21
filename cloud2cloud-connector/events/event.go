@@ -80,7 +80,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 	}
 	sequenceNumber, err := strconv.ParseUint(seqNum, 10, 64)
 	if err != nil {
-		return h, fmt.Errorf("invalid "+SequenceNumberKey+"(%v): %v", seqNum, err)
+		return h, fmt.Errorf("invalid "+SequenceNumberKey+"(%v): %w", seqNum, err)
 	}
 
 	evTimestamp := r.Header.Get(EventTimestampKey)
@@ -89,7 +89,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 	}
 	eventTimestamp, err := strconv.ParseInt(evTimestamp, 10, 64)
 	if err != nil {
-		return h, fmt.Errorf("invalid "+EventTimestampKey+"(%v): %v", evTimestamp, err)
+		return h, fmt.Errorf("invalid "+EventTimestampKey+"(%v): %w", evTimestamp, err)
 	}
 	eventSignature := r.Header.Get(EventSignatureKey)
 	if eventSignature == "" {
@@ -126,7 +126,7 @@ func getContentEncoder(ct string, decoder func(w io.Reader, v interface{}) error
 		return func(w io.Reader, v interface{}) error {
 			reader, err := gzip.NewReader(w)
 			if err != nil {
-				return fmt.Errorf("cannot create gzip reader: %v", err)
+				return fmt.Errorf("cannot create gzip reader: %w", err)
 			}
 			return decoder(reader, v)
 		}, nil

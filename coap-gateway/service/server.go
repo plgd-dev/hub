@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"reflect"
@@ -32,6 +33,8 @@ import (
 	"github.com/go-ocf/kit/log"
 	cache "github.com/patrickmn/go-cache"
 )
+
+var expiredKey = "Expired"
 
 //Server a configuration of coapgateway
 type Server struct {
@@ -74,7 +77,7 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, authInterceptor kitNetCoap.Interceptor) *Server {
+func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -183,7 +186,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		clients:         kitSync.NewMap(),
 		oicPingCache:    oicPingCache,
 		listener:        listener,
-		authInterceptor: authInterceptor,
+		authInterceptor: NewAuthInterceptor(),
 		wgDone:          new(sync.WaitGroup),
 	}
 
@@ -279,16 +282,17 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 
 		authCtx := client.loadAuthorizationContext()
 		ctx := kitNetCoap.CtxWithToken(r.Context, authCtx.AccessToken)
+		ctx = context.WithValue(ctx, &expiredKey, authCtx.Expire)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %v", path, err), coapCodes.Unauthorized, r.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized, r.Token)
 			client.Close()
 			return
 		}
 		serviceToken, err := server.oauthMgr.GetToken(r.Context)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, r.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, r.Token)
 			client.Close()
 			return
 		}

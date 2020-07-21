@@ -95,7 +95,7 @@ func MakeMediaType(coapContentFormat int32, contentType string) (message.MediaTy
 func NewCoapResourceUpdateRequest(ctx context.Context, event *pb.Event_ResourceUpdatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())
 	if err != nil {
-		return nil, fmt.Errorf("invalid content type for update content: %v", err)
+		return nil, fmt.Errorf("invalid content type for update content: %w", err)
 	}
 	if event.Content == nil {
 		return nil, fmt.Errorf("invalid content for update content")

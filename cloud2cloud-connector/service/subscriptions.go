@@ -83,7 +83,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), r)
 	if err != nil {
-		return resp, fmt.Errorf("cannot create post request: %v", err)
+		return resp, fmt.Errorf("cannot create post request: %w", err)
 	}
 	req.Header.Set(events.CorrelationIDKey, correlationID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
@@ -101,7 +101,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	}()
 	httpResp, err := client.Do(req)
 	if err != nil {
-		return resp, fmt.Errorf("cannot post: %v", err)
+		return resp, fmt.Errorf("cannot post: %w", err)
 	}
 	defer httpResp.Body.Close()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusCreated {
@@ -109,7 +109,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	}
 	err = json.ReadFrom(httpResp.Body, &resp)
 	if err != nil {
-		return resp, fmt.Errorf("cannot device response: %v", err)
+		return resp, fmt.Errorf("cannot device response: %w", err)
 	}
 	return resp, nil
 }
@@ -118,7 +118,7 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	client := linkedCloud.GetHTTPClient()
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), nil)
 	if err != nil {
-		return fmt.Errorf("cannot create delete request: %v", err)
+		return fmt.Errorf("cannot create delete request: %w", err)
 	}
 	req.Header.Set("Token", linkedAccount.ID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
@@ -128,7 +128,7 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 
 	httpResp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("cannot delete: %v", err)
+		return fmt.Errorf("cannot delete: %w", err)
 	}
 	defer httpResp.Body.Close()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusAccepted {
@@ -147,7 +147,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 		newSubscription, loaded, err := s.store.LoadOrCreateSubscription(subData.subscription)
 		s.cache.Delete(header.CorrelationID)
 		if err != nil {
-			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: %v", header.CorrelationID, header.ID, err)
+			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: %w", header.CorrelationID, header.ID, err)
 		}
 		if loaded && newSubscription.subscription.ID != header.ID {
 			return http.StatusGone, fmt.Errorf("cannot store subscription(CorrelationID: %v, ID: %v) to DB: duplicit subscription(CorrelationID %v, ID: %v)", header.CorrelationID, header.ID, newSubscription.subscription.CorrelationID, newSubscription.subscription.ID)
@@ -180,7 +180,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	if header.EventType == events.EventType_SubscriptionCanceled {
 		err := s.HandleCancelEvent(ctx, header, subData.linkedAccount)
 		if err != nil {
-			return http.StatusGone, fmt.Errorf("cannot cancel subscription: %v", err)
+			return http.StatusGone, fmt.Errorf("cannot cancel subscription: %w", err)
 		}
 		return http.StatusOK, nil
 	}

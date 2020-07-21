@@ -165,7 +165,7 @@ func (d *UserDevicesManager) updateDevices(ctx context.Context, userID string, d
 	defer func() {
 		err := d.Release(userID)
 		if err != nil {
-			d.errFunc(fmt.Errorf("cannot release userID %v devices: %v", userID, err))
+			d.errFunc(fmt.Errorf("cannot release userID %v devices: %w", userID, err))
 		}
 	}()
 
@@ -180,7 +180,7 @@ func (d *UserDevicesManager) getDevices(ctx context.Context, userID string) map[
 	defer func() {
 		err := d.Release(userID)
 		if err != nil {
-			d.errFunc(fmt.Errorf("cannot release userID %v devices: %v", userID, err))
+			d.errFunc(fmt.Errorf("cannot release userID %v devices: %w", userID, err))
 		}
 	}()
 	return v.Data().(*userDevices).getDevices()
@@ -235,7 +235,7 @@ func (d *UserDevicesManager) onTick(ctx context.Context, timeout time.Duration, 
 	}
 	usersDevices, err := getUsersDevices(ctx, d.asClient, users)
 	if err != nil {
-		d.errFunc(fmt.Errorf("cannot get user devices: %v", err))
+		d.errFunc(fmt.Errorf("cannot get user devices: %w", err))
 		return
 	}
 	for userID, devices := range usersDevices {

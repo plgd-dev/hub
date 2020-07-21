@@ -308,7 +308,7 @@ func RefreshToken(ctx context.Context, linkedAccount store.LinkedAccount, linked
 	if refreshed {
 		err = s.UpdateLinkedAccount(ctx, linkedAccount)
 		if err != nil {
-			return store.LinkedAccount{}, fmt.Errorf("cannot store updated linked linkedAccount: %v", err)
+			return store.LinkedAccount{}, fmt.Errorf("cannot store updated linked linkedAccount: %w", err)
 		}
 	}
 	return linkedAccount, nil

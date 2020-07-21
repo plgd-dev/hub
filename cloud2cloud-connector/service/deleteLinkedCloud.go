@@ -31,6 +31,6 @@ func (rh *RequestHandler) deleteLinkedCloud(w http.ResponseWriter, r *http.Reque
 func (rh *RequestHandler) DeleteLinkedCloud(w http.ResponseWriter, r *http.Request) {
 	statusCode, err := rh.deleteLinkedCloud(w, r)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot delete linked cloud: %v", err), statusCode, w)
+		logAndWriteErrorResponse(fmt.Errorf("cannot delete linked cloud: %w", err), statusCode, w)
 	}
 }

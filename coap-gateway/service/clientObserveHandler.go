@@ -30,7 +30,7 @@ func clientObserveHandler(s mux.ResponseWriter, req *mux.Message, client *Client
 	authCtx := client.loadAuthorizationContext()
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle observe resource: %v", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle observe resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -77,7 +77,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		DeviceIdsFilter: []string{deviceID},
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %v", authCtx.DeviceId, deviceID, href, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.DeviceId, deviceID, href, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	var found bool
@@ -88,7 +88,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 			break
 		}
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %v", authCtx.DeviceId, deviceID, href, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.DeviceId, deviceID, href, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
 			return
 		}
 		if userDev.DeviceId == deviceID {
@@ -130,7 +130,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 		Href:     href,
 	}, &h, &h, client.server.rdClient)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: %v", authCtx.DeviceId, deviceID, href, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -148,7 +148,7 @@ func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cli
 	token := req.Token.String()
 	cancelled, err := client.cancelResourceSubscription(token, true)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation /%v%v: %v", authCtx.DeviceId, deviceID, href, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation /%v%v: %w", authCtx.DeviceId, deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	if !cancelled {

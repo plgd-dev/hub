@@ -33,7 +33,7 @@ type SignerConfig struct {
 func AddHandler(svr *kitNetGrpc.Server, cfg SignerConfig) error {
 	handler, err := NewRequestHandlerFromConfig(cfg)
 	if err != nil {
-		return fmt.Errorf("could not create go-ocf/certificate-authority: %v", err)
+		return fmt.Errorf("could not create go-ocf/certificate-authority: %w", err)
 	}
 	pb.RegisterCertificateAuthorityServer(svr.Server, handler)
 	return nil

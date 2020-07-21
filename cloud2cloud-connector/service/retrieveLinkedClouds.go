@@ -16,6 +16,6 @@ func (rh *RequestHandler) retrieveLinkedClouds(w http.ResponseWriter, r *http.Re
 func (rh *RequestHandler) RetrieveLinkedClouds(w http.ResponseWriter, r *http.Request) {
 	statusCode, err := rh.retrieveLinkedClouds(w, r)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve linked clouds: %v", err), statusCode, w)
+		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve linked clouds: %w", err), statusCode, w)
 	}
 }

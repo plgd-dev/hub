@@ -43,7 +43,7 @@ func (r *RequestHandler) offboardDevice(ctx *fasthttp.RequestCtx, token, sub str
 		httpCode, err := httpRequestCtx.PostProto(r.server.client, getContentResourceShadowURI(r.server), &request, &response)
 
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot offboard device: %v", err), http.StatusBadRequest, ctx)
+			logAndWriteErrorResponse(fmt.Errorf("cannot offboard device: %w", err), http.StatusBadRequest, ctx)
 			return
 		}
 

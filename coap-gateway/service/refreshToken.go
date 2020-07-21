@@ -42,13 +42,13 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 	var refreshToken CoapRefreshTokenReq
 	err := cbor.ReadFrom(req.Body, &refreshToken)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	err = validateRefreshToken(refreshToken)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -58,7 +58,7 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 		RefreshToken: refreshToken.RefreshToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
 		return
 	}
 
@@ -71,12 +71,12 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(coapResp)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)

@@ -29,12 +29,12 @@ func (rh *RequestHandler) addLinkedCloud(w http.ResponseWriter, r *http.Request)
 	buffer := bytes.NewBuffer(make([]byte, 0, 1024))
 	_, err := buffer.ReadFrom(r.Body)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot read body: %v", err)
+		return http.StatusBadRequest, fmt.Errorf("cannot read body: %w", err)
 	}
 	var l store.LinkedCloud
 	err = json.Decode(buffer.Bytes(), &l)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot decode body: %v", err)
+		return http.StatusBadRequest, fmt.Errorf("cannot decode body: %w", err)
 	}
 	uuid, err1 := uuid.NewV4()
 	if err1 != nil {
@@ -55,6 +55,6 @@ func (rh *RequestHandler) addLinkedCloud(w http.ResponseWriter, r *http.Request)
 func (rh *RequestHandler) AddLinkedCloud(w http.ResponseWriter, r *http.Request) {
 	statusCode, err := rh.addLinkedCloud(w, r)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot add linked cloud: %v", err), statusCode, w)
+		logAndWriteErrorResponse(fmt.Errorf("cannot add linked cloud: %w", err), statusCode, w)
 	}
 }

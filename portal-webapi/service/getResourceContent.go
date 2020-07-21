@@ -54,7 +54,7 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 	})
 
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusBadRequest, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %w", err), http.StatusBadRequest, ctx)
 		return
 	}
 	defer retrieveResourcesValuesClient.CloseSend()
@@ -67,7 +67,7 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 			break
 		}
 		if err != nil {
-			logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusBadRequest, ctx)
+			logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %w", err), http.StatusBadRequest, ctx)
 			return
 		}
 		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetHref() == href && resourceValue.Content != nil {
@@ -75,13 +75,13 @@ func (r *RequestHandler) getResourceContent(ctx *fasthttp.RequestCtx, token, sub
 			case message.AppCBOR.String(), message.AppOcfCbor.String():
 				err := codec.NewDecoderBytes(resourceValue.Content.Data, new(codec.CborHandle)).Decode(&m)
 				if err != nil {
-					logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusInternalServerError, ctx)
+					logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %w", err), http.StatusInternalServerError, ctx)
 					return
 				}
 			case message.AppJSON.String():
 				err := codec.NewDecoderBytes(resourceValue.Content.Data, new(codec.JsonHandle)).Decode(&m)
 				if err != nil {
-					logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %v", err), http.StatusInternalServerError, ctx)
+					logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource content: %w", err), http.StatusInternalServerError, ctx)
 					return
 				}
 			case message.TextPlain.String():
