@@ -125,7 +125,7 @@ func (p *PersistenceTx) RetrieveAll(userID string) persistence.Iterator {
 		return &iterator{}
 	}
 	if err != nil {
-		return &iterator{err: fmt.Errorf("cannot load all devices subscription: %v", err)}
+		return &iterator{err: fmt.Errorf("cannot load all devices subscription: %w", err)}
 	}
 
 	return &iterator{

@@ -46,7 +46,7 @@ func parseSubFromJwtToken(rawJwtToken string) (string, error) {
 	var claims claims
 	_, _, err := parser.ParseUnverified(rawJwtToken, &claims)
 	if err != nil {
-		return "", fmt.Errorf("cannot get subject from jwt token: %v", err)
+		return "", fmt.Errorf("cannot get subject from jwt token: %w", err)
 	}
 
 	if claims.Subject != "" {

@@ -31,13 +31,13 @@ func getPingConfiguration(s mux.ResponseWriter, req *mux.Message, client *Client
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
 	out, err := encode(ping)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot send ping configuration: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
@@ -58,7 +58,7 @@ func ping(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	var ping oicwkping
 	err := cbor.ReadFrom(req.Body, &ping)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %v", deviceID, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId %v: cannot handle ping: %w", deviceID, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	if ping.Interval == 0 {

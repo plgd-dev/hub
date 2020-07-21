@@ -63,7 +63,7 @@ func (rh *RequestHandler) deleteLinkedAccount(w http.ResponseWriter, r *http.Req
 
 	linkedAccount, err := rh.store.PullOutLinkedAccount(r.Context(), cloudID, accountID)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot load linked account: %v", err)
+		return http.StatusBadRequest, fmt.Errorf("cannot load linked account: %w", err)
 	}
 	cloud, ok := rh.store.LoadCloud(cloudID)
 	if !ok {
@@ -77,6 +77,6 @@ func (rh *RequestHandler) deleteLinkedAccount(w http.ResponseWriter, r *http.Req
 func (rh *RequestHandler) DeleteLinkedAccount(w http.ResponseWriter, r *http.Request) {
 	statusCode, err := rh.deleteLinkedAccount(w, r)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot delete linked accounts: %v", err), statusCode, w)
+		logAndWriteErrorResponse(fmt.Errorf("cannot delete linked accounts: %w", err), statusCode, w)
 	}
 }

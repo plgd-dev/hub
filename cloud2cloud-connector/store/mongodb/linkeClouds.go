@@ -42,7 +42,7 @@ func (s *Store) UpdateLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 	col := s.client.Database(s.DBName()).Collection(resLinkedCloudCName)
 	res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub})
 	if err != nil {
-		return fmt.Errorf("cannot save linked cloud: %v", err)
+		return fmt.Errorf("cannot save linked cloud: %w", err)
 	}
 	if res.MatchedCount == 0 {
 		return fmt.Errorf("cannot update linked cloud: not found")
@@ -59,7 +59,7 @@ func (s *Store) InsertLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 	col := s.client.Database(s.DBName()).Collection(resLinkedCloudCName)
 
 	if _, err := col.InsertOne(ctx, sub); err != nil {
-		return fmt.Errorf("cannot save linked cloud: %v", err)
+		return fmt.Errorf("cannot save linked cloud: %w", err)
 	}
 	return nil
 }
@@ -71,7 +71,7 @@ func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudId string) err
 
 	res, err := s.client.Database(s.DBName()).Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudId})
 	if err != nil {
-		return fmt.Errorf("cannot remove linked cloud: %v", err)
+		return fmt.Errorf("cannot remove linked cloud: %w", err)
 	}
 	if res.DeletedCount == 0 {
 		return fmt.Errorf("cannot remove linked cloud: not found")

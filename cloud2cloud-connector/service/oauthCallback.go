@@ -17,7 +17,7 @@ func (rh *RequestHandler) HandleLinkedAccount(ctx context.Context, linkedCloud s
 	ctx = linkedCloud.CtxWithHTTPClient(ctx)
 	token, err := oauth.Exchange(ctx, authCode)
 	if err != nil {
-		return store.Token{}, fmt.Errorf("cannot exchange target cloud authorization code for access token: %v", err)
+		return store.Token{}, fmt.Errorf("cannot exchange target cloud authorization code for access token: %w", err)
 	}
 	return store.Token{
 		AccessToken:  store.AccessToken(token.AccessToken),
@@ -49,7 +49,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	linkedAccount.ID = id.String()
 	_, _, err = rh.store.LoadOrCreateLinkedAccount(r.Context(), linkedAccount)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %v", linkedAccount, err)
+		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %w", linkedAccount, err)
 	}
 	if provisionCacheData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		return http.StatusOK, nil
@@ -66,6 +66,6 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 func (rh *RequestHandler) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	statusCode, err := rh.oAuthCallback(w, r)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot process oauth callback: %v", err), statusCode, w)
+		logAndWriteErrorResponse(fmt.Errorf("cannot process oauth callback: %w", err), statusCode, w)
 	}
 }

@@ -26,11 +26,11 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 	}
 	signingSecret, err := generateRandomString(32)
 	if err != nil {
-		return fmt.Errorf("cannot generate signingSecret for device subscription: %v", err)
+		return fmt.Errorf("cannot generate signingSecret for device subscription: %w", err)
 	}
 	corID, err := uuid.NewV4()
 	if err != nil {
-		return fmt.Errorf("cannot generate correlationID for devices subscription: %v", err)
+		return fmt.Errorf("cannot generate correlationID for devices subscription: %w", err)
 	}
 	correlationID := corID.String()
 	sub := Subscription{
@@ -48,21 +48,21 @@ func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID st
 	}
 	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
 	if err != nil {
-		return fmt.Errorf("cannot cache subscription for device subscriptions: %v", err)
+		return fmt.Errorf("cannot cache subscription for device subscriptions: %w", err)
 	}
 	sub.ID, err = s.subscribeToDevice(ctx, linkedAccount, linkedCloud, correlationID, signingSecret, deviceID)
 	if err != nil {
 		s.cache.Delete(correlationID)
-		return fmt.Errorf("cannot subscribe to device %v: %v", deviceID, err)
+		return fmt.Errorf("cannot subscribe to device %v: %w", deviceID, err)
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
 		cancelDeviceSubscription(ctx, linkedAccount, linkedCloud, deviceID, sub.ID)
-		return fmt.Errorf("cannot store subscription to DB: %v", err)
+		return fmt.Errorf("cannot store subscription to DB: %w", err)
 	}
 	err = s.devicesSubscription.Add(deviceID, linkedAccount, linkedCloud)
 	if err != nil {
-		return fmt.Errorf("cannot register device %v to resource projection: %v", deviceID, err)
+		return fmt.Errorf("cannot register device %v to resource projection: %w", deviceID, err)
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccou
 		SigningSecret: signingSecret,
 	}, linkedAccount, linkedCloud)
 	if err != nil {
-		return "", fmt.Errorf("cannot subscribe to device %v for %v: %v", deviceID, linkedAccount.ID, err)
+		return "", fmt.Errorf("cannot subscribe to device %v for %v: %w", deviceID, linkedAccount.ID, err)
 	}
 	return resp.SubscriptionId, nil
 }
@@ -85,7 +85,7 @@ func (s *SubscriptionManager) subscribeToDevice(ctx context.Context, linkedAccou
 func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, deviceID, subscriptionID string) error {
 	err := cancelSubscription(ctx, "/devices/"+deviceID+"/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
-		return fmt.Errorf("cannot cancel device subscription for %v: %v", linkedAccount.ID, err)
+		return fmt.Errorf("cannot cancel device subscription for %v: %w", linkedAccount.ID, err)
 	}
 	return nil
 }
@@ -163,7 +163,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot publish resource: %v", err))
+			errors = append(errors, fmt.Errorf("cannot publish resource: %w", err))
 			continue
 		}
 		if d.linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {
@@ -200,7 +200,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 			},
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot unpublish resource: %v", err))
+			errors = append(errors, fmt.Errorf("cannot unpublish resource: %w", err))
 		}
 		_, ok := s.store.PullOutResource(d.linkedAccount.LinkedCloudID, d.linkedAccount.ID, link.DeviceID, href)
 		if !ok {
@@ -218,21 +218,21 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 func (s *SubscriptionManager) HandleDeviceEvent(ctx context.Context, header events.EventHeader, body []byte, subscriptionData subscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
-		return fmt.Errorf("cannot get content reader: %v", err)
+		return fmt.Errorf("cannot get content reader: %w", err)
 	}
 	switch header.EventType {
 	case events.EventType_ResourcesPublished:
 		var links events.ResourcesPublished
 		err := contentReader(body, &links)
 		if err != nil {
-			return fmt.Errorf("cannot decode device event %v: %v", header.EventType, err)
+			return fmt.Errorf("cannot decode device event %v: %w", header.EventType, err)
 		}
 		return s.HandleResourcesPublished(ctx, subscriptionData, header, links)
 	case events.EventType_ResourcesUnpublished:
 		var links events.ResourcesUnpublished
 		err := contentReader(body, &links)
 		if err != nil {
-			return fmt.Errorf("cannot decode device event %v: %v", header.EventType, err)
+			return fmt.Errorf("cannot decode device event %v: %w", header.EventType, err)
 		}
 		return s.HandleResourcesUnpublished(ctx, subscriptionData, header, links)
 	}

@@ -66,12 +66,12 @@ func (h *TaskProcessor) pullDevice(ctx context.Context, e Task, subscriptionMana
 	err := Get(ctx, e.linkedCloud.Endpoint.URL+"/devices/"+e.deviceID, e.linkedAccount, e.linkedCloud, &device)
 	if err != nil {
 		h.pulledDevices.Delete(key)
-		return fmt.Errorf("cannot pull device %v for linked linkedAccount(%v): %v", e.deviceID, e.linkedAccount, err)
+		return fmt.Errorf("cannot pull device %v for linked linkedAccount(%v): %w", e.deviceID, e.linkedAccount, err)
 	}
 	err = publishDeviceResources(ctx, h.raClient, e.deviceID, e.linkedAccount, e.linkedCloud, subscriptionManager, device, h.Trigger)
 	if err != nil {
 		h.pulledDevices.Delete(key)
-		return fmt.Errorf("cannot publish device %v resources for linkedAccount(%v): %v", e.deviceID, e.linkedAccount, err)
+		return fmt.Errorf("cannot publish device %v resources for linkedAccount(%v): %w", e.deviceID, e.linkedAccount, err)
 	}
 	return nil
 }

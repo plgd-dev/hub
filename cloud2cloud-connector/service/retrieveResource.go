@@ -24,7 +24,7 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	client := linkedCloud.GetHTTPClient()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, makeHTTPEndpoint(linkedCloud.Endpoint.URL, deviceID, href), nil)
 	if err != nil {
-		return "", nil, pbRA.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %v", err)
+		return "", nil, pbRA.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %w", err)
 	}
 	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
@@ -33,7 +33,7 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 
 	httpResp, err := client.Do(req)
 	if err != nil {
-		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot post: %v", err)
+		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot post: %w", err)
 	}
 	defer httpResp.Body.Close()
 	if httpResp.StatusCode != http.StatusOK {
@@ -44,7 +44,7 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	respContent := bytes.NewBuffer(make([]byte, 0, 1024))
 	_, err = respContent.ReadFrom(httpResp.Body)
 	if err != nil {
-		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot read update response: %v", err)
+		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot read update response: %w", err)
 	}
 
 	return respContentType, respContent.Bytes(), pbRA.Status_OK, nil

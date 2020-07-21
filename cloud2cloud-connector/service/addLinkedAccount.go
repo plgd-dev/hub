@@ -84,6 +84,6 @@ func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Reques
 func (rh *RequestHandler) AddLinkedAccount(w http.ResponseWriter, r *http.Request) {
 	statusCode, err := rh.addLinkedAccount(w, r)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot add linked account: %v", err), statusCode, w)
+		logAndWriteErrorResponse(fmt.Errorf("cannot add linked account: %w", err), statusCode, w)
 	}
 }

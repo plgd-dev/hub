@@ -22,11 +22,11 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 	}
 	signingSecret, err := generateRandomString(32)
 	if err != nil {
-		return fmt.Errorf("cannot generate signingSecret for start subscriptions: %v", err)
+		return fmt.Errorf("cannot generate signingSecret for start subscriptions: %w", err)
 	}
 	corID, err := uuid.NewV4()
 	if err != nil {
-		return fmt.Errorf("cannot generate correlationID for start subscriptions: %v", err)
+		return fmt.Errorf("cannot generate correlationID for start subscriptions: %w", err)
 	}
 	correlationID := corID.String()
 
@@ -44,17 +44,17 @@ func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAcco
 	}
 	err = s.cache.Add(correlationID, data, cache.DefaultExpiration)
 	if err != nil {
-		return fmt.Errorf("cannot cache subscription for start subscriptions: %v", err)
+		return fmt.Errorf("cannot cache subscription for start subscriptions: %w", err)
 	}
 	sub.ID, err = s.subscribeToDevices(ctx, linkedAccount, linkedCloud, correlationID, signingSecret)
 	if err != nil {
 		s.cache.Delete(correlationID)
-		return fmt.Errorf("cannot subscribe to devices for %v: %v", linkedAccount.ID, err)
+		return fmt.Errorf("cannot subscribe to devices for %v: %w", linkedAccount.ID, err)
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
 		cancelDevicesSubscription(ctx, linkedAccount, linkedCloud, sub.ID)
-		return fmt.Errorf("cannot store subscription to DB: %v", err)
+		return fmt.Errorf("cannot store subscription to DB: %w", err)
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func (s *SubscriptionManager) subscribeToDevices(ctx context.Context, linkedAcco
 func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionID string) error {
 	err := cancelSubscription(ctx, "/devices/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
-		return fmt.Errorf("cannot cancel devices subscription for %v: %v", linkedAccount.ID, err)
+		return fmt.Errorf("cannot cancel devices subscription for %v: %w", linkedAccount.ID, err)
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func (s *SubscriptionManager) publishCloudDeviceStatus(ctx context.Context, devi
 
 	_, err := s.raClient.PublishResource(ctx, &request)
 	if err != nil {
-		return fmt.Errorf("cannot process command publish resource: %v", err)
+		return fmt.Errorf("cannot process command publish resource: %w", err)
 	}
 	return nil
 }
@@ -159,11 +159,11 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 			UserId:   userID,
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot remove device  %v from user: %v", device.ID, err))
+			errors = append(errors, fmt.Errorf("cannot remove device  %v from user: %w", device.ID, err))
 		}
 		err = s.devicesSubscription.Delete(userID, device.ID)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot unregister device %v from resource projection: %v", device.ID, err))
+			errors = append(errors, fmt.Errorf("cannot unregister device %v from resource projection: %w", device.ID, err))
 		}
 
 	}
@@ -193,7 +193,7 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 			Sequence:     header.SequenceNumber,
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot set device %v to online: %v", device.ID, err))
+			errors = append(errors, fmt.Errorf("cannot set device %v to online: %w", device.ID, err))
 		}
 	}
 	if len(errors) > 0 {
@@ -224,7 +224,7 @@ func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscr
 		})
 
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %v", device.ID, err))
+			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %w", device.ID, err))
 		}
 	}
 	if len(errors) > 0 {
@@ -237,7 +237,7 @@ func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscr
 func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header events.EventHeader, body []byte, d subscriptionData) error {
 	contentReader, err := header.GetContentDecoder()
 	if err != nil {
-		return fmt.Errorf("cannot handle device event: %v", err)
+		return fmt.Errorf("cannot handle device event: %w", err)
 	}
 
 	switch header.EventType {
@@ -245,28 +245,28 @@ func (s *SubscriptionManager) HandleDevicesEvent(ctx context.Context, header eve
 		var devices events.DevicesRegistered
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %v", err)
+			return fmt.Errorf("cannot decode devices event: %w", err)
 		}
 		return s.HandleDevicesRegistered(ctx, d, devices, header)
 	case events.EventType_DevicesUnregistered:
 		var devices events.DevicesUnregistered
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %v", err)
+			return fmt.Errorf("cannot decode devices event: %w", err)
 		}
 		return s.HandleDevicesUnregistered(ctx, d, header.CorrelationID, devices)
 	case events.EventType_DevicesOnline:
 		var devices events.DevicesOnline
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %v", err)
+			return fmt.Errorf("cannot decode devices event: %w", err)
 		}
 		return s.HandleDevicesOnline(ctx, d, header, devices)
 	case events.EventType_DevicesOffline:
 		var devices events.DevicesOffline
 		err = contentReader(body, &devices)
 		if err != nil {
-			return fmt.Errorf("cannot decode devices event: %v", err)
+			return fmt.Errorf("cannot decode devices event: %w", err)
 		}
 		return s.HandleDevicesOffline(ctx, d, header, devices)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/go-ocf/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/go-ocf/cloud/grpc-gateway/client"
@@ -32,6 +33,7 @@ type authCtx struct {
 	pbCQRS.AuthorizationContext
 	AccessToken string
 	UserID      string
+	Expire      time.Time
 }
 
 const pendingDeviceSubscriptionToken = "pending"
@@ -223,7 +225,7 @@ func (client *Client) unobserveResources(ctx context.Context, resourceIDs []stri
 func (client *Client) Close() error {
 	err := client.coapConn.Close()
 	if err != nil {
-		return fmt.Errorf("cannot close client: %v", err)
+		return fmt.Errorf("cannot close client: %w", err)
 	}
 	return nil
 }
@@ -330,6 +332,7 @@ func (client *Client) OnClose() {
 	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
 
 	if oldAuthCtx.DeviceId != "" {
+		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
 		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
 		defer cancel()
 		token, err := client.server.oauthMgr.GetToken(ctx)
@@ -361,17 +364,23 @@ func (client *Client) loadAuthorizationContext() authCtx {
 }
 
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
-	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
 	authCtx := client.loadAuthorizationContext()
+	expired := authCtx.Expire
+	if time.Now().After(expired) {
+		return fmt.Errorf("cannot notify resource /%v%v content changed: token is expired", res.GetDeviceId(), res.GetHref())
+	}
+
+	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
+
 	token, err := client.server.oauthMgr.GetToken(notification.Context())
 	if err != nil {
-		return fmt.Errorf("cannot notify resource content changed: %v", err)
+		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", res.GetDeviceId(), res.GetHref(), err)
 	}
 	ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(notification.Context(), token.AccessToken), authCtx.UserID)
 	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
 	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
 	if err != nil {
-		return fmt.Errorf("cannot notify resource content changed: %v", err)
+		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", res.GetDeviceId(), res.GetHref(), err)
 	}
 	return nil
 }
@@ -390,6 +399,12 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 			return err
 		}
 		return nil
+	}
+	authCtx := client.loadAuthorizationContext()
+	expired := authCtx.Expire
+	if time.Now().After(expired) {
+		client.Close()
+		return fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
@@ -411,8 +426,6 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	if resp.Code() == coapCodes.NotFound {
 		client.unpublishResources(ctx, []string{resourceID})
 	}
-
-	authCtx := client.loadAuthorizationContext()
 
 	request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
@@ -439,6 +452,12 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 		}
 		return nil
 	}
+	authCtx := client.loadAuthorizationContext()
+	expired := authCtx.Expire
+	if time.Now().After(expired) {
+		client.Close()
+		return fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	}
 
 	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
 	defer cancel()
@@ -460,7 +479,6 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 		client.unpublishResources(ctx, []string{resourceID})
 	}
 
-	authCtx := client.loadAuthorizationContext()
 	request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 	if err != nil {
@@ -497,7 +515,7 @@ func (client *Client) publishResource(ctx context.Context, link schema.ResourceL
 
 	response, err := client.server.raClient.PublishResource(ctx, &request)
 	if err != nil {
-		return link, fmt.Errorf("cannot process command publish resource: %v", err)
+		return link, fmt.Errorf("cannot process command publish resource: %w", err)
 	}
 
 	link.InstanceID = response.InstanceId

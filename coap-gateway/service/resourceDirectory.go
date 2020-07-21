@@ -77,12 +77,12 @@ func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, cli
 	var w wkRd
 	err := cbor.ReadFrom(req.Body, &w)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %v", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	if err := validatePublish(w); err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %v", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -121,12 +121,12 @@ func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, cli
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %v", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(w)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %v", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
@@ -136,7 +136,7 @@ func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs [
 	for _, q := range queries {
 		values, err := url.ParseQuery(q)
 		if err != nil {
-			return "", nil, fmt.Errorf("cannot parse unpublish query: %v", err)
+			return "", nil, fmt.Errorf("cannot parse unpublish query: %w", err)
 		}
 		if di := values.Get("di"); di != "" {
 			deviceID = di
@@ -191,12 +191,12 @@ func resourceDirectoryGetSelector(s mux.ResponseWriter, req *mux.Message, client
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot get selector: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot get selector: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(rds)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot get selector: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot get selector: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 

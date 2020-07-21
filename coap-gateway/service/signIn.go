@@ -41,7 +41,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		AccessToken: signIn.AccessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
 		return
 	}
 
@@ -52,12 +52,12 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(coapResp)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
@@ -67,10 +67,11 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		},
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
+		Expire:      time.Now().Add(time.Second * time.Duration(resp.ExpiresIn)),
 	}
 	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
 		client.Close()
 		return
 	}
@@ -78,7 +79,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %v", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
 		client.Close()
 		return
 	}
@@ -123,7 +124,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 				}
 				sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
 				if err != nil {
-					client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %v", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
+					client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
 					client.Close()
 					return
 				}
@@ -154,12 +155,13 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		}
 		sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %v", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
 		devSub.Store(sub)
 	}
+	client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }
 
@@ -179,9 +181,10 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 	client.cancelDeviceSubscriptions(true)
 	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
 	if oldAuthCtx.DeviceId != "" {
+		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
 		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %v", err), coapCodes.InternalServerError, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
@@ -205,7 +208,7 @@ func signInHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		var signIn CoapSignInReq
 		err := cbor.ReadFrom(req.Body, &signIn)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.BadRequest, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.BadRequest, req.Token)
 			return
 		}
 		switch signIn.Login {

@@ -45,20 +45,20 @@ func (r *RequestHandler) updateResourceContent(ctx *fasthttp.RequestCtx, token, 
 
 	err := codec.NewDecoderBytes(ctx.Request.Body(), new(codec.JsonHandle)).Decode(&m)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content - decode json: %v", err), http.StatusBadRequest, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content - decode json: %w", err), http.StatusBadRequest, ctx)
 		return
 	}
 
 	bw := bytes.NewBuffer(make([]byte, 0, 1024))
 	err = codec.NewEncoder(bw, new(codec.CborHandle)).Encode(m)
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content - encode cbor: %v", err), http.StatusInternalServerError, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content - encode cbor: %w", err), http.StatusInternalServerError, ctx)
 		return
 	}
 
 	correlationIdUUID, err := uuid.NewV4()
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content - generate uuid: %v", err), http.StatusBadRequest, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content - generate uuid: %w", err), http.StatusBadRequest, ctx)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (r *RequestHandler) updateResourceContent(ctx *fasthttp.RequestCtx, token, 
 	})
 
 	if err != nil {
-		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content: %v", err), http.StatusBadRequest, ctx)
+		logAndWriteErrorResponse(fmt.Errorf("cannot update resource content: %w", err), http.StatusBadRequest, ctx)
 		return
 	}
 

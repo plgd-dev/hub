@@ -26,7 +26,7 @@ func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, 
 
 	s, err := service.New(config, persistence, oauth, oauth)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create server cert manager %v", err)
+		return nil, fmt.Errorf("cannot create server cert manager %w", err)
 	}
 
 	return s, nil

@@ -1,17 +1,13 @@
 package refImpl
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/go-ocf/kit/security/certManager"
 
 	"github.com/go-ocf/cloud/coap-gateway/service"
-	"github.com/go-ocf/cloud/coap-gateway/uri"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
 	"github.com/go-ocf/kit/log"
-	kitNetCoap "github.com/go-ocf/kit/net/coap"
 )
 
 type Config struct {
@@ -38,30 +34,23 @@ func (c Config) String() string {
 func Init(config Config) (*RefImpl, error) {
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create dial cert manager %v", err)
+		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}
-	auth := NewDefaultAuthInterceptor()
-	return InitWithAuthInterceptor(config, dialCertManager, auth)
-}
 
-// InitWithAuthInterceptor creates reference implementation for coap-gateway with custom authorization interceptor.
-func InitWithAuthInterceptor(config Config, dialCertManager certManager.CertManager, auth kitNetCoap.Interceptor) (*RefImpl, error) {
 	log.Setup(config.Log)
-
 	log.Info(config.String())
 
 	var listenCertManager certManager.CertManager
-	var err error
 	if !config.ListenWithoutTLS {
 		listenCertManager, err = certManager.NewOcfCertManager(config.Listen)
 		if err != nil {
 			dialCertManager.Close()
-			return nil, fmt.Errorf("cannot create listen cert manager %v", err)
+			return nil, fmt.Errorf("cannot create listen cert manager %w", err)
 		}
 	}
 
 	return &RefImpl{
-		service:           service.New(config.Service, dialCertManager, listenCertManager, auth),
+		service:           service.New(config.Service, dialCertManager, listenCertManager),
 		dialCertManager:   dialCertManager,
 		listenCertManager: listenCertManager,
 	}, nil
@@ -80,19 +69,4 @@ func (r *RefImpl) Shutdown() error {
 		r.listenCertManager.Close()
 	}
 	return err
-}
-
-// NewDefaultAuthInterceptor creates default authorization interceptor.
-func NewDefaultAuthInterceptor() kitNetCoap.Interceptor {
-	return func(ctx context.Context, code coapCodes.Code, path string) (context.Context, error) {
-		switch path {
-		case uri.RefreshToken, uri.SecureRefreshToken, uri.SignUp, uri.SecureSignUp, uri.SignIn, uri.SecureSignIn, uri.ResourcePing:
-			return ctx, nil
-		}
-		_, err := kitNetCoap.TokenFromCtx(ctx)
-		if err != nil {
-			return ctx, err
-		}
-		return ctx, nil
-	}
 }

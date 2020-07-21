@@ -31,7 +31,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	r, w := io.Pipe()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, makeHTTPEndpoint(linkedCloud.Endpoint.URL, deviceID, href), r)
 	if err != nil {
-		return "", nil, pbRA.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %v", err)
+		return "", nil, pbRA.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %w", err)
 	}
 	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, contentType)
@@ -48,7 +48,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	}()
 	httpResp, err := client.Do(req)
 	if err != nil {
-		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot post: %v", err)
+		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot post: %w", err)
 	}
 	defer httpResp.Body.Close()
 	if httpResp.StatusCode != http.StatusOK {
@@ -59,7 +59,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	respContent := bytes.NewBuffer(make([]byte, 0, 1024))
 	_, err = respContent.ReadFrom(httpResp.Body)
 	if err != nil {
-		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot read update response: %v", err)
+		return "", nil, pbRA.Status_UNAVAILABLE, fmt.Errorf("cannot read update response: %w", err)
 	}
 
 	return respContentType, respContent.Bytes(), pbRA.Status_OK, nil

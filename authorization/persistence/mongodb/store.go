@@ -58,12 +58,12 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(cfg.tlsCfg))
 	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %v", err)
+		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 	ctx, _ = context.WithTimeout(ctx, 2*time.Second)
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %v", err)
+		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 
 	return NewStoreWithSession(ctx, client, cfg.Database)
@@ -88,7 +88,7 @@ func NewStoreWithSession(ctx context.Context, client *mongo.Client, dbPrefix str
 	err := ensureIndex(ctx, subCol, userDeviceQueryIndex, userDevicesQueryIndex)
 	if err != nil {
 		client.Disconnect(ctx)
-		return nil, fmt.Errorf("cannot ensure index for device subscription: %v", err)
+		return nil, fmt.Errorf("cannot ensure index for device subscription: %w", err)
 	}
 
 	return s, nil
@@ -108,7 +108,7 @@ func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) 
 				//index already exist, just skip error and continue
 				continue
 			}
-			return fmt.Errorf("cannot ensure indexes for eventstore: %v", err)
+			return fmt.Errorf("cannot ensure indexes for eventstore: %w", err)
 		}
 	}
 	return nil

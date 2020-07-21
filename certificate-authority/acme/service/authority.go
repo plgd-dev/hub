@@ -69,12 +69,12 @@ func (s *authority) Sign(cr *x509.CertificateRequest, opts provisioner.Options, 
 	})
 	pemCert, err := signer.Sign(ctx, pemCSR)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot sign cert for %v: %v", ID, err)
+		return nil, nil, fmt.Errorf("cannot sign cert for %v: %w", ID, err)
 	}
 
 	certs, err := loadPEM(pemCert)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot load cert for %v: %v", ID, err)
+		return nil, nil, fmt.Errorf("cannot load cert for %v: %w", ID, err)
 	}
 
 	if len(certs) > 1 {
