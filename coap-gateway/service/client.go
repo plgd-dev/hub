@@ -365,8 +365,7 @@ func (client *Client) loadAuthorizationContext() authCtx {
 
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
 	authCtx := client.loadAuthorizationContext()
-	expired := authCtx.Expire
-	if time.Now().After(expired) {
+	if isExpired(authCtx.Expire) {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: token is expired", res.GetDeviceId(), res.GetHref())
 	}
 
@@ -401,8 +400,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 		return nil
 	}
 	authCtx := client.loadAuthorizationContext()
-	expired := authCtx.Expire
-	if time.Now().After(expired) {
+	if isExpired(authCtx.Expire) {
 		client.Close()
 		return fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	}
@@ -453,8 +451,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 		return nil
 	}
 	authCtx := client.loadAuthorizationContext()
-	expired := authCtx.Expire
-	if time.Now().After(expired) {
+	if isExpired(authCtx.Expire) {
 		client.Close()
 		return fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	}

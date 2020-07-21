@@ -10,6 +10,10 @@ import (
 	kitNetCoap "github.com/go-ocf/kit/net/coap"
 )
 
+func isExpired(e time.Time) bool {
+	return !e.IsZero() && time.Now().After(e)
+}
+
 func NewAuthInterceptor() kitNetCoap.Interceptor {
 	return func(ctx context.Context, code coapCodes.Code, path string) (context.Context, error) {
 		switch path {
@@ -24,8 +28,8 @@ func NewAuthInterceptor() kitNetCoap.Interceptor {
 		if e == nil {
 			return ctx, fmt.Errorf("invalid token expiration")
 		}
-		expired := e.(time.Time)
-		if time.Now().After(expired) {
+		expire := e.(time.Time)
+		if isExpired(expire) {
 			return ctx, fmt.Errorf("token is expired")
 		}
 		return ctx, nil
