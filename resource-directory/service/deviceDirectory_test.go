@@ -12,7 +12,7 @@ import (
 	"github.com/go-ocf/go-coap/v2/message"
 	"github.com/go-ocf/sdk/schema/cloud"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/panjf2000/ants"
+	"github.com/panjf2000/ants/v2"
 
 	cbor "github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/security/certManager"

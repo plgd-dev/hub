@@ -21,7 +21,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/go-ocf/kit/security/oauth/manager"
-	"github.com/panjf2000/ants"
+	"github.com/panjf2000/ants/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
