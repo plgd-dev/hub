@@ -10,7 +10,7 @@ require (
 	github.com/go-ocf/cqrs v0.0.0-20200722082051-4581c0ea399b
 	github.com/go-ocf/go-coap/v2 v2.0.2
 	github.com/go-ocf/kit v0.0.0-20200702075537-01631a881369
-	github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e
+	github.com/go-ocf/sdk v0.0.0-20200722091408-db52b4773db9
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
@@ -21,7 +21,6 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/jhump/protoreflect v1.6.1 // indirect
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v1.0.2
@@ -39,9 +38,7 @@ require (
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
-	golang.org/x/tools v0.0.0-20200603170713-0310561d584d // indirect
 	google.golang.org/grpc v1.29.1
-	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 )
 

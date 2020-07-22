@@ -86,6 +86,7 @@ github.com/go-ocf/authorization v0.0.0-20200318102231-7b6f2c3de1f8/go.mod h1:r5z
 github.com/go-ocf/certificate-authority v0.0.0-20200306090447-ff501f1cf29a/go.mod h1:0z120kuRIORuPujXrjGafXXpCgX3chBrevVd+WZFF4M=
 github.com/go-ocf/cloud v0.0.0-20200408100218-89a8e02454aa/go.mod h1:bgN+GeghCbIPncb3gYlhY70l1LhVH7SBP1dvRYeKa5w=
 github.com/go-ocf/cloud v0.0.0-20200508074105-f9daefc26a14/go.mod h1:UinphtnMsflEFHWatohb/PYxrXgz7/la9RbWvWIulNg=
+github.com/go-ocf/cloud v0.0.0-20200722070446-3773fbf08dcb/go.mod h1:PYBqFejN+ymcGdK3Q7K8q69DOCYYrGrSV8k2pJcKLUI=
 github.com/go-ocf/coap-gateway v0.0.0-20191029135134-f6d64e927f2d/go.mod h1:nATrHRzqOGUkWP99R/66FoXGIVOIAuC6NiGW/5OoIQ8=
 github.com/go-ocf/coap-gateway v0.0.0-20191128113433-bf8268a9145d/go.mod h1:jgZuHpW4wW0kdrOa0jy/AgtA5otvkBMGxfraUruQ5gE=
 github.com/go-ocf/coap-gateway v0.0.0-20200206135044-4d6d04bae45e/go.mod h1:v0nWSD3MofMRfuIhjj6FQdp7Etc74qhfnDMDy5iMT/0=
@@ -172,8 +173,9 @@ github.com/go-ocf/sdk v0.0.0-20200319134918-2e08edf8487d/go.mod h1:A/jV/AdVxe3SW
 github.com/go-ocf/sdk v0.0.0-20200323152137-050aa844e539/go.mod h1:GKqvP80MeIWx4/ekRA2FJzFJCnTg/8TLTTANZJx2Hhw=
 github.com/go-ocf/sdk v0.0.0-20200406082918-51e333156732/go.mod h1:mU0HDyK3eyZXb9JtmgonizwtoLXy6fCpxVURHrfzBxQ=
 github.com/go-ocf/sdk v0.0.0-20200409112144-f306e826ae33/go.mod h1:9vLNYHs9YT+5Ytye8mzdiAI0Xez/DZWTHaqiZMpEIVQ=
-github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e h1:A7y211ERXh8bvW+CCkfpZe2+8BF2wq96PnfVD+QYYCc=
 github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e/go.mod h1:Z1S2nsnJgkJUF0OrpbaJ+We9xbQitHTMs60SL7XD5Ug=
+github.com/go-ocf/sdk v0.0.0-20200722091408-db52b4773db9 h1:hACbk68I/4ENOosBoVA1cPR5RSJIWIgUXcgGCfm4Hjk=
+github.com/go-ocf/sdk v0.0.0-20200722091408-db52b4773db9/go.mod h1:SQjxg3I0nizBuFYIiq0oPHbrBdBTn53nvyEXRBVyWfE=
 github.com/go-sql-driver/mysql v1.4.0/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
