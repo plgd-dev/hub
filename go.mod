@@ -9,7 +9,7 @@ require (
 	github.com/fullstorydev/grpchan v1.0.1
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200324131357-db8a7b8c83be
-	github.com/go-ocf/go-coap/v2 v2.0.0
+	github.com/go-ocf/go-coap/v2 v2.0.2
 	github.com/go-ocf/kit v0.0.0-20200702075537-01631a881369
 	github.com/go-ocf/sdk v0.0.0-20200610191654-01cea092557e
 	github.com/gofrs/uuid v3.3.0+incompatible
