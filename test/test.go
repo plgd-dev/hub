@@ -451,13 +451,16 @@ func MustGetHostname() string {
 }
 
 func MustFindDeviceByName(name string) (deviceID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	deviceID, err := FindDeviceByName(ctx, name)
-	if err != nil {
-		panic(err)
+	var err error
+	for i := 0; i < 3; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		deviceID, err = FindDeviceByName(ctx, name)
+		if err == nil {
+			return deviceID
+		}
 	}
-	return deviceID
+	panic(err)
 }
 
 type findDeviceIDByNameHandler struct {
