@@ -30,7 +30,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go/codec v1.1.7
 	github.com/valyala/fasthttp v1.12.0
 	go.mongodb.org/mongo-driver v1.3.2
