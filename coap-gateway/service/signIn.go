@@ -118,28 +118,27 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 				client.Close()
 				return
 			}
+
 			client.deviceSubscriptions.Delete(pendingDeviceSubscriptionToken)
 			for {
-				log.Debugf("reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending)")
+				log.Debugf("reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending)", signIn.DeviceID)
 				var devSub atomic.Value
 				_, loaded := client.deviceSubscriptions.LoadOrStore(pendingDeviceSubscriptionToken, &devSub)
 				if loaded {
 					return
 				}
 				sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
-				if err != nil {
-					client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
-					client.Close()
-					return
-				}
 				if err == nil {
 					devSub.Store(sub)
 					return
 				}
 				client.deviceSubscriptions.Delete(pendingDeviceSubscriptionToken)
-				if !strings.Contains(err.Error(), "connection refused") {
+				if strings.Contains(err.Error(), "connection refused") {
+					err = nil
+				}
+				if err != nil {
 					client.Close()
-					log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) cannot reconnect: %v", signIn.DeviceID, err)
+					log.Errorf("cannot reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending): %v", signIn.DeviceID, err)
 					return
 				}
 				select {
