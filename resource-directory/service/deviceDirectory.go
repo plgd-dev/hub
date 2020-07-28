@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-ocf/kit/codec/cbor"
 	"github.com/go-ocf/kit/codec/json"
+	"github.com/go-ocf/kit/log"
 	"github.com/go-ocf/kit/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -126,11 +127,16 @@ func filterDevicesByUserFilters(resourceValues map[string]map[string]*resourceCt
 	typeFilter.Add(req.TypeFilter...)
 	for deviceID, resources := range resourceValues {
 		var device Device
+		var err error
 		for _, resource := range resources {
-			err := updateDevice(&device, resource)
+			err = updateDevice(&device, resource)
 			if err != nil {
-				return nil, fmt.Errorf("cannot process device resources: %w", err)
+				break
 			}
+		}
+		if err != nil {
+			log.Debugf("filterDevicesByUserFilters: cannot process device(%v) resources: %w", deviceID, err)
+			continue
 		}
 		var resourceTypes []string
 		if device.Resource == nil {
