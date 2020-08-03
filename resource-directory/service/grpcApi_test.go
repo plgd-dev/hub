@@ -23,7 +23,7 @@ import (
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 )
 
-const TEST_TIMEOUT = time.Second * 3000
+const TEST_TIMEOUT = time.Second * 30
 
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -855,6 +855,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	for run {
 		ev, err = client.Recv()
 		require.NoError(t, err)
+
+		t.Logf("ev after shutdown: %v\n", ev)
 
 		switch {
 		case ev.GetDeviceUnregistered() != nil:
