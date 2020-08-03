@@ -64,8 +64,7 @@ func ToDevicesObservationEvent(e client.DevicesObservationEvent_type) string {
 }
 
 func (d *deviceObservation) Handle(ctx context.Context, event client.DevicesObservationEvent) error {
-	if event.Event == client.DevicesObservationEvent_REGISTERED ||
-		event.Event == client.DevicesObservationEvent_UNREGISTERED {
+	if len(event.DeviceIDs) == 0 {
 		return nil
 	}
 	evt := DeviceEvent{

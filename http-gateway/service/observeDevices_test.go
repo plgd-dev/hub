@@ -37,7 +37,6 @@ func TestObserveDevices(t *testing.T) {
 }
 
 func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
-
 	//first event
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -51,13 +50,13 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 	defer closeWebSocketConnection(t, wsConn)
 	expEvt := service.DeviceEvent{
 		DeviceIDs: []string{deviceID},
-		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_ONLINE),
+		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_REGISTERED),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 
 	expEvt = service.DeviceEvent{
-		DeviceIDs: nil,
-		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE),
+		DeviceIDs: []string{deviceID},
+		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_ONLINE),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 
@@ -65,7 +64,7 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 	shutdownDevSim()
 	expEvt = service.DeviceEvent{
 		DeviceIDs: []string{deviceID},
-		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE),
+		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_UNREGISTERED),
 	}
 	testDeviceEvent(t, wsConn, expEvt)
 }
@@ -74,6 +73,7 @@ func testDeviceEvent(t *testing.T, conn *websocket.Conn, expect service.DeviceEv
 	_, message, err := conn.ReadMessage()
 	require.NoError(t, err)
 	evt := service.DeviceEvent{}
+	fmt.Printf("testDeviceEvent %v\n", string(message))
 	err = json.Decode(message, &evt)
 	require.NoError(t, err)
 	require.Equal(t, expect, evt)
