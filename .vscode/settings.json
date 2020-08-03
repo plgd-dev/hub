@@ -20,7 +20,7 @@
         "TEST_CLOUD_SID": "adebc667-1f2b-41e3-bf5c-6d6eabc68cc6",
         "ACME_DB_DIR": "${workspaceFolder}/.tmp/home/certificate-authority",
         // "GOMAXPROCS": 1,
-        // "GOFLAGS":"-race",
+        // "GOFLAGS":"-mod=vendor",
         // "GRPC_VERBOSITY":"DEBUG",
         // "GRPC_GO_LOG_VERBOSITY_LEVEL":99,
         // "GRPC_GO_LOG_SEVERITY_LEVEL":"info",

@@ -67,6 +67,8 @@ type Server struct {
 	asConn          *grpc.ClientConn
 	rdConn          *grpc.ClientConn
 	raConn          *grpc.ClientConn
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 type DialCertManager = interface {
@@ -171,6 +173,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.BlockWiseTransferSZX)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	s := Server{
 		FQDN:                            config.FQDN,
 		ExternalPort:                    config.ExternalPort,
@@ -200,6 +204,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
 		wgDone:                new(sync.WaitGroup),
+
+		ctx:    ctx,
+		cancel: cancel,
 	}
 
 	s.setupCoapServer()
@@ -225,10 +232,6 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc
 	}
 	switch req.Code {
 	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-		if !ok {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
-			return
-		}
 		fnc(s, req, client)
 	case coapCodes.Empty:
 		if !ok {
@@ -288,8 +291,6 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 		client, ok := ToClient(server.clients.Load(w.Client().RemoteAddr().String()))
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request: client not found"), coapCodes.InternalServerError, r.Token)
-			return
 		}
 
 		authCtx := client.loadAuthorizationContext()
@@ -359,6 +360,7 @@ func (server *Server) setupCoapServer() {
 	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
 	opts = append(opts, tcp.WithBlockwise(server.BlockWiseTransfer, server.BlockWiseTransferSZX, server.RequestTimeout))
 	opts = append(opts, tcp.WithMux(m))
+	opts = append(opts, tcp.WithContext(server.ctx))
 	server.coapServer = tcp.NewServer(opts...)
 }
 
@@ -371,6 +373,7 @@ func (server *Server) Serve() error {
 	server.wgDone.Add(1)
 	defer func() {
 		defer server.wgDone.Done()
+		server.cancel()
 		server.oauthMgr.Close()
 		server.asConn.Close()
 		server.rdConn.Close()

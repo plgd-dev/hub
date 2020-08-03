@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -139,6 +140,9 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	var accessToken string
 	var userID string
 
+	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.RequestTimeout)
+	defer cancel()
+
 	queries, _ := req.Options.Queries()
 	for _, query := range queries {
 		values, err := url.ParseQuery(query)
@@ -164,7 +168,7 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.BadRequest, req.Token)
 		return
 	}
-	_, err = client.server.asClient.SignOff(req.Context, &pbAS.SignOffRequest{
+	_, err = client.server.asClient.SignOff(ctx, &pbAS.SignOffRequest{
 		DeviceId:    deviceID,
 		UserId:      userID,
 		AccessToken: accessToken,
