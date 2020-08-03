@@ -10,6 +10,7 @@ import (
 const AUTH_HOST = "localhost:20000"
 const AUTH_HTTP_HOST = "localhost:20001"
 const GW_HOST = "localhost:20002"
+const GW_UNSECURE_HOST = "localhost:20008"
 const RESOURCE_AGGREGATE_HOST = "localhost:20003"
 const RESOURCE_DIRECTORY_HOST = "localhost:20004"
 const GRPC_HOST = "localhost:20005"

@@ -61,7 +61,7 @@ func TestObserveDevices(t *testing.T) {
 	res = <-h.res
 	require.Equal(t, client.DevicesObservationEvent{
 		DeviceIDs: []string{deviceID},
-		Event:     client.DevicesObservationEvent_OFFLINE,
+		Event:     client.DevicesObservationEvent_UNREGISTERED,
 	}, res)
 }
 

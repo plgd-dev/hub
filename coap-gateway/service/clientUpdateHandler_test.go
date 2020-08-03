@@ -18,7 +18,7 @@ func Test_clientUpdateHandler(t *testing.T) {
 	shutdown := setUp(t, true)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, true)
+	co := testCoapDial(t, testCfg.GW_UNSECURE_HOST, true)
 	if co == nil {
 		return
 	}

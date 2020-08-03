@@ -29,7 +29,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/go-ocf/sdk/local"
 	"github.com/go-ocf/sdk/schema"
+	"github.com/go-ocf/sdk/schema/acl"
 	"github.com/go-ocf/sdk/schema/cloud"
 
 	coapgwService "github.com/go-ocf/cloud/coap-gateway/test"
@@ -160,54 +162,76 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
-	gwShutdown := coapgwService.SetUp(t)
+	gwShutdown := coapgwService.SetUp(t, true)
 	grpcShutdown := grpcgwService.SetUp(t)
 	c2cgwShutdown := c2cgwService.SetUp(t)
+	secureGWShutdown := coapgwService.SetUp(t)
 
 	return func() {
 		c2cgwShutdown()
 		grpcShutdown()
 		gwShutdown()
+		secureGWShutdown()
 		rdShutdown()
 		raShutdown()
 		authShutdown()
 	}
 }
 
-func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, gwHost string, expectedResources []schema.ResourceLink) func() {
-	client := core.NewClient()
-	dev, links, err := client.GetDevice(ctx, deviceID)
-	require.NoError(t, err)
-	devLink, ok := links.GetResourceLink("/oic/d")
-	require.True(t, ok)
-	patchedLinks := make(schema.ResourceLinks, 0, len(links))
-	for _, l := range links {
-		if len(l.Endpoints) == 0 {
-			l.Endpoints = devLink.Endpoints
-		}
-		patchedLinks = append(patchedLinks, l)
-	}
-	link, ok := patchedLinks.GetResourceLink("/CoapCloudConfResURI")
-	require.True(t, ok)
+func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, deviceID string) {
+	cloudSID := os.Getenv("TEST_CLOUD_SID")
+	require.NotEmpty(t, cloudSID)
 
-	err = dev.UpdateResource(ctx, link, cloud.ConfigurationUpdateRequest{
-		AuthorizationProvider: "test",
-		URL:                   "coap+tcp://" + gwHost,
-		AuthorizationCode:     "authCode",
-		CloudID:               "sid",
-	}, nil)
+	d, links, err := c.GetRefDevice(ctx, deviceID)
+	require.NoError(t, err)
+
+	defer d.Release(ctx)
+	p, err := d.Provision(ctx, links)
+	require.NoError(t, err)
+	defer func() {
+		err := p.Close(ctx)
+		require.NoError(t, err)
+	}()
+
+	link, err := core.GetResourceLink(links, "/oic/sec/acl2")
+	require.NoError(t, err)
+
+	setAcl := acl.UpdateRequest{
+		AccessControlList: []acl.AccessControl{
+			acl.AccessControl{
+				Permission: acl.AllPermissions,
+				Subject: acl.Subject{
+					Subject_Device: &acl.Subject_Device{
+						DeviceID: cloudSID,
+					},
+				},
+				Resources: acl.AllResources,
+			},
+		},
+	}
+
+	err = p.UpdateResource(ctx, link, setAcl, nil)
+	require.NoError(t, err)
+}
+
+func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, gwHost string, expectedResources []schema.ResourceLink) func() {
+	client, err := NewSDKClient()
+	require.NoError(t, err)
+	err = client.OwnDevice(ctx, deviceID)
+	require.NoError(t, err)
+
+	setAccessForCloud(ctx, t, client, deviceID)
+
+	err = client.OnboardDevice(ctx, deviceID, "test", "coaps+tcp://"+gwHost, "authCode", "sid")
 	require.NoError(t, err)
 
 	waitForDevice(ctx, t, c, deviceID, expectedResources)
 
 	return func() {
-		err = dev.UpdateResource(ctx, link, cloud.ConfigurationUpdateRequest{
-			AuthorizationProvider: "",
-			URL:                   "",
-			AuthorizationCode:     "",
-		}, nil)
+		err := client.DisownDevice(ctx, deviceID)
 		require.NoError(t, err)
-		dev.Close(ctx)
+		client.Close(ctx)
+		time.Sleep(time.Second)
 	}
 }
 
@@ -417,7 +441,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 	pool := security.NewDefaultCertPool(nil)
-	dat, err := ioutil.ReadFile(os.Getenv("LISTEN_FILE_CA_POOL"))
+	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CRT"))
 	require.NoError(t, err)
 	ok := pool.AppendCertsFromPEM(dat)
 	require.True(t, ok)
@@ -425,7 +449,7 @@ func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 }
 
 func GetRootCertificateAuthorities(t *testing.T) []*x509.Certificate {
-	dat, err := ioutil.ReadFile(os.Getenv("LISTEN_FILE_CA_POOL"))
+	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CRT"))
 	require.NoError(t, err)
 	r := make([]*x509.Certificate, 0, 4)
 	for {

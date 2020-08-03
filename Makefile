@@ -1,5 +1,6 @@
 SHELL = /bin/bash
 SIMULATOR_NAME_SUFFIX ?= $(shell hostname)
+CLOUD_SID ?= adebc667-1f2b-41e3-bf5c-6d6eabc68cc6
 
 SUBDIRS := resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
@@ -26,7 +27,7 @@ certificates: cloud-test
 		-v $(shell pwd)/.tmp/certs:/certs \
 		--user $(shell id -u):$(shell id -g) \
 		cloud-test \
-		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key && cert-tool --cmd.generateIdentityCertificate=adebc667-1f2b-41e3-bf5c-6d6eabc68cc6 --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key && cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
 	cat $(shell pwd)/.tmp/certs/http.crt > $(shell pwd)/.tmp/certs/mongo.key
 	cat $(shell pwd)/.tmp/certs/http.key >> $(shell pwd)/.tmp/certs/mongo.key
 
@@ -84,6 +85,9 @@ test: env
 		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME=coap.crt \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME=coap.key \
+		-e TEST_CLOUD_SID=$(CLOUD_SID) \
+		-e TEST_ROOT_CA_CRT=/certs/root_ca.crt \
+        -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
 		cloud-test \
 		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt

@@ -1,25 +1,3 @@
-diff --git a/api/cloud/oc_cloud_resource.c b/api/cloud/oc_cloud_resource.c
-index c6b36d7..09b14c5 100644
---- a/api/cloud/oc_cloud_resource.c
-+++ b/api/cloud/oc_cloud_resource.c
-@@ -144,7 +144,7 @@ post_cloud(oc_request_t *request, oc_interface_mask_t interface,
-   }
-   OC_DBG("POST request received");
-   (void)interface;
--
-+/*
-   switch (ctx->store.cps) {
-   case OC_CPS_UNINITIALIZED:
-   case OC_CPS_READYTOREGISTER:
-@@ -155,7 +155,7 @@ post_cloud(oc_request_t *request, oc_interface_mask_t interface,
-     return;
-   }
-   }
--
-+*/
-   char *cps;
-   size_t cps_len = 0;
-   if (oc_rep_get_string(request->request_payload, "cps", &cps, &cps_len)) {
 diff --git a/apps/cloud_server.c b/apps/cloud_server.c
 index 6edd644..ceaff87 100644
 --- a/apps/cloud_server.c
