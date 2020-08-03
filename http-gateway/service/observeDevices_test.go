@@ -62,20 +62,26 @@ func testObserveDevices(ctx context.Context, t *testing.T, deviceID string) {
 
 	//Second event
 	shutdownDevSim()
+	evt := testDeviceRecvEvent(t, wsConn)
+	require.True(t, evt.Status == service.ToDevicesObservationEvent(client.DevicesObservationEvent_OFFLINE) || evt.Status == service.ToDevicesObservationEvent(client.DevicesObservationEvent_UNREGISTERED))
 	expEvt = service.DeviceEvent{
 		DeviceIDs: []string{deviceID},
-		Status:    service.ToDevicesObservationEvent(client.DevicesObservationEvent_UNREGISTERED),
+		Status:    evt.Status,
 	}
-	testDeviceEvent(t, wsConn, expEvt)
+	require.Equal(t, expEvt, evt)
 }
 
-func testDeviceEvent(t *testing.T, conn *websocket.Conn, expect service.DeviceEvent) {
+func testDeviceRecvEvent(t *testing.T, conn *websocket.Conn) service.DeviceEvent {
 	_, message, err := conn.ReadMessage()
 	require.NoError(t, err)
 	evt := service.DeviceEvent{}
-	fmt.Printf("testDeviceEvent %v\n", string(message))
 	err = json.Decode(message, &evt)
 	require.NoError(t, err)
+	return evt
+}
+
+func testDeviceEvent(t *testing.T, conn *websocket.Conn, expect service.DeviceEvent) {
+	evt := testDeviceRecvEvent(t, conn)
 	require.Equal(t, expect, evt)
 }
 
