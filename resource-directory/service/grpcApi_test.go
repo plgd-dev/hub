@@ -461,7 +461,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		FilterBy: &pb.SubscribeForEvents_DevicesEvent{
 			DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
 				FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-					pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE,
+					pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE, pb.SubscribeForEvents_DevicesEventFilter_REGISTERED, pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED,
 				},
 			},
 		},
@@ -479,6 +479,28 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 				},
 			},
+		},
+	}
+	require.Equal(t, expectedEvent, ev)
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceRegistered_{
+			DeviceRegistered: &pb.Event_DeviceRegistered{
+				DeviceIds: []string{deviceID},
+			},
+		},
+	}
+	require.Equal(t, expectedEvent, ev)
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceUnregistered_{
+			DeviceUnregistered: &pb.Event_DeviceUnregistered{},
 		},
 	}
 	require.Equal(t, expectedEvent, ev)
@@ -829,15 +851,23 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	shutdownDevSim()
 
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOffline_{
-			DeviceOffline: &pb.Event_DeviceOffline{
-				DeviceIds: []string{deviceID},
-			},
-		},
+	run := true
+	for run {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+
+		switch {
+		case ev.GetDeviceUnregistered() != nil:
+			expectedEvent = &pb.Event{
+				SubscriptionId: ev.SubscriptionId,
+				Type: &pb.Event_DeviceUnregistered_{
+					DeviceUnregistered: &pb.Event_DeviceUnregistered{
+						DeviceIds: []string{deviceID},
+					},
+				},
+			}
+			require.Equal(t, expectedEvent, ev)
+			run = false
+		}
 	}
-	require.Equal(t, expectedEvent, ev)
 }
