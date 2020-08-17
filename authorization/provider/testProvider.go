@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
+	"net/url"
 	"time"
 
 	"github.com/valyala/fasthttp"
@@ -127,6 +128,25 @@ func setErrorResponse(r *fasthttp.Response, code int, body string) {
 }
 
 func (p *TestProvider) HandleAuthorizationCode(ctx *fasthttp.RequestCtx) {
+	uri := ctx.QueryArgs().Peek("redirect_uri")
+	if len(uri) > 0 {
+		state := ctx.QueryArgs().Peek("state")
+		u, err := url.Parse(string(uri))
+		if err != nil {
+			setErrorResponse(&ctx.Response, fasthttp.StatusInternalServerError, err.Error())
+			return
+		}
+		q, err := url.ParseQuery(u.RawQuery)
+		if err != nil {
+			setErrorResponse(&ctx.Response, fasthttp.StatusInternalServerError, err.Error())
+			return
+		}
+		q.Add("state", string(state))
+		q.Add("code", DeviceAccessToken)
+		u.RawQuery = q.Encode()
+		ctx.Redirect(u.String(), fasthttp.StatusTemporaryRedirect)
+		return
+	}
 	resp := map[string]interface{}{
 		"code": DeviceAccessToken,
 	}
