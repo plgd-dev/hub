@@ -11,6 +11,11 @@ ARG service=grpc-gateway
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
+#http-gateway
+ARG service=http-gateway
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+
 #resource-directory
 ARG service=resource-directory
 WORKDIR $root_directory/$service
@@ -43,6 +48,7 @@ RUN apt update
 RUN apt install -y mongodb-server curl
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
+COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
 COPY --from=build /go/bin/authorization /usr/local/bin/authorization
@@ -67,6 +73,10 @@ ENV COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=false
 # grpc-gateway
 ENV GRPC_GATEWAY_ADDRESS="0.0.0.0:9084"
 ENV GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS=true
+
+# http-gateway
+ENV HTTP_GATEWAY_ADDRESS="0.0.0.0:9086"
+ENV HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 
 # authorization
 ENV AUTHORIZATION_ADDRESS="localhost:9081"
