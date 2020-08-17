@@ -40,6 +40,7 @@ export NATS_URL="nats://localhost:$NATS_PORT"
 
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
 export OAUTH_ENDPOINT_TOKEN_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/token
+export OAUTH_ENDPOINT_CODE_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/code
 export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
 
 if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
@@ -112,7 +113,14 @@ fi
 
 # resource-directory
 echo "starting resource-directory"
-ADDRESS=${RESOURCE_DIRECTORY_ADDRESS} resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
+ADDRESS=${RESOURCE_DIRECTORY_ADDRESS} \
+SERVICE_CLIENT_CONFIGURATION_CLOUD_CA_POOL=${CA_POOL_CERT_PATH} \
+SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=${OAUTH_ENDPOINT_TOKEN_URL} \
+SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${OAUTH_ENDPOINT_CODE_URL} \
+SERVICE_CLIENT_CONFIGURATION_CLOUDID=${COAP_GATEWAY_CLOUD_ID} \
+SERVICE_CLIENT_CONFIGURATION_CLOUDURL="coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}" \
+SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="test" \
+resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
 status=$?
 if [ $status -ne 0 ]; then
   echo "Failed to start resource-directory: $status"
@@ -190,6 +198,42 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# http-gateway
+echo "starting http-gateway"
+cat > /data/httpgw.yaml << EOF
+Address: ${HTTP_GATEWAY_ADDRESS}
+Listen:
+  Type: file
+  File:
+    CAPool: ${CA_POOL_CERT_PATH}
+    TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
+    DirPath: ${INTERNAL_CERT_DIR_PATH}
+    TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
+    DisableVerifyClientCertificate: ${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS}
+    UseSystemCertPool: false
+Dial:
+  Type: file
+  File:
+    CAPool: ${CA_POOL_CERT_PATH}
+    TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
+    DirPath: ${INTERNAL_CERT_DIR_PATH}
+    TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
+    DisableVerifyClientCertificate: false
+    UseSystemCertPool: false
+JwksURL: ${JWKS_URL}
+ResourceDirectoryAddr: ${RESOURCE_DIRECTORY_ADDRESS}
+EOF
+ADDRESS=${HTTP_GATEWAY_ADDRESS} \
+LOG_ENABLE_DEBUG=true \
+LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
+http-gateway --config=/data/httpgw.yaml >$LOGS_PATH/http-gateway.log 2>&1 &
+status=$?
+if [ $status -ne 0 ]; then
+  echo "Failed to start http-gateway: $status"
+  sync
+  cat $LOGS_PATH/http-gateway.log
+  exit $status
+fi
 
 # Naive check runs checks once a minute to see if either of the processes exited.
 # This illustrates part of the heavy lifting you need to do if you want to run
@@ -251,6 +295,13 @@ while sleep 10; do
     echo "grpc-gateway has already exited."
     sync
     cat $LOGS_PATH/grpc-gateway.log
+   exit 1
+  fi
+  ps aux |grep http-gateway |grep -q -v grep
+  if [ $? -ne 0 ]; then 
+    echo "http-gateway has already exited."
+    sync
+    cat $LOGS_PATH/http-gateway.log
    exit 1
   fi
 done

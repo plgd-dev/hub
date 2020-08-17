@@ -39,7 +39,7 @@ func (s *Service) HandleOAuthCallback(ctx *fasthttp.RequestCtx) {
 }
 
 func setHTMLResponse(r *fasthttp.Response, html string) {
-	r.Header.SetContentType("text/html") // for IE - otherwise it want to download content as file
+	r.Header.SetContentType("application/json") // for IE - otherwise it want to download content as file
 	r.SetStatusCode(fasthttp.StatusOK)
 	r.SetBodyString(html)
 }

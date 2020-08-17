@@ -36,6 +36,8 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 | `COAP_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying coap clients certificates | `true` |
 | `GRPC_GATEWAY_ADDRESS`| string | secure grpc-tcp listen address | `"0.0.0.0:9084"` |
 | `GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying grpc clients certificates | `true` |
+| `HTTP_GATEWAY_ADDRESS`| string | secure grpc-tcp listen address | `"0.0.0.0:9086"` |
+| `HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying http clients certificates | `true` |
 | `INITIALIZE_CERITIFICATES` | bool | initialze certificates | `true` |
 | `CERITIFICATES_PATH` | string | path to directory | `"/data/certs"` |
 | `MONGO_PATH` | string | path to directory | `"/data/db"` |
@@ -107,3 +109,6 @@ go build
 # gets devices from cloud
 ./grpc --getdevices
 ```
+
+## HTTP access
+[REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/openconnectivityfoundation/core-extensions/ocfcloud-openapi/swagger2.0/oic.r.cloudopenapi.swagger.json#/)

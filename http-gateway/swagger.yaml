@@ -4,9 +4,22 @@ info:
   description: Control plane for your devices
   version: 1.0.0
 servers:
-- url: 'https://try.plgd.cloud/api/v1'
+- url: 'https://try.plgd.cloud'
 paths:
-  '/devices':
+  '/.well-known/ocfcloud-configuration':
+    get:
+      tags:
+        - Well known
+      summary: Configuration for cloud clients
+      description: Provides configuration for clients(Onboarding tools,http clients).
+      responses:
+        200:
+          description: Configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudClientsConfiguration'
+  '/api/v1/devices':
     get:
       tags:
         - Devices
@@ -32,7 +45,7 @@ paths:
           $ref: '#/components/responses/unauthorized'
         500:
           $ref: '#/components/responses/error'
-  '/devices/{deviceId}':
+  '/api/v1/devices/{deviceId}':
     get:
       tags:
         - Devices
@@ -57,7 +70,7 @@ paths:
           $ref: '#/components/responses/deviceNotFound'
         500:
           $ref: '#/components/responses/error'
-  '/devices/{deviceId}/{resourcePath}':
+  '/api/v1/devices/{deviceId}/{resourcePath}':
     get:
       tags:
         - Devices
@@ -119,7 +132,7 @@ paths:
           $ref: '#/components/responses/deviceNotFound'
         500:
           $ref: '#/components/responses/error'
-  '/devices/{deviceId}/reboot':
+  '/api/v1/devices/{deviceId}/reboot':
     post:
       tags:
         - Maintenance
@@ -141,7 +154,7 @@ paths:
           $ref: '#/components/responses/deviceNotFound'
         500:
           $ref: '#/components/responses/error'
-  '/devices/{deviceId}/factory-reset':
+  '/api/v1/devices/{deviceId}/factory-reset':
     post:
       tags:
         - Maintenance
@@ -163,7 +176,7 @@ paths:
           $ref: '#/components/responses/deviceNotFound'
         500:
           $ref: '#/components/responses/error'
-  '/ws/devices/{deviceId}/{resourcePath}':
+  '/api/v1/ws/devices/{deviceId}/{resourcePath}':
     get:
       tags:
         - Observation
@@ -190,7 +203,7 @@ paths:
           $ref: '#/components/responses/deviceNotFound'
         500:
           $ref: '#/components/responses/error'
-  '/ws/devices':
+  '/api/v1/ws/devices':
     get:
       tags:
         - Observation
@@ -212,7 +225,7 @@ paths:
           $ref: '#/components/responses/unauthorized'
         500:
           $ref: '#/components/responses/error'
-  '/ws/devices/{deviceId}':
+  '/api/v1/ws/devices/{deviceId}':
     get:
       tags:
         - Observation
@@ -249,6 +262,45 @@ components:
           scopes:
             openid: to authorize access to a user's details
   schemas:
+    CloudClientsConfiguration:
+      type: object
+      properties:
+        access_token_url:
+          description: URL to get access token for access to Cloud API.
+          type: string
+        cloud_certificate_authorities:
+          description: Signer of cloud certificate. Need to be stored in a device.
+          type: string
+        cloud_authorization_provider:
+          description: Pass APN for onboard a device.
+          type: string
+        cloud_id:
+          description: Identity of cloud. Pass SID for onboard a device.
+          type: string
+        cloud_url:
+          description: URL of COAP-GW. Pass CIS for onboard a device. 
+          type: string
+        auth_code_url:
+          description: URL to get authorization code. Pass code for onboard a device.
+          type: string
+      example:
+        access_token_url: https://localhost:9085/api/authz/token
+        auth_code_url: https://localhost:9085/api/authz/code
+        cloud_authorization_provider: test
+        cloud_certificate_authorities: |
+          -----BEGIN CERTIFICATE-----
+          MIIBRTCB66ADAgECAhAYrP/8939ZQulrospE3RuHMAoGCCqGSM49BAMCMBIxEDAO
+          BgNVBAMTB1Jvb3QgQ0EwHhcNMjAwODE3MDcyMzM3WhcNMjEwODE3MDcyMzM3WjAS
+          MRAwDgYDVQQDEwdSb290IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEad6z
+          XxjrEezHI8IvNH8RZkc10CM2CdaeU0S+azvpEqV+LMIh0CFLHw9WLEUaTV8JBmXU
+          m2Ien4YsLfHbAC4Q/6MjMCEwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMB
+          Af8wCgYIKoZIzj0EAwIDSQAwRgIhAIyyCjzD8YzCNSY6YbnLgJ7TaXz5HPE0Eyqm
+          gfQCLUhwAiEAmfMN+GW05NyB3n5OxYHqVmHGDZJ8rHUUBCPJ3WbCweM=
+          -----END CERTIFICATE-----
+        cloud_id: 00000000-0000-0000-0000-000000000001
+        cloud_url: coaps+tcp://localhost:5684
+        jwt_claim_owner_id: ''
+        signing_server_address: ''
     DeviceResourcesObservation:
       type: object
       properties:
