@@ -266,22 +266,22 @@ components:
       type: object
       properties:
         access_token_url:
-          description: URL to get access token for cloud devices API.
-          type: string
-        auth_code_url:
-          description: URL to get authorization code to onboard device.
-          type: string
-        cloud_authorization_provider:
-          description: APN to onboard device.
+          description: URL to get access token for access to Cloud API.
           type: string
         cloud_certificate_authorities:
-          description: CA which signs cloud certificate. Need to be stored in device.
+          description: Signer of cloud certificate. Need to be stored in a device.
+          type: string
+        cloud_authorization_provider:
+          description: Pass APN for onboard a device.
           type: string
         cloud_id:
-          description: SID to onboard device. It's identity of cloud.
+          description: Identity of cloud. Pass SID for onboard a device.
           type: string
         cloud_url:
-          description: CIS to onboard device. URL to COAP-GW for device.
+          description: URL of COAP-GW. Pass CIS for onboard a device. 
+          type: string
+        auth_code_url:
+          description: URL to get authorization code. Pass code for onboard a device.
           type: string
       example:
         access_token_url: https://localhost:9085/api/authz/token
