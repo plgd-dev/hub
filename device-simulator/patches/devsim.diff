@@ -1,3 +1,16 @@
+diff --git a/messaging/coap/engine.c b/messaging/coap/engine.c
+index 627ad9d2..1a33839a 100644
+--- a/messaging/coap/engine.c
++++ b/messaging/coap/engine.c
+@@ -258,7 +258,7 @@ coap_receive(oc_message_t *msg)
+           coap_udp_init_message(response, COAP_TYPE_ACK, CONTENT_2_05,
+                                 message->mid);
+         } else {
+-          if (check_if_duplicate(message->mid, (uint8_t)msg->endpoint.device)) {
++          if (message->type == COAP_TYPE_NON && check_if_duplicate(message->mid, (uint8_t)msg->endpoint.device)) {
+             return 0;
+           }
+           history[idx] = message->mid;
 diff --git a/apps/cloud_server.c b/apps/cloud_server.c
 index 6edd644..ceaff87 100644
 --- a/apps/cloud_server.c
