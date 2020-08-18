@@ -8,7 +8,7 @@ require (
 	github.com/fullstorydev/grpchan v1.0.1
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-ocf/cqrs v0.0.0-20200722082051-4581c0ea399b
-	github.com/go-ocf/go-coap/v2 v2.0.4-0.20200729140542-f80fe6477c94
+	github.com/go-ocf/go-coap/v2 v2.0.4-0.20200805125602-ff485322e0ad
 	github.com/go-ocf/kit v0.0.0-20200803084548-48b1b68a4ffa
 	github.com/go-ocf/sdk v0.0.0-20200803093640-2e93888f40cb
 	github.com/gofrs/uuid v3.3.0+incompatible
@@ -27,15 +27,16 @@ require (
 	github.com/nats-io/nats.go v1.9.2
 	github.com/panjf2000/ants/v2 v2.4.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/pion/dtls/v2 v2.0.3-0.20200804191223-c6dbd482fa3a // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go/codec v1.1.7
 	github.com/valyala/fasthttp v1.12.0
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/atomic v1.6.0
-	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	google.golang.org/grpc v1.29.1

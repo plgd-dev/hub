@@ -217,6 +217,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, devic
 func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, gwHost string, expectedResources []schema.ResourceLink) func() {
 	client, err := NewSDKClient()
 	require.NoError(t, err)
+	defer client.Close(ctx)
 	err = client.OwnDevice(ctx, deviceID)
 	require.NoError(t, err)
 
@@ -228,10 +229,12 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	waitForDevice(ctx, t, c, deviceID, expectedResources)
 
 	return func() {
-		err := client.DisownDevice(ctx, deviceID)
+		client, err := NewSDKClient()
+		require.NoError(t, err)
+		err = client.DisownDevice(ctx, deviceID)
 		require.NoError(t, err)
 		client.Close(ctx)
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 2)
 	}
 }
 

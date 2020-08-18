@@ -90,8 +90,7 @@ test: env
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
 		cloud-test \
-		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
-	cp $(shell pwd)/.tmp/home/coverage.txt $(shell pwd)/coverage.txt
+		go test -mod=mod -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 
