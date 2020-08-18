@@ -33,7 +33,7 @@ require (
 	github.com/smallstep/nosql v0.2.0
 	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go/codec v1.1.7
-	github.com/valyala/fasthttp v1.12.0
+	github.com/valyala/fasthttp v1.16.0
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/atomic v1.6.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
