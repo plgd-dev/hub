@@ -272,7 +272,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
-		fmt.Printf("waitForDevice.forOnline: %v\n", ev)
 		var endLoop bool
 		for _, ID := range ev.GetDeviceOnline().GetDeviceIds() {
 			if ID == deviceID {
