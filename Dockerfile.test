@@ -14,5 +14,5 @@ WORKDIR $GOPATH/src/github.com/go-ocf/cloud
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go mod tidy
-RUN go test ./... || true
+# RUN go mod tidy
+# RUN go test ./... || true
