@@ -1,14 +1,14 @@
 {
     "devDependencies": {
-        "@vuepress/plugin-google-analytics": "^1.4.1",
-        "@vuepress/plugin-medium-zoom": "^1.4.1",
-        "vuepress": "^1.4.1"
+        "@vuepress/plugin-google-analytics": "1.4.1",
+        "@vuepress/plugin-medium-zoom": "1.4.1",
+        "vuepress": "1.4.1"
     },
     "scripts": {
         "docs:dev": "vuepress dev docs",
         "docs:build": "vuepress build docs"
     },
     "dependencies": {
-        "vuepress-bar": "^0.3.0"
+        "vuepress-bar": "0.3.1"
     }
 }
