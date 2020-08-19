@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
 // ResourcePublishedHandler handler of events.

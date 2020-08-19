@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/refImpl"
-	testCfg "github.com/go-ocf/cloud/test/config"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/refImpl"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )

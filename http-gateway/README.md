@@ -4,7 +4,7 @@
 - [WebSocket](#websocket)
 
 ## Documentation
-- [REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/go-ocf/cloud/master/http-gateway/swagger.yaml) ([swagger](/http-gateway/swagger.yaml), [uri](/http-gateway/uri/uri.go), [mux](/http-gateway/service/httpApi.go))
+- [REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/master/http-gateway/swagger.yaml) ([swagger](/http-gateway/swagger.yaml), [uri](/http-gateway/uri/uri.go), [mux](/http-gateway/service/httpApi.go))
 - [WebSocket API](#websocket)
 
 ## WebSocket

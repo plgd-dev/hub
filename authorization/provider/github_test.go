@@ -10,8 +10,8 @@ import (
 
 	"io"
 
-	"github.com/go-ocf/cloud/authorization/oauth"
 	"github.com/google/go-github/github"
+	"github.com/plgd-dev/cloud/authorization/oauth"
 	"github.com/stretchr/testify/assert"
 )
 

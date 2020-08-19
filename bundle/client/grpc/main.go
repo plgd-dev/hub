@@ -14,11 +14,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pbGW "github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/codec/json"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/net/http/transport"
+	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/json"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/net/http/transport"
 )
 
 func toJSON(v interface{}) string {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/kit/log"
 	"github.com/valyala/fasthttp"
 )
 

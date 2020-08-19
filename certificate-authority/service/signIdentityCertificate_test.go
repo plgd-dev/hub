@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/certificate-authority/pb"
-	ocfSigner "github.com/go-ocf/kit/security/signer"
+	"github.com/plgd-dev/cloud/certificate-authority/pb"
+	ocfSigner "github.com/plgd-dev/kit/security/signer"
 	"github.com/stretchr/testify/require"
 )
 

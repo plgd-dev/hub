@@ -7,16 +7,16 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/security/oauth/manager"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/oauth/manager"
 
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
 )
 
 //Server handle HTTP request

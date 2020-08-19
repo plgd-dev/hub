@@ -6,15 +6,15 @@ import (
 
 	"google.golang.org/grpc/status"
 
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
-	"github.com/go-ocf/cloud/resource-aggregate/pb"
-	cqrs "github.com/go-ocf/cqrs"
-	cqrsEvent "github.com/go-ocf/cqrs/event"
-	"github.com/go-ocf/cqrs/eventstore/maintenance"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/strings"
+	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+	cqrs "github.com/plgd-dev/cqrs"
+	cqrsEvent "github.com/plgd-dev/cqrs/event"
+	"github.com/plgd-dev/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 )
 

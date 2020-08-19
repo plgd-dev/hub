@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-ocf/cloud/coap-gateway/coapconv"
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/go-coap/v2/message"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/go-ocf/go-coap/v2/mux"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 

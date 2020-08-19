@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	testCfg "github.com/go-ocf/cloud/test/config"
-	"github.com/go-ocf/go-coap/v2/tcp"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

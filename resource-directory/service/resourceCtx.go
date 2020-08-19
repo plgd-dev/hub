@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-ocf/cqrs/event"
-	"github.com/go-ocf/cqrs/eventstore"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/sdk/schema/cloud"
+	"github.com/plgd-dev/cqrs/event"
+	"github.com/plgd-dev/cqrs/eventstore"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/sdk/schema/cloud"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	raEvents "github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/notification"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 type resourceCtx struct {

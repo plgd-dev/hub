@@ -3,8 +3,8 @@ package refImpl
 import (
 	"testing"
 
-	testAS "github.com/go-ocf/cloud/authorization/test"
-	testCfg "github.com/go-ocf/cloud/test/config"
+	testAS "github.com/plgd-dev/cloud/authorization/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )

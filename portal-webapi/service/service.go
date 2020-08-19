@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"net"
 
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/kit/log"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/kit/log"
 	"github.com/valyala/fasthttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

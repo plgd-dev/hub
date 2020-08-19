@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 
-	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/codec/cbor"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/schema/cloud"
+	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/cbor"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 func updateCloudStatus(ctx context.Context, raClient pbRA.ResourceAggregateClient, userID, deviceID string, online bool, cmdMeta pbCQRS.CommandMetadata) error {

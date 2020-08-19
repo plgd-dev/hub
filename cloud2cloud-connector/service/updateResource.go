@@ -8,18 +8,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v2/message"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitHttp "github.com/go-ocf/kit/net/http"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitHttp "github.com/plgd-dev/kit/net/http"
 
-	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 func makeHTTPEndpoint(url, deviceID, href string) string {

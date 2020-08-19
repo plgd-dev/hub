@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/go-ocf/cloud/resource-aggregate/refImpl/maintenance"
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/refImpl/maintenance"
+	"github.com/plgd-dev/kit/log"
 )
 
 func main() {

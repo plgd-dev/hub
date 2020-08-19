@@ -3,12 +3,12 @@ package test
 import (
 	"testing"
 
-	c2curi "github.com/go-ocf/cloud/cloud2cloud-connector/uri"
-	raService "github.com/go-ocf/cloud/resource-aggregate/test"
-	rdService "github.com/go-ocf/cloud/resource-directory/test"
+	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
+	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 
-	authService "github.com/go-ocf/cloud/authorization/test"
-	"github.com/go-ocf/cloud/authorization/uri"
+	authService "github.com/plgd-dev/cloud/authorization/test"
+	"github.com/plgd-dev/cloud/authorization/uri"
 )
 
 const AUTH_HOST = "localhost:30000"

@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

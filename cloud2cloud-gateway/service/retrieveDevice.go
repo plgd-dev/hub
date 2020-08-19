@@ -6,16 +6,16 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/codec/cbor"
-	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/kit/log"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/sdk/schema"
-	"github.com/go-ocf/sdk/schema/cloud"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/log"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/sdk/schema/cloud"
 
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 func toEndpoint(s *pbRA.EndpointInformation) schema.Endpoint {

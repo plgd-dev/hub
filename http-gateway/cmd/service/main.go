@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/go-ocf/cloud/http-gateway/service"
+	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/jessevdk/go-flags"
 )
 

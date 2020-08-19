@@ -3,7 +3,7 @@ package refImpl_test
 import (
 	"testing"
 
-	"github.com/go-ocf/cloud/grpc-gateway/refImpl"
+	"github.com/plgd-dev/cloud/grpc-gateway/refImpl"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )

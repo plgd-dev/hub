@@ -3,8 +3,8 @@ package service
 import (
 	"io"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 

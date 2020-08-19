@@ -8,16 +8,16 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/go-ocf/go-coap/v2/mux"
-	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 )
 
 func StatusToCoapCode(status pbGRPC.Status, cmdCode codes.Code) codes.Code {

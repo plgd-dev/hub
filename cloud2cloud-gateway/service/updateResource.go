@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/gorilla/mux"
 )
 

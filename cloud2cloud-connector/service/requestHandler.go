@@ -9,16 +9,16 @@ import (
 
 	"github.com/patrickmn/go-cache"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/uri"
-	"github.com/go-ocf/kit/log"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/kit/log"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
 
 	router "github.com/gorilla/mux"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 const cloudIDKey = "CloudId"

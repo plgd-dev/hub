@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/authorization/persistence"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/authorization/persistence"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
 )

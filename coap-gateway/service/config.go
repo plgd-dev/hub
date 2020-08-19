@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	"github.com/go-ocf/kit/security/oauth/manager"
+	"github.com/plgd-dev/kit/security/oauth/manager"
 )
 
 // Config for application.

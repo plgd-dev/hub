@@ -13,15 +13,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/kit/codec/json"
 
-	"github.com/go-ocf/kit/net"
+	"github.com/plgd-dev/kit/net"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	codes "github.com/go-ocf/go-coap/v2/message/codes"
-	coap "github.com/go-ocf/go-coap/v2/tcp"
-	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
-	"github.com/go-ocf/kit/codec/cbor"
+	"github.com/plgd-dev/go-coap/v2/message"
+	codes "github.com/plgd-dev/go-coap/v2/message/codes"
+	coap "github.com/plgd-dev/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/kit/codec/cbor"
 )
 
 type authReq struct {

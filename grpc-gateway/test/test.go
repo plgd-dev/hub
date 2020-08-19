@@ -4,9 +4,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-ocf/cloud/grpc-gateway/refImpl"
-	testCfg "github.com/go-ocf/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/grpc-gateway/refImpl"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 

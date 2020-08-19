@@ -1,5 +1,5 @@
-[![codecov](https://codecov.io/gh/go-ocf/certificate-authority/branch/master/graph/badge.svg)](https://codecov.io/gh/go-ocf/certificate-authority)
-[![Go Report](https://goreportcard.com/badge/github.com/go-ocf/cloud/certificate-authority)](https://goreportcard.com/report/github.com/go-ocf/cloud/certificate-authority)
+[![codecov](https://codecov.io/gh/plgd-dev/certificate-authority/branch/master/graph/badge.svg)](https://codecov.io/gh/plgd-dev/certificate-authority)
+[![Go Report](https://goreportcard.com/badge/github.com/plgd-dev/cloud/certificate-authority)](https://goreportcard.com/report/github.com/plgd-dev/cloud/certificate-authority)
 
 # certificate-authority
 

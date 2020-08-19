@@ -12,7 +12,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 )
 
 type subscription struct {

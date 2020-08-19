@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/gofrs/uuid"
 
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/kit/codec/json"
 )
 
 func writeJson(w http.ResponseWriter, v interface{}) error {

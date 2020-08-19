@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 )
 
 type Type string

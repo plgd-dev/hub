@@ -1,11 +1,11 @@
 package service
 
 import (
-	"github.com/go-ocf/kit/strings"
+	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
 func toResourceValue(m *resourceCtx) pb.ResourceValue {

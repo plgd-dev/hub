@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/kit/net/grpc"
 )
 
 //Config represent application configuration

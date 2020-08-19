@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/kit/log"
 )
 
 type resourceSubscription struct {

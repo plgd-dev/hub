@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/authorization/pb"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

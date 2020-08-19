@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	projectionRA "github.com/go-ocf/cloud/resource-aggregate/cqrs/projection"
-	"github.com/go-ocf/cqrs/eventbus"
-	"github.com/go-ocf/cqrs/eventstore"
-	"github.com/go-ocf/kit/strings"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	projectionRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs/projection"
+	"github.com/plgd-dev/cqrs/eventbus"
+	"github.com/plgd-dev/cqrs/eventstore"
+	"github.com/plgd-dev/kit/strings"
 	cache "github.com/patrickmn/go-cache"
 )
 

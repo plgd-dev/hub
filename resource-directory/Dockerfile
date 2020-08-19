@@ -1,5 +1,5 @@
 FROM cloud-build AS build
-WORKDIR $GOPATH/src/github.com/go-ocf/cloud/resource-directory
+WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/resource-directory
 RUN go build -o /go/bin/service ./cmd/service
 
 FROM alpine:3.12 as service

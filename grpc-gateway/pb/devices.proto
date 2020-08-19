@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.grpcgateway.pb;
 
-option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
 message GetDevicesRequest {
   enum Status {

@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/coap-gateway/uri"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	"github.com/go-ocf/go-coap/v2/message"
+	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/go-coap/v2/message"
 
-	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/kit/log"
 
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"
 )
 

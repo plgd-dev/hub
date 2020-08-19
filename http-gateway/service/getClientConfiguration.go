@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
 func (requestHandler *RequestHandler) getClientConfiguration(w http.ResponseWriter, r *http.Request) {

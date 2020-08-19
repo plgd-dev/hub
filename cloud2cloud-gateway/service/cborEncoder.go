@@ -3,9 +3,9 @@ package service
 import (
 	"net/http"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 
-	"github.com/go-ocf/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/cbor"
 )
 
 func newCBORResponseWriterEncoder(contentType string) func(w http.ResponseWriter, v interface{}, status int) error {

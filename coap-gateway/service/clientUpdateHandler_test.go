@@ -6,10 +6,10 @@ import (
 	"io"
 	"testing"
 
-	"github.com/go-ocf/cloud/coap-gateway/uri"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	"github.com/go-ocf/go-coap/v2/message"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

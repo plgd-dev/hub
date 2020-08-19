@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/go-ocf/cloud/grpc-gateway/client"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/gorilla/websocket"
 )
 

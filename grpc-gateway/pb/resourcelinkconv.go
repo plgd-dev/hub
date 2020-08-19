@@ -1,9 +1,9 @@
 package pb
 
 import (
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/sdk/schema"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/sdk/schema"
 )
 
 func (e EndpointInformation) ToRAProto() *pbRA.EndpointInformation {

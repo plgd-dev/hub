@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/kit/log"
-	kitSync "github.com/go-ocf/kit/sync"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/kit/log"
+	kitSync "github.com/plgd-dev/kit/sync"
 	"golang.org/x/sync/semaphore"
 )
 

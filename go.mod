@@ -1,4 +1,4 @@
-module github.com/go-ocf/cloud
+module github.com/plgd-dev/cloud
 
 go 1.14
 
@@ -7,10 +7,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fullstorydev/grpchan v1.0.1
 	github.com/go-chi/chi v4.1.1+incompatible
-	github.com/go-ocf/cqrs v0.0.0-20200722082051-4581c0ea399b
-	github.com/go-ocf/go-coap/v2 v2.0.4-0.20200805125602-ff485322e0ad
-	github.com/go-ocf/kit v0.0.0-20200803084548-48b1b68a4ffa
-	github.com/go-ocf/sdk v0.0.0-20200803093640-2e93888f40cb
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
@@ -28,6 +24,10 @@ require (
 	github.com/panjf2000/ants/v2 v2.4.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pion/dtls/v2 v2.0.3-0.20200804191223-c6dbd482fa3a // indirect
+	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
+	github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc
+	github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63
+	github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0

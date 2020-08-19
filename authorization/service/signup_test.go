@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/kit/net/http"
+	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/kit/net/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
 )

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-ocf/cloud/portal-webapi/service"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/cloud/portal-webapi/service"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/certManager"
 )
 
 type Config struct {

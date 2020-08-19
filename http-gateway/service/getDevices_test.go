@@ -5,19 +5,19 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	cloudTest "github.com/go-ocf/cloud/test"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	cloudTest "github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/kit/codec/json"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"context"
 
-	authTest "github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/http-gateway/test"
-	"github.com/go-ocf/cloud/http-gateway/uri"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	authTest "github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 

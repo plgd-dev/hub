@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.resourceaggregate.pb;
 
-option go_package = "github.com/go-ocf/cloud/resource-aggregate/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
 
 // https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.oic-link-schema.json
 message Resource {

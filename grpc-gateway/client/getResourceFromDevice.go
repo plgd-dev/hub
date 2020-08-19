@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	pbGW "github.com/go-ocf/cloud/grpc-gateway/pb"
-	kitNetCoap "github.com/go-ocf/kit/net/coap"
+	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 )
 
 func (c *Client) getResourceFromDevice(

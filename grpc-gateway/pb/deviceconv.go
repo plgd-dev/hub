@@ -1,7 +1,7 @@
 package pb
 
 import (
-	"github.com/go-ocf/sdk/schema"
+	"github.com/plgd-dev/sdk/schema"
 )
 
 func (l *LocalizedString) ToSchema() schema.LocalizedString {

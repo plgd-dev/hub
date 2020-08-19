@@ -1,6 +1,6 @@
 package client
 
-import kitNetCoap "github.com/go-ocf/kit/net/coap"
+import kitNetCoap "github.com/plgd-dev/kit/net/coap"
 
 // WithInterface updates/gets resource with interface directly from a device.
 func WithInterface(resourceInterface string) ResourceInterfaceOption {

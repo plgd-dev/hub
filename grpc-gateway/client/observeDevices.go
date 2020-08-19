@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
 	"github.com/gofrs/uuid"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
 type DevicesObservationEvent_type uint8

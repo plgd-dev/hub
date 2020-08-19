@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security/oauth/manager"
+	"github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/oauth/manager"
 )
 
 type TaskProcessorConfig struct {

@@ -1,4 +1,4 @@
-[![Go Report](https://goreportcard.com/badge/github.com/go-ocf/cloud/cloud2cloud-gateway)](https://goreportcard.com/report/github.com/go-ocf/cloud/cloud2cloud-gateway)
+[![Go Report](https://goreportcard.com/badge/github.com/plgd-dev/cloud/cloud2cloud-gateway)](https://goreportcard.com/report/github.com/plgd-dev/cloud/cloud2cloud-gateway)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 # Cloud API for Cloud Services

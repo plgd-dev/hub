@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/sdk/schema"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/sdk/schema"
 	"github.com/gorilla/mux"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/log"
 )
 
 type deviceSubscription struct {

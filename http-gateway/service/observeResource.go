@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/go-ocf/cloud/http-gateway/uri"
-	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/kit/log"
-	kitNetCoap "github.com/go-ocf/kit/net/coap"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/log"
+	kitNetCoap "github.com/plgd-dev/kit/net/coap"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
