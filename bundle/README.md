@@ -111,4 +111,4 @@ go build
 ```
 
 ## HTTP access
-[REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/openconnectivityfoundation/core-extensions/ocfcloud-openapi/swagger2.0/oic.r.cloudopenapi.swagger.json#/)
+[REST API](https://raw.githubusercontent.com/go-ocf/cloud/master/http-gateway/swagger.yaml)
