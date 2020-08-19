@@ -353,9 +353,11 @@ components:
       type: object
       properties:
         device:
-          $ref: "http://openconnectivityfoundation.github.io/core/swagger2.0/oic.wk.d.swagger.json#definitions/Device"
+          type: object
+          description: "http://openconnectivityfoundation.github.io/core/swagger2.0/oic.wk.d.swagger.json#definitions/Device"
         links:
-          $ref: "http://openconnectivityfoundation.github.io/core/swagger2.0/oic.wk.col.swagger.json#definitions/sbaseline/properties/links"
+          type: object
+          description: "http://openconnectivityfoundation.github.io/core/swagger2.0/oic.wk.col.swagger.json#definitions/sbaseline/properties/links"
         status:
           $ref: '#/components/schemas/DeviceStatus'
       example:
