@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-ocf/cloud/coap-gateway/refImpl"
-	testCfg "github.com/go-ocf/cloud/test/config"
+	"github.com/plgd-dev/cloud/coap-gateway/refImpl"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )

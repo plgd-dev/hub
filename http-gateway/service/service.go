@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/go-ocf/cloud/grpc-gateway/client"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/cloud/http-gateway/uri"
-	"github.com/go-ocf/kit/log"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/kit/log"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/kit/security/certManager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

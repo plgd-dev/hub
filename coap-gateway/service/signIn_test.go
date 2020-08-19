@@ -3,10 +3,10 @@ package service_test
 import (
 	"testing"
 
-	oauthTest "github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/coap-gateway/uri"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
+	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 )
 
 type TestCoapSignInResponse struct {

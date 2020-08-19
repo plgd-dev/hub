@@ -8,15 +8,15 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/cloud/resource-aggregate/pb"
-	cqrs "github.com/go-ocf/cqrs"
-	cqrsEvent "github.com/go-ocf/cqrs/event"
-	cqrsEventBus "github.com/go-ocf/cqrs/eventbus"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/net/grpc"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+	cqrs "github.com/plgd-dev/cqrs"
+	cqrsEvent "github.com/plgd-dev/cqrs/event"
+	cqrsEventBus "github.com/plgd-dev/cqrs/eventbus"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 //RequestHandler for handling incoming request

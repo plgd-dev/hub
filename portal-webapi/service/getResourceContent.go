@@ -10,10 +10,10 @@ import (
 
 	"github.com/ugorji/go/codec"
 
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/valyala/fasthttp"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/gorilla/mux"
 )
 

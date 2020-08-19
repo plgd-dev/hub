@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"golang.org/x/oauth2"
 )
 

@@ -3,10 +3,10 @@ package test
 import (
 	"fmt"
 
-	"github.com/go-ocf/cloud/resource-aggregate/cqrs/events"
-	"github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/cqrs/event"
-	httpUtils "github.com/go-ocf/kit/net/http"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cqrs/event"
+	httpUtils "github.com/plgd-dev/kit/net/http"
 )
 
 func MakeResourcePublishedEvent(resource pb.Resource, eventMetadata pb.EventMetadata) event.EventUnmarshaler {

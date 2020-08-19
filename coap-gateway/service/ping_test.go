@@ -5,14 +5,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/go-coap/v2/tcp"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	"github.com/go-ocf/cloud/coap-gateway/uri"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/go-ocf/go-coap/v2/tcp/message/pool"
-	"github.com/go-ocf/kit/codec/cbor"
+	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

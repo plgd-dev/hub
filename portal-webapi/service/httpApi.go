@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/go-ocf/cloud/portal-webapi/uri"
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/cloud/portal-webapi/uri"
+	"github.com/plgd-dev/kit/log"
 	"github.com/ugorji/go/codec"
 	"github.com/valyala/fasthttp"
 
 	router "github.com/buaazp/fasthttprouter"
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 //RequestHandler for handling incoming request

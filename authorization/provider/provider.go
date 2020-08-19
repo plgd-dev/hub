@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"github.com/go-ocf/cloud/authorization/oauth"
+	"github.com/plgd-dev/cloud/authorization/oauth"
 )
 
 // Provider defines interface for authentification against auth service

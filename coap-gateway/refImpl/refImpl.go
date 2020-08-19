@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager"
 
-	"github.com/go-ocf/cloud/coap-gateway/service"
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/cloud/coap-gateway/service"
+	"github.com/plgd-dev/kit/log"
 )
 
 type Config struct {

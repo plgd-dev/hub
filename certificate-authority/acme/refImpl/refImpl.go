@@ -14,13 +14,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-ocf/cloud/certificate-authority/acme/service"
-	kitNet "github.com/go-ocf/kit/net"
-	"github.com/go-ocf/kit/security/generateCertificate"
+	"github.com/plgd-dev/cloud/certificate-authority/acme/service"
+	kitNet "github.com/plgd-dev/kit/net"
+	"github.com/plgd-dev/kit/security/generateCertificate"
 
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/security"
-	ocfSigner "github.com/go-ocf/kit/security/signer"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security"
+	ocfSigner "github.com/plgd-dev/kit/security/signer"
 )
 
 type Config struct {

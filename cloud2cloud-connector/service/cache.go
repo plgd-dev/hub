@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
-	kitSync "github.com/go-ocf/kit/sync"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	kitSync "github.com/plgd-dev/kit/sync"
 )
 
 type ResourceData struct {

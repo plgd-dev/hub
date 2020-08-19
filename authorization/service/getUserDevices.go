@@ -3,12 +3,12 @@ package service
 import (
 	"fmt"
 
-	"github.com/go-ocf/cloud/authorization/persistence"
+	"github.com/plgd-dev/cloud/authorization/persistence"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/kit/log"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

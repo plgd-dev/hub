@@ -4,19 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/net/grpc"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/cqrs"
-	"github.com/go-ocf/cqrs/event"
-	"github.com/go-ocf/kit/codec/cbor"
-	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/kit/net/http"
+	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cqrs"
+	"github.com/plgd-dev/cqrs/event"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/net/http"
 )
 
 type VerifyAccessFunc func(deviceId, resourceId string) error

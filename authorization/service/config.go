@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-ocf/cloud/authorization/oauth"
-	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
-	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/cloud/authorization/oauth"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
+	"github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/certManager"
 )
 
 // Config provides defaults and enables configuring via env variables.

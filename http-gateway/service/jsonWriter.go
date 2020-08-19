@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/json"
 	"github.com/gogo/protobuf/proto"
 )
 

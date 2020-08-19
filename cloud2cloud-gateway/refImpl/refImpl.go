@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/service"
-	storeMongodb "github.com/go-ocf/cloud/cloud2cloud-gateway/store/mongodb"
-	"github.com/go-ocf/kit/log"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/service"
+	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
+	"github.com/plgd-dev/kit/log"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/kit/security/certManager"
 )
 
 type Config struct {

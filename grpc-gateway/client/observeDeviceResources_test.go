@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/go-ocf/cloud/authorization/provider"
-	client "github.com/go-ocf/cloud/grpc-gateway/client"
-	test "github.com/go-ocf/cloud/test"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	authTest "github.com/plgd-dev/cloud/authorization/provider"
+	client "github.com/plgd-dev/cloud/grpc-gateway/client"
+	test "github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/cloud/coap-gateway/uri"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	kitNetCoap "github.com/go-ocf/kit/net/coap"
+	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 )
 
 func isExpired(e time.Time) bool {

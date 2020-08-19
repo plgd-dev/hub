@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/net/coap"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/net/coap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

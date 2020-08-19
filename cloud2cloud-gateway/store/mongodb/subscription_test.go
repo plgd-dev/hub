@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )

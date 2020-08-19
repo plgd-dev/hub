@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/sdk/schema"
-	"github.com/go-ocf/sdk/schema/cloud"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 type deviceSubsciptionHandler struct {

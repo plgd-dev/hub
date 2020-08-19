@@ -3,21 +3,21 @@ package service
 import (
 	"fmt"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/sdk/schema"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/sdk/schema"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 
-	"github.com/go-ocf/sdk/schema/cloud"
+	"github.com/plgd-dev/sdk/schema/cloud"
 
-	"github.com/go-ocf/kit/codec/cbor"
-	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/strings"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 // hasMatchingStatus returns true for matching a device state.

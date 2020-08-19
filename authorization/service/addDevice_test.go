@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/stretchr/testify/require"
 )
 

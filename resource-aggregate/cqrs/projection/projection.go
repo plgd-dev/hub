@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sync"
 
-	raCqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/cqrs"
-	"github.com/go-ocf/cqrs/eventbus"
-	"github.com/go-ocf/cqrs/eventstore"
-	"github.com/go-ocf/kit/log"
-	kitSync "github.com/go-ocf/kit/sync"
+	raCqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cqrs"
+	"github.com/plgd-dev/cqrs/eventbus"
+	"github.com/plgd-dev/cqrs/eventstore"
+	"github.com/plgd-dev/kit/log"
+	kitSync "github.com/plgd-dev/kit/sync"
 )
 
 // Projection projects events from resource aggregate.

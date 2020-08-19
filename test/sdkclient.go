@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/go-ocf/sdk/local"
+	"github.com/plgd-dev/sdk/local"
 )
 
 type testSetupSecureClient struct {

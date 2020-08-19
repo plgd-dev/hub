@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
 // DeviceDetails describes a device.

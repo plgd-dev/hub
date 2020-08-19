@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-ocf/cqrs/event"
-	"github.com/go-ocf/cqrs/eventstore"
+	"github.com/plgd-dev/cqrs/event"
+	"github.com/plgd-dev/cqrs/eventstore"
 )
 
 type MockEventStore struct {

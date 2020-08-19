@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 
-	raCqrs "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitHttp "github.com/go-ocf/kit/net/http"
-	"github.com/go-ocf/sdk/schema"
-	"github.com/go-ocf/sdk/schema/cloud"
+	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitHttp "github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 func publishResource(ctx context.Context, raClient pbRA.ResourceAggregateClient, userID string, link schema.ResourceLink, cmdMeta pbCQRS.CommandMetadata) error {

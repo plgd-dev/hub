@@ -10,15 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/kit/log"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
-	pbCQRS "github.com/go-ocf/cloud/resource-aggregate/pb"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/kit/codec/json"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/schema"
+	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/kit/codec/json"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/sdk/schema"
 )
 
 type Device struct {

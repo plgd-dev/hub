@@ -20,17 +20,17 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/go-ocf/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/cqrs/eventstore/maintenance"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/cqrs/event"
-	"github.com/go-ocf/cqrs/eventstore"
-	cqrsMongodb "github.com/go-ocf/cqrs/eventstore/mongodb"
+	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cqrs/event"
+	"github.com/plgd-dev/cqrs/eventstore"
+	cqrsMongodb "github.com/plgd-dev/cqrs/eventstore/mongodb"
 )
 
 const instanceIdsCollection = "instanceIds"

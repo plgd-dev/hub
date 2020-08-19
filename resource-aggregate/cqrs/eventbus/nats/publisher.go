@@ -1,8 +1,8 @@
 package nats
 
 import (
-	cqrsUtils "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	cqrsNats "github.com/go-ocf/cqrs/eventbus/nats"
+	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	cqrsNats "github.com/plgd-dev/cqrs/eventbus/nats"
 )
 
 type Publisher struct {

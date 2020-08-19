@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
-	"github.com/go-ocf/cloud/grpc-gateway/client"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitSync "github.com/go-ocf/kit/sync"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitSync "github.com/plgd-dev/kit/sync"
 )
 
 type Subscription interface {

@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/go-ocf/go-coap/v2/mux"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
 )
 
 func resourceRouteHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {

@@ -6,18 +6,18 @@ import (
 	"crypto/x509"
 	"testing"
 
-	"github.com/go-ocf/cloud/grpc-gateway/client"
-	"github.com/go-ocf/cloud/test"
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/codec/cbor"
-	kit "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/sdk/schema"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/cbor"
+	kit "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/sdk/schema"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	testCfg "github.com/go-ocf/cloud/test/config"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 )
 
 const (

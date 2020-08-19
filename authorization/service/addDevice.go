@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/authorization/persistence"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/authorization/persistence"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

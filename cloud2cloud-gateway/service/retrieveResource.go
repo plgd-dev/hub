@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
 )
 
 func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID pbGRPC.ResourceId, encoder responseWriterEncoderFunc) (int, error) {

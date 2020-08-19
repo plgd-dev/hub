@@ -7,18 +7,18 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	"github.com/go-ocf/kit/codec/cbor"
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/uri"
-	"github.com/go-ocf/kit/log"
-	kitNetHttp "github.com/go-ocf/kit/net/http"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
+	"github.com/plgd-dev/kit/log"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
 
 	router "github.com/gorilla/mux"
 
-	pbGRPC "github.com/go-ocf/cloud/grpc-gateway/pb"
+	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
 const HrefKey = "Href"

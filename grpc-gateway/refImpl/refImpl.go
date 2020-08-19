@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager"
 
 	"google.golang.org/grpc"
 
-	"github.com/go-ocf/cloud/grpc-gateway/service"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security/jwt"
+	"github.com/plgd-dev/cloud/grpc-gateway/service"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/jwt"
 	"google.golang.org/grpc/credentials"
 )
 

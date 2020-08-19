@@ -3,8 +3,8 @@ package config
 import (
 	"time"
 
-	"github.com/go-ocf/cloud/authorization/uri"
-	c2curi "github.com/go-ocf/cloud/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/cloud/authorization/uri"
+	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 )
 
 const AUTH_HOST = "localhost:20000"

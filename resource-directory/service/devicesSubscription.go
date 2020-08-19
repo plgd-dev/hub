@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/go-ocf/cloud/resource-aggregate/cqrs"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/sdk/schema/cloud"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 type devicesSubscription struct {

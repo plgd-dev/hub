@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-ocf/cloud/grpc-gateway/client"
-	"github.com/go-ocf/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/gorilla/mux"
 )

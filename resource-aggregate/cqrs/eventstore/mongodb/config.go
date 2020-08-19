@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/cqrs/event"
+	"github.com/plgd-dev/cqrs/event"
 )
 
 // Option provides the means to use function call chaining

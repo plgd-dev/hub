@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	authTest "github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/test"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	kitNetCoap "github.com/go-ocf/kit/net/coap"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	authTest "github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	kitNetCoap "github.com/plgd-dev/kit/net/coap"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

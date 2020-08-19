@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/kit/net/http/transport"
+	"github.com/plgd-dev/kit/net/http/transport"
 
-	"github.com/go-ocf/cloud/http-gateway/service"
-	"github.com/go-ocf/cloud/http-gateway/uri"
-	testCfg "github.com/go-ocf/cloud/test/config"
+	"github.com/plgd-dev/cloud/http-gateway/service"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/jtacoma/uritemplates"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	codecOcf "github.com/go-ocf/kit/codec/ocf"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	codecOcf "github.com/plgd-dev/kit/codec/ocf"
 )
 
 // UpdateResource updates content in OCF-CBOR format.

@@ -1,5 +1,5 @@
 FROM cloud-build AS build
-ARG root_directory=$GOPATH/src/github.com/go-ocf/cloud
+ARG root_directory=$GOPATH/src/github.com/plgd-dev/cloud
 
 #coap-gateway
 ARG service=coap-gateway
@@ -34,7 +34,7 @@ RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$servi
 #certificate-generator
 ARG service=kit
 WORKDIR /
-RUN cd $GOPATH/pkg/mod/github.com/go-ocf/kit* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
+RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit* && go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/certificate-generator ./cmd/certificate-generator
 
 #nats
 WORKDIR $root_directory

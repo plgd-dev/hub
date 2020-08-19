@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 
-	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
-	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/authorization/service"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
+	"github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/authorization/service"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/certManager"
 )
 
 func main() {

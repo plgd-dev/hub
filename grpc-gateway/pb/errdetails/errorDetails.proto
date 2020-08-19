@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package ocf.cloud.grpcgateway.pb.errdetails;
-option go_package = "github.com/go-ocf/cloud/grpc-gateway/pb/errdetails;errdetails";
+option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb/errdetails;errdetails";
 
 // must be generated with without gogo protobuf because it is used in grpc status details.
 

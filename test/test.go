@@ -15,37 +15,37 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/kit/codec/cbor"
-	"github.com/go-ocf/kit/net/http/transport"
-	"github.com/go-ocf/kit/security/certManager"
 	"github.com/jtacoma/uritemplates"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/net/http/transport"
+	"github.com/plgd-dev/kit/security/certManager"
 	"go.uber.org/atomic"
 
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/go-ocf/sdk/local"
-	"github.com/go-ocf/sdk/schema"
-	"github.com/go-ocf/sdk/schema/acl"
-	"github.com/go-ocf/sdk/schema/cloud"
+	"github.com/plgd-dev/sdk/local"
+	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/sdk/schema/acl"
+	"github.com/plgd-dev/sdk/schema/cloud"
 
-	coapgwService "github.com/go-ocf/cloud/coap-gateway/test"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	raService "github.com/go-ocf/cloud/resource-aggregate/test"
-	rdService "github.com/go-ocf/cloud/resource-directory/test"
-	"github.com/go-ocf/sdk/local/core"
 	"github.com/kelseyhightower/envconfig"
+	coapgwService "github.com/plgd-dev/cloud/coap-gateway/test"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
+	rdService "github.com/plgd-dev/cloud/resource-directory/test"
+	"github.com/plgd-dev/sdk/local/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	authService "github.com/go-ocf/cloud/authorization/test"
-	c2cgwService "github.com/go-ocf/cloud/cloud2cloud-gateway/test"
-	grpcgwService "github.com/go-ocf/cloud/grpc-gateway/test"
+	authService "github.com/plgd-dev/cloud/authorization/test"
+	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
+	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 )
 
 var (

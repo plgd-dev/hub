@@ -9,14 +9,14 @@ import (
 
 	"github.com/patrickmn/go-cache"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/store"
-	pbRA "github.com/go-ocf/cloud/resource-aggregate/pb"
-	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitHttp "github.com/go-ocf/kit/net/http"
+	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
 const AuthorizationHeader string = "Authorization"

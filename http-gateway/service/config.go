@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager"
 
 	"gopkg.in/yaml.v2"
 )

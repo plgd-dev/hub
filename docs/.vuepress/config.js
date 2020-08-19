@@ -3,14 +3,14 @@ module.exports = {
     description: 'Secure and Interoperable Internet of Things',
     themeConfig: {
       logo: '/img/logo-long.svg',
-      repo: 'go-ocf/cloud',
-      docsRepo: 'go-ocf/gocf.dev',
+      repo: 'plgd-dev/cloud',
+      docsRepo: 'plgd-dev/gocf.dev',
       editLinks: true,
       editLinkText: 'Help us improve this page!',
       nav: [
         { text: 'Guide', link: '/guide/' },
         { text: 'Chat with us', link: 'https://gitter.im/ocfcloud/Lobby' },
-        { text: 'Changelog', link: 'https://github.com/go-ocf/cloud/releases' }
+        { text: 'Changelog', link: 'https://github.com/plgd-dev/cloud/releases' }
       ],
       sidebarDepth: 1,
       sidebar: {

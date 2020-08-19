@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/go-ocf/sdk/schema"
+	"github.com/plgd-dev/sdk/schema"
 )
 
 type ResourcesPublished []schema.ResourceLink

@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/net/http/transport"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/net/http/transport"
 )
 
 type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)

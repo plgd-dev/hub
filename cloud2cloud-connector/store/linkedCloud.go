@@ -6,9 +6,9 @@ import (
 	"crypto/x509"
 	"net/http"
 
-	"github.com/go-ocf/cloud/authorization/oauth"
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
-	"github.com/go-ocf/kit/net/http/transport"
+	"github.com/plgd-dev/cloud/authorization/oauth"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/kit/net/http/transport"
 	"golang.org/x/oauth2"
 )
 

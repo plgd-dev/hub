@@ -10,11 +10,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	test "github.com/go-ocf/cloud/test"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	test "github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func TestRequestHandler_GetResourceLinks(t *testing.T) {

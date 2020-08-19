@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.certificateauthority.pb;
 
-option go_package = "github.com/go-ocf/cloud/certificate-authority/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/certificate-authority/pb;pb";
 
 message SignCertificateRequest {
     bytes certificate_signing_request = 1; // PEM format

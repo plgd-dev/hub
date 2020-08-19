@@ -7,13 +7,13 @@ import (
 	"net/http/httputil"
 	"strings"
 
-	"github.com/go-ocf/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/google/uuid"
 
-	"github.com/go-ocf/cloud/http-gateway/uri"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	kitHttp "github.com/go-ocf/kit/net/http"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitHttp "github.com/plgd-dev/kit/net/http"
 
 	router "github.com/gorilla/mux"
 )

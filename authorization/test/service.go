@@ -10,11 +10,11 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
-	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/authorization/service"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
+	"github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/authorization/service"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/kit/security/certManager"
 )
 
 func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, error) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-ocf/cloud/authorization/pb"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/authorization/pb"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 

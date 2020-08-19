@@ -3,9 +3,9 @@ package refImpl_test
 import (
 	"testing"
 
-	authConfig "github.com/go-ocf/cloud/authorization/service"
-	authService "github.com/go-ocf/cloud/authorization/test"
-	"github.com/go-ocf/cloud/resource-directory/refImpl"
+	authConfig "github.com/plgd-dev/cloud/authorization/service"
+	authService "github.com/plgd-dev/cloud/authorization/test"
+	"github.com/plgd-dev/cloud/resource-directory/refImpl"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )

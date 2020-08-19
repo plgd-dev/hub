@@ -6,11 +6,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/go-ocf/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 
-	"github.com/go-ocf/cloud/cloud2cloud-gateway/store"
-	"github.com/go-ocf/kit/codec/json"
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/log"
 	"github.com/gofrs/uuid"
 
 	"github.com/gorilla/mux"

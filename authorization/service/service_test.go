@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-ocf/cloud/authorization/persistence"
-	"github.com/go-ocf/kit/security/certManager"
+	"github.com/plgd-dev/cloud/authorization/persistence"
+	"github.com/plgd-dev/kit/security/certManager"
 
-	"github.com/go-ocf/cloud/authorization/persistence/mongodb"
-	oauthProvider "github.com/go-ocf/cloud/authorization/provider"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
+	oauthProvider "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

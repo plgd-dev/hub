@@ -11,12 +11,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/go-ocf/cloud/authorization/provider"
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/cloud/test"
-	testCfg "github.com/go-ocf/cloud/test/config"
-	"github.com/go-ocf/kit/codec/cbor"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/kit/codec/cbor"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {

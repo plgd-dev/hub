@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/cbor"
 
-	"github.com/go-ocf/go-coap/v2/message"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/go-ocf/go-coap/v2/mux"
-	"github.com/go-ocf/kit/log"
-	"github.com/go-ocf/kit/net/coap"
+	"github.com/plgd-dev/go-coap/v2/message"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/net/coap"
 )
 
 type oicwkping struct {

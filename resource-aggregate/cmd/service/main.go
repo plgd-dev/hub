@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/go-ocf/cloud/resource-aggregate/refImpl"
-	"github.com/go-ocf/kit/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
+	"github.com/plgd-dev/kit/log"
 	"github.com/kelseyhightower/envconfig"
 )
 

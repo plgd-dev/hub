@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ocf/cloud/certificate-authority/pb"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
-	"github.com/go-ocf/kit/security"
-	"github.com/go-ocf/kit/security/signer"
+	"github.com/plgd-dev/cloud/certificate-authority/pb"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security"
+	"github.com/plgd-dev/kit/security/signer"
 	"google.golang.org/grpc"
 )
 
@@ -33,7 +33,7 @@ type SignerConfig struct {
 func AddHandler(svr *kitNetGrpc.Server, cfg SignerConfig) error {
 	handler, err := NewRequestHandlerFromConfig(cfg)
 	if err != nil {
-		return fmt.Errorf("could not create go-ocf/certificate-authority: %w", err)
+		return fmt.Errorf("could not create plgd-dev/certificate-authority: %w", err)
 	}
 	pb.RegisterCertificateAuthorityServer(svr.Server, handler)
 	return nil

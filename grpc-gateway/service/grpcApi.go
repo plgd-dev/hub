@@ -8,9 +8,9 @@ import (
 	"io"
 	"sync"
 
-	"github.com/go-ocf/cloud/grpc-gateway/pb"
-	"github.com/go-ocf/kit/log"
-	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/log"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

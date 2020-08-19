@@ -3,7 +3,7 @@ package local
 import (
 	"context"
 
-	"github.com/go-ocf/cloud/certificate-authority/pb"
+	"github.com/plgd-dev/cloud/certificate-authority/pb"
 )
 
 type BasicCertificateSigner struct {

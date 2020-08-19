@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	pbAS "github.com/go-ocf/cloud/authorization/pb"
-	"github.com/go-ocf/cloud/coap-gateway/coapconv"
-	coapCodes "github.com/go-ocf/go-coap/v2/message/codes"
-	"github.com/go-ocf/go-coap/v2/mux"
-	"github.com/go-ocf/kit/codec/cbor"
-	"github.com/go-ocf/kit/net/coap"
+	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/mux"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/net/coap"
 	"google.golang.org/grpc/status"
 )
 
