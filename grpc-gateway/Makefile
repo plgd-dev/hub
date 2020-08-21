@@ -20,8 +20,8 @@ build-servicecontainer:
 build: build-servicecontainer
 
 push: build-servicecontainer
-	docker push ocfcloud/$(SERVICE_NAME):$(VERSION_TAG)
-	docker push ocfcloud/$(SERVICE_NAME):$(LATEST_TAG)
+	docker push plgd/$(SERVICE_NAME):$(VERSION_TAG)
+	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
 	protoc -I=. -I=${GOPATH}/src --gogofaster_out=${GOPATH}/src $(shell pwd)/pb/clientConfiguration.proto
