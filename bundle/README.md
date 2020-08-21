@@ -16,7 +16,7 @@ Provides a simple docker cloud image for **testing purpose**.
 
 ## Pull the image
 ```bash
-docker pull ocfcloud/bundle:vnext
+docker pull plgd/bundle:vnext
 ```
 
 ## Configuration
@@ -47,7 +47,7 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 
 ## Run
 ```bash
-docker run -d --network=host --name=cloud -t ocfcloud/bundle:vnext
+docker run -d --network=host --name=cloud -t plgd/bundle:vnext
 ```
 
 ## Device Onboarding

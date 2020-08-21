@@ -10,8 +10,8 @@ Bundle option hosts all gOCF Cloud Services and it's dependencies in a single Do
 
 ### Pull the image
 ```bash
-docker pull ocfcloud/bundle:vnext
-docker run -d --network=host --name=cloud -t ocfcloud/bundle:vnext
+docker pull plgd/bundle:vnext
+docker run -d --network=host --name=cloud -t plgd/bundle:vnext
 ```
 
 ### Remarks
