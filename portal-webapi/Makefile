@@ -8,8 +8,8 @@ default: build
 define build-docker-image
 	docker build \
 		--network=host \
-		--tag ocfcloud/$(SERVICE_NAME):$(VERSION_TAG) \
-		--tag ocfcloud/$(SERVICE_NAME):$(LATEST_TAG) \
+		--tag plgd/$(SERVICE_NAME):$(VERSION_TAG) \
+		--tag plgd/$(SERVICE_NAME):$(LATEST_TAG) \
 		--target $(1) \
 		.
 endef
