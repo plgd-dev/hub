@@ -8,11 +8,10 @@ import (
 	"time"
 
 	"github.com/go-ocf/cloud/certificate-authority/pb"
-	ocfSigner "github.com/go-ocf/kit/security/signer"
 	"github.com/stretchr/testify/require"
 )
 
-func newBasicSigner(t *testing.T) CertificateSigner {
+func newRequestHandler(t *testing.T) *RequestHandler {
 	identityIntermediateCABlock, _ := pem.Decode(IdentityIntermediateCA)
 	require.NotEmpty(t, identityIntermediateCABlock)
 	identityIntermediateCA, err := x509.ParseCertificates(identityIntermediateCABlock.Bytes)
@@ -21,7 +20,14 @@ func newBasicSigner(t *testing.T) CertificateSigner {
 	require.NotEmpty(t, identityIntermediateCAKeyBlock)
 	identityIntermediateCAKey, err := x509.ParseECPrivateKey(identityIntermediateCAKeyBlock.Bytes)
 	require.NoError(t, err)
-	return ocfSigner.NewBasicCertificateSigner(identityIntermediateCA, identityIntermediateCAKey, time.Hour*86400)
+	return &RequestHandler{
+		ValidFrom: func() time.Time {
+			return time.Now()
+		},
+		ValidFor:    time.Hour * 86400,
+		Certificate: identityIntermediateCA,
+		PrivateKey:  identityIntermediateCAKey,
+	}
 }
 
 func TestRequestHandler_SignCertificate(t *testing.T) {
@@ -52,7 +58,7 @@ func TestRequestHandler_SignCertificate(t *testing.T) {
 		},
 	}
 
-	r := NewRequestHandler(newBasicSigner(t), nil)
+	r := newRequestHandler(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

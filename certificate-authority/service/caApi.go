@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"crypto"
+	"crypto/x509"
 	"fmt"
 	"time"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/go-ocf/kit/log"
 	kitNetGrpc "github.com/go-ocf/kit/net/grpc"
 	"github.com/go-ocf/kit/security"
-	"github.com/go-ocf/kit/security/signer"
+	"github.com/karrick/tparse/v2"
 	"google.golang.org/grpc"
 )
 
@@ -20,14 +22,37 @@ type CertificateSigner interface {
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
-	identitySigner CertificateSigner
-	signer         CertificateSigner
+	ValidFrom   func() time.Time
+	ValidFor    time.Duration
+	Certificate []*x509.Certificate
+	PrivateKey  crypto.PrivateKey
+}
+
+type ValidFromDecoder func() time.Time
+
+func (d *ValidFromDecoder) Decode(value string) error {
+	if value == "" {
+		*d = func() time.Time {
+			return time.Now().Add(time.Hour * -1)
+		}
+		return nil
+	}
+	_, err := tparse.ParseNow(time.RFC3339, value)
+	if err != nil {
+		return fmt.Errorf("invalid VALID_FROM(%v): %v", value, err)
+	}
+	*d = func() time.Time {
+		t, _ := tparse.ParseNow(time.RFC3339, value)
+		return t
+	}
+	return nil
 }
 
 type SignerConfig struct {
-	Certificate   string        `envconfig:"CERTIFICATE"`
-	PrivateKey    string        `envconfig:"PRIVATE_KEY"`
-	ValidDuration time.Duration `envconfig:"VALID_DURATION" default:"87600h"`
+	Certificate   string           `envconfig:"CERTIFICATE"`
+	PrivateKey    string           `envconfig:"PRIVATE_KEY"`
+	ValidFrom     ValidFromDecoder `envconfig:"VALID_FROM" default:"now"`
+	ValidDuration time.Duration    `envconfig:"VALID_DURATION" default:"87600h"`
 }
 
 func AddHandler(svr *kitNetGrpc.Server, cfg SignerConfig) error {
@@ -54,16 +79,20 @@ func NewRequestHandlerFromConfig(cfg SignerConfig) (*RequestHandler, error) {
 		return nil, err
 	}
 
-	identity := signer.NewIdentityCertificateSigner(chainCerts, privateKey, cfg.ValidDuration)
-	basic := signer.NewBasicCertificateSigner(chainCerts, privateKey, cfg.ValidDuration)
-	return NewRequestHandler(basic, identity), nil
+	return NewRequestHandler(cfg.ValidFrom, cfg.ValidDuration, chainCerts, privateKey), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
-func NewRequestHandler(signer, identitySigner CertificateSigner) *RequestHandler {
+func NewRequestHandler(
+	ValidFrom func() time.Time,
+	ValidFor time.Duration,
+	Certificate []*x509.Certificate,
+	PrivateKey crypto.PrivateKey) *RequestHandler {
 	return &RequestHandler{
-		signer:         signer,
-		identitySigner: identitySigner,
+		ValidFrom:   ValidFrom,
+		ValidFor:    ValidFor,
+		Certificate: Certificate,
+		PrivateKey:  PrivateKey,
 	}
 }
 

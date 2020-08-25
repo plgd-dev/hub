@@ -2,27 +2,11 @@ package service
 
 import (
 	"context"
-	"crypto/x509"
-	"encoding/pem"
 	"testing"
-	"time"
 
 	"github.com/go-ocf/cloud/certificate-authority/pb"
-	ocfSigner "github.com/go-ocf/kit/security/signer"
 	"github.com/stretchr/testify/require"
 )
-
-func newIdentitySigner(t *testing.T) CertificateSigner {
-	identityIntermediateCABlock, _ := pem.Decode(IdentityIntermediateCA)
-	require.NotEmpty(t, identityIntermediateCABlock)
-	identityIntermediateCA, err := x509.ParseCertificates(identityIntermediateCABlock.Bytes)
-	require.NoError(t, err)
-	identityIntermediateCAKeyBlock, _ := pem.Decode(IdentityIntermediateCAKey)
-	require.NotEmpty(t, identityIntermediateCAKeyBlock)
-	identityIntermediateCAKey, err := x509.ParseECPrivateKey(identityIntermediateCAKeyBlock.Bytes)
-	require.NoError(t, err)
-	return ocfSigner.NewIdentityCertificateSigner(identityIntermediateCA, identityIntermediateCAKey, time.Hour*86400)
-}
 
 func TestRequestHandler_SignIdentityCertificate(t *testing.T) {
 	type args struct {
@@ -52,7 +36,7 @@ func TestRequestHandler_SignIdentityCertificate(t *testing.T) {
 		},
 	}
 
-	r := NewRequestHandler(nil, newIdentitySigner(t))
+	r := newRequestHandler(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

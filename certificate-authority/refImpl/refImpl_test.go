@@ -17,6 +17,7 @@ func TestInit(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 	testSignerCerts(t, dir)
+	os.Setenv("VALID_FROM", "now-1d")
 	err = envconfig.Process("", &config)
 	require.NoError(t, err)
 
