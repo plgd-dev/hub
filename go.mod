@@ -24,7 +24,6 @@ require (
 	github.com/nats-io/nats.go v1.9.2
 	github.com/panjf2000/ants/v2 v2.4.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pion/dtls/v2 v2.0.3-0.20200804191223-c6dbd482fa3a // indirect
 	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
 	github.com/plgd-dev/go-coap/v2 v2.0.4
 	github.com/plgd-dev/kit v0.0.0-20200825124924-f07b62fe8d61
