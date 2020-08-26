@@ -72,10 +72,14 @@ func NewRefImplFromConfig(config Config) (*RefImpl, error) {
 		return nil, err
 	}
 
-	signer := ocfSigner.NewBasicCertificateSigner(chainCerts, privateKey, config.SignerValidDuration)
+	createSigner := func() signer {
+		notBefore := time.Now().Add(-time.Hour)
+		notAfter := notBefore.Add(config.SignerValidDuration)
+		return ocfSigner.NewBasicCertificateSigner(chainCerts, privateKey, notBefore, notAfter)
+	}
 
 	selfSigner := &selfSigner{
-		pemSigner: signer,
+		createSigner: createSigner,
 	}
 
 	h, err := service.NewHandler(config.FQDN, config.AcmeDBDir, addr.GetPort(), []service.Signer{selfSigner})
@@ -146,7 +150,7 @@ type signer = interface {
 }
 
 type selfSigner struct {
-	pemSigner signer
+	createSigner func() signer
 }
 
 func (s *selfSigner) ID() string {
@@ -154,5 +158,6 @@ func (s *selfSigner) ID() string {
 }
 
 func (s *selfSigner) Sign(ctx context.Context, csr []byte) ([]byte, error) {
-	return s.pemSigner.Sign(ctx, csr)
+	signer := s.createSigner()
+	return signer.Sign(ctx, csr)
 }
