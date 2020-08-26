@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/go-ocf/cloud/certificate-authority/pb"
+	"github.com/go-ocf/cloud/certificate-authority/signer"
 	"github.com/go-ocf/kit/log"
-	"github.com/plgd-dev/kit/security/signer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
