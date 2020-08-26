@@ -26,9 +26,9 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pion/dtls/v2 v2.0.3-0.20200804191223-c6dbd482fa3a // indirect
 	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
-	github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819114417-9bdc8a6450d1
+	github.com/plgd-dev/go-coap/v2 v2.0.4
 	github.com/plgd-dev/kit v0.0.0-20200825124924-f07b62fe8d61
-	github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9
+	github.com/plgd-dev/sdk v0.0.0-20200826132138-78beaf9fdc6b
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
