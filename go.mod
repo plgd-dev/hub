@@ -22,7 +22,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v1.0.2
 	github.com/nats-io/nats.go v1.9.2
-	github.com/panjf2000/ants/v2 v2.4.1
+	github.com/panjf2000/ants/v2 v2.4.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
 	github.com/plgd-dev/go-coap/v2 v2.0.4
