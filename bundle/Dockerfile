@@ -43,7 +43,7 @@ RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
-FROM ubuntu:18.04 as service
+FROM ubuntu:18.10 as service
 RUN apt update
 RUN apt install -y mongodb-server curl
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
