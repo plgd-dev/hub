@@ -13,7 +13,7 @@ require (
 	github.com/golang/snappy v0.0.2-0.20190904063534-ff6b7dc882cf
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.1
-	github.com/gorilla/mux v1.7.4
+	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/jessevdk/go-flags v1.4.0
