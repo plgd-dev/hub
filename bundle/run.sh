@@ -80,6 +80,9 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/mongod.log
   exit $status
 fi
+
+# waiting for mongo DB. Without wait, sometimes auth service didn't connect.
+sleep 3
     
 # authorization
 echo "starting authorization"
