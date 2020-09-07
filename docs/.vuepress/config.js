@@ -1,10 +1,10 @@
 module.exports = {
-    title: 'gOCF',
+    title: 'plgd',
     description: 'Secure and Interoperable Internet of Things',
     themeConfig: {
       logo: '/img/logo-long.svg',
       repo: 'plgd-dev/cloud',
-      docsRepo: 'plgd-dev/gocf.dev',
+      docsRepo: 'plgd-dev/cloud',
       editLinks: true,
       editLinkText: 'Help us improve this page!',
       nav: [
