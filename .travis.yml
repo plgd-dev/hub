@@ -32,6 +32,6 @@ jobs:
         local_dir: dist
         github_token: $GITHUB_TOKEN
         keep_history: true
-        fqdn: gocf.dev
+        fqdn: plgd.dev
         on:
           branch: master

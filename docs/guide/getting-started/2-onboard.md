@@ -1,2 +1,2 @@
 # 2. Onboard Device
-gOCF Cloud provide allow you to start   
+plgd Cloud provide allow you to start   
