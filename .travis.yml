@@ -28,10 +28,10 @@ jobs:
         - yarn docs:build
       deploy:
         provider: pages
-        skip_cleanup: false
+        skip_cleanup: true
         local_dir: dist
         github_token: $GITHUB_TOKEN
-        keep_history: false
+        keep_history: true
         fqdn: plgd.dev
         on:
           branch: master
