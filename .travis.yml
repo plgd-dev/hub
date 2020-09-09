@@ -12,7 +12,7 @@ jobs:
         - make test
     - stage: test_publish
       name: "Test & Publish"
-      if: branch = master AND type != pull_request AND commit_message !~ \[doc\]
+      if: (branch = master OR tag IS present) AND type != pull_request AND commit_message !~ \[doc\]
       script:
         - make test
         - bash <(curl -s https://codecov.io/bash)
