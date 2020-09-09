@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 SERVICE_NAME = $(notdir $(CURDIR))
-LATEST_TAG = vnext
-VERSION_TAG = vnext-$(shell git rev-parse --short=7 --verify HEAD)
+LATEST_TAG ?= vnext
+VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 
 default: build
 

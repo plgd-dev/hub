@@ -1,6 +1,7 @@
 SHELL = /bin/bash
 SIMULATOR_NAME_SUFFIX ?= $(shell hostname)
 CLOUD_SID ?= adebc667-1f2b-41e3-bf5c-6d6eabc68cc6
+LATEST_TAG := $(if $(LATEST_TAG),$(LATEST_TAG),vnext)
 
 SUBDIRS := resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
@@ -104,7 +105,7 @@ clean:
 	rm -rf ./.tmp/home || true
 
 proto/generate: $(SUBDIRS)
-push: cloud-build $(SUBDIRS)
+push: cloud-build $(SUBDIRS) LATEST_TAG=$(LATEST_TAG)
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
