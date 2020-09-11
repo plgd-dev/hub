@@ -26,6 +26,8 @@ var jwkKey jwk.Key
 var clientID = "test"
 var UserToken = ""
 var DeviceAccessToken = "123"
+var DeviceUserID = "1"
+var DeviceExpiresIn = time.Minute * 60
 
 func init() {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -52,7 +54,7 @@ func generateToken(isService bool) (*Token, error) {
 	t := Token{
 		RefreshToken: "refresh-token",
 		Expiry:       time.Now().Add(time.Hour * 24 * 365),
-		UserID:       "1",
+		UserID:       DeviceUserID,
 	}
 	token := jwt.New()
 	if !isService {
@@ -99,9 +101,9 @@ func (p *TestProvider) GetProviderName() string {
 // Exchange Auth Code for Access Token via OAuth.
 func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
 	return &Token{
-		UserID:       "1",
+		UserID:       DeviceUserID,
 		AccessToken:  DeviceAccessToken,
-		Expiry:       time.Now().Add(time.Minute),
+		Expiry:       time.Now().Add(DeviceExpiresIn),
 		RefreshToken: "refresh-token",
 	}, nil
 }
@@ -109,9 +111,9 @@ func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, auth
 // Refresh gets new Access Token via OAuth.
 func (p *TestProvider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
 	return &Token{
-		UserID:       "1",
+		UserID:       DeviceUserID,
 		AccessToken:  DeviceAccessToken,
-		Expiry:       time.Now().Add(time.Minute),
+		Expiry:       time.Now().Add(DeviceExpiresIn),
 		RefreshToken: "refresh-token",
 	}, nil
 }
