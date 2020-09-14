@@ -29,6 +29,9 @@ func readBody(r io.ReadSeeker) []byte {
 		return nil
 	}
 	r.Seek(v, io.SeekStart)
+	if len(body) == 0 {
+		return nil
+	}
 	return body
 }
 
@@ -50,22 +53,25 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 	body := readBody(resp.Body())
 	if mt, err := resp.Options().ContentFormat(); err == nil {
 		fmt.Fprintf(buf, "ContentFormat: %v\n", mt)
-
-		switch mt {
-		case message.AppCBOR, message.AppOcfCbor:
-			s, err := cbor.ToJSON(body)
-			if err != nil {
-				log.Errorf("Cannot encode %v to JSON: %v", body, err)
+		if body != nil {
+			switch mt {
+			case message.AppCBOR, message.AppOcfCbor:
+				s, err := cbor.ToJSON(body)
+				if err != nil {
+					log.Errorf("Cannot encode %v to JSON: %v", body, err)
+				}
+				fmt.Fprintf(buf, "CBOR:\n%v", s)
+			case message.TextPlain:
+				fmt.Fprintf(buf, "TXT:\n%v", string(body))
+			case message.AppJSON:
+				fmt.Fprintf(buf, "JSON:\n%v", string(body))
+			case message.AppXML:
+				fmt.Fprintf(buf, "XML:\n%v", string(body))
+			default:
+				fmt.Fprintf(buf, "RAW(%v):\n%v", mt, body)
 			}
-			fmt.Fprintf(buf, "CBOR:\n%v", s)
-		case message.TextPlain:
-			fmt.Fprintf(buf, "TXT:\n%v", string(body))
-		case message.AppJSON:
-			fmt.Fprintf(buf, "JSON:\n%v", string(body))
-		case message.AppXML:
-			fmt.Fprintf(buf, "XML:\n%v", string(body))
-		default:
-			fmt.Fprintf(buf, "RAW(%v):\n%v", mt, body)
+		} else {
+			fmt.Fprintf(buf, "Body is EMPTY")
 		}
 	} else {
 		fmt.Fprintf(buf, "RAW:\n%v", body)
