@@ -4,10 +4,11 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/coap-gateway/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,6 +30,7 @@ func MakeConfig(t *testing.T, withoutTLS ...bool) refImpl.Config {
 	gwCfg.Service.FQDN = "coap-gateway-" + t.Name()
 	gwCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	gwCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	gwCfg.Service.HeartBeat = time.Millisecond * 300
 
 	gwCfg.Listen.File.TLSCertFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")
 	gwCfg.Listen.File.TLSKeyFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME")

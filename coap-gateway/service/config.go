@@ -24,4 +24,5 @@ type Config struct {
 	SendErrorTextInResponse         bool           `envconfig:"ERROR_IN_RESPONSE"  default:"true"`
 	OAuth                           manager.Config `envconfig:"OAUTH"`
 	ReconnectInterval               time.Duration  `envconfig:"RECONNECT_TIMEOUT" default:"10s"`
+	HeartBeat                       time.Duration  `envconfig:"HEARTBEAT"  default:"4s"`
 }

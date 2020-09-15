@@ -74,3 +74,4 @@ go build -o coap-gateway ./cmd/service
 | `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | tbd | `""` |
 | `-` | `LISTEN_ACME_DEVICE_ID` | string | tbd | `""` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | tbd | `false` |
+| `-` | `HEARTBEAT` | string | tbd | `"4s"` |

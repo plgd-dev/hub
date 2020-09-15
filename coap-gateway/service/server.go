@@ -30,8 +30,8 @@ import (
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
-	"github.com/plgd-dev/kit/log"
 	cache "github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/kit/log"
 )
 
 var expiredKey = "Expired"
@@ -50,6 +50,7 @@ type Server struct {
 	BlockWiseTransfer               bool
 	BlockWiseTransferSZX            blockwise.SZX
 	ReconnectInterval               time.Duration
+	HeartBeat                       time.Duration
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
@@ -186,6 +187,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		BlockWiseTransfer:               !config.DisableBlockWiseTransfer,
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
 		ReconnectInterval:               config.ReconnectInterval,
+		HeartBeat:                       config.HeartBeat,
 
 		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,
@@ -361,6 +363,7 @@ func (server *Server) setupCoapServer() {
 	opts = append(opts, tcp.WithBlockwise(server.BlockWiseTransfer, server.BlockWiseTransferSZX, server.RequestTimeout))
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
+	opts = append(opts, tcp.WithHeartBeat(server.HeartBeat))
 	server.coapServer = tcp.NewServer(opts...)
 }
 
