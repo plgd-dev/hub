@@ -406,6 +406,8 @@ github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63 h1:cI6kESUBU1KUHtufZe
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit v0.0.0-20200825124924-f07b62fe8d61 h1:aA90tVJBJwZCtadPG5NRGI8e3wuqJ8MP2pTxsU8gKbc=
 github.com/plgd-dev/kit v0.0.0-20200825124924-f07b62fe8d61/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
+github.com/plgd-dev/kit v0.0.0-20200914114346-d8fe71e33da0 h1:MLUTaUL4kjptJR2FqlxPrPVHbSpglnrAa+n5+faJ2YQ=
+github.com/plgd-dev/kit v0.0.0-20200914114346-d8fe71e33da0/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9 h1:sH2vjFJno1C9BvP2OnxmvY854CBq6SwJcu4Hl+UEX9w=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9/go.mod h1:8IzIQh/+2ZnNgtdpgWwaiBrI0hSox63ojTWHc4KlPTY=
 github.com/plgd-dev/sdk v0.0.0-20200826132138-78beaf9fdc6b h1:9RsYPAmHSzaMT71t5IteiOBOjOSEk/5jz36BBPNXIuM=
