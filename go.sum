@@ -406,10 +406,16 @@ github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63 h1:cI6kESUBU1KUHtufZe
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit v0.0.0-20200825124924-f07b62fe8d61 h1:aA90tVJBJwZCtadPG5NRGI8e3wuqJ8MP2pTxsU8gKbc=
 github.com/plgd-dev/kit v0.0.0-20200825124924-f07b62fe8d61/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
+github.com/plgd-dev/kit v0.0.0-20200914114346-d8fe71e33da0 h1:MLUTaUL4kjptJR2FqlxPrPVHbSpglnrAa+n5+faJ2YQ=
+github.com/plgd-dev/kit v0.0.0-20200914114346-d8fe71e33da0/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
+github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612 h1:YAzuCNWQgBtIhVPgERZZdweOeQlFENdxmiC51Hse5lU=
+github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9 h1:sH2vjFJno1C9BvP2OnxmvY854CBq6SwJcu4Hl+UEX9w=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9/go.mod h1:8IzIQh/+2ZnNgtdpgWwaiBrI0hSox63ojTWHc4KlPTY=
 github.com/plgd-dev/sdk v0.0.0-20200826132138-78beaf9fdc6b h1:9RsYPAmHSzaMT71t5IteiOBOjOSEk/5jz36BBPNXIuM=
 github.com/plgd-dev/sdk v0.0.0-20200826132138-78beaf9fdc6b/go.mod h1:zhXdEW70jJH/gr4XEllyyFCLwVa7z/xaS97op5YHCDI=
+github.com/plgd-dev/sdk v0.0.0-20200917124432-caf96ab63f2d h1:GgOfGxi1+Hiq0oK+2T8B0peWEG+vJwPH5A9/+hG76zs=
+github.com/plgd-dev/sdk v0.0.0-20200917124432-caf96ab63f2d/go.mod h1:jbuh5K0ZIMDWcJEuRWtJZWve9CmjN0ZFGrLm4B09ytk=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
