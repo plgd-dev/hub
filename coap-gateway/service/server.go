@@ -51,6 +51,7 @@ type Server struct {
 	BlockWiseTransferSZX            blockwise.SZX
 	ReconnectInterval               time.Duration
 	HeartBeat                       time.Duration
+	MaxMessageSize                  int
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
@@ -188,6 +189,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
 		ReconnectInterval:               config.ReconnectInterval,
 		HeartBeat:                       config.HeartBeat,
+		MaxMessageSize:                  config.MaxMessageSize,
 
 		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,
@@ -364,6 +366,7 @@ func (server *Server) setupCoapServer() {
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
 	opts = append(opts, tcp.WithHeartBeat(server.HeartBeat))
+	opts = append(opts, tcp.WithMaxMessageSize(server.MaxMessageSize))
 	server.coapServer = tcp.NewServer(opts...)
 }
 

@@ -75,3 +75,4 @@ go build -o coap-gateway ./cmd/service
 | `-` | `LISTEN_ACME_DEVICE_ID` | string | tbd | `""` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | tbd | `false` |
 | `-` | `HEARTBEAT` | string | tbd | `"4s"` |
+| `-` | `MAX_MESSAGE_SIZE` | int | tbd | `262144` |
