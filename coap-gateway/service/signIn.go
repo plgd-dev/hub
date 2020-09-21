@@ -173,9 +173,20 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 }
 
 func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, signOut CoapSignInReq) {
+	// fix for iotivity-classic
+	authCurrentCtx := client.loadAuthorizationContext()
+	userID := signOut.UserID
+	deviceID := signOut.DeviceID
+	if userID == "" {
+		userID = authCurrentCtx.UserID
+	}
+	if deviceID == "" {
+		deviceID = authCurrentCtx.GetDeviceId()
+	}
+
 	_, err := client.server.asClient.SignOut(req.Context, &pbAS.SignOutRequest{
-		DeviceId:    signOut.DeviceID,
-		UserId:      signOut.UserID,
+		DeviceId:    deviceID,
+		UserId:      userID,
 		AccessToken: signOut.AccessToken,
 	})
 	if err != nil {
