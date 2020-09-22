@@ -19,7 +19,6 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
@@ -244,8 +243,8 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc
 		}
 		clientResetHandler(s, req, client)
 	case coapCodes.Content:
-		// Unregistered observer at a peer send us a notification - inform the peer to remove it
-		client.sendResponse(coapCodes.Empty, req.Token, message.TextPlain, nil)
+		// Unregistered observer at a peer send us a notification
+		decodeMsgToDebug(client, req, "DROPPED-NOTIFICATION")
 	default:
 		deviceID := getDeviceID(client)
 		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
