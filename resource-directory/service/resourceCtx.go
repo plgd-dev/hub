@@ -246,8 +246,6 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var onResourcePublished, onResourceUnpublished, onResourceContentChanged bool
 	resourceUpdated := make([]raEvents.ResourceUpdated, 0, 16)
 	resourceRetrieved := make([]raEvents.ResourceRetrieved, 0, 16)
-	resourceUpdatePendings := make([]raEvents.ResourceUpdatePending, 0, 16)
-	resourceRetrievePendings := make([]raEvents.ResourceRetrievePending, 0, 16)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	var anyEventProcessed bool
@@ -304,7 +302,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
-			resourceUpdatePendings = append(resourceUpdatePendings, s)
+			m.resourceUpdatePendings = append(m.resourceUpdatePendings, s)
 		case http.ProtobufContentType(&pbRA.ResourceUpdated{}):
 			var s raEvents.ResourceUpdated
 			if err := eu.Unmarshal(&s); err != nil {
@@ -312,30 +310,23 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			}
 			tmp := make([]raEvents.ResourceUpdatePending, 0, 16)
 			var found bool
-			for _, cu := range resourceUpdatePendings {
+			for _, cu := range m.resourceUpdatePendings {
 				if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
 					tmp = append(tmp, cu)
 				} else {
 					found = true
 				}
 			}
-			if !found {
-				for _, cu := range m.resourceUpdatePendings {
-					if cu.GetAuditContext().GetCorrelationId() == s.GetAuditContext().GetCorrelationId() {
-						found = true
-					}
-				}
-			}
 			if found {
 				resourceUpdated = append(resourceUpdated, s)
 			}
-			resourceUpdatePendings = tmp
+			m.resourceUpdatePendings = tmp
 		case http.ProtobufContentType(&pbRA.ResourceRetrievePending{}):
 			var s raEvents.ResourceRetrievePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
-			resourceRetrievePendings = append(resourceRetrievePendings, s)
+			m.resourceRetrievePendings = append(m.resourceRetrievePendings, s)
 		case http.ProtobufContentType(&pbRA.ResourceRetrieved{}):
 			var s raEvents.ResourceRetrieved
 			if err := eu.Unmarshal(&s); err != nil {
@@ -343,24 +334,17 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			}
 			tmp := make([]raEvents.ResourceRetrievePending, 0, 16)
 			var found bool
-			for _, cu := range resourceRetrievePendings {
+			for _, cu := range m.resourceRetrievePendings {
 				if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
 					tmp = append(tmp, cu)
 				} else {
 					found = true
 				}
 			}
-			if !found {
-				for _, cu := range m.resourceRetrievePendings {
-					if cu.GetAuditContext().GetCorrelationId() == s.GetAuditContext().GetCorrelationId() {
-						found = true
-					}
-				}
-			}
 			if found {
 				resourceRetrieved = append(resourceRetrieved, s)
 			}
-			resourceRetrievePendings = tmp
+			m.resourceRetrievePendings = tmp
 		}
 	}
 
@@ -395,12 +379,10 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 		}
 	}
 
-	m.resourceUpdatePendings = append(m.resourceUpdatePendings, resourceUpdatePendings...)
 	err := m.onResourceUpdatePendingLocked(ctx, m.subscriptions.OnResourceUpdatePending)
 	if err != nil {
 		log.Errorf("%v", err)
 	}
-	m.resourceRetrievePendings = append(m.resourceRetrievePendings, resourceRetrievePendings...)
 	err = m.onResourceRetrievePendingLocked(ctx, m.subscriptions.OnResourceRetrievePending)
 	if err != nil {
 		log.Errorf("%v", err)
