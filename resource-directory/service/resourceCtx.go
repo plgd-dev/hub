@@ -243,7 +243,7 @@ func (m *resourceCtx) SnapshotEventType() string {
 
 func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var eu event.EventUnmarshaler
-	var onResourcePublished, onResourceUnpublished, onResourceContentChanged bool
+	var onResourcePublished, onResourceUnpublished, onResourceContentChanged, onResourceUpdatePending, onResourceRetrievePending bool
 	resourceUpdated := make([]raEvents.ResourceUpdated, 0, 16)
 	resourceRetrieved := make([]raEvents.ResourceRetrieved, 0, 16)
 	m.lock.Lock()
@@ -303,6 +303,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 				return err
 			}
 			m.resourceUpdatePendings = append(m.resourceUpdatePendings, s)
+			onResourceUpdatePending = true
 		case http.ProtobufContentType(&pbRA.ResourceUpdated{}):
 			var s raEvents.ResourceUpdated
 			if err := eu.Unmarshal(&s); err != nil {
@@ -319,14 +320,16 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			}
 			if found {
 				resourceUpdated = append(resourceUpdated, s)
+				onResourceUpdatePending = true
+				m.resourceUpdatePendings = tmp
 			}
-			m.resourceUpdatePendings = tmp
 		case http.ProtobufContentType(&pbRA.ResourceRetrievePending{}):
 			var s raEvents.ResourceRetrievePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
 			m.resourceRetrievePendings = append(m.resourceRetrievePendings, s)
+			onResourceRetrievePending = true
 		case http.ProtobufContentType(&pbRA.ResourceRetrieved{}):
 			var s raEvents.ResourceRetrieved
 			if err := eu.Unmarshal(&s); err != nil {
@@ -339,12 +342,14 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 					tmp = append(tmp, cu)
 				} else {
 					found = true
+
 				}
 			}
 			if found {
 				resourceRetrieved = append(resourceRetrieved, s)
+				onResourceRetrievePending = true
+				m.resourceRetrievePendings = tmp
 			}
-			m.resourceRetrievePendings = tmp
 		}
 	}
 
@@ -379,16 +384,20 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 		}
 	}
 
-	err := m.onResourceUpdatePendingLocked(ctx, m.subscriptions.OnResourceUpdatePending)
-	if err != nil {
-		log.Errorf("%v", err)
+	if onResourceUpdatePending {
+		err := m.onResourceUpdatePendingLocked(ctx, m.subscriptions.OnResourceUpdatePending)
+		if err != nil {
+			log.Errorf("%v", err)
+		}
 	}
-	err = m.onResourceRetrievePendingLocked(ctx, m.subscriptions.OnResourceRetrievePending)
-	if err != nil {
-		log.Errorf("%v", err)
+	if onResourceRetrievePending {
+		err := m.onResourceRetrievePendingLocked(ctx, m.subscriptions.OnResourceRetrievePending)
+		if err != nil {
+			log.Errorf("%v", err)
+		}
 	}
 
-	err = m.onResourceUpdatedLocked(ctx, resourceUpdated)
+	err := m.onResourceUpdatedLocked(ctx, resourceUpdated)
 	if err != nil {
 		log.Errorf("%v", err)
 	}
