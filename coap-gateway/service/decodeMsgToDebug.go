@@ -74,7 +74,12 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 			fmt.Fprintf(buf, "Body is EMPTY")
 		}
 	} else {
-		fmt.Fprintf(buf, "RAW:\n%v", body)
+		if len(body) == 0 {
+			fmt.Fprintf(buf, "Body is EMPTY")
+		} else {
+			// https://tools.ietf.org/html/rfc7252#section-5.5.2
+			fmt.Fprintf(buf, "Error Message:\n%v", string(body))
+		}
 	}
 	log.Debug(buf.String())
 }

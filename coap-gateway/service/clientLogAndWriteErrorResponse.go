@@ -18,7 +18,7 @@ func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token
 	msg.SetCode(code)
 	msg.SetToken(token)
 	if client != nil && client.server.SendErrorTextInResponse {
-		msg.SetContentFormat(message.TextPlain)
+		// Don't set content format for diagnostic message: https://tools.ietf.org/html/rfc7252#section-5.5.2
 		msg.SetBody(bytes.NewReader([]byte(err.Error())))
 	} else {
 		msg.SetContentFormat(message.AppOcfCbor)
