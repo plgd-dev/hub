@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"sync"
@@ -14,6 +15,8 @@ import (
 	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/go-coap/v2/message/codes"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
@@ -384,6 +387,19 @@ func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *poo
 	return nil
 }
 
+func (client *Client) sendErrorConfirmResourceUpdate(ctx context.Context, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, err error) {
+	resp := pool.AcquireMessage(ctx)
+	defer pool.ReleaseMessage(resp)
+	resp.SetContentFormat(message.TextPlain)
+	resp.SetBody(bytes.NewReader([]byte(err.Error())))
+	resp.SetCode(code)
+	request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
+	if err != nil {
+		log.Errorf("cannot send error via confirm resource update: %v", err)
+	}
+}
+
 func (client *Client) updateResource(ctx context.Context, event *pb.Event_ResourceUpdatePending) error {
 	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	if event.GetResourceId().GetHref() == cloud.StatusHref {
@@ -401,14 +417,17 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	}
 	authCtx := client.loadAuthorizationContext()
 	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceUpdate(ctx, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
 		client.Close()
-		return fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
+	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceUpdateRequest(ctx, event)
+	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, event)
 	if err != nil {
+		client.sendErrorConfirmResourceUpdate(ctx, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -417,6 +436,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
+		client.sendErrorConfirmResourceUpdate(ctx, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -434,6 +454,19 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	}
 
 	return nil
+}
+
+func (client *Client) sendErrorConfirmResourceRetrieve(ctx context.Context, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, err error) {
+	resp := pool.AcquireMessage(ctx)
+	defer pool.ReleaseMessage(resp)
+	resp.SetContentFormat(message.TextPlain)
+	resp.SetBody(bytes.NewReader([]byte(err.Error())))
+	resp.SetCode(code)
+	request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
+	if err != nil {
+		log.Errorf("cannot send error confirm resource update: %v", err)
+	}
 }
 
 func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_ResourceRetrievePending) error {
@@ -454,14 +487,17 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	}
 	authCtx := client.loadAuthorizationContext()
 	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceUpdate(ctx, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
 		client.Close()
-		return fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
+	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
 	defer cancel()
-	req, err := coapconv.NewCoapResourceRetrieveRequest(ctx, event)
+	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, event)
 	if err != nil {
+		client.sendErrorConfirmResourceUpdate(ctx, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -470,6 +506,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
+		client.sendErrorConfirmResourceUpdate(ctx, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
