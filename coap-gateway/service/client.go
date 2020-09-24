@@ -413,13 +413,15 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	}
 	defer pool.ReleaseMessage(req)
 
+	decodeMsgToDebug(client, req, "RESOURCE-UPDATE-REQUEST")
+
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
 
-	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE")
+	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
 		client.unpublishResources(ctx, []string{resourceID})
@@ -464,13 +466,15 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	}
 	defer pool.ReleaseMessage(req)
 
+	decodeMsgToDebug(client, req, "RESOURCE-RETRIEVE-REQUEST")
+
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
 
-	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE")
+	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
 		client.unpublishResources(ctx, []string{resourceID})

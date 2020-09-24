@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 
+	"github.com/kelseyhightower/envconfig"
 	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
 	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
@@ -35,7 +35,6 @@ import (
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	test "github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/kit/log"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -100,35 +99,32 @@ func initializeStruct(t reflect.Type, v reflect.Value) {
 }
 
 func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
-	if resp.Code() != test.out.code {
-		t.Fatalf("Output code %v is invalid, expected %v", resp.Code(), test.out.code)
-	} else {
-		bodySize, _ := resp.BodySize()
-		if bodySize > 0 || test.out.payload != nil {
-			body, err := ioutil.ReadAll(resp.Body())
-			require.NoError(t, err)
-			if contentType, err := resp.ContentFormat(); err == nil {
-				switch contentType {
-				case message.AppCBOR, message.AppOcfCbor:
-					n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
-					err := cbor.Decode(body, n)
-					require.NoError(t, err)
-					if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
-						t.Fatal()
-					}
-				case message.TextPlain:
-					if v, ok := test.out.payload.(string); ok {
-						if strings.Count(string(body), v) == 0 {
-							t.Fatalf("Output payload '%v' is invalid, expected '%v'", string(body), test.out.payload)
-						}
-					} else {
-						t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
-					}
+	require.Equal(t, test.out.code, resp.Code())
+	bodySize, _ := resp.BodySize()
+	if bodySize > 0 || test.out.payload != nil {
+		body, err := ioutil.ReadAll(resp.Body())
+		require.NoError(t, err)
+		if contentType, err := resp.ContentFormat(); err == nil {
+			switch contentType {
+			case message.AppCBOR, message.AppOcfCbor:
+				n := reflect.New(reflect.TypeOf(test.out.payload)).Interface()
+				err := cbor.Decode(body, n)
+				require.NoError(t, err)
+				if !assert.Equal(t, test.out.payload, reflect.ValueOf(n).Elem().Interface()) {
+					t.Fatal()
 				}
+			default:
+				t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
+			}
+		} else {
+			// https://tools.ietf.org/html/rfc7252#section-5.5.2
+			if v, ok := test.out.payload.(string); ok {
+				require.Contains(t, string(body), v)
 			} else {
 				t.Fatalf("Output payload %v is invalid, expected %v", body, test.out.payload)
 			}
 		}
+
 		if len(test.out.queries) > 0 {
 			queries, err := resp.Options().Queries()
 			require.NoError(t, err)
