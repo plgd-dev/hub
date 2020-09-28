@@ -20,7 +20,7 @@ require (
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lestrrat-go/jwx v1.0.2
+	github.com/lestrrat-go/jwx v1.0.5
 	github.com/nats-io/nats.go v1.9.2
 	github.com/panjf2000/ants/v2 v2.4.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
