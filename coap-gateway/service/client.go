@@ -388,17 +388,18 @@ func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *poo
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceUpdate(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, err error) {
+func (client *Client) sendErrorConfirmResourceUpdate(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
 	ctx, cancel, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource update: %v", err)
+		return
 	}
 	defer cancel()
 
 	resp := pool.AcquireMessage(ctx)
 	defer pool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
-	resp.SetBody(bytes.NewReader([]byte(err.Error())))
+	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
 	request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
@@ -474,16 +475,17 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceRetrieve(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, err error) {
+func (client *Client) sendErrorConfirmResourceRetrieve(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
 	ctx, cancel, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource retrieve: %v", err)
+		return
 	}
 	defer cancel()
 	resp := pool.AcquireMessage(ctx)
 	defer pool.ReleaseMessage(resp)
 	resp.SetContentFormat(message.TextPlain)
-	resp.SetBody(bytes.NewReader([]byte(err.Error())))
+	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
 	request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
