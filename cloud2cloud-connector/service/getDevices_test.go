@@ -39,7 +39,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	})))
 	require.NoError(t, err)
 	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
-	shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 
 	rootCAs := make([]string, 0, 1)
 	certs := test.GetRootCertificateAuthorities(t)

@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 
+	"github.com/gorilla/websocket"
 	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -18,7 +19,6 @@ import (
 	cloudTest "github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -42,7 +42,7 @@ func TestDeviceResourcesObservation(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
 
 	// create web socket connection
 	wsConn := webSocketConnection(t, GetDeviceResourcesObservationUri(deviceID))
