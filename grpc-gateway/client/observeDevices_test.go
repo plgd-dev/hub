@@ -24,7 +24,7 @@ func TestObserveDevices(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
-	shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 
 	h := makeTestDevicesObservationHandler()
 	id, err := c.ObserveDevices(ctx, h)
