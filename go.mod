@@ -39,7 +39,7 @@ require (
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
-	google.golang.org/grpc v1.29.1
+	google.golang.org/grpc v1.32.0
 	gopkg.in/yaml.v2 v2.2.8
 )
 
