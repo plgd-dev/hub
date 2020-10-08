@@ -27,7 +27,7 @@ require (
 	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
 	github.com/plgd-dev/go-coap/v2 v2.0.5-0.20200922125453-917a9b325e68
 	github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612
-	github.com/plgd-dev/sdk v0.0.0-20200917124432-caf96ab63f2d
+	github.com/plgd-dev/sdk v0.0.0-20201008144930-a520d56a75b7
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
