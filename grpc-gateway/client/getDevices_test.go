@@ -19,6 +19,7 @@ func sortDevices(s map[string]client.DeviceDetails) map[string]client.DeviceDeta
 		for i := range x.Resources {
 			x.Resources[i].InstanceId = 0
 		}
+		x.Device.ProtocolIndependentId = ""
 		s[key] = x
 	}
 
