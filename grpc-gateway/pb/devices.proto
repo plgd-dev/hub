@@ -197,6 +197,7 @@ message Device {
   repeated LocalizedString manufacturer_name = 5;
   string model_number = 6;
   repeated string interfaces = 7;
+  string protocol_independent_id = 8;
 }
 
 message Policies {

@@ -50,6 +50,10 @@ func cleanUp(v interface{}) interface{} {
 	if !ok {
 		return v
 	}
+	device, ok := d["device"].(map[interface{}]interface{})
+	if ok {
+		delete(device, "piid")
+	}
 	links, ok := d["links"].([]interface{})
 	if !ok {
 		return v

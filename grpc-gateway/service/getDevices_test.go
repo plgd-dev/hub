@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -75,6 +76,8 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 						break
 					}
 					require.NoError(t, err)
+					assert.NotEmpty(t, dev.ProtocolIndependentId)
+					dev.ProtocolIndependentId = ""
 					devices = append(devices, dev)
 				}
 				require.Equal(t, tt.want, devices)

@@ -23,12 +23,13 @@ func (s LocalizedStrings) ToSchema() []schema.LocalizedString {
 
 func (d Device) ToSchema() schema.Device {
 	return schema.Device{
-		ID:               d.GetId(),
-		ResourceTypes:    d.GetTypes(),
-		Interfaces:       d.GetInterfaces(),
-		Name:             d.GetName(),
-		ManufacturerName: LocalizedStrings(d.GetManufacturerName()).ToSchema(),
-		ModelNumber:      d.GetModelNumber(),
+		ID:                    d.GetId(),
+		ResourceTypes:         d.GetTypes(),
+		Interfaces:            d.GetInterfaces(),
+		Name:                  d.GetName(),
+		ManufacturerName:      LocalizedStrings(d.GetManufacturerName()).ToSchema(),
+		ModelNumber:           d.GetModelNumber(),
+		ProtocolIndependentID: d.GetProtocolIndependentId(),
 	}
 }
 
@@ -55,11 +56,12 @@ func SchemaDeviceToProto(d *schema.Device) *Device {
 		return nil
 	}
 	return &Device{
-		Id:               d.ID,
-		Types:            d.ResourceTypes,
-		Interfaces:       d.Interfaces,
-		Name:             d.Name,
-		ManufacturerName: SchemaLocalizedStringsToProto(d.ManufacturerName),
-		ModelNumber:      d.ModelNumber,
+		Id:                    d.ID,
+		Types:                 d.ResourceTypes,
+		Interfaces:            d.Interfaces,
+		Name:                  d.Name,
+		ManufacturerName:      SchemaLocalizedStringsToProto(d.ManufacturerName),
+		ModelNumber:           d.ModelNumber,
+		ProtocolIndependentId: d.ProtocolIndependentID,
 	}
 }

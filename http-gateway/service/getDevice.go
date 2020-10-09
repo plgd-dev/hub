@@ -6,10 +6,10 @@ import (
 
 	"github.com/plgd-dev/sdk/schema"
 
+	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/gorilla/mux"
 )
 
 func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {
@@ -47,21 +47,6 @@ type RetrieveDeviceWithLinksResponse struct {
 	Links []schema.ResourceLink `json:"links"`
 }
 
-func toLocalizedString(s *pb.LocalizedString) schema.LocalizedString {
-	return schema.LocalizedString{
-		Value:    s.Value,
-		Language: s.Language,
-	}
-}
-
-func toLocalizedStrings(s []*pb.LocalizedString) []schema.LocalizedString {
-	r := make([]schema.LocalizedString, 0, 16)
-	for _, v := range s {
-		r = append(r, toLocalizedString(v))
-	}
-	return r
-}
-
 func toResourceLinks(s []*pb.ResourceLink) []schema.ResourceLink {
 	r := make([]schema.ResourceLink, 0, 16)
 	for _, v := range s {
@@ -73,13 +58,7 @@ func toResourceLinks(s []*pb.ResourceLink) []schema.ResourceLink {
 func mapToDevice(d client.DeviceDetails) RetrieveDeviceWithLinksResponse {
 	return RetrieveDeviceWithLinksResponse{
 		Device: Device{
-			Device: schema.Device{
-				ResourceTypes:    d.Device.GetTypes(),
-				ID:               d.ID,
-				ManufacturerName: toLocalizedStrings(d.Device.GetManufacturerName()),
-				ModelNumber:      d.Device.GetModelNumber(),
-				Name:             d.Device.GetName(),
-			},
+			Device: d.Device.ToSchema(),
 			Status: toStatus(d.Device.GetIsOnline()),
 		},
 		Links: toResourceLinks(d.Resources),
