@@ -122,6 +122,7 @@ SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=${OAUTH_ENDPOINT_TOKEN_URL} \
 SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${OAUTH_ENDPOINT_CODE_URL} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDID=${COAP_GATEWAY_CLOUD_ID} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDURL="coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}" \
+SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${CERTIFICATE_AUTHORITY_ADDRESS} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="test" \
 resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
 status=$?
@@ -238,6 +239,22 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# certificate-authority
+echo "starting certificate-authority"
+ADDRESS=${CERTIFICATE_AUTHORITY_ADDRESS} \
+LOG_ENABLE_DEBUG=true \
+SIGNER_CERTIFICATE=${CA_POOL_CERT_PATH} \
+SIGNER_PRIVATE_KEY=${CA_POOL_CERT_KEY_PATH} \
+LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${CERTIFICATE_AUTHORITY_DISABLE_VERIFY_CLIENTS} \
+certificate-authority >$LOGS_PATH/certificate-authority.log 2>&1 &
+status=$?
+if [ $status -ne 0 ]; then
+  echo "Failed to start certificate-authority: $status"
+  sync
+  cat $LOGS_PATH/certificate-authority.log
+  exit $status
+fi
+
 # Naive check runs checks once a minute to see if either of the processes exited.
 # This illustrates part of the heavy lifting you need to do if you want to run
 # more than one service in a container. The container exits with an error
@@ -305,6 +322,13 @@ while sleep 10; do
     echo "http-gateway has already exited."
     sync
     cat $LOGS_PATH/http-gateway.log
+   exit 1
+  fi
+  ps aux |grep certificate-authority |grep -q -v grep
+  if [ $? -ne 0 ]; then 
+    echo "certificate-authority has already exited."
+    sync
+    cat $LOGS_PATH/certificate-authority.log
    exit 1
   fi
 done

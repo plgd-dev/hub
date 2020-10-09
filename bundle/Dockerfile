@@ -31,6 +31,11 @@ ARG service=authorization
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
+#certificate-authority
+ARG service=certificate-authority
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+
 #certificate-generator
 ARG service=kit
 WORKDIR /
@@ -52,6 +57,7 @@ COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
 COPY --from=build /go/bin/authorization /usr/local/bin/authorization
+COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY run.sh /usr/local/bin/run.sh
@@ -81,6 +87,10 @@ ENV HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 # authorization
 ENV AUTHORIZATION_ADDRESS="localhost:9081"
 ENV AUTHORIZATION_HTTP_ADDRESS="localhost:9085"
+
+# certificate-authority
+ENV CERTIFICATE_AUTHORITY_ADDRESS="localhost:9087"
+ENV CERTIFICATE_AUTHORITY_DISABLE_VERIFY_CLIENTS=true
 
 ENV JWKS_URL="https://$AUTHORIZATION_HTTP_ADDRESS/.well-known/jwks.json"
 ENV RESOURCE_AGGREGATE_ADDRESS="localhost:9083"
