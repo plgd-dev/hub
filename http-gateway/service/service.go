@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 
+	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
@@ -28,6 +29,7 @@ type Server struct {
 	ln                net.Listener
 	listenCertManager certManager.CertManager
 	rdConn            *grpc.ClientConn
+	caConn            *grpc.ClientConn
 }
 
 // New parses configuration and creates new Server with provided store and bus
@@ -61,6 +63,20 @@ func New(cfg Config) (*Server, error) {
 	if err != nil {
 		log.Fatalf("cannot initialize new client: %w", err)
 	}
+	var caConn *grpc.ClientConn
+	var caClient pbCA.CertificateAuthorityClient
+
+	if cfg.CertificateAuthorityAddr != "" {
+		caConn, err = grpc.Dial(
+			cfg.CertificateAuthorityAddr,
+			grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("cannot connect to certificate authority: %w", err)
+		}
+		caClient = pbCA.NewCertificateAuthorityClient(caConn)
+	}
+
 	manager, err := NewObservationManager()
 	if err != nil {
 		log.Fatal("unable to initialize new observation manager %w", err)
@@ -69,7 +85,7 @@ func New(cfg Config) (*Server, error) {
 		Method: http.MethodGet,
 		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
 	})
-	requestHandler := NewRequestHandler(client, &cfg, manager)
+	requestHandler := NewRequestHandler(client, caClient, &cfg, manager)
 
 	server := Server{
 		server:            NewHTTP(requestHandler, auth),
@@ -78,6 +94,7 @@ func New(cfg Config) (*Server, error) {
 		ln:                ln,
 		listenCertManager: listenCertManager,
 		rdConn:            rdConn,
+		caConn:            caConn,
 	}
 
 	return &server, nil
@@ -97,6 +114,9 @@ func (s *Server) Shutdown() error {
 		}
 	}
 	s.rdConn.Close()
+	if s.caConn != nil {
+		s.caConn.Close()
+	}
 	if s.listenCertManager != nil {
 		s.listenCertManager.Close()
 	}

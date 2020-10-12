@@ -11,11 +11,12 @@ import (
 
 // Config represent application configuration
 type Config struct {
-	Address               string             `envconfig:"ADDRESS" default:"0.0.0.0:7000"`
-	Listen                certManager.Config `envconfig:"LISTEN"`
-	Dial                  certManager.Config `envconfig:"DIAL"`
-	JwksURL               string             `envconfig:"JWKS_URL"`
-	ResourceDirectoryAddr string             `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
+	Address                  string             `envconfig:"ADDRESS" default:"0.0.0.0:7000"`
+	Listen                   certManager.Config `envconfig:"LISTEN"`
+	Dial                     certManager.Config `envconfig:"DIAL"`
+	JwksURL                  string             `envconfig:"JWKS_URL"`
+	ResourceDirectoryAddr    string             `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
+	CertificateAuthorityAddr string             `envconfig:"CERTIFICATE_AUTHORITY_ADDRESS"  default:""`
 }
 
 func ParseConfig(s string) (Config, error) {

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security"
-	"github.com/karrick/tparse/v2"
 	"google.golang.org/grpc"
 )
 

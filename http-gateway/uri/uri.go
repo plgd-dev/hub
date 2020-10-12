@@ -29,4 +29,8 @@ const (
 	WsStartDevicesObservation         = WSDevices
 	WsStartDeviceResourcesObservation = WSDevices + "/{" + DeviceIDKey + "}"
 	WsStartDeviceResourceObservation  = WsStartDeviceResourcesObservation + "/"
+
+	//certificate-authority
+	CertificaAuthority     = API + "/certificate-authority"
+	CertificaAuthoritySign = CertificaAuthority + "/sign"
 )
