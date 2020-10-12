@@ -7,8 +7,9 @@ import (
 	"net/http/httputil"
 	"strings"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/google/uuid"
+	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
 
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/kit/log"
@@ -20,17 +21,19 @@ import (
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	client  *client.Client
-	config  *Config
-	manager *ObservationManager
+	client   *client.Client
+	caClient pbCA.CertificateAuthorityClient
+	config   *Config
+	manager  *ObservationManager
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(client *client.Client, config *Config, manager *ObservationManager) *RequestHandler {
+func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager) *RequestHandler {
 	return &RequestHandler{
-		client:  client,
-		config:  config,
-		manager: manager,
+		client:   client,
+		config:   config,
+		manager:  manager,
+		caClient: caClient,
 	}
 }
 
@@ -95,6 +98,9 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 
 	// client configuration
 	r.HandleFunc(uri.ClientConfiguration, requestHandler.getClientConfiguration).Methods(http.MethodGet)
+
+	// certifica authority sign
+	r.HandleFunc(uri.CertificaAuthoritySign, requestHandler.signCertificate).Methods(http.MethodPost)
 
 	// devices
 	r.HandleFunc(uri.Devices, requestHandler.getDevices).Methods(http.MethodGet)

@@ -226,6 +226,7 @@ Dial:
     UseSystemCertPool: false
 JwksURL: ${JWKS_URL}
 ResourceDirectoryAddr: ${RESOURCE_DIRECTORY_ADDRESS}
+CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
 EOF
 ADDRESS=${HTTP_GATEWAY_ADDRESS} \
 LOG_ENABLE_DEBUG=true \
