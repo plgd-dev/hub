@@ -1,12 +1,15 @@
 # 3. Resource directory
 
 ## Description
+
 According to CQRS pattern it creates/updates projection for resource directory and resource shadow.
 
 ## API
-All requests to service must contains valid access token in (grpc metadata)[https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2].
 
-### Commands:
+All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+
+### Commands
+
 - get devices - list devices
 - get resource links - list resource links
 - retrieve resource from device - get content from the device
@@ -16,11 +19,13 @@ All requests to service must contains valid access token in (grpc metadata)[http
 - get client configuration - provides public configuration for clients(mobile, web, onboarding tool)
 
 ### Contract
- - [service](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/service.proto)
- - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/devices.proto)
- - [client configuration](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/clientConfiguration.proto)
+
+- [service](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/service.proto)
+- [requets/responses](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/devices.proto)
+- [client configuration](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/clientConfiguration.proto)
 
 ## Configuration
+
 | Option | ENV variable | Type | Description | Default |
 | ------ | --------- | ----------- | ------- | ------- |
 | `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |

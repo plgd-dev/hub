@@ -1,12 +1,15 @@
 # 1. Authorization server
 
 ## Description
+
 Athorize access for users to devices.
 
 ### API
+
 All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
 
-#### Commands:
+#### Commands
+
 - sign up - exchange authorization code for opaque token
 - sign in - validate access token of the device
 - sign out - invalidate access token of the device
@@ -15,10 +18,12 @@ All requests to service must contains valid access token in [grpc metadata](http
 - get user devices - returns list of users devices
 
 #### Contract
- - [service](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/service.proto)
- - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/auth.proto)
+
+- [service](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/service.proto)
+- [requets/responses](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/auth.proto)
 
 ## Configuration
+
 | Option | ENV variable | Type | Description | Default |
 | ------ | --------- | ----------- | ------- | ------- |
 | `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
@@ -52,4 +57,3 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `-` | `MONGODB_URI` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
 | `-` | `MONGODB_DATABASE` | string | `name of database` | `"authorization"` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
-

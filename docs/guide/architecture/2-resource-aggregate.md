@@ -1,12 +1,15 @@
 # 2. Resource aggregate
 
 ## Description
+
 According to CQRS pattern it translates commands to events, store them to DB and publish them to messaging system.
 
 ## API
-All requests to service must contains valid access token in (grpc metadata)[https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2]. Any success command creates event and it can create additional snapshot event. The event is stored in DB and published via messaging system.
 
-### Commands:
+All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2). Any success command creates event and it can create additional snapshot event. The event is stored in DB and published via messaging system.
+
+### Commands
+
 - publish resource - create resource/republish of the device
 - unpublish resource - unpublish resource from the cloud
 - notify resource changed - set/update content of the resource in the cloud
@@ -16,11 +19,13 @@ All requests to service must contains valid access token in (grpc metadata)[http
 - confirm resource retrieve - response to retrieve resource request
 
 ### Contract
- - [service](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/service.proto)
- - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/commands.proto)
- - [events](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/events.proto)
+
+- [service](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/service.proto)
+- [requets/responses](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/commands.proto)
+- [events](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/events.proto)
 
 ## Configuration
+
 | Option | ENV variable | Type | Description | Default |
 | ------ | --------- | ----------- | ------- | ------- |
 | `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
