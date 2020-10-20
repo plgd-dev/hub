@@ -26,7 +26,9 @@ module.exports = {
           {
             title: 'Architecture',
             children: [
-              'architecture/',
+              'architecture/1-authorization-server',
+              'architecture/2-resource-aggregate',
+              'architecture/3-resource-directory',
             ]
           }
         ]
