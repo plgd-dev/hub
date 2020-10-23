@@ -24,6 +24,12 @@ All requests to service must contains valid access token in [grpc metadata](http
 - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/devices.proto)
 - [client configuration](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/clientConfiguration.proto)
 
+## Docker Image
+
+```bash
+docker pull plgd/resource-directory:vnext
+```
+
 ## Configuration
 
 | Option | ENV variable | Type | Description | Default |
