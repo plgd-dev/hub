@@ -2,7 +2,7 @@
 
 ## Description
 
-Athorize access for users to devices.
+Authorize access for users to devices.
 
 ### API
 
@@ -22,25 +22,31 @@ All requests to service must contains valid access token in [grpc metadata](http
 - [service](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/service.proto)
 - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/auth.proto)
 
+## Docker Image
+
+```bash
+docker pull plgd/authorization:vnext
+```
+
 ## Configuration
 
 | Option | ENV variable | Type | Description | Default |
 | ------ | --------- | ----------- | ------- | ------- |
 | `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
 | `-` | `DEVICE_PROVIDER` | string | `value which comes from the device during the sign-up ("apn")` | `"github"` |
-| `-` | `DEVICE_OAUTH_CLIENT_ID` | string | tbd | `""` |
-| `-` | `DEVICE_OAUTH_CLIENT_SECRET` | string | tbd | `""` |
-| `-` | `DEVICE_OAUTH_REDIRECT_URL` | string | tbd | `""` |
-| `-` | `DEVICE_OAUTH_ENDPOINT_AUTH_URL` | string | tbd | `""` |
-| `-` | `DEVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | tbd | `""` |
-| `-` | `DEVICE_OAUTH_SCOPES` | string | Comma separated list of required scopes | `""` |
-| `-` | `DEVICE_OAUTH_RESPONSE_MODE` | string | one of "query/post_form" | `"query"` |
-| `-` | `SDK_OAUTH_CLIENT_ID` | string | tbd | `""` |
-| `-` | `SDK_OAUTH_REDIRECT_URL` | string | tbd | `""` |
-| `-` | `SDK_OAUTH_ENDPOINT_AUTH_URL` | string | tbd | `""` |
-| `-` | `SDK_OAUTH_AUDIENCE` | string | tbd | `""` |
-| `-` | `SDK_OAUTH_SCOPES` | string | Comma separated list of required scopes | `""` |
-| `-` | `SDK_OAUTH_RESPONSE_MODE` | string | one of "query/post_form" | `"query"` |
+| `-` | `DEVICE_OAUTH_CLIENT_ID` | `client id for authentication to get access token/authorization code` | `""` |
+| `-` | `DEVICE_OAUTH_CLIENT_SECRET` | `client id for authentication to get access token` |  `""` |
+| `-` | `DEVICE_OAUTH_REDIRECT_URL` | `redirect url used to obtain device access token` | `""` |
+| `-` | `DEVICE_OAUTH_ENDPOINT_AUTH_URL` | `authorization endpoint` | `""` |
+| `-` | `DEVICE_OAUTH_ENDPOINT_TOKEN_URL` | `token endpoint` | `""` |
+| `-` | `DEVICE_OAUTH_SCOPES` | string | `Comma separated list of required scopes` | `""` |
+| `-` | `DEVICE_OAUTH_RESPONSE_MODE` | string | `one of "query/post_form"` | `"query"` |
+| `-` | `SDK_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
+| `-` | `SDK_OAUTH_REDIRECT_URL` | string | `redirect url used to obtain access token` | `""` |
+| `-` | `SDK_OAUTH_ENDPOINT_AUTH_URL` | string | `authorization endpoint` | `""` |
+| `-` | `SDK_OAUTH_AUDIENCE` | string |  `refer to the resource servers that should accept the token` | `""` |
+| `-` | `SDK_OAUTH_SCOPES` | string | `Comma separated list of required scopes` | `""` |
+| `-` | `SDK_OAUTH_RESPONSE_MODE` | string | `one of "query/post_form"`| `"query"` |
 | `-` | `LISTEN_TYPE` | string | `defines how to obtain listen TLS certificates - options: acme|file` | `"acme"` |
 | `-` | `LISTEN_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
 | `-` | `LISTEN_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
@@ -48,7 +54,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
 | `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
 | `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | tbd | `path to pem file of CAs` |
+| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
 | `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
 | `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
 | `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |

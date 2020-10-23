@@ -24,6 +24,12 @@ All requests to service must contains valid access token in [grpc metadata](http
 - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/commands.proto)
 - [events](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/events.proto)
 
+## Docker Image
+
+```bash
+docker pull plgd/resource-aggregate:vnext
+```
+
 ## Configuration
 
 | Option | ENV variable | Type | Description | Default |
