@@ -33,9 +33,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LinkedCloud'
+                $ref: '#/components/schemas/LinkedCloud'
       security:
       - c2c_connector_auth:
         - empty
@@ -50,9 +48,10 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LinkedClouds'
+                type: object
+                properties:
+                  cloudId:
+                    $ref: '#/components/schemas/LinkedClouds'
       security:
       - c2c_connector_auth:
         - empty
@@ -188,25 +187,13 @@ components:
               UseSystemCAs:
                   type: boolean
   securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: http://petstore.swagger.io/oauth/dialog
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
     c2c_connector_auth:
       type: oauth2
       flows:
         implicit:
           authorizationUrl: http://oauth/connect/token
           scopes:
-            openid: "aa"
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+            empty: value
   parameters:
     cloudId:
       name: cloudId
