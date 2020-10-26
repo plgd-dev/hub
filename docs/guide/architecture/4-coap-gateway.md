@@ -1,4 +1,4 @@
-# 4. COAP gateway
+# COAP gateway
 
 ## Description
 
@@ -90,6 +90,7 @@ docker pull plgd/coap-gateway:vnext
 | `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
 | `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
 | `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
+| `-` | `LISTEN_ACME_DEVICE_ID` | string | `deviceID for OCF Identity Certificate` | `""` |
 | `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` | `""` |
 | `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
 | `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |

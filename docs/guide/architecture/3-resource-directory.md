@@ -1,4 +1,4 @@
-# 3. Resource directory
+# Resource directory
 
 ## Description
 

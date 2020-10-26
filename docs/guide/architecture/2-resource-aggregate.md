@@ -1,4 +1,4 @@
-# 2. Resource aggregate
+# Resource aggregate
 
 ## Description
 

@@ -1,8 +1,8 @@
-# 4. COAP gateway
+# Cloud2Cloud connector
 
 ## Description
 
-Connects the cloud to a OCF Cloud, populate devices from the OCF cloud or update devices of the CLOUD cloud.
+Connects the cloud to a OCF Cloud, populate devices from the OCF cloud, update devices of the OCF cloud, maintenance of linked clouds and linked accounts.
 
 ## API
 
@@ -10,16 +10,9 @@ Follow [OCF Cloud API For Cloud Services Specification](https://openconnectivity
 
 ### Commands
 
-- POST /oic/sec/account - sign up the device with authorization code
-- DELETE /oic/sec/account - sign off the device with access token
-- POST /oic/sec/tokenrefresh - refresh access token with refresh token
-- POST /oic/sec/session - sign in the device with access token and with login true
-- POST /oic/sec/session - sign out the device with access token and with login false
-- POST /oic/rd - publish resources from the signed device
-- DELETE /oic/rd - unpublish resources from the signed device
-- GET /oic/res - discover all cloud devices resources from the signed device
-- GET /oic/route/{deviceID}/{href} - get/observe resource of the cloud device from signed device
-- POST /oic/route/{deviceID}/{href} - update resource of the cloud device from signed device
+- maintenance of linked clouds
+- maintenance of linked accounts
+- [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/doc/c2c-connector/cloud2cloud-connector/swagger.yaml)
 
 ## Docker Image
 
@@ -31,26 +24,25 @@ docker pull plgd/cloud2cloud-connector:vnext
 
 | Option | ENV variable | Type | Description | Default |
 | ------ | --------- | ----------- | ------- | ------- |
-| `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:5684"` |
-| `-` | `EXTERNAL_PORT` | string | `used to fill discovery hrefs` | `"0.0.0.0:5684"` |
-| `-` | `FQDN` | string | `used to fill discovery` | `"coapgw.ocf.cloud"` |
+| `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
 | `-` | `AUTH_SERVER_ADDRESS` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
 | `-` | `RESOURCE_AGGREGATE_ADDRESS` | string | `resource aggregate address` | `"127.0.0.1:9100"` |
 | `-` | `RESOURCE_DIRECTORY_ADDRESS` | string | `resource directory address` | `"127.0.0.1:9100"` |
-| `-` | `REQUEST_TIMEOUT` | string | `wait for update/retrieve resource` | `10s` |
-| `-` | `KEEPALIVE_ENABLE` | bool | `check devices connection` | true |
-| `-` | `KEEPALIVE_TIMEOUT_CONNECTION` | string | `close inactive connection after limit` | `"20s"` |
-| `-` | `DISABLE_BLOCKWISE_TRANSFER` | bool | `disable blockwise transfer` | `true` |
-| `-` | `BLOCKWISE_TRANSFER_SZX` | int | `size of blockwise transfer block` | `1024` |
-| `-` | `DISABLE_TCP_SIGNAL_MESSAGE_CSM` | bool | `disable send CSM when connection was established` | `false` |
-| `-` | `DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS` | bool | `disable process peer CSM` | `true` |
-| `-` | `ERROR_IN_RESPONSE` | bool | `send text error message in response` |  `true` |
+| `-` | `JWKS_URL` | string | `url to get JSON Web Key` | `""` |
+| `-` | `SERVICE_OAUTH_CALLBACK` | string | `external redirect url callback for acquire authorization code` | `""` |
+| `-` | `SERVICE_EVENTS_URL` | string | `external url where will be send events from another cloud` | `""` |
+| `-` | `SERVICE_PULL_DEVICES_DISABLED` | bool | `disable get devices via pull for all cloud` | `false` |
+| `-` | `SERVICE_PULL_DEVICES_INTERVAL` | string | `time interval between pulls`  | `5s` |
+| `-` | `SERVICE_TASK_PROCESSOR_CACHE_SIZE` | int | `size of processor task queue` | `2048` |
+| `-` | `SERVICE_TASK_PROCESSOR_TIMEOUT` | int | `timeout for one running task` | `"5s"` |
+| `-` | `SERVICE_TASK_PROCESSOR_MAX_PARALLEL`  int | `count of running tasks in same time` | `128` |
+| `-` | `SERVICE_TASK_PROCESSOR_DELAY` | string | `delay task before start`  | `0s` |
+| `-` | `SERVICE_RECONNECT_INTERVAL` | string | `try to reconnect after interval to resource-directory when connection was closed` | `"10s"` |
+| `-` | `SERVICE_RESUBSCRIBE_INTERVAL` | string | `try to resubscribe after interval to resource-directory when subscription not exist` | `"10s"` |
 | `-` | `SERVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | `url to get service access token via OAUTH client credential flow` | `""` |
 | `-` | `SERVICE_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
 | `-` | `SERVICE_OAUTH_CLIENT_SECRET` | string | `secrest for authentication to get access token` | `""` |
 | `-` | `SERVICE_OAUTH_AUDIENCE` | string | `refer to the resource servers that should accept the token` | `""` |
-| `-` | `HEARTBEAT` | string | `defines check of live service` | `"4s"` |
-| `-` | `MAX_MESSAGE_SIZE` | int | `defines max message size which can be send/receive via coap` | `262144` |
 | `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
 | `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
 | `-` | `DIAL_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
@@ -76,4 +68,6 @@ docker pull plgd/cloud2cloud-connector:vnext
 | `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
 | `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
 | `-` | `LISTEN_WITHOUT_TLS` | bool | `listen without TLS` | `false` |
+| `-` | `LINKED_STORE_MONGO_HOST` | `host of mongo database - uri without scheme` | `"localhost:27017"` |
+| `-` | `LINKED_STORE_MONGO_DATABASE` | `name of database` | `"cloud2cloudConnector"` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
