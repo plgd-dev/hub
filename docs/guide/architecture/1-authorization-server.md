@@ -1,4 +1,4 @@
-# 1. Authorization server
+# Authorization server
 
 ## Description
 

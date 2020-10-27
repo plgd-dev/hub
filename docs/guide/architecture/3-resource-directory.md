@@ -1,4 +1,4 @@
-# 3. Resource directory
+# Resource directory
 
 ## Description
 
@@ -66,7 +66,7 @@ docker pull plgd/resource-directory:vnext
 | `-` | `DIAL_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
 | `-` | `DIAL_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
 | `-` | `DIAL_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `DIAL_FILE_CA_POOL` | string | tbd | `path to pem file of CAs` |
+| `-` | `DIAL_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
 | `-` | `DIAL_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
 | `-` | `DIAL_FILE_CERT_DIR_PATH` | string | `path to directory which contains DIAL_FILE_CERT_KEY_NAME and DIAL_FILE_CERT_NAME` | `""` |
 | `-` | `DIAL_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
@@ -78,7 +78,7 @@ docker pull plgd/resource-directory:vnext
 | `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
 | `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
 | `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | tbd | `path to pem file of CAs` |
+| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
 | `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
 | `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
 | `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |

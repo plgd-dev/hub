@@ -1,33 +1,23 @@
-# Resource aggregate
+# Cloud2Cloud connector
 
 ## Description
 
-According to CQRS pattern it translates commands to events, store them to DB and publish them to messaging system.
+Connects the cloud to a OCF Cloud, populate devices from the OCF cloud, update devices of the OCF cloud, maintenance of linked clouds and linked accounts.
 
 ## API
 
-All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2). Any success command creates event and it can create additional snapshot event. The event is stored in DB and published via messaging system.
+Follow [OCF Cloud API For Cloud Services Specification](https://openconnectivity.org/specs/OCF_Cloud_API_For_Cloud_Services_Specification_v2.2.0.pdf)
 
 ### Commands
 
-- publish resource - create resource/republish of the device
-- unpublish resource - unpublish resource from the cloud
-- notify resource changed - set/update content of the resource in the cloud
-- update resource - request to update resource in the device via cloud
-- confirm resource update - response to update resource request
-- retrieve resource - request to retrieve resource from the device via cloud
-- confirm resource retrieve - response to retrieve resource request
-
-### Contract
-
-- [service](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/service.proto)
-- [requets/responses](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/commands.proto)
-- [events](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/events.proto)
+- maintenance of linked clouds
+- maintenance of linked accounts
+- [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/master/cloud2cloud-connector/swagger.yaml)
 
 ## Docker Image
 
 ```bash
-docker pull plgd/resource-aggregate:vnext
+docker pull plgd/cloud2cloud-connector:vnext
 ```
 
 ## Configuration
@@ -36,15 +26,23 @@ docker pull plgd/resource-aggregate:vnext
 | ------ | --------- | ----------- | ------- | ------- |
 | `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
 | `-` | `AUTH_SERVER_ADDRESS` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
-| `-` | `SNAPSHOT_THRESHOLD` | int | `number of events to spawn snapshot event` | `128` |
-| `-` | `OCC_MAX_RETRY` | int | `maximum tries to store event to db` | `8` |
+| `-` | `RESOURCE_AGGREGATE_ADDRESS` | string | `resource aggregate address` | `"127.0.0.1:9100"` |
+| `-` | `RESOURCE_DIRECTORY_ADDRESS` | string | `resource directory address` | `"127.0.0.1:9100"` |
 | `-` | `JWKS_URL` | string | `url to get JSON Web Key` | `""` |
-| `-` | `NATS_URL` | string | `url to nats messaging system` | `"nats://localhost:4222"` |
-| `-` | `MONGODB_URI` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
-| `-` | `MONGODB_DATABASE` | string | `name of database` | `"eventstore"` |
-| `-` | `MONGODB_BATCH_SIZE` | int | `maximum number resources in one batch request`  | `16` |
-| `-` | `MONGODB_MAX_POOL_SIZE` | int | `maximum parallel request to DB` | `16` |
-| `-` | `MONGODB_MAX_CONN_IDLE_TIME` | string |  `maximum time of idle connection` | `"240s"` |
+| `-` | `SERVICE_OAUTH_CALLBACK` | string | `external redirect url callback for acquire authorization code` | `""` |
+| `-` | `SERVICE_EVENTS_URL` | string | `external url where will be send events from another cloud` | `""` |
+| `-` | `SERVICE_PULL_DEVICES_DISABLED` | bool | `disable get devices via pull for all cloud` | `false` |
+| `-` | `SERVICE_PULL_DEVICES_INTERVAL` | string | `time interval between pulls`  | `5s` |
+| `-` | `SERVICE_TASK_PROCESSOR_CACHE_SIZE` | int | `size of processor task queue` | `2048` |
+| `-` | `SERVICE_TASK_PROCESSOR_TIMEOUT` | int | `timeout for one running task` | `"5s"` |
+| `-` | `SERVICE_TASK_PROCESSOR_MAX_PARALLEL`  int | `count of running tasks in same time` | `128` |
+| `-` | `SERVICE_TASK_PROCESSOR_DELAY` | string | `delay task before start`  | `0s` |
+| `-` | `SERVICE_RECONNECT_INTERVAL` | string | `try to reconnect after interval to resource-directory when connection was closed` | `"10s"` |
+| `-` | `SERVICE_RESUBSCRIBE_INTERVAL` | string | `try to resubscribe after interval to resource-directory when subscription not exist` | `"10s"` |
+| `-` | `SERVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | `url to get service access token via OAUTH client credential flow` | `""` |
+| `-` | `SERVICE_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
+| `-` | `SERVICE_OAUTH_CLIENT_SECRET` | string | `secrest for authentication to get access token` | `""` |
+| `-` | `SERVICE_OAUTH_AUDIENCE` | string | `refer to the resource servers that should accept the token` | `""` |
 | `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
 | `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
 | `-` | `DIAL_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
@@ -64,9 +62,12 @@ docker pull plgd/resource-aggregate:vnext
 | `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
 | `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
 | `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
+| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` | `""` |
 | `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
 | `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
 | `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
 | `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
+| `-` | `LISTEN_WITHOUT_TLS` | bool | `listen without TLS` | `false` |
+| `-` | `LINKED_STORE_MONGO_HOST` | `host of mongo database - uri without scheme` | `"localhost:27017"` |
+| `-` | `LINKED_STORE_MONGO_DATABASE` | `name of database` | `"cloud2cloudConnector"` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |

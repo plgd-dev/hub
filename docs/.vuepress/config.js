@@ -30,6 +30,7 @@ module.exports = {
               'architecture/2-resource-aggregate',
               'architecture/3-resource-directory',
               'architecture/4-coap-gateway',
+              'architecture/5-cloud2cloud-connector',
             ]
           }
         ]
