@@ -12,7 +12,7 @@ Follow [OCF Cloud API For Cloud Services Specification](https://openconnectivity
 
 - maintenance of linked clouds
 - maintenance of linked accounts
-- [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/doc/c2c-connector/cloud2cloud-connector/swagger.yaml)
+- [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/master/cloud2cloud-connector/swagger.yaml)
 
 ## Docker Image
 
