@@ -1,1 +1,1 @@
-../docs/guide/architecture/5-cloud2coud-connector.md
+../docs/guide/architecture/5-cloud2cloud-connector.md
