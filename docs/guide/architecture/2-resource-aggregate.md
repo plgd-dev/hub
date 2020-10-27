@@ -4,6 +4,12 @@
 
 According to CQRS pattern it translates commands to events, store them to DB and publish them to messaging system.
 
+## Docker Image
+
+```bash
+docker pull plgd/resource-aggregate:vnext
+```
+
 ## API
 
 All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2). Any success command creates event and it can create additional snapshot event. The event is stored in DB and published via messaging system.
@@ -23,12 +29,6 @@ All requests to service must contains valid access token in [grpc metadata](http
 - [service](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/service.proto)
 - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/commands.proto)
 - [events](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/events.proto)
-
-## Docker Image
-
-```bash
-docker pull plgd/resource-aggregate:vnext
-```
 
 ## Configuration
 

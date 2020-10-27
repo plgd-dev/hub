@@ -4,6 +4,12 @@
 
 Connects the cloud to a OCF Cloud, populate devices from the OCF cloud, update devices of the OCF cloud, maintenance of linked clouds and linked accounts.
 
+## Docker Image
+
+```bash
+docker pull plgd/cloud2cloud-connector:vnext
+```
+
 ## API
 
 Follow [OCF Cloud API For Cloud Services Specification](https://openconnectivity.org/specs/OCF_Cloud_API_For_Cloud_Services_Specification_v2.2.0.pdf)
@@ -13,12 +19,6 @@ Follow [OCF Cloud API For Cloud Services Specification](https://openconnectivity
 - maintenance of linked clouds
 - maintenance of linked accounts
 - [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/master/cloud2cloud-connector/swagger.yaml)
-
-## Docker Image
-
-```bash
-docker pull plgd/cloud2cloud-connector:vnext
-```
 
 ## Configuration
 
