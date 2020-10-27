@@ -35,7 +35,7 @@ docker pull plgd/cloud2cloud-connector:vnext
 | `-` | `SERVICE_PULL_DEVICES_INTERVAL` | string | `time interval between pulls`  | `5s` |
 | `-` | `SERVICE_TASK_PROCESSOR_CACHE_SIZE` | int | `size of processor task queue` | `2048` |
 | `-` | `SERVICE_TASK_PROCESSOR_TIMEOUT` | int | `timeout for one running task` | `"5s"` |
-| `-` | `SERVICE_TASK_PROCESSOR_MAX_PARALLEL`  int | `count of running tasks in same time` | `128` |
+| `-` | `SERVICE_TASK_PROCESSOR_MAX_PARALLEL` | int | `count of running tasks in same time` | `128` |
 | `-` | `SERVICE_TASK_PROCESSOR_DELAY` | string | `delay task before start`  | `0s` |
 | `-` | `SERVICE_RECONNECT_INTERVAL` | string | `try to reconnect after interval to resource-directory when connection was closed` | `"10s"` |
 | `-` | `SERVICE_RESUBSCRIBE_INTERVAL` | string | `try to resubscribe after interval to resource-directory when subscription not exist` | `"10s"` |
@@ -68,6 +68,6 @@ docker pull plgd/cloud2cloud-connector:vnext
 | `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
 | `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
 | `-` | `LISTEN_WITHOUT_TLS` | bool | `listen without TLS` | `false` |
-| `-` | `LINKED_STORE_MONGO_HOST` | `host of mongo database - uri without scheme` | `"localhost:27017"` |
-| `-` | `LINKED_STORE_MONGO_DATABASE` | `name of database` | `"cloud2cloudConnector"` |
+| `-` | `LINKED_STORE_MONGO_HOST` | string | `host of mongo database - uri without scheme` | `"localhost:27017"` |
+| `-` | `LINKED_STORE_MONGO_DATABASE` | string | `name of database` | `"cloud2cloudConnector"` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
