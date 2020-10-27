@@ -34,11 +34,11 @@ docker pull plgd/authorization:vnext
 | ------ | --------- | ----------- | ------- | ------- |
 | `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
 | `-` | `DEVICE_PROVIDER` | string | `value which comes from the device during the sign-up ("apn")` | `"github"` |
-| `-` | `DEVICE_OAUTH_CLIENT_ID` | `client id for authentication to get access token/authorization code` | `""` |
-| `-` | `DEVICE_OAUTH_CLIENT_SECRET` | `client id for authentication to get access token` |  `""` |
-| `-` | `DEVICE_OAUTH_REDIRECT_URL` | `redirect url used to obtain device access token` | `""` |
-| `-` | `DEVICE_OAUTH_ENDPOINT_AUTH_URL` | `authorization endpoint` | `""` |
-| `-` | `DEVICE_OAUTH_ENDPOINT_TOKEN_URL` | `token endpoint` | `""` |
+| `-` | `DEVICE_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token/authorization code` | `""` |
+| `-` | `DEVICE_OAUTH_CLIENT_SECRET` | string | `client id for authentication to get access token` |  `""` |
+| `-` | `DEVICE_OAUTH_REDIRECT_URL` | string | `redirect url used to obtain device access token` | `""` |
+| `-` | `DEVICE_OAUTH_ENDPOINT_AUTH_URL` | string | `authorization endpoint` | `""` |
+| `-` | `DEVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | `token endpoint` | `""` |
 | `-` | `DEVICE_OAUTH_SCOPES` | string | `Comma separated list of required scopes` | `""` |
 | `-` | `DEVICE_OAUTH_RESPONSE_MODE` | string | `one of "query/post_form"` | `"query"` |
 | `-` | `SDK_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
