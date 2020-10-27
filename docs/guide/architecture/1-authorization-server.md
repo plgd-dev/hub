@@ -4,6 +4,12 @@
 
 Authorize access for users to devices.
 
+## Docker Image
+
+```bash
+docker pull plgd/authorization:vnext
+```
+
 ### API
 
 All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
@@ -21,12 +27,6 @@ All requests to service must contains valid access token in [grpc metadata](http
 
 - [service](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/service.proto)
 - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/auth.proto)
-
-## Docker Image
-
-```bash
-docker pull plgd/authorization:vnext
-```
 
 ## Configuration
 

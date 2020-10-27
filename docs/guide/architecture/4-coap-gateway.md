@@ -6,7 +6,7 @@ OCF Servers / Clients communicate over TCP / UDP using the CoAP application prot
 
 TCP connection to the OCF Native Cloud is by its nature stateful. The OCF CoAP Gateway is therefore also stateful, keeping open connections to the OCF Servers / Clients.  The goal of the Gateway is to translate between the OCF Servers / Clients (CoAP) and the protocol of the OCF Native Cloud and communicate in an asynchronous way.
 
-## Validation
+### Validation
 
 - OCF CoAP Gateway can accept requests from the OCF Client / Server only after a successful sign-in
 - OCF CoAP Gateway can forward requests to the OCF Client / Server only after successful sign-in
@@ -24,6 +24,12 @@ TCP connection to the OCF Native Cloud is by its nature stateful. The OCF CoAP G
 - OCF CoAP Gateway processes events from Resources, by issuing a proper CoAP request to the device and raising an event with the response
 - OCF CoAP Gateway has to process a waiting request within the configured time, or set the device as offline
 
+## Docker Image
+
+```bash
+docker pull plgd/coap-gateway:vnext
+```
+
 ## API
 
 Follow [OCF Device To Cloud Services Specification](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.0.pdf)
@@ -40,12 +46,6 @@ Follow [OCF Device To Cloud Services Specification](https://openconnectivity.org
 - GET /oic/res - discover all cloud devices resources from the signed device
 - GET /oic/route/{deviceID}/{href} - get/observe resource of the cloud device from signed device
 - POST /oic/route/{deviceID}/{href} - update resource of the cloud device from signed device
-
-## Docker Image
-
-```bash
-docker pull plgd/coap-gateway:vnext
-```
 
 ## Configuration
 

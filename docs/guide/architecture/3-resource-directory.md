@@ -4,6 +4,12 @@
 
 According to CQRS pattern it creates/updates projection for resource directory and resource shadow.
 
+## Docker Image
+
+```bash
+docker pull plgd/resource-directory:vnext
+```
+
 ## API
 
 All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
@@ -23,12 +29,6 @@ All requests to service must contains valid access token in [grpc metadata](http
 - [service](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/service.proto)
 - [requets/responses](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/devices.proto)
 - [client configuration](https://github.com/plgd-dev/cloud/blob/master/grpc-gateway/pb/clientConfiguration.proto)
-
-## Docker Image
-
-```bash
-docker pull plgd/resource-directory:vnext
-```
 
 ## Configuration
 
