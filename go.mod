@@ -25,9 +25,9 @@ require (
 	github.com/panjf2000/ants/v2 v2.4.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
-	github.com/plgd-dev/go-coap/v2 v2.0.5-0.20200922125453-917a9b325e68
-	github.com/plgd-dev/kit v0.0.0-20201002113054-9f5d47d18a8c
-	github.com/plgd-dev/sdk v0.0.0-20201008144930-a520d56a75b7
+	github.com/plgd-dev/go-coap/v2 v2.0.5-0.20201027070641-9937654b6af4
+	github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61
+	github.com/plgd-dev/sdk v0.0.0-20201028101719-4e0d1c693a90
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
