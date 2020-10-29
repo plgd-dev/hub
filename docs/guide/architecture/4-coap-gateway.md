@@ -60,10 +60,10 @@ Follow [OCF Device To Cloud Services Specification](https://openconnectivity.org
 | `-` | `REQUEST_TIMEOUT` | string | `wait for update/retrieve resource` | `10s` |
 | `-` | `KEEPALIVE_ENABLE` | bool | `check devices connection` | true |
 | `-` | `KEEPALIVE_TIMEOUT_CONNECTION` | string | `close inactive connection after limit` | `"20s"` |
-| `-` | `DISABLE_BLOCKWISE_TRANSFER` | bool | `disable blockwise transfer` | `true` |
+| `-` | `DISABLE_BLOCKWISE_TRANSFER` | bool | `disable blockwise transfer` | `false` |
 | `-` | `BLOCKWISE_TRANSFER_SZX` | int | `size of blockwise transfer block` | `1024` |
 | `-` | `DISABLE_TCP_SIGNAL_MESSAGE_CSM` | bool | `disable send CSM when connection was established` | `false` |
-| `-` | `DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS` | bool | `disable process peer CSM` | `true` |
+| `-` | `DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS` | bool | `disable process peer CSM` | `false` |
 | `-` | `ERROR_IN_RESPONSE` | bool | `send text error message in response` |  `true` |
 | `-` | `SERVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | `url to get service access token via OAUTH client credential flow` | `""` |
 | `-` | `SERVICE_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
