@@ -17,10 +17,10 @@ type Config struct {
 	RequestTimeout                  time.Duration  `envconfig:"REQUEST_TIMEOUT"  default:"10s"`
 	KeepaliveEnable                 bool           `envconfig:"KEEPALIVE_ENABLE" default:"true"`
 	KeepaliveTimeoutConnection      time.Duration  `envconfig:"KEEPALIVE_TIMEOUT_CONNECTION" default:"20s"`
-	DisableBlockWiseTransfer        bool           `envconfig:"DISABLE_BLOCKWISE_TRANSFER" default:"true"`
+	DisableBlockWiseTransfer        bool           `envconfig:"DISABLE_BLOCKWISE_TRANSFER" default:"false"`
 	BlockWiseTransferSZX            string         `envconfig:"BLOCKWISE_TRANSFER_SZX" default:"1024"`
 	DisableTCPSignalMessageCSM      bool           `envconfig:"DISABLE_TCP_SIGNAL_MESSAGE_CSM"  default:"false"`
-	DisablePeerTCPSignalMessageCSMs bool           `envconfig:"DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS"  default:"true"`
+	DisablePeerTCPSignalMessageCSMs bool           `envconfig:"DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS"  default:"false"`
 	SendErrorTextInResponse         bool           `envconfig:"ERROR_IN_RESPONSE"  default:"true"`
 	OAuth                           manager.Config `envconfig:"OAUTH"`
 	ReconnectInterval               time.Duration  `envconfig:"RECONNECT_TIMEOUT" default:"10s"`
