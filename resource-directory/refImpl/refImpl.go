@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plgd-dev/kit/security/certManager"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"google.golang.org/grpc"
 
@@ -20,9 +20,9 @@ import (
 
 type Config struct {
 	Log     log.Config
-	JwksURL string             `envconfig:"JWKS_URL"`
-	Listen  certManager.Config `envconfig:"LISTEN"`
-	Dial    certManager.Config `envconfig:"DIAL"`
+	JwksURL string                    `envconfig:"JWKS_URL"`
+	Listen  certificateManager.Config `envconfig:"LISTEN"`
+	Dial    certificateManager.Config `envconfig:"DIAL"`
 	kitNetGrpc.Config
 	service.HandlerConfig
 }
@@ -65,11 +65,11 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	log.Setup(config.Log)
 	log.Info(config.String())
 
-	listenCertManager, err := certManager.NewCertManager(config.Listen)
+	listenCertManager, err := certificateManager.NewCertificateManager(config.Listen)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server cert manager %w", err)
 	}
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}

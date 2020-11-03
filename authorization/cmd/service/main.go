@@ -8,7 +8,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/authorization/service"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	log.Setup(cfg.Log)
 	log.Info(cfg.String())
 
-	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(cfg.Dial)
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}

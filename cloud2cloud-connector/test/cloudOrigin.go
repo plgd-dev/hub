@@ -49,7 +49,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg.Service.AuthServerAddr = AUTH_HOST
 	rdCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
 	rdCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
-	rdCfg.Listen.File.DisableVerifyClientCertificate = true
+	rdCfg.Listen.DisableVerifyClientCertificate = true
 	rdShutdown := rdService.New(t, rdCfg)
 
 	c2cConnectorCfg := MakeConfig(t)

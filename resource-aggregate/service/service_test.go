@@ -4,12 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/gofrs/uuid"
+	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
@@ -18,8 +20,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
 )
 
 func TestPublishUnpublish(t *testing.T) {
@@ -35,7 +35,7 @@ func TestPublishUnpublish(t *testing.T) {
 	config.Service.AuthServerAddr = testCfg.AUTH_HOST
 	config.Service.JwksURL = testCfg.JWKS_URL
 
-	clientCertManager, err := certManager.NewCertManager(config.Dial)
+	clientCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))

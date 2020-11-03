@@ -14,7 +14,7 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -27,7 +27,7 @@ type Server struct {
 	cfg               *Config
 	requestHandler    *RequestHandler
 	ln                net.Listener
-	listenCertManager certManager.CertManager
+	listenCertManager *certificateManager.CertificateManager
 	rdConn            *grpc.ClientConn
 	caConn            *grpc.ClientConn
 }
@@ -36,11 +36,11 @@ type Server struct {
 func New(cfg Config) (*Server, error) {
 	log.Info(cfg.String())
 
-	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
+	listenCertManager, err := certificateManager.NewCertificateManager(cfg.Listen)
 	if err != nil {
 		log.Fatalf("cannot create listen cert manager: %w", err)
 	}
-	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(cfg.Dial)
 	if err != nil {
 		log.Fatalf("cannot create dial cert manager: %w", err)
 	}

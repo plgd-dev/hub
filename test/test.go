@@ -18,7 +18,7 @@ import (
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/net/http/transport"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"go.uber.org/atomic"
 
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -132,10 +132,10 @@ func FindResourceLink(href string) schema.ResourceLink {
 }
 
 func ClearDB(ctx context.Context, t *testing.T) {
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 

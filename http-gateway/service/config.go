@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"gopkg.in/yaml.v2"
 )
 
 // Config represent application configuration
 type Config struct {
-	Address                  string             `envconfig:"ADDRESS" default:"0.0.0.0:7000"`
-	Listen                   certManager.Config `envconfig:"LISTEN"`
-	Dial                     certManager.Config `envconfig:"DIAL"`
-	JwksURL                  string             `envconfig:"JWKS_URL"`
-	ResourceDirectoryAddr    string             `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
-	CertificateAuthorityAddr string             `envconfig:"CERTIFICATE_AUTHORITY_ADDRESS"  default:""`
+	Address                  string                    `envconfig:"ADDRESS" default:"0.0.0.0:7000"`
+	Listen                   certificateManager.Config `envconfig:"LISTEN"`
+	Dial                     certificateManager.Config `envconfig:"DIAL"`
+	JwksURL                  string                    `envconfig:"JWKS_URL"`
+	ResourceDirectoryAddr    string                    `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
+	CertificateAuthorityAddr string                    `envconfig:"CERTIFICATE_AUTHORITY_ADDRESS"  default:""`
 }
 
 func ParseConfig(s string) (Config, error) {

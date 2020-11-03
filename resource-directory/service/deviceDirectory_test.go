@@ -8,14 +8,14 @@ import (
 
 	"google.golang.org/grpc/status"
 
+	"github.com/kelseyhightower/envconfig"
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/sdk/schema/cloud"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/panjf2000/ants/v2"
 
 	cbor "github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
@@ -119,10 +119,10 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 		},
 	}
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	defer dialCertManager.Close()
 	tlsConfig := dialCertManager.GetClientTLSConfig()

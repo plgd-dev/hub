@@ -11,16 +11,16 @@ import (
 	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 )
 
 type Config struct {
 	Log          log.Config `envconfig:"LOG"`
 	Service      service.Config
 	StoreMongoDB storeMongodb.Config
-	Dial         certManager.Config `envconfig:"DIAL"`
-	Listen       certManager.Config `envconfig:"LISTEN"`
-	JwksURL      string             `envconfig:"JWKS_URL"`
+	Dial         certificateManager.Config `envconfig:"DIAL"`
+	Listen       certificateManager.Config `envconfig:"LISTEN"`
+	JwksURL      string                    `envconfig:"JWKS_URL"`
 }
 
 //String return string representation of Config
@@ -31,14 +31,14 @@ func (c Config) String() string {
 
 type RefImpl struct {
 	server            *service.Server
-	dialCertManager   certManager.CertManager
-	listenCertManager certManager.CertManager
+	dialCertManager   *certificateManager.CertificateManager
+	listenCertManager *certificateManager.CertificateManager
 }
 
 func Init(config Config) (*RefImpl, error) {
 	log.Setup(config.Log)
 
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}
@@ -49,7 +49,7 @@ func Init(config Config) (*RefImpl, error) {
 		return nil, fmt.Errorf("cannot create mongodb substore %w", err)
 	}
 
-	listenCertManager, err := certManager.NewCertManager(config.Listen)
+	listenCertManager, err := certificateManager.NewCertificateManager(config.Listen)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listen cert manager %w", err)
 	}

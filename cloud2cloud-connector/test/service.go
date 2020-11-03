@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +24,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	cfg.Service.OAuthCallback = testCfg.C2C_CONNECTOR_OAUTH_CALLBACK
 	cfg.Service.EventsURL = testCfg.C2C_CONNECTOR_EVENTS_URL
 	cfg.Service.JwksURL = testCfg.JWKS_URL
-	cfg.Listen.File.DisableVerifyClientCertificate = true
+	cfg.Listen.DisableVerifyClientCertificate = true
 	cfg.Service.PullDevicesInterval = time.Second
 	cfg.Service.ResubscribeInterval = time.Second
 	return cfg

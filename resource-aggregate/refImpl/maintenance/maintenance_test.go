@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/snappy"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	cqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
@@ -12,9 +14,7 @@ import (
 	kitCqrsPb "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cqrs/event"
 	"github.com/plgd-dev/cqrs/eventstore/maintenance"
-	"github.com/plgd-dev/kit/security/certManager"
-	"github.com/golang/snappy"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
@@ -58,11 +58,11 @@ func TestPerformMaintenance(t *testing.T) {
 			MaxConnIdleTime: 240000000000,
 		}}
 
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
 
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 
 	tlsConfig := dialCertManager.GetClientTLSConfig()

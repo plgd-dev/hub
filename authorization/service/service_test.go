@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
@@ -39,7 +39,7 @@ func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provi
 	require.NoError(t, err)
 
 	t.Log(cfg.String())
-	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(cfg.Dial)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 

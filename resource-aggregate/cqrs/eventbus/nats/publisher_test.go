@@ -3,18 +3,18 @@ package nats
 import (
 	"testing"
 
-	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewPublisher(t *testing.T) {
-	var config certManager.Config
+	var config certificateManager.Config
 	err := envconfig.Process("DIAL", &config)
 	assert.NoError(t, err)
 
-	dialCertManager, err := certManager.NewCertManager(config)
+	dialCertManager, err := certificateManager.NewCertificateManager(config)
 	require.NoError(t, err)
 
 	tlsConfig := dialCertManager.GetClientTLSConfig()

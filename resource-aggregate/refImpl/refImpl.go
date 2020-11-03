@@ -9,16 +9,16 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 )
 
 type Config struct {
 	Service service.Config
-	Nats    nats.Config        `envconfig:"NATS"`
-	MongoDB mongodb.Config     `envconfig:"MONGODB"`
-	Listen  certManager.Config `envconfig:"LISTEN"`
-	Dial    certManager.Config `envconfig:"DIAL"`
-	Log     log.Config         `envconfig:"LOG"`
+	Nats    nats.Config               `envconfig:"NATS"`
+	MongoDB mongodb.Config            `envconfig:"MONGODB"`
+	Listen  certificateManager.Config `envconfig:"LISTEN"`
+	Dial    certificateManager.Config `envconfig:"DIAL"`
+	Log     log.Config                `envconfig:"LOG"`
 }
 
 //String return string representation of Config
@@ -31,14 +31,14 @@ type RefImpl struct {
 	eventstore        *mongodb.EventStore
 	service           *service.Server
 	publisher         *nats.Publisher
-	clientCertManager certManager.CertManager
-	serverCertManager certManager.CertManager
+	clientCertManager *certificateManager.CertificateManager
+	serverCertManager *certificateManager.CertificateManager
 }
 
 func Init(config Config) (*RefImpl, error) {
 	log.Setup(config.Log)
 
-	clientCertManager, err := certManager.NewCertManager(config.Dial)
+	clientCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
@@ -53,7 +53,7 @@ func Init(config Config) (*RefImpl, error) {
 		return nil, fmt.Errorf("cannot create kafka publisher %w", err)
 	}
 
-	serverCertManager, err := certManager.NewCertManager(config.Listen)
+	serverCertManager, err := certificateManager.NewCertificateManager(config.Listen)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server cert manager %w", err)
 	}

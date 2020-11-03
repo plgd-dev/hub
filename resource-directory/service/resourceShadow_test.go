@@ -6,15 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/security/certManager"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -187,10 +187,10 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			},
 		},
 	}
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	defer dialCertManager.Close()
 	tlsConfig := dialCertManager.GetClientTLSConfig()

@@ -14,7 +14,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/authorization/service"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 )
 
 func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, error) {
@@ -47,7 +47,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 func New(t *testing.T, config service.Config) func() {
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 

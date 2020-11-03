@@ -11,7 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/service"
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -100,10 +100,10 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
+	var acmeCfg certificateManager.Config
 	err = envconfig.Process("LISTEN", &acmeCfg)
 	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
+	certMgr, err := certificateManager.NewCertificateManager(acmeCfg)
 	require.NoError(t, err)
 	tlsConfig := certMgr.GetClientTLSConfig()
 
@@ -218,10 +218,10 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
+	var acmeCfg certificateManager.Config
 	err = envconfig.Process("LISTEN", &acmeCfg)
 	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
+	certMgr, err := certificateManager.NewCertificateManager(acmeCfg)
 	require.NoError(t, err)
 	tlsConfig := certMgr.GetClientTLSConfig()
 
@@ -309,10 +309,10 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
+	var acmeCfg certificateManager.Config
 	err = envconfig.Process("LISTEN", &acmeCfg)
 	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
+	certMgr, err := certificateManager.NewCertificateManager(acmeCfg)
 	require.NoError(t, err)
 	tlsConfig := certMgr.GetClientTLSConfig()
 

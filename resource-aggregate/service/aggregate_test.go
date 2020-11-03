@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
+	"github.com/gofrs/uuid"
+	"github.com/kelseyhightower/envconfig"
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	cqrs "github.com/plgd-dev/cqrs"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/panjf2000/ants/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -55,10 +55,10 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
@@ -129,10 +129,10 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	deviceID := "dupDeviceId"
 	resourceID := "dupResourceId"
 	userID := "dupResourceId"
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
@@ -169,10 +169,10 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	deviceID := "dev0"
 	resourceID := "res0"
 	userID := "user0"
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
@@ -413,10 +413,10 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 			wantErr:        false,
 		},
 	}
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
@@ -512,10 +512,10 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
@@ -601,10 +601,10 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
@@ -690,10 +690,10 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 			wantErr:        false,
 		},
 	}
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
@@ -779,10 +779,10 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)

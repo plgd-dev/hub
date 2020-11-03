@@ -32,9 +32,9 @@ func MakeConfig(t *testing.T, withoutTLS ...bool) refImpl.Config {
 	gwCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 	gwCfg.Service.HeartBeat = time.Millisecond * 300
 
-	gwCfg.Listen.File.TLSCertFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")
-	gwCfg.Listen.File.TLSKeyFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME")
-	gwCfg.Listen.File.DisableVerifyClientCertificate = true
+	gwCfg.Listen.TLSCertFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")
+	gwCfg.Listen.TLSKeyFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME")
+	gwCfg.Listen.DisableVerifyClientCertificate = true
 	return gwCfg
 }
 

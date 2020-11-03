@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"github.com/plgd-dev/cloud/authorization/uri"
 
@@ -54,7 +54,7 @@ type Server struct {
 	grpcServer        *kitNetGrpc.Server
 	httpServer        *fasthttp.Server
 	cfg               Config
-	serverCertManager certManager.CertManager
+	serverCertManager *certificateManager.CertificateManager
 	listener          net.Listener
 }
 
@@ -69,7 +69,7 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 
 // New creates the service's HTTP server.
 func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provider.Provider) (*Server, error) {
-	serverCertManager, err := certManager.NewCertManager(cfg.Listen)
+	serverCertManager, err := certificateManager.NewCertificateManager(cfg.Listen)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server cert manager %w", err)
 	}

@@ -514,15 +514,13 @@ github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63 h1:cI6kESUBU1KUHtufZe
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612 h1:YAzuCNWQgBtIhVPgERZZdweOeQlFENdxmiC51Hse5lU=
 github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
-github.com/plgd-dev/kit v0.0.0-20201002113054-9f5d47d18a8c h1:pnJ3U0vA7MWsOekqYyNzMwrGs3IUUDWQ5jH2NB1XG9Y=
-github.com/plgd-dev/kit v0.0.0-20201002113054-9f5d47d18a8c/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
 github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61 h1:u3gjS+FsWsaXjY1Ye/FUBdNAazatnzb+VQAR7HUy0QM=
 github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
+github.com/plgd-dev/kit v0.0.0-20201103150101-97aece0023e8 h1:dCXGMLg3F8JMq/UORa79jab/q4LNlEyN7a20Au+aPuo=
+github.com/plgd-dev/kit v0.0.0-20201103150101-97aece0023e8/go.mod h1:lGNxaWBKeQY9hxkm/qLlGprZ9ahK/SOCmrwjF3bLx+c=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9 h1:sH2vjFJno1C9BvP2OnxmvY854CBq6SwJcu4Hl+UEX9w=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9/go.mod h1:8IzIQh/+2ZnNgtdpgWwaiBrI0hSox63ojTWHc4KlPTY=
 github.com/plgd-dev/sdk v0.0.0-20200917124432-caf96ab63f2d/go.mod h1:jbuh5K0ZIMDWcJEuRWtJZWve9CmjN0ZFGrLm4B09ytk=
-github.com/plgd-dev/sdk v0.0.0-20201008144930-a520d56a75b7 h1:LT9v5mdtXjBDMy8tKBqq7XnrmOpXow8XMgxbPazLodE=
-github.com/plgd-dev/sdk v0.0.0-20201008144930-a520d56a75b7/go.mod h1:jbuh5K0ZIMDWcJEuRWtJZWve9CmjN0ZFGrLm4B09ytk=
 github.com/plgd-dev/sdk v0.0.0-20201028101719-4e0d1c693a90 h1:AK26oscYaLvl2zzR8+aOkx0ZOUjyQPJBZPdsmPZd4Ls=
 github.com/plgd-dev/sdk v0.0.0-20201028101719-4e0d1c693a90/go.mod h1:nwMmPJcG3t3mNjUQeM6mQegQ5q1DmLdoDZ+A3uXhI88=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

@@ -19,7 +19,7 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/net/coap"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -62,10 +62,10 @@ func testCreateResourceStoreSub(t *testing.T, resourceDBname string) (*mongodb.E
 	mgoCfg.DatabaseName = resourceDBname
 	assert.NoError(t, err)
 
-	var cmconfig certManager.Config
+	var cmconfig certificateManager.Config
 	err = envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	dialCertManager, err := certificateManager.NewCertificateManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
@@ -232,10 +232,10 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 }
 
 func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn {
-	var config certManager.OcfConfig
+	var config certificateManager.Config
 	err := envconfig.Process("LISTEN", &config)
 	assert.NoError(t, err)
-	listenCertManager, err := certManager.NewOcfCertManager(config)
+	listenCertManager, err := certificateManager.NewCertificateManager(config)
 	require.NoError(t, err)
 
 	tlsConfig := listenCertManager.GetClientTLSConfig()

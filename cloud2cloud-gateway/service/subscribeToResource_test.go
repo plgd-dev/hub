@@ -22,7 +22,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -56,11 +56,11 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	var listen certManager.Config
+	var listen certificateManager.Config
 	err = envconfig.Process("LISTEN", &listen)
 	require.NoError(t, err)
 
-	listenCertManager, err := certManager.NewCertManager(listen)
+	listenCertManager, err := certificateManager.NewCertificateManager(listen)
 	require.NoError(t, err)
 	cfg := listenCertManager.GetServerTLSConfig()
 	cfg.ClientAuth = tls.NoClientCert

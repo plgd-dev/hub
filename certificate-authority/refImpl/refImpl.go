@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/plgd-dev/kit/security/jwt"
 
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
@@ -18,24 +18,24 @@ import (
 )
 
 type Config struct {
-	Log     log.Config           `envconfig:"LOG"`
-	Signer  service.SignerConfig `envconfig:"SIGNER"`
-	Listen  certManager.Config   `envconfig:"LISTEN"`
-	Dial    certManager.Config   `envconfig:"DIAL"`
-	JwksURL string               `envconfig:"JWKS_URL"`
+	Log     log.Config                `envconfig:"LOG"`
+	Signer  service.SignerConfig      `envconfig:"SIGNER"`
+	Listen  certificateManager.Config `envconfig:"LISTEN"`
+	Dial    certificateManager.Config `envconfig:"DIAL"`
+	JwksURL string                    `envconfig:"JWKS_URL"`
 	kitNetGrpc.Config
 }
 
 type RefImpl struct {
 	handle            *service.RequestHandler
 	server            *kitNetGrpc.Server
-	listenCertManager certManager.CertManager
-	dialCertManager   certManager.CertManager
+	listenCertManager *certificateManager.CertificateManager
+	dialCertManager   *certificateManager.CertificateManager
 }
 
 // NewRequestHandlerFromConfig creates RegisterGrpcGatewayServer with all dependencies.
 func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*RefImpl, error) {
-	listenCertManager, err := certManager.NewCertManager(config.Listen)
+	listenCertManager, err := certificateManager.NewCertificateManager(config.Listen)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listen cert manager %w", err)
 	}
@@ -65,7 +65,7 @@ func (c Config) String() string {
 }
 
 func Init(config Config) (*RefImpl, error) {
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}

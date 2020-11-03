@@ -8,15 +8,15 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/service"
 	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 )
 
 type Config struct {
 	Log              log.Config `envconfig:"LOG"`
 	Service          service.Config
-	Dial             certManager.Config `envconfig:"DIAL"`
-	Listen           certManager.Config `envconfig:"LISTEN"`
-	ListenWithoutTLS bool               `envconfig:"LISTEN_WITHOUT_TLS"`
+	Dial             certificateManager.Config `envconfig:"DIAL"`
+	Listen           certificateManager.Config `envconfig:"LISTEN"`
+	ListenWithoutTLS bool                      `envconfig:"LISTEN_WITHOUT_TLS"`
 	StoreMongoDB     storeMongodb.Config
 }
 
@@ -29,7 +29,7 @@ func (c Config) String() string {
 func Init(config Config) (*service.Server, error) {
 	log.Setup(config.Log)
 	log.Info(config.String())
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}
@@ -40,9 +40,9 @@ func Init(config Config) (*service.Server, error) {
 		return nil, fmt.Errorf("cannot create mongodb store %w", err)
 	}
 
-	var listenCertManager certManager.CertManager
+	var listenCertManager *certificateManager.CertificateManager
 	if !config.ListenWithoutTLS {
-		listenCertManager, err = certManager.NewCertManager(config.Listen)
+		listenCertManager, err = certificateManager.NewCertificateManager(config.Listen)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create listen cert manager %w", err)
 		}

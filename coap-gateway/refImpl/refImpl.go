@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	"github.com/plgd-dev/kit/log"
@@ -12,16 +12,16 @@ import (
 
 type Config struct {
 	Service          service.Config
-	Dial             certManager.Config    `envconfig:"DIAL"`
-	Listen           certManager.OcfConfig `envconfig:"LISTEN"`
-	ListenWithoutTLS bool                  `envconfig:"LISTEN_WITHOUT_TLS"`
-	Log              log.Config            `envconfig:"LOG"`
+	Dial             certificateManager.Config `envconfig:"DIAL"`
+	Listen           certificateManager.Config `envconfig:"LISTEN"`
+	ListenWithoutTLS bool                      `envconfig:"LISTEN_WITHOUT_TLS"`
+	Log              log.Config                `envconfig:"LOG"`
 }
 
 type RefImpl struct {
 	service           *service.Server
-	dialCertManager   certManager.CertManager
-	listenCertManager certManager.CertManager
+	dialCertManager   *certificateManager.CertificateManager
+	listenCertManager *certificateManager.CertificateManager
 }
 
 //String return string representation of Config
@@ -32,7 +32,7 @@ func (c Config) String() string {
 
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config Config) (*RefImpl, error) {
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	dialCertManager, err := certificateManager.NewCertificateManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}
@@ -40,9 +40,9 @@ func Init(config Config) (*RefImpl, error) {
 	log.Setup(config.Log)
 	log.Info(config.String())
 
-	var listenCertManager certManager.CertManager
+	var listenCertManager *certificateManager.CertificateManager
 	if !config.ListenWithoutTLS {
-		listenCertManager, err = certManager.NewOcfCertManager(config.Listen)
+		listenCertManager, err = certificateManager.NewCertificateManager(config.Listen)
 		if err != nil {
 			dialCertManager.Close()
 			return nil, fmt.Errorf("cannot create listen cert manager %w", err)
