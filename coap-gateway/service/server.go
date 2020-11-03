@@ -269,7 +269,7 @@ func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	}
 }
 
-func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn) {
+func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 	remoteAddr := coapConn.RemoteAddr().String()
 	coapConn.AddOnClose(func() {
 		if client, ok := ToClient(server.clients.PullOut(remoteAddr)); ok {
