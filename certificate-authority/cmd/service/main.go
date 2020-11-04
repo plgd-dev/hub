@@ -2,16 +2,16 @@ package main
 
 import (
 	"github.com/plgd-dev/cloud/certificate-authority/refImpl"
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
-	"github.com/kelseyhightower/envconfig"
 )
 
 func main() {
-	var config refImpl.Config
-	if err := envconfig.Process("", &config); err != nil {
+	var cfg refImpl.Config
+	if err := config.Load(&cfg); err != nil {
 		log.Fatalf("cannot parse configuration: %v", err)
 	}
-	server, err := refImpl.Init(config)
+	server, err := refImpl.Init(cfg)
 	if err != nil {
 		log.Fatalf("cannot init server: %v", err)
 	}

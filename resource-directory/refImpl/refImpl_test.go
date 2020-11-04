@@ -3,10 +3,11 @@ package refImpl_test
 import (
 	"testing"
 
+	"github.com/kelseyhightower/envconfig"
 	authConfig "github.com/plgd-dev/cloud/authorization/service"
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/resource-directory/refImpl"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/kit/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,12 +21,12 @@ func TestInit(t *testing.T) {
 	authShutdown := authService.New(t, authCfg)
 	defer authShutdown()
 
-	var config refImpl.Config
-	err = envconfig.Process("", &config)
+	var cfg refImpl.Config
+	err = config.Load(&cfg)
 	require.NoError(t, err)
-	config.Service.OAuth.Endpoint.TokenURL = "https://" + authCfg.HTTPAddr + "/api/authz/token"
+	cfg.Service.OAuth.Endpoint.TokenURL = "https://" + authCfg.HTTPAddr + "/api/authz/token"
 
-	got, err := refImpl.Init(config)
+	got, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
 	defer got.Close()

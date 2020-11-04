@@ -1,9 +1,6 @@
 package service
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "github.com/plgd-dev/kit/config"
 
 // Config represent application configuration
 type Config struct {
@@ -12,6 +9,5 @@ type Config struct {
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }

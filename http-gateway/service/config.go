@@ -1,12 +1,8 @@
 package service
 
 import (
-	"fmt"
-	"reflect"
-
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/security/certificateManager"
-
-	"gopkg.in/yaml.v2"
 )
 
 // Config represent application configuration
@@ -19,20 +15,6 @@ type Config struct {
 	CertificateAuthorityAddr string                    `envconfig:"CERTIFICATE_AUTHORITY_ADDRESS"  default:""`
 }
 
-func ParseConfig(s string) (Config, error) {
-	var cfg Config
-	err := yaml.Unmarshal([]byte(s), &cfg, yaml.DecoderWithFieldNameMarshaler(FieldNameMarshaler))
-	if err != nil {
-		return cfg, fmt.Errorf("invalid config: %w", err)
-	}
-	return cfg, nil
-}
-
 func (c Config) String() string {
-	b, _ := yaml.Marshal(c, yaml.EncoderWithFieldNameMarshaler(FieldNameMarshaler))
-	return string(b)
-}
-
-func FieldNameMarshaler(f reflect.StructField) string {
-	return f.Name
+	return config.ToString(c)
 }

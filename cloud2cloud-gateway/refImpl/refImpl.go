@@ -2,13 +2,13 @@ package refImpl
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/service"
 	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/kit/security/certificateManager"
@@ -25,8 +25,7 @@ type Config struct {
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }
 
 type RefImpl struct {

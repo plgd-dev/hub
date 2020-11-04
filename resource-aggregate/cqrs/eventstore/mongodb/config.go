@@ -2,11 +2,10 @@ package mongodb
 
 import (
 	"crypto/tls"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/plgd-dev/cqrs/event"
+	"github.com/plgd-dev/kit/config"
 )
 
 // Option provides the means to use function call chaining
@@ -50,6 +49,5 @@ type Config struct {
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }

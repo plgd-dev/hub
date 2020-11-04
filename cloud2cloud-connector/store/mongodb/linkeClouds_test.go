@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"github.com/kelseyhightower/envconfig"
@@ -81,11 +82,11 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 	}
 
 	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := config.Load(&cfg)
 	require.NoError(err)
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
+	s := newStore(ctx, t, cfg)
 	require.NoError(err)
 	defer s.Clear(ctx)
 
@@ -147,11 +148,11 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 	}
 
 	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := config.Load(&cfg)
 	require.NoError(err)
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
+	s := newStore(ctx, t, cfg)
 	defer s.Clear(ctx)
 
 	assert := assert.New(t)
@@ -269,11 +270,11 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 	}
 
 	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := config.Load(&cfg)
 	require.NoError(err)
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
+	s := newStore(ctx, t, cfg)
 	require.NoError(err)
 	defer s.Clear(ctx)
 

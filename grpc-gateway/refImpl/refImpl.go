@@ -3,9 +3,9 @@ package refImpl
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/security/certificateManager"
 
 	"google.golang.org/grpc"
@@ -28,8 +28,7 @@ type Config struct {
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }
 
 func Init(config Config) (*kitNetGrpc.Server, error) {

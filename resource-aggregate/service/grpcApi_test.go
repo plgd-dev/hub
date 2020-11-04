@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/kit/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/stretchr/testify/assert"
@@ -75,8 +76,8 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	var config Config
-	err = envconfig.Process("", &config)
+	var cfg Config
+	err = config.Load(&cfg)
 	assert.NoError(t, err)
 
 	var natsCfg nats.Config
@@ -91,7 +92,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, &mockAuthorizationServiceClient{})
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -173,8 +174,8 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	var config Config
-	err = envconfig.Process("", &config)
+	var cfg Config
+	err = config.Load(&cfg)
 	assert.NoError(t, err)
 
 	var natsCfg nats.Config
@@ -189,7 +190,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, &mockAuthorizationServiceClient{})
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
@@ -252,8 +253,8 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	var config Config
-	err = envconfig.Process("", &config)
+	var cfg Config
+	err = config.Load(&cfg)
 	assert.NoError(t, err)
 
 	var natsCfg nats.Config
@@ -269,7 +270,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, &mockAuthorizationServiceClient{})
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -346,8 +347,8 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	var config Config
-	err = envconfig.Process("", &config)
+	var cfg Config
+	err = config.Load(&cfg)
 	assert.NoError(t, err)
 
 	var natsCfg nats.Config
@@ -362,7 +363,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, &mockAuthorizationServiceClient{})
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -427,8 +428,8 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	var config Config
-	err = envconfig.Process("", &config)
+	var cfg Config
+	err = config.Load(&cfg)
 	assert.NoError(t, err)
 
 	var natsCfg nats.Config
@@ -443,7 +444,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, &mockAuthorizationServiceClient{})
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -508,8 +509,8 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	var config Config
-	err = envconfig.Process("", &config)
+	var cfg Config
+	err = config.Load(&cfg)
 	assert.NoError(t, err)
 
 	var natsCfg nats.Config
@@ -524,7 +525,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, &mockAuthorizationServiceClient{})
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -589,8 +590,8 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	var mgoCfg mongodb.Config
 	err = envconfig.Process("", &mgoCfg)
 	assert.NoError(t, err)
-	var config Config
-	err = envconfig.Process("", &config)
+	var cfg Config
+	err = config.Load(&cfg)
 	assert.NoError(t, err)
 
 	var natsCfg nats.Config
@@ -605,7 +606,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, &mockAuthorizationServiceClient{})
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)

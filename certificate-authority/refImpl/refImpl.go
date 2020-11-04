@@ -3,9 +3,9 @@ package refImpl
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/security/certificateManager"
 	"github.com/plgd-dev/kit/security/jwt"
 
@@ -60,8 +60,7 @@ func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*Ref
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }
 
 func Init(config Config) (*RefImpl, error) {

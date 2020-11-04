@@ -1,10 +1,10 @@
 package refImpl
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/plgd-dev/cloud/portal-webapi/service"
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certificateManager"
 )
@@ -24,8 +24,7 @@ type RefImpl struct {
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }
 
 func Init(config Config) (*RefImpl, error) {

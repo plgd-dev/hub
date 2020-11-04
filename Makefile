@@ -81,22 +81,21 @@ test: env
 		-v $(shell pwd)/.tmp/home:/home \
 		--user $(shell id -u):$(shell id -g) \
 		-e HOME=/home \
-		-e DIAL_TYPE="file" \
-		-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \
-		-e DIAL_FILE_CERT_DIR_PATH=/certs \
-		-e DIAL_FILE_CERT_NAME=http.crt \
-		-e DIAL_FILE_CERT_KEY_NAME=http.key \
-		-e LISTEN_TYPE="file" \
-		-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
-		-e LISTEN_FILE_CERT_DIR_PATH=/certs \
-		-e LISTEN_FILE_CERT_NAME=http.crt \
-		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
+		-e DIAL_CA_POOL=/certs/root_ca.crt \
+		-e DIAL_CERT_DIR_PATH=/certs \
+		-e DIAL_CERT_NAME=http.crt \
+		-e DIAL_CERT_KEY_NAME=http.key \
+		-e LISTEN_CA_POOL=/certs/root_ca.crt \
+		-e LISTEN_CERT_DIR_PATH=/certs \
+		-e LISTEN_CERT_NAME=http.crt \
+		-e LISTEN_CERT_KEY_NAME=http.key \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME=coap.crt \
 		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME=coap.key \
 		-e TEST_CLOUD_SID=$(CLOUD_SID) \
 		-e TEST_ROOT_CA_CRT=/certs/root_ca.crt \
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
+		-e FLAGS_IGNORE_UNKNOWN=true
 		cloud-test \
 		go test -mod=mod -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 

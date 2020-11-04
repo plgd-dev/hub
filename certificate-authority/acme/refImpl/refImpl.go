@@ -7,14 +7,13 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/plgd-dev/cloud/certificate-authority/acme/service"
+	"github.com/plgd-dev/kit/config"
 	kitNet "github.com/plgd-dev/kit/net"
 	"github.com/plgd-dev/kit/security/generateCertificate"
 
@@ -97,8 +96,7 @@ func NewRefImplFromConfig(config Config) (*RefImpl, error) {
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }
 
 func Init(config Config) (*RefImpl, error) {

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/kit/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,11 +36,11 @@ func TestStore_InsertLinkedAccount(t *testing.T) {
 	}
 
 	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := config.Load(&cfg)
 	require.NoError(err)
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
+	s := newStore(ctx, t, cfg)
 	require.NoError(err)
 	defer s.Clear(ctx)
 
@@ -100,11 +100,11 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 	}
 
 	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := config.Load(&cfg)
 	require.NoError(err)
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
+	s := newStore(ctx, t, cfg)
 	require.NoError(err)
 	defer s.Clear(ctx)
 
@@ -159,11 +159,11 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 	}
 
 	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := config.Load(&cfg)
 	require.NoError(err)
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
+	s := newStore(ctx, t, cfg)
 	require.NoError(err)
 	defer s.Clear(ctx)
 
@@ -254,11 +254,11 @@ func TestStore_LoadLinkedAccounts(t *testing.T) {
 	}
 
 	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := config.Load(&cfg)
 	require.NoError(err)
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
+	s := newStore(ctx, t, cfg)
 	require.NoError(err)
 	defer s.Clear(ctx)
 

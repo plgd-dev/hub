@@ -26,9 +26,10 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
 	github.com/plgd-dev/go-coap/v2 v2.1.0
-	github.com/plgd-dev/kit v0.0.0-20201103150101-97aece0023e8
+	github.com/plgd-dev/kit v0.0.0-20201104195048-9756109afaf6
 	github.com/plgd-dev/sdk v0.0.0-20201028101719-4e0d1c693a90
 	github.com/satori/go.uuid v1.2.0
+	github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262 // indirect
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
 	github.com/stretchr/testify v1.6.1
@@ -42,6 +43,7 @@ require (
 	google.golang.org/grpc v1.32.0
 	google.golang.org/grpc/examples v0.0.0-20201008225051-06c094c3ab22 // indirect
 	gopkg.in/yaml.v2 v2.2.8
+	honnef.co/go/tools v0.0.1-2020.1.4
 )
 
 replace gopkg.in/yaml.v2 v2.2.8 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454

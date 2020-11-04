@@ -6,22 +6,22 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/kit/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInit(t *testing.T) {
-	var config Config
+	var cfg Config
 	dir, err := ioutil.TempDir("", "gotesttmp")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 	testSignerCerts(t, dir)
 	os.Setenv("VALID_FROM", "now-1d")
-	err = envconfig.Process("", &config)
+	err = config.Load(&cfg)
 	require.NoError(t, err)
 
-	got, err := Init(config)
+	got, err := Init(cfg)
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
 }

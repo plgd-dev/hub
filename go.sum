@@ -516,8 +516,12 @@ github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612 h1:YAzuCNWQgBtIhVPgER
 github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
 github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61 h1:u3gjS+FsWsaXjY1Ye/FUBdNAazatnzb+VQAR7HUy0QM=
 github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
+github.com/plgd-dev/kit v0.0.0-20201102152602-1e03187a6a3a h1:Xal/8dNe66ZCYv+Be1KJNp89hjXgoqJqsJMD+GdwgDo=
+github.com/plgd-dev/kit v0.0.0-20201102152602-1e03187a6a3a/go.mod h1:kkin3ExkpQj04LcjzUewPeb0G4A112bxUiaNMtvlhAc=
 github.com/plgd-dev/kit v0.0.0-20201103150101-97aece0023e8 h1:dCXGMLg3F8JMq/UORa79jab/q4LNlEyN7a20Au+aPuo=
 github.com/plgd-dev/kit v0.0.0-20201103150101-97aece0023e8/go.mod h1:lGNxaWBKeQY9hxkm/qLlGprZ9ahK/SOCmrwjF3bLx+c=
+github.com/plgd-dev/kit v0.0.0-20201104195048-9756109afaf6 h1:WssgVD7jW5GwQihY/iCLCetYAoFOV5zARPdeA9Oj11I=
+github.com/plgd-dev/kit v0.0.0-20201104195048-9756109afaf6/go.mod h1:lGNxaWBKeQY9hxkm/qLlGprZ9ahK/SOCmrwjF3bLx+c=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9 h1:sH2vjFJno1C9BvP2OnxmvY854CBq6SwJcu4Hl+UEX9w=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9/go.mod h1:8IzIQh/+2ZnNgtdpgWwaiBrI0hSox63ojTWHc4KlPTY=
 github.com/plgd-dev/sdk v0.0.0-20200917124432-caf96ab63f2d/go.mod h1:jbuh5K0ZIMDWcJEuRWtJZWve9CmjN0ZFGrLm4B09ytk=
@@ -548,6 +552,7 @@ github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6Mwd
 github.com/smallstep/assert v0.0.0-20180720014142-de77670473b5/go.mod h1:TC9A4+RjIOS+HyTH7wG17/gSqVv95uDw2J64dQZx7RE=
 github.com/smallstep/assert v0.0.0-20200103212524-b99dc1097b15 h1:kSImCuenAkXtCaBeQ1UhmzzJGRhSm8sVH7I3sHE2Qdg=
 github.com/smallstep/assert v0.0.0-20200103212524-b99dc1097b15/go.mod h1:MyOHs9Po2fbM1LHej6sBUT8ozbxmMOFG+E+rx/GSGuc=
+github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262/go.mod h1:MyOHs9Po2fbM1LHej6sBUT8ozbxmMOFG+E+rx/GSGuc=
 github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094 h1:v4HSfEQt7PT2pdMTrX9Qwj27D5AlJeLOZkD1k57J2Gs=
 github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094/go.mod h1:eZ90IBg01k2RKND3sAKXVI0atx5/lzCNX0sA0DqwcUg=
 github.com/smallstep/cli v0.13.4-0.20190930184324-d68486471cbd h1:fokJyC0qVzpY1PDGNnX0ppne4vAZcZozCHSZuQwWRgs=

@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
@@ -19,33 +18,34 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/kit/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func TestPublishUnpublish(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), authProvider.UserToken)
 
-	var config refImpl.Config
-	err := envconfig.Process("", &config)
+	var cfg refImpl.Config
+	err := config.Load(&cfg)
 	require.NoError(t, err)
 
 	authShutdown := authService.SetUp(t)
 	defer authShutdown()
 
-	config.Service.AuthServerAddr = testCfg.AUTH_HOST
-	config.Service.JwksURL = testCfg.JWKS_URL
+	cfg.Service.AuthServerAddr = testCfg.AUTH_HOST
+	cfg.Service.JwksURL = testCfg.JWKS_URL
 
-	clientCertManager, err := certificateManager.NewCertificateManager(config.Dial)
+	clientCertManager, err := certificateManager.NewCertificateManager(cfg.Dial)
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
+	eventstore, err := mongodb.NewEventStore(cfg.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
-	config.Service.Addr = "localhost:9888"
-	config.Service.SnapshotThreshold = 1
+	cfg.Service.Addr = "localhost:9888"
+	cfg.Service.SnapshotThreshold = 1
 
-	server, err := refImpl.Init(config)
+	server, err := refImpl.Init(cfg)
 	require.NoError(t, err)
 	defer server.Shutdown()
 	go func() {
@@ -53,11 +53,11 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	authConn, err := grpc.Dial(config.Service.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	authConn, err := grpc.Dial(cfg.Service.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	require.NoError(t, err)
 	authClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	raConn, err := grpc.Dial(config.Service.Addr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	raConn, err := grpc.Dial(cfg.Service.Addr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	require.NoError(t, err)
 	raClient := pb.NewResourceAggregateClient(raConn)
 

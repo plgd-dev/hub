@@ -3,17 +3,17 @@ package main
 import (
 	"context"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/authorization/service"
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certificateManager"
 )
 
 func main() {
 	var cfg service.Config
-	if err := envconfig.Process("", &cfg); err != nil {
+	if err := config.Load(&cfg); err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}
 

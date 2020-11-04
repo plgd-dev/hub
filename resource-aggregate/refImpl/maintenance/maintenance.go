@@ -11,12 +11,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cqrs/event"
 	"github.com/plgd-dev/cqrs/eventstore"
 	"github.com/plgd-dev/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
-	"github.com/jessevdk/go-flags"
 )
 
 // Config represent application arguments
@@ -28,8 +29,7 @@ type Config struct {
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }
 
 type recordHandler struct {

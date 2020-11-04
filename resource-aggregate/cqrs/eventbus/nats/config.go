@@ -2,10 +2,9 @@ package nats
 
 import (
 	"crypto/tls"
-	"encoding/json"
-	"fmt"
 
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/kit/config"
 )
 
 // Option provides the means to use function call chaining
@@ -18,8 +17,7 @@ type Config struct {
 
 // String returns string representation of Config.
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }
 
 // WithTLS configures connection to use TLS
