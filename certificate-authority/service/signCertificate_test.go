@@ -21,9 +21,7 @@ func newRequestHandler(t *testing.T) *RequestHandler {
 	identityIntermediateCAKey, err := x509.ParseECPrivateKey(identityIntermediateCAKeyBlock.Bytes)
 	require.NoError(t, err)
 	return &RequestHandler{
-		ValidFrom: func() time.Time {
-			return time.Now()
-		},
+		ValidFrom:   "now",
 		ValidFor:    time.Hour * 86400,
 		Certificate: identityIntermediateCA,
 		PrivateKey:  identityIntermediateCAKey,

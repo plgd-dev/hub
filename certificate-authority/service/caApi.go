@@ -22,37 +22,17 @@ type CertificateSigner interface {
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
-	ValidFrom   func() time.Time
+	ValidFrom   string
 	ValidFor    time.Duration
 	Certificate []*x509.Certificate
 	PrivateKey  crypto.PrivateKey
 }
 
-type ValidFromDecoder func() time.Time
-
-func (d *ValidFromDecoder) Decode(value string) error {
-	if value == "" {
-		*d = func() time.Time {
-			return time.Now().Add(time.Hour * -1)
-		}
-		return nil
-	}
-	_, err := tparse.ParseNow(time.RFC3339, value)
-	if err != nil {
-		return fmt.Errorf("invalid VALID_FROM(%v): %v", value, err)
-	}
-	*d = func() time.Time {
-		t, _ := tparse.ParseNow(time.RFC3339, value)
-		return t
-	}
-	return nil
-}
-
 type SignerConfig struct {
-	Certificate   string           `envconfig:"CERTIFICATE"`
-	PrivateKey    string           `envconfig:"PRIVATE_KEY"`
-	ValidFrom     ValidFromDecoder `envconfig:"VALID_FROM" default:"now"`
-	ValidDuration time.Duration    `envconfig:"VALID_DURATION" default:"87600h"`
+	Certificate   string        `envconfig:"CERTIFICATE"`
+	PrivateKey    string        `envconfig:"PRIVATE_KEY"`
+	ValidFrom     string        `envconfig:"VALID_FROM" default:"now-1h"`
+	ValidDuration time.Duration `envconfig:"VALID_DURATION" default:"87600h"`
 }
 
 func AddHandler(svr *kitNetGrpc.Server, cfg SignerConfig) error {
@@ -78,13 +58,17 @@ func NewRequestHandlerFromConfig(cfg SignerConfig) (*RequestHandler, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = tparse.ParseNow(time.RFC3339, cfg.ValidFrom)
+	if err != nil {
+		return nil, fmt.Errorf("invalid VALID_FROM(%v): %v", cfg.ValidFrom, err)
+	}
 
 	return NewRequestHandler(cfg.ValidFrom, cfg.ValidDuration, chainCerts, privateKey), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
-	ValidFrom func() time.Time,
+	ValidFrom string,
 	ValidFor time.Duration,
 	Certificate []*x509.Certificate,
 	PrivateKey crypto.PrivateKey) *RequestHandler {

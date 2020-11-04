@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"time"
 
+	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/signer"
@@ -13,7 +15,10 @@ import (
 func (r *RequestHandler) SignIdentityCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
 	log.Debugf("RequestHandler.SignIdentityCertificate: %v", string(req.CertificateSigningRequest))
 
-	notBefore := r.ValidFrom()
+	notBefore, err := tparse.ParseNow(time.RFC3339, r.ValidFrom)
+	if err != nil {
+		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "invalid VALID_FROM(%v): %v", r.ValidFrom, err))
+	}
 	notAfter := notBefore.Add(r.ValidFor)
 	signer := signer.NewIdentityCertificateSigner(r.Certificate, r.PrivateKey, notBefore, notAfter)
 	cert, err := signer.Sign(ctx, req.CertificateSigningRequest)
