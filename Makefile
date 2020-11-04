@@ -95,7 +95,7 @@ test: env
 		-e TEST_ROOT_CA_CRT=/certs/root_ca.crt \
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
-		-e FLAGS_IGNORE_UNKNOWN=true
+		-e FLAGS_IGNORE_UNKNOWN=true \
 		cloud-test \
 		go test -mod=mod -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
