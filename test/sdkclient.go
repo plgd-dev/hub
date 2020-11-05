@@ -89,8 +89,8 @@ func NewSDKClient() (*local.Client, error) {
 		DisablePeerTCPSignalMessageCSMs: true,
 		DeviceOwnershipSDK: &local.DeviceOwnershipSDKConfig{
 			ID:      CertIdentity,
-			Cert:    identityIntermediateCA,
-			CertKey: identityIntermediateCAKey,
+			Cert:    string(identityIntermediateCA),
+			CertKey: string(identityIntermediateCAKey),
 		},
 	}
 
