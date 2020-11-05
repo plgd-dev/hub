@@ -59,28 +59,14 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `-` | `MONGODB_BATCH_SIZE` | int | `maximum number resources in one batch request`  | `16` |
 | `-` | `MONGODB_MAX_POOL_SIZE` | int | `maximum parallel request to DB` | `16` |
 | `-` | `MONGODB_MAX_CONN_IDLE_TIME` | string |  `maximum time of idle connection` | `"240s"` |
-| `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `DIAL_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `DIAL_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `DIAL_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `DIAL_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `DIAL_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `DIAL_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `DIAL_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `DIAL_FILE_CERT_DIR_PATH` | string | `path to directory which contains DIAL_FILE_CERT_KEY_NAME and DIAL_FILE_CERT_NAME` | `""` |
-| `-` | `DIAL_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `DIAL_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_TYPE` | string | `defines how to obtain listen TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `LISTEN_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `LISTEN_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
-| `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
+| `-` | `DIAL_CA_POOL` | string | `path to pem file of CAs` |  `""` |
+| `-` | `DIAL_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
+| `-` | `DIAL_CERT_DIR_PATH` | string | `path to directory which contains DIAL_CERT_KEY_NAME and DIAL_CERT_NAME` | `""` |
+| `-` | `DIAL_CERT_NAME` | string | `name of pem certificate file` | `""` |
+| `-` | `DIAL_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
+| `-` | `LISTEN_CA_POOL` | string | `path to pem file of CAs` |  `""` |
+| `-` | `LISTEN_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
+| `-` | `LISTEN_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_CERT_KEY_NAME and LISTEN_CERT_NAME` | `""` |
+| `-` | `LISTEN_CERT_NAME` | string | `name of pem certificate file` | `""` |
+| `-` | `LISTEN_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |

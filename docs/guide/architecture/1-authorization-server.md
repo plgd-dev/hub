@@ -47,18 +47,11 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `-` | `SDK_OAUTH_AUDIENCE` | string |  `refer to the resource servers that should accept the token` | `""` |
 | `-` | `SDK_OAUTH_SCOPES` | string | `Comma separated list of required scopes` | `""` |
 | `-` | `SDK_OAUTH_RESPONSE_MODE` | string | `one of "query/post_form"`| `"query"` |
-| `-` | `LISTEN_TYPE` | string | `defines how to obtain listen TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `LISTEN_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `LISTEN_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
-| `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
+| `-` | `LISTEN_CA_POOL` | string | `path to pem file of CAs` |  `""` |
+| `-` | `LISTEN_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
+| `-` | `LISTEN_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_CERT_KEY_NAME and LISTEN_CERT_NAME` | `""` |
+| `-` | `LISTEN_CERT_NAME` | string | `name of pem certificate file` | `""` |
+| `-` | `LISTEN_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | `enable debugging message` | `false` |
 | `-` | `MONGODB_URI` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
 | `-` | `MONGODB_DATABASE` | string | `name of database` | `"authorization"` |
