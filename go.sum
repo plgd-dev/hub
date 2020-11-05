@@ -510,6 +510,7 @@ github.com/plgd-dev/go-coap/v2 v2.0.5-0.20201027070641-9937654b6af4 h1:smEjS2xxL
 github.com/plgd-dev/go-coap/v2 v2.0.5-0.20201027070641-9937654b6af4/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
 github.com/plgd-dev/go-coap/v2 v2.1.0 h1:FNpGHDaBQx2M4wh7zGsSM/ECGzwngR8ALSkrx0Wxyx0=
 github.com/plgd-dev/go-coap/v2 v2.1.0/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
+github.com/plgd-dev/go-coap/v2 v2.1.1/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63 h1:cI6kESUBU1KUHtufZepEkaTsSkLN2kE6xz+Ec5V17q0=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612 h1:YAzuCNWQgBtIhVPgERZZdweOeQlFENdxmiC51Hse5lU=
@@ -525,6 +526,8 @@ github.com/plgd-dev/sdk v0.0.0-20201008144930-a520d56a75b7 h1:LT9v5mdtXjBDMy8tKB
 github.com/plgd-dev/sdk v0.0.0-20201008144930-a520d56a75b7/go.mod h1:jbuh5K0ZIMDWcJEuRWtJZWve9CmjN0ZFGrLm4B09ytk=
 github.com/plgd-dev/sdk v0.0.0-20201028101719-4e0d1c693a90 h1:AK26oscYaLvl2zzR8+aOkx0ZOUjyQPJBZPdsmPZd4Ls=
 github.com/plgd-dev/sdk v0.0.0-20201028101719-4e0d1c693a90/go.mod h1:nwMmPJcG3t3mNjUQeM6mQegQ5q1DmLdoDZ+A3uXhI88=
+github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280 h1:vQUZcewGHy0cZzTxvF9we+OE2ISKP1NtrAEbQgN05qk=
+github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280/go.mod h1:QiKRdvfkq/scE4qvHdPCDssybLdx0iPM/cyVOsx5kRc=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
