@@ -61,6 +61,34 @@ The onboarding values which should be set to the [coapcloudconf](https://github.
 | `sid` | `same as is set in COAP_GATEWAY_CLOUD_ID` |
 | `at` | `test` |
 
+#### Unsecured iotivity-lite sample device example:
+
+```bash
+# Start the cloud container with "unsecured" parameters
+docker run -d --network=host --name=cloud -t plgd/bundle:vnext \
+-e COAP_GATEWAY_CLOUD_ID="00000000-0000-0000-0000-000000000001" \
+-e COAP_GATEWAY_UNSECURE_PORT="5683" \
+-e COAP_GATEWAY_UNSECURE_ADDRESS="0.0.0.0:5683" \
+-e "coap+tcp://127.0.0.1:5683"
+
+```
+
+```bash
+# Retrieve iotivity-lite project
+git clone --recursive https://github.com/iotivity/iotivity-lite.git
+cd ./iotivity-lite/port/linux
+
+# Build and run unsecured applications
+make CLOUD=1 SECURE=0 cloud_server cloud_client
+
+# Start unsecured device sample
+./cloud_server cloud_server test coap+tcp://127.0.0.1:5683 00000000-0000-0000-0000-000000000001 test
+
+# Start unsecured client
+./cloud_client cloud_client test coap+tcp://127.0.0.1:5683 00000000-0000-0000-0000-000000000001 test
+
+```
+
 ### Secured device
 | Attribute | Value |
 | --------- | ------|
@@ -78,12 +106,42 @@ The onboarding values which should be set to the [coapcloudconf](https://github.
   ```
 - ACL for Cloud (Subject: COAP_GATEWAY_CLOUD_ID) must be set with full access to all published resources in device.
 
-## Build a sample device application
+#### Secured iotivity-lite sample device example:
+
 ```bash
+# Start the cloud container with "secured" parameters
+docker run -d --network=host --name=cloud -t plgd/bundle:vnext \
+-e COAP_GATEWAY_CLOUD_ID="00000000-0000-0000-0000-000000000001" \
+-e COAP_GATEWAY_PORT="5684" \
+-e COAP_GATEWAY_ADDRESS="0.0.0.0:5684" \
+-e "coaps+tcp://127.0.0.1:5684"
+
+```
+
+```bash
+# Retrieve iotivity-lite project
 git clone --recursive https://github.com/iotivity/iotivity-lite.git
 cd ./iotivity-lite/port/linux
-make CLOUD=1 SECURE=0 cloud_server
-./cloud_server test test coap+tcp://127.0.0.1:5683 COAP_GATEWAY_CLOUD_ID
+
+# Then build secured applications and onboarding_tool
+make CLOUD=1 SECURE=1 PKI=1 onboarding_tool cloud_server cloud_client
+
+# Retrieve cloud CA and set it as "pki_certs/cloudca.pem", to make the sample import this as TRUST CA
+docker exec -it cloud cat /data/certs/root_ca.crt > pki_certs/cloudca.pem
+
+# Start secured device sample
+./cloud_server cloud_server test coaps+tcp://127.0.0.1:5684 00000000-0000-0000-0000-000000000001 test
+# Start secured client
+./cloud_client cloud_client test coaps+tcp://127.0.0.1:5684 00000000-0000-0000-0000-000000000001 test
+
+# Execute onboarding_tool and:
+# - Onboard and set ACLs to the device sample as described in https://github.com/iotivity/iotivity-lite#step-1-onboard-and-provision-the-server
+# - Onboard the client as described in https://github.com/iotivity/iotivity-lite#step-2-onboard-the-client
+# - Pair client and server as described in https://github.com/iotivity/iotivity-lite#step-3-pair-server-and-client
+./onboarding_tool
+
+# Then restart device sample and client
+
 ```
 
 ## Build a COAP client application
