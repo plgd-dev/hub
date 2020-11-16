@@ -9,6 +9,7 @@ import (
 type deviceSubscriptionHandlers struct {
 	onResourceUpdatePending   func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error
 	onResourceRetrievePending func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error
+	onResourceDeletePending   func(ctx context.Context, val *pb.Event_ResourceDeletePending) error
 	onClose                   func()
 	onError                   func(err error)
 }
@@ -19,6 +20,10 @@ func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Con
 
 func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
 	return h.onResourceRetrievePending(ctx, val)
+}
+
+func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Context, val *pb.Event_ResourceDeletePending) error {
+	return h.onResourceDeletePending(ctx, val)
 }
 
 func (h *deviceSubscriptionHandlers) Error(err error) {

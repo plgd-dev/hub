@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 
-	codecOcf "github.com/plgd-dev/kit/codec/ocf"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,7 +19,7 @@ func (c *Client) GetResource(
 	opts ...GetOption,
 ) error {
 	cfg := getOptions{
-		codec: codecOcf.VNDOCFCBORCodec{},
+		codec: CloudCodec{},
 	}
 	for _, o := range opts {
 		cfg = o.applyOnGet(cfg)

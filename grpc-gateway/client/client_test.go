@@ -118,6 +118,10 @@ func (h *gatewayHandler) RetrieveResourceFromDevice(context.Context, *pb.Retriev
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
+func (h *gatewayHandler) DeleteResource(context.Context, *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "not implemented")
+}
+
 func sendResourceValue(srv pb.GrpcGateway_RetrieveResourcesValuesServer, deviceId, resourceType string, v interface{}) error {
 	c, err := cbor.Encode(v)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/gofrs/uuid"
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
@@ -17,7 +18,6 @@ import (
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/sdk/schema/cloud"
-	"github.com/gofrs/uuid"
 
 	"github.com/plgd-dev/cqrs/eventstore"
 )
@@ -425,6 +425,27 @@ func (s *subscriptions) OnResourceRetrievePending(ctx context.Context, retrieveP
 	return nil
 }
 
+func (s *subscriptions) OnResourceDeletePending(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, deletePending.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[deletePending.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfDeletePendingResource(ctx, deletePending, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource delete pending event: %v", errors)
+	}
+	return nil
+}
+
 func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
@@ -442,6 +463,27 @@ func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Ev
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("cannot send resource retrieved event: %v", errors)
+	}
+	return nil
+}
+
+func (s *subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_ResourceDeleted, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, deleted.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[deleted.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfDeletedResource(ctx, deleted, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource deleted event: %v", errors)
 	}
 	return nil
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gorilla/mux"
 )
 
 func statusToHttpStatus(status pbGRPC.Status) int {
@@ -33,6 +33,8 @@ func statusToHttpStatus(status pbGRPC.Status) int {
 		return http.StatusAccepted
 	case pbGRPC.Status_ERROR:
 		return http.StatusInternalServerError
+	case pbGRPC.Status_METHOD_NOT_ALLOWED:
+		return http.StatusMethodNotAllowed
 	}
 	return http.StatusInternalServerError
 }

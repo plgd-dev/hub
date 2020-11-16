@@ -114,3 +114,36 @@ Bus --> Client : ResourceRetrieved
 deactivate Client
 
 @enduml
+
+@startuml
+
+title "Delete Resource"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+
+Client -> ResourceAggregate : DeleteResourceRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate -> Client : DeleteResourceResponse
+ResourceAggregate --> Bus : ResourceDeletePending
+deactivate ResourceAggregate
+Bus --> Gateway : ResourceDeletePending
+activate Gateway
+Gateway -> Server: [DELETE] '/light/1'
+activate Server
+Server -> Gateway : OK
+deactivate Server
+Gateway -> ResourceAggregate : ConfirmResourceDeleteRequest
+activate ResourceAggregate
+ResourceAggregate -> Gateway : ConfirmResourceDeleteResponse
+deactivate Gateway
+ResourceAggregate --> Bus : ResourceDeleted
+deactivate ResourceAggregate
+Bus --> Client : ResourceDeleted
+deactivate Client
+
+@enduml

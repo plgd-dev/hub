@@ -25,4 +25,7 @@ service GrpcGateway {
 
   // Get client configuration
   rpc GetClientConfiguration(ClientConfigurationRequest) returns (ClientConfigurationResponse) {}
+
+  // Delete resource at the device.
+  rpc DeleteResource(DeleteResourceRequest) returns (DeleteResourceResponse) {}
 }

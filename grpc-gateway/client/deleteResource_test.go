@@ -1,0 +1,91 @@
+package client_test
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	authTest "github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
+	"github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"google.golang.org/grpc/codes"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestClient_DeleteResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	type args struct {
+		token    string
+		deviceID string
+		href     string
+		opts     []client.DeleteOption
+	}
+	tests := []struct {
+		name        string
+		args        args
+		want        interface{}
+		wantErr     bool
+		wantErrCode codes.Code
+	}{
+		{
+			name: "/ligh/1 - method not allowd",
+			args: args{
+				token:    authTest.UserToken,
+				deviceID: deviceID,
+				href:     "/ligh/1",
+			},
+			wantErr:     true,
+			wantErrCode: extCodes.MethodNotAllowed,
+		},
+		{
+			name: "/ligh/1 - permission denied",
+			args: args{
+				token:    authTest.UserToken,
+				deviceID: deviceID,
+				href:     "/oic/d",
+			},
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
+		},
+		{
+			name: "invalid href",
+			args: args{
+				token:    authTest.UserToken,
+				deviceID: deviceID,
+				href:     "/invalid/href",
+			},
+			wantErr:     true,
+			wantErrCode: codes.NotFound,
+		},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
+
+	c := NewTestClient(t)
+	defer c.Close(context.Background())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			defer cancel()
+			var got interface{}
+			err := c.DeleteResource(ctx, tt.args.deviceID, tt.args.href, &got, tt.args.opts...)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}

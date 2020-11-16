@@ -45,4 +45,5 @@ enum Status {
   NOT_IMPLEMENTED = 7;
   ACCEPTED = 8;
   ERROR = 9;
+  METHOD_NOT_ALLOWED = 10;
 }

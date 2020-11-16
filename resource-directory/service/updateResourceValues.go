@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb/errdetails"
@@ -13,7 +14,6 @@ import (
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gofrs/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
@@ -39,6 +39,8 @@ func statusToGrpcStatus(status pbRA.Status) codes.Code {
 		return codes.Unimplemented
 	case pbRA.Status_ACCEPTED:
 		return extCodes.Accepted
+	case pbRA.Status_METHOD_NOT_ALLOWED:
+		return extCodes.MethodNotAllowed
 	}
 	return extCodes.InvalidCode
 }

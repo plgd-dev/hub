@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
@@ -41,10 +39,6 @@ func getResourceInterface(msg *mux.Message) string {
 }
 
 func clientRetrieveHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
-	t := time.Now()
-	defer func() {
-		log.Debugf("clientRetrieveHandler takes %v", time.Since(t))
-	}()
 	authCtx := client.loadAuthorizationContext()
 
 	deviceID, href, err := URIToDeviceIDHref(req)

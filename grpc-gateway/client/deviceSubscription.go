@@ -40,6 +40,16 @@ type ResourceRetrievedHandler = interface {
 	HandleResourceRetrieved(ctx context.Context, val *pb.Event_ResourceRetrieved) error
 }
 
+// ResourceDeletePendingHandler handler of events
+type ResourceDeletePendingHandler = interface {
+	HandleResourceDeletePending(ctx context.Context, val *pb.Event_ResourceDeletePending) error
+}
+
+// ResourceDeletedHandler handler of events
+type ResourceDeletedHandler = interface {
+	HandleResourceDeleted(ctx context.Context, val *pb.Event_ResourceDeleted) error
+}
+
 // DeviceSubscription subscription.
 type DeviceSubscription struct {
 	client                         pb.GrpcGateway_SubscribeForEventsClient
@@ -50,7 +60,10 @@ type DeviceSubscription struct {
 	resourceUpdatedHandler         ResourceUpdatedHandler
 	resourceRetrievePendingHandler ResourceRetrievePendingHandler
 	resourceRetrievedHandler       ResourceRetrievedHandler
-	closeErrorHandler              SubscriptionHandler
+	resourceDeletePendingHandler   ResourceDeletePendingHandler
+	resourceDeletedHandler         ResourceDeletedHandler
+
+	closeErrorHandler SubscriptionHandler
 
 	wait     func()
 	canceled uint32
@@ -71,6 +84,8 @@ func NewDeviceSubscription(ctx context.Context, deviceID string, closeErrorHandl
 	var resourceUpdatedHandler ResourceUpdatedHandler
 	var resourceRetrievePendingHandler ResourceRetrievePendingHandler
 	var resourceRetrievedHandler ResourceRetrievedHandler
+	var resourceDeletePendingHandler ResourceDeletePendingHandler
+	var resourceDeletedHandler ResourceDeletedHandler
 	filterEvents := make([]pb.SubscribeForEvents_DeviceEventFilter_Event, 0, 1)
 	if v, ok := handle.(ResourcePublishedHandler); ok {
 		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED)
@@ -96,14 +111,24 @@ func NewDeviceSubscription(ctx context.Context, deviceID string, closeErrorHandl
 		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED)
 		resourceRetrievedHandler = v
 	}
+	if v, ok := handle.(ResourceDeletePendingHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING)
+		resourceDeletePendingHandler = v
+	}
+	if v, ok := handle.(ResourceDeletedHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETED)
+		resourceDeletedHandler = v
+	}
 
 	if resourcePublishedHandler == nil &&
 		resourceUnpublishedHandler == nil &&
 		resourceUpdatePendingHandler == nil &&
 		resourceUpdatedHandler == nil &&
 		resourceRetrievePendingHandler == nil &&
-		resourceRetrievedHandler == nil {
-		return nil, fmt.Errorf("invalid handler - it's supports: ResourcePublishedHandler, ResourceUnpublishedHandler, ResourceUpdatePendingHandler, ResourceUpdatedHandler, ResourceRetrievePendingHandler, ResourceRetrievedHandler")
+		resourceRetrievedHandler == nil &&
+		resourceDeletePendingHandler == nil &&
+		resourceDeletedHandler == nil {
+		return nil, fmt.Errorf("invalid handler - it's supports: ResourcePublishedHandler, ResourceUnpublishedHandler, ResourceUpdatePendingHandler, ResourceUpdatedHandler, ResourceRetrievePendingHandler, ResourceRetrievedHandler, ResourceDeletePendingHandler, ResourceDeletedHandler")
 	}
 	client, err := gwClient.SubscribeForEvents(ctx)
 	if err != nil {
@@ -144,6 +169,8 @@ func NewDeviceSubscription(ctx context.Context, deviceID string, closeErrorHandl
 		resourceUpdatedHandler:         resourceUpdatedHandler,
 		resourceRetrievePendingHandler: resourceRetrievePendingHandler,
 		resourceRetrievedHandler:       resourceRetrievedHandler,
+		resourceDeletePendingHandler:   resourceDeletePendingHandler,
+		resourceDeletedHandler:         resourceDeletedHandler,
 		wait:                           wg.Wait,
 	}
 	wg.Add(1)
@@ -234,6 +261,20 @@ func (s *DeviceSubscription) runRecv() {
 			}
 		} else if ct := ev.GetResourceRetrieved(); ct != nil {
 			err = s.resourceRetrievedHandler.HandleResourceRetrieved(s.client.Context(), ct)
+			if err != nil {
+				s.Cancel()
+				s.closeErrorHandler.Error(err)
+				return
+			}
+		} else if ct := ev.GetResourceDeletePending(); ct != nil {
+			err = s.resourceDeletePendingHandler.HandleResourceDeletePending(s.client.Context(), ct)
+			if err != nil {
+				s.Cancel()
+				s.closeErrorHandler.Error(err)
+				return
+			}
+		} else if ct := ev.GetResourceDeleted(); ct != nil {
+			err = s.resourceDeletedHandler.HandleResourceDeleted(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
 				s.closeErrorHandler.Error(err)

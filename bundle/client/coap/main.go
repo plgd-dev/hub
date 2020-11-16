@@ -138,6 +138,7 @@ func main() {
 	discoverRt := flag.String("rt", "", "resource type")
 	observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expceted in stdin")
+	delete := flag.Bool("delete", false, "delete resource")
 
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
@@ -197,12 +198,18 @@ func main() {
 	}
 
 	switch {
+	case *delete:
+		resp, err := co.Delete(context.Background(), *href)
+		if err != nil {
+			log.Fatalf("cannot delete value: %v", err)
+		}
+		decodePayload(resp)
 	case *update:
 		b := bytes.NewBuffer(make([]byte, 0, 124))
 		b.ReadFrom(os.Stdin)
 		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), bytes.NewReader(b.Bytes()))
 		if err != nil {
-			log.Fatalf("cannot get value: %v", err)
+			log.Fatalf("cannot update value: %v", err)
 		}
 		decodePayload(resp)
 	case *observe:

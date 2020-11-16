@@ -144,6 +144,30 @@ func validateConfirmResourceRetrieve(request *pb.ConfirmResourceRetrieveRequest)
 	return nil
 }
 
+func validateDeleteResource(request *pb.DeleteResourceRequest) error {
+	if request.ResourceId == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	}
+	if request.CorrelationId == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+	}
+	return nil
+}
+
+func validateConfirmResourceDelete(request *pb.ConfirmResourceDeleteRequest) error {
+	if request.Content == nil {
+		return status.Errorf(codes.InvalidArgument, "invalid Content")
+	}
+	if request.ResourceId == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	}
+	if request.CorrelationId == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+	}
+
+	return nil
+}
+
 func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events []cqrsEvent.Event) {
 	for _, event := range events {
 		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
@@ -292,7 +316,7 @@ func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.Confi
 	return
 }
 
-// RetrieveResource handles a command UpdateResource
+// RetrieveResource handles a command RetriveResource
 func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveResourceRequest) (response *pb.RetrieveResourceResponse, events []cqrsEvent.Event, err error) {
 	if err = validateRetrieveResource(request); err != nil {
 		err = fmt.Errorf("invalid retrieve resource content command: %w", err)
@@ -328,6 +352,47 @@ func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.Con
 
 	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
 	response = &pb.ConfirmResourceRetrieveResponse{
+		AuditContext: &auditContext,
+	}
+	return
+}
+
+// DeleteResource handles a command DeleteResource
+func (a *aggregate) DeleteResource(ctx context.Context, request *pb.DeleteResourceRequest) (response *pb.DeleteResourceResponse, events []cqrsEvent.Event, err error) {
+	if err = validateDeleteResource(request); err != nil {
+		err = fmt.Errorf("invalid delete resource content command: %w", err)
+		return
+	}
+
+	events, err = a.ag.HandleCommand(ctx, request)
+	if err != nil {
+		err = fmt.Errorf("unable to process delete resource content command: %w", err)
+		return
+	}
+	insertMaintenanceDbRecord(ctx, a, events)
+
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
+	response = &pb.DeleteResourceResponse{
+		AuditContext: &auditContext,
+	}
+	return
+}
+
+func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *pb.ConfirmResourceDeleteRequest) (response *pb.ConfirmResourceDeleteResponse, events []cqrsEvent.Event, err error) {
+	if err = validateConfirmResourceDelete(request); err != nil {
+		err = fmt.Errorf("invalid delete resource content notification command: %w", err)
+		return
+	}
+
+	events, err = a.ag.HandleCommand(ctx, request)
+	if err != nil {
+		err = fmt.Errorf("unable to process delete resource content notification command: %w", err)
+		return
+	}
+	insertMaintenanceDbRecord(ctx, a, events)
+
+	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
+	response = &pb.ConfirmResourceDeleteResponse{
 		AuditContext: &auditContext,
 	}
 	return

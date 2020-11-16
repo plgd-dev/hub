@@ -11,6 +11,8 @@ func resourceRouteHandler(s mux.ResponseWriter, req *mux.Message, client *Client
 	switch req.Code {
 	case coapCodes.POST:
 		clientUpdateHandler(s, req, client)
+	case coapCodes.DELETE:
+		clientDeleteHandler(s, req, client)
 	case coapCodes.GET:
 		if observe, err := req.Options.Observe(); err == nil {
 			clientObserveHandler(s, req, client, observe)

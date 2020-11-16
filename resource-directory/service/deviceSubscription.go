@@ -177,6 +177,48 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 	})
 }
 
+func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error {
+	var found bool
+	for _, f := range s.deviceEvent.GetFilterEvents() {
+		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING {
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	if s.FilterByVersion(deletePending.GetResourceId().GetDeviceId(), deletePending.GetResourceId().GetHref(), "res", version) {
+		return nil
+	}
+	return s.Send(ctx, pb.Event{
+		SubscriptionId: s.ID(),
+		Type: &pb.Event_ResourceDeletePending_{
+			ResourceDeletePending: &deletePending,
+		},
+	})
+}
+
+func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, deleted pb.Event_ResourceDeleted, version uint64) error {
+	var found bool
+	for _, f := range s.deviceEvent.GetFilterEvents() {
+		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETED {
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	if s.FilterByVersion(deleted.GetResourceId().GetDeviceId(), deleted.GetResourceId().GetHref(), "res", version) {
+		return nil
+	}
+	return s.Send(ctx, pb.Event{
+		SubscriptionId: s.ID(),
+		Type: &pb.Event_ResourceDeleted_{
+			ResourceDeleted: &deleted,
+		},
+	})
+}
+
 func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
 	models := s.resourceProjection.Models(s.DeviceID(), "")
 	toSend := make([]ResourceLink, 0, 32)
@@ -236,6 +278,18 @@ func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Contex
 	return nil
 }
 
+func (s *deviceSubscription) initSendResourcesDeletePending(ctx context.Context) error {
+	models := s.resourceProjection.Models(s.DeviceID(), "")
+	for _, model := range models {
+		c := model.(*resourceCtx).Clone()
+		err := c.onResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
+		if err != nil {
+			return fmt.Errorf("cannot send resource update pending: %w", err)
+		}
+	}
+	return nil
+}
+
 func (s *deviceSubscription) Init(ctx context.Context, currentDevices map[string]bool) error {
 	if !currentDevices[s.DeviceID()] {
 		return fmt.Errorf("device %v not found", s.DeviceID())
@@ -255,6 +309,8 @@ func (s *deviceSubscription) Init(ctx context.Context, currentDevices map[string
 			err = s.initSendResourcesUpdatePending(ctx)
 		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING:
 			err = s.initSendResourcesRetrievePending(ctx)
+		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING:
+			err = s.initSendResourcesDeletePending(ctx)
 		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED:
 			// do nothing
 		}

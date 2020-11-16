@@ -8,11 +8,11 @@ import (
 
 	"google.golang.org/grpc/status"
 
+	"github.com/kelseyhightower/envconfig"
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/sdk/schema/cloud"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/panjf2000/ants/v2"
 
 	cbor "github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/security/certManager"
@@ -139,8 +139,9 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 	subscriptions := service.NewSubscriptions()
 	updateNotificationContainer := notification.NewUpdateNotificationContainer()
 	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
+	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
 
-	resourceProjection, err := service.NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), time.Second)
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), time.Second)
 	require.NoError(t, err)
 
 	rd := service.NewDeviceDirectory(resourceProjection, []string{
