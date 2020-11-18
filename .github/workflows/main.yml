@@ -26,19 +26,19 @@ jobs:
         run: echo "COMMIT_MESSAGE=`git log --format=%B -n 1`" >> $GITHUB_ENV
 
       - name: Run a test
-        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
+        if: ${{ !startsWith(env.COMMIT_MESSAGE, '[doc]') }}
         run: make test
         
       - name: Publish the coverage
-        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
+        if: ${{ !startsWith(env.COMMIT_MESSAGE, '[doc]') }}
         run: bash <(curl -s https://codecov.io/bash)
 
       - name: Set latest tag
-        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
+        if: ${{ !startsWith(env.COMMIT_MESSAGE, '[doc]') }}
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       
       - name: Publish docker images
-        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
+        if: ${{ !startsWith(env.COMMIT_MESSAGE, '[doc]') }}
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin && make push LATEST_TAG=${{ env.RELEASE_VERSION }}
 
 
