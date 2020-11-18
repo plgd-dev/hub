@@ -4,7 +4,8 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
     tags:
       - '*'
   
@@ -20,21 +21,24 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      
+      - name: Set commit message
+        run: echo "COMMIT_MESSAGE=`git log --format=%B -n 1`" >> $GITHUB_ENV
 
-      # Runs a single command using the runners shell
       - name: Run a test
+        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
         run: make test
         
       - name: Publish the coverage
+        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
         run: bash <(curl -s https://codecov.io/bash)
 
       - name: Set latest tag
+        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       
       - name: Publish docker images
-        with: ${{ secrets.DOCKERHUB_TOKEN }}
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: docker login -u "$DOCKERHUB_USERNAME" --password-stdin && make push LATEST_TAG=${{ env.RELEASE_VERSION }}
+        if: ${{ !startsWith("[doc]", env.COMMIT_MESSAGE) }}
+        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin && make push LATEST_TAG=${{ env.RELEASE_VERSION }}
 
 
