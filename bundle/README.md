@@ -23,12 +23,11 @@ docker pull plgd/bundle:vnext
 Image can be configured via enviroment variables as argument `-e ENV=VALUE` of command `docker`:
 | ENV variable | Type | Description | Default |
 | --------- | ----------- | ------- | ------- |
+| `FQDN` | string | public FQDN for bundle | `"localhost"` |
 | `COAP_GATEWAY_UNSECURE_PORT` | uint16 | exposed public port for coap-tcp  | `"5683"` |
 | `COAP_GATEWAY_UNSECURE_ADDRESS` | string | coap-tcp listen address | `"0.0.0.0:5683"` |
-| `COAP_GATEWAY_UNSECURE_FQDN` | string | public FQDN for coap-tcp | `localhost` |
 | `COAP_GATEWAY_PORT` | uint16 | exposed public port for coaps-tcp  | `"5684"` |
 | `COAP_GATEWAY_ADDRESS` | string | coaps-tcp listen address | `"0.0.0.0:5684"` |
-| `COAP_GATEWAY_FQDN` | string | public FQDN for coaps-tcp | `"localhost"` |
 | `COAP_GATEWAY_CLOUD_ID` | string | cloud id | `"00000000-0000-0000-0000-000000000001"` |
 | `COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER`| bool | disable blockwise transfer | `false` |
 | `COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX` | string | blockwise transfer size | `"1024"` |
