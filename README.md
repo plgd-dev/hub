@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/plgd-dev/cloud.svg?branch=master)](https://travis-ci.com/plgd-dev/cloud)
+[![CI](https://github.com/plgd-dev/cloud/workflows/CI/badge.svg)](https://github.com/plgd-dev/cloud/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/plgd-dev/cloud/branch/master/graph/badge.svg)](https://codecov.io/gh/plgd-dev/cloud)
 [![Go Report](https://goreportcard.com/badge/github.com/plgd-dev/cloud)](https://goreportcard.com/report/github.com/plgd-dev/cloud)
 [![Gitter](https://badges.gitter.im/ocfcloud/Lobby.svg)](https://gitter.im/ocfcloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
