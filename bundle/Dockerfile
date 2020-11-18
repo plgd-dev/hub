@@ -50,7 +50,7 @@ RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
 FROM ubuntu:18.04 as service
 RUN apt update
-RUN apt install -y mongodb-server curl
+RUN apt install -y mongodb-server curl iproute2
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
@@ -62,13 +62,14 @@ COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-gener
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY run.sh /usr/local/bin/run.sh
 
+# global
+ENV FQDN="localhost"
+
 # coap-gateway
 ENV COAP_GATEWAY_UNSECURE_PORT=5683
 ENV COAP_GATEWAY_UNSECURE_ADDRESS="0.0.0.0:$COAP_GATEWAY_UNSECURE_PORT"
-ENV COAP_GATEWAY_UNSECURE_FQDN="localhost"
 ENV COAP_GATEWAY_PORT=5684
 ENV COAP_GATEWAY_ADDRESS="0.0.0.0:$COAP_GATEWAY_PORT"
-ENV COAP_GATEWAY_FQDN="localhost"
 ENV COAP_GATEWAY_CLOUD_ID="00000000-0000-0000-0000-000000000001"
 ENV COAP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 ENV COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER=false

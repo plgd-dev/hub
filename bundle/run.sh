@@ -43,14 +43,25 @@ export OAUTH_ENDPOINT_TOKEN_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/
 export OAUTH_ENDPOINT_CODE_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/code
 export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
 
+export FQDN_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN}:`echo ${AUTHORIZATION_HTTP_ADDRESS} | rev | cut -d':' -f 1 | rev`/api/authz/token
+export FQDN_OAUTH_ENDPOINT_CODE_URL=https://${FQDN}:`echo ${AUTHORIZATION_HTTP_ADDRESS} | rev | cut -d':' -f 1 | rev`/api/authz/code
+export FQDN_CERTIFICATE_AUTHORITY_ADDRESS=${FQDN}:`echo ${CERTIFICATE_AUTHORITY_ADDRESS} | rev | cut -d':' -f 1 | rev`
+
+export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
+export COAP_GATEWAY_FQDN=$FQDN
+
 if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
   mkdir -p $CA_POOL_DIR
   mkdir -p $INTERNAL_CERT_DIR_PATH
   mkdir -p $EXTERNAL_CERT_DIR_PATH
+  fqdnSAN="--cert.san.cn=$FQDN"
+  if ip route get $FQDN 2>/dev/null >/dev/null; then
+    fqdnSAN="--cert.san.ip=$FQDN"
+  fi
   echo "generating CA cert"
   certificate-generator --cmd.generateRootCA --outCert=$CA_POOL_CERT_PATH --outKey=$CA_POOL_CERT_KEY_PATH --cert.subject.cn="Root CA"
   echo "generating GRPC internal cert"
-  certificate-generator --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+  certificate-generator --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
   echo "generating COAP-GW cert"
   certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
 fi
@@ -118,11 +129,11 @@ fi
 echo "starting resource-directory"
 ADDRESS=${RESOURCE_DIRECTORY_ADDRESS} \
 SERVICE_CLIENT_CONFIGURATION_CLOUD_CA_POOL=${CA_POOL_CERT_PATH} \
-SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=${OAUTH_ENDPOINT_TOKEN_URL} \
-SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${OAUTH_ENDPOINT_CODE_URL} \
+SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=${FQDN_OAUTH_ENDPOINT_TOKEN_URL} \
+SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${FQDN_OAUTH_ENDPOINT_CODE_URL} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDID=${COAP_GATEWAY_CLOUD_ID} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDURL="coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}" \
-SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${CERTIFICATE_AUTHORITY_ADDRESS} \
+SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${FQDN_CERTIFICATE_AUTHORITY_ADDRESS} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="test" \
 resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
 status=$?
