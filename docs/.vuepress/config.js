@@ -26,12 +26,19 @@ module.exports = {
           {
             title: 'Architecture',
             children: [
-              'architecture/1-authorization-server',
-              'architecture/2-resource-aggregate',
-              'architecture/3-resource-directory',
-              'architecture/4-coap-gateway',
-              'architecture/5-cloud2cloud-connector',
-              'architecture/6-cloud2cloud-gateway',
+              'architecture/domain-overview',
+              'architecture/system-overview'
+            ]
+          },
+          {
+            title: 'Deployment',
+            children: [
+              'deployment/authorization-server',
+              'deployment/resource-aggregate',
+              'deployment/resource-directory',
+              'deployment/coap-gateway',
+              'deployment/cloud2cloud-connector',
+              'deployment/cloud2cloud-gateway',
             ]
           }
         ]
@@ -40,7 +47,7 @@ module.exports = {
     dest: "dist",
     plugins: [
       '@vuepress/medium-zoom',
-      [ 
+      [
         '@vuepress/google-analytics',
         {
           'ga': 'UA-165501387-1'
