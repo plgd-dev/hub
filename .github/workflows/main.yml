@@ -5,7 +5,7 @@ name: CI
 on:
   push:
     branches:
-      - docs-githubaction
+      - master
     tags:
       - '*'
   
@@ -61,24 +61,4 @@ jobs:
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: dist # The folder the action should deploy.
           CLEAN: true # Automatically remove deleted files from the deploy branch
-
-
-
- #     - name: Navigate into the build output directory
- #       run: cd docs/.vuepress/dist
-
-#      - name: Deploying to a plgd.dev
-#        run: echo 'plgd.dev' > CNAME
-
-#      - name: Commit deploy name
-#        run: git add -A && git commit -m 'deploy'
-        
-#      - name: Push to gh-pages branch
-#        run: git push -f git@github.com:<USERNAME>/plgd-dev/cloud.git master:gh-pages
-
-# if you are deploying to https://<USERNAME>.github.io
-# git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git master
-
-# if you are deploying to https://<USERNAME>.github.io/<REPO>
-# git push -f git@github.com:<USERNAME>/<REPO>.git master:gh-pages
 
