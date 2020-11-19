@@ -9,6 +9,3 @@ Internet of Things (IoT) technologies have evolved rapidly in recent years and c
 Beyond the specification bounds is the **open source** plgd project delivering you the **Cloud Native** implementation of the [OCF Cloud specification](https://openconnectivity.org/developer/specifications/) as well as other ecosystem supportive tools. The plgd Cloud is not just another IoT platform providing you remote access to your devices; it's an OCF Ecosystem building block designed to enable true Internet of Things - access **a device as a service**.
 
 ![plgd Cloud high level diagram](/docs/.vuepress/public/img/plgd_high_level.svg)
-
-## Features
-...
