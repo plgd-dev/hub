@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gorilla/websocket"
 )
 
 type DeviceEvent struct {
@@ -27,11 +27,11 @@ type deviceObservationResolver struct {
 	requestHandler *RequestHandler
 }
 
-func (d *deviceObservationResolver) StartObservation(r *http.Request, ws *websocket.Conn) (SubscribeSession, error) {
+func (d *deviceObservationResolver) StartObservation(r *http.Request, ws *websocket.Conn, accessToken string) (SubscribeSession, error) {
 	ob := deviceObservation{
 		NewSubscriptionSession(ws),
 	}
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), getAccessToken(r.Header))
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), accessToken)
 	id, err := d.requestHandler.client.ObserveDevices(ctx, &ob)
 	if err != nil {
 		return nil, err

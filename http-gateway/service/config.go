@@ -1,38 +1,34 @@
 package service
 
 import (
-	"fmt"
-	"reflect"
+	"time"
 
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/security/certManager"
-
-	"gopkg.in/yaml.v2"
 )
 
 // Config represent application configuration
 type Config struct {
-	Address                  string             `envconfig:"ADDRESS" default:"0.0.0.0:7000"`
+	Address                  string             `envconfig:"ADDRESS"`
 	Listen                   certManager.Config `envconfig:"LISTEN"`
 	Dial                     certManager.Config `envconfig:"DIAL"`
 	JwksURL                  string             `envconfig:"JWKS_URL"`
-	ResourceDirectoryAddr    string             `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
-	CertificateAuthorityAddr string             `envconfig:"CERTIFICATE_AUTHORITY_ADDRESS"  default:""`
+	ResourceDirectoryAddr    string             `envconfig:"RESOURCE_DIRECTORY_ADDRESS"`
+	CertificateAuthorityAddr string             `envconfig:"CERTIFICATE_AUTHORITY_ADDRESS"`
+	WebSocketReadLimit       int64              `envconfig:"WEBSOCKET_READ_LIMIT"`
+	WebSocketReadTimeout     time.Duration      `envconfig:"WEBSOCKET_READ_TIMEOUT"`
 }
 
-func ParseConfig(s string) (Config, error) {
-	var cfg Config
-	err := yaml.Unmarshal([]byte(s), &cfg, yaml.DecoderWithFieldNameMarshaler(FieldNameMarshaler))
-	if err != nil {
-		return cfg, fmt.Errorf("invalid config: %w", err)
+func (c Config) checkForDefaults() Config {
+	if c.WebSocketReadLimit == 0 {
+		c.WebSocketReadLimit = 8192
 	}
-	return cfg, nil
+	if c.WebSocketReadTimeout == 0 {
+		c.WebSocketReadTimeout = time.Second * 4
+	}
+	return c
 }
 
 func (c Config) String() string {
-	b, _ := yaml.Marshal(c, yaml.EncoderWithFieldNameMarshaler(FieldNameMarshaler))
-	return string(b)
-}
-
-func FieldNameMarshaler(f reflect.StructField) string {
-	return f.Name
+	return config.ToString(c)
 }

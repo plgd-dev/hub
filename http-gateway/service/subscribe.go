@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/kit/log"
 	"github.com/gorilla/websocket"
+	"github.com/plgd-dev/kit/log"
 )
 
 const (
@@ -38,7 +38,7 @@ type ObservationManager struct {
 }
 
 type ObservationResolver interface {
-	StartObservation(r *http.Request, ws *websocket.Conn) (SubscribeSession, error)
+	StartObservation(r *http.Request, ws *websocket.Conn, accessToken string) (SubscribeSession, error)
 	StopObservation(subscriptionID string) error
 }
 
@@ -106,13 +106,26 @@ func (s *subscribeSession) Error(err error) {
 	s.ws.Close()
 }
 
+type TokenMessage struct {
+	Token string `json:"Token"`
+}
+
 func (requestHandler *RequestHandler) ServeWs(w http.ResponseWriter, r *http.Request, ob ObservationResolver) error {
 	c, err := requestHandler.manager.ws.Upgrade(w, r, nil)
 	if err != nil {
 		log.Errorf("unable to upgrade into websocket: %w", err)
 		return err
 	}
-	s, err := ob.StartObservation(r, c)
+	c.SetReadLimit(requestHandler.config.WebSocketReadLimit)
+	c.SetReadDeadline(time.Now().Add(time.Second * requestHandler.config.WebSocketReadTimeout))
+	var tokenMessage TokenMessage
+	err = c.ReadJSON(&tokenMessage)
+	if err != nil {
+		c.Close()
+		log.Errorf("unable read token message from websocket: %w", err)
+		return err
+	}
+	s, err := ob.StartObservation(r, c, tokenMessage.Token)
 	if err != nil {
 		c.Close()
 		log.Error("unable to start observation: %w", err)

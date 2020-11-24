@@ -132,6 +132,34 @@ paths:
           $ref: '#/components/responses/deviceNotFound'
         500:
           $ref: '#/components/responses/error'
+    delete:
+      tags:
+        - Devices
+      summary: Delete a single resource
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/resourcePath'
+      description: Delte a single resource
+      responses:
+        200:
+          description: response with content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRepresentation'
+        202:
+          $ref: '#/components/responses/nocontent'
+        204:
+          $ref: '#/components/responses/accepted'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
   '/api/v1/devices/{deviceId}/reboot':
     post:
       tags:
@@ -190,6 +218,8 @@ paths:
         - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/resourcePath'
+      requestBody:
+        $ref: '#/components/requestBodies/WSAccessToken'
       responses:
         101:
           description: Websocket connection was established
@@ -214,6 +244,8 @@ paths:
           - plgd.devices
       parameters:
         - $ref: '#/components/parameters/correlationId'
+      requestBody:
+        $ref: '#/components/requestBodies/WSAccessToken'
       responses:
         101:
           description: Websocket connection was established
@@ -238,6 +270,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
+      requestBody:
+        $ref: '#/components/requestBodies/WSAccessToken'
       responses:
         101:
           description: Websocket connection was established
@@ -261,6 +295,19 @@ components:
           authorizationUrl: https://auth.plgd.cloud/oauth/token
           scopes:
             openid: to authorize access to a user's details
+  requestBodies:
+    WSAccessToken:
+      description: An access token must be send in the first message for backend mode via websocket.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              Token:
+                type: string
+                description: Access token
+            example:
+              Token: 53080a4f-5e3e-4291-802f-3436238232d1
   schemas:
     CloudClientsConfiguration:
       type: object
@@ -462,6 +509,12 @@ components:
       schema:
         type: string
   responses:
+    ok:
+      description: Content is stored in body.
+    nocontent:
+      description: No content in body.
+    accepted:
+      description: Action will asynchronously processed.
     unauthorized:
       description: Not authorized
     error:
