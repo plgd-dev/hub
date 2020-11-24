@@ -201,7 +201,7 @@ func main() {
 	case *delete:
 		resp, err := co.Delete(context.Background(), *href)
 		if err != nil {
-			log.Fatalf("cannot delete value: %v", err)
+			log.Fatalf("cannot delete resource: %v", err)
 		}
 		decodePayload(resp)
 	case *update:
@@ -209,7 +209,7 @@ func main() {
 		b.ReadFrom(os.Stdin)
 		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), bytes.NewReader(b.Bytes()))
 		if err != nil {
-			log.Fatalf("cannot update value: %v", err)
+			log.Fatalf("cannot update resource: %v", err)
 		}
 		decodePayload(resp)
 	case *observe:
@@ -217,7 +217,7 @@ func main() {
 			decodePayload(req)
 		})
 		if err != nil {
-			log.Fatalf("cannot observe value: %v", err)
+			log.Fatalf("cannot observe resource: %v", err)
 		}
 		defer obs.Cancel(context.Background())
 
@@ -234,7 +234,7 @@ func main() {
 		}
 		resp, err := co.Get(context.Background(), *href, opts...)
 		if err != nil {
-			log.Fatalf("cannot get value: %v", err)
+			log.Fatalf("cannot get resource: %v", err)
 		}
 		decodePayload(resp)
 	case *discover:
@@ -246,7 +246,7 @@ func main() {
 		}
 		resp, err := co.Get(context.Background(), "/oic/res", opts...)
 		if err != nil {
-			log.Fatalf("cannot discover value: %v", err)
+			log.Fatalf("cannot discover resources: %v", err)
 		}
 		decodePayload(resp)
 	default:

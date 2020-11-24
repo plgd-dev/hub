@@ -124,7 +124,7 @@ func main() {
 			},
 		})
 		if err != nil {
-			log.Fatalf("cannot delete value: %v", err)
+			log.Fatalf("cannot delete resource: %v", err)
 		}
 		d, err := json.Encode(resp)
 		if err != nil {
@@ -147,7 +147,7 @@ func main() {
 			},
 		})
 		if err != nil {
-			log.Fatalf("cannot update value: %v", err)
+			log.Fatalf("cannot update resource: %v", err)
 		}
 		d, err := json.Encode(resp)
 		if err != nil {
