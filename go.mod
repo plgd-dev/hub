@@ -41,7 +41,7 @@ require (
 	golang.org/x/sync v0.0.0-20201008141435-b3e1573b7520
 	google.golang.org/grpc v1.32.0
 	google.golang.org/grpc/examples v0.0.0-20201008225051-06c094c3ab22 // indirect
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace gopkg.in/yaml.v2 v2.2.8 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454
