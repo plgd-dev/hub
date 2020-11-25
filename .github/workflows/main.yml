@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Set commit message
-        run: echo "COMMIT_MESSAGE=`git log --format=%B -n 1`" >> $GITHUB_ENV
+        run: echo "COMMIT_MESSAGE=`git log --format=%B -n 1 | head -1 | xargs`" >> $GITHUB_ENV
 
       - name: Run a test
         if: ${{ !startsWith(env.COMMIT_MESSAGE, '[doc]') }}
