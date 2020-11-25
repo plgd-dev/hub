@@ -54,7 +54,7 @@ if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
   mkdir -p $CA_POOL_DIR
   mkdir -p $INTERNAL_CERT_DIR_PATH
   mkdir -p $EXTERNAL_CERT_DIR_PATH
-  fqdnSAN="--cert.san.cn=$FQDN"
+  fqdnSAN="--cert.san.domain=$FQDN"
   if ip route get $FQDN 2>/dev/null >/dev/null; then
     fqdnSAN="--cert.san.ip=$FQDN"
   fi

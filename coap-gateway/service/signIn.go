@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -31,6 +33,31 @@ type CoapSignInReq struct {
 
 type CoapSignInResp struct {
 	ExpiresIn int64 `json:"expiresin"`
+}
+
+func registerObservationsForPublishedResources(ctx context.Context, client *Client, deviceID string) {
+	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
+		DeviceIdsFilter: []string{deviceID},
+	})
+	if err != nil {
+		if status.Convert(err).Code() == codes.NotFound {
+			return
+		}
+		log.Errorf("signIn: cannot get resource links for the device %v: %w", deviceID, err)
+		return
+	}
+	for {
+		m, err := getResourceLinksClient.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Errorf("signIn: cannot receive link for the device %v: %w", deviceID, err)
+			return
+		}
+		raLink := m.ToRAProto()
+		client.observeResource(ctx, &raLink, true)
+	}
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
@@ -170,6 +197,9 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
 	}
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
+
+	// try to register observations to the device for published resources at the cloud.
+	registerObservationsForPublishedResources(req.Context, client, signIn.DeviceID)
 }
 
 func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, signOut CoapSignInReq) {
