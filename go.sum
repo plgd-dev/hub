@@ -508,6 +508,8 @@ github.com/plgd-dev/go-coap/v2 v2.0.5-0.20200922125453-917a9b325e68 h1:1Fm9uTIRK
 github.com/plgd-dev/go-coap/v2 v2.0.5-0.20200922125453-917a9b325e68/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
 github.com/plgd-dev/go-coap/v2 v2.1.1 h1:/RI+UQkO62rw1e9vDvrlT8OZx8nirp57Vg6QoanJTLY=
 github.com/plgd-dev/go-coap/v2 v2.1.1/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
+github.com/plgd-dev/go-coap/v2 v2.1.3 h1:ArfNCW6xhQkWIHKjzAWR53ljn6trDykB3+vDO4HJBJg=
+github.com/plgd-dev/go-coap/v2 v2.1.3/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63 h1:cI6kESUBU1KUHtufZepEkaTsSkLN2kE6xz+Ec5V17q0=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612 h1:YAzuCNWQgBtIhVPgERZZdweOeQlFENdxmiC51Hse5lU=
