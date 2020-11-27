@@ -25,7 +25,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.4.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
-	github.com/plgd-dev/go-coap/v2 v2.1.1
+	github.com/plgd-dev/go-coap/v2 v2.1.3
 	github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
