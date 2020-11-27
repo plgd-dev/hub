@@ -96,5 +96,4 @@ message ResourceStateSnapshotTaken {
     int32 time_to_live = 5;
     bool is_published = 6;
     EventMetadata event_metadata = 7;
-    bool is_deleted = 8;
 }

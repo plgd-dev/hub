@@ -63,7 +63,6 @@ func (rs *ResourceStateSnapshotTaken) HandleEventResourcePublished(ctx context.C
 	rs.Resource = pub.Resource
 	rs.TimeToLive = pub.TimeToLive
 	rs.IsPublished = true
-	rs.IsDeleted = false
 	return nil
 }
 
@@ -79,9 +78,6 @@ func (rs *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx conte
 	if !rs.IsPublished {
 		return status.Errorf(codes.FailedPrecondition, "resource is unpublished")
 	}
-	if rs.IsDeleted {
-		return status.Errorf(codes.FailedPrecondition, "resource is deleted")
-	}
 	rs.mapForCalculatePendingRequestsCount[contentUpdatePending.AuditContext.CorrelationId] = true
 	return nil
 }
@@ -90,18 +86,12 @@ func (rs *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx con
 	if !rs.IsPublished {
 		return status.Errorf(codes.FailedPrecondition, "resource is unpublished")
 	}
-	if rs.IsDeleted {
-		return status.Errorf(codes.FailedPrecondition, "resource is deleted")
-	}
 	return nil
 }
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, req ResourceDeletePending) error {
 	if !rs.IsPublished {
 		return status.Errorf(codes.FailedPrecondition, "resource is unpublished")
-	}
-	if rs.IsDeleted {
-		return status.Errorf(codes.FailedPrecondition, "resource is deleted")
 	}
 	return nil
 }
@@ -138,10 +128,6 @@ func (rs *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Con
 }
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Context, deleted ResourceDeleted) error {
-	switch deleted.GetStatus() {
-	case pb.Status_OK, pb.Status_ACCEPTED:
-		rs.IsDeleted = true
-	}
 	return nil
 }
 

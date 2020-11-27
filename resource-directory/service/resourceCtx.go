@@ -22,7 +22,6 @@ type resourceCtx struct {
 	lock                         sync.Mutex
 	resource                     *pbRA.Resource
 	isPublished                  bool
-	isDeleted                    bool
 	content                      *pbRA.ResourceChanged
 	version                      uint64
 	onResourcePublishedVersion   uint64
@@ -58,7 +57,6 @@ func (m *resourceCtx) cloneLocked() *resourceCtx {
 	return &resourceCtx{
 		resource:               m.resource,
 		isPublished:            m.isPublished,
-		isDeleted:              m.isDeleted,
 		content:                m.content,
 		version:                m.version,
 		resourceUpdatePendings: resourceUpdatePendings,
@@ -331,7 +329,6 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			m.content = s.LatestResourceChange
 			m.resource = s.Resource
 			m.isPublished = s.IsPublished
-			m.isDeleted = s.IsDeleted
 			m.onResourcePublishedVersion = eu.Version
 			m.onResourceUnpublishedVersion = eu.Version
 			m.onResourceChangedVersion = eu.Version
@@ -347,7 +344,6 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			}
 			m.onResourcePublishedVersion = eu.Version
 			m.isPublished = true
-			m.isDeleted = false
 			m.resource = s.Resource
 		case http.ProtobufContentType(&pbRA.ResourceUnpublished{}):
 			if m.isPublished {
