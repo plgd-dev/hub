@@ -242,3 +242,66 @@ message ConfirmResourceRetrieveRequest {
 message ConfirmResourceRetrieveResponse {
     AuditContext audit_context = 1;
 }
+
+//*******************************************************************************************************************************************************
+// "Delete Resource"                                               
+                                                                                                                    
+// ┌──────────┐            ┌───────┐                   ┌──────────────────┐          ┌─────────┐          ┌──────┐
+// │OCF Server│            │Gateway│                   │Resource Aggregate│          │Event Bus│          │Client│
+// └──────────┘            └───┬───┘                   └────────┬─────────┘          └─────────┘          └──────┘
+//      │                      │                                ┌┴┐          DeleteResourceRequest           ┌┴┐  
+//      │                      │                                │ │ <────────────────────────────────────────│ │  
+//      │                      │                                │ │                       │                  │ │  
+//      │                      │                                │ │          DeleteResourceResponse          │ │  
+//      │                      │                                │ │ ────────────────────────────────────────>│ │  
+//      │                      │                                └┬┘                       │                  │ │  
+//      │                      │                                │  ResourceDeletePending  │                  │ │  
+//      │                      │                                │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │ │  
+//      │                      │                                │                         │                  │ │  
+//      │                     ┌┴┐                  ResourceDeletePending                  │                  │ │  
+//      │                     │ │ <─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                   │ │  
+//      │                     │ │                               │                         │                  │ │  
+//     ┌┴┐[DELETE] '/light/1' │ │                               │                         │                  │ │  
+//     │ │ <───────────────── │ │                               │                         │                  │ │  
+//     └┬┘                    │ │                               │                         │                  │ │  
+//      │         OK          │ │                               │                         │                  │ │  
+//      │ ───────────────────>│ │                               │                         │                  │ │  
+//      │                     │ │                               │                         │                  │ │  
+//      │                     │ │ ConfirmResourceDeleteRequest  ┌┴┐                       │                  │ │  
+//      │                     │ │ ─────────────────────────────>│ │                       │                  │ │  
+//      │                     └┬┘                               │ │                       │                  │ │  
+//      │                      │ConfirmResourceDeleteResponse   │ │                       │                  │ │  
+//      │                      │<────────────────────────────── │ │                       │                  │ │  
+//      │                      │                                └┬┘                       │                  │ │  
+//      │                      │                                │     ResourceDeleted     │                  │ │  
+//      │                      │                                │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │ │  
+//      │                      │                                │                         │                  └┬┘  
+//      │                      │                                │                         │  ResourceDeleted │    
+//      │                      │                                │                         │  ─ ─ ─ ─ ─ ─ ─ ─ >    
+// ┌──────────┐            ┌───┴───┐                   ┌────────┴─────────┐          ┌─────────┐          ┌──────┐
+// │OCF Server│            │Gateway│                   │Resource Aggregate│          │Event Bus│          │Client│
+// └──────────┘            └───────┘                   └──────────────────┘          └─────────┘          └──────┘
+
+message DeleteResourceRequest {
+    AuthorizationContext authorization_context = 1;
+    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    string correlation_id = 3;
+    CommandMetadata command_metadata = 100;
+}
+
+message DeleteResourceResponse {
+    AuditContext audit_context = 1;
+}
+
+message ConfirmResourceDeleteRequest {
+    AuthorizationContext authorization_context = 1;
+    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    string correlation_id = 3;
+    Status status = 4;
+    Content content = 5;
+    CommandMetadata command_metadata = 100;
+}
+
+message ConfirmResourceDeleteResponse {
+    AuditContext audit_context = 100;
+}

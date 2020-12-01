@@ -23,6 +23,8 @@ All requests to service must contains valid access token in [grpc metadata](http
 - confirm resource update - response to update resource request
 - retrieve resource - request to retrieve resource from the device via cloud
 - confirm resource retrieve - response to retrieve resource request
+- delete resource - request to delete resource from the device via cloud
+- confirm resource delete - response to delete resource request
 
 ### Contract
 

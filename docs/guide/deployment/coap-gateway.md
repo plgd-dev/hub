@@ -46,6 +46,7 @@ Follow [OCF Device To Cloud Services Specification](https://openconnectivity.org
 - GET /oic/res - discover all cloud devices resources from the signed device
 - GET /oic/route/{deviceID}/{href} - get/observe resource of the cloud device from signed device
 - POST /oic/route/{deviceID}/{href} - update resource of the cloud device from signed device
+- DELETE /oic/route/{deviceID}/{href} - delete resource of the cloud device from signed device
 
 ## Configuration
 

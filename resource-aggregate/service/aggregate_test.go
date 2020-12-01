@@ -8,14 +8,14 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/security/certManager"
 
+	"github.com/gofrs/uuid"
+	"github.com/kelseyhightower/envconfig"
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	cqrs "github.com/plgd-dev/cqrs"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/panjf2000/ants/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -297,6 +297,19 @@ func testMakeRetrieveResourceRequest(deviceID, resourceID string, correlationId 
 	return &r
 }
 
+func testMakeDeleteResourceRequest(deviceID, resourceID string, correlationId string) *pb.DeleteResourceRequest {
+	r := pb.DeleteResourceRequest{
+		ResourceId:           resourceID,
+		CorrelationId:        correlationId,
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CommandMetadata: &pb.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			Sequence:     0,
+		},
+	}
+	return &r
+}
+
 func testMakeConfirmResourceUpdateRequest(deviceID, resourceID, correlationId string) *pb.ConfirmResourceUpdateRequest {
 	r := pb.ConfirmResourceUpdateRequest{
 		ResourceId:           resourceID,
@@ -316,6 +329,23 @@ func testMakeConfirmResourceUpdateRequest(deviceID, resourceID, correlationId st
 
 func testMakeConfirmResourceRetrieveRequest(deviceID, resourceID, correlationId string) *pb.ConfirmResourceRetrieveRequest {
 	r := pb.ConfirmResourceRetrieveRequest{
+		ResourceId:           resourceID,
+		CorrelationId:        correlationId,
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		Content: &pb.Content{
+			Data: []byte("hello world"),
+		},
+		Status: pb.Status_OK,
+		CommandMetadata: &pb.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			Sequence:     0,
+		},
+	}
+	return &r
+}
+
+func testMakeConfirmResourceDeleteRequest(deviceID, resourceID, correlationId string) *pb.ConfirmResourceDeleteRequest {
+	r := pb.ConfirmResourceDeleteRequest{
 		ResourceId:           resourceID,
 		CorrelationId:        correlationId,
 		AuthorizationContext: testNewAuthorizationContext(deviceID),
@@ -451,6 +481,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 				assert.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
+			require.NoError(t, err)
 			if tt.wantResp {
 				assert.NotEmpty(t, gotResp)
 			}
@@ -550,6 +581,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 				assert.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
+			require.NoError(t, err)
 			if tt.wantResp {
 				assert.NotEmpty(t, gotResp)
 			}
@@ -640,6 +672,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 				assert.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
+			require.NoError(t, err)
 			if tt.wantResp {
 				assert.NotEmpty(t, gotResp)
 			}
@@ -728,6 +761,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 				assert.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
+			require.NoError(t, err)
 			if tt.wantResp {
 				assert.NotEmpty(t, gotResp)
 			}
@@ -818,6 +852,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 				assert.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
+			require.NoError(t, err)
 			if tt.wantResp {
 				assert.NotEmpty(t, gotResp)
 			}
@@ -834,4 +869,185 @@ func testListDevicesOfUserFunc(ctx context.Context, correlationId, userID string
 	}
 	deviceIds := []string{"dev0", "dupDeviceId"}
 	return deviceIds, codes.OK, nil
+}
+
+func Test_aggregate_HandleDeleteResource(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
+
+	type args struct {
+		req *pb.DeleteResourceRequest
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantResp       bool
+		wantEvents     bool
+		wantStatusCode codes.Code
+		wantErr        bool
+	}{
+		{
+			name: "invalid",
+			args: args{
+				&pb.DeleteResourceRequest{
+					ResourceId:           resourceID,
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				},
+			},
+			wantResp:       false,
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
+		},
+		{
+			name: "valid",
+			args: args{
+				testMakeDeleteResourceRequest(deviceID, resourceID, "123"),
+			},
+			wantResp:       true,
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+	}
+	var cmconfig certManager.Config
+	err := envconfig.Process("DIAL", &cmconfig)
+	assert.NoError(t, err)
+	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	require.NoError(t, err)
+	tlsConfig := dialCertManager.GetClientTLSConfig()
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	var mgoCfg mongodb.Config
+	err = envconfig.Process("", &mgoCfg)
+	assert.NoError(t, err)
+
+	var natsCfg nats.Config
+	err = envconfig.Process("", &natsCfg)
+	assert.NoError(t, err)
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+	assert.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
+
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotResp, gotEvents, err := ag.DeleteResource(ctx, tt.args.req)
+			if tt.wantErr {
+				require.Error(t, err)
+				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
+				require.True(t, ok)
+				assert.Equal(t, tt.wantStatusCode, s.Code())
+				return
+			}
+			require.NoError(t, err)
+			if tt.wantResp {
+				assert.NotEmpty(t, gotResp)
+			}
+			if tt.wantEvents {
+				assert.NotEmpty(t, gotEvents)
+			}
+		})
+	}
+}
+
+func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "res0"
+	userID := "user0"
+
+	type args struct {
+		req *pb.ConfirmResourceDeleteRequest
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantResp       bool
+		wantEvents     bool
+		wantStatusCode codes.Code
+		wantErr        bool
+	}{
+		{
+			name: "invalid",
+			args: args{
+				&pb.ConfirmResourceDeleteRequest{
+					ResourceId:           resourceID,
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					Status:               pb.Status_OK,
+				},
+			},
+			wantResp:       false,
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
+		},
+		{
+			name: "valid",
+			args: args{
+				testMakeConfirmResourceDeleteRequest(deviceID, resourceID, "123"),
+			},
+			wantResp:       true,
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+	}
+
+	var cmconfig certManager.Config
+	err := envconfig.Process("DIAL", &cmconfig)
+	assert.NoError(t, err)
+	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	require.NoError(t, err)
+	tlsConfig := dialCertManager.GetClientTLSConfig()
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	var mgoCfg mongodb.Config
+	err = envconfig.Process("", &mgoCfg)
+	assert.NoError(t, err)
+
+	var natsCfg nats.Config
+	err = envconfig.Process("", &natsCfg)
+	assert.NoError(t, err)
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+	assert.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
+
+	ag, err := NewAggregate(ctx, resourceID, []string{deviceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotResp, gotEvents, err := ag.ConfirmResourceDelete(ctx, tt.args.req)
+			if tt.wantErr {
+				require.Error(t, err)
+				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
+				require.True(t, ok)
+				assert.Equal(t, tt.wantStatusCode, s.Code())
+				return
+			}
+			require.NoError(t, err)
+			if tt.wantResp {
+				assert.NotEmpty(t, gotResp)
+			}
+			if tt.wantEvents {
+				assert.NotEmpty(t, gotEvents)
+			}
+		})
+	}
 }

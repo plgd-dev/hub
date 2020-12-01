@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
 func (requestHandler *RequestHandler) startResourceObservation(w http.ResponseWriter, r *http.Request) {
@@ -26,12 +26,12 @@ type resourceObservationResolver struct {
 	requestHandler *RequestHandler
 }
 
-func (d resourceObservationResolver) StartObservation(r *http.Request, ws *websocket.Conn) (SubscribeSession, error) {
+func (d resourceObservationResolver) StartObservation(r *http.Request, ws *websocket.Conn, accessToken string) (SubscribeSession, error) {
 	ob := resourceObservation{
 		NewSubscriptionSession(ws),
 	}
 	vars := mux.Vars(r)
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), getAccessToken(r.Header))
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), accessToken)
 	id, err := d.requestHandler.client.ObserveResource(ctx, vars[uri.DeviceIDKey], vars[uri.HrefKey], &ob)
 	if err != nil {
 		return nil, err

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/gofrs/uuid"
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -18,10 +19,9 @@ import (
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gofrs/uuid"
 
-	"github.com/plgd-dev/kit/security/oauth/manager"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/kit/security/oauth/manager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -39,6 +39,7 @@ type RequestHandler struct {
 	clientTLS                     *tls.Config
 	updateNotificationContainer   *notification.UpdateNotificationContainer
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
+	deleteNotificationContainer   *notification.DeleteNotificationContainer
 	timeoutForRequests            time.Duration
 	closeFunc                     func()
 	clientConfiguration           pb.ClientConfigurationResponse
@@ -121,11 +122,12 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 
 	updateNotificationContainer := notification.NewUpdateNotificationContainer()
 	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
+	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
 	projUUID, err := uuid.NewV4()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create uuid for projection %w", err)
 	}
-	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer), svc.ProjectionCacheExpiration)
+	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), svc.ProjectionCacheExpiration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
@@ -147,6 +149,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		subscriptions,
 		updateNotificationContainer,
 		retrieveNotificationContainer,
+		deleteNotificationContainer,
 		svc.TimeoutForRequests,
 		closeFunc,
 		svc.ClientConfiguration.ClientConfigurationResponse,
@@ -165,6 +168,7 @@ func NewRequestHandler(
 	subscriptions *subscriptions,
 	updateNotificationContainer *notification.UpdateNotificationContainer,
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer,
+	deleteNotificationContainer *notification.DeleteNotificationContainer,
 	timeoutForRequests time.Duration,
 	closeFunc func(),
 	clientConfiguration pb.ClientConfigurationResponse,
@@ -178,6 +182,7 @@ func NewRequestHandler(
 		resourceAggregateClient:       resourceAggregateClient,
 		updateNotificationContainer:   updateNotificationContainer,
 		retrieveNotificationContainer: retrieveNotificationContainer,
+		deleteNotificationContainer:   deleteNotificationContainer,
 		timeoutForRequests:            timeoutForRequests,
 		closeFunc:                     closeFunc,
 		clientConfiguration:           clientConfiguration,

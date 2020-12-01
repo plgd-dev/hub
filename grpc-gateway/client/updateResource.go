@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	codecOcf "github.com/plgd-dev/kit/codec/ocf"
 )
 
 // UpdateResource updates content in OCF-CBOR format.
@@ -18,7 +17,7 @@ func (c *Client) UpdateResource(
 	opts ...UpdateOption,
 ) error {
 	cfg := updateOptions{
-		codec: codecOcf.VNDOCFCBORCodec{},
+		codec: GeneralMessageCodec{},
 	}
 	for _, o := range opts {
 		cfg = o.applyOnUpdate(cfg)

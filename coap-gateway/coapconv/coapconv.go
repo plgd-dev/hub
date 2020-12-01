@@ -53,7 +53,7 @@ func StatusToCoapCode(status pbGRPC.Status, cmdCode codes.Code) codes.Code {
 
 func CoapCodeToStatus(code codes.Code) pbRA.Status {
 	switch code {
-	case codes.Changed, codes.Content:
+	case codes.Changed, codes.Content, codes.Deleted:
 		return pbRA.Status_OK
 	case codes.Valid:
 		return pbRA.Status_ACCEPTED
@@ -69,6 +69,8 @@ func CoapCodeToStatus(code codes.Code) pbRA.Status {
 		return pbRA.Status_UNAVAILABLE
 	case codes.NotImplemented:
 		return pbRA.Status_NOT_IMPLEMENTED
+	case codes.MethodNotAllowed:
+		return pbRA.Status_METHOD_NOT_ALLOWED
 	default:
 		return pbRA.Status_ERROR
 	}
@@ -124,6 +126,15 @@ func NewCoapResourceRetrieveRequest(ctx context.Context, event *pb.Event_Resourc
 	return req, nil
 }
 
+func NewCoapResourceDeleteRequest(ctx context.Context, event *pb.Event_ResourceDeletePending) (*pool.Message, error) {
+	req, err := tcp.NewDeleteRequest(ctx, event.GetResourceId().GetHref())
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func MakeContent(opts message.Options, body io.Reader) pbRA.Content {
 	contentTypeString := ""
 	coapContentFormat := int32(-1)
@@ -169,6 +180,20 @@ func MakeConfirmResourceUpdateRequest(resourceId, correlationId string, authCtx 
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.ConfirmResourceUpdateRequest{
+		AuthorizationContext: &authCtx,
+		ResourceId:           resourceId,
+		CorrelationId:        correlationId,
+		Status:               CoapCodeToStatus(req.Code()),
+		Content:              &content,
+		CommandMetadata:      &metadata,
+	}
+}
+
+func MakeConfirmResourceDeleteRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceDeleteRequest {
+	content := MakeContent(req.Options(), req.Body())
+	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
+
+	return pbRA.ConfirmResourceDeleteRequest{
 		AuthorizationContext: &authCtx,
 		ResourceId:           resourceId,
 		CorrelationId:        correlationId,

@@ -138,6 +138,7 @@ func main() {
 	discoverRt := flag.String("rt", "", "resource type")
 	observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expceted in stdin")
+	delete := flag.Bool("delete", false, "delete resource")
 
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
@@ -197,12 +198,18 @@ func main() {
 	}
 
 	switch {
+	case *delete:
+		resp, err := co.Delete(context.Background(), *href)
+		if err != nil {
+			log.Fatalf("cannot delete resource: %v", err)
+		}
+		decodePayload(resp)
 	case *update:
 		b := bytes.NewBuffer(make([]byte, 0, 124))
 		b.ReadFrom(os.Stdin)
 		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), bytes.NewReader(b.Bytes()))
 		if err != nil {
-			log.Fatalf("cannot get value: %v", err)
+			log.Fatalf("cannot update resource: %v", err)
 		}
 		decodePayload(resp)
 	case *observe:
@@ -210,7 +217,7 @@ func main() {
 			decodePayload(req)
 		})
 		if err != nil {
-			log.Fatalf("cannot observe value: %v", err)
+			log.Fatalf("cannot observe resource: %v", err)
 		}
 		defer obs.Cancel(context.Background())
 
@@ -227,7 +234,7 @@ func main() {
 		}
 		resp, err := co.Get(context.Background(), *href, opts...)
 		if err != nil {
-			log.Fatalf("cannot get value: %v", err)
+			log.Fatalf("cannot get resource: %v", err)
 		}
 		decodePayload(resp)
 	case *discover:
@@ -239,7 +246,7 @@ func main() {
 		}
 		resp, err := co.Get(context.Background(), "/oic/res", opts...)
 		if err != nil {
-			log.Fatalf("cannot discover value: %v", err)
+			log.Fatalf("cannot discover resources: %v", err)
 		}
 		decodePayload(resp)
 	default:

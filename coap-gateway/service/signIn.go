@@ -135,6 +135,9 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 			onResourceRetrievePending: func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
 				return client.retrieveResource(ctx, val)
 			},
+			onResourceDeletePending: func(ctx context.Context, val *pb.Event_ResourceDeletePending) error {
+				return client.deleteResource(ctx, val)
+			},
 			onClose: func() {
 				log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", signIn.DeviceID)
 			},

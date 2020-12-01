@@ -74,6 +74,20 @@ message ResourceRetrieved {
     EventMetadata event_metadata = 5;
 }
 
+message ResourceDeletePending {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+}
+
+message ResourceDeleted {
+    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    Status status = 2;
+    Content content = 3;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+}
+
 message ResourceStateSnapshotTaken {
     string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
     Resource resource = 2;
@@ -81,5 +95,5 @@ message ResourceStateSnapshotTaken {
     uint32 pending_requests_count = 4;
     int32 time_to_live = 5;
     bool is_published = 6;
-    EventMetadata event_metadata = 7;  
+    EventMetadata event_metadata = 7;
 }

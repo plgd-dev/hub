@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	codecOcf "github.com/plgd-dev/kit/codec/ocf"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	"github.com/plgd-dev/sdk/local/core"
 )
@@ -18,7 +17,7 @@ func (c *Client) ObserveResource(
 	opts ...ObserveOption,
 ) (observationID string, _ error) {
 	cfg := observeOptions{
-		codec: codecOcf.VNDOCFCBORCodec{},
+		codec: GeneralMessageCodec{},
 	}
 	for _, o := range opts {
 		cfg = o.applyOnObserve(cfg)

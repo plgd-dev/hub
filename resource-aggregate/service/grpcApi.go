@@ -253,3 +253,49 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *pb
 	}
 	return response, nil
 }
+
+func (r RequestHandler) DeleteResource(ctx context.Context, request *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
+	deviceIds, err := r.GetUsersDevices(ctx)
+	if err != nil {
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot delete resource: %v", err))
+	}
+
+	aggregate, err := NewAggregate(ctx, request.ResourceId, deviceIds, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	if err != nil {
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete resource: %v", err))
+	}
+
+	response, events, err := aggregate.DeleteResource(ctx, request)
+	if err != nil {
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
+	}
+
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), request.ResourceId, events)
+	if err != nil {
+		log.Errorf("cannot publish events for delete resource command: %v", err)
+	}
+	return response, nil
+}
+
+func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *pb.ConfirmResourceDeleteRequest) (*pb.ConfirmResourceDeleteResponse, error) {
+	deviceIds, err := r.GetUsersDevices(ctx)
+	if err != nil {
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot notify resource delete processed: %v", err))
+	}
+
+	aggregate, err := NewAggregate(ctx, request.ResourceId, deviceIds, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	if err != nil {
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify resource delete processed: %v", err))
+	}
+
+	response, events, err := aggregate.ConfirmResourceDelete(ctx, request)
+	if err != nil {
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify resource delete processed: %v", err))
+	}
+
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), request.ResourceId, events)
+	if err != nil {
+		log.Errorf("cannot publish events for notify resource delete processed: %v", err)
+	}
+	return response, nil
+}

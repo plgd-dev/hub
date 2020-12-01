@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	cloudTest "github.com/plgd-dev/cloud/test"
@@ -108,10 +109,14 @@ func GetResourceObservationUri(deviceID, href string) string {
 
 func webSocketConnection(t *testing.T, uri string) *websocket.Conn {
 	header := make(http.Header)
-	header.Add("Authorization", fmt.Sprintf("Bearer %s", authTest.UserToken))
 	d := websocket.DefaultDialer
 	d.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	conn, _, err := d.Dial(uri, header)
+	require.NoError(t, err)
+	tokenMessage := service.TokenMessage{
+		Token: authTest.UserToken,
+	}
+	err = conn.WriteJSON(tokenMessage)
 	require.NoError(t, err)
 	return conn
 }

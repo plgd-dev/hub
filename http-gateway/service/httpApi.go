@@ -113,6 +113,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	// resources
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodPut).HandlerFunc(requestHandler.updateResource)
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.getResource)
+	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodDelete).HandlerFunc(requestHandler.deleteResource)
 
 	// ws
 	r.PathPrefix(uri.WsStartDeviceResourceObservation).MatcherFunc(wsResourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.startResourceObservation)

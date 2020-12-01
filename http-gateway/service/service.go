@@ -34,6 +34,7 @@ type Server struct {
 
 // New parses configuration and creates new Server with provided store and bus
 func New(cfg Config) (*Server, error) {
+	cfg = cfg.checkForDefaults()
 	log.Info(cfg.String())
 
 	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
@@ -83,8 +84,12 @@ func New(cfg Config) (*Server, error) {
 	}
 	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, kitNetHttp.RequestMatcher{
 		Method: http.MethodGet,
+		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.WsStartDevicesObservation) + `.*`),
+	}, kitNetHttp.RequestMatcher{
+		Method: http.MethodGet,
 		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
-	})
+	},
+	)
 	requestHandler := NewRequestHandler(client, caClient, &cfg, manager)
 
 	server := Server{

@@ -26,6 +26,8 @@ func RAStatus2Status(s pbRA.Status) Status {
 		return Status_ACCEPTED
 	case pbRA.Status_ERROR:
 		return Status_ERROR
+	case pbRA.Status_METHOD_NOT_ALLOWED:
+		return Status_METHOD_NOT_ALLOWED
 	}
 	return Status_UNKNOWN
 }

@@ -21,6 +21,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 - retrieve resource from device - get content from the device
 - retrieve resources values - get resources from the resource shadow
 - update resources values - update resource at the device
+- delete resource - delete resource at the device
 - subscribe for events - provides notification about device registered/unregistered/online/offline, resource published/unpublished/content changed/ ...
 - get client configuration - provides public configuration for clients(mobile, web, onboarding tool)
 

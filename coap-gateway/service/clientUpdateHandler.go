@@ -2,23 +2,16 @@ package service
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/status"
 )
 
 func clientUpdateHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
-	t := time.Now()
-	defer func() {
-		log.Debugf("clientUpdateHandler takes %v", time.Since(t))
-	}()
-
 	authCtx := client.loadAuthorizationContext()
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {

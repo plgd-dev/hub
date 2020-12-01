@@ -84,7 +84,10 @@ paths:
         - $ref: '#/components/parameters/resourcePath'
         - $ref: '#/components/parameters/interface'
         - $ref: '#/components/parameters/skipShadow'
-      description: Get a single resource
+      description: |
+        If interface or skipShadow is set it invokes RETRIEVE command within the resource aggregate,
+        which transparently forwards the request to the device and waits for resource retrieved event.
+        Otherwise it gets resource from resource shadow.
       responses:
         200:
           description: Device
@@ -101,9 +104,10 @@ paths:
     put:
       tags:
         - Devices
-      summary: Update a single resource. In case you want update BigDecimal attribute.
-               It's necessary include also decimal point. Otherwise attribute will be converted
-               as int.
+      summary: Update a single resource
+      description: |
+        Invokes UPDATE command within the resource aggregate, which transparently forwards the request to the device and waits for resource updated event.
+        In case you want update BigDecimal attribute. It's necessary include also decimal point. Otherwise attribute will be converted as int.
       security:
         - oauth2:
           - plgd.devices
@@ -126,6 +130,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResourceRepresentation'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+    delete:
+      tags:
+        - Devices
+      summary: Delete a single resource
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/resourcePath'
+      description: |
+        Invokes DELETE command within the resource aggregate, which transparently forwards the request to the device and waits for resource deleted event.
+      responses:
+        200:
+          description: response with content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRepresentation'
+        202:
+          $ref: '#/components/responses/nocontent'
+        204:
+          $ref: '#/components/responses/accepted'
         401:
           $ref: '#/components/responses/unauthorized'
         404:
@@ -190,6 +223,8 @@ paths:
         - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/resourcePath'
+      requestBody:
+        $ref: '#/components/requestBodies/authorizationContext'
       responses:
         101:
           description: Websocket connection was established
@@ -214,6 +249,8 @@ paths:
           - plgd.devices
       parameters:
         - $ref: '#/components/parameters/correlationId'
+      requestBody:
+        $ref: '#/components/requestBodies/authorizationContext'
       responses:
         101:
           description: Websocket connection was established
@@ -238,6 +275,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
+      requestBody:
+        $ref: '#/components/requestBodies/authorizationContext'
       responses:
         101:
           description: Websocket connection was established
@@ -261,6 +300,19 @@ components:
           authorizationUrl: https://auth.plgd.cloud/oauth/token
           scopes:
             openid: to authorize access to a user's details
+  requestBodies:
+    authorizationContext:
+      description: An access token must be send in the first message for backend mode via websocket.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+                description: Access token
+            example:
+              Token: 53080a4f-5e3e-4291-802f-3436238232d1
   schemas:
     CloudClientsConfiguration:
       type: object
@@ -462,6 +514,12 @@ components:
       schema:
         type: string
   responses:
+    ok:
+      description: Content is stored in body.
+    nocontent:
+      description: No content in body.
+    accepted:
+      description: Action will asynchronously processed.
     unauthorized:
       description: Not authorized
     error:

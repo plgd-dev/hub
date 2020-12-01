@@ -76,6 +76,7 @@ func main() {
 	getDevices := flag.Bool("getdevices", false, "get devices")
 	//observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expceted in stdin")
+	delete := flag.Bool("delete", false, "delete resource")
 
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
@@ -115,6 +116,21 @@ func main() {
 	//ocfGWHelper := cloud.NewClient(ocfGW)
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), *accesstoken)
 	switch {
+	case *delete:
+		resp, err := ocfGW.DeleteResource(ctx, &pbGW.DeleteResourceRequest{
+			ResourceId: &pbGW.ResourceId{
+				DeviceId: *deviceID,
+				Href:     *href,
+			},
+		})
+		if err != nil {
+			log.Fatalf("cannot delete resource: %v", err)
+		}
+		d, err := json.Encode(resp)
+		if err != nil {
+			log.Fatalf("cannot encode resp to json: %v", err)
+		}
+		fmt.Println(string(d))
 	case *update:
 		data, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
@@ -131,11 +147,11 @@ func main() {
 			},
 		})
 		if err != nil {
-			log.Fatalf("cannot update value: %v", err)
+			log.Fatalf("cannot update resource: %v", err)
 		}
 		d, err := json.Encode(resp)
 		if err != nil {
-			log.Fatalf("cannot encode device: %v", err)
+			log.Fatalf("cannot encode resp to json: %v", err)
 		}
 		fmt.Println(string(d))
 	/*
@@ -165,7 +181,7 @@ func main() {
 		}
 		d, err := json.Encode(devices)
 		if err != nil {
-			log.Fatalf("cannot encode device: %v", err)
+			log.Fatalf("cannot encode resp to json: %v", err)
 		}
 		fmt.Println(string(d))
 	case *get:
@@ -200,7 +216,7 @@ func main() {
 		}
 		d, err := json.Encode(resources)
 		if err != nil {
-			log.Fatalf("cannot encode device: %v", err)
+			log.Fatalf("cannot encode resp to json: %v", err)
 		}
 		fmt.Println(string(d))
 	default:

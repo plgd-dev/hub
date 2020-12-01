@@ -31,16 +31,19 @@ type resourceCtx struct {
 	subscriptions                 *subscriptions
 	updateNotificationContainer   *notification.UpdateNotificationContainer
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
+	deleteNotificationContainer   *notification.DeleteNotificationContainer
 	resourceUpdatePendings        []raEvents.ResourceUpdatePending
 	resourceRetrievePendings      []raEvents.ResourceRetrievePending
+	resourceDeletePendings        []raEvents.ResourceDeletePending
 }
 
-func NewResourceCtx(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer) func(context.Context) (eventstore.Model, error) {
+func NewResourceCtx(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer) func(context.Context) (eventstore.Model, error) {
 	return func(context.Context) (eventstore.Model, error) {
 		return &resourceCtx{
 			subscriptions:                 subscriptions,
 			updateNotificationContainer:   updateNotificationContainer,
 			retrieveNotificationContainer: retrieveNotificationContainer,
+			deleteNotificationContainer:   deleteNotificationContainer,
 			resourceUpdatePendings:        make([]raEvents.ResourceUpdatePending, 0, 8),
 		}, nil
 	}
@@ -89,7 +92,7 @@ func (m *resourceCtx) onResourceUpdatePendingLocked(ctx context.Context, do func
 	if len(m.resourceUpdatePendings) == 0 {
 		return nil
 	}
-	log.Debugf("onResourceUpdatePending %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
+	log.Debugf("onResourceUpdatePendingLocked /%v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	for idx := range m.resourceUpdatePendings {
 		p := m.resourceUpdatePendings[idx]
 		updatePending := pb.Event_ResourceUpdatePending{
@@ -132,7 +135,7 @@ func (m *resourceCtx) onResourceRetrievePendingLocked(ctx context.Context, do fu
 	if len(m.resourceRetrievePendings) == 0 {
 		return nil
 	}
-	log.Debugf("onResourceRetrievePending %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
+	log.Debugf("onResourceRetrievePendingLocked /%v%v", m.resource.GetDeviceId(), m.resource.GetHref())
 	for idx := range m.resourceRetrievePendings {
 		p := m.resourceRetrievePendings[idx]
 		retrievePending := pb.Event_ResourceRetrievePending{
@@ -144,6 +147,28 @@ func (m *resourceCtx) onResourceRetrievePendingLocked(ctx context.Context, do fu
 			CorrelationId:     p.GetAuditContext().GetCorrelationId(),
 		}
 		err := do(ctx, retrievePending, p.GetEventMetadata().GetVersion())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *resourceCtx) onResourceDeletePendingLocked(ctx context.Context, do func(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error) error {
+	if len(m.resourceDeletePendings) == 0 {
+		return nil
+	}
+	log.Debugf("onResourceDeletePendingLocked /%v%v", m.resource.GetDeviceId(), m.resource.GetHref())
+	for idx := range m.resourceDeletePendings {
+		p := m.resourceDeletePendings[idx]
+		deletePending := pb.Event_ResourceDeletePending{
+			ResourceId: &pb.ResourceId{
+				DeviceId: m.resource.GetDeviceId(),
+				Href:     m.resource.GetHref(),
+			},
+			CorrelationId: p.GetAuditContext().GetCorrelationId(),
+		}
+		err := do(ctx, deletePending, p.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -163,6 +188,25 @@ func (m *resourceCtx) sendEventResourceRetrieved(ctx context.Context, resourcesR
 			Status:        pb.RAStatus2Status(u.GetStatus()),
 		}
 		err := m.subscriptions.OnResourceRetrieved(ctx, retrieved, u.GetEventMetadata().GetVersion())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *resourceCtx) sendEventResourceDeleted(ctx context.Context, resourceDeleted []raEvents.ResourceDeleted) error {
+	for _, u := range resourceDeleted {
+		deleted := pb.Event_ResourceDeleted{
+			ResourceId: &pb.ResourceId{
+				DeviceId: m.resource.GetDeviceId(),
+				Href:     m.resource.GetHref(),
+			},
+			Content:       pb.RAContent2Content(u.GetContent()),
+			CorrelationId: u.GetAuditContext().GetCorrelationId(),
+			Status:        pb.RAStatus2Status(u.GetStatus()),
+		}
+		err := m.subscriptions.OnResourceDeleted(ctx, deleted, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -236,6 +280,24 @@ func (m *resourceCtx) onResourceRetrievedLocked(ctx context.Context, resourceRet
 	return m.sendEventResourceRetrieved(ctx, resourceRetrieved)
 }
 
+func (m *resourceCtx) onResourceDeletedLocked(ctx context.Context, resourceDeleted []raEvents.ResourceDeleted) error {
+	if len(resourceDeleted) == 0 {
+		return nil
+	}
+	log.Debugf("onResourceDeletedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
+	for _, up := range resourceDeleted {
+		notify := m.deleteNotificationContainer.Find(up.AuditContext.CorrelationId)
+		if notify != nil {
+			select {
+			case notify <- up:
+			default:
+				log.Debugf("DeviceId: %v, ResourceId: %v: cannot send resource deleted event", m.resource.DeviceId, m.resource.Id)
+			}
+		}
+	}
+	return m.sendEventResourceDeleted(ctx, resourceDeleted)
+}
+
 func (m *resourceCtx) SnapshotEventType() string {
 	s := &raEvents.ResourceStateSnapshotTaken{}
 	return s.SnapshotEventType()
@@ -243,9 +305,10 @@ func (m *resourceCtx) SnapshotEventType() string {
 
 func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var eu event.EventUnmarshaler
-	var onResourcePublished, onResourceUnpublished, onResourceContentChanged, onResourceUpdatePending, onResourceRetrievePending bool
+	var onResourcePublished, onResourceUnpublished, onResourceContentChanged, onResourceUpdatePending, onResourceRetrievePending, onResourceDeletePending bool
 	resourceUpdated := make([]raEvents.ResourceUpdated, 0, 16)
 	resourceRetrieved := make([]raEvents.ResourceRetrieved, 0, 16)
+	resourceDeleted := make([]raEvents.ResourceDeleted, 0, 4)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	var anyEventProcessed bool
@@ -330,6 +393,13 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			}
 			m.resourceRetrievePendings = append(m.resourceRetrievePendings, s)
 			onResourceRetrievePending = true
+		case http.ProtobufContentType(&pbRA.ResourceDeletePending{}):
+			var s raEvents.ResourceDeletePending
+			if err := eu.Unmarshal(&s); err != nil {
+				return err
+			}
+			m.resourceDeletePendings = append(m.resourceDeletePendings, s)
+			onResourceDeletePending = true
 		case http.ProtobufContentType(&pbRA.ResourceRetrieved{}):
 			var s raEvents.ResourceRetrieved
 			if err := eu.Unmarshal(&s); err != nil {
@@ -349,6 +419,26 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 				resourceRetrieved = append(resourceRetrieved, s)
 				onResourceRetrievePending = true
 				m.resourceRetrievePendings = tmp
+			}
+		case http.ProtobufContentType(&pbRA.ResourceDeleted{}):
+			var s raEvents.ResourceDeleted
+			if err := eu.Unmarshal(&s); err != nil {
+				return err
+			}
+			tmp := make([]raEvents.ResourceDeletePending, 0, 16)
+			var found bool
+			for _, cu := range m.resourceDeletePendings {
+				if cu.GetAuditContext().GetCorrelationId() != s.GetAuditContext().GetCorrelationId() {
+					tmp = append(tmp, cu)
+				} else {
+					found = true
+
+				}
+			}
+			if found {
+				resourceDeleted = append(resourceDeleted, s)
+				onResourceDeletePending = true
+				m.resourceDeletePendings = tmp
 			}
 		}
 	}
@@ -396,12 +486,22 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			log.Errorf("%v", err)
 		}
 	}
+	if onResourceDeletePending {
+		err := m.onResourceDeletePendingLocked(ctx, m.subscriptions.OnResourceDeletePending)
+		if err != nil {
+			log.Errorf("%v", err)
+		}
+	}
 
 	err := m.onResourceUpdatedLocked(ctx, resourceUpdated)
 	if err != nil {
 		log.Errorf("%v", err)
 	}
 	err = m.onResourceRetrievedLocked(ctx, resourceRetrieved)
+	if err != nil {
+		log.Errorf("%v", err)
+	}
+	err = m.onResourceDeletedLocked(ctx, resourceDeleted)
 	if err != nil {
 		log.Errorf("%v", err)
 	}

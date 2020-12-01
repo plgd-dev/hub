@@ -411,6 +411,12 @@ func (client *Client) sendErrorConfirmResourceUpdate(userID, resourceID, correla
 func (client *Client) updateResource(ctx context.Context, event *pb.Event_ResourceUpdatePending) error {
 	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
+	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.Close()
+		return err
+	}
 	if event.GetResourceId().GetHref() == cloud.StatusHref {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
@@ -428,13 +434,6 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 			return err
 		}
 		return nil
-	}
-
-	if isExpired(authCtx.Expire) {
-		err := fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
-		client.Close()
-		return err
 	}
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
@@ -497,6 +496,13 @@ func (client *Client) sendErrorConfirmResourceRetrieve(userID, resourceID, corre
 func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_ResourceRetrievePending) error {
 	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
+	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.Close()
+		return err
+	}
+
 	if event.GetResourceId().GetHref() == cloud.StatusHref {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
@@ -515,13 +521,6 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 			return err
 		}
 		return nil
-	}
-
-	if isExpired(authCtx.Expire) {
-		err := fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
-		client.Close()
-		return err
 	}
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
@@ -555,6 +554,94 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	defer cancel()
 	request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, &request)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (client *Client) sendErrorConfirmResourceDelete(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
+	ctx, cancel, err := client.server.ServiceRequestContext(userID)
+	if err != nil {
+		log.Errorf("cannot send error via confirm resource delete: %v", err)
+		return
+	}
+	defer cancel()
+
+	resp := pool.AcquireMessage(ctx)
+	defer pool.ReleaseMessage(resp)
+	resp.SetContentFormat(message.TextPlain)
+	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
+	resp.SetCode(code)
+	request := coapconv.MakeConfirmResourceDeleteRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceDelete(ctx, &request)
+	if err != nil {
+		log.Errorf("cannot send error via confirm resource delete: %v", err)
+	}
+}
+
+func (client *Client) deleteResource(ctx context.Context, event *pb.Event_ResourceDeletePending) error {
+	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+	authCtx := client.loadAuthorizationContext()
+	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot delete resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.Close()
+		return err
+	}
+
+	if event.GetResourceId().GetHref() == cloud.StatusHref {
+		authCtx := client.loadAuthorizationContext()
+		msg := pool.AcquireMessage(ctx)
+		msg.SetCode(coapCodes.Forbidden)
+		msg.SetSequence(client.coapConn.Sequence())
+		defer pool.ReleaseMessage(msg)
+
+		sendConfirmCtx, cancel, err := client.server.ServiceRequestContext(authCtx.UserID)
+		if err != nil {
+			return err
+		}
+		defer cancel()
+		request := coapconv.MakeConfirmResourceDeleteRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
+		_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, &request)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
+	defer cancel()
+	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, event)
+	if err != nil {
+		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
+		return err
+	}
+	defer pool.ReleaseMessage(req)
+
+	decodeMsgToDebug(client, req, "RESOURCE-DELETE-REQUEST")
+
+	resp, err := client.coapConn.Do(req)
+	if err != nil {
+		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
+		return err
+	}
+	defer pool.ReleaseMessage(resp)
+
+	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
+
+	if resp.Code() == coapCodes.NotFound {
+		client.unpublishResources(ctx, []string{resourceID})
+	}
+
+	sendConfirmCtx, cancel, err := client.server.ServiceRequestContext(authCtx.UserID)
+	if err != nil {
+		return err
+	}
+	defer cancel()
+	request := coapconv.MakeConfirmResourceDeleteRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, &request)
 	if err != nil {
 		return err
 	}

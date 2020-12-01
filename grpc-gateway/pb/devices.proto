@@ -79,6 +79,8 @@ message SubscribeForEvents {
       RESOURCE_UPDATED = 3;
       RESOURCE_RETRIEVE_PENDING = 4;
       RESOURCE_RETRIEVED = 5;
+      RESOURCE_DELETE_PENDING = 6;
+      RESOURCE_DELETED = 7;
     }
     repeated Event filter_events = 2;
   }
@@ -148,6 +150,16 @@ message Event {
     Status status = 3;
     string correlation_id = 4;
   }
+  message ResourceDeletePending {
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+  }
+  message ResourceDeleted {
+    ResourceId resource_id = 1;
+    Content content = 2;
+    Status status = 3;
+    string correlation_id = 4;
+  }
   message OperationProcessed {
     message ErrorStatus {
       enum Code {
@@ -180,6 +192,8 @@ message Event {
     ResourceUpdated resource_updated = 13;
     ResourceRetrievePending resource_retrieve_pending = 14;
     ResourceRetrieved resource_retrieved = 15;
+    ResourceDeletePending resource_delete_pending = 16;
+    ResourceDeleted resource_deleted = 17;
   }
 
 }
@@ -238,4 +252,14 @@ enum Status {
   NOT_IMPLEMENTED = 7;
   ACCEPTED = 8;
   ERROR = 9;
+  METHOD_NOT_ALLOWED = 10;
+}
+
+message DeleteResourceRequest {
+  ResourceId resource_id = 1;
+}
+
+message DeleteResourceResponse {
+  Content content = 1;
+  Status status = 2;
 }

@@ -99,3 +99,12 @@ func (c *grpcGatewayChannelClient) GetClientConfiguration(ctx context.Context, i
 	}
 	return out, nil
 }
+
+func (c *grpcGatewayChannelClient) DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error) {
+	out := new(DeleteResourceResponse)
+	err := c.ch.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteResource", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
