@@ -107,7 +107,7 @@ func (s *subscribeSession) Error(err error) {
 }
 
 type TokenMessage struct {
-	Token string `json:"Token"`
+	Token string `json:"token"`
 }
 
 func (requestHandler *RequestHandler) ServeWs(w http.ResponseWriter, r *http.Request, ob ObservationResolver) error {

@@ -17,7 +17,7 @@ func (c *Client) UpdateResource(
 	opts ...UpdateOption,
 ) error {
 	cfg := updateOptions{
-		codec: CloudCodec{},
+		codec: GeneralMessageCodec{},
 	}
 	for _, o := range opts {
 		cfg = o.applyOnUpdate(cfg)

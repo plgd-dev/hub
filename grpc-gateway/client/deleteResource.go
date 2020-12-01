@@ -7,7 +7,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
-// DeleteResource deletes resource.
+// DeleteResource invokes DELETE command within the resource aggregate, which transparently forwards the request to the device.
 func (c *Client) DeleteResource(
 	ctx context.Context,
 	deviceID string,
@@ -16,7 +16,7 @@ func (c *Client) DeleteResource(
 	opts ...DeleteOption,
 ) error {
 	cfg := deleteOptions{
-		codec: CloudCodec{},
+		codec: GeneralMessageCodec{},
 	}
 	for _, o := range opts {
 		cfg = o.applyOnDelete(cfg)

@@ -411,6 +411,12 @@ func (client *Client) sendErrorConfirmResourceUpdate(userID, resourceID, correla
 func (client *Client) updateResource(ctx context.Context, event *pb.Event_ResourceUpdatePending) error {
 	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
+	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.Close()
+		return err
+	}
 	if event.GetResourceId().GetHref() == cloud.StatusHref {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
@@ -428,13 +434,6 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 			return err
 		}
 		return nil
-	}
-
-	if isExpired(authCtx.Expire) {
-		err := fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
-		client.Close()
-		return err
 	}
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
@@ -497,6 +496,13 @@ func (client *Client) sendErrorConfirmResourceRetrieve(userID, resourceID, corre
 func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_ResourceRetrievePending) error {
 	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
+	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.Close()
+		return err
+	}
+
 	if event.GetResourceId().GetHref() == cloud.StatusHref {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
@@ -515,13 +521,6 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 			return err
 		}
 		return nil
-	}
-
-	if isExpired(authCtx.Expire) {
-		err := fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
-		client.Close()
-		return err
 	}
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
@@ -585,6 +584,13 @@ func (client *Client) sendErrorConfirmResourceDelete(userID, resourceID, correla
 func (client *Client) deleteResource(ctx context.Context, event *pb.Event_ResourceDeletePending) error {
 	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
+	if isExpired(authCtx.Expire) {
+		err := fmt.Errorf("cannot delete resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
+		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.Close()
+		return err
+	}
+
 	if event.GetResourceId().GetHref() == cloud.StatusHref {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
@@ -603,13 +609,6 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 			return err
 		}
 		return nil
-	}
-
-	if isExpired(authCtx.Expire) {
-		err := fmt.Errorf("cannot delete resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
-		client.Close()
-		return err
 	}
 
 	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)

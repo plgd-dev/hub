@@ -19,7 +19,7 @@ func (c *Client) GetResource(
 	opts ...GetOption,
 ) error {
 	cfg := getOptions{
-		codec: CloudCodec{},
+		codec: GeneralMessageCodec{},
 	}
 	for _, o := range opts {
 		cfg = o.applyOnGet(cfg)

@@ -84,7 +84,10 @@ paths:
         - $ref: '#/components/parameters/resourcePath'
         - $ref: '#/components/parameters/interface'
         - $ref: '#/components/parameters/skipShadow'
-      description: Get a single resource
+      description: |
+        If interface or skipShadow is set it invokes RETRIEVE command within the resource aggregate,
+        which transparently forwards the request to the device and waits for resource retrieved event.
+        Otherwise it gets resource from resource shadow.
       responses:
         200:
           description: Device
@@ -101,9 +104,10 @@ paths:
     put:
       tags:
         - Devices
-      summary: Update a single resource. In case you want update BigDecimal attribute.
-               It's necessary include also decimal point. Otherwise attribute will be converted
-               as int.
+      summary: Update a single resource
+      description: |
+        Invokes UPDATE command within the resource aggregate, which transparently forwards the request to the device and waits for resource updated event.
+        In case you want update BigDecimal attribute. It's necessary include also decimal point. Otherwise attribute will be converted as int.
       security:
         - oauth2:
           - plgd.devices
@@ -142,7 +146,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/resourcePath'
-      description: Delte a single resource
+      description: |
+        Invokes DELETE command within the resource aggregate, which transparently forwards the request to the device and waits for resource deleted event.
       responses:
         200:
           description: response with content
@@ -219,7 +224,7 @@ paths:
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/resourcePath'
       requestBody:
-        $ref: '#/components/requestBodies/WSAccessToken'
+        $ref: '#/components/requestBodies/authorizationContext'
       responses:
         101:
           description: Websocket connection was established
@@ -245,7 +250,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/correlationId'
       requestBody:
-        $ref: '#/components/requestBodies/WSAccessToken'
+        $ref: '#/components/requestBodies/authorizationContext'
       responses:
         101:
           description: Websocket connection was established
@@ -271,7 +276,7 @@ paths:
         - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
       requestBody:
-        $ref: '#/components/requestBodies/WSAccessToken'
+        $ref: '#/components/requestBodies/authorizationContext'
       responses:
         101:
           description: Websocket connection was established
@@ -296,14 +301,14 @@ components:
           scopes:
             openid: to authorize access to a user's details
   requestBodies:
-    WSAccessToken:
+    authorizationContext:
       description: An access token must be send in the first message for backend mode via websocket.
       content:
         application/json:
           schema:
             type: object
             properties:
-              Token:
+              token:
                 type: string
                 description: Access token
             example:

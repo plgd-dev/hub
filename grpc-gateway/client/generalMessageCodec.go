@@ -10,19 +10,19 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 )
 
-// CloudCodec encodes in application/vnd.ocf+cbor and decodes json/coap/text.
-type CloudCodec struct{}
+// GeneralMessageCodec encodes in application/vnd.ocf+cbor and decodes json/coap/text.
+type GeneralMessageCodec struct{}
 
 // ContentFormat used for encoding.
-func (CloudCodec) ContentFormat() message.MediaType { return message.AppOcfCbor }
+func (GeneralMessageCodec) ContentFormat() message.MediaType { return message.AppOcfCbor }
 
 // Encode encodes v and returns bytes.
-func (CloudCodec) Encode(v interface{}) ([]byte, error) {
+func (GeneralMessageCodec) Encode(v interface{}) ([]byte, error) {
 	return cbor.Encode(v)
 }
 
 // Decode the CBOR payload of a COAP message.
-func (CloudCodec) Decode(m *message.Message, v interface{}) error {
+func (GeneralMessageCodec) Decode(m *message.Message, v interface{}) error {
 	if v == nil {
 		return nil
 	}
