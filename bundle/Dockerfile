@@ -48,7 +48,7 @@ RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
-FROM ubuntu:20.04 as service
+FROM ubuntu:20.10 as service
 RUN apt update
 RUN apt install -y wget gnupg curl iproute2 systemctl
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
