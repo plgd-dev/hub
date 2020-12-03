@@ -43,14 +43,18 @@ RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit* && go build -ldflags "-linkmode 
 
 #nats
 WORKDIR $root_directory
-RUN curl -L https://github.com/nats-io/nats-server/releases/download/v2.1.4/nats-server-v2.1.4-linux-amd64.zip -o ./nats-server.zip
+RUN curl -L https://github.com/nats-io/nats-server/releases/download/v2.1.9/nats-server-v2.1.9-linux-amd64.zip -o ./nats-server.zip
 RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
-FROM ubuntu:18.04 as service
+FROM ubuntu:20.04 as service
 RUN apt update
-RUN apt install -y mongodb-server curl iproute2
+RUN apt install -y wget gnupg curl iproute2 systemctl
+RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
+RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+RUN apt update
+RUN apt-get install -y mongodb-org-server
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
