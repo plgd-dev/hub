@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
@@ -15,7 +13,6 @@ import (
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -91,7 +88,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -189,7 +186,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
@@ -269,7 +266,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -362,7 +359,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -443,7 +440,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -524,7 +521,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -605,7 +602,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -686,7 +683,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -767,7 +764,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, &mockAuthorizationServiceClient{})
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -791,41 +788,15 @@ type mockAuthorizationServiceClient struct {
 	pbAS.AuthorizationServiceClient
 }
 
-type mockGetUserDevicesClientClient struct {
-	resourceLink []*pbAS.UserDevice
-	i            int
-	grpc.ClientStream
-}
-
-func (r *mockGetUserDevicesClientClient) Recv() (*pbAS.UserDevice, error) {
-	if r.i >= len(r.resourceLink) {
-		return nil, io.EOF
-	}
-	res := r.resourceLink[r.i]
-	r.i++
-	return res, nil
-}
-
-func (c *mockGetUserDevicesClientClient) CloseSend() error {
-	return nil
-}
-
-func (c mockAuthorizationServiceClient) GetUserDevices(ctx context.Context, in *pbAS.GetUserDevicesRequest, opts ...grpc.CallOption) (pbAS.AuthorizationService_GetUserDevicesClient, error) {
-	if len(in.UserIdsFilter) == 0 {
-		return nil, fmt.Errorf("UserIdsFilter is empty")
-	}
-
-	userID := in.UserIdsFilter[0]
-
+func mockGetUserDevices(ctx context.Context, userID, deviceID string) (bool, error) {
 	deviceIds, code, err := testListDevicesOfUserFunc(ctx, "0", userID)
 	if err != nil {
-		return nil, status.Errorf(code, "%v", err)
+		return false, status.Errorf(code, "%v", err)
 	}
-	userDevices := make([]*pbAS.UserDevice, 0, 16)
-	for _, d := range deviceIds {
-		userDevices = append(userDevices, &pbAS.UserDevice{DeviceId: d, UserId: userID})
+	for _, id := range deviceIds {
+		if id == deviceID {
+			return true, nil
+		}
 	}
-	return &mockGetUserDevicesClientClient{
-		resourceLink: userDevices,
-	}, nil
+	return false, nil
 }

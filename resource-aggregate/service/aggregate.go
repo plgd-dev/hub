@@ -14,23 +14,26 @@ import (
 	"github.com/plgd-dev/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 )
 
 type LogPublishErrFunc func(err error)
 type aggregate struct {
-	model         *raEvents.ResourceStateSnapshotTaken
-	ag            *cqrs.Aggregate
-	resourceId    string
-	userDeviceIds strings.Set
-	eventstore    EventStore
-	userID        string
+	model            *raEvents.ResourceStateSnapshotTaken
+	ag               *cqrs.Aggregate
+	resourceId       string
+	isUserDeviceFunc isUserDeviceFunc
+	eventstore       EventStore
+	userID           string
 }
 
-func (a *aggregate) factoryModel(context.Context) (cqrs.AggregateModel, error) {
+func (a *aggregate) factoryModel(ctx context.Context) (cqrs.AggregateModel, error) {
 	a.model = raEvents.NewResourceStateSnapshotTaken(func(deviceId, resourceId string) error {
-		if a.userDeviceIds.HasOneOf(deviceId) {
+		ok, err := a.isUserDeviceFunc(ctx, a.userID, deviceId)
+		if err != nil {
+			return err
+		}
+		if ok {
 			return nil
 		}
 		return fmt.Errorf("access denied")
@@ -39,18 +42,17 @@ func (a *aggregate) factoryModel(context.Context) (cqrs.AggregateModel, error) {
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(ctx context.Context, resourceId string, userDeviceIds []string, SnapshotThreshold int, eventstore EventStore, retry cqrs.RetryFunc) (*aggregate, error) {
+func NewAggregate(ctx context.Context, resourceId string, isUserDeviceFunc isUserDeviceFunc, SnapshotThreshold int, eventstore EventStore, retry cqrs.RetryFunc) (*aggregate, error) {
 	userID, err := grpc.UserIDFromMD(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resourced: invalid userID: %w", err)
 	}
-	deviceIds := make(strings.Set)
-	deviceIds.Add(userDeviceIds...)
+
 	a := &aggregate{
-		resourceId:    resourceId,
-		userDeviceIds: deviceIds,
-		eventstore:    eventstore,
-		userID:        userID,
+		resourceId:       resourceId,
+		isUserDeviceFunc: isUserDeviceFunc,
+		eventstore:       eventstore,
+		userID:           userID,
 	}
 	cqrsAg, err := cqrs.NewAggregate(resourceId, retry, SnapshotThreshold, eventstore, a.factoryModel, func(template string, args ...interface{}) {})
 	if err != nil {

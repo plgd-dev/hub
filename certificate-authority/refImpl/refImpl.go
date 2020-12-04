@@ -107,10 +107,10 @@ func (r *RefImpl) Shutdown() {
 }
 
 func NewAuth(jwksUrl string, tls *tls.Config, scope string) kitNetGrpc.AuthInterceptors {
+	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
+		return jwt.NewScopeClaims(scope)
+	})
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
-		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
-			return jwt.NewScopeClaims(scope)
-		})
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
 			log.Errorf("auth interceptor: %v", err)

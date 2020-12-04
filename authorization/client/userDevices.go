@@ -99,7 +99,7 @@ func (d *UserDevicesManager) Acquire(ctx context.Context, userID string) error {
 	return nil
 }
 
-// GetUserDevices returns devices which belows to user.
+// GetUserDevices returns devices which belongs to user.
 func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) ([]string, error) {
 	v, created := d.getRef(userID, true)
 	if created {
@@ -123,6 +123,28 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 		devs = append(devs, d)
 	}
 	return devs, nil
+}
+
+// UpdateUserDevices updates and returns devices which belongs to user.
+func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID string) ([]string, error) {
+	v, created := d.getRef(userID, true)
+	if !created {
+		defer d.Release(userID)
+	}
+	userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
+	if err != nil {
+		if created {
+			d.Release(userID)
+		}
+		return nil, err
+	}
+	d.trigger <- triggerUserDevice{
+		userID:      userID,
+		userDevices: userDevices,
+		update:      true,
+	}
+	d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
+	return userDevices[userID], nil
 }
 
 func (d *UserDevicesManager) IsUserDevice(userID, deviceID string) bool {

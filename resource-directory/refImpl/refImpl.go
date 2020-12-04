@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plgd-dev/kit/security/certManager"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/plgd-dev/kit/security/certManager"
 
 	"google.golang.org/grpc"
 
@@ -105,14 +105,14 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 }
 
 func makeAuthFunc(jwksUrl string, tls *tls.Config) func(ctx context.Context, method string) (context.Context, error) {
+	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
+		return jwt.NewScopeClaims()
+	})
 	return func(ctx context.Context, method string) (context.Context, error) {
 		switch method {
 		case "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration":
 			return ctx, nil
 		}
-		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
-			return jwt.NewScopeClaims()
-		})
 		token, _ := kitNetGrpc.TokenFromMD(ctx)
 		ctx, err := interceptor(ctx, method)
 		if err != nil {

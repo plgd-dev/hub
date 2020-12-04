@@ -27,7 +27,7 @@ var clientID = "test"
 var UserToken = ""
 var DeviceAccessToken = "123"
 var DeviceUserID = "1"
-var DeviceExpiresIn = time.Minute * 60
+var DeviceExpiresIn = time.Minute * 60 * 24 * 30
 
 func init() {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
