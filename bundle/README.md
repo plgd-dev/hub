@@ -37,6 +37,7 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 | `GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying grpc clients certificates | `true` |
 | `HTTP_GATEWAY_ADDRESS`| string | secure grpc-tcp listen address | `"0.0.0.0:9086"` |
 | `HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying http clients certificates | `true` |
+| `RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES` | uin16 | maximum number of queries MongoDB client can execute in parallel | `8` |
 | `INITIALIZE_CERITIFICATES` | bool | initialze certificates | `true` |
 | `CERITIFICATES_PATH` | string | path to directory | `"/data/certs"` |
 | `MONGO_PATH` | string | path to directory | `"/data/db"` |

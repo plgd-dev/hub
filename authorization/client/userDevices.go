@@ -99,7 +99,7 @@ func (d *UserDevicesManager) Acquire(ctx context.Context, userID string) error {
 	return nil
 }
 
-// GetUserDevices returns devices which belows to user.
+// GetUserDevices returns devices which belongs to user.
 func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) ([]string, error) {
 	v, created := d.getRef(userID, true)
 	if created {
@@ -125,7 +125,7 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 	return devs, nil
 }
 
-// UpdateUserDevices updates and returns devices which belows to user.
+// UpdateUserDevices updates and returns devices which belongs to user.
 func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID string) ([]string, error) {
 	v, created := d.getRef(userID, true)
 	if !created {
