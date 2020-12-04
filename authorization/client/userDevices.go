@@ -125,6 +125,50 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 	return devs, nil
 }
 
+// UpdateUserDevices updates and returns devices which belows to user.
+func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID string) ([]string, error) {
+	v, created := d.getRef(userID, true)
+	if !created {
+		defer d.Release(userID)
+	}
+	userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
+	if err != nil {
+		if created {
+			d.Release(userID)
+		}
+		return nil, err
+	}
+	d.trigger <- triggerUserDevice{
+		userID:      userID,
+		userDevices: userDevices,
+		update:      true,
+	}
+	d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
+	return userDevices[userID], nil
+}
+
+func (d *UserDevicesManager) IsUserDeviceV1(ctx context.Context, userID, deviceID string) bool {
+	deviceIDs, err := d.GetUserDevices(ctx, userID)
+	if err != nil {
+		return false
+	}
+	for _, id := range deviceIDs {
+		if id == deviceID {
+			return true
+		}
+	}
+	userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
+	if err != nil {
+		return false
+	}
+	for _, id := range userDevices[userID] {
+		if id == deviceID {
+			return true
+		}
+	}
+	return false
+}
+
 func (d *UserDevicesManager) IsUserDevice(userID, deviceID string) bool {
 	v, _ := d.getRef(userID, false)
 	if v == nil {

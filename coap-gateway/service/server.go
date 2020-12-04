@@ -328,7 +328,9 @@ func (server *Server) ServiceRequestContext(userID string) (context.Context, con
 	if err != nil {
 		return nil, nil, err
 	}
-	ctx, cancel := context.WithTimeout(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID), server.RequestTimeout)
+	ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID)
+	cancel := func() {}
+	//ctx, cancel := context.WithTimeout(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID), server.RequestTimeout)
 	return ctx, cancel, nil
 }
 

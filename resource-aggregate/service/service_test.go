@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/kit/security/certManager"
 
@@ -10,6 +11,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/gofrs/uuid"
+	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
@@ -18,8 +21,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
 )
 
 func TestPublishUnpublish(t *testing.T) {
@@ -34,6 +35,10 @@ func TestPublishUnpublish(t *testing.T) {
 
 	config.Service.AuthServerAddr = testCfg.AUTH_HOST
 	config.Service.JwksURL = testCfg.JWKS_URL
+	config.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	config.Service.UserDevicesManagerTickFrequency = time.Millisecond * 500
+	config.Service.UserDevicesManagerExpiration = time.Millisecond * 500
 
 	clientCertManager, err := certManager.NewCertManager(config.Dial)
 	require.NoError(t, err)

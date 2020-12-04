@@ -34,6 +34,7 @@ export LISTEN_FILE_CERT_KEY_NAME="$GRPC_INTERNAL_CERT_KEY_NAME"
 
 export MONGODB_URL="mongodb://localhost:$MONGO_PORT"
 export MONGODB_URI="mongodb://localhost:$MONGO_PORT"
+export MONGODB_MAX_POOL_SIZE="$RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES"
 export MONGO_URI="mongodb://localhost:$MONGO_PORT"
 
 export NATS_URL="nats://localhost:$NATS_PORT"

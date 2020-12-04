@@ -8,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 
+	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	cqrsEventBus "github.com/plgd-dev/cqrs/eventbus"
@@ -16,6 +17,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/jwt"
+	"github.com/plgd-dev/kit/security/oauth/manager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -29,11 +31,12 @@ type EventStore interface {
 
 //Server handle HTTP request
 type Server struct {
-	server   *kitNetGrpc.Server
-	cfg      Config
-	handler  *RequestHandler
-	sigs     chan os.Signal
-	authConn *grpc.ClientConn
+	server             *kitNetGrpc.Server
+	cfg                Config
+	handler            *RequestHandler
+	sigs               chan os.Signal
+	authConn           *grpc.ClientConn
+	userDevicesManager *clientAS.UserDevicesManager
 }
 
 type ClientCertManager = interface {
@@ -49,27 +52,54 @@ func New(config Config, clientCertManager ClientCertManager, serverCertManager S
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 	listenTLSConfig := serverCertManager.GetServerTLSConfig()
 
-	authConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
-	authClient := pbAS.NewAuthorizationServiceClient(authConn)
-
 	auth := NewAuth(config.JwksURL, dialTLSConfig)
 	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	requestHandler := NewRequestHandler(config, eventStore, publisher, authClient)
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create oauth manager: %w", err)
+	}
+
+	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	if err != nil {
+		log.Fatalf("cannot connect to authorization server: %w", err)
+	}
+	authClient := pbAS.NewAuthorizationServiceClient(asConn)
+
+	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
+	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, userID, deviceID string) (bool, error) {
+		devices, err := userDevicesManager.GetUserDevices(ctx, userID)
+		if err != nil {
+			return false, err
+		}
+		for _, id := range devices {
+			if id == deviceID {
+				return true, nil
+			}
+		}
+		devices, err = userDevicesManager.UpdateUserDevices(ctx, userID)
+		if err != nil {
+			return false, err
+		}
+		for _, id := range devices {
+			if id == deviceID {
+				return true, nil
+			}
+		}
+		return false, nil
+	})
 	pb.RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	server := Server{
-		server:   grpcServer,
-		cfg:      config,
-		handler:  requestHandler,
-		sigs:     make(chan os.Signal, 1),
-		authConn: authConn,
+		server:             grpcServer,
+		cfg:                config,
+		handler:            requestHandler,
+		sigs:               make(chan os.Signal, 1),
+		authConn:           asConn,
+		userDevicesManager: userDevicesManager,
 	}
 
 	return &server
@@ -93,7 +123,9 @@ func (s *Server) serveWithHandlingSignal(serve func() error) error {
 
 	s.server.Stop()
 	wg.Wait()
+	s.userDevicesManager.Close()
 	s.authConn.Close()
+
 	return err
 }
 
@@ -108,10 +140,10 @@ func (s *Server) Shutdown() {
 }
 
 func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
+	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
+		return jwt.NewScopeClaims()
+	})
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
-		interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
-			return jwt.NewScopeClaims()
-		})
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
 			log.Errorf("auth interceptor: %v", err)
