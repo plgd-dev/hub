@@ -147,28 +147,6 @@ func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID strin
 	return userDevices[userID], nil
 }
 
-func (d *UserDevicesManager) IsUserDeviceV1(ctx context.Context, userID, deviceID string) bool {
-	deviceIDs, err := d.GetUserDevices(ctx, userID)
-	if err != nil {
-		return false
-	}
-	for _, id := range deviceIDs {
-		if id == deviceID {
-			return true
-		}
-	}
-	userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
-	if err != nil {
-		return false
-	}
-	for _, id := range userDevices[userID] {
-		if id == deviceID {
-			return true
-		}
-	}
-	return false
-}
-
 func (d *UserDevicesManager) IsUserDevice(userID, deviceID string) bool {
 	v, _ := d.getRef(userID, false)
 	if v == nil {

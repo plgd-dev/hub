@@ -323,15 +323,12 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
-func (server *Server) ServiceRequestContext(userID string) (context.Context, context.CancelFunc, error) {
+func (server *Server) ServiceRequestContext(userID string) (context.Context, error) {
 	serviceToken, err := server.oauthMgr.GetToken(server.ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID)
-	cancel := func() {}
-	//ctx, cancel := context.WithTimeout(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID), server.RequestTimeout)
-	return ctx, cancel, nil
+	return kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID), nil
 }
 
 //setupCoapServer setup coap server
