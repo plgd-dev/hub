@@ -107,6 +107,17 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.UserID)
+
+	err = client.PublishCloudDeviceStatus(req.Context, signIn.DeviceID, pbCQRS.AuthorizationContext{
+		DeviceId: signIn.DeviceID,
+	})
+	if err != nil {
+		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot publish cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
+		client.Close()
+		return
+	}
+
 	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.

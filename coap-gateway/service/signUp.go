@@ -7,14 +7,11 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/coap"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -71,19 +68,6 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), r.Token)
 		return
-	}
-	serviceToken, err := client.server.oauthMgr.GetToken(r.Context)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, r.Token)
-		client.Close()
-		return
-	}
-
-	err = client.PublishCloudDeviceStatus(kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithUserID(r.Context, response.UserId), serviceToken.AccessToken), signUp.DeviceID, pbCQRS.AuthorizationContext{
-		DeviceId: signUp.DeviceID,
-	})
-	if err != nil {
-		log.Errorf("cannot publish cloud device status: %v", err)
 	}
 
 	coapResponse := CoapSignUpResponse{
