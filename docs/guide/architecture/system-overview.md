@@ -7,23 +7,49 @@
 ![L2](/img/diagrams/container-plgd.svg)
 
 ## CoAP Gateway
-The CoAP gateway acts act as a CoAP Client, communicating with IoT Devices - CoAP Servers following OCF specification. As the component diagram describes, responsibilities of the gateway are:
+The CoAP gateway acts act as a CoAP Client, communicating with IoT Devices - CoAP Servers following the OCF specification. As the component diagram describes, responsibilities of the gateway are:
 - handle and maintain TCP connections comming from devices
 - forward [authentication and authorization requests #5.4.4](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.0.pdf) #5.4.4 to Authorization Service
 - process device CRUDN operations which are by its nature forwarded to [Resource Aggregate](resource-aggregate) or [Resource Directory](resource-directory)
 
 ### Operational flow
-Device after it connects to the CoAP Gateway over TCP needs to send an authorization request. If it is the first connection, device needs to register. As the plgd.cloud uses standardized OAuth2.0 flow, device needs to firstly receive a unique [authorization code](https://tools.ietf.org/html/rfc6749#section-4.1) from the Client(#component-client) and proceed with registration called Sign Up request. Goal of the Sign Up request is to exchange the authorization code for an access and refresh token, which is after successful validation by the OAuth2.0 Server returned back to the device. 
+Before a Device becomes operational and is able to interact with other Devices, it needs to be appropriately onboarded. The first step in onboarding a Device is to configure the ownership where the legitimate user that owns/purchases the Device uses an Onboarding tool (OBT) and using the OBT uses one of the Owner Transfer Methods (OTMs) to establish ownership. Once ownership is established, the OBT provisions the Device, at the end of which the Device can be provisioned for the OCF Cloud.
 
 @startuml Sequence
 hide footbox
 
-participant D1 as "Device #1"
+participant D as "Device"
+participant CGW as "CoAP Gateway"
+participant AS as "Authorization Server"
+participant OBT as "Onboarding Tool"
+
+OBT -->[: Discover devices
+|||
+D --> OBT: Here I am
+group OCF Onboarding
+    OBT -> D ++: Establish Device Owner
+    return Ownership established
+    OBT -> D ++: Provisioning security configuration
+    return Provisioning successful
+end
+group OCF Cloud Provisioning
+    OBT -> D ++: Provisioning cloud configuration resource
+    return Provisioning successful
+end
+D -> CGW ++: Establish TCP connection
+@enduml
+
+Device after it connects to the CoAP Gateway over TCP needs to send a authorization request. If it's the first connection, device needs to register. As the plgd.cloud uses standardized OAuth2.0 flow, device needs to firstly receive a unique [authorization code](https://tools.ietf.org/html/rfc6749#section-4.1) from the Client(#component-client) and proceed with registration called Sign Up request. Goal of the Sign Up request is to exchange the authorization code for an access and refresh token, which is after successful validation by the OAuth2.0 Server returned back to the device. 
+
+@startuml Sequence
+hide footbox
+
+participant D as "Device"
 participant CGW as "CoAP Gateway"
 participant AS as "Authorization Server"
 participant RA as "Resource Aggregate"
 
-D1 -> CGW ++: Sign Up
+D -> CGW ++: Sign Up
 group OAuth2.0 Authorization Code Grant Flow
     CGW -> AS ++: Exchange authorization code for access token
     AS -> AS: Verify Authorization Code
@@ -40,11 +66,11 @@ Successful registration to the plgd.dev is followed by authentication request ca
 @startuml Sequence
 hide footbox
 
-participant D1 as "Device #1"
+participant D as "Device"
 participant CGW as "CoAP Gateway"
 participant RA as "Resource Aggregate"
 
-D1 -> CGW ++: Sign In
+D -> CGW ++: Sign In
 CGW -> CGW: Validate Accses Token
 CGW -> RA ++: Declare device as online
 return
@@ -54,8 +80,8 @@ return Signed In
 
 As device capabilities is represented by set of resources, device needs to inform the plgd.cloud which resources are available remotely by publishing them. Information which is published is not the resource representation itself, but [Resource Information #6.1.3.2.2](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.0.pdf).
 
-
-```json
+::: details example payload
+``` json
 {
    "di":"e61c3e6b-9c54-4b81-8ce5-f9039c1d04d9",
    "links":[
@@ -90,6 +116,7 @@ As device capabilities is represented by set of resources, device needs to infor
    "ttl":600476
 }
 ```
+:::
 
 Published resource information doesn't contains only link to the resource to be able to CRUDN particular capability, but also resource types which are used to filter only resources client is able to use. As an example, if you have an application which controls the light, this app will search for all lights you have at home - filter resources type `oic.r.switch.binary`, and not for temperature sensors, even if it was published by the same device. This resource publish command registers the resource aggregate in the plgd.cloud what makes it discoverable to all authorized clients.
 
@@ -98,14 +125,15 @@ The plgd.cloud is after successful resource publish starting observation of each
 @startuml Sequence
 hide footbox
 
-participant D1 as "Device #1"
+participant D as "Device"
 participant CGW as "CoAP Gateway"
 participant RA as "Resource Aggregate"
+participant D2 as "Device #2"
 
-D1 -> CGW ++: Publish Resources
+D -> CGW ++: Publish Resources
 CGW -> RA ++: Publish Resources
 return
-CGW -> D1 ++: Observe published resource
+CGW -> D ++: Observe published resource
 return Resource representation
 CGW -> RA ++: Update resource representation
 return
