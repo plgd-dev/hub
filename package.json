@@ -9,6 +9,7 @@
         "docs:build": "vuepress build docs"
     },
     "dependencies": {
+        "markdown-it-plantuml": "^1.4.1",
         "vuepress-bar": "0.3.1"
     }
 }
