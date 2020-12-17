@@ -53,7 +53,7 @@ end
 D -> CGW ++: Establish TCP connection
 @enduml
 
-TCP connection which device established to the CoAp Gateway is now authenticated but not authorized. Before the devices becomes reachable, TCP connection needs to be authorized. As this flow describes operation of a new device, device needs within the first connection Sign Up - [register with the plgd.cloud (see 8.1.4)](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.1.pdf#page=33). The [authorization code](https://tools.ietf.org/html/rfc6749#section-4.1) received during the OCF Cloud Provisioning process described in the diagram above is be by the CoAP Gateway exchanged for an access and refresh token and returned back to the device. This process is in more detail described in the [OCF Cloud Security Specification (see 6.2)](https://openconnectivity.org/specs/OCF_Cloud_Security_Specification_v2.2.1.pdf#page=12).
+TCP connection which device established to the CoAP Gateway is now authenticated but not authorized. Before the devices becomes reachable, TCP connection needs to be authorized. As this flow describes operation of a new device, device needs within the first connection Sign Up - [register with the plgd.cloud (see 8.1.4)](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.1.pdf#page=33). The [authorization code](https://tools.ietf.org/html/rfc6749#section-4.1) received during the OCF Cloud Provisioning process described in the diagram above is be by the CoAP Gateway exchanged for an access and refresh token and returned back to the device. This process is in more detail described in the [OCF Cloud Security Specification (see 6.2)](https://openconnectivity.org/specs/OCF_Cloud_Security_Specification_v2.2.1.pdf#page=12).
 
 #### Cloud Registration
 <br/>
@@ -154,11 +154,18 @@ participant RA as "Resource Aggregate"
 D -> CGW ++: Publish Resources
 CGW -> RA ++: Publish Resources
 return
-CGW -> D ++: Observe published resource
-return Resource representation
+CGW -> D: Observe published resource
+activate D
+D --> CGW: Resource representation
 CGW -> RA ++: Update resource representation
 return
-
+|||
+[-> D: Actuate
+activate D
+D --> CGW: Resource representation
+deactivate D
+CGW -> RA ++: Update resource representation
+return
 @enduml
 
 From this moment on, device is reachable to all authorized clients and devices. Resource update requests received by particular Gateway where the client is connected are forwarded to the [Resource Aggregate](#resource-aggregate). Successful command validation precede storing and publishing of this event to the [Event Bus](#event-bus), to which is the CoAP Gateway subscribed. If the update request event targets the device hosted by this instance of the CoAP Gateway, [UPDATE](https://tools.ietf.org/html/rfc7252#section-5.8.2) is forwarded over the authorized TCP channel to the device. Device response is forwarded to the [Resource Aggregate](#resource-aggregate) which issues resource updated event updating the resource projection and informing client that the update was successful.
@@ -193,7 +200,7 @@ return Updated
 
 @enduml
 
-::: tip
+::: tip NOTE
 Client requesting resource observation will immediately start to receive notifications without additional request to the device over CoAP Gateway. As the plgd.cloud is by default observing resources of all connected devices, responsible Gateway will just subscribe to the [Event Bus](#event-bus) and forward requested notifications. **Handling of CRUDN operations is same for every Gateway.**
 :::
 
@@ -224,8 +231,8 @@ Client requesting resource observation will immediately start to receive notific
 :::
 
 ## Client
-
-https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.1.pdf#page=31 8.1.2.2 OCF Cloud Usr Authorization of Mediator
+WIP
+https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.1.pdf#page=31 8.1.2.2 OCF Cloud User Authorization of Mediator
 
 ::: details Client Component Diagram
 ![L3](/img/diagrams/component-clients.svg =600x)
