@@ -55,7 +55,6 @@ message PublishResourceRequest {
 
 message PublishResourceResponse {
     AuditContext audit_context = 1;
-    int64 instance_id = 2;
 }
 
 // https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml #Specification CR needed

@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
@@ -43,12 +44,12 @@ func (rs *ResourceStateSnapshotTaken) Version() uint64 {
 	return rs.ResourceStateSnapshotTaken.EventMetadata.Version
 }
 
-func (rs *ResourceStateSnapshotTaken) Marshal() ([]byte, error) {
-	return rs.ResourceStateSnapshotTaken.Marshal()
+func (rs ResourceStateSnapshotTaken) Marshal() ([]byte, error) {
+	return proto.Marshal(&rs.ResourceStateSnapshotTaken)
 }
 
 func (rs *ResourceStateSnapshotTaken) Unmarshal(b []byte) error {
-	return rs.ResourceStateSnapshotTaken.Unmarshal(b)
+	return proto.Unmarshal(b, &rs.ResourceStateSnapshotTaken)
 }
 
 func (rs *ResourceStateSnapshotTaken) EventType() string {
@@ -57,9 +58,6 @@ func (rs *ResourceStateSnapshotTaken) EventType() string {
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourcePublished(ctx context.Context, pub ResourcePublished) error {
 	rs.Id = pub.Resource.Id
-	if rs.IsPublished {
-		pub.Resource.InstanceId = rs.Resource.InstanceId
-	}
 	rs.Resource = pub.Resource
 	rs.TimeToLive = pub.TimeToLive
 	rs.IsPublished = true

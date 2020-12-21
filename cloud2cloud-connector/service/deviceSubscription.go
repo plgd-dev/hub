@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofrs/uuid"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
@@ -16,8 +18,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/sdk/schema/cloud"
-	"github.com/gofrs/uuid"
-	cache "github.com/patrickmn/go-cache"
 )
 
 func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -150,7 +150,6 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 				ResourceTypes:         link.ResourceTypes,
 				Interfaces:            link.Interfaces,
 				DeviceId:              link.DeviceID,
-				InstanceId:            link.InstanceID,
 				Anchor:                link.Anchor,
 				Policies:              &pbRA.Policies{BitFlags: int32(link.Policy.BitMask)},
 				Title:                 link.Title,

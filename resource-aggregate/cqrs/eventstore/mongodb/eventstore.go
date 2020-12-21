@@ -17,12 +17,10 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/plgd-dev/cqrs/eventstore/maintenance"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -33,19 +31,11 @@ import (
 	cqrsMongodb "github.com/plgd-dev/cqrs/eventstore/mongodb"
 )
 
-const instanceIdsCollection = "instanceIds"
-
-func init() {
-	rand.Seed(time.Now().UTC().UnixNano())
-}
-
 // EventStore implements an EventStore for MongoDB.
 type EventStore struct {
 	es     *cqrsMongodb.EventStore
 	client *mongo.Client
 	config Config
-
-	uniqueIdIsInitialized uint64
 }
 
 //NewEventStore create a event store from configuration
@@ -126,52 +116,7 @@ func (s *EventStore) Remove(ctx context.Context, task maintenance.Task) error {
 
 // Clear clears the event storage.
 func (s *EventStore) Clear(ctx context.Context) error {
-	err1 := s.es.Clear(ctx)
-	err2 := s.client.Database(s.es.DBName()).Collection(instanceIdsCollection).Drop(ctx)
-	if err1 != nil {
-		return fmt.Errorf("cannot clear events: %v", err1)
-	}
-	if err2 != nil && err2 != mongo.ErrNoDocuments {
-		return fmt.Errorf("cannot clear sequence number: %v", err2)
-	}
-	return nil
-}
-
-type seqRecord struct {
-	AggregateId string `bson:"aggregateid"`
-	InstanceId  int64  `bson:"_id"`
-}
-
-// GetInstanceId returns int64 that is unique
-func (s *EventStore) GetInstanceId(ctx context.Context, aggregateId string) (int64, error) {
-	var newInstanceId uint32
-	for {
-		newInstanceId = rand.Uint32()
-
-		r := seqRecord{
-			AggregateId: aggregateId,
-			InstanceId:  int64(newInstanceId),
-		}
-
-		if _, err := s.client.Database(s.es.DBName()).Collection(instanceIdsCollection).InsertOne(ctx, r); err != nil {
-			if cqrsMongodb.IsDup(err) {
-				rand.Seed(time.Now().UTC().UnixNano())
-			} else {
-				return -1, fmt.Errorf("cannot generate instance id: %w", err)
-			}
-		} else {
-			break
-		}
-	}
-
-	return int64(newInstanceId), nil
-}
-
-func (s *EventStore) RemoveInstanceId(ctx context.Context, instanceId int64) error {
-	if _, err := s.client.Database(s.es.DBName()).Collection(instanceIdsCollection).DeleteOne(ctx, bson.M{"_id": instanceId}); err != nil {
-		return fmt.Errorf("cannot remove instance id: %w", err)
-	}
-	return nil
+	return s.es.Clear(ctx)
 }
 
 // Close closes the database session.

@@ -192,35 +192,17 @@ func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishReso
 		return
 	}
 
-	instanceID, err := a.eventstore.GetInstanceId(ctx, request.ResourceId)
-	if err != nil {
-		err = status.Errorf(codes.InvalidArgument, "unable to get instanceID for publish command: %v", err)
-		return
-	}
-	request.Resource.InstanceId = instanceID
-
 	events, err = a.ag.HandleCommand(ctx, request)
 	if err != nil {
-		a.eventstore.RemoveInstanceId(ctx, instanceID)
 		err = fmt.Errorf("unable to process publish command: %w", err)
 		return
 	}
-	for _, event := range events {
-		if rp, ok := event.(raEvents.ResourcePublished); ok {
-			// if resource is already published we need to use origin intanceId that was set by model.
-			if rp.Resource.InstanceId != instanceID {
-				a.eventstore.RemoveInstanceId(ctx, instanceID)
-				instanceID = rp.Resource.InstanceId
-			}
-			break
-		}
-	}
+
 	insertMaintenanceDbRecord(ctx, a, events)
 
 	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, "")
 	response = &pb.PublishResourceResponse{
 		AuditContext: &auditContext,
-		InstanceId:   instanceID,
 	}
 	return
 }
@@ -243,11 +225,6 @@ func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.Unpublish
 		return
 	}
 	insertMaintenanceDbRecord(ctx, a, events)
-
-	err = a.eventstore.RemoveInstanceId(ctx, a.model.Resource.InstanceId)
-	if err != nil {
-		err = status.Errorf(codes.Internal, "unable remove instanceID: %v", err)
-	}
 
 	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	response = &pb.UnpublishResourceResponse{

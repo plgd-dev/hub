@@ -26,4 +26,5 @@ type Config struct {
 	ReconnectInterval               time.Duration  `envconfig:"RECONNECT_TIMEOUT" default:"10s"`
 	HeartBeat                       time.Duration  `envconfig:"HEARTBEAT" default:"4s"`
 	MaxMessageSize                  int            `envconfig:"MAX_MESSAGE_SIZE" default:"262144"`
+	LogMessages                     bool           `envconfig:"LOG_MESSAGES" default:"false"`
 }

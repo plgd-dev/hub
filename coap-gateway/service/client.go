@@ -28,7 +28,7 @@ import (
 )
 
 type observedResource struct {
-	res         *pbRA.Resource
+	resourceID  string
 	observation *tcp.Observation
 }
 
@@ -102,14 +102,14 @@ func (client *Client) cancelResourceSubscription(token string, wantWait bool) (b
 }
 
 func (client *Client) observeResource(ctx context.Context, res *pbRA.Resource, allowDuplicit bool) (err error) {
-	log.Debugf("DeviceId: %v, ResourceId: %v: observe resource", res.DeviceId, res.Id)
-
+	log.Debugf("coap-gw: client.observeResource /%v%v ins %v: observe resource", res.DeviceId, res.GetHref())
+	instanceID := getInstanceID(res.GetHref())
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 	if _, ok := client.observedResources[res.DeviceId]; !ok {
 		client.observedResources[res.DeviceId] = make(map[int64]observedResource)
 	}
-	if _, ok := client.observedResources[res.DeviceId][res.InstanceId]; ok {
+	if _, ok := client.observedResources[res.DeviceId][instanceID]; ok {
 		if allowDuplicit {
 			return nil
 		}
@@ -118,55 +118,53 @@ func (client *Client) observeResource(ctx context.Context, res *pbRA.Resource, a
 	return client.addObservedResourceLocked(ctx, res)
 }
 
-func (client *Client) getResourceContent(ctx context.Context, obsRes *pbRA.Resource) {
-	resp, err := client.coapConn.Get(ctx, obsRes.Href)
+func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
+	resp, err := client.coapConn.Get(ctx, href)
 	if err != nil {
-		log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content: %v", obsRes.DeviceId, obsRes.Id, err)
+		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
 		return
 	}
 	defer pool.ReleaseMessage(resp)
-	err = client.notifyContentChanged(obsRes, resp)
+	err = client.notifyContentChanged(deviceID, href, resp)
 	if err != nil {
 		// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-		log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content: %v", obsRes.DeviceId, obsRes.Id, err)
+		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
 		client.Close()
 	}
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []string{obsRes.GetId()})
+		client.unpublishResources(ctx, []string{cqrsRA.MakeResourceId(deviceID, href)})
 	}
 }
 
 func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.Resource) error {
 	var observation *tcp.Observation
 	obs := isObservable(res)
-	log.Debugf("DeviceId: %v, ResourceId: %v: Observable: %v: Client.addObservedResourceLocked", res.DeviceId, res.Href, obs)
-
 	if res.Id == cqrsRA.MakeResourceId(res.DeviceId, cloud.StatusHref) {
 		return nil
 	}
+	instanceID := getInstanceID(res.GetHref())
 
-	obsRes := res.Clone()
 	if obs {
-		obs, err := client.coapConn.Observe(ctx, res.Href, func(req *pool.Message) {
-			err := client.notifyContentChanged(obsRes, req)
+		obs, err := client.coapConn.Observe(ctx, res.GetHref(), func(req *pool.Message) {
+			err := client.notifyContentChanged(res.GetDeviceId(), res.GetHref(), req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-				log.Errorf("DeviceId: %v, ResourceId: %v: cannot get resource content %v%v: %v", obsRes.DeviceId, obsRes.Id, obsRes.DeviceId, obsRes.Href, err)
+				log.Errorf("cannot observe resource /%v%v: %v", res.GetDeviceId(), res.GetHref(), err)
 				client.Close()
 			}
 			if req.Code() == coapCodes.NotFound {
-				client.unpublishResources(req.Context(), []string{obsRes.GetId()})
+				client.unpublishResources(req.Context(), []string{res.GetId()})
 			}
 		})
 		if err != nil {
-			log.Errorf("DeviceId: %v, ResourceId: %v: cannot observe resource %v%v: %v", obsRes.DeviceId, obsRes.Id, obsRes.DeviceId, obsRes.Href, err)
+			log.Errorf("cannot observe resource /%v%v: %v", res.GetDeviceId(), res.GetHref(), err)
 		} else {
 			observation = obs
 		}
 	} else {
-		go client.getResourceContent(ctx, obsRes)
+		go client.getResourceContent(ctx, res.GetDeviceId(), res.GetHref())
 	}
-	client.observedResources[res.DeviceId][res.InstanceId] = observedResource{res: obsRes, observation: observation}
+	client.observedResources[res.DeviceId][instanceID] = observedResource{resourceID: res.GetId(), observation: observation}
 	return nil
 }
 
@@ -180,12 +178,12 @@ func (client *Client) getObservedResources(deviceID string, instanceIDs []int64)
 	if deviceResourcesMap, ok := client.observedResources[deviceID]; ok {
 		if getAllDeviceIDMatches {
 			for _, value := range deviceResourcesMap {
-				matches = append(matches, value.res.GetId())
+				matches = append(matches, value.resourceID)
 			}
 		} else {
 			for _, instanceID := range instanceIDs {
 				if resource, ok := deviceResourcesMap[instanceID]; ok {
-					matches = append(matches, resource.res.GetId())
+					matches = append(matches, resource.resourceID)
 				}
 			}
 		}
@@ -249,7 +247,7 @@ func (client *Client) unobserveAndRemoveResources(resourceIDs []string, rscsUnpu
 		var deviceID string
 		for devID, devs := range client.observedResources {
 			for insID, r := range devs {
-				if r.res.GetId() == resourceID {
+				if r.resourceID == resourceID {
 					instanceID = insID
 					deviceID = devID
 					break
@@ -366,23 +364,20 @@ func (client *Client) loadAuthorizationContext() authCtx {
 	return client.authCtx
 }
 
-func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {
+func (client *Client) notifyContentChanged(deviceID string, href string, notification *pool.Message) error {
 	authCtx := client.loadAuthorizationContext()
 	if isExpired(authCtx.Expire) {
-		return fmt.Errorf("cannot notify resource /%v%v content changed: token is expired", res.GetDeviceId(), res.GetHref())
+		return fmt.Errorf("cannot notify resource /%v%v content changed: token is expired", deviceID, href)
 	}
-
 	decodeMsgToDebug(client, notification, "RECEIVED-NOTIFICATION")
-
 	ctx, err := client.server.ServiceRequestContext(authCtx.UserID)
 	if err != nil {
-		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", res.GetDeviceId(), res.GetHref(), err)
+		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
-
-	request := coapconv.MakeNotifyResourceChangedRequest(res.Id, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
+	request := coapconv.MakeNotifyResourceChangedRequest(cqrsRA.MakeResourceId(deviceID, href), authCtx.AuthorizationContext, client.remoteAddrString(), notification)
 	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
 	if err != nil {
-		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", res.GetDeviceId(), res.GetHref(), err)
+		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
 	return nil
 }
@@ -664,12 +659,12 @@ func (client *Client) publishResource(ctx context.Context, link schema.ResourceL
 		},
 	}
 
-	response, err := client.server.raClient.PublishResource(ctx, &request)
+	_, err := client.server.raClient.PublishResource(ctx, &request)
 	if err != nil {
 		return link, fmt.Errorf("cannot process command publish resource: %w", err)
 	}
 
-	link.InstanceID = response.InstanceId
+	link.InstanceID = getInstanceID(raLink.GetHref())
 	link.ID = resourceID
 	return link, nil
 }

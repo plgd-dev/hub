@@ -38,6 +38,7 @@ export MONGODB_MAX_POOL_SIZE="$RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES"
 export MONGO_URI="mongodb://localhost:$MONGO_PORT"
 
 export NATS_URL="nats://localhost:$NATS_PORT"
+export JETSTREAM_URL="nats://localhost:$JETSTREAM_PORT"
 
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
 export OAUTH_ENDPOINT_TOKEN_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/token
@@ -72,6 +73,7 @@ mkdir -p $CERITIFICATES_PATH
 mkdir -p $LOGS_PATH
 
 # nats
+echo "starting nats-server"
 nats-server --port $NATS_PORT --tls --tlsverify --tlscert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --tlskey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --tlscacert=$CA_POOL_CERT_PATH >$LOGS_PATH/nats-server.log 2>&1 &
 status=$?
 if [ $status -ne 0 ]; then
@@ -81,7 +83,20 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# jetstream
+echo "starting jetstream"
+jetstream --jetstream --store_dir /data --port $JETSTREAM_PORT --tls --tlsverify --tlscert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --tlskey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --tlscacert=$CA_POOL_CERT_PATH >$LOGS_PATH/jetstream.log 2>&1 &
+status=$?
+if [ $status -ne 0 ]; then
+  echo "Failed to start jetstream: $status"
+  sync
+  cat $LOGS_PATH/jetstream.log
+  exit $status
+fi
+
+
 # mongo
+echo "starting mongod"
 cat $DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME > $DIAL_FILE_CERT_DIR_PATH/mongo.key
 cat $DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME >> $DIAL_FILE_CERT_DIR_PATH/mongo.key
 mongod --port $MONGO_PORT --dbpath $MONGO_PATH --sslMode requireSSL --sslCAFile $CA_POOL_CERT_PATH --sslPEMKeyFile $DIAL_FILE_CERT_DIR_PATH/mongo.key >$LOGS_PATH/mongod.log 2>&1 &
@@ -117,7 +132,9 @@ done
 
 # resource-aggregate
 echo "starting resource-aggregate"
-ADDRESS=${RESOURCE_AGGREGATE_ADDRESS} resource-aggregate >$LOGS_PATH/resource-aggregate.log 2>&1 &
+ADDRESS=${RESOURCE_AGGREGATE_ADDRESS} \
+LOG_ENABLE_DEBUG=true \
+resource-aggregate >$LOGS_PATH/resource-aggregate.log 2>&1 &
 status=$?
 if [ $status -ne 0 ]; then
   echo "Failed to start resource-aggregate: $status"
@@ -149,6 +166,7 @@ fi
 echo "starting coap-gateway-unsecure"
 ADDRESS=${COAP_GATEWAY_UNSECURE_ADDRESS} \
 LOG_ENABLE_DEBUG=true \
+LOG_MESSAGES=${COAP_GATEWAY_LOG_MESSAGES} \
 EXTERNAL_PORT=${COAP_GATEWAY_UNSECURE_PORT} \
 FQDN=${COAP_GATEWAY_UNSECURE_FQDN} \
 DISABLE_BLOCKWISE_TRANSFER=${COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER} \
@@ -175,6 +193,7 @@ fi
 echo "starting coap-gateway-secure"
 ADDRESS=${COAP_GATEWAY_ADDRESS} \
 LOG_ENABLE_DEBUG=true \
+LOG_MESSAGES=${COAP_GATEWAY_LOG_MESSAGES} \
 EXTERNAL_PORT=${COAP_GATEWAY_PORT} \
 FQDN=${COAP_GATEWAY_FQDN} \
 LISTEN_FILE_CERT_DIR_PATH=${EXTERNAL_CERT_DIR_PATH} \
@@ -342,6 +361,13 @@ while sleep 10; do
     echo "certificate-authority has already exited."
     sync
     cat $LOGS_PATH/certificate-authority.log
+   exit 1
+  fi
+  ps aux |grep jetstream |grep -q -v grep
+  if [ $? -ne 0 ]; then 
+    echo "jetstream has already exited."
+    sync
+    cat $LOGS_PATH/jetstream.log
    exit 1
   fi
 done

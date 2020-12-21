@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"google.golang.org/grpc/codes"
 
@@ -20,6 +19,7 @@ type isUserDeviceFunc = func(ctx context.Context, userID, deviceID string) (bool
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
+	pb.UnimplementedResourceAggregateServer
 	config           Config
 	eventstore       EventStore
 	publisher        cqrsEventBus.Publisher
@@ -41,10 +41,6 @@ func NewRequestHandler(config Config, eventstore EventStore, publisher cqrsEvent
 }
 
 func publishEvents(ctx context.Context, publisher cqrsEventBus.Publisher, deviceId, resourceId string, events []cqrsEvent.Event) error {
-	t := time.Now()
-	defer func() {
-		log.Debugf("publishEvents takes %v", time.Since(t))
-	}()
 	var errors []error
 	for _, event := range events {
 		err := publisher.Publish(ctx, cqrsUtils.GetTopics(deviceId), deviceId, resourceId, event)

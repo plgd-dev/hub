@@ -12,21 +12,21 @@ import (
 func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID pbGRPC.ResourceId, encoder responseWriterEncoderFunc) (int, error) {
 	allResources, err := rh.RetrieveResourcesValues(ctx, []*pbGRPC.ResourceId{&resourceID}, nil)
 	if err != nil {
-		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve resource(%v): %w", resourceID, err)
+		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), err
 	}
 
 	for _, v := range allResources {
 		if v[0].Status != pbGRPC.Status_OK {
-			return statusToHttpStatus(v[0].Status), fmt.Errorf("cannot retrieve resource(%v): device returns code %v", resourceID, v[0].Status)
+			return statusToHttpStatus(v[0].Status), fmt.Errorf("device returns unexpected code %v", v[0].Status)
 		}
 
 		err = encoder(w, v[0].Representation, http.StatusOK)
 		if err != nil {
-			return http.StatusBadRequest, fmt.Errorf("cannot retrieve resource(%v): %w", resourceID, err)
+			return http.StatusBadRequest, err
 		}
 		return http.StatusOK, nil
 	}
-	return http.StatusNotFound, fmt.Errorf("cannot retrieve resource(%v): %w", resourceID, err)
+	return http.StatusNotFound, err
 }
 
 func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, w http.ResponseWriter, routeVars map[string]string, contentQuery string, encoder responseWriterEncoderFunc) (int, error) {

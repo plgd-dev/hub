@@ -11,7 +11,7 @@ message Resource {
     repeated string resource_types = 3;
     repeated string interfaces = 4;
     string device_id = 5;
-    int64 instance_id = 6;
+    // int64 instance_id = 6;
     string anchor = 7; 
     Policies policies = 8;
     string title = 9;

@@ -215,7 +215,7 @@ func (m *resourceCtx) sendEventResourceDeleted(ctx context.Context, resourceDele
 }
 
 func (m *resourceCtx) onResourceChangedLocked(ctx context.Context, do func(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error) error {
-	log.Debugf("onResourceChangedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
+	log.Debugf("onResourceChangedLocked %v%v %v", m.resource.GetDeviceId(), m.resource.GetHref(), m.onResourceChangedVersion)
 	return do(ctx, pb.Event_ResourceChanged{
 		ResourceId: &pb.ResourceId{
 			DeviceId: m.resource.GetDeviceId(),

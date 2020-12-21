@@ -16,7 +16,9 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
+	natsio "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/net/http/transport"
 	"github.com/plgd-dev/kit/security/certManager"
 	"go.uber.org/atomic"
@@ -37,6 +39,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	coapgwService "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/sdk/local/core"
@@ -155,6 +158,16 @@ func ClearDB(ctx context.Context, t *testing.T) {
 	}
 	err = client.Disconnect(ctx)
 	require.NoError(t, err)
+
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
+
+	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
+	require.NoError(t, err)
 }
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
@@ -267,7 +280,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 
 	for {
 		ev, err = client.Recv()
@@ -308,7 +321,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		},
 	}
 	expectedEvent.SubscriptionId = ev.SubscriptionId
-	require.Equal(t, expectedEvent, ev)
+	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 	subOnPublishedID := ev.SubscriptionId
 
 	expectedLinks := make(map[string]*pb.ResourceLink)
@@ -319,10 +332,10 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		ev.SubscriptionId = ""
+		fmt.Printf("ev %+v\n", ev)
 		for _, l := range ev.GetResourcePublished().GetLinks() {
-			l.InstanceId = 0
 			expLink := expectedLinks[l.GetHref()]
-			require.Equal(t, expLink, l)
+			CheckProtobufs(t, expLink, l, RequireToCheckFunc(require.Equal))
 			delete(expectedLinks, l.GetHref())
 		}
 		if len(expectedLinks) == 0 {
@@ -348,7 +361,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -363,7 +376,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 
 	expectedEvents := ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
 	for _, e := range expectedEvents {
@@ -395,7 +408,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 				},
 			},
 		}
-		require.Equal(t, expectedEvent, ev)
+		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
@@ -420,7 +433,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 				SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 			},
 		}
-		require.Equal(t, expectedEvent, ev)
+		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 
 		ev, err = client.Recv()
 		require.NoError(t, err)
@@ -435,7 +448,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 				},
 			},
 		}
-		require.Equal(t, expectedEvent, ev)
+		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 	}
 
 	err = client.CloseSend()
@@ -550,12 +563,11 @@ func EncodeToCbor(t *testing.T, v interface{}) []byte {
 	return d
 }
 
-func ResourceLinkToPublishEvent(deviceID string, instanceID int64, links []schema.ResourceLink) *pb.Event {
+func ResourceLinkToPublishEvent(deviceID string, links []schema.ResourceLink) *pb.Event {
 	out := make([]*pb.ResourceLink, 0, 32)
 	for _, l := range links {
 		link := pb.SchemaResourceLinkToProto(l)
 		link.DeviceId = deviceID
-		link.InstanceId = instanceID
 		out = append(out, &link)
 	}
 	return &pb.Event{
@@ -689,4 +701,31 @@ func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
 	resp, err := c.Do(req)
 	require.NoError(t, err)
 	return resp
+}
+
+func ProtobufToInterface(t *testing.T, val interface{}) interface{} {
+	expJSON, err := json.Encode(val)
+	require.NoError(t, err)
+	var v interface{}
+	err = json.Decode(expJSON, &v)
+	require.NoError(t, err)
+	return v
+}
+
+func RequireToCheckFunc(checFunc func(t require.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{})) func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
+	return func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
+		checFunc(t, expected, actual, msgAndArgs)
+	}
+}
+
+func AssertToCheckFunc(checFunc func(t assert.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool) func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
+	return func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
+		checFunc(t, expected, actual, msgAndArgs)
+	}
+}
+
+func CheckProtobufs(t *testing.T, expected interface{}, actual interface{}, checkFunc func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{})) {
+	v1 := ProtobufToInterface(t, expected)
+	v2 := ProtobufToInterface(t, actual)
+	checkFunc(t, v1, v2)
 }

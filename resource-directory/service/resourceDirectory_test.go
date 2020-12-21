@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-directory/service"
+	"github.com/plgd-dev/cloud/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	type args struct {
 		request pb.GetResourceLinksRequest
 	}
-	test := []struct {
+	tests := []struct {
 		name     string
 		args     args
 		want     map[string]*pb.ResourceLink
@@ -78,7 +79,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 
 	rd := service.New(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
 
-	for _, tt := range test {
+	for _, tt := range tests {
 		fn := func(t *testing.T) {
 			var s testGrpcGateway_GetResourceLinksServer
 			err := rd.GetResourceLinks(&tt.args.request, &s)
@@ -88,7 +89,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantCode, status.Convert(err).Code())
-			assert.Equal(t, tt.want, s.got)
+			test.CheckProtobufs(t, tt.want, s.got, test.AssertToCheckFunc(assert.Equal))
 		}
 		t.Run(tt.name, fn)
 	}

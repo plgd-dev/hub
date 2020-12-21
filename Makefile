@@ -10,7 +10,7 @@ endif
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
+SUBDIRS := nats-server resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
 
 default: build
@@ -65,7 +65,22 @@ mongo: certificates
 		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
-env: clean certificates nats mongo
+jetstream: certificates
+	make -C ./nats-server build
+	docker run -d \
+		--network=host \
+		--name=jetstream \
+		-v $(shell pwd)/.tmp/certs:/certs \
+		--user $(shell id -u):$(shell id -g) \
+		plgd/nats-server:vnext --jetstream --store_dir /data -p 4223 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+	docker run -d \
+		--network=host \
+		--name=jetstream-cloud-connector \
+		-v $(shell pwd)/.tmp/certs:/certs \
+		--user $(shell id -u):$(shell id -g) \
+		plgd/nats-server:vnext --jetstream --store_dir /data -p 34223 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+
+env: clean certificates nats mongo jetstream
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
@@ -98,7 +113,7 @@ test: env
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
 		cloud-test \
-		go test -mod=mod -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
+		go test -mod=vendor -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 
@@ -107,6 +122,8 @@ clean:
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
 	docker rm -f devsim || true
+	docker rm -f jetstream || true
+	docker rm -f jetstream-cloud-connector || true
 	rm -rf ./.tmp/certs || true
 	rm -rf ./.tmp/mongo || true
 	rm -rf ./.tmp/home || true

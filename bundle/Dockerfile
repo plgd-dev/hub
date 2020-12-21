@@ -4,7 +4,7 @@ ARG root_directory=$GOPATH/src/github.com/plgd-dev/cloud
 #coap-gateway
 ARG service=coap-gateway
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -mod=vendor -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
 #grpc-gateway
 ARG service=grpc-gateway
@@ -54,7 +54,8 @@ RUN apt install -y wget gnupg curl iproute2 systemctl
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
-RUN apt-get install -y mongodb-org-server
+RUN apt-get install -y mongodb-org-server mongodb-org
+COPY --from=build-nats-server-static /go/bin/service /usr/local/bin/jetstream
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
@@ -79,6 +80,7 @@ ENV COAP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 ENV COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER=false
 ENV COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX="1024"
 ENV COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=false
+ENV COAP_GATEWAY_LOG_MESSAGES=false
 
 # grpc-gateway
 ENV GRPC_GATEWAY_ADDRESS="0.0.0.0:9084"
@@ -104,6 +106,7 @@ ENV INITIALIZE_CERITIFICATES=true
 ENV MONGO_PATH="/data/db"
 ENV MONGO_PORT=10000
 ENV NATS_PORT=10001
+ENV JETSTREAM_PORT=10002
 ENV CERITIFICATES_PATH="/data/certs"
 ENV LOGS_PATH="/data/log"
 

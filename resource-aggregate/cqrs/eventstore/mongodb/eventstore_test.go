@@ -15,11 +15,10 @@
 package mongodb
 
 import (
-	"context"
 	"testing"
 
-	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,33 +38,4 @@ func TestNewEventStore(t *testing.T) {
 	}, nil, WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	assert.NotNil(t, bus)
-}
-
-func TestInstanceId(t *testing.T) {
-	var config certManager.Config
-	err := envconfig.Process("DIAL", &config)
-	assert.NoError(t, err)
-
-	dialCertManager, err := certManager.NewCertManager(config)
-	require.NoError(t, err)
-
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
-	ctx := context.Background()
-	store, err := NewEventStore(Config{
-		URI:          "mongodb://localhost:27017",
-		DatabaseName: "test",
-	}, nil, WithTLS(tlsConfig))
-	defer func() {
-		store.Clear(ctx)
-		store.Close(ctx)
-	}()
-	assert.NoError(t, err)
-
-	for i := int64(1); i < 10; i++ {
-		instanceId, err := store.GetInstanceId(ctx, "b")
-		assert.NoError(t, err)
-		err = store.RemoveInstanceId(ctx, instanceId)
-		assert.NoError(t, err)
-	}
 }

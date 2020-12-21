@@ -30,11 +30,8 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
 	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	test "github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,29 +48,6 @@ type testEl struct {
 	name string
 	in   input
 	out  output
-}
-
-func testCreateResourceStoreSub(t *testing.T, resourceDBname string) (*mongodb.EventStore, *nats.Subscriber) {
-	var natsCfg nats.Config
-	err := envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	mgoCfg.DatabaseName = resourceDBname
-	assert.NoError(t, err)
-
-	var cmconfig certManager.Config
-	err = envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
-	subscriber, err := nats.NewSubscriber(natsCfg, nil, func(err error) { log.Errorf("%v", err) }, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-	return eventstore, subscriber
 }
 
 func initializeStruct(t reflect.Type, v reflect.Value) {

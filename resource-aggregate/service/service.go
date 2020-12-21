@@ -8,6 +8,11 @@ import (
 	"sync"
 	"syscall"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"go.uber.org/zap"
+
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
@@ -25,8 +30,6 @@ import (
 type EventStore interface {
 	cqrsEventStore.EventStore
 	cqrsMaintenance.EventStore
-	GetInstanceId(ctx context.Context, resourceId string) (int64, error)
-	RemoveInstanceId(ctx context.Context, instanceId int64) error
 }
 
 //Server handle HTTP request
@@ -48,12 +51,23 @@ type ServerCertManager = interface {
 }
 
 // New creates new Server with provided store and publisher.
-func New(config Config, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
+func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 	listenTLSConfig := serverCertManager.GetServerTLSConfig()
 
 	auth := NewAuth(config.JwksURL, dialTLSConfig)
-	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
+	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger),
+			auth.Stream(),
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger),
+			auth.Unary(),
+		)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}

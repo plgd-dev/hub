@@ -89,7 +89,6 @@ func TestRequestHandler_SubscribeToDevice(t *testing.T) {
 			links := make([]*pb.ResourceLink, 0, 32)
 			for _, l := range v {
 				pl := pb.SchemaResourceLinkToProto(l)
-				pl.InstanceId = 0
 				pl.Href = "/" + strings.Join(strings.Split(pl.GetHref(), "/")[2:], "/")
 				links = append(links, &pl)
 			}

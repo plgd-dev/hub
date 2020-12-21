@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	natsio "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/security/certManager"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	cqrs "github.com/plgd-dev/cqrs"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -68,10 +69,11 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -99,7 +101,7 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore *mongodb.EventStore, deviceID, resourceID, userID string, expStatusCode codes.Code, hasErr bool) {
+func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore EventStore, deviceID, resourceID, userID string, expStatusCode codes.Code, hasErr bool) {
 	pc := testMakePublishResourceRequest(deviceID, resourceID)
 
 	ag, err := NewAggregate(kitNetGrpc.CtxWithUserID(ctx, userID), resourceID, mockGetUserDevices, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
@@ -133,15 +135,20 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
 	defer pool.Release()
 
-	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(tlsConfig))
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
+	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, pool.Submit)
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
 
 	ag, err := NewAggregate(ctx, resourceID, func(ctx context.Context, userID, devID string) (bool, error) {
 		return deviceID == devID, nil
@@ -149,7 +156,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	require.NoError(t, err)
 	pc1 := testMakePublishResourceRequest(deviceID, resourceID)
 
-	resp1, events, err := ag.PublishResource(ctx, pc1)
+	_, events, err := ag.PublishResource(ctx, pc1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
@@ -158,11 +165,9 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, resourceID)
-	resp2, events, err := ag2.PublishResource(ctx, pc2)
+	_, events, err = ag2.PublishResource(ctx, pc2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-
-	assert.Equal(t, resp1.InstanceId, resp2.InstanceId)
 }
 
 func TestAggregateHandleUnpublishResource(t *testing.T) {
@@ -177,10 +182,6 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
@@ -191,8 +192,12 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	defer pool.Release()
 
-	eventstore, err := mongodb.NewEventStore(mgoCfg, pool.Submit, mongodb.WithTLS(tlsConfig))
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, pool.Submit)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -372,14 +377,15 @@ func testNewAuthorizationContext(deviceID string) *pb.AuthorizationContext {
 
 func testNewResource(href string, deviceID string, resourceID string) *pb.Resource {
 	return &pb.Resource{
-		Id:                    resourceID,
-		Href:                  href,
-		ResourceTypes:         []string{"oic.wk.d", "x.org.iotivity.device"},
-		Interfaces:            []string{"oic.if.baseline"},
-		DeviceId:              deviceID,
-		InstanceId:            1,
-		Anchor:                "ocf://" + deviceID + "/oic/p",
-		Policies:              &pb.Policies{1},
+		Id:            resourceID,
+		Href:          href,
+		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
+		Interfaces:    []string{"oic.if.baseline"},
+		DeviceId:      deviceID,
+		Anchor:        "ocf://" + deviceID + "/oic/p",
+		Policies: &pb.Policies{
+			BitFlags: 1,
+		},
 		Title:                 "device",
 		SupportedContentTypes: []string{message.TextPlain.String()},
 	}
@@ -453,16 +459,18 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -555,21 +563,21 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
-
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
 	ag, err := NewAggregate(ctx, resourceID, func(ctx context.Context, userID, devID string) (bool, error) {
@@ -647,17 +655,18 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -739,16 +748,17 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -831,17 +841,18 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -931,16 +942,17 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -1024,17 +1036,18 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
-
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg jetstream.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)

@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
 	"github.com/plgd-dev/cloud/resource-directory/service"
+	"github.com/plgd-dev/cloud/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
@@ -226,7 +227,7 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantStatusCode, status.Convert(err).Code())
-			assert.Equal(t, tt.want, s.got)
+			test.CheckProtobufs(t, tt.want, s.got, test.AssertToCheckFunc(assert.Equal))
 		})
 	}
 }

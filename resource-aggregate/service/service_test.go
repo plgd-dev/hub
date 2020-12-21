@@ -13,10 +13,11 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
+	natsio "github.com/nats-io/nats.go"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -43,7 +44,9 @@ func TestPublishUnpublish(t *testing.T) {
 	clientCertManager, err := certManager.NewCertManager(config.Dial)
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
+
+	config.JetStream.Options = append(config.JetStream.Options, natsio.Secure(dialTLSConfig))
+	eventstore, err := jetstream.NewEventStore(config.JetStream, nil)
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
@@ -125,9 +128,10 @@ func testNewResource(href string, deviceId string, resourceId string) *pb.Resour
 		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
 		Interfaces:    []string{"oic.if.baseline"},
 		DeviceId:      deviceId,
-		InstanceId:    1,
 		Anchor:        "ocf://" + deviceId + "/oic/p",
-		Policies:      &pb.Policies{1},
-		Title:         "device",
+		Policies: &pb.Policies{
+			BitFlags: 1,
+		},
+		Title: "device",
 	}
 }

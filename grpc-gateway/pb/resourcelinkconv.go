@@ -64,12 +64,12 @@ func (p *Policies) ToSchema() *schema.Policy {
 
 func (l ResourceLink) ToRAProto() pbRA.Resource {
 	return pbRA.Resource{
-		Anchor:                l.GetAnchor(),
-		DeviceId:              l.GetDeviceId(),
-		EndpointInformations:  EndpointInformations(l.GetEndpointInformations()).ToRAProto(),
-		Href:                  l.GetHref(),
-		Id:                    cqrs.MakeResourceId(l.GetDeviceId(), l.GetHref()),
-		InstanceId:            l.GetInstanceId(),
+		Anchor:               l.GetAnchor(),
+		DeviceId:             l.GetDeviceId(),
+		EndpointInformations: EndpointInformations(l.GetEndpointInformations()).ToRAProto(),
+		Href:                 l.GetHref(),
+		Id:                   cqrs.MakeResourceId(l.GetDeviceId(), l.GetHref()),
+		// InstanceId:            l.GetInstanceId(),
 		Interfaces:            l.GetInterfaces(),
 		Policies:              l.GetPolicies().ToRAProto(),
 		ResourceTypes:         l.GetTypes(),
@@ -80,12 +80,12 @@ func (l ResourceLink) ToRAProto() pbRA.Resource {
 
 func (l ResourceLink) ToSchema() schema.ResourceLink {
 	return schema.ResourceLink{
-		ID:                    cqrs.MakeResourceId(l.GetDeviceId(), l.GetHref()),
-		Anchor:                l.GetAnchor(),
-		DeviceID:              l.GetDeviceId(),
-		Endpoints:             EndpointInformations(l.GetEndpointInformations()).ToSchema(),
-		Href:                  l.GetHref(),
-		InstanceID:            l.GetInstanceId(),
+		ID:        cqrs.MakeResourceId(l.GetDeviceId(), l.GetHref()),
+		Anchor:    l.GetAnchor(),
+		DeviceID:  l.GetDeviceId(),
+		Endpoints: EndpointInformations(l.GetEndpointInformations()).ToSchema(),
+		Href:      l.GetHref(),
+		// InstanceID:            l.GetInstanceId(),
 		Interfaces:            l.GetInterfaces(),
 		Policy:                l.GetPolicies().ToSchema(),
 		ResourceTypes:         l.GetTypes(),
@@ -120,7 +120,6 @@ func RAResourceToProto(ra *pbRA.Resource) ResourceLink {
 		DeviceId:              ra.DeviceId,
 		EndpointInformations:  RAEndpointInformationsToProto(ra.EndpointInformations),
 		Href:                  ra.Href,
-		InstanceId:            ra.InstanceId,
 		Interfaces:            ra.Interfaces,
 		Policies:              p,
 		Types:                 ra.ResourceTypes,
@@ -158,7 +157,6 @@ func SchemaResourceLinkToProto(ra schema.ResourceLink) ResourceLink {
 		DeviceId:              ra.DeviceID,
 		EndpointInformations:  SchemaEndpointsToProto(ra.Endpoints),
 		Href:                  ra.Href,
-		InstanceId:            ra.InstanceID,
 		Interfaces:            ra.Interfaces,
 		Policies:              SchemaPolicyToProto(ra.Policy),
 		Types:                 ra.ResourceTypes,

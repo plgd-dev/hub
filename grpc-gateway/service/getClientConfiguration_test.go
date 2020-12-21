@@ -49,7 +49,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tt.want, got)
+				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

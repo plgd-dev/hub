@@ -16,7 +16,7 @@ type resourceSubscription struct {
 }
 
 func NewResourceSubscription(id, userID string, send SendEventFunc, resourceProjection *Projection, resourceEvent *pb.SubscribeForEvents_ResourceEventFilter) *resourceSubscription {
-	log.Debugf("subscription.NewResourceSubscription %v", id)
+	log.Debugf("subscription.NewResourceSubscription %v %+v", id, resourceEvent.GetResourceId())
 	defer log.Debugf("subscription.NewResourceSubscription %v done", id)
 	return &resourceSubscription{
 		subscription:  NewSubscription(userID, id, send, resourceProjection),

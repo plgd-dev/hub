@@ -5,20 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 
+	natsio "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certManager"
 )
 
 type Config struct {
-	Service service.Config
-	Nats    nats.Config        `envconfig:"NATS"`
-	MongoDB mongodb.Config     `envconfig:"MONGODB"`
-	Listen  certManager.Config `envconfig:"LISTEN"`
-	Dial    certManager.Config `envconfig:"DIAL"`
-	Log     log.Config         `envconfig:"LOG"`
+	Service   service.Config
+	Nats      nats.Config        `envconfig:"NATS"`
+	JetStream jetstream.Config   `envconfig:"JETSTREAM"`
+	Listen    certManager.Config `envconfig:"LISTEN"`
+	Dial      certManager.Config `envconfig:"DIAL"`
+	Log       log.Config         `envconfig:"LOG"`
 }
 
 //String return string representation of Config
@@ -28,7 +29,7 @@ func (c Config) String() string {
 }
 
 type RefImpl struct {
-	eventstore        *mongodb.EventStore
+	eventstore        *jetstream.EventStore
 	service           *service.Server
 	publisher         *nats.Publisher
 	clientCertManager certManager.CertManager
@@ -36,15 +37,20 @@ type RefImpl struct {
 }
 
 func Init(config Config) (*RefImpl, error) {
-	log.Setup(config.Log)
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
 
 	clientCertManager, err := certManager.NewCertManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 	tlsConfig := clientCertManager.GetClientTLSConfig()
+	config.JetStream.Options = append(config.JetStream.Options, natsio.Secure(tlsConfig))
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := jetstream.NewEventStore(config.JetStream, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
@@ -62,7 +68,7 @@ func Init(config Config) (*RefImpl, error) {
 
 	return &RefImpl{
 		eventstore:        eventstore,
-		service:           service.New(config.Service, clientCertManager, serverCertManager, eventstore, publisher),
+		service:           service.New(config.Service, logger, clientCertManager, serverCertManager, eventstore, publisher),
 		publisher:         publisher,
 		clientCertManager: clientCertManager,
 		serverCertManager: serverCertManager,
