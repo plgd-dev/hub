@@ -161,58 +161,70 @@ func MakeCommandMetadata(sequenceNumber uint64, connectionID string) pbCQRS.Comm
 	}
 }
 
-func MakeConfirmResourceRetrieveRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceRetrieveRequest {
+func MakeConfirmResourceRetrieveRequest(deviceID, href, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceRetrieveRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.ConfirmResourceRetrieveRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resourceId,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              &content,
-		CommandMetadata:      &metadata,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         &content,
+		CommandMetadata: &metadata,
 	}
 }
 
-func MakeConfirmResourceUpdateRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceUpdateRequest {
+func MakeConfirmResourceUpdateRequest(deviceID, href, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceUpdateRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.ConfirmResourceUpdateRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resourceId,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              &content,
-		CommandMetadata:      &metadata,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         &content,
+		CommandMetadata: &metadata,
 	}
 }
 
-func MakeConfirmResourceDeleteRequest(resourceId, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceDeleteRequest {
+func MakeConfirmResourceDeleteRequest(deviceID, href string, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceDeleteRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.ConfirmResourceDeleteRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resourceId,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              &content,
-		CommandMetadata:      &metadata,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         &content,
+		CommandMetadata: &metadata,
 	}
 }
 
-func MakeNotifyResourceChangedRequest(resourceId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.NotifyResourceChangedRequest {
+func MakeNotifyResourceChangedRequest(deviceID, href string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.NotifyResourceChangedRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return pbRA.NotifyResourceChangedRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resourceId,
-		Content:              &content,
-		CommandMetadata:      &metadata,
-		Status:               CoapCodeToStatus(req.Code()),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		Content:         &content,
+		CommandMetadata: &metadata,
+		Status:          CoapCodeToStatus(req.Code()),
 	}
 }
 
@@ -242,14 +254,17 @@ func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.
 	}
 }
 
-func MakeRetrieveResourceRequest(resourceId, resourceInterface, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *mux.Message) pbRA.RetrieveResourceRequest {
+func MakeRetrieveResourceRequest(deviceID, href string, resourceInterface, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *mux.Message) pbRA.RetrieveResourceRequest {
 	metadata := MakeCommandMetadata(req.SequenceNumber, connectionID)
 
 	return pbRA.RetrieveResourceRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resourceId,
-		CorrelationId:        correlationId,
-		ResourceInterface:    resourceInterface,
-		CommandMetadata:      &metadata,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId:     correlationId,
+		ResourceInterface: resourceInterface,
+		CommandMetadata:   &metadata,
 	}
 }

@@ -33,7 +33,7 @@ func (m *mockResourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var eu event.EventUnmarshaler
 
 	for iter.Next(ctx, &eu) {
-		log.Debugf("resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
+		log.Debugf("resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupID, eu.AggregateID, eu.Version, eu.EventType)
 		switch eu.EventType {
 		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
 			var s raEvents.ResourceStateSnapshotTaken

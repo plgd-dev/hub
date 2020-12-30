@@ -11,50 +11,35 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	cqrs "github.com/plgd-dev/cqrs"
 	cqrsEvent "github.com/plgd-dev/cqrs/event"
+	"github.com/plgd-dev/cqrs/eventstore"
 	"github.com/plgd-dev/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 type LogPublishErrFunc func(err error)
 type aggregate struct {
-	model            *raEvents.ResourceStateSnapshotTaken
-	ag               *cqrs.Aggregate
-	resourceId       string
-	isUserDeviceFunc isUserDeviceFunc
-	eventstore       EventStore
-	userID           string
+	model      *raEvents.ResourceStateSnapshotTaken
+	ag         *cqrs.Aggregate
+	resourceID string
+	eventstore EventStore
 }
 
 func (a *aggregate) factoryModel(ctx context.Context) (cqrs.AggregateModel, error) {
 	a.model = raEvents.NewResourceStateSnapshotTaken(func(deviceId, resourceId string) error {
-		ok, err := a.isUserDeviceFunc(ctx, a.userID, deviceId)
-		if err != nil {
-			return err
-		}
-		if ok {
-			return nil
-		}
-		return fmt.Errorf("access denied")
+		return nil
 	})
 	return a.model, nil
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(ctx context.Context, resourceId string, isUserDeviceFunc isUserDeviceFunc, SnapshotThreshold int, eventstore EventStore, retry cqrs.RetryFunc) (*aggregate, error) {
-	userID, err := grpc.UserIDFromMD(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create aggregate for resourced: invalid userID: %w", err)
-	}
-
+func NewAggregate(resourceID *pb.ResourceId, SnapshotThreshold int, eventstore EventStore, retry cqrs.RetryFunc) (*aggregate, error) {
+	resID := cqrsUtils.MakeResourceId(resourceID.GetDeviceId(), resourceID.GetHref())
 	a := &aggregate{
-		resourceId:       resourceId,
-		isUserDeviceFunc: isUserDeviceFunc,
-		eventstore:       eventstore,
-		userID:           userID,
+		resourceID: resID,
+		eventstore: eventstore,
 	}
-	cqrsAg, err := cqrs.NewAggregate(resourceId, retry, SnapshotThreshold, eventstore, a.factoryModel, func(template string, args ...interface{}) {})
+	cqrsAg, err := cqrs.NewAggregate(resourceID.GetDeviceId(), resID, retry, SnapshotThreshold, eventstore, a.factoryModel, func(template string, args ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}
@@ -63,14 +48,12 @@ func NewAggregate(ctx context.Context, resourceId string, isUserDeviceFunc isUse
 }
 
 func validatePublish(request *pb.PublishResourceRequest) error {
+	resID := cqrsUtils.MakeResourceId(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref())
+	if request.Resource.Id != resID {
+		return status.Errorf(codes.InvalidArgument, "invalid Resource.Id")
+	}
 	if request.Resource == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Resource")
-	}
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
-	}
-	if request.Resource.Id != request.ResourceId {
-		return status.Errorf(codes.InvalidArgument, "invalid Resource.Id")
 	}
 	if request.Resource.DeviceId == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid Resource.DeviceId")
@@ -79,8 +62,11 @@ func validatePublish(request *pb.PublishResourceRequest) error {
 }
 
 func validateUnpublish(request *pb.UnpublishResourceRequest) error {
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	return nil
 }
@@ -89,8 +75,11 @@ func validateNotifyContentChanged(request *pb.NotifyResourceChangedRequest) erro
 	if request.Content == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content")
 	}
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	return nil
 }
@@ -99,8 +88,11 @@ func validateUpdateResourceContent(request *pb.UpdateResourceRequest) error {
 	if request.Content == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content")
 	}
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	if request.CorrelationId == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
@@ -109,8 +101,11 @@ func validateUpdateResourceContent(request *pb.UpdateResourceRequest) error {
 }
 
 func validateRetrieveResource(request *pb.RetrieveResourceRequest) error {
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	if request.CorrelationId == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
@@ -122,8 +117,11 @@ func validateConfirmResourceUpdate(request *pb.ConfirmResourceUpdateRequest) err
 	if request.Content == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content")
 	}
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	if request.CorrelationId == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
@@ -136,8 +134,11 @@ func validateConfirmResourceRetrieve(request *pb.ConfirmResourceRetrieveRequest)
 	if request.Content == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content")
 	}
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	if request.CorrelationId == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
@@ -147,8 +148,11 @@ func validateConfirmResourceRetrieve(request *pb.ConfirmResourceRetrieveRequest)
 }
 
 func validateDeleteResource(request *pb.DeleteResourceRequest) error {
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	if request.CorrelationId == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
@@ -160,14 +164,28 @@ func validateConfirmResourceDelete(request *pb.ConfirmResourceDeleteRequest) err
 	if request.Content == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content")
 	}
-	if request.ResourceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId")
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
 	if request.CorrelationId == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
 	}
 
 	return nil
+}
+
+func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []cqrsEvent.Event) {
+	for _, event := range events {
+		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
+			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupId(), AggregateID: ru.AggregateId(), Version: ru.Version()}}); err != nil {
+				log.Info("unable to remove events up to snapshot /%v%v", ru.GetResource().GetDeviceId(), ru.GetResource().GetHref())
+			}
+			break
+		}
+	}
 }
 
 func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events []cqrsEvent.Event) {
@@ -186,7 +204,7 @@ func (a *aggregate) DeviceID() string {
 }
 
 // HandlePublishResource handles a command PublishResource
-func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishResourceRequest) (response *pb.PublishResourceResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishResourceRequest) (events []cqrsEvent.Event, err error) {
 	if err = validatePublish(request); err != nil {
 		err = fmt.Errorf("invalid publish command: %w", err)
 		return
@@ -198,24 +216,15 @@ func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishReso
 		return
 	}
 
-	insertMaintenanceDbRecord(ctx, a, events)
+	cleanUpToSnapshot(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, "")
-	response = &pb.PublishResourceResponse{
-		AuditContext: &auditContext,
-	}
 	return
 }
 
 // HandleUnpublishResource handles a command UnpublishResource
-func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.UnpublishResourceRequest) (response *pb.UnpublishResourceResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.UnpublishResourceRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateUnpublish(request); err != nil {
 		err = fmt.Errorf("invalid unpublish command: %w", err)
-		return
-	}
-	userID, err := grpc.UserIDFromMD(ctx)
-	if err != nil {
-		err = status.Errorf(codes.InvalidArgument, "cannot process unpublish command: invalid userID: %v", err)
 		return
 	}
 
@@ -224,17 +233,13 @@ func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.Unpublish
 		err = fmt.Errorf("unable to process unpublish command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
+	cleanUpToSnapshot(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
-	response = &pb.UnpublishResourceResponse{
-		AuditContext: &auditContext,
-	}
 	return
 }
 
 // NotifyContentChanged handles a command NotifyContentChanged
-func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *pb.NotifyResourceChangedRequest) (response *pb.NotifyResourceChangedResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *pb.NotifyResourceChangedRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateNotifyContentChanged(request); err != nil {
 		err = fmt.Errorf("invalid notify content changed command: %w", err)
 		return
@@ -245,17 +250,12 @@ func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *pb.Notif
 		err = fmt.Errorf("unable to process notify content changed command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
-
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, "")
-	response = &pb.NotifyResourceChangedResponse{
-		AuditContext: &auditContext,
-	}
+	cleanUpToSnapshot(ctx, a, events)
 	return
 }
 
 // HandleUpdateResourceContent handles a command UpdateResource
-func (a *aggregate) UpdateResource(ctx context.Context, request *pb.UpdateResourceRequest) (response *pb.UpdateResourceResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) UpdateResource(ctx context.Context, request *pb.UpdateResourceRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateUpdateResourceContent(request); err != nil {
 		err = fmt.Errorf("invalid update resource content command: %w", err)
 		return
@@ -266,16 +266,12 @@ func (a *aggregate) UpdateResource(ctx context.Context, request *pb.UpdateResour
 		err = fmt.Errorf("unable to process update resource content command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
+	cleanUpToSnapshot(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
-	response = &pb.UpdateResourceResponse{
-		AuditContext: &auditContext,
-	}
 	return
 }
 
-func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.ConfirmResourceUpdateRequest) (response *pb.ConfirmResourceUpdateResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.ConfirmResourceUpdateRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateConfirmResourceUpdate(request); err != nil {
 		err = fmt.Errorf("invalid update resource content notification command: %w", err)
 		return
@@ -286,17 +282,13 @@ func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.Confi
 		err = fmt.Errorf("unable to process update resource content notification command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
+	cleanUpToSnapshot(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
-	response = &pb.ConfirmResourceUpdateResponse{
-		AuditContext: &auditContext,
-	}
 	return
 }
 
 // RetrieveResource handles a command RetriveResource
-func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveResourceRequest) (response *pb.RetrieveResourceResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveResourceRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateRetrieveResource(request); err != nil {
 		err = fmt.Errorf("invalid retrieve resource content command: %w", err)
 		return
@@ -307,16 +299,12 @@ func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveRe
 		err = fmt.Errorf("unable to process retrieve resource content command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
+	cleanUpToSnapshot(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
-	response = &pb.RetrieveResourceResponse{
-		AuditContext: &auditContext,
-	}
 	return
 }
 
-func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.ConfirmResourceRetrieveRequest) (response *pb.ConfirmResourceRetrieveResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.ConfirmResourceRetrieveRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateConfirmResourceRetrieve(request); err != nil {
 		err = fmt.Errorf("invalid retrieve resource content notification command: %w", err)
 		return
@@ -327,17 +315,12 @@ func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.Con
 		err = fmt.Errorf("unable to process retrieve resource content notification command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
-
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
-	response = &pb.ConfirmResourceRetrieveResponse{
-		AuditContext: &auditContext,
-	}
+	cleanUpToSnapshot(ctx, a, events)
 	return
 }
 
 // DeleteResource handles a command DeleteResource
-func (a *aggregate) DeleteResource(ctx context.Context, request *pb.DeleteResourceRequest) (response *pb.DeleteResourceResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) DeleteResource(ctx context.Context, request *pb.DeleteResourceRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateDeleteResource(request); err != nil {
 		err = fmt.Errorf("invalid delete resource content command: %w", err)
 		return
@@ -348,16 +331,12 @@ func (a *aggregate) DeleteResource(ctx context.Context, request *pb.DeleteResour
 		err = fmt.Errorf("unable to process delete resource content command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
+	cleanUpToSnapshot(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
-	response = &pb.DeleteResourceResponse{
-		AuditContext: &auditContext,
-	}
 	return
 }
 
-func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *pb.ConfirmResourceDeleteRequest) (response *pb.ConfirmResourceDeleteResponse, events []cqrsEvent.Event, err error) {
+func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *pb.ConfirmResourceDeleteRequest) (events []cqrsEvent.Event, err error) {
 	if err = validateConfirmResourceDelete(request); err != nil {
 		err = fmt.Errorf("invalid delete resource content notification command: %w", err)
 		return
@@ -368,11 +347,7 @@ func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *pb.Confi
 		err = fmt.Errorf("unable to process delete resource content notification command: %w", err)
 		return
 	}
-	insertMaintenanceDbRecord(ctx, a, events)
+	cleanUpToSnapshot(ctx, a, events)
 
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), a.userID, request.CorrelationId)
-	response = &pb.ConfirmResourceDeleteResponse{
-		AuditContext: &auditContext,
-	}
 	return
 }

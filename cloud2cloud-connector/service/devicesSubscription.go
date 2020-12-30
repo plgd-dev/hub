@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gofrs/uuid"
+	"github.com/patrickmn/go-cache"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
@@ -12,8 +14,6 @@ import (
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/sdk/schema/cloud"
-	"github.com/gofrs/uuid"
-	"github.com/patrickmn/go-cache"
 )
 
 func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -96,10 +96,13 @@ func (s *SubscriptionManager) publishCloudDeviceStatus(ctx context.Context, devi
 	}
 	request := pbRA.PublishResourceRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resource.Id,
-		Resource:             &resource,
-		TimeToLive:           0,
-		CommandMetadata:      &cmdMetadata,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     cloud.StatusHref,
+		},
+		Resource:        &resource,
+		TimeToLive:      0,
+		CommandMetadata: &cmdMetadata,
 	}
 
 	_, err := s.raClient.PublishResource(ctx, &request)

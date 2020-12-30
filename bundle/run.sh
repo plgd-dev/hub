@@ -38,7 +38,6 @@ export MONGODB_MAX_POOL_SIZE="$RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES"
 export MONGO_URI="mongodb://localhost:$MONGO_PORT"
 
 export NATS_URL="nats://localhost:$NATS_PORT"
-export JETSTREAM_URL="nats://localhost:$JETSTREAM_PORT"
 
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
 export OAUTH_ENDPOINT_TOKEN_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/token
@@ -82,18 +81,6 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/nats-server.log
   exit $status
 fi
-
-# jetstream
-echo "starting jetstream"
-jetstream --jetstream --store_dir /data --port $JETSTREAM_PORT --tls --tlsverify --tlscert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --tlskey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --tlscacert=$CA_POOL_CERT_PATH >$LOGS_PATH/jetstream.log 2>&1 &
-status=$?
-if [ $status -ne 0 ]; then
-  echo "Failed to start jetstream: $status"
-  sync
-  cat $LOGS_PATH/jetstream.log
-  exit $status
-fi
-
 
 # mongo
 echo "starting mongod"
@@ -361,13 +348,6 @@ while sleep 10; do
     echo "certificate-authority has already exited."
     sync
     cat $LOGS_PATH/certificate-authority.log
-   exit 1
-  fi
-  ps aux |grep jetstream |grep -q -v grep
-  if [ $? -ne 0 ]; then 
-    echo "jetstream has already exited."
-    sync
-    cat $LOGS_PATH/jetstream.log
    exit 1
   fi
 done

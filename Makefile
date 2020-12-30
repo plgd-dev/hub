@@ -10,7 +10,7 @@ endif
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := nats-server resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
+SUBDIRS := resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
 
 default: build
@@ -65,22 +65,36 @@ mongo: certificates
 		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
-jetstream: certificates
-	make -C ./nats-server build
+cockroachdb:
+	docker network create -d bridge roachnet
 	docker run -d \
-		--network=host \
-		--name=jetstream \
-		-v $(shell pwd)/.tmp/certs:/certs \
-		--user $(shell id -u):$(shell id -g) \
-		plgd/nats-server:vnext --jetstream --store_dir /data -p 4223 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+		--name=roach1 \
+		--hostname=roach1 \
+		--net=roachnet \
+		-p 26257:26257 -p 8080:8080  \
+		-v "${PWD}/.tmp/cockroach-data/roach1:/cockroach/cockroach-data"  \
+		cockroachdb/cockroach:v20.2.3 start \
+		--insecure \
+		--join=roach1,roach2,roach3
 	docker run -d \
-		--network=host \
-		--name=jetstream-cloud-connector \
-		-v $(shell pwd)/.tmp/certs:/certs \
-		--user $(shell id -u):$(shell id -g) \
-		plgd/nats-server:vnext --jetstream --store_dir /data -p 34223 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+		--name=roach2 \
+		--hostname=roach2 \
+		--net=roachnet \
+		-v "${PWD}/.tmp/cockroach-data/roach2:/cockroach/cockroach-data" \
+		cockroachdb/cockroach:v20.2.3 start \
+		--insecure \
+		--join=roach1,roach2,roach3
+	docker run -d \
+		--name=roach3 \
+		--hostname=roach3 \
+		--net=roachnet \
+		-v "${PWD}/.tmp/cockroach-data/roach3:/cockroach/cockroach-data" \
+		cockroachdb/cockroach:v20.2.3 start \
+		--insecure \
+		--join=roach1,roach2,roach3
+	docker exec -it roach1 ./cockroach init --insecure
 
-env: clean certificates nats mongo jetstream
+env: clean certificates nats mongo cockroachdb
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
@@ -122,11 +136,14 @@ clean:
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
 	docker rm -f devsim || true
-	docker rm -f jetstream || true
-	docker rm -f jetstream-cloud-connector || true
-	rm -rf ./.tmp/certs || true
-	rm -rf ./.tmp/mongo || true
-	rm -rf ./.tmp/home || true
+	docker rm -f roach1 || true
+	docker rm -f roach2 || true
+	docker rm -f roach3 || true
+	docker network rm roachnet || true
+	sudo rm -rf ./.tmp/certs || true
+	sudo rm -rf ./.tmp/mongo || true
+	sudo rm -rf ./.tmp/home || true
+	sudo rm -rf ./.tmp/cockroach-data || true
 
 proto/generate: $(SUBDIRS)
 push: cloud-build $(SUBDIRS) 

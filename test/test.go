@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	natsio "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/net/http/transport"
@@ -39,7 +38,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	coapgwService "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/sdk/local/core"
@@ -158,16 +156,16 @@ func ClearDB(ctx context.Context, t *testing.T) {
 	}
 	err = client.Disconnect(ctx)
 	require.NoError(t, err)
+	/*
+		var jsmCfg mongodb.Config
+		err = envconfig.Process("", &jsmCfg)
 
-	var jsmCfg jetstream.Config
-	err = envconfig.Process("", &jsmCfg)
-
-	assert.NoError(t, err)
-	jsmCfg.Options = append(jsmCfg.Options, natsio.Secure(tlsConfig))
-	eventstore, err := jetstream.NewEventStore(jsmCfg, nil)
-	require.NoError(t, err)
-	err = eventstore.Clear(ctx)
-	require.NoError(t, err)
+		assert.NoError(t, err)
+		eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+		require.NoError(t, err)
+		err = eventstore.Clear(ctx)
+		require.NoError(t, err)
+	*/
 }
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {

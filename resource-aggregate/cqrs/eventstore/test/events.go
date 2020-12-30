@@ -24,8 +24,8 @@ func MakeResourcePublishedEvent(resource pb.Resource, eventMetadata pb.EventMeta
 	return event.EventUnmarshaler{
 		Version:     rp.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourcePublished{}),
-		AggregateId: rp.Id,
-		GroupId:     rp.Resource.DeviceId,
+		AggregateID: rp.Id,
+		GroupID:     rp.Resource.DeviceId,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourcePublished); ok {
 				*x = rp
@@ -50,8 +50,8 @@ func MakeResourceUnpublishedEvent(id, deviceID string, eventMetadata pb.EventMet
 	return event.EventUnmarshaler{
 		Version:     ru.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourceUnpublished{}),
-		AggregateId: ru.Id,
-		GroupId:     deviceID,
+		AggregateID: ru.Id,
+		GroupID:     deviceID,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUnpublished); ok {
 				*x = ru
@@ -73,8 +73,8 @@ func MakeResourceStateSnapshotTaken(isPublished bool, resource pb.Resource, late
 	return event.EventUnmarshaler{
 		Version:     rs.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourceStateSnapshotTaken{}),
-		AggregateId: rs.Id,
-		GroupId:     rs.Resource.DeviceId,
+		AggregateID: rs.Id,
+		GroupID:     rs.Resource.DeviceId,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
 				*x = *rs
@@ -100,8 +100,8 @@ func MakeResourceUpdatePending(deviceId, resourceId string, content pb.Content, 
 	return event.EventUnmarshaler{
 		Version:     rc.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourceUpdatePending{}),
-		AggregateId: rc.Id,
-		GroupId:     deviceId,
+		AggregateID: rc.Id,
+		GroupID:     deviceId,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdatePending); ok {
 				*x = rc
@@ -128,8 +128,8 @@ func MakeResourceUpdated(deviceId, resourceId string, status pb.Status, content 
 	return event.EventUnmarshaler{
 		Version:     rc.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourceUpdated{}),
-		AggregateId: rc.Id,
-		GroupId:     deviceId,
+		AggregateID: rc.Id,
+		GroupID:     deviceId,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdated); ok {
 				*x = rc
@@ -155,8 +155,8 @@ func MakeResourceChangedEvent(id, deviceID string, content pb.Content, eventMeta
 	return event.EventUnmarshaler{
 		Version:     ru.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourceChanged{}),
-		AggregateId: ru.Id,
-		GroupId:     deviceID,
+		AggregateID: ru.Id,
+		GroupID:     deviceID,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourceChanged); ok {
 				*x = ru
@@ -182,8 +182,8 @@ func MakeResourceRetrievePending(deviceId, resourceId string, resourceInterface 
 	return event.EventUnmarshaler{
 		Version:     rc.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourceRetrievePending{}),
-		AggregateId: rc.Id,
-		GroupId:     deviceId,
+		AggregateID: rc.Id,
+		GroupID:     deviceId,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrievePending); ok {
 				*x = rc
@@ -210,8 +210,8 @@ func MakeResourceRetrieved(deviceId, resourceId string, status pb.Status, conten
 	return event.EventUnmarshaler{
 		Version:     rc.EventMetadata.Version,
 		EventType:   httpUtils.ProtobufContentType(&pb.ResourceRetrieved{}),
-		AggregateId: rc.Id,
-		GroupId:     deviceId,
+		AggregateID: rc.Id,
+		GroupID:     deviceId,
 		Unmarshal: func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrieved); ok {
 				*x = rc

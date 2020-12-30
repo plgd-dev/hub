@@ -26,7 +26,7 @@ var JWKS_URL = "https://" + AUTH_HTTP_HOST + uri.JWKs
 
 const cloudConnectorDB = "cloudConnectorDB"
 const cloudConnectorNatsURL = "nats://localhost:34222"
-const cloudConnectorJetstreamURL = "nats://localhost:34223"
+const cloudConnectormongodbURL = "nats://localhost:34223"
 
 func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	authCfg := authService.MakeConfig(t)
@@ -36,7 +36,8 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	authShutdown := authService.New(t, authCfg)
 
 	raCfg := raService.MakeConfig(t)
-	raCfg.JetStream.URL = cloudConnectorJetstreamURL
+	//raCfg.mongodb.URL = cloudConnectormongodbURL
+	raCfg.MongoDB.DatabaseName = cloudConnectorDB
 	raCfg.Service.Addr = RESOURCE_AGGREGATE_HOST
 	raCfg.Service.AuthServerAddr = AUTH_HOST
 	raCfg.Nats.URL = cloudConnectorNatsURL
@@ -45,7 +46,8 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg := rdService.MakeConfig(t)
 	rdCfg.Addr = RESOURCE_DIRECTORY_HOST
 	rdCfg.JwksURL = JWKS_URL
-	rdCfg.Jetstream.URL = cloudConnectorJetstreamURL
+	rdCfg.MongoDB.DatabaseName = cloudConnectorDB
+	//rdCfg.mongodb.URL = cloudConnectormongodbURL
 	rdCfg.Nats.URL = cloudConnectorNatsURL
 	rdCfg.Service.AuthServerAddr = AUTH_HOST
 	rdCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL

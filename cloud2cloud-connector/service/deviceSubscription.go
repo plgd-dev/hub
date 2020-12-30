@@ -102,7 +102,10 @@ func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID st
 	}
 
 	request := pbRA.NotifyResourceChangedRequest{
-		ResourceId: raCqrs.MakeResourceId(deviceID, cloud.StatusHref),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     cloud.StatusHref,
+		},
 		Content: &pbRA.Content{
 			ContentType:       message.AppOcfCbor.String(),
 			CoapContentFormat: int32(message.AppOcfCbor),
@@ -137,15 +140,18 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 				Priority: int64(endpoint.Priority),
 			})
 		}
-		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
-		resourceId := raCqrs.MakeResourceId(link.DeviceID, kitHttp.CanonicalHref(href))
+		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
+		resourceID := raCqrs.MakeResourceId(link.DeviceID, href)
 		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,
 			},
-			ResourceId: resourceId,
+			ResourceId: &pbRA.ResourceId{
+				DeviceId: link.DeviceID,
+				Href:     href,
+			},
 			Resource: &pbRA.Resource{
-				Id:                    resourceId,
+				Id:                    resourceID,
 				Href:                  href,
 				ResourceTypes:         link.ResourceTypes,
 				Interfaces:            link.Interfaces,
@@ -187,12 +193,15 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 	var errors []error
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
-		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
+		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 		_, err := s.raClient.UnpublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.UnpublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,
 			},
-			ResourceId: raCqrs.MakeResourceId(link.GetDeviceID(), kitHttp.CanonicalHref(href)),
+			ResourceId: &pbRA.ResourceId{
+				DeviceId: link.GetDeviceID(),
+				Href:     href,
+			},
 			CommandMetadata: &pbCQRS.CommandMetadata{
 				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,

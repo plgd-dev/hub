@@ -314,7 +314,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	var anyEventProcessed bool
 	for iter.Next(ctx, &eu) {
 		anyEventProcessed = true
-		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
+		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupID, eu.AggregateID, eu.Version, eu.EventType)
 		m.version = eu.Version
 		switch eu.EventType {
 		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
@@ -449,7 +449,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	}
 
 	if m.resource == nil {
-		return fmt.Errorf("DeviceId: %v, ResourceId: %v: invalid resource is stored in eventstore: Resource attribute is not set", eu.GroupId, eu.AggregateId)
+		return fmt.Errorf("DeviceId: %v, ResourceId: %v: invalid resource is stored in eventstore: Resource attribute is not set", eu.GroupID, eu.AggregateID)
 	}
 
 	if onResourcePublished {

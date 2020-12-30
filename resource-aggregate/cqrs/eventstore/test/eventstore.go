@@ -34,7 +34,7 @@ func (s *MockEventStore) LoadFromVersion(ctx context.Context, queries []eventsto
 		var ok bool
 		var r []event.EventUnmarshaler
 
-		if r, ok = aggregates[q.AggregateId]; !ok {
+		if r, ok = aggregates[q.AggregateID]; !ok {
 			continue
 		}
 
@@ -56,7 +56,7 @@ func makeModelId(groupId, aggregateId string) string {
 func (s *MockEventStore) allModels(queriesInt map[string]eventstore.VersionQuery) map[string]eventstore.VersionQuery {
 	for groupId, group := range s.events {
 		for aggrId, events := range group {
-			queriesInt[makeModelId(groupId, aggrId)] = eventstore.VersionQuery{AggregateId: aggrId, Version: events[0].Version}
+			queriesInt[makeModelId(groupId, aggrId)] = eventstore.VersionQuery{AggregateID: aggrId, Version: events[0].Version}
 		}
 	}
 	return queriesInt
@@ -69,25 +69,25 @@ func (s *MockEventStore) LoadFromSnapshot(ctx context.Context, queries []eventst
 	} else {
 		for _, query := range queries {
 			switch {
-			case query.GroupId == "" && query.AggregateId == "":
+			case query.GroupID == "" && query.AggregateID == "":
 				queriesInt = s.allModels(queriesInt)
 				break
-			case query.GroupId != "" && query.AggregateId == "":
-				if aggregates, ok := s.events[query.GroupId]; ok {
+			case query.GroupID != "" && query.AggregateID == "":
+				if aggregates, ok := s.events[query.GroupID]; ok {
 					for aggrId, events := range aggregates {
-						queriesInt[makeModelId(query.GroupId, aggrId)] = eventstore.VersionQuery{AggregateId: aggrId, Version: events[0].Version}
+						queriesInt[makeModelId(query.GroupID, aggrId)] = eventstore.VersionQuery{AggregateID: aggrId, Version: events[0].Version}
 					}
 				}
-			case query.GroupId == "" && query.AggregateId != "":
+			case query.GroupID == "" && query.AggregateID != "":
 				for groupId, aggregates := range s.events {
-					if events, ok := aggregates[query.AggregateId]; ok {
-						queriesInt[makeModelId(groupId, query.AggregateId)] = eventstore.VersionQuery{AggregateId: query.AggregateId, Version: events[0].Version}
+					if events, ok := aggregates[query.AggregateID]; ok {
+						queriesInt[makeModelId(groupId, query.AggregateID)] = eventstore.VersionQuery{AggregateID: query.AggregateID, Version: events[0].Version}
 					}
 				}
 			default:
-				if aggregates, ok := s.events[query.GroupId]; ok {
-					if events, ok := aggregates[query.AggregateId]; ok {
-						queriesInt[makeModelId(query.GroupId, query.AggregateId)] = eventstore.VersionQuery{AggregateId: query.AggregateId, Version: events[0].Version}
+				if aggregates, ok := s.events[query.GroupID]; ok {
+					if events, ok := aggregates[query.AggregateID]; ok {
+						queriesInt[makeModelId(query.GroupID, query.AggregateID)] = eventstore.VersionQuery{AggregateID: query.AggregateID, Version: events[0].Version}
 					}
 				}
 			}

@@ -8,9 +8,6 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	"github.com/plgd-dev/kit/log"
-
-	"net/http"
-	_ "net/http/pprof"
 )
 
 type Config struct {
@@ -61,9 +58,6 @@ func Init(config Config) (*RefImpl, error) {
 
 // Serve starts handling coap requests.
 func (r *RefImpl) Serve() error {
-	go func() {
-		http.ListenAndServe("0.0.0.0:18080", nil)
-	}()
 	return r.service.Serve()
 }
 

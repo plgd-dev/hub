@@ -149,7 +149,7 @@ func (rs *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter event.Ite
 		if eu.EventType == "" {
 			return status.Errorf(codes.Internal, "cannot determine type of event")
 		}
-		err := rs.verifyAccess(eu.GroupId, eu.AggregateId)
+		err := rs.verifyAccess(eu.GroupID, eu.AggregateID)
 		if err != nil {
 			return grpc.ForwardErrorf(codes.Unauthenticated, "unauthorized access to resource: %v", err)
 		}
@@ -286,7 +286,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 	}
 	switch req := cmd.(type) {
 	case *pb.PublishResourceRequest:
-		if rs.Id != req.ResourceId && rs.Id != "" {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID && rs.Id != "" {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
@@ -297,7 +298,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 
 		rp := ResourcePublished{pb.ResourcePublished{
-			Id:            req.ResourceId,
+			Id:            resourceID,
 			Resource:      req.Resource,
 			TimeToLive:    req.TimeToLive,
 			AuditContext:  &ac,
@@ -313,7 +314,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.ResourceId {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
@@ -323,7 +325,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
 		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 		ru := ResourceUnpublished{pb.ResourceUnpublished{
-			Id:            req.ResourceId,
+			Id:            resourceID,
 			AuditContext:  &ac,
 			EventMetadata: &em,
 		}}
@@ -336,7 +338,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.ResourceId {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
@@ -348,7 +351,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 
 		rc := ResourceChanged{
 			pb.ResourceChanged{
-				Id:            req.ResourceId,
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.Content,
@@ -368,7 +371,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
@@ -384,7 +388,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 
 		rc := ResourceUpdatePending{
 			pb.ResourceUpdatePending{
-				Id:                req.GetResourceId(),
+				Id:                resourceID,
 				ResourceInterface: req.GetResourceInterface(),
 				AuditContext:      &ac,
 				EventMetadata:     &em,
@@ -400,7 +404,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.ResourceId {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
@@ -411,7 +416,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 		rc := ResourceUpdated{
 			pb.ResourceUpdated{
-				Id:            req.ResourceId,
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.Content,
@@ -426,7 +431,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
@@ -438,7 +444,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 
 		rc := ResourceRetrievePending{
 			pb.ResourceRetrievePending{
-				Id:                req.GetResourceId(),
+				Id:                resourceID,
 				ResourceInterface: req.GetResourceInterface(),
 				AuditContext:      &ac,
 				EventMetadata:     &em,
@@ -453,7 +459,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
@@ -464,7 +471,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceRetrieved{
 			pb.ResourceRetrieved{
-				Id:            req.GetResourceId(),
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.GetContent(),
@@ -479,7 +486,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
@@ -491,7 +499,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 
 		rc := ResourceDeletePending{
 			pb.ResourceDeletePending{
-				Id:            req.GetResourceId(),
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 			},
@@ -505,7 +513,8 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := cqrsUtils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
@@ -516,7 +525,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceDeleted{
 			pb.ResourceDeleted{
-				Id:            req.GetResourceId(),
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.GetContent(),

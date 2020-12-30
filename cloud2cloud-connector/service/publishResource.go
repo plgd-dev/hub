@@ -20,15 +20,18 @@ func publishResource(ctx context.Context, raClient pbRA.ResourceAggregateClient,
 			Priority: int64(endpoint.Priority),
 		})
 	}
-	href := trimDeviceIDFromHref(link.DeviceID, link.Href)
-	resourceId := raCqrs.MakeResourceId(link.DeviceID, kitHttp.CanonicalHref(href))
+	href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
+	resourceID := raCqrs.MakeResourceId(link.DeviceID, href)
 	_, err := raClient.PublishResource(kitNetGrpc.CtxWithUserID(ctx, userID), &pbRA.PublishResourceRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: link.DeviceID,
 		},
-		ResourceId: resourceId,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: link.DeviceID,
+			Href:     href,
+		},
 		Resource: &pbRA.Resource{
-			Id:                    resourceId,
+			Id:                    resourceID,
 			Href:                  href,
 			ResourceTypes:         link.ResourceTypes,
 			Interfaces:            link.Interfaces,

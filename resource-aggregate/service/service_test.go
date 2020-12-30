@@ -13,11 +13,11 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
-	natsio "github.com/nats-io/nats.go"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -45,8 +45,7 @@ func TestPublishUnpublish(t *testing.T) {
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 
-	config.JetStream.Options = append(config.JetStream.Options, natsio.Secure(dialTLSConfig))
-	eventstore, err := jetstream.NewEventStore(config.JetStream, nil)
+	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
@@ -70,7 +69,7 @@ func TestPublishUnpublish(t *testing.T) {
 	raClient := pb.NewResourceAggregateClient(raConn)
 
 	deviceId := "dev0"
-	resId := "res0"
+	href := "/oic/p"
 	resp, err := authClient.SignUp(ctx, &pbAS.SignUpRequest{
 		DeviceId:              deviceId,
 		AuthorizationCode:     "authcode",
@@ -78,20 +77,22 @@ func TestPublishUnpublish(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId, resp.UserId, resp.AccessToken)
+	pubReq := testMakePublishResourceRequest(deviceId, href, resp.UserId, resp.AccessToken)
 	_, err = raClient.PublishResource(ctx, pubReq)
 	require.NoError(t, err)
 
-	unpubReq := testMakeUnpublishResourceRequest(deviceId, resId, resp.UserId, resp.AccessToken)
+	unpubReq := testMakeUnpublishResourceRequest(deviceId, href, resp.UserId, resp.AccessToken)
 	_, err = raClient.UnpublishResource(ctx, unpubReq)
 	require.NoError(t, err)
 }
 
-func testMakePublishResourceRequest(deviceId, resourceId, userId, accesstoken string) *pb.PublishResourceRequest {
-	href := "/oic/p"
+func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) *pb.PublishResourceRequest {
 	r := &pb.PublishResourceRequest{
-		ResourceId:           resourceId,
-		Resource:             testNewResource(href, deviceId, resourceId),
+		ResourceId: &pb.ResourceId{
+			DeviceId: deviceId,
+			Href:     href,
+		},
+		Resource:             testNewResource(href, deviceId, cqrs.MakeResourceId(deviceId, href)),
 		AuthorizationContext: testNewAuthorizationContext(deviceId, userId, accesstoken),
 		TimeToLive:           1,
 		CommandMetadata: &pb.CommandMetadata{
@@ -102,9 +103,12 @@ func testMakePublishResourceRequest(deviceId, resourceId, userId, accesstoken st
 	return r
 }
 
-func testMakeUnpublishResourceRequest(deviceId, resourceId, userId, accesstoken string) *pb.UnpublishResourceRequest {
+func testMakeUnpublishResourceRequest(deviceId, href, userId, accesstoken string) *pb.UnpublishResourceRequest {
 	r := &pb.UnpublishResourceRequest{
-		ResourceId:           resourceId,
+		ResourceId: &pb.ResourceId{
+			DeviceId: deviceId,
+			Href:     href,
+		},
 		AuthorizationContext: testNewAuthorizationContext(deviceId, userId, accesstoken),
 		CommandMetadata: &pb.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),

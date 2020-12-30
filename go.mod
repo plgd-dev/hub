@@ -6,6 +6,7 @@ require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-pg/pg/v10 v10.7.3
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/snappy v0.0.2
@@ -24,7 +25,7 @@ require (
 	github.com/nats-io/nats.go v1.10.1-0.20201111151633-9e1f4a0d80d8
 	github.com/panjf2000/ants/v2 v2.4.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f
+	github.com/plgd-dev/cqrs v0.0.0-20201228095736-bbae574da528
 	github.com/plgd-dev/go-coap/v2 v2.2.1-0.20201214110031-a745da270c13
 	github.com/plgd-dev/kit v0.0.0-20201214132922-e9fbe17b274c
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
@@ -47,6 +48,7 @@ require (
 	google.golang.org/grpc v1.34.0
 	google.golang.org/grpc/examples v0.0.0-20201008225051-06c094c3ab22 // indirect
 	google.golang.org/protobuf v1.25.0
+	gopkg.in/yaml.v2 v2.3.0
 )
 
-replace gopkg.in/yaml.v2 v2.2.8 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454
+replace gopkg.in/yaml.v2 v2.3.0 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454

@@ -12,7 +12,6 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -28,7 +27,7 @@ import (
 )
 
 type observedResource struct {
-	resourceID  string
+	href        string
 	observation *tcp.Observation
 }
 
@@ -132,14 +131,14 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		client.Close()
 	}
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []string{cqrsRA.MakeResourceId(deviceID, href)})
+		client.unpublishResources(ctx, []pbRA.ResourceId{pbRA.ResourceId{DeviceId: deviceID, Href: href}})
 	}
 }
 
 func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.Resource) error {
 	var observation *tcp.Observation
 	obs := isObservable(res)
-	if res.Id == cqrsRA.MakeResourceId(res.DeviceId, cloud.StatusHref) {
+	if res.Href == cloud.StatusHref {
 		return nil
 	}
 	instanceID := getInstanceID(res.GetHref())
@@ -153,7 +152,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 				client.Close()
 			}
 			if req.Code() == coapCodes.NotFound {
-				client.unpublishResources(req.Context(), []string{res.GetId()})
+				client.unpublishResources(req.Context(), []pbRA.ResourceId{pbRA.ResourceId{DeviceId: res.GetDeviceId(), Href: res.GetHref()}})
 			}
 		})
 		if err != nil {
@@ -164,26 +163,32 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.R
 	} else {
 		go client.getResourceContent(ctx, res.GetDeviceId(), res.GetHref())
 	}
-	client.observedResources[res.DeviceId][instanceID] = observedResource{resourceID: res.GetId(), observation: observation}
+	client.observedResources[res.DeviceId][instanceID] = observedResource{href: res.GetHref(), observation: observation}
 	return nil
 }
 
-func (client *Client) getObservedResources(deviceID string, instanceIDs []int64) []string {
+func (client *Client) getObservedResources(deviceID string, instanceIDs []int64) []pbRA.ResourceId {
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 
 	getAllDeviceIDMatches := len(instanceIDs) == 0
-	matches := make([]string, 0, 16)
+	matches := make([]pbRA.ResourceId, 0, 16)
 
 	if deviceResourcesMap, ok := client.observedResources[deviceID]; ok {
 		if getAllDeviceIDMatches {
 			for _, value := range deviceResourcesMap {
-				matches = append(matches, value.resourceID)
+				matches = append(matches, pbRA.ResourceId{
+					DeviceId: deviceID,
+					Href:     value.href,
+				})
 			}
 		} else {
 			for _, instanceID := range instanceIDs {
 				if resource, ok := deviceResourcesMap[instanceID]; ok {
-					matches = append(matches, resource.resourceID)
+					matches = append(matches, pbRA.ResourceId{
+						DeviceId: deviceID,
+						Href:     resource.href,
+					})
 				}
 			}
 		}
@@ -215,7 +220,7 @@ func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Obs
 	return obs
 }
 
-func (client *Client) unobserveResources(ctx context.Context, resourceIDs []string, rscsUnpublished map[string]bool) {
+func (client *Client) unobserveResources(ctx context.Context, resourceIDs []pbRA.ResourceId, rscsUnpublished map[string]bool) {
 	observartions := client.unobserveAndRemoveResources(resourceIDs, rscsUnpublished)
 	for _, obs := range observartions {
 		obs.Cancel(ctx)
@@ -231,23 +236,23 @@ func (client *Client) Close() error {
 	return nil
 }
 
-func (client *Client) unobserveAndRemoveResources(resourceIDs []string, rscsUnpublished map[string]bool) []*tcp.Observation {
+func (client *Client) unobserveAndRemoveResources(resourceIDs []pbRA.ResourceId, rscsUnpublished map[string]bool) []*tcp.Observation {
 	observartions := make([]*tcp.Observation, 0, 32)
 
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 
 	for _, resourceID := range resourceIDs {
-		if del, ok := rscsUnpublished[resourceID]; ok && del {
-			log.Debugf("ResourceId: %v: delete resource", resourceID)
+		if del, ok := rscsUnpublished[resourceID.GetHref()]; ok && del {
+			log.Debugf("delete resource /%v%v", resourceID.GetDeviceId(), resourceID.GetHref())
 		} else {
-			log.Debugf("ResourceId: %v: unobserve resource", resourceID)
+			log.Debugf("unobserve resource /%v%v", resourceID.GetDeviceId(), resourceID.GetHref())
 		}
 		var instanceID int64
 		var deviceID string
 		for devID, devs := range client.observedResources {
 			for insID, r := range devs {
-				if r.resourceID == resourceID {
+				if r.href == resourceID.GetHref() {
 					instanceID = insID
 					deviceID = devID
 					break
@@ -259,7 +264,7 @@ func (client *Client) unobserveAndRemoveResources(resourceIDs []string, rscsUnpu
 		if obs != nil {
 			observartions = append(observartions, obs)
 		}
-		if rscsUnpublished[resourceID] {
+		if rscsUnpublished[resourceID.GetHref()] {
 			client.removeResource(deviceID, instanceID)
 		}
 	}
@@ -374,7 +379,7 @@ func (client *Client) notifyContentChanged(deviceID string, href string, notific
 	if err != nil {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
-	request := coapconv.MakeNotifyResourceChangedRequest(cqrsRA.MakeResourceId(deviceID, href), authCtx.AuthorizationContext, client.remoteAddrString(), notification)
+	request := coapconv.MakeNotifyResourceChangedRequest(deviceID, href, authCtx.AuthorizationContext, client.remoteAddrString(), notification)
 	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
@@ -382,7 +387,7 @@ func (client *Client) notifyContentChanged(deviceID string, href string, notific
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceUpdate(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceUpdate(deviceID, href, userID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource update: %v", err)
@@ -394,7 +399,7 @@ func (client *Client) sendErrorConfirmResourceUpdate(userID, resourceID, correla
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceUpdateRequest(deviceID, href, correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource update: %v", err)
@@ -402,11 +407,10 @@ func (client *Client) sendErrorConfirmResourceUpdate(userID, resourceID, correla
 }
 
 func (client *Client) updateResource(ctx context.Context, event *pb.Event_ResourceUpdatePending) error {
-	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
 	if isExpired(authCtx.Expire) {
 		err := fmt.Errorf("cannot update resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -420,7 +424,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
+		request := coapconv.MakeConfirmResourceUpdateRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, &request)
 		if err != nil {
 			return err
@@ -432,7 +436,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	defer cancel()
 	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -441,7 +445,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -449,14 +453,14 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []string{resourceID})
+		client.unpublishResources(ctx, []pbRA.ResourceId{pbRA.ResourceId{DeviceId: event.GetResourceId().GetDeviceId(), Href: event.GetResourceId().GetHref()}})
 	}
 
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.UserID)
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceUpdateRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceUpdateRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, &request)
 	if err != nil {
 		return err
@@ -465,7 +469,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceRetrieve(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource retrieve: %v", err)
@@ -476,7 +480,7 @@ func (client *Client) sendErrorConfirmResourceRetrieve(userID, resourceID, corre
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceRetrieveRequest(deviceID, href, correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 	if err != nil {
 		log.Errorf("cannot send error confirm resource retrieve: %v", err)
@@ -484,11 +488,10 @@ func (client *Client) sendErrorConfirmResourceRetrieve(userID, resourceID, corre
 }
 
 func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_ResourceRetrievePending) error {
-	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
 	if isExpired(authCtx.Expire) {
 		err := fmt.Errorf("cannot retrieve resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -504,7 +507,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
+		request := coapconv.MakeConfirmResourceRetrieveRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, &request)
 		if err != nil {
 			return err
@@ -516,7 +519,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	defer cancel()
 	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -525,7 +528,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -533,14 +536,17 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []string{resourceID})
+		client.unpublishResources(ctx, []pbRA.ResourceId{pbRA.ResourceId{
+			DeviceId: event.GetResourceId().GetDeviceId(),
+			Href:     event.GetResourceId().GetHref(),
+		}})
 	}
 
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.UserID)
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceRetrieveRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceRetrieveRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, &request)
 	if err != nil {
 		return err
@@ -549,7 +555,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceDelete(userID, resourceID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, correlationID string, authCtx pbCQRS.AuthorizationContext, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource delete: %v", err)
@@ -561,7 +567,7 @@ func (client *Client) sendErrorConfirmResourceDelete(userID, resourceID, correla
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceDeleteRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceDeleteRequest(deviceID, href, correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceDelete(ctx, &request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource delete: %v", err)
@@ -569,11 +575,10 @@ func (client *Client) sendErrorConfirmResourceDelete(userID, resourceID, correla
 }
 
 func (client *Client) deleteResource(ctx context.Context, event *pb.Event_ResourceDeletePending) error {
-	resourceID := cqrsRA.MakeResourceId(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
 	authCtx := client.loadAuthorizationContext()
 	if isExpired(authCtx.Expire) {
 		err := fmt.Errorf("cannot delete resource /%v%v: token is expired", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref())
-		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
+		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -589,7 +594,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceDeleteRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
+		request := coapconv.MakeConfirmResourceDeleteRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, &request)
 		if err != nil {
 			return err
@@ -601,7 +606,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 	defer cancel()
 	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
+		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -610,7 +615,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceDelete(authCtx.UserID, resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.UserID, event.GetCorrelationId(), authCtx.AuthorizationContext, codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -618,14 +623,17 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []string{resourceID})
+		client.unpublishResources(ctx, []pbRA.ResourceId{pbRA.ResourceId{
+			DeviceId: event.GetResourceId().GetDeviceId(),
+			Href:     event.GetResourceId().GetHref(),
+		}})
 	}
 
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.UserID)
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceDeleteRequest(resourceID, event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceDeleteRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.AuthorizationContext, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, &request)
 	if err != nil {
 		return err
@@ -650,9 +658,12 @@ func (client *Client) publishResource(ctx context.Context, link schema.ResourceL
 
 	request := pbRA.PublishResourceRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId:           resourceID,
-		Resource:             &raLink,
-		TimeToLive:           ttl,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: link.GetDeviceID(),
+			Href:     link.Href,
+		},
+		Resource:   &raLink,
+		TimeToLive: ttl,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			Sequence:     sequence,
 			ConnectionId: connectionID,
@@ -669,12 +680,12 @@ func (client *Client) publishResource(ctx context.Context, link schema.ResourceL
 	return link, nil
 }
 
-func (client *Client) unpublishResource(ctx context.Context, resourceID string, rscsUnpublished map[string]bool) map[string]bool {
+func (client *Client) unpublishResource(ctx context.Context, deviceID, href string, rscsUnpublished map[string]bool) map[string]bool {
 	authCtx := client.loadAuthorizationContext()
 	token, err := client.server.oauthMgr.GetToken(ctx)
 	if err != nil {
-		log.Errorf("ResourceId: %v: cannot unpublish resource: %v", resourceID, err)
-		rscsUnpublished[resourceID] = false
+		log.Errorf("ResourceId: %v: cannot unpublish resource /%v%v: %v", deviceID, href, err)
+		rscsUnpublished[href] = false
 		return rscsUnpublished
 	}
 	ctx = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.UserID)
@@ -682,7 +693,10 @@ func (client *Client) unpublishResource(ctx context.Context, resourceID string, 
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: authCtx.DeviceId,
 		},
-		ResourceId: resourceID,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			ConnectionId: client.remoteAddrString(),
 			Sequence:     client.coapConn.Sequence(),
@@ -691,20 +705,20 @@ func (client *Client) unpublishResource(ctx context.Context, resourceID string, 
 	if err != nil {
 		// unpublish resource is not critical -> resource is still accessible,
 		// but next update of device resource will returns 'not found; and it triggers again unpublish.
-		log.Errorf("ResourceId: %v: cannot unpublish resource: %v", resourceID, err)
-		rscsUnpublished[resourceID] = false
+		log.Errorf("ResourceId: %v: cannot unpublish resource /%v%v: %v", deviceID, href, err)
+		rscsUnpublished[href] = false
 		return rscsUnpublished
 	}
 
-	rscsUnpublished[resourceID] = true
+	rscsUnpublished[href] = true
 	return rscsUnpublished
 }
 
-func (client *Client) unpublishResources(ctx context.Context, resourceIDs []string) {
+func (client *Client) unpublishResources(ctx context.Context, resourceIDs []pbRA.ResourceId) {
 	rscsUnpublished := make(map[string]bool, 32)
 
-	for _, resourceID := range resourceIDs {
-		rscsUnpublished = client.unpublishResource(ctx, resourceID, rscsUnpublished)
+	for idx := range resourceIDs {
+		rscsUnpublished = client.unpublishResource(ctx, resourceIDs[idx].DeviceId, resourceIDs[idx].Href, rscsUnpublished)
 	}
 
 	client.unobserveResources(ctx, resourceIDs, rscsUnpublished)

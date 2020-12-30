@@ -5,21 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 
-	natsio "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certManager"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 type Config struct {
-	Service   service.Config
-	Nats      nats.Config        `envconfig:"NATS"`
-	JetStream jetstream.Config   `envconfig:"JETSTREAM"`
-	Listen    certManager.Config `envconfig:"LISTEN"`
-	Dial      certManager.Config `envconfig:"DIAL"`
-	Log       log.Config         `envconfig:"LOG"`
+	Service service.Config
+	Nats    nats.Config        `envconfig:"NATS"`
+	MongoDB mongodb.Config     `envconfig:"MONGO"`
+	Listen  certManager.Config `envconfig:"LISTEN"`
+	Dial    certManager.Config `envconfig:"DIAL"`
+	Log     log.Config         `envconfig:"LOG"`
 }
 
 //String return string representation of Config
@@ -29,7 +31,7 @@ func (c Config) String() string {
 }
 
 type RefImpl struct {
-	eventstore        *jetstream.EventStore
+	eventstore        *mongodb.EventStore
 	service           *service.Server
 	publisher         *nats.Publisher
 	clientCertManager certManager.CertManager
@@ -48,9 +50,7 @@ func Init(config Config) (*RefImpl, error) {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 	tlsConfig := clientCertManager.GetClientTLSConfig()
-	config.JetStream.Options = append(config.JetStream.Options, natsio.Secure(tlsConfig))
-
-	eventstore, err := jetstream.NewEventStore(config.JetStream, nil)
+	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
@@ -76,6 +76,9 @@ func Init(config Config) (*RefImpl, error) {
 }
 
 func (r *RefImpl) Serve() error {
+	go func() {
+		http.ListenAndServe("0.0.0.0:18080", nil)
+	}()
 	return r.service.Serve()
 }
 

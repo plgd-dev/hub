@@ -14,13 +14,12 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/jetstream"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
-	natsio "github.com/nats-io/nats.go"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/kit/security/oauth/manager"
 	"google.golang.org/grpc"
@@ -49,9 +48,9 @@ type RequestHandler struct {
 }
 
 type HandlerConfig struct {
-	Jetstream jetstream.Config
-	Nats      nats.Config
-	Service   Config
+	MongoDB mongodb.Config `envconfig:"MONGO"`
+	Nats    nats.Config
+	Service Config
 
 	GoRoutinePoolSize               int           `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
 	UserDevicesManagerTickFrequency time.Duration `envconfig:"USER_MGMT_TICK_FREQUENCY" default:"15s"`
@@ -106,8 +105,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 
-	config.Jetstream.Options = append(config.Jetstream.Options, natsio.Secure(clientTLS))
-	resourceEventStore, err := jetstream.NewEventStore(config.Jetstream, pool.Submit)
+	resourceEventStore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(clientTLS))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}

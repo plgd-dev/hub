@@ -4,7 +4,7 @@ ARG root_directory=$GOPATH/src/github.com/plgd-dev/cloud
 #coap-gateway
 ARG service=coap-gateway
 WORKDIR $root_directory/$service
-RUN go build -mod=vendor -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
 #grpc-gateway
 ARG service=grpc-gateway
@@ -55,7 +55,6 @@ RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
-COPY --from=build-nats-server-static /go/bin/service /usr/local/bin/jetstream
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
