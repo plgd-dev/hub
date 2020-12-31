@@ -10,9 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certManager"
-
-	"net/http"
-	_ "net/http/pprof"
 )
 
 type Config struct {
@@ -76,9 +73,6 @@ func Init(config Config) (*RefImpl, error) {
 }
 
 func (r *RefImpl) Serve() error {
-	go func() {
-		http.ListenAndServe("0.0.0.0:18080", nil)
-	}()
 	return r.service.Serve()
 }
 

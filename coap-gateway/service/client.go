@@ -100,21 +100,21 @@ func (client *Client) cancelResourceSubscription(token string, wantWait bool) (b
 	return true, nil
 }
 
-func (client *Client) observeResource(ctx context.Context, res *pbRA.Resource, allowDuplicit bool) (err error) {
-	log.Debugf("coap-gw: client.observeResource /%v%v ins %v: observe resource", res.DeviceId, res.GetHref())
-	instanceID := getInstanceID(res.GetHref())
+func (client *Client) observeResource(ctx context.Context, deviceID, href string, observable, allowDuplicit bool) (err error) {
+	log.Debugf("coap-gw: client.observeResource /%v%v ins %v: observe resource", deviceID, href)
+	instanceID := getInstanceID(href)
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
-	if _, ok := client.observedResources[res.DeviceId]; !ok {
-		client.observedResources[res.DeviceId] = make(map[int64]observedResource)
+	if _, ok := client.observedResources[deviceID]; !ok {
+		client.observedResources[deviceID] = make(map[int64]observedResource)
 	}
-	if _, ok := client.observedResources[res.DeviceId][instanceID]; ok {
+	if _, ok := client.observedResources[deviceID][instanceID]; ok {
 		if allowDuplicit {
 			return nil
 		}
 		return fmt.Errorf("resource is already already published")
 	}
-	return client.addObservedResourceLocked(ctx, res)
+	return client.addObservedResourceLocked(ctx, deviceID, href, observable)
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
@@ -135,35 +135,35 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 	}
 }
 
-func (client *Client) addObservedResourceLocked(ctx context.Context, res *pbRA.Resource) error {
+func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID, href string, observale bool) error {
 	var observation *tcp.Observation
-	obs := isObservable(res)
-	if res.Href == cloud.StatusHref {
+	obs := observale
+	if href == cloud.StatusHref {
 		return nil
 	}
-	instanceID := getInstanceID(res.GetHref())
+	instanceID := getInstanceID(href)
 
 	if obs {
-		obs, err := client.coapConn.Observe(ctx, res.GetHref(), func(req *pool.Message) {
-			err := client.notifyContentChanged(res.GetDeviceId(), res.GetHref(), req)
+		obs, err := client.coapConn.Observe(ctx, href, func(req *pool.Message) {
+			err := client.notifyContentChanged(deviceID, href, req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-				log.Errorf("cannot observe resource /%v%v: %v", res.GetDeviceId(), res.GetHref(), err)
+				log.Errorf("cannot observe resource /%v%v: %v", deviceID, href, err)
 				client.Close()
 			}
 			if req.Code() == coapCodes.NotFound {
-				client.unpublishResources(req.Context(), []pbRA.ResourceId{pbRA.ResourceId{DeviceId: res.GetDeviceId(), Href: res.GetHref()}})
+				client.unpublishResources(req.Context(), []pbRA.ResourceId{pbRA.ResourceId{DeviceId: deviceID, Href: href}})
 			}
 		})
 		if err != nil {
-			log.Errorf("cannot observe resource /%v%v: %v", res.GetDeviceId(), res.GetHref(), err)
+			log.Errorf("cannot observe resource /%v%v: %v", deviceID, href, err)
 		} else {
 			observation = obs
 		}
 	} else {
-		go client.getResourceContent(ctx, res.GetDeviceId(), res.GetHref())
+		go client.getResourceContent(ctx, deviceID, href)
 	}
-	client.observedResources[res.DeviceId][instanceID] = observedResource{href: res.GetHref(), observation: observation}
+	client.observedResources[deviceID][instanceID] = observedResource{href: deviceID, observation: observation}
 	return nil
 }
 

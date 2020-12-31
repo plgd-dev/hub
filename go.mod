@@ -6,7 +6,7 @@ require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi v4.1.2+incompatible
-	github.com/go-pg/pg/v10 v10.7.3
+	github.com/go-pg/pg/v10 v10.7.3 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/snappy v0.0.2
@@ -20,17 +20,15 @@ require (
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v1.0.5
-	github.com/nats-io/jsm.go v0.0.20
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
 	github.com/nats-io/nats.go v1.10.1-0.20201111151633-9e1f4a0d80d8
 	github.com/panjf2000/ants/v2 v2.4.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/cqrs v0.0.0-20201228095736-bbae574da528
+	github.com/plgd-dev/cqrs v0.0.0-20201231085148-cd371b44b8f9
 	github.com/plgd-dev/go-coap/v2 v2.2.1-0.20201214110031-a745da270c13
 	github.com/plgd-dev/kit v0.0.0-20201214132922-e9fbe17b274c
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
-	github.com/silenceper/pool v1.0.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
 	github.com/stretchr/testify v1.6.1

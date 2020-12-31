@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/sdk/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -55,8 +56,7 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 			fmt.Errorf("signIn: cannot receive link for the device %v: %w", deviceID, err)
 			return
 		}
-		raLink := m.ToRAProto()
-		client.observeResource(ctx, &raLink, true)
+		client.observeResource(ctx, m.GetDeviceId(), m.GetHref(), m.GetPolicies().GetBitFlags()&int32(schema.Observable) == int32(schema.Observable), true)
 	}
 }
 
