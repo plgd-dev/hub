@@ -64,9 +64,6 @@ func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValue
 
 	for _, resources := range resourceValues {
 		for _, resource := range resources {
-			if resource.content == nil {
-				continue
-			}
 			val := toResourceValue(resource)
 			err = srv.Send(&val)
 			if err != nil {
