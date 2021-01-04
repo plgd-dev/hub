@@ -65,36 +65,7 @@ mongo: certificates
 		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
-cockroachdb:
-	docker network create -d bridge roachnet
-	docker run -d \
-		--name=roach1 \
-		--hostname=roach1 \
-		--net=roachnet \
-		-p 26257:26257 -p 8080:8080  \
-		-v "${PWD}/.tmp/cockroach-data/roach1:/cockroach/cockroach-data"  \
-		cockroachdb/cockroach:v20.2.3 start \
-		--insecure \
-		--join=roach1,roach2,roach3
-	docker run -d \
-		--name=roach2 \
-		--hostname=roach2 \
-		--net=roachnet \
-		-v "${PWD}/.tmp/cockroach-data/roach2:/cockroach/cockroach-data" \
-		cockroachdb/cockroach:v20.2.3 start \
-		--insecure \
-		--join=roach1,roach2,roach3
-	docker run -d \
-		--name=roach3 \
-		--hostname=roach3 \
-		--net=roachnet \
-		-v "${PWD}/.tmp/cockroach-data/roach3:/cockroach/cockroach-data" \
-		cockroachdb/cockroach:v20.2.3 start \
-		--insecure \
-		--join=roach1,roach2,roach3
-	docker exec -it roach1 ./cockroach init --insecure
-
-env: clean certificates nats mongo cockroachdb
+env: clean certificates nats mongo
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
@@ -143,7 +114,6 @@ clean:
 	sudo rm -rf ./.tmp/certs || true
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true
-	sudo rm -rf ./.tmp/cockroach-data || true
 
 proto/generate: $(SUBDIRS)
 push: cloud-build $(SUBDIRS) 
