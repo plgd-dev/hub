@@ -40,7 +40,7 @@ func fixHref(href string) string {
 	backslash := regexp.MustCompile(`\/+`)
 	p := backslash.ReplaceAllString(href, "/")
 	p = strings.TrimRight(p, "/")
-	if p[0] == '/' {
+	if len(p) > 0 && p[0] == '/' {
 		return p
 	}
 	return "/" + p

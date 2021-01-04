@@ -107,10 +107,6 @@ clean:
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
 	docker rm -f devsim || true
-	docker rm -f roach1 || true
-	docker rm -f roach2 || true
-	docker rm -f roach3 || true
-	docker network rm roachnet || true
 	sudo rm -rf ./.tmp/certs || true
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true

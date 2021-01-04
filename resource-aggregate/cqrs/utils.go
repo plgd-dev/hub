@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/gofrs/uuid"
 	"github.com/golang/snappy"
+	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"google.golang.org/protobuf/proto"
 )
 
 func GetTopics(deviceId string) []string {
@@ -50,8 +51,8 @@ type ProtobufUnmarshaler interface {
 }
 
 func Marshal(v interface{}) ([]byte, error) {
-	if p, ok := v.(ProtobufMarshaler); ok {
-		src, err := p.Marshal()
+	if p, ok := v.(proto.Message); ok {
+		src, err := proto.Marshal(p)
 		if err != nil {
 			return nil, fmt.Errorf("cannot marshal event: %w", err)
 		}
@@ -62,13 +63,13 @@ func Marshal(v interface{}) ([]byte, error) {
 }
 
 func Unmarshal(b []byte, v interface{}) error {
-	if p, ok := v.(ProtobufUnmarshaler); ok {
+	if p, ok := v.(proto.Message); ok {
 		dst := make([]byte, 1024)
 		dst, err := snappy.Decode(dst, b)
 		if err != nil {
 			return fmt.Errorf("cannot decode buffer: %w", err)
 		}
-		return p.Unmarshal(dst)
+		return proto.Unmarshal(dst, p)
 	}
 	return fmt.Errorf("marshal is not supported by %T", v)
 }
