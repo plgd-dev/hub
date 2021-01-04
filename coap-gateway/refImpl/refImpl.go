@@ -3,15 +3,11 @@ package refImpl
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 
 	"github.com/plgd-dev/kit/security/certManager"
 
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	"github.com/plgd-dev/kit/log"
-
-	"net/http"
-	_ "net/http/pprof"
 )
 
 type Config struct {
@@ -36,7 +32,6 @@ func (c Config) String() string {
 
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config Config) (*RefImpl, error) {
-	runtime.MemProfileRate = 256
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
@@ -63,9 +58,6 @@ func Init(config Config) (*RefImpl, error) {
 
 // Serve starts handling coap requests.
 func (r *RefImpl) Serve() error {
-	go func() {
-		http.ListenAndServe("0.0.0.0:18080", nil)
-	}()
 	return r.service.Serve()
 }
 
