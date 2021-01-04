@@ -78,7 +78,7 @@ func TestClient_GetDevices(t *testing.T) {
 			}
 			require.NoError(t, err)
 			got = sortDevices(got)
-			require.Equal(t, tt.want, got)
+			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

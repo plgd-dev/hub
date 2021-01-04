@@ -40,7 +40,7 @@ func TestObserveDeviceResources(t *testing.T) {
 	case res := <-h.res:
 		t.Logf("res %+v\n", res)
 		exp := test.ResourceLinkToPublishEvent(deviceID, test.GetAllBackendResourceLinks())
-		require.Equal(t, test.SortResources(exp.GetResourcePublished().GetLinks()), test.SortResources(res.Links))
+		test.CheckProtobufs(t, test.SortResources(exp.GetResourcePublished().GetLinks()), test.SortResources(res.Links), test.RequireToCheckFunc(require.Equal))
 	case <-time.After(TestTimeout):
 		t.Error("timeout")
 	}

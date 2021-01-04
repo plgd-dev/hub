@@ -163,7 +163,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID, h
 	} else {
 		go client.getResourceContent(ctx, deviceID, href)
 	}
-	client.observedResources[deviceID][instanceID] = observedResource{href: deviceID, observation: observation}
+	client.observedResources[deviceID][instanceID] = observedResource{href: href, observation: observation}
 	return nil
 }
 
