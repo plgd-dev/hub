@@ -1,9 +1,11 @@
 package pb
 
 import (
+	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
+	"google.golang.org/grpc/codes"
 )
 
 func RAStatus2Status(s pbRA.Status) Status {
@@ -30,6 +32,27 @@ func RAStatus2Status(s pbRA.Status) Status {
 		return Status_METHOD_NOT_ALLOWED
 	}
 	return Status_UNKNOWN
+}
+
+var status2grpcCode = map[Status]codes.Code{
+	Status_OK:                 codes.OK,
+	Status_BAD_REQUEST:        codes.InvalidArgument,
+	Status_UNAUTHORIZED:       codes.Unauthenticated,
+	Status_FORBIDDEN:          codes.PermissionDenied,
+	Status_NOT_FOUND:          codes.NotFound,
+	Status_UNAVAILABLE:        codes.Unavailable,
+	Status_NOT_IMPLEMENTED:    codes.Unimplemented,
+	Status_ACCEPTED:           extCodes.Accepted,
+	Status_ERROR:              codes.Internal,
+	Status_METHOD_NOT_ALLOWED: extCodes.MethodNotAllowed,
+}
+
+func (s Status) ToGrpcCode() codes.Code {
+	v, ok := status2grpcCode[s]
+	if ok {
+		return v
+	}
+	return codes.Unknown
 }
 
 func (r *ResourceId) ID() string {

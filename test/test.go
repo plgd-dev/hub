@@ -226,7 +226,9 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	err = client.OnboardDevice(ctx, deviceID, "test", "coaps+tcp://"+gwHost, "authCode", "sid")
 	require.NoError(t, err)
 
-	waitForDevice(ctx, t, c, deviceID, expectedResources)
+	if len(expectedResources) > 0 {
+		waitForDevice(ctx, t, c, deviceID, expectedResources)
+	}
 
 	return deviceID, func() {
 		client, err := NewSDKClient()

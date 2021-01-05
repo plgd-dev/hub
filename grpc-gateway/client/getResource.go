@@ -47,6 +47,11 @@ func (c *Client) getResource(
 	if resp == nil {
 		return status.Errorf(codes.NotFound, "not found")
 	}
-
-	return DecodeContentWithCodec(codec, resp.GetContent().GetContentType(), resp.GetContent().GetData(), response)
+	switch resp.GetStatus() {
+	case pb.Status_OK:
+		return DecodeContentWithCodec(codec, resp.GetContent().GetContentType(), resp.GetContent().GetData(), response)
+	case pb.Status_UNKNOWN:
+		return status.Errorf(codes.Unavailable, "content of resource /%v%v is not stored", deviceID, href)
+	}
+	return status.Errorf(resp.GetStatus().ToGrpcCode(), "cannot obtain content of resource /%v%v", deviceID, href)
 }
