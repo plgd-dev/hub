@@ -16,7 +16,7 @@ func toResourceValue(m *resourceCtx) pb.ResourceValue {
 		},
 		Content: pb.RAContent2Content(m.content.GetContent()),
 		Types:   m.resource.GetResourceTypes(),
-		Status:  pb.RAStatus2Status(m.content.Status),
+		Status:  pb.RAStatus2Status(m.content.GetStatus()),
 	}
 }
 
