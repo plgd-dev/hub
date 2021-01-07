@@ -26,7 +26,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f
 	github.com/plgd-dev/go-coap/v2 v2.2.0
-	github.com/plgd-dev/kit v0.0.0-20201102152602-1e03187a6a3a
+	github.com/plgd-dev/kit v0.0.0-20201202142530-c7215a26cefe
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094

@@ -498,14 +498,6 @@ github.com/plgd-dev/cloud v0.0.0-20200819132744-8f09150a96e1/go.mod h1:PzDJWPdQO
 github.com/plgd-dev/cloud v1.0.1/go.mod h1:U+fZ0KfH0SxSqacQy0ERgjgf3DcMHEPehJ8Jq2CQlqI=
 github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616 h1:JAAbX4g6VWpGXtuU/9TGYfVUWpqSjd4VYwKfpgGrEfA=
 github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204134438-ec585d6a9c7a h1:+eXuQ/JCO2965K8nJJaRlAyoaV30EPLdfJfIbL1Rwz4=
-github.com/plgd-dev/cqrs v0.0.0-20201204134438-ec585d6a9c7a/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204140735-2f1fdff49f03 h1:epctQgLgTC4DhewFR2r+SbO7QdaS2TMuNBBZtKwojps=
-github.com/plgd-dev/cqrs v0.0.0-20201204140735-2f1fdff49f03/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204141922-ed716fecda7a h1:+ulbTHdVA2H8GVvuUmey/tq2GdpbLRZFkeU5Vl1XBxc=
-github.com/plgd-dev/cqrs v0.0.0-20201204141922-ed716fecda7a/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204143818-b7a610a687ac h1:96KxoQha3vQIjJWfwYw5XPlJIrhmn+mShhouuqFDD9k=
-github.com/plgd-dev/cqrs v0.0.0-20201204143818-b7a610a687ac/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
 github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f h1:a5k4xGbgotuxGwhtnuBJ8IWw2UvaK2xVOEVPfl33AUA=
 github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc h1:kEOQOFCaNd7SDhf17MSQkSB519JeDbwhhrUWBffbsZI=
@@ -518,6 +510,7 @@ github.com/plgd-dev/go-coap/v2 v2.0.5-0.20200922125453-917a9b325e68 h1:1Fm9uTIRK
 github.com/plgd-dev/go-coap/v2 v2.0.5-0.20200922125453-917a9b325e68/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
 github.com/plgd-dev/go-coap/v2 v2.1.1 h1:/RI+UQkO62rw1e9vDvrlT8OZx8nirp57Vg6QoanJTLY=
 github.com/plgd-dev/go-coap/v2 v2.1.1/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
+github.com/plgd-dev/go-coap/v2 v2.1.4-0.20201201213140-b8c428d8fccf/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
 github.com/plgd-dev/go-coap/v2 v2.2.0 h1:3g95L9eNNoCZUyckPbdJI04ocgOEI7lOxqnYE25rdDA=
 github.com/plgd-dev/go-coap/v2 v2.2.0/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63 h1:cI6kESUBU1KUHtufZepEkaTsSkLN2kE6xz+Ec5V17q0=
@@ -526,8 +519,8 @@ github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612 h1:YAzuCNWQgBtIhVPgER
 github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
 github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61 h1:u3gjS+FsWsaXjY1Ye/FUBdNAazatnzb+VQAR7HUy0QM=
 github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
-github.com/plgd-dev/kit v0.0.0-20201102152602-1e03187a6a3a h1:Xal/8dNe66ZCYv+Be1KJNp89hjXgoqJqsJMD+GdwgDo=
-github.com/plgd-dev/kit v0.0.0-20201102152602-1e03187a6a3a/go.mod h1:kkin3ExkpQj04LcjzUewPeb0G4A112bxUiaNMtvlhAc=
+github.com/plgd-dev/kit v0.0.0-20201202142530-c7215a26cefe h1:tABxiFuRPzyX0RTbsrBDs6Er1Tqo3i9ZPc+QDSj6tf8=
+github.com/plgd-dev/kit v0.0.0-20201202142530-c7215a26cefe/go.mod h1:2hMgcklG0UX+HyPAVyodx5cFsQiLN0CbRcmuS0SggDE=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9 h1:sH2vjFJno1C9BvP2OnxmvY854CBq6SwJcu4Hl+UEX9w=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9/go.mod h1:8IzIQh/+2ZnNgtdpgWwaiBrI0hSox63ojTWHc4KlPTY=
 github.com/plgd-dev/sdk v0.0.0-20200917124432-caf96ab63f2d/go.mod h1:jbuh5K0ZIMDWcJEuRWtJZWve9CmjN0ZFGrLm4B09ytk=
@@ -558,8 +551,6 @@ github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6Mwd
 github.com/smallstep/assert v0.0.0-20180720014142-de77670473b5/go.mod h1:TC9A4+RjIOS+HyTH7wG17/gSqVv95uDw2J64dQZx7RE=
 github.com/smallstep/assert v0.0.0-20200103212524-b99dc1097b15 h1:kSImCuenAkXtCaBeQ1UhmzzJGRhSm8sVH7I3sHE2Qdg=
 github.com/smallstep/assert v0.0.0-20200103212524-b99dc1097b15/go.mod h1:MyOHs9Po2fbM1LHej6sBUT8ozbxmMOFG+E+rx/GSGuc=
-github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262 h1:unQFBIznI+VYD1/1fApl1A+9VcBk+9dcqGfnePY87LY=
-github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262/go.mod h1:MyOHs9Po2fbM1LHej6sBUT8ozbxmMOFG+E+rx/GSGuc=
 github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094 h1:v4HSfEQt7PT2pdMTrX9Qwj27D5AlJeLOZkD1k57J2Gs=
 github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094/go.mod h1:eZ90IBg01k2RKND3sAKXVI0atx5/lzCNX0sA0DqwcUg=
 github.com/smallstep/cli v0.13.4-0.20190930184324-d68486471cbd h1:fokJyC0qVzpY1PDGNnX0ppne4vAZcZozCHSZuQwWRgs=
