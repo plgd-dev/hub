@@ -498,14 +498,6 @@ github.com/plgd-dev/cloud v0.0.0-20200819132744-8f09150a96e1/go.mod h1:PzDJWPdQO
 github.com/plgd-dev/cloud v1.0.1/go.mod h1:U+fZ0KfH0SxSqacQy0ERgjgf3DcMHEPehJ8Jq2CQlqI=
 github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616 h1:JAAbX4g6VWpGXtuU/9TGYfVUWpqSjd4VYwKfpgGrEfA=
 github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204134438-ec585d6a9c7a h1:+eXuQ/JCO2965K8nJJaRlAyoaV30EPLdfJfIbL1Rwz4=
-github.com/plgd-dev/cqrs v0.0.0-20201204134438-ec585d6a9c7a/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204140735-2f1fdff49f03 h1:epctQgLgTC4DhewFR2r+SbO7QdaS2TMuNBBZtKwojps=
-github.com/plgd-dev/cqrs v0.0.0-20201204140735-2f1fdff49f03/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204141922-ed716fecda7a h1:+ulbTHdVA2H8GVvuUmey/tq2GdpbLRZFkeU5Vl1XBxc=
-github.com/plgd-dev/cqrs v0.0.0-20201204141922-ed716fecda7a/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204143818-b7a610a687ac h1:96KxoQha3vQIjJWfwYw5XPlJIrhmn+mShhouuqFDD9k=
-github.com/plgd-dev/cqrs v0.0.0-20201204143818-b7a610a687ac/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
 github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f h1:a5k4xGbgotuxGwhtnuBJ8IWw2UvaK2xVOEVPfl33AUA=
 github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc h1:kEOQOFCaNd7SDhf17MSQkSB519JeDbwhhrUWBffbsZI=
@@ -598,8 +590,8 @@ github.com/valyala/fasthttp v1.7.1/go.mod h1:FstJa9V+Pj9vQ7OJie2qMHdwemEDaDiSdBn
 github.com/valyala/fasthttp v1.9.0/go.mod h1:FstJa9V+Pj9vQ7OJie2qMHdwemEDaDiSdBnvPM1Su9w=
 github.com/valyala/fasthttp v1.12.0 h1:TsB9qkSeiMXB40ELWWSRMjlsE+8IkqXHcs01y2d9aw0=
 github.com/valyala/fasthttp v1.12.0/go.mod h1:229t1eWu9UXTPmoUkbpN/fctKPBY4IJoFXQnxHGXy6E=
-github.com/valyala/fasthttp v1.16.0 h1:9zAqOYLl8Tuy3E5R6ckzGDJ1g8+pw15oQp2iL9Jl6gQ=
-github.com/valyala/fasthttp v1.16.0/go.mod h1:YOKImeEosDdBPnxc0gy7INqi3m1zK6A+xl6TwOBhHCA=
+github.com/valyala/fasthttp v1.19.0 h1:PfTS4PeH3xDr3WomrDS2ID8lU2GskK1xS3YG6gIpibU=
+github.com/valyala/fasthttp v1.19.0/go.mod h1:jjraHZVbKOXftJfsOYoAjaeygpj5hr8ermTRJNroD7A=
 github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV9WzVtRmSR+PDvWpU/qWl4Wa5LApYYX4ZtKbio=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
@@ -749,8 +741,8 @@ golang.org/x/net v0.0.0-20200707034311-ab3426394381 h1:VXak5I6aEWmAXeQjA+QSZzlgN
 golang.org/x/net v0.0.0-20200707034311-ab3426394381/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
 golang.org/x/net v0.0.0-20200822124328-c89045814202/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
 golang.org/x/net v0.0.0-20200930145003-4acb6c075d10/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
-golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0 h1:wBouT66WTYFXdxfVdz9sVWARVd/2vfGcmI45D2gj45M=
-golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
+golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0 h1:5kGOVHlq0euqwzgTC9Vu15p6fV1Wi0ArVi8da2urnVg=
+golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
@@ -813,7 +805,6 @@ golang.org/x/sys v0.0.0-20200501052902-10377860bb8e/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200511232937-7e40ca221e25/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200523222454-059865788121/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200803210538-64077c9b5642/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f h1:+Nyd8tzPX9R7BWHguqsrbFdRx3WQ/1ib8I44HXV5yTA=
 golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
