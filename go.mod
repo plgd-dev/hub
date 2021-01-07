@@ -9,7 +9,7 @@ require (
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/golang/snappy v0.0.2
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.2
@@ -29,14 +29,14 @@ require (
 	github.com/plgd-dev/kit v0.0.0-20201102152602-1e03187a6a3a
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
-	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
-	github.com/smallstep/nosql v0.2.0
+	github.com/smallstep/certificates v0.15.6
+	github.com/smallstep/nosql v0.3.0
 	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go/codec v1.1.10
 	github.com/valyala/fasthttp v1.16.0
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/atomic v1.7.0
-	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	golang.org/x/sync v0.0.0-20201008141435-b3e1573b7520
 	google.golang.org/grpc v1.32.0
