@@ -29,7 +29,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
-	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	test "github.com/plgd-dev/cloud/test"
 	"github.com/stretchr/testify/assert"
@@ -286,10 +286,10 @@ var (
 
 	CertIdentity      = "b5a2a42e-b285-42f1-a36b-034c8fc8efd5"
 	TestAResourceHref = "/a"
-	TestAResourceId   = cqrsUtils.MakeResourceId(CertIdentity, TestAResourceHref)
+	TestAResourceId   = utils.MakeResourceId(CertIdentity, TestAResourceHref)
 	TestAResourceType = "x.a"
 	TestBResourceHref = "/b"
-	TestBResourceId   = cqrsUtils.MakeResourceId(CertIdentity, TestBResourceHref)
+	TestBResourceId   = utils.MakeResourceId(CertIdentity, TestBResourceHref)
 	TestBResourceType = "x.b"
 
 	TestExchangeTimeout = time.Second * 15

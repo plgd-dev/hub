@@ -9,7 +9,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
@@ -84,7 +84,7 @@ func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAc
 
 func (s *SubscriptionManager) publishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext, cmdMetadata pbCQRS.CommandMetadata) error {
 	resource := pbRA.Resource{
-		Id:            raCqrs.MakeResourceId(deviceID, cloud.StatusHref),
+		Id:            utils.MakeResourceId(deviceID, cloud.StatusHref),
 		Href:          cloud.StatusHref,
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,

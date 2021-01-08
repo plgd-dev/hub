@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 )
@@ -36,7 +36,7 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	}
 	log.Debugf("subscriptions.SubscribeForResourceEvent.resourceProjection.Register, created=%v", created)
 
-	resourceID := cqrsRA.MakeResourceId(s.DeviceID(), s.Href())
+	resourceID := utils.MakeResourceId(s.DeviceID(), s.Href())
 	models := s.resourceProjection.Models(s.DeviceID(), resourceID)
 	if len(models) == 0 {
 		err = s.resourceProjection.ForceUpdate(ctx, s.DeviceID(), resourceID)

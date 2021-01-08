@@ -5,15 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/plgd-dev/cqrs/event"
 )
 
 // Option provides the means to use function call chaining
 type Option func(Config) Config
 
 // WithMarshaler provides the possibility to set an marshaling function for the config
-func WithMarshaler(f event.MarshalerFunc) Option {
+func WithMarshaler(f MarshalerFunc) Option {
 	return func(cfg Config) Config {
 		cfg.marshalerFunc = f
 		return cfg
@@ -21,7 +19,7 @@ func WithMarshaler(f event.MarshalerFunc) Option {
 }
 
 // WithUnmarshaler provides the possibility to set an unmarshaling function for the config
-func WithUnmarshaler(f event.UnmarshalerFunc) Option {
+func WithUnmarshaler(f UnmarshalerFunc) Option {
 	return func(cfg Config) Config {
 		cfg.unmarshalerFunc = f
 		return cfg
@@ -44,8 +42,8 @@ type Config struct {
 	MaxPoolSize     uint64        `long:"maxPoolSize" env:"MAX_POOL_SIZE" envconfig:"MAX_POOL_SIZE" default:"16"`
 	MaxConnIdleTime time.Duration `long:"maxConnIdleTime" env:"MAX_CONN_IDLE_TIME" envconfig:"MAX_CONN_IDLE_TIME" default:"240s"`
 	tlsCfg          *tls.Config
-	marshalerFunc   event.MarshalerFunc
-	unmarshalerFunc event.UnmarshalerFunc
+	marshalerFunc   MarshalerFunc
+	unmarshalerFunc UnmarshalerFunc
 }
 
 //String return string representation of Config

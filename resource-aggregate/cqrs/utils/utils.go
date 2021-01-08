@@ -1,4 +1,4 @@
-package cqrs
+package utils
 
 import (
 	"fmt"

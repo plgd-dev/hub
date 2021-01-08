@@ -11,11 +11,11 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
-	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	cqrs "github.com/plgd-dev/cqrs"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,7 +82,7 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ag, err := NewAggregate(tt.args.request.ResourceId, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+			ag, err := NewAggregate(tt.args.request.ResourceId, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
 			events, err := ag.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
@@ -103,7 +103,7 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore EventStore, deviceID, href, userID string, expStatusCode codes.Code, hasErr bool) {
 	pc := testMakePublishResourceRequest(deviceID, href)
 
-	ag, err := NewAggregate(pc.GetResourceId(), 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(pc.GetResourceId(), 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.PublishResource(ctx, pc)
 	if hasErr {
@@ -144,7 +144,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc1 := testMakePublishResourceRequest(deviceID, resourceID)
 
@@ -152,7 +152,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag2, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, resourceID)
 	events, err = ag2.PublishResource(ctx, pc2)
@@ -196,7 +196,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 
 	pc := testMakeUnpublishResourceRequest(deviceID, resourceID)
 
-	ag, err := NewAggregate(pc.GetResourceId(), 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(pc.GetResourceId(), 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResource(ctx, pc)
 	assert.NoError(t, err)
@@ -222,7 +222,7 @@ func testMakePublishResourceRequest(deviceID, href string) *pb.PublishResourceRe
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		Resource:             testNewResource(href, deviceID, cqrsRA.MakeResourceId(deviceID, href)),
+		Resource:             testNewResource(href, deviceID, utils.MakeResourceId(deviceID, href)),
 		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		TimeToLive:           1,
 		CommandMetadata: &pb.CommandMetadata{
@@ -483,7 +483,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -575,7 +575,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	}()
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -660,7 +660,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	assert.NoError(t, err)
@@ -745,7 +745,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -830,7 +830,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -921,7 +921,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1007,7 +1007,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrs.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {

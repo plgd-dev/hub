@@ -1,7 +1,7 @@
 package pb
 
 import (
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
@@ -33,7 +33,7 @@ func RAStatus2Status(s pbRA.Status) Status {
 }
 
 func (r *ResourceId) ID() string {
-	return cqrs.MakeResourceId(r.GetDeviceId(), r.GetHref())
+	return utils.MakeResourceId(r.GetDeviceId(), r.GetHref())
 }
 
 func RAContent2Content(s *pbRA.Content) *Content {

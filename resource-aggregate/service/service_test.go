@@ -16,8 +16,8 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -92,7 +92,7 @@ func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) 
 			DeviceId: deviceId,
 			Href:     href,
 		},
-		Resource:             testNewResource(href, deviceId, cqrs.MakeResourceId(deviceId, href)),
+		Resource:             testNewResource(href, deviceId, utils.MakeResourceId(deviceId, href)),
 		AuthorizationContext: testNewAuthorizationContext(deviceId, userId, accesstoken),
 		TimeToLive:           1,
 		CommandMetadata: &pb.CommandMetadata{

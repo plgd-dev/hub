@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -21,7 +21,7 @@ func publishResource(ctx context.Context, raClient pbRA.ResourceAggregateClient,
 		})
 	}
 	href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-	resourceID := raCqrs.MakeResourceId(link.DeviceID, href)
+	resourceID := utils.MakeResourceId(link.DeviceID, href)
 	_, err := raClient.PublishResource(kitNetGrpc.CtxWithUserID(ctx, userID), &pbRA.PublishResourceRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: link.DeviceID,

@@ -6,40 +6,38 @@ import (
 
 	"google.golang.org/grpc/status"
 
-	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	cqrs "github.com/plgd-dev/cqrs"
-	cqrsEvent "github.com/plgd-dev/cqrs/event"
-	"github.com/plgd-dev/cqrs/eventstore"
-	"github.com/plgd-dev/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/codes"
 )
 
 type LogPublishErrFunc func(err error)
+
 type aggregate struct {
 	model      *raEvents.ResourceStateSnapshotTaken
-	ag         *cqrs.Aggregate
+	ag         *cqrsAggregate.Aggregate
 	resourceID string
 	eventstore EventStore
 }
 
-func (a *aggregate) factoryModel(ctx context.Context) (cqrs.AggregateModel, error) {
-	a.model = raEvents.NewResourceStateSnapshotTaken(func(deviceId, resourceId string) error {
-		return nil
-	})
+func (a *aggregate) factoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	a.model = raEvents.NewResourceStateSnapshotTaken()
 	return a.model, nil
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *pb.ResourceId, SnapshotThreshold int, eventstore EventStore, retry cqrs.RetryFunc) (*aggregate, error) {
-	resID := cqrsUtils.MakeResourceId(resourceID.GetDeviceId(), resourceID.GetHref())
+func NewAggregate(resourceID *pb.ResourceId, SnapshotThreshold int, eventstore EventStore, retry cqrsAggregate.RetryFunc) (*aggregate, error) {
+	resID := utils.MakeResourceId(resourceID.GetDeviceId(), resourceID.GetHref())
 	a := &aggregate{
 		resourceID: resID,
 		eventstore: eventstore,
 	}
-	cqrsAg, err := cqrs.NewAggregate(resourceID.GetDeviceId(), resID, retry, SnapshotThreshold, eventstore, a.factoryModel, func(template string, args ...interface{}) {})
+	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(), resID, retry, SnapshotThreshold, eventstore, a.factoryModel, func(template string, args ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}
@@ -48,7 +46,7 @@ func NewAggregate(resourceID *pb.ResourceId, SnapshotThreshold int, eventstore E
 }
 
 func validatePublish(request *pb.PublishResourceRequest) error {
-	resID := cqrsUtils.MakeResourceId(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref())
+	resID := utils.MakeResourceId(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref())
 	if request.Resource.Id != resID {
 		return status.Errorf(codes.InvalidArgument, "invalid Resource.Id")
 	}
@@ -177,7 +175,7 @@ func validateConfirmResourceDelete(request *pb.ConfirmResourceDeleteRequest) err
 	return nil
 }
 
-func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []cqrsEvent.Event) {
+func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
 	for _, event := range events {
 		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
 			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupId(), AggregateID: ru.AggregateId(), Version: ru.Version()}}); err != nil {
@@ -188,7 +186,7 @@ func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []cqrsE
 	}
 }
 
-func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events []cqrsEvent.Event) {
+func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
 	for _, event := range events {
 		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
 			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateId(), Version: ru.Version()}); err != nil {
@@ -204,7 +202,7 @@ func (a *aggregate) DeviceID() string {
 }
 
 // HandlePublishResource handles a command PublishResource
-func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishResourceRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishResourceRequest) (events []eventstore.Event, err error) {
 	if err = validatePublish(request); err != nil {
 		err = fmt.Errorf("invalid publish command: %w", err)
 		return
@@ -222,7 +220,7 @@ func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishReso
 }
 
 // HandleUnpublishResource handles a command UnpublishResource
-func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.UnpublishResourceRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.UnpublishResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateUnpublish(request); err != nil {
 		err = fmt.Errorf("invalid unpublish command: %w", err)
 		return
@@ -239,7 +237,7 @@ func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.Unpublish
 }
 
 // NotifyContentChanged handles a command NotifyContentChanged
-func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *pb.NotifyResourceChangedRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *pb.NotifyResourceChangedRequest) (events []eventstore.Event, err error) {
 	if err = validateNotifyContentChanged(request); err != nil {
 		err = fmt.Errorf("invalid notify content changed command: %w", err)
 		return
@@ -255,7 +253,7 @@ func (a *aggregate) NotifyResourceChanged(ctx context.Context, request *pb.Notif
 }
 
 // HandleUpdateResourceContent handles a command UpdateResource
-func (a *aggregate) UpdateResource(ctx context.Context, request *pb.UpdateResourceRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) UpdateResource(ctx context.Context, request *pb.UpdateResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateUpdateResourceContent(request); err != nil {
 		err = fmt.Errorf("invalid update resource content command: %w", err)
 		return
@@ -271,7 +269,7 @@ func (a *aggregate) UpdateResource(ctx context.Context, request *pb.UpdateResour
 	return
 }
 
-func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.ConfirmResourceUpdateRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.ConfirmResourceUpdateRequest) (events []eventstore.Event, err error) {
 	if err = validateConfirmResourceUpdate(request); err != nil {
 		err = fmt.Errorf("invalid update resource content notification command: %w", err)
 		return
@@ -288,7 +286,7 @@ func (a *aggregate) ConfirmResourceUpdate(ctx context.Context, request *pb.Confi
 }
 
 // RetrieveResource handles a command RetriveResource
-func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveResourceRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateRetrieveResource(request); err != nil {
 		err = fmt.Errorf("invalid retrieve resource content command: %w", err)
 		return
@@ -304,7 +302,7 @@ func (a *aggregate) RetrieveResource(ctx context.Context, request *pb.RetrieveRe
 	return
 }
 
-func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.ConfirmResourceRetrieveRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.ConfirmResourceRetrieveRequest) (events []eventstore.Event, err error) {
 	if err = validateConfirmResourceRetrieve(request); err != nil {
 		err = fmt.Errorf("invalid retrieve resource content notification command: %w", err)
 		return
@@ -320,7 +318,7 @@ func (a *aggregate) ConfirmResourceRetrieve(ctx context.Context, request *pb.Con
 }
 
 // DeleteResource handles a command DeleteResource
-func (a *aggregate) DeleteResource(ctx context.Context, request *pb.DeleteResourceRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) DeleteResource(ctx context.Context, request *pb.DeleteResourceRequest) (events []eventstore.Event, err error) {
 	if err = validateDeleteResource(request); err != nil {
 		err = fmt.Errorf("invalid delete resource content command: %w", err)
 		return
@@ -336,7 +334,7 @@ func (a *aggregate) DeleteResource(ctx context.Context, request *pb.DeleteResour
 	return
 }
 
-func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *pb.ConfirmResourceDeleteRequest) (events []cqrsEvent.Event, err error) {
+func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *pb.ConfirmResourceDeleteRequest) (events []eventstore.Event, err error) {
 	if err = validateConfirmResourceDelete(request); err != nil {
 		err = fmt.Errorf("invalid delete resource content notification command: %w", err)
 		return
