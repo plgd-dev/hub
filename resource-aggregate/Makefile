@@ -27,6 +27,7 @@ proto/generate:
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/commands.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/events.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/resources.proto
+	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/cqrs/eventbus/pb/eventbus.proto
 	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(shell pwd)/pb/service.proto
 
 .PHONY: build-servicecontainer build push clean proto/generate

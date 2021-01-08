@@ -15,10 +15,10 @@ import (
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	cqrsEventBus "github.com/plgd-dev/cqrs/eventbus"
-	cqrsEventStore "github.com/plgd-dev/cqrs/eventstore"
-	cqrsMaintenance "github.com/plgd-dev/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/jwt"

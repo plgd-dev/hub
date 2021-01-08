@@ -9,7 +9,7 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -141,7 +141,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			})
 		}
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-		resourceID := raCqrs.MakeResourceId(link.DeviceID, href)
+		resourceID := utils.MakeResourceId(link.DeviceID, href)
 		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,

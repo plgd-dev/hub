@@ -7,11 +7,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	cqrs "github.com/plgd-dev/cqrs"
-	cqrsEvent "github.com/plgd-dev/cqrs/event"
-	cqrsEventBus "github.com/plgd-dev/cqrs/eventbus"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -24,7 +23,7 @@ type RequestHandler struct {
 	pb.UnimplementedResourceAggregateServer
 	config           Config
 	eventstore       EventStore
-	publisher        cqrsEventBus.Publisher
+	publisher        eventbus.Publisher
 	isUserDeviceFunc isUserDeviceFunc
 }
 
@@ -33,7 +32,7 @@ func userDevicesChanged(ctx context.Context, userID string, addedDevices, remove
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(config Config, eventstore EventStore, publisher cqrsEventBus.Publisher, isUserDeviceFunc isUserDeviceFunc) *RequestHandler {
+func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, isUserDeviceFunc isUserDeviceFunc) *RequestHandler {
 	return &RequestHandler{
 		config:           config,
 		eventstore:       eventstore,
@@ -42,10 +41,10 @@ func NewRequestHandler(config Config, eventstore EventStore, publisher cqrsEvent
 	}
 }
 
-func publishEvents(ctx context.Context, publisher cqrsEventBus.Publisher, deviceId, resourceId string, events []cqrsEvent.Event) error {
+func publishEvents(ctx context.Context, publisher eventbus.Publisher, deviceId, resourceId string, events []eventbus.Event) error {
 	var errors []error
 	for _, event := range events {
-		err := publisher.Publish(ctx, cqrsUtils.GetTopics(deviceId), deviceId, resourceId, event)
+		err := publisher.Publish(ctx, utils.GetTopics(deviceId), deviceId, resourceId, event)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -86,7 +85,7 @@ func (r RequestHandler) PublishResource(ctx context.Context, request *pb.Publish
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
 
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot publish resource: %v", err))
 	}
@@ -100,7 +99,7 @@ func (r RequestHandler) PublishResource(ctx context.Context, request *pb.Publish
 	if err != nil {
 		log.Errorf("cannot publish events for publish command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	return &pb.PublishResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -115,7 +114,7 @@ func (r RequestHandler) UnpublishResource(ctx context.Context, request *pb.Unpub
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot unpublish resource: %v", err))
 	}
@@ -129,7 +128,7 @@ func (r RequestHandler) UnpublishResource(ctx context.Context, request *pb.Unpub
 	if err != nil {
 		log.Errorf("cannot publish events for unpublish command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	return &pb.UnpublishResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -144,7 +143,7 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *pb.N
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify resource content changed: %v", err))
 	}
@@ -158,7 +157,7 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *pb.N
 	if err != nil {
 		log.Errorf("cannot publish events for notify content changed command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	return &pb.NotifyResourceChangedResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -173,7 +172,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *pb.UpdateRe
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource content: %v", err))
 	}
@@ -187,7 +186,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *pb.UpdateRe
 	if err != nil {
 		log.Errorf("cannot publish events for update resource content command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &pb.UpdateResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -202,7 +201,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *pb.C
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify resource content update processed: %v", err))
 	}
@@ -216,7 +215,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *pb.C
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource content update processed command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &pb.ConfirmResourceUpdateResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -231,7 +230,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *pb.Retrie
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot retrieve resource content: %v", err))
 	}
@@ -245,7 +244,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *pb.Retrie
 	if err != nil {
 		log.Errorf("cannot publish events for retrieve resource content command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &pb.RetrieveResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -260,7 +259,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *pb
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify resource content retrieve processed: %v", err))
 	}
@@ -274,7 +273,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *pb
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource content retrieve processed command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &pb.ConfirmResourceRetrieveResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -289,7 +288,7 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *pb.DeleteRe
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete resource: %v", err))
 	}
@@ -303,7 +302,7 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *pb.DeleteRe
 	if err != nil {
 		log.Errorf("cannot publish events for delete resource command: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &pb.DeleteResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
@@ -318,7 +317,7 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *pb.C
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrs.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.SnapshotThreshold, r.eventstore, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify resource delete processed: %v", err))
 	}
@@ -332,7 +331,7 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *pb.C
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource delete processed: %v", err)
 	}
-	auditContext := cqrsUtils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &pb.ConfirmResourceDeleteResponse{
 		AuditContext: &auditContext,
 	}, nil

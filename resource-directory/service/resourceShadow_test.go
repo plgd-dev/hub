@@ -9,9 +9,9 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -245,6 +245,6 @@ func (s *testGrpcGateway_RetrieveResourcesValuesServer) Send(d *pb.ResourceValue
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceValue)
 	}
-	s.got[cqrs.MakeResourceId(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetHref())] = d
+	s.got[utils.MakeResourceId(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetHref())] = d
 	return nil
 }

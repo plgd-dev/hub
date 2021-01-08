@@ -5,34 +5,33 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/plgd-dev/cqrs/event"
-	"github.com/plgd-dev/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
 type MockEventStore struct {
-	events map[string]map[string][]event.EventUnmarshaler
+	events map[string]map[string][]eventstore.EventUnmarshaler
 }
 
-func (s *MockEventStore) Save(ctx context.Context, groupId, aggregateId string, events []event.Event) (concurrencyException bool, err error) {
+func (s *MockEventStore) Save(ctx context.Context, groupId, aggregateId string, events []eventstore.Event) (concurrencyException bool, err error) {
 	return false, errors.New("not supported")
 }
 
-func (s *MockEventStore) SaveSnapshot(ctx context.Context, groupId, aggregateId string, event event.Event) (concurrencyException bool, err error) {
+func (s *MockEventStore) SaveSnapshot(ctx context.Context, groupId, aggregateId string, event eventstore.Event) (concurrencyException bool, err error) {
 	return false, errors.New("not supported")
 }
 
-func (s *MockEventStore) LoadFromVersion(ctx context.Context, queries []eventstore.VersionQuery, eventHandler event.Handler) error {
-	aggregates := make(map[string][]event.EventUnmarshaler)
+func (s *MockEventStore) LoadFromVersion(ctx context.Context, queries []eventstore.VersionQuery, eventHandler eventstore.Handler) error {
+	aggregates := make(map[string][]eventstore.EventUnmarshaler)
 	for _, device := range s.events {
 		for aggrId, events := range device {
 			aggregates[aggrId] = events
 		}
 	}
 
-	var events []event.EventUnmarshaler
+	var events []eventstore.EventUnmarshaler
 	for _, q := range queries {
 		var ok bool
-		var r []event.EventUnmarshaler
+		var r []eventstore.EventUnmarshaler
 
 		if r, ok = aggregates[q.AggregateID]; !ok {
 			continue
@@ -45,7 +44,7 @@ func (s *MockEventStore) LoadFromVersion(ctx context.Context, queries []eventsto
 }
 
 // LoadUpToVersion loads aggragate events up to a specific version.
-func (s *MockEventStore) LoadUpToVersion(ctx context.Context, queries []eventstore.VersionQuery, eventHandler event.Handler) error {
+func (s *MockEventStore) LoadUpToVersion(ctx context.Context, queries []eventstore.VersionQuery, eventHandler eventstore.Handler) error {
 	return errors.New("not supported")
 }
 
@@ -56,13 +55,13 @@ func makeModelId(groupId, aggregateId string) string {
 func (s *MockEventStore) allModels(queriesInt map[string]eventstore.VersionQuery) map[string]eventstore.VersionQuery {
 	for groupId, group := range s.events {
 		for aggrId, events := range group {
-			queriesInt[makeModelId(groupId, aggrId)] = eventstore.VersionQuery{AggregateID: aggrId, Version: events[0].Version}
+			queriesInt[makeModelId(groupId, aggrId)] = eventstore.VersionQuery{AggregateID: aggrId, Version: events[0].Version()}
 		}
 	}
 	return queriesInt
 }
 
-func (s *MockEventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.SnapshotQuery, eventHandler event.Handler) error {
+func (s *MockEventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.SnapshotQuery, eventHandler eventstore.Handler) error {
 	queriesInt := make(map[string]eventstore.VersionQuery)
 	if len(queries) == 0 {
 		queriesInt = s.allModels(queriesInt)
@@ -75,19 +74,19 @@ func (s *MockEventStore) LoadFromSnapshot(ctx context.Context, queries []eventst
 			case query.GroupID != "" && query.AggregateID == "":
 				if aggregates, ok := s.events[query.GroupID]; ok {
 					for aggrId, events := range aggregates {
-						queriesInt[makeModelId(query.GroupID, aggrId)] = eventstore.VersionQuery{AggregateID: aggrId, Version: events[0].Version}
+						queriesInt[makeModelId(query.GroupID, aggrId)] = eventstore.VersionQuery{AggregateID: aggrId, Version: events[0].Version()}
 					}
 				}
 			case query.GroupID == "" && query.AggregateID != "":
 				for groupId, aggregates := range s.events {
 					if events, ok := aggregates[query.AggregateID]; ok {
-						queriesInt[makeModelId(groupId, query.AggregateID)] = eventstore.VersionQuery{AggregateID: query.AggregateID, Version: events[0].Version}
+						queriesInt[makeModelId(groupId, query.AggregateID)] = eventstore.VersionQuery{AggregateID: query.AggregateID, Version: events[0].Version()}
 					}
 				}
 			default:
 				if aggregates, ok := s.events[query.GroupID]; ok {
 					if events, ok := aggregates[query.AggregateID]; ok {
-						queriesInt[makeModelId(query.GroupID, query.AggregateID)] = eventstore.VersionQuery{AggregateID: query.AggregateID, Version: events[0].Version}
+						queriesInt[makeModelId(query.GroupID, query.AggregateID)] = eventstore.VersionQuery{AggregateID: query.AggregateID, Version: events[0].Version()}
 					}
 				}
 			}
@@ -112,16 +111,16 @@ func (s *MockEventStore) RemoveUpToVersion(ctx context.Context, queries []events
 
 type iter struct {
 	idx    int
-	events []event.EventUnmarshaler
+	events []eventstore.EventUnmarshaler
 }
 
-func (i *iter) Next(ctx context.Context, eu *event.EventUnmarshaler) bool {
+func (i *iter) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
 	if i.idx >= len(i.events) {
-		return false
+		return nil, false
 	}
-	*eu = i.events[i.idx]
+	eu := i.events[i.idx]
 	i.idx++
-	return true
+	return eu, true
 }
 
 func (i *iter) Err() error {
@@ -136,19 +135,19 @@ func (s *MockEventStore) RemoveInstanceId(ctx context.Context, instanceId int64)
 }
 
 func NewMockEventStore() *MockEventStore {
-	return &MockEventStore{make(map[string]map[string][]event.EventUnmarshaler)}
+	return &MockEventStore{make(map[string]map[string][]eventstore.EventUnmarshaler)}
 }
 
-func (e *MockEventStore) Append(groupId, aggregateId string, ev event.EventUnmarshaler) {
-	var m map[string][]event.EventUnmarshaler
+func (e *MockEventStore) Append(groupId, aggregateId string, ev eventstore.EventUnmarshaler) {
+	var m map[string][]eventstore.EventUnmarshaler
 	var ok bool
 	if m, ok = e.events[groupId]; !ok {
-		m = make(map[string][]event.EventUnmarshaler)
+		m = make(map[string][]eventstore.EventUnmarshaler)
 		e.events[groupId] = m
 	}
-	var r []event.EventUnmarshaler
+	var r []eventstore.EventUnmarshaler
 	if r, ok = m[aggregateId]; !ok {
-		r = make([]event.EventUnmarshaler, 0, 10)
+		r = make([]eventstore.EventUnmarshaler, 0, 10)
 	}
 	m[aggregateId] = append(r, ev)
 }
