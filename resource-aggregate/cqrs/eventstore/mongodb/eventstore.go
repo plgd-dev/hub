@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/crc64"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 )
@@ -35,7 +37,8 @@ var snapshotsQueryIndex = bson.D{
 }
 
 var eventsQueryIndex = bson.D{
-	{idKey, 1},
+	{versionKey, 1},
+	{aggregateIDKey, 1},
 }
 
 type signOperator string
@@ -66,6 +69,7 @@ type EventStore struct {
 	batchSize       int
 	dataMarshaler   MarshalerFunc
 	dataUnmarshaler UnmarshalerFunc
+	ensuredIndexes  *cache.Cache
 }
 
 //NewEventStore create a event store from configuration
@@ -145,6 +149,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		dataUnmarshaler: eventUnmarshaler,
 		batchSize:       batchSize,
 		LogDebugfFunc:   LogDebugfFunc,
+		ensuredIndexes:  cache.New(time.Hour, time.Hour),
 	}
 
 	colAv := s.client.Database(s.DBName()).Collection(maintenanceCName)
@@ -231,6 +236,10 @@ type index struct {
 }
 
 func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
+	_, ok := s.ensuredIndexes.Get(col.Name())
+	if ok {
+		return nil
+	}
 	for _, keys := range indexes {
 		opts := options.Index()
 		opts.SetBackground(false)
@@ -248,6 +257,7 @@ func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, ind
 			return fmt.Errorf("cannot ensure indexes for eventstore: %w", err)
 		}
 	}
+	s.ensuredIndexes.SetDefault(col.Name(), true)
 	return nil
 }
 
@@ -282,12 +292,10 @@ func (s *EventStore) Save(ctx context.Context, collectionID, aggregateID string,
 
 	col := s.client.Database(s.DBName()).Collection(getEventCollectionName(collectionID))
 	if events[0].Version() == 0 {
-		/*
-			err = s.ensureIndex(ctx, col, eventsQueryIndex)
-			if err != nil {
-				return false, fmt.Errorf("cannot save events: %w", err)
-			}
-		*/
+		err = s.ensureIndex(ctx, col, eventsQueryIndex)
+		if err != nil {
+			return false, fmt.Errorf("cannot save events: %w", err)
+		}
 	}
 
 	if len(events) > 1 {
@@ -323,7 +331,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		return nil, false
 	}
 
-	version := event[idKey].(primitive.M)[versionKey].(int64)
+	version := event[versionKey].(int64)
 	i.LogDebugfFunc("mongodb.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v", i.groupID, event[aggregateIDStrKey].(string), version, event[eventTypeKey].(string))
 
 	data := event[dataKey].(primitive.Binary)
@@ -363,17 +371,9 @@ func versionQueriesToMgoQuery(queries []eventstore.VersionQuery, op signOperator
 
 func versionQueryToMgoQuery(query eventstore.VersionQuery, op signOperator) bson.M {
 	return bson.M{
-		idKey + "." + versionKey:     bson.M{string(op): query.Version},
-		idKey + "." + aggregateIDKey: aggregateID2Hash(query.AggregateID),
+		versionKey:     bson.M{string(op): query.Version},
+		aggregateIDKey: aggregateID2Hash(query.AggregateID),
 	}
-	andQueries := make([]bson.M, 0, 2)
-	andQueries = append(andQueries, bson.M{
-		idKey + "." + versionKey:     bson.M{string(op): query.Version},
-		idKey + "." + aggregateIDKey: aggregateID2Hash(query.AggregateID),
-	})
-	andQueries = append(andQueries, bson.M{idKey + "." + aggregateIDKey: aggregateID2Hash(query.AggregateID)})
-	return bson.M{"$and": andQueries}
-
 }
 
 type loader struct {
@@ -603,6 +603,7 @@ func (s *EventStore) Clear(ctx context.Context) error {
 
 // Close closes the database session.
 func (s *EventStore) Close(ctx context.Context) error {
+	s.ensuredIndexes.Flush()
 	return s.client.Disconnect(ctx)
 }
 
@@ -615,13 +616,12 @@ func makeDBEvent(groupID, aggregateID string, event eventstore.Event, marshaler 
 	}
 
 	return bson.M{
+		aggregateIDKey:    aggregateID2Hash(aggregateID),
+		versionKey:        event.Version(),
 		aggregateIDStrKey: aggregateID,
 		dataKey:           raw,
 		eventTypeKey:      event.EventType(),
-		idKey: bson.D{
-			{aggregateIDKey, aggregateID2Hash(aggregateID)},
-			{versionKey, event.Version()},
-		},
+		idKey:             aggregateID + "." + strconv.FormatUint(event.Version(), 10),
 	}, nil
 }
 
@@ -653,6 +653,12 @@ func (s *EventStore) SaveSnapshotQuery(ctx context.Context, groupID, aggregateID
 	sbSnap := makeDBSnapshot(groupID, aggregateID, version)
 	col := s.client.Database(s.DBName()).Collection(getSnapshotCollectionName(groupID))
 	if version == 0 {
+		/*
+			err = s.ensureIndex(ctx, col, snapshotsQueryIndex)
+			if err != nil {
+				return false, fmt.Errorf("cannot save events: %w", err)
+			}
+		*/
 		_, err := col.InsertOne(ctx, sbSnap)
 		if err != nil && IsDup(err) {
 			// someone update store newer snapshot
