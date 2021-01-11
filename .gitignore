@@ -129,3 +129,4 @@ dist
 .tern-port
 
 certificate-authority/acme/refImpl/acmeDB/
+docs/
