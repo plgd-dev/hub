@@ -1,0 +1,15 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2021-01-05T14:52:54.941Z\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"MIME-Version: 1.0\n"
+"X-Generator: react-intl-po\n"
+
+
+#: ./i18n/template.json
+#. [appName]
+#. defaultMessage is:
+#. Plgd UI
+msgid "Plgd UI"
+msgstr ""

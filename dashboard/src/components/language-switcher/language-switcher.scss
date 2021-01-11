@@ -1,0 +1,16 @@
+#language-switcher {
+  .toggle {
+    text-transform: uppercase;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+
+    span,
+    a {
+      cursor: pointer;
+      padding: 10px 15px;
+    }
+  }
+}

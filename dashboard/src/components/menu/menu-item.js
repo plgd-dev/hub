@@ -1,0 +1,48 @@
+import classNames from 'classnames'
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
+import Tooltip from 'react-bootstrap/Tooltip'
+import { NavLink } from 'react-router-dom'
+
+export const MenuItem = ({ children, tooltip, onClick, className, icon, to, ...rest }) => {
+  const menuItemClassName = classNames('menu-item', className)
+
+  const renderMenuItemContent = () => {
+    return (
+      <>
+        <span className="icon">
+          <i className={`fas ${icon}`} />
+        </span>
+        <span className="title">{children}</span>
+      </>
+    )
+  }
+
+  const renderMenuItem = () => {
+    if (to) {
+      return (
+        <NavLink to={to} className={menuItemClassName} {...rest}>
+          {renderMenuItemContent()}
+        </NavLink>
+      )
+    }
+
+    return (
+      <div className={menuItemClassName} onClick={onClick} {...rest}>
+        {renderMenuItemContent()}
+      </div>
+    )
+  }
+
+  if (tooltip) {
+    return (
+      <OverlayTrigger
+        placement="right"
+        overlay={tooltip && <Tooltip id={`menu-item-tooltip-${tooltip.replace(/\s/g, '-')}`}>{tooltip}</Tooltip>}
+      >
+        {renderMenuItem()}
+      </OverlayTrigger>
+    )
+  }
+
+  return renderMenuItem()
+}

@@ -1,0 +1,16 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: plgd #dashboard\n"
+"Language: en\n"
+
+#. [appName]
+#. defaultMessage is:
+#. Plgd UI
+#: ./i18n/template.json
+msgid "Plgd UI"
+msgstr "Plgd UI"
+
