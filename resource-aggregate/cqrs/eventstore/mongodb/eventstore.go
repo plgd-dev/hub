@@ -631,7 +631,7 @@ func makeDBSnapshot(aggregateID string, version uint64) bson.M {
 		versionKey:        -1,
 		aggregateIDStrKey: aggregateID,
 		dataKey:           version,
-		idKey:             "s." + aggregateID,
+		idKey:             getSnapshotID(aggregateID),
 	}
 }
 
@@ -678,6 +678,10 @@ func (s *EventStore) SaveSnapshotQuery(ctx context.Context, groupID, aggregateID
 	return false, nil
 }
 
+func getSnapshotID(aggregateID string) string {
+	return aggregateID + ".s"
+}
+
 func snapshotQueriesToMgoQuery(queries []eventstore.SnapshotQuery) (bson.M, *options.FindOptions) {
 	if len(queries) == 0 {
 		opts := options.FindOptions{}
@@ -688,14 +692,14 @@ func snapshotQueriesToMgoQuery(queries []eventstore.SnapshotQuery) (bson.M, *opt
 	if len(queries) == 1 {
 		opts := options.FindOptions{}
 		opts.SetHint(snapshotsQueryIndex)
-		return bson.M{idKey: "s." + queries[0].AggregateID}, &opts
+		return bson.M{idKey: getSnapshotID(queries[0].AggregateID)}, &opts
 	}
 
 	orQueries := make([]bson.M, 0, 32)
 	for _, q := range queries {
 		andQueries := make([]bson.M, 0, 4)
 		if q.AggregateID != "" {
-			andQueries = append(andQueries, bson.M{idKey: "s." + q.AggregateID})
+			andQueries = append(andQueries, bson.M{idKey: getSnapshotID(q.AggregateID)})
 		}
 		orQueries = append(orQueries, bson.M{"$and": andQueries})
 	}
