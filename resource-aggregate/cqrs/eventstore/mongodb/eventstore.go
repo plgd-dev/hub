@@ -23,7 +23,6 @@ import (
 )
 
 const eventCName = "events"
-const snapshotCName = "snapshots"
 
 const aggregateIDKey = "aggregateid"
 const aggregateIDStrKey = "aggregateidstr"
@@ -183,7 +182,7 @@ func IsDup(err error) bool {
 }
 
 func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, collectionID string, aggregateID string, event eventstore.Event) (concurrencyException bool, err error) {
-	e, err := makeDBEvent(collectionID, aggregateID, event, s.dataMarshaler)
+	e, err := makeDBEvent(aggregateID, event, s.dataMarshaler)
 	if err != nil {
 		return false, err
 	}
@@ -213,7 +212,7 @@ func (s *EventStore) saveEvents(ctx context.Context, col *mongo.Collection, coll
 		}
 
 		// Create the event record for the DB.
-		e, err := makeDBEvent(collectionID, aggregateID, event, s.dataMarshaler)
+		e, err := makeDBEvent(aggregateID, event, s.dataMarshaler)
 		if err != nil {
 			return false, err
 		}
@@ -608,7 +607,7 @@ func (s *EventStore) Close(ctx context.Context) error {
 }
 
 // newDBEvent returns a new dbEvent for an eventstore.
-func makeDBEvent(groupID, aggregateID string, event eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
+func makeDBEvent(aggregateID string, event eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
 	// Marshal event data if there is any.
 	raw, err := marshaler(event)
 	if err != nil {
@@ -626,16 +625,14 @@ func makeDBEvent(groupID, aggregateID string, event eventstore.Event, marshaler 
 }
 
 // newDBEvent returns a new dbEvent for an eventstore.
-func makeDBSnapshot(groupID, aggregateID string, version uint64) bson.M {
+func makeDBSnapshot(aggregateID string, version uint64) bson.M {
 	return bson.M{
-		idKey:             aggregateID2Hash(aggregateID),
+		aggregateIDKey:    aggregateID2Hash("snapshot"),
+		versionKey:        -1,
 		aggregateIDStrKey: aggregateID,
-		versionKey:        version,
+		dataKey:           version,
+		idKey:             "s." + aggregateID,
 	}
-}
-
-func getSnapshotCollectionName(groupID string) string {
-	return snapshotCName + "_" + groupID
 }
 
 // SaveSnapshotQuery upserts the snapshot record
@@ -650,15 +647,9 @@ func (s *EventStore) SaveSnapshotQuery(ctx context.Context, groupID, aggregateID
 		return false, fmt.Errorf("cannot save snapshot query: invalid query.aggregateID")
 	}
 
-	sbSnap := makeDBSnapshot(groupID, aggregateID, version)
-	col := s.client.Database(s.DBName()).Collection(getSnapshotCollectionName(groupID))
+	sbSnap := makeDBSnapshot(aggregateID, version)
+	col := s.client.Database(s.DBName()).Collection(getEventCollectionName(groupID))
 	if version == 0 {
-		/*
-			err = s.ensureIndex(ctx, col, snapshotsQueryIndex)
-			if err != nil {
-				return false, fmt.Errorf("cannot save events: %w", err)
-			}
-		*/
 		_, err := col.InsertOne(ctx, sbSnap)
 		if err != nil && IsDup(err) {
 			// someone update store newer snapshot
@@ -669,9 +660,9 @@ func (s *EventStore) SaveSnapshotQuery(ctx context.Context, groupID, aggregateID
 
 	if _, err = col.UpdateOne(ctx,
 		bson.M{
-			idKey: sbSnap[idKey].(int64),
-			versionKey: bson.M{
-				"$lt": sbSnap[versionKey].(uint64),
+			idKey: sbSnap[idKey].(string),
+			dataKey: bson.M{
+				"$lt": sbSnap[dataKey].(uint64),
 			},
 		},
 		bson.M{
@@ -689,20 +680,22 @@ func (s *EventStore) SaveSnapshotQuery(ctx context.Context, groupID, aggregateID
 
 func snapshotQueriesToMgoQuery(queries []eventstore.SnapshotQuery) (bson.M, *options.FindOptions) {
 	if len(queries) == 0 {
-		return bson.M{}, nil
+		opts := options.FindOptions{}
+		opts.SetHint(eventsQueryIndex)
+		return bson.M{aggregateIDKey: aggregateID2Hash("snapshot"), versionKey: -1}, &opts
 	}
 
 	if len(queries) == 1 {
 		opts := options.FindOptions{}
 		opts.SetHint(snapshotsQueryIndex)
-		return bson.M{idKey: aggregateID2Hash(queries[0].AggregateID)}, &opts
+		return bson.M{idKey: "s." + queries[0].AggregateID}, &opts
 	}
 
 	orQueries := make([]bson.M, 0, 32)
 	for _, q := range queries {
 		andQueries := make([]bson.M, 0, 4)
 		if q.AggregateID != "" {
-			andQueries = append(andQueries, bson.M{idKey: aggregateID2Hash(q.AggregateID)})
+			andQueries = append(andQueries, bson.M{idKey: "s." + q.AggregateID})
 		}
 		orQueries = append(orQueries, bson.M{"$and": andQueries})
 	}
@@ -728,7 +721,7 @@ func (i *queryIterator) Next(ctx context.Context, q *eventstore.VersionQuery) bo
 		return false
 	}
 
-	version := query[versionKey].(int64)
+	version := query[dataKey].(int64)
 	q.Version = uint64(version)
 	q.AggregateID = query[aggregateIDStrKey].(string)
 	q.GroupID = i.groupID
@@ -744,9 +737,9 @@ func (s *EventStore) loadSnapshotQueries(ctx context.Context, groupID string, qu
 	var iter *mongo.Cursor
 	query, hint := snapshotQueriesToMgoQuery(queries)
 	if hint == nil {
-		iter, err = s.client.Database(s.DBName()).Collection(getSnapshotCollectionName(groupID)).Find(ctx, query)
+		iter, err = s.client.Database(s.DBName()).Collection(getEventCollectionName(groupID)).Find(ctx, query)
 	} else {
-		iter, err = s.client.Database(s.DBName()).Collection(getSnapshotCollectionName(groupID)).Find(ctx, query, hint)
+		iter, err = s.client.Database(s.DBName()).Collection(getEventCollectionName(groupID)).Find(ctx, query, hint)
 	}
 	if err == mongo.ErrNilDocument {
 		return nil
