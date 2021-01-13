@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"os"
+	"os/signal"
 	"reflect"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/plgd-dev/kit/security/oauth/manager"
@@ -63,12 +66,13 @@ type Server struct {
 	coapServer      *tcp.Server
 	listener        tcp.Listener
 	authInterceptor kitNetCoap.Interceptor
-	wgDone          *sync.WaitGroup
 	asConn          *grpc.ClientConn
 	rdConn          *grpc.ClientConn
 	raConn          *grpc.ClientConn
 	ctx             context.Context
 	cancel          context.CancelFunc
+
+	sigs chan os.Signal
 }
 
 type DialCertManager = interface {
@@ -205,7 +209,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		oicPingCache:          oicPingCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
-		wgDone:                new(sync.WaitGroup),
+
+		sigs: make(chan os.Signal, 1),
 
 		ctx:    ctx,
 		cancel: cancel,
@@ -388,22 +393,42 @@ func (server *Server) tlsEnabled() bool {
 
 // Serve starts a coapgateway on the configured address in *Server.
 func (server *Server) Serve() error {
-	server.wgDone.Add(1)
-	defer func() {
-		defer server.wgDone.Done()
+	return server.serveWithHandlingSignal()
+}
+
+func (server *Server) serveWithHandlingSignal() error {
+	var wg sync.WaitGroup
+	var err error
+	wg.Add(1)
+	go func(server *Server) {
+		defer wg.Done()
+		err = server.coapServer.Serve(server.listener)
 		server.cancel()
 		server.oauthMgr.Close()
 		server.asConn.Close()
 		server.rdConn.Close()
 		server.raConn.Close()
 		server.listener.Close()
-	}()
-	return server.coapServer.Serve(server.listener)
+	}(server)
+
+	signal.Notify(server.sigs,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+	<-server.sigs
+
+	server.coapServer.Stop()
+	wg.Wait()
+
+	return err
 }
 
 // Shutdown turn off server.
 func (server *Server) Shutdown() error {
-	defer server.wgDone.Wait()
-	server.coapServer.Stop()
+	select {
+	case server.sigs <- syscall.SIGTERM:
+	default:
+	}
 	return nil
 }
