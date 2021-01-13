@@ -93,7 +93,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	}
 
 	authCtx := authCtx{
-		AuthorizationContext: pbCQRS.AuthorizationContext{
+		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: signIn.DeviceID,
 		},
 		UserID:      signIn.UserID,
@@ -106,9 +106,9 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		client.Close()
 		return
 	}
-	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.UserID)
+	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
 
-	err = client.PublishCloudDeviceStatus(req.Context, signIn.DeviceID, pbCQRS.AuthorizationContext{
+	err = client.PublishCloudDeviceStatus(req.Context, signIn.DeviceID, &pbCQRS.AuthorizationContext{
 		DeviceId: signIn.DeviceID,
 	})
 	if err != nil {
@@ -126,7 +126,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 
-	oldAuthCtx := client.replaceAuthorizationContext(authCtx)
+	oldAuthCtx := client.replaceAuthorizationContext(&authCtx)
 	newDevice := false
 
 	switch {
@@ -241,7 +241,7 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 
 	client.cancelResourceSubscriptions(true)
 	client.cancelDeviceSubscriptions(true)
-	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
+	oldAuthCtx := client.replaceAuthorizationContext(nil)
 	if oldAuthCtx.DeviceId != "" {
 		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
 		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)

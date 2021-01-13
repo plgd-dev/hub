@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -22,7 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func makeListDevicesCommand(msg *mux.Message, authCtx pbCQRS.AuthorizationContext) (*pbGRPC.GetResourceLinksRequest, error) {
+func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, error) {
 	deviceIdsFilter := make([]string, 0, 4)
 	typeFilter := make([]string, 0, 4)
 
@@ -106,13 +105,13 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 	}()
 
 	authCtx := client.loadAuthorizationContext()
-	request, err := makeListDevicesCommand(req, authCtx.AuthorizationContext)
+	request, err := makeListDevicesCommand(req)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
-	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID), request)
+	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithUserID(req.Context, authCtx.GetUserID()), request)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.DeviceId, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
 		return

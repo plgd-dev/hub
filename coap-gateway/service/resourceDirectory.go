@@ -121,6 +121,7 @@ func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, cli
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
+
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }
 

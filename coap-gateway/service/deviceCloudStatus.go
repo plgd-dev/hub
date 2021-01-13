@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
-func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext) error {
+func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx *pbCQRS.AuthorizationContext) error {
 	devStatus := schema.ResourceLink{
 		Href:          cloud.StatusHref,
 		ResourceTypes: cloud.StatusResourceTypes,
@@ -27,7 +27,7 @@ func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID str
 	return err
 }
 
-func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext, online bool) error {
+func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID string, authCtx *pbCQRS.AuthorizationContext, online bool) error {
 	status := cloud.Status{
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,
@@ -53,7 +53,7 @@ func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID stri
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),
 		},
-		AuthorizationContext: &authCtx,
+		AuthorizationContext: authCtx,
 	}
 
 	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
