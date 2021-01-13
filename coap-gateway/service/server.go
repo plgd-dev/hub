@@ -96,25 +96,25 @@ func New(config Config, clients ClientsConfig) *Server {
 		}
 	})
 
-	oauthCertManager, err := certManager.NewCertManager(config.OAuthTLSConfig)
+	oauthCertManager, err := certManager.NewCertManager(clients.OAuthProvider.OAuthTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth dial cert manager %v", err)
 	}
 
 	oauthDialTLSConfig := oauthCertManager.GetClientTLSConfig()
-	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, oauthDialTLSConfig)
+	oauthMgr, err := manager.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthDialTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
-	raCertManager, err := certManager.NewCertManager(clients.ResourceAggregateClientTLSConfig)
+	raCertManager, err := certManager.NewCertManager(clients.ResourceAggregate.ResourceAggregateClientTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create resource-aggregate dial cert manager %v", err)
 	}
 
 	raDialTLSConfig := raCertManager.GetClientTLSConfig()
 	raConn, err := grpc.Dial(
-		clients.ResourceAggregateAddr,
+		clients.ResourceAggregate.ResourceAggregateAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(raDialTLSConfig)),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
@@ -123,14 +123,14 @@ func New(config Config, clients ClientsConfig) *Server {
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	asCertManager, err := certManager.NewCertManager(clients.AuthServerClientTLSConfig)
+	asCertManager, err := certManager.NewCertManager(clients.Authorization.AuthServerClientTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create authorization dial cert manager %v", err)
 	}
 
 	asDialTLSConfig := asCertManager.GetClientTLSConfig()
 	asConn, err := grpc.Dial(
-		clients.AuthServerAddr,
+		clients.Authorization.AuthServerAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(asDialTLSConfig)),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
@@ -140,13 +140,13 @@ func New(config Config, clients ClientsConfig) *Server {
 	asClient := pbAS.NewAuthorizationServiceClient(asConn)
 
 
-	rdCertManager, err := certManager.NewCertManager(clients.ResourceDirectoryClientTLSConfig)
+	rdCertManager, err := certManager.NewCertManager(clients.ResourceDirectory.ResourceDirectoryClientTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create resource-directory dial cert manager %v", err)
 	}
 
 	rdDialTLSConfig := rdCertManager.GetClientTLSConfig()
-	rdConn, err := grpc.Dial(clients.ResourceDirectoryAddr,
+	rdConn, err := grpc.Dial(clients.ResourceDirectory.ResourceDirectoryAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(rdDialTLSConfig)),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
@@ -155,21 +155,21 @@ func New(config Config, clients ClientsConfig) *Server {
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	listenCertManager, err := certManager.NewCertManager(config.ServerTLSConfig)
+	listenCertManager, err := certManager.NewCertManager(config.CoapGW.ServerTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create listen cert manager %v", err)
 	}
 	var listener tcp.Listener
 	var isTLSListener bool
 	if listenCertManager == nil || reflect.ValueOf(listenCertManager).IsNil() {
-		l, err := net.NewTCPListener("tcp", config.Addr)
+		l, err := net.NewTCPListener("tcp", config.CoapGW.Addr)
 		if err != nil {
 			log.Fatalf("cannot setup tcp for server: %v", err)
 		}
 		listener = l
 	} else {
 		tlsConfig := listenCertManager.GetServerTLSConfig()
-		l, err := net.NewTLSListener("tcp", config.Addr, tlsConfig)
+		l, err := net.NewTLSListener("tcp", config.CoapGW.Addr, tlsConfig)
 		if err != nil {
 			log.Fatalf("cannot setup tcp-tls for server: %v", err)
 		}
@@ -179,12 +179,12 @@ func New(config Config, clients ClientsConfig) *Server {
 
 
 	var keepAlive *keepalive.KeepAlive
-	if config.KeepaliveEnable {
-		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.KeepaliveTimeoutConnection)))
+	if config.CoapGW.KeepaliveEnable {
+		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.CoapGW.KeepaliveTimeoutConnection)))
 	}
 
 	var blockWiseTransferSZX blockwise.SZX
-	switch strings.ToLower(config.BlockWiseTransferSZX) {
+	switch strings.ToLower(config.CoapGW.BlockWiseTransferSZX) {
 	case "16":
 		blockWiseTransferSZX = blockwise.SZX16
 	case "32":
@@ -202,24 +202,24 @@ func New(config Config, clients ClientsConfig) *Server {
 	case "bert":
 		blockWiseTransferSZX = blockwise.SZXBERT
 	default:
-		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.BlockWiseTransferSZX)
+		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.CoapGW.BlockWiseTransferSZX)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	s := Server{
-		FQDN:                            config.FQDN,
-		ExternalPort:                    config.ExternalPort,
-		Addr:                            config.Addr,
-		RequestTimeout:                  config.RequestTimeout,
-		DisableTCPSignalMessageCSM:      config.DisableTCPSignalMessageCSM,
-		DisablePeerTCPSignalMessageCSMs: config.DisablePeerTCPSignalMessageCSMs,
-		SendErrorTextInResponse:         config.SendErrorTextInResponse,
-		BlockWiseTransfer:               config.EnableBlockWiseTransfer,
+		FQDN:                            config.CoapGW.FQDN,
+		ExternalPort:                    config.CoapGW.ExternalPort,
+		Addr:                            config.CoapGW.Addr,
+		RequestTimeout:                  config.CoapGW.RequestTimeout,
+		DisableTCPSignalMessageCSM:      config.CoapGW.DisableTCPSignalMessageCSM,
+		DisablePeerTCPSignalMessageCSMs: config.CoapGW.DisablePeerTCPSignalMessageCSMs,
+		SendErrorTextInResponse:         config.CoapGW.SendErrorTextInResponse,
+		BlockWiseTransfer:               config.CoapGW.BlockWiseTransferEnable,
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
-		ReconnectInterval:               config.ReconnectInterval,
-		HeartBeat:                       config.HeartBeat,
-		MaxMessageSize:                  config.MaxMessageSize,
+		ReconnectInterval:               config.CoapGW.ReconnectInterval,
+		HeartBeat:                       config.CoapGW.HeartBeat,
+		MaxMessageSize:                  config.CoapGW.MaxMessageSize,
 
 		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,

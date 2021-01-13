@@ -2,39 +2,59 @@ package service
 
 import (
 	"github.com/plgd-dev/kit/security/certManager"
-	"time"
-
 	"github.com/plgd-dev/kit/security/oauth/manager"
+	"time"
 )
 
 // Config for application.
 type Config struct {
-	Addr                            	string         `envconfig:"ADDRESS" long:"coap-address" default:"0.0.0.0:5684"`
-	ExternalPort                    	uint16         `envconfig:"EXTERNAL_PORT" long:"coap-external-port" default:"5684"`
-	FQDN                            	string         `envconfig:"FQDN" long:"coap-fqdn" default:"coapgw.ocf.cloud"`
-	ServerTLSConfig						certManager.Config 	`envconfig:"TLS" long:"coap-tls"`
 
-	RequestTimeout                  	time.Duration  `envconfig:"REQUEST_TIMEOUT" long:"coap-request-timeout" default:"10s"`
-	HeartBeat                       	time.Duration  `envconfig:"HEARTBEAT" long:"coap-heartbeat" default:"4s"`
-	ReconnectInterval               	time.Duration  `envconfig:"RECONNECT_TIMEOUT" long:"coap-reconnect-interval" default:"10s"`
-	MaxMessageSize                  	int            `envconfig:"MAX_MESSAGE_SIZE" long:"coap-max-message-size" default:"262144"`
-	KeepaliveEnable                 	bool           `envconfig:"KEEPALIVE_ENABLE" long:"coap-keepalive-enabled" default:"true"`
-	KeepaliveTimeoutConnection      	time.Duration  `envconfig:"KEEPALIVE_TIMEOUT_CONNECTION" long:"coap-keepalive-timeout" default:"20s"`
-	EnableBlockWiseTransfer        		bool           `envconfig:"ENABLE_BLOCKWISE_TRANSFER" long:"coap-blockwise-transfer-enabled" default:"true"`
-	BlockWiseTransferSZX            	string         `envconfig:"BLOCKWISE_TRANSFER_SZX" long:"coap-blockwise-block-size" default:"1024"`
-	DisableTCPSignalMessageCSM      	bool           `envconfig:"DISABLE_TCP_SIGNAL_MESSAGE_CSM" long:"coap-tcp-signal-message-csm-disabled" default:"false"`
-	DisablePeerTCPSignalMessageCSMs 	bool           `envconfig:"DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS" long:"coap-peer-tcp-signal-message-csm-disabled"  default:"false"`
-	SendErrorTextInResponse        		bool           `envconfig:"ERROR_IN_RESPONSE" long:"coap-error-response-enabled" default:"true"`
-
-	OAuth                           	manager.Config 		`envconfig:"OAUTH" long:"coap-oauth"`
-	OAuthTLSConfig						certManager.Config 	`envconfig:"TLS" long:"coap-oauth-tls"`
+	CoapGW 								CoapConfig 			`yaml:"coap" json:"coap"`
 }
 
+type CoapConfig struct {
+	Addr                            	string         		`yaml:"address" json:"address" default:"0.0.0.0:5684"`
+	ExternalPort                    	uint16         		`yaml:"external-port" json:"external-port" default:"5684"`
+	FQDN                            	string         		`yaml:"fqdn" json:"fqdn" default:"coapgw.ocf.cloud"`
+	ServerTLSConfig						certManager.Config 	`yaml:"tls" json:"tls"`
+
+	RequestTimeout                  	time.Duration  		`yaml:"request-timeout" json:"request-timeout" default:"10s"`
+	HeartBeat                       	time.Duration  		`yaml:"heartbeat" json:"heartbeat" default:"4s"`
+	ReconnectInterval               	time.Duration  		`yaml:"reconnect-interval" json:"reconnect-interval" default:"10s"`
+	MaxMessageSize                  	int            		`yaml:"max-message-size" json:"max-message-size" default:"262144"`
+	KeepaliveEnable                 	bool           		`yaml:"keepalive-enabled" json:"keepalive-enabled" default:"true"`
+	KeepaliveTimeoutConnection      	time.Duration  		`yaml:"keepalive-timeout" json:"keepalive-timeout" default:"20s"`
+	BlockWiseTransferEnable        		bool           		`yaml:"blockwise-transfer-enabled" json:"blockwise-transfer-enabled" default:"true"`
+	BlockWiseTransferSZX            	string         		`yaml:"blockwise-block-size" json:"blockwise-block-size" default:"1024"`
+	DisableTCPSignalMessageCSM      	bool           		`yaml:"tcp-signal-message-csm-disabled" json:"tcp-signal-message-csm-disabled" default:"false"`
+	DisablePeerTCPSignalMessageCSMs 	bool           		`yaml:"peer-tcp-signal-message-csm-disabled" json:"peer-tcp-signal-message-csm-disabled" default:"false"`
+	SendErrorTextInResponse        		bool           		`yaml:"error-response-enabled" json:"error-response-enabled" default:"true"`
+}
+
+
 type ClientsConfig struct {
-	AuthServerAddr                  	string         		`envconfig:"AUTH_SERVER_ADDRESS" long:"authorization-address" default:"127.0.0.1:9081"`
-	AuthServerClientTLSConfig			certManager.Config 	`envconfig:"AUTH_SERVER_TLS" long:"authorization-tls"`
-	ResourceDirectoryAddr           	string         		`envconfig:"RESOURCE_DIRECTORY_ADDRESS" long:"resource-directory-address" default:"127.0.0.1:9082"`
-	ResourceDirectoryClientTLSConfig	certManager.Config 	`envconfig:"RESOURCE_DIRECTORY_TLS" long:"resource-directory-tls"`
-	ResourceAggregateAddr           	string         		`envconfig:"RESOURCE_AGGREGATE_ADDRESS" long:"resource-aggregate-address" default:"127.0.0.1:9083"`
-	ResourceAggregateClientTLSConfig	certManager.Config 	`envconfig:"RESOURCE_AGGREGATE_TLS" long:"resource-aggregate-tls"`
+	OAuthProvider						OAuthConfig					`yaml:"oauth" json:"oauth"`
+	Authorization 						AuthorizationConfig 		`yaml:"authorization" json:"authorization"`
+	ResourceDirectory					ResourceDirectoryConfig		`yaml:"resource-directory" json:"resource-directory"`
+	ResourceAggregate					ResourceAggregateConfig 	`yaml:"resource-aggregate" json:"resource-aggregate"`
+}
+
+type OAuthConfig struct {
+	OAuthConfig                         manager.Config 		`yaml:"provider" json:"provider"`
+	OAuthTLSConfig						certManager.Config 	`yaml:"tls" json:"tls"`
+}
+
+type AuthorizationConfig struct {
+	AuthServerAddr                  	string         		`yaml:"address" json:"address" default:"127.0.0.1:9081"`
+	AuthServerClientTLSConfig			certManager.Config 	`yaml:"tls" json:"tls"`
+}
+
+type ResourceDirectoryConfig struct {
+	ResourceDirectoryAddr           	string         		`yaml:"address" json:"address" default:"127.0.0.1:9082"`
+	ResourceDirectoryClientTLSConfig	certManager.Config 	`yaml:"tls" json:"tls"`
+}
+
+type ResourceAggregateConfig struct {
+	ResourceAggregateAddr           	string         		`yaml:"address" json:"address" default:"127.0.0.1:9083"`
+	ResourceAggregateClientTLSConfig	certManager.Config 	`yaml:"tls" json:"tls"`
 }
