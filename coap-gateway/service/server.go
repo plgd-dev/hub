@@ -317,7 +317,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
-		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.UserID)
+		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.GetUserID())
 		next.ServeCOAP(w, r)
 	})
 }

@@ -168,6 +168,6 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
 		return
 	}
-	client.replaceAuthorizationContext(authCtx{})
+	client.replaceAuthorizationContext(nil)
 	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
 }

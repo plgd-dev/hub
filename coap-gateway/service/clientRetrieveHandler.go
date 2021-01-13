@@ -106,7 +106,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 
 func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href, resourceInterface string) (*pbGRPC.Content, coapCodes.Code, error) {
 	authCtx := client.loadAuthorizationContext()
-	processed, err := client.server.rdClient.RetrieveResourceFromDevice(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID), &pbGRPC.RetrieveResourceFromDeviceRequest{
+	processed, err := client.server.rdClient.RetrieveResourceFromDevice(kitNetGrpc.CtxWithUserID(req.Context, authCtx.GetUserID()), &pbGRPC.RetrieveResourceFromDeviceRequest{
 		ResourceId: &pbGRPC.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
