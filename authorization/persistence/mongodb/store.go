@@ -32,8 +32,8 @@ type Store struct {
 }
 
 type Config struct {
-	URI      string `envconfig:"URI" env:"URI" default:"mongodb://localhost:27017"`
-	Database string `envconfig:"DATABASE" env:"DATABASE" default:"authorization"`
+	URI      string `envconfig:"URI" env:"URI" long:"uri" default:"mongodb://localhost:27017"`
+	Database string `envconfig:"DATABASE" env:"DATABASE" long:"database" default:"authorization"`
 	tlsCfg   *tls.Config
 }
 

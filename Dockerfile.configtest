@@ -1,0 +1,16 @@
+FROM golang:1.14-alpine AS cloud-test
+RUN apk add --no-cache curl git build-base bash
+WORKDIR $GOPATH/src/github.com/plgd-dev
+RUN git clone https://github.com/plgd-dev/kit.git -b config-refactoring
+WORKDIR $GOPATH/src/github.com/plgd-dev/kit
+COPY go.mod go.sum ./
+RUN go mod download
+#COPY . .
+RUN go build -o /usr/bin/cert-tool ./cmd/certificate-generator
+WORKDIR $GOPATH/src/github.com/plgd-dev/cloud
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+COPY .tmp/ .tmp/
+RUN ls -al
+
