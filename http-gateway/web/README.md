@@ -15,9 +15,9 @@ Configuration for the client can be found in `./src/auth_config.json`.
 
     $ npm start
 
-Application will be hosted on `http://localhost:3001` by default. To change the default port, put `PORT=xxxx` into `package.json` script for starting the development server
+Application will be hosted on `http://localhost:3000` by default. To change the default port, put `PORT=xxxx` into `package.json` script for starting the development server
 
-    cross-env PORT=3001 craco start
+    cross-env PORT=3000 craco start
 
 or set `PORT` into your enviroment variables.
 
