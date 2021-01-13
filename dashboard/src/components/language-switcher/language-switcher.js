@@ -25,7 +25,6 @@ export const LanguageSwitcher = memo(() => {
       {expanded && (
         <div className="content">
           <span onClick={() => changeLanguage('en')}>English</span>
-          <span onClick={() => changeLanguage('de')}>Deutsch</span>
         </div>
       )}
     </div>

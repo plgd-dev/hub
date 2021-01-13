@@ -12,6 +12,7 @@
     "@testing-library/user-event": "^12.6.0",
     "bootstrap": "^4.5.3",
     "classnames": "^2.2.6",
+    "cross-env": "^7.0.3",
     "history": "^4.10.1",
     "node-sass": "4.14.1",
     "prettier": "1.14.3",
@@ -38,9 +39,12 @@
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
-    "extract-intl": "formatjs extract './src/**/*.js*' --out-file './i18n/template.json' --format ./scripts/formatjs-extract-format.js",
-    "extract-pot": "rip json2pot './i18n/**/*.json' -o './i18n/template.pot'",
-    "generate-languages": "rip po2json './i18n/**/*.po' -m './i18n/template.json' -o './src/languages/languages.json'"
+    "generate-pot": "node ./scripts/generate-pot.js",
+    "generate-language-files": "node ./scripts/generate-language-files.js"
+  },
+  "scriptComments": {
+    "generate-pot": "Maps through all js files and extract the translate messages into a .pot file, used in the translation tool outside of this app.",
+    "generate-language-files": "Maps through all .po files in i18n folder exported from the translation tool after the translators translated the strings, and generates the final languages.json file used in the application."
   },
   "eslintConfig": {
     "extends": [

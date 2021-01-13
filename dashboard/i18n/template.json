@@ -1,6 +1,38 @@
 [
   {
-    "defaultMessage": "Plgd UI",
-    "id": "appName"
+    "defaultMessage": "API",
+    "id": "footer.API"
+  },
+  {
+    "defaultMessage": "Docs",
+    "id": "footer.docs"
+  },
+  {
+    "defaultMessage": "Contribute",
+    "id": "footer.contribute"
+  },
+  {
+    "defaultMessage": "Dashboard",
+    "id": "menu.dashboard"
+  },
+  {
+    "defaultMessage": "Things",
+    "id": "menu.things"
+  },
+  {
+    "defaultMessage": "Services",
+    "id": "menu.services"
+  },
+  {
+    "defaultMessage": "Notifications",
+    "id": "menu.notifications"
+  },
+  {
+    "defaultMessage": "Collapse",
+    "id": "menu.collapse"
+  },
+  {
+    "defaultMessage": "Log Out",
+    "id": "user-widget.logOut"
   }
 ]
