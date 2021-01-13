@@ -3,59 +3,63 @@ log:
 apis:
   coap:
     address: "0.0.0.0:5684"
-    external-port: "5684"
+    external-port: 5684
+    fqdn: "localhost"
     request-timeout: 10s
     heartbeat: 4s
     max-message-size: 1024
-    keepalive:
-      enabled: true
-      timeout: 5s
-      #max-retries: 6
-    blockwise-transfer:
-      enabled: true
-      block-size: 1024
+    keepalive-enabled: true
+    keepalive-timeout: 5s
+    blockwise-transfer-enabled: true
+    blockwise-transfer-block-size: 1024
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      cert-file: "/data/certs/external/coap-gateway.crt"
-      key-file: "/data/certs/external/coap-gateway.key"
+      dir-path: "/data/certs"
+      ca-file: "root_ca.crt"
+      cert-file: "coap.crt"
+      key-file: "coap.key"
       client-certificate-required: true
-    oauth:
-      client_id: ""
-      client_secret: ""
-      scopes: ""
+clients:
+  oauth:
+    provider:
+      client-id: ""
+      client-secret: ""
+      scopes: []
       audience: ""
       endpoint:
-        token_url : ""
-      request-timeout : "10s"
-      tls:
-        enabled: false
-        ca-file: ""
-        cert-file: ""
-        key-file: ""
-        use-system-ca-pool: true
-clients:
+        token-url : ""
+      request-timeout : 10s
+    tls:
+      enabled: true
+      dir-path: "/data/certs"
+      ca-file: "root_ca.crt"
+      cert-file: "http.crt"
+      key-file: "http.key"
+      use-system-ca-pool: true
   authorization:
     address: "127.0.0.1:9081"
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      cert-file: "/data/certs/internal/endpoint.crt"
-      key-file: "/data/certs/internal/endpoint.key"
+      dir-path: "/data/certs"
+      ca-file: "root_ca.crt"
+      cert-file: "http.crt"
+      key-file: "http.key"
       use-system-ca-pool: true
   resource-directory:
     address: "127.0.0.1:9082"
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      cert-file: "/data/certs/internal/endpoint.crt"
-      key-file: "/data/certs/internal/endpoint.key"
+      dir-path: "/data/certs"
+      ca-file: "root_ca.crt"
+      cert-file: "http.crt"
+      key-file: "http.key"
       use-system-ca-pool: true
   resource-aggregate:
     address: "127.0.0.1:9083"
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      cert-file: "/data/certs/internal/endpoint.crt"
-      key-file: "/data/certs/internal/endpoint.key"
+      dir-path: "/data/certs"
+      ca-file: "root_ca.crt"
+      cert-file: "http.crt"
+      key-file: "http.key"
       use-system-ca-pool: true

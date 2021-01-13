@@ -1,6 +1,5 @@
-log:
-  debug: false
-
+Log:
+  Debug: false
 Address: ${HTTP_GATEWAY_ADDRESS}
 Listen:
   Type: file

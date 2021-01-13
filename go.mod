@@ -23,7 +23,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.4.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/go-coap/v2 v2.3.0
-	github.com/plgd-dev/kit v0.0.0-20201214132922-e9fbe17b274c
+	github.com/plgd-dev/kit v0.0.0-20210115130350-b15ec8f1b200
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
@@ -49,4 +49,12 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-replace gopkg.in/yaml.v2 v2.3.0 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454
+replace gopkg.in/yaml.v2 v2.2.8 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454
+
+//replace github.com/plgd-dev/kit => ../kit
+
+//replace github.com/plgd-dev/sdk => ../sdk
+
+//replace github.com/plgd-dev/cqrs => ../cqrs
+
+//replace github.com/plgd-dev/go-coap/v2 => ../go-coap

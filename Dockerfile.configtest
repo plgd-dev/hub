@@ -1,12 +1,22 @@
+#FROM ubuntu:20.04 AS cloud-test
+#RUN apt-get update \
+#    && apt-get install -y gcc make git curl file sudo
+#RUN git clone https://github.com/udhos/update-golang.git \
+#    && cd update-golang \
+#    && sudo ./update-golang.sh \
+#    && ln -s /usr/local/go/bin/go /usr/bin/go
+
 FROM golang:1.14-alpine AS cloud-test
 RUN apk add --no-cache curl git build-base bash
+
 WORKDIR $GOPATH/src/github.com/plgd-dev
-RUN git clone https://github.com/plgd-dev/kit.git -b config-refactoring
+RUN git clone -b config-refactoring https://github.com/plgd-dev/kit.git
+
 WORKDIR $GOPATH/src/github.com/plgd-dev/kit
-COPY go.mod go.sum ./
+RUN ls -al
 RUN go mod download
-#COPY . .
 RUN go build -o /usr/bin/cert-tool ./cmd/certificate-generator
+
 WORKDIR $GOPATH/src/github.com/plgd-dev/cloud
 COPY go.mod go.sum ./
 RUN go mod download
