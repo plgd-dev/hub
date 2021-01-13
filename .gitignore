@@ -130,3 +130,6 @@ dist
 
 certificate-authority/acme/refImpl/acmeDB/
 docs/
+
+go.mod
+go.sum

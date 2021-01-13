@@ -1,0 +1,57 @@
+log:
+  debug: true
+apis:
+    address: "0.0.0.0:9081"
+    tls:
+      enabled: true
+      ca-file: "/data/certs/root_ca.crt"
+      cert-file: "/data/certs/internal/endpoint.crt"
+      key-file: "/data/certs/internal/endpoint.key"
+      client-certificate-required: true
+    http-address: "0.0.0.0:9085"
+    http-tls:
+      enabled: true
+      ca-file: "/data/certs/root_ca.crt"
+      cert-file: "/data/certs/internal/endpoint.crt"
+      key-file: "/data/certs/internal/endpoint.key"
+      client-certificate-required: false
+    device:
+      provider: "test"
+      oauth:
+        client_id: ""
+        client_secret: ""
+        scopes: ""
+        audience: ""
+        endpoint:
+          auth_url : ""
+          auth_token : ""
+          auth_stype : ""  # not required
+        response_type: ""
+        response_mode: ""
+        redirect_url: ""
+        access_type: ""   # not required
+        tls:
+          enabled: false
+          ca-file: ""
+          cert-file: ""
+          key-file: ""
+          use-system-ca-pool: true
+    sdk-oauth:
+      client_id: ""
+      client_secret: ""
+      scopes: ""
+      audience: ""
+      endpoint:
+        auth_url : ""
+        auth_token : ""
+        auth_stype : ""  # not required
+      response_type: ""
+      response_mode: ""
+      redirect_url: ""
+      access_type: ""   # not required
+      tls:
+        enabled: false
+        ca-file: ""
+        cert-file: ""
+        key-file: ""
+        use-system-ca-pool: true

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/plgd-dev/kit/security/certManager"
 	"reflect"
 	"strings"
 	"sync"
@@ -81,7 +82,7 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager) *Server {
+func New(config Config, clients ClientsConfig) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -95,15 +96,26 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		}
 	})
 
-	dialTLSConfig := dialCertManager.GetClientTLSConfig()
-	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	oauthCertManager, err := certManager.NewCertManager(config.OAuthTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create oauth dial cert manager %v", err)
+	}
+
+	oauthDialTLSConfig := oauthCertManager.GetClientTLSConfig()
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, oauthDialTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
+	raCertManager, err := certManager.NewCertManager(clients.ResourceAggregateClientTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create resource-aggregate dial cert manager %v", err)
+	}
+
+	raDialTLSConfig := raCertManager.GetClientTLSConfig()
 	raConn, err := grpc.Dial(
-		config.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		clients.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(raDialTLSConfig)),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
@@ -111,9 +123,15 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
+	asCertManager, err := certManager.NewCertManager(clients.AuthServerClientTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create authorization dial cert manager %v", err)
+	}
+
+	asDialTLSConfig := asCertManager.GetClientTLSConfig()
 	asConn, err := grpc.Dial(
-		config.AuthServerAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		clients.AuthServerAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(asDialTLSConfig)),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
@@ -121,12 +139,25 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 	asClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+
+	rdCertManager, err := certManager.NewCertManager(clients.ResourceDirectoryClientTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create resource-directory dial cert manager %v", err)
+	}
+
+	rdDialTLSConfig := rdCertManager.GetClientTLSConfig()
+	rdConn, err := grpc.Dial(clients.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(rdDialTLSConfig)),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
+	}
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
+
+	listenCertManager, err := certManager.NewCertManager(config.ServerTLSConfig)
+	if err != nil {
+		log.Fatalf("cannot create listen cert manager %v", err)
 	}
 	var listener tcp.Listener
 	var isTLSListener bool
@@ -145,7 +176,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		listener = l
 		isTLSListener = true
 	}
-	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
+
 
 	var keepAlive *keepalive.KeepAlive
 	if config.KeepaliveEnable {
@@ -184,7 +215,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		DisableTCPSignalMessageCSM:      config.DisableTCPSignalMessageCSM,
 		DisablePeerTCPSignalMessageCSMs: config.DisablePeerTCPSignalMessageCSMs,
 		SendErrorTextInResponse:         config.SendErrorTextInResponse,
-		BlockWiseTransfer:               !config.DisableBlockWiseTransfer,
+		BlockWiseTransfer:               config.EnableBlockWiseTransfer,
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
 		ReconnectInterval:               config.ReconnectInterval,
 		HeartBeat:                       config.HeartBeat,

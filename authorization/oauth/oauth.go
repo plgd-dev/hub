@@ -31,21 +31,21 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 }
 
 type Endpoint struct {
-	AuthURL   string    `json:"AuthUrl" envconfig:"AUTH_URL" env:"AUTH_URL"`
-	TokenURL  string    `json:"TokenUrl" envconfig:"TOKEN_URL" env:"TOKEN_URL"`
-	AuthStyle AuthStyle `envconfig:"AUTH_STYLE" env:"AUTH_STYLE"`
+	AuthURL   string    `json:"AuthUrl" envconfig:"AUTH_URL" env:"AUTH_URL" long:"auth_url"`
+	TokenURL  string    `json:"TokenUrl" envconfig:"TOKEN_URL" env:"TOKEN_URL" long:"token_url"`
+	AuthStyle AuthStyle `envconfig:"AUTH_STYLE" env:"AUTH_STYLE" long:"auth_style"`
 }
 
 type Config struct {
-	ClientID     string   `json:"ClientId" envconfig:"CLIENT_ID" env:"CLIENT_ID"`
-	ClientSecret string   `json:"ClientSecret" envconfig:"CLIENT_SECRET" env:"CLIENT_SECRET"`
-	Scopes       []string `json:"Scopes" envconfig:"SCOPES" env:"SCOPES"`
-	Endpoint     Endpoint `json:"Endpoint" envconfig:"ENDPOINT" env:"ENDPOINT"`
-	Audience     string   `json:"Audience" envconfig:"AUDIENCE" env:"AUDIENCE"`
-	RedirectURL  string   `json:"RedirectUrl" envconfig:"REDIRECT_URL" env:"REDIRECT_URL"`
-	AccessType   string   `json:"AccessType" envconfig:"ACCESS_TYPE" env:"ACCESS_TYPE"`
-	ResponseType string   `json:"ResponseType" envconfig:"RESPONSE_TYPE" env:"RESPONSE_TYPE"`
-	ResponseMode string   `json:"ResponseMode" envconfig:"RESPONSE_MODE" env:"RESPONSE_MODE"`
+	ClientID     string   `json:"ClientId" envconfig:"CLIENT_ID" env:"CLIENT_ID" long:"client_id"`
+	ClientSecret string   `json:"ClientSecret" envconfig:"CLIENT_SECRET" env:"CLIENT_SECRET" long:"client_secret"`
+	Scopes       []string `json:"Scopes" envconfig:"SCOPES" env:"SCOPES" long:"scopes"`
+	Endpoint     Endpoint `json:"Endpoint" envconfig:"ENDPOINT" env:"ENDPOINT" long:"endpoint"`
+	Audience     string   `json:"Audience" envconfig:"AUDIENCE" env:"AUDIENCE" long:"audience"`
+	RedirectURL  string   `json:"RedirectUrl" envconfig:"REDIRECT_URL" env:"REDIRECT_URL" long:"redirect_url"`
+	AccessType   string   `json:"AccessType" envconfig:"ACCESS_TYPE" env:"ACCESS_TYPE" long:"access_type"`
+	ResponseType string   `json:"ResponseType" envconfig:"RESPONSE_TYPE" env:"RESPONSE_TYPE" long:"response_type"`
+	ResponseMode string   `json:"ResponseMode" envconfig:"RESPONSE_MODE" env:"RESPONSE_MODE" long:"response_mode"`
 }
 
 func (c Config) ToOAuth2() oauth2.Config {
