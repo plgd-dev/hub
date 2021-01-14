@@ -16,7 +16,7 @@ func toResourceValue(m *resourceCtx) pb.ResourceValue {
 		},
 		Content: pb.RAContent2Content(m.content.GetContent()),
 		Types:   m.resource.GetResourceTypes(),
-		Status:  pb.RAStatus2Status(m.content.Status),
+		Status:  pb.RAStatus2Status(m.content.GetStatus()),
 	}
 }
 
@@ -64,9 +64,6 @@ func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValue
 
 	for _, resources := range resourceValues {
 		for _, resource := range resources {
-			if resource.content == nil {
-				continue
-			}
 			val := toResourceValue(resource)
 			err = srv.Send(&val)
 			if err != nil {

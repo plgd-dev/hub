@@ -254,7 +254,7 @@ func (m *resourceCtx) onResourceUpdatedLocked(ctx context.Context, updateProcess
 			select {
 			case notify <- up:
 			default:
-				log.Debugf("DeviceId: %v, ResourceId: %v: cannot send resource updated event", m.resource.DeviceId, m.resource.Id)
+				log.Debugf("DeviceId: %v, ResourceId: %v: cannot send resource updated event", m.resource.GetDeviceId(), m.resource.GetId())
 			}
 		}
 	}
@@ -272,7 +272,7 @@ func (m *resourceCtx) onResourceRetrievedLocked(ctx context.Context, resourceRet
 			select {
 			case notify <- up:
 			default:
-				log.Debugf("DeviceId: %v, ResourceId: %v: cannot send resource retrieved event", m.resource.DeviceId, m.resource.Id)
+				log.Debugf("DeviceId: %v, ResourceId: %v: cannot send resource retrieved event", m.resource.GetDeviceId(), m.resource.GetId())
 			}
 		}
 	}
@@ -290,7 +290,7 @@ func (m *resourceCtx) onResourceDeletedLocked(ctx context.Context, resourceDelet
 			select {
 			case notify <- up:
 			default:
-				log.Debugf("DeviceId: %v, ResourceId: %v: cannot send resource deleted event", m.resource.DeviceId, m.resource.Id)
+				log.Debugf("DeviceId: %v, ResourceId: %v: cannot send resource deleted event", m.resource.GetDeviceId(), m.resource.GetId())
 			}
 		}
 	}
@@ -468,7 +468,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 	}
 
 	if onResourceContentChanged && m.isPublished {
-		if utils.MakeResourceId(m.resource.GetDeviceId(), cloud.StatusHref) == m.resource.Id {
+		if utils.MakeResourceId(m.resource.GetDeviceId(), cloud.StatusHref) == m.resource.GetId() {
 			if err := m.onCloudStatusChangedLocked(ctx); err != nil {
 				log.Errorf("cannot make action on cloud status changed: %v", err)
 			}
