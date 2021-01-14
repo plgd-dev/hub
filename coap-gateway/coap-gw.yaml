@@ -7,21 +7,24 @@ apis:
     fqdn: "localhost"
     request-timeout: 10s
     heartbeat: 4s
-    max-message-size: 1024
+    max-message-size: 1024  # default:262144
     keepalive-enabled: true
-    keepalive-timeout: 5s
+    keepalive-timeout: 20s
     blockwise-transfer-enabled: true
     blockwise-transfer-block-size: 1024
+    # tcp-signal-message-csm-disabled : false
+    # peer-tcp-signal-message-csm-disabled : false
+    # error-response-enabled : true
     tls:
       enabled: true
+      ca-file: "/data/certs/root_ca.crt"
       dir-path: "/data/certs"
-      ca-file: "root_ca.crt"
       cert-file: "coap.crt"
       key-file: "coap.key"
       client-certificate-required: true
 clients:
-  oauth:
-    provider:
+  oauth-provider:
+    oauth:
       client-id: ""
       client-secret: ""
       scopes: []
@@ -31,8 +34,8 @@ clients:
       request-timeout : 10s
     tls:
       enabled: true
+      ca-file: "/data/certs/root_ca.crt"
       dir-path: "/data/certs"
-      ca-file: "root_ca.crt"
       cert-file: "http.crt"
       key-file: "http.key"
       use-system-ca-pool: true
@@ -40,8 +43,8 @@ clients:
     address: "127.0.0.1:9081"
     tls:
       enabled: true
+      ca-file: "/data/certs/root_ca.crt"
       dir-path: "/data/certs"
-      ca-file: "root_ca.crt"
       cert-file: "http.crt"
       key-file: "http.key"
       use-system-ca-pool: true
@@ -49,8 +52,8 @@ clients:
     address: "127.0.0.1:9082"
     tls:
       enabled: true
+      ca-file: "/data/certs/root_ca.crt"
       dir-path: "/data/certs"
-      ca-file: "root_ca.crt"
       cert-file: "http.crt"
       key-file: "http.key"
       use-system-ca-pool: true
@@ -58,8 +61,8 @@ clients:
     address: "127.0.0.1:9083"
     tls:
       enabled: true
+      ca-file: "/data/certs/root_ca.crt"
       dir-path: "/data/certs"
-      ca-file: "root_ca.crt"
       cert-file: "http.crt"
       key-file: "http.key"
       use-system-ca-pool: true

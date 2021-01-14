@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Log              log.Config            	`yaml:"log" json:"log"`
-	Service          service.Config		   	`yaml:"apis" json:"apis"`
+	Service          service.ServiceConfig	`yaml:"apis" json:"apis"`
 	Clients			 service.ClientsConfig  `yaml:"clients" json:"clients"`
 }
 
@@ -24,10 +24,6 @@ func (c Config) String() string {
 
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config Config) (*RefImpl, error) {
-
-	log.Setup(config.Log)
-	log.Info(config.String())
-
 	return &RefImpl{
 		service:           service.New(config.Service, config.Clients),
 	}, nil
@@ -41,9 +37,5 @@ func (r *RefImpl) Serve() error {
 // Shutdown shutdowns the service.
 func (r *RefImpl) Shutdown() error {
 	err := r.service.Shutdown()
-	/*r.dialCertManager.Close()
-	if r.listenCertManager != nil {
-		r.listenCertManager.Close()
-	}*/
 	return err
 }

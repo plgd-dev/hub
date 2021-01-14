@@ -1,15 +1,30 @@
-FROM cloud-build AS build
+FROM cloud-test AS build
+
+WORKDIR $GOPATH/src/github.com/plgd-dev/cloud
+RUN mkdir -p /data/certs/
+RUN cp -a .tmp/certs/ /data/
+#RUN ls /data/certs/
+
 WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/authorization
 RUN go build -o /go/bin/service ./cmd/service
 RUN mkdir -p /data
 COPY authorization.yaml /data/authorization.yaml
 
+# alpine
 FROM alpine:3.12 as service
 RUN apk add --no-cache ca-certificates
-COPY --from=build /go/bin/service /usr/local/bin/service
+
+#FROM ubuntu:20.04 as service
+#RUN apt update
+#RUN apt install -y wget gnupg curl iproute2 systemctl ca-certificates
+
 RUN mkdir -p /data
+COPY --from=build /go/bin/service /usr/local/bin/service
 COPY --from=build /data/authorization.yaml /data/authorization.yaml
-ls /data
-#COPY --from=build ../.tmp/certs /data/certs
+COPY --from=build /data/certs/ /data/certs/
+RUN ls -al /data/
+RUN ls /data/certs/
+RUN cat /data/authorization.yaml
+
 ENTRYPOINT ["/usr/local/bin/service", "--config=/data/authorization.yaml"]
 

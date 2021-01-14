@@ -71,6 +71,12 @@ type Server struct {
 	raConn          *grpc.ClientConn
 	ctx             context.Context
 	cancel          context.CancelFunc
+
+	oauthCertManager	certManager.CertManager
+	raCertManager	  	certManager.CertManager
+	asCertManager	  	certManager.CertManager
+	rdCertManager	  	certManager.CertManager
+
 }
 
 type DialCertManager = interface {
@@ -82,7 +88,7 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(config Config, clients ClientsConfig) *Server {
+func New(config ServiceConfig, clients ClientsConfig) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -177,7 +183,6 @@ func New(config Config, clients ClientsConfig) *Server {
 		isTLSListener = true
 	}
 
-
 	var keepAlive *keepalive.KeepAlive
 	if config.CoapGW.KeepaliveEnable {
 		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.CoapGW.KeepaliveTimeoutConnection)))
@@ -241,6 +246,11 @@ func New(config Config, clients ClientsConfig) *Server {
 
 		ctx:    ctx,
 		cancel: cancel,
+
+		oauthCertManager: oauthCertManager,
+		raCertManager: raCertManager,
+		asCertManager: asCertManager,
+		rdCertManager: rdCertManager,
 	}
 
 	s.setupCoapServer()
@@ -429,6 +439,11 @@ func (server *Server) Serve() error {
 		server.rdConn.Close()
 		server.raConn.Close()
 		server.listener.Close()
+
+		server.oauthCertManager.Close()
+		server.raCertManager.Close()
+		server.asCertManager.Close()
+		server.rdCertManager.Close()
 	}()
 	return server.coapServer.Serve(server.listener)
 }

@@ -1,57 +1,76 @@
 log:
   debug: true
 apis:
+  grpc:
     address: "0.0.0.0:9081"
     tls:
       enabled: true
       ca-file: "/data/certs/root_ca.crt"
-      cert-file: "/data/certs/internal/endpoint.crt"
-      key-file: "/data/certs/internal/endpoint.key"
+      dir-path: "/data/certs"
+      cert-file: "http.crt"
+      key-file: "http.key"
       client-certificate-required: true
-    http-address: "0.0.0.0:9085"
-    http-tls:
+  http:
+    address: "0.0.0.0:9085"
+    tls:
       enabled: true
       ca-file: "/data/certs/root_ca.crt"
-      cert-file: "/data/certs/internal/endpoint.crt"
-      key-file: "/data/certs/internal/endpoint.key"
+      dir-path: "/data/certs"
+      cert-file: "http.crt"
+      key-file: "http.key"
       client-certificate-required: false
-    device:
-      provider: "test"
-      oauth:
-        client_id: ""
-        client_secret: ""
-        scopes: ""
-        audience: ""
-        endpoint:
-          auth_url : ""
-          auth_token : ""
-          auth_stype : ""  # not required
-        response_type: ""
-        response_mode: ""
-        redirect_url: ""
-        access_type: ""   # not required
-        tls:
-          enabled: false
-          ca-file: ""
-          cert-file: ""
-          key-file: ""
-          use-system-ca-pool: true
-    sdk-oauth:
-      client_id: ""
-      client_secret: ""
-      scopes: ""
+clients:
+  mongo:
+    mongodb:
+      uri: "mongodb://localhost:27017"
+      database: "authorization"
+    tls:
+      enabled: true
+      ca-file: "/data/certs/root_ca.crt"
+      dir-path: "/data/certs"
+      cert-file: "http.crt"
+      key-file: "http.key"
+      use-system-ca-pool: true
+  device-oauth:
+    provider: "test"
+    oauth:
+      client-id: ""
+      client-secret: ""
+      scopes: []
       audience: ""
       endpoint:
-        auth_url : ""
-        auth_token : ""
-        auth_stype : ""  # not required
-      response_type: ""
-      response_mode: ""
-      redirect_url: ""
-      access_type: ""   # not required
-      tls:
-        enabled: false
-        ca-file: ""
-        cert-file: ""
-        key-file: ""
-        use-system-ca-pool: true
+        auth-url : ""
+        auth-token : ""
+        #auth-stype : ""  # not required
+      response-type: ""
+      response-mode: ""
+      redirect-url: ""
+      #access-type: ""   # not required
+    tls:
+      enabled: true
+      ca-file: "/data/certs/root_ca.crt"
+      dir-path: "/data/certs"
+      cert-file: "http.crt"
+      key-file: "http.key"
+      use-system-ca-pool: true
+  sdk-oauth:
+    oauth:
+      client-id: ""
+      client-secret: ""
+      scopes: []
+      audience: ""
+      endpoint:
+        auth-url : ""
+        auth-token : ""
+        #auth-stype : ""  # not required
+      response-type: ""
+      response-mode: ""
+      redirect-url: ""
+      #access-type: ""   # not required
+    tls:
+      enabled: true
+      ca-file: "/data/certs/root_ca.crt"
+      dir-path: "/data/certs"
+      cert-file: "http.crt"
+      key-file: "http.key"
+      use-system-ca-pool: true

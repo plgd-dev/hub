@@ -1,31 +1,8 @@
-FROM cloud-test AS build
+FROM cloud-build AS build
 WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/coap-gateway
-RUN ls
 RUN go build -o /go/bin/service ./cmd/service
-RUN mkdir -p /data/
-COPY ./coap-gw.yaml /data/coap-gw.yaml
 
-WORKDIR $GOPATH/src/github.com/plgd-dev/cloud
-RUN mkdir -p /data/certs/
-RUN cp -a .tmp/certs/ /data/
-#COPY .tmp/certs/ /data/
-#RUN ls /data/certs/
-
-# alpine
 FROM alpine:3.12 as service
 RUN apk add --no-cache ca-certificates
-
-#FROM ubuntu:20.04 as service
-#RUN apt update
-#RUN apt install -y wget gnupg curl iproute2 systemctl ca-certificates
-
-RUN mkdir -p /data
 COPY --from=build /go/bin/service /usr/local/bin/service
-COPY --from=build /data/coap-gw.yaml /data/coap-gw.yaml
-COPY --from=build /data/certs/ /data/certs/
-RUN ls -al /data/
-RUN ls /data/certs/
-RUN cat /data/coap-gw.yaml
-
-#ENTRYPOINT ["/usr/local/bin/service"]
-ENTRYPOINT ["/usr/local/bin/service", "--config=/data/coap-gw.yaml"]
+ENTRYPOINT ["/usr/local/bin/service"]
