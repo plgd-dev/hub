@@ -10,7 +10,7 @@ import (
 	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
-func notifyResourceChanged(ctx context.Context, raClient pbRA.ResourceAggregateClient, deviceID, href, userID string, contentType string, body []byte, cmdMeta pbCQRS.CommandMetadata) error {
+func notifyResourceChanged(ctx context.Context, raClient pbRA.ResourceAggregateClient, deviceID, href, userID string, contentType string, body []byte, cmdMetadata pbCQRS.CommandMetadata) error {
 	coapContentFormat := int32(-1)
 	switch contentType {
 	case message.AppCBOR.String():
@@ -29,7 +29,7 @@ func notifyResourceChanged(ctx context.Context, raClient pbRA.ResourceAggregateC
 			DeviceId: deviceID,
 			Href:     kitHttp.CanonicalHref(href),
 		},
-		CommandMetadata: &cmdMeta,
+		CommandMetadata: &cmdMetadata,
 		Content: &pbRA.Content{
 			Data:              body,
 			ContentType:       contentType,

@@ -8,8 +8,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 
-	"github.com/plgd-dev/sdk/schema/cloud"
-
+	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
@@ -93,7 +92,7 @@ func (d Device) ToProto() *pb.Device {
 
 func updateDevice(dev *Device, resource *resourceCtx) error {
 	cloudResourceTypes := make(strings.Set)
-	cloudResourceTypes.Add(cloud.StatusResourceTypes...)
+	cloudResourceTypes.Add(deviceStatus.ResourceTypes...)
 	switch {
 	case resource.resource.GetHref() == "/oic/d":
 		var devContent schema.Device
@@ -110,12 +109,12 @@ func updateDevice(dev *Device, resource *resourceCtx) error {
 		}
 		dev.ID = devContent.ID
 	case cloudResourceTypes.HasOneOf(resource.resource.GetResourceTypes()...):
-		var cloudStatus cloud.Status
+		var cloudStatus deviceStatus.Status
 		err := decodeContent(resource.content.GetContent(), &cloudStatus)
 		if err != nil {
 			return err
 		}
-		dev.IsOnline = cloudStatus.Online
+		dev.IsOnline = cloudStatus.IsOnline()
 		dev.cloudStateUpdated = true
 	}
 	return nil
@@ -181,7 +180,7 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 
 	resourceIdsFilter := make([]*pb.ResourceId, 0, 64)
 	for deviceID := range deviceIds {
-		resourceIdsFilter = append(resourceIdsFilter, &pb.ResourceId{DeviceId: deviceID, Href: "/oic/d"}, &pb.ResourceId{DeviceId: deviceID, Href: cloud.StatusHref})
+		resourceIdsFilter = append(resourceIdsFilter, &pb.ResourceId{DeviceId: deviceID, Href: "/oic/d"}, &pb.ResourceId{DeviceId: deviceID, Href: deviceStatus.Href})
 	}
 
 	resourceValues, err := dd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, nil, nil)

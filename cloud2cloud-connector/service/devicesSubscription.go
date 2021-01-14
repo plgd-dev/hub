@@ -3,17 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/patrickmn/go-cache"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 func (s *SubscriptionManager) SubscribeToDevices(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -78,36 +77,6 @@ func cancelDevicesSubscription(ctx context.Context, linkedAccount store.LinkedAc
 	err := cancelSubscription(ctx, "/devices/subscriptions/"+subscriptionID, linkedAccount, linkedCloud)
 	if err != nil {
 		return fmt.Errorf("cannot cancel devices subscription for %v: %w", linkedAccount.ID, err)
-	}
-	return nil
-}
-
-func (s *SubscriptionManager) publishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext, cmdMetadata pbCQRS.CommandMetadata) error {
-	resource := pbRA.Resource{
-		Id:            utils.MakeResourceId(deviceID, cloud.StatusHref),
-		Href:          cloud.StatusHref,
-		ResourceTypes: cloud.StatusResourceTypes,
-		Interfaces:    cloud.StatusInterfaces,
-		DeviceId:      deviceID,
-		Policies: &pbRA.Policies{
-			BitFlags: 3,
-		},
-		Title: "Cloud device status",
-	}
-	request := pbRA.PublishResourceRequest{
-		AuthorizationContext: &authCtx,
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     cloud.StatusHref,
-		},
-		Resource:        &resource,
-		TimeToLive:      0,
-		CommandMetadata: &cmdMetadata,
-	}
-
-	_, err := s.raClient.PublishResource(ctx, &request)
-	if err != nil {
-		return fmt.Errorf("cannot process command publish resource: %w", err)
 	}
 	return nil
 }
@@ -183,18 +152,16 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 		authCtx := pbCQRS.AuthorizationContext{
 			DeviceId: device.ID,
 		}
-		err := s.publishCloudDeviceStatus(ctx, device.ID, authCtx, pbCQRS.CommandMetadata{
+		cmdMetadata := pbCQRS.CommandMetadata{
 			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 			Sequence:     header.SequenceNumber,
-		})
+		}
+		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata, &authCtx)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
-		err = s.updateCloudStatus(ctx, device.ID, true, authCtx, pbCQRS.CommandMetadata{
-			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
-			Sequence:     header.SequenceNumber,
-		})
+		err = status.SetOnline(ctx, s.raClient, device.ID, time.Time{}, &cmdMetadata, &authCtx)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to online: %w", device.ID, err))
 		}
@@ -213,19 +180,16 @@ func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscr
 		authCtx := pbCQRS.AuthorizationContext{
 			DeviceId: device.ID,
 		}
-		err := s.publishCloudDeviceStatus(ctx, device.ID, authCtx, pbCQRS.CommandMetadata{
+		cmdMetadata := pbCQRS.CommandMetadata{
 			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 			Sequence:     header.SequenceNumber,
-		})
+		}
+		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata, &authCtx)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
-		err = s.updateCloudStatus(ctx, device.ID, false, authCtx, pbCQRS.CommandMetadata{
-			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
-			Sequence:     header.SequenceNumber,
-		})
-
+		err = status.SetOffline(ctx, s.raClient, device.ID, &cmdMetadata, &authCtx)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %w", device.ID, err))
 		}

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 type devicesSubscription struct {
@@ -144,7 +144,7 @@ func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []D
 	}
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.FilterByVersion(d.deviceID, cloud.StatusHref, "devStatus", d.version) {
+		if s.FilterByVersion(d.deviceID, status.Href, "devStatus", d.version) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)
@@ -174,7 +174,7 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 	}
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.FilterByVersion(d.deviceID, cloud.StatusHref, "devStatus", d.version) {
+		if s.FilterByVersion(d.deviceID, status.Href, "devStatus", d.version) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)
@@ -195,7 +195,7 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		cloudResourceID := utils.MakeResourceId(deviceID, cloud.StatusHref)
+		cloudResourceID := utils.MakeResourceId(deviceID, status.Href)
 		models := s.resourceProjection.Models(deviceID, cloudResourceID)
 		if len(models) == 0 {
 			continue
@@ -225,7 +225,7 @@ func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, devi
 func (s *devicesSubscription) initNotifyOfOfflineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		cloudResourceID := utils.MakeResourceId(deviceID, cloud.StatusHref)
+		cloudResourceID := utils.MakeResourceId(deviceID, status.Href)
 		models := s.resourceProjection.Models(deviceID, cloudResourceID)
 		if len(models) == 0 {
 			continue
