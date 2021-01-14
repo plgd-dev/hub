@@ -61,16 +61,16 @@ func decodeContent(content *pbRA.Content, v interface{}) error {
 
 	var decoder func([]byte, interface{}) error
 
-	switch content.ContentType {
+	switch content.GetContentType() {
 	case message.AppCBOR.String(), message.AppOcfCbor.String():
 		decoder = cbor.Decode
 	case message.AppJSON.String():
 		decoder = json.Decode
 	default:
-		return fmt.Errorf("unsupported content type: %v", content.ContentType)
+		return fmt.Errorf("unsupported content type: %v", content.GetContentType())
 	}
 
-	return decoder(content.Data, v)
+	return decoder(content.GetData(), v)
 }
 
 type Device struct {

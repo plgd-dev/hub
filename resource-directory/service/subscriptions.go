@@ -582,7 +582,7 @@ func isDeviceOnline(content *pbRA.Content) (bool, error) {
 		return false, nil
 	}
 	var decoder func(data []byte, v interface{}) error
-	switch content.ContentType {
+	switch content.GetContentType() {
 	case message.AppCBOR.String(), message.AppOcfCbor.String():
 		decoder = cbor.Decode
 	case message.AppJSON.String():
@@ -592,7 +592,7 @@ func isDeviceOnline(content *pbRA.Content) (bool, error) {
 		return false, fmt.Errorf("decoder not found")
 	}
 	var cloudStatus cloud.Status
-	err := decoder(content.Data, &cloudStatus)
+	err := decoder(content.GetData(), &cloudStatus)
 	if err != nil {
 		return false, err
 	}

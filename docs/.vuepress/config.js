@@ -45,6 +45,11 @@ module.exports = {
       }
     },
     dest: "dist",
+    extendMarkdown: md => {
+      md.set({ breaks: true })
+      md.use(require('markdown-it-plantuml'))
+      md.use(require('markdown-it-imsize'))
+    },
     plugins: [
       '@vuepress/medium-zoom',
       [
