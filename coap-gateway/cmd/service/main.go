@@ -8,16 +8,15 @@ import (
 )
 
 func main() {
-	/*var config refImpl.Config
-	if err := envconfig.Process("", &config); err != nil {
-		log.Fatalf("cannot parse configuration: %v", err)
-	}*/
 
 	var cfg refImpl.Config
 	err := config.Load(&cfg)
 	if err != nil {
 		log.Fatalf("cannot parse configuration: %v", err)
 	}
+
+	log.Setup(cfg.Log)
+	log.Info(cfg.String())
 
 	if server, err := refImpl.Init(cfg); err != nil {
 		log.Fatalf("cannot init server: %v", err)

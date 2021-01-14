@@ -8,7 +8,7 @@ import (
 )
 
 // Config for application.
-type Config struct {
+type ServiceConfig struct {
 	CoapGW CoapConfig `yaml:"coap" json:"coap"`
 }
 
@@ -32,14 +32,14 @@ type CoapConfig struct {
 }
 
 type ClientsConfig struct {
-	OAuthProvider     OAuthConfig             `yaml:"oauth" json:"oauth"`
+	OAuthProvider     OAuthConfig             `yaml:"oauth-provider" json:"oauth-provider"`
 	Authorization     AuthorizationConfig     `yaml:"authorization" json:"authorization"`
 	ResourceDirectory ResourceDirectoryConfig `yaml:"resource-directory" json:"resource-directory"`
 	ResourceAggregate ResourceAggregateConfig `yaml:"resource-aggregate" json:"resource-aggregate"`
 }
 
 type OAuthConfig struct {
-	OAuthConfig    manager.Config     `yaml:"provider" json:"provider"`
+	OAuthConfig    manager.Config     `yaml:"oauth" json:"oauth"`
 	OAuthTLSConfig certManager.Config `yaml:"tls" json:"tls"`
 }
 

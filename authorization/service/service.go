@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
+	"github.com/plgd-dev/kit/log"
 	"net"
 	"time"
 
@@ -55,7 +57,9 @@ type Server struct {
 	grpcServer        *kitNetGrpc.Server
 	httpServer        *fasthttp.Server
 	cfg               Config
-	serverCertManager certManager.CertManager
+	grpcCertManager   certManager.CertManager
+	httpCertManager   certManager.CertManager
+	mongoCertManager  certManager.CertManager
 	listener          net.Listener
 }
 
@@ -69,21 +73,59 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 }
 
 // New creates the service's HTTP server.
-func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provider.Provider) (*Server, error) {
-	serverCertManager, err := certManager.NewCertManager(cfg.Listen)
+func New(cfg Config) (*Server, error) {
+
+	mongoCertManager, err := certManager.NewCertManager(cfg.Clients.MogoDBConfig.MongoDBTLSConfig)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create server cert manager %w", err)
+		log.Fatalf("cannot parse config: %v", err)
 	}
-	httpServerTLSConfig := serverCertManager.GetServerTLSConfig()
-	httpServerTLSConfig.ClientAuth = tls.NoClientCert
-	listener, err := tls.Listen("tcp", cfg.HTTPAddr, httpServerTLSConfig)
+
+	mongoTlsConfig := mongoCertManager.GetClientTLSConfig()
+	persistence, err := mongodb.NewStore(context.Background(), cfg.Clients.MogoDBConfig.MongoDB, mongodb.WithTLS(mongoTlsConfig))
+	if err != nil {
+		log.Fatalf("cannot parse config: %v", err)
+	}
+	if cfg.Clients.DeviceConfig.OAuth2.AccessType == "" {
+		cfg.Clients.DeviceConfig.OAuth2.AccessType = "offline"
+	}
+	if cfg.Clients.DeviceConfig.OAuth2.ResponseType == "" {
+		cfg.Clients.DeviceConfig.OAuth2.ResponseType = "code"
+	}
+	if cfg.Clients.DeviceConfig.OAuth2.ResponseMode == "" {
+		cfg.Clients.DeviceConfig.OAuth2.ResponseMode = "query"
+	}
+	if cfg.Clients.SDKConfig.OAuth.AccessType == "" {
+		cfg.Clients.SDKConfig.OAuth.AccessType = "online"
+	}
+	if cfg.Clients.SDKConfig.OAuth.ResponseType == "" {
+		cfg.Clients.SDKConfig.OAuth.ResponseType = "token"
+	}
+	if cfg.Clients.SDKConfig.OAuth.ResponseMode == "" {
+		cfg.Clients.SDKConfig.OAuth.ResponseMode = "query"
+	}
+	deviceProvider := provider.New(cfg.Clients.DeviceConfig)
+	sdkProvider := provider.New(provider.Config{
+		Provider: "generic",
+		OAuth2:   cfg.Clients.SDKConfig.OAuth,
+	})
+	service := newService(deviceProvider, sdkProvider, persistence)
+
+	httpCertManager, err := certManager.NewCertManager(cfg.Service.HttpServer.HttpTLSConfig)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create http server cert manager %w", err)
+	}
+	httpServerTLSConfig := httpCertManager.GetServerTLSConfig()
+	//httpServerTLSConfig.ClientAuth = tls.NoClientCert // TODO : no need to use due to tlsConfig which set by verifyClientCertificate
+	listener, err := tls.Listen("tcp", cfg.Service.HttpServer.HttpAddr, httpServerTLSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("listening failed: %w", err)
 	}
-
-	service := newService(deviceProvider, sdkProvider, persistence)
-	listenTLSConfig := serverCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(cfg.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
+	grpcCertManager, err := certManager.NewCertManager(cfg.Service.GrpcServer.GrpcTLSConfig)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create grpc server cert manager %w", err)
+	}
+	grpcServerTLSConfig := grpcCertManager.GetServerTLSConfig()
+	server, err := kitNetGrpc.NewServer(cfg.Service.GrpcServer.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcServerTLSConfig)))
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +146,8 @@ func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provid
 		IdleTimeout: time.Second,
 	}
 
-	return &Server{service: service, grpcServer: server, httpServer: httpServer, cfg: cfg, serverCertManager: serverCertManager, listener: listener}, nil
+	return &Server{service: service, grpcServer: server, httpServer: httpServer, cfg: cfg,
+		grpcCertManager: grpcCertManager, httpCertManager: httpCertManager, mongoCertManager: mongoCertManager, listener: listener}, nil
 }
 
 // Serve starts the service's GRPC and HTTP server and blocks.
@@ -122,5 +165,7 @@ func (s *Server) Shutdown() {
 	s.grpcServer.Stop()
 	s.httpServer.Shutdown()
 	s.listener.Close()
-	s.serverCertManager.Close()
+	s.grpcCertManager.Close()
+	s.httpCertManager.Close()
+	s.mongoCertManager.Close()
 }

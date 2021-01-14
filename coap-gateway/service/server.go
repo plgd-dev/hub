@@ -74,7 +74,11 @@ type Server struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 
-	sigs chan os.Signal
+	sigs             chan os.Signal
+	oauthCertManager certManager.CertManager
+	raCertManager    certManager.CertManager
+	asCertManager    certManager.CertManager
+	rdCertManager    certManager.CertManager
 }
 
 type DialCertManager = interface {
@@ -86,7 +90,7 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(config Config, clients ClientsConfig) *Server {
+func New(config ServiceConfig, clients ClientsConfig) *Server {
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -243,6 +247,11 @@ func New(config Config, clients ClientsConfig) *Server {
 
 		ctx:    ctx,
 		cancel: cancel,
+
+		oauthCertManager: oauthCertManager,
+		raCertManager:    raCertManager,
+		asCertManager:    asCertManager,
+		rdCertManager:    rdCertManager,
 	}
 
 	s.setupCoapServer()
@@ -438,6 +447,10 @@ func (server *Server) serveWithHandlingSignal() error {
 		server.rdConn.Close()
 		server.raConn.Close()
 		server.listener.Close()
+		server.oauthCertManager.Close()
+		server.raCertManager.Close()
+		server.asCertManager.Close()
+		server.rdCertManager.Close()
 	}(server)
 
 	signal.Notify(server.sigs,
@@ -450,7 +463,7 @@ func (server *Server) serveWithHandlingSignal() error {
 	server.coapServer.Stop()
 	wg.Wait()
 
-	return err
+	return server.coapServer.Serve(server.listener)
 }
 
 // Shutdown turn off server.

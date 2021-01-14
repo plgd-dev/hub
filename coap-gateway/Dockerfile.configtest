@@ -1,15 +1,14 @@
 FROM cloud-test AS build
-WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/coap-gateway
-RUN ls
-RUN go build -o /go/bin/service ./cmd/service
-RUN mkdir -p /data/
-COPY ./coap-gw.yaml /data/coap-gw.yaml
 
 WORKDIR $GOPATH/src/github.com/plgd-dev/cloud
 RUN mkdir -p /data/certs/
 RUN cp -a .tmp/certs/ /data/
-#COPY .tmp/certs/ /data/
 #RUN ls /data/certs/
+
+WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/coap-gateway
+RUN go build -o /go/bin/service ./cmd/service
+RUN mkdir -p /data/
+COPY coap-gw.yaml /data/coap-gw.yaml
 
 # alpine
 FROM alpine:3.12 as service
@@ -27,5 +26,4 @@ RUN ls -al /data/
 RUN ls /data/certs/
 RUN cat /data/coap-gw.yaml
 
-#ENTRYPOINT ["/usr/local/bin/service"]
 ENTRYPOINT ["/usr/local/bin/service", "--config=/data/coap-gw.yaml"]

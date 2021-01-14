@@ -11,6 +11,7 @@ define build-docker-image
 		--tag plgd/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag plgd/$(SERVICE_NAME):$(LATEST_TAG) \
 		--target $(1) \
+		-f Dockerfile.configtest \
 		.
 endef
 
