@@ -10,6 +10,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -17,7 +18,6 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/sdk/schema/cloud"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
@@ -591,12 +591,12 @@ func isDeviceOnline(content *pbRA.Content) (bool, error) {
 	if decoder == nil {
 		return false, fmt.Errorf("decoder not found")
 	}
-	var cloudStatus cloud.Status
+	var cloudStatus status.Status
 	err := decoder(content.GetData(), &cloudStatus)
 	if err != nil {
 		return false, err
 	}
-	return cloudStatus.Online, nil
+	return cloudStatus.IsOnline(), nil
 }
 
 func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {

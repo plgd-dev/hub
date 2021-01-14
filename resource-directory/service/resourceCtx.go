@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/sdk/schema/cloud"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
@@ -468,7 +468,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 	}
 
 	if onResourceContentChanged && m.isPublished {
-		if utils.MakeResourceId(m.resource.GetDeviceId(), cloud.StatusHref) == m.resource.GetId() {
+		if utils.MakeResourceId(m.resource.GetDeviceId(), status.Href) == m.resource.GetId() {
 			if err := m.onCloudStatusChangedLocked(ctx); err != nil {
 				log.Errorf("cannot make action on cloud status changed: %v", err)
 			}

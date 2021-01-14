@@ -10,6 +10,7 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
@@ -107,8 +108,10 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
-
-	err = client.PublishCloudDeviceStatus(req.Context, signIn.DeviceID, &pbCQRS.AuthorizationContext{
+	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &pbCQRS.CommandMetadata{
+		Sequence:     client.coapConn.Sequence(),
+		ConnectionId: client.remoteAddrString(),
+	}, &pbCQRS.AuthorizationContext{
 		DeviceId: signIn.DeviceID,
 	})
 	if err != nil {
@@ -118,7 +121,10 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 
-	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
+	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &pbCQRS.CommandMetadata{
+		Sequence:     client.coapConn.Sequence(),
+		ConnectionId: client.remoteAddrString(),
+	}, authCtx.AuthorizationContext)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
@@ -251,7 +257,10 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 			return
 		}
 		req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), oldAuthCtx.UserID)
-		err = client.UpdateCloudDeviceStatus(req.Context, oldAuthCtx.DeviceId, oldAuthCtx.AuthorizationContext, false)
+		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.DeviceId, &pbCQRS.CommandMetadata{
+			Sequence:     client.coapConn.Sequence(),
+			ConnectionId: client.remoteAddrString(),
+		}, oldAuthCtx.AuthorizationContext)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceId(), err)

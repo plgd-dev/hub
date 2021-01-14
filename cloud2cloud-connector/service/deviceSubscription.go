@@ -12,12 +12,9 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -88,36 +85,6 @@ func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAcc
 		return fmt.Errorf("cannot cancel device subscription for %v: %w", linkedAccount.ID, err)
 	}
 	return nil
-}
-
-func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, cmdMetadata pbCQRS.CommandMetadata) error {
-	status := cloud.Status{
-		ResourceTypes: cloud.StatusResourceTypes,
-		Interfaces:    cloud.StatusInterfaces,
-		Online:        online,
-	}
-	data, err := cbor.Encode(status)
-	if err != nil {
-		return err
-	}
-
-	request := pbRA.NotifyResourceChangedRequest{
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     cloud.StatusHref,
-		},
-		Content: &pbRA.Content{
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: int32(message.AppOcfCbor),
-			Data:              data,
-		},
-		Status:               pbRA.Status_OK,
-		CommandMetadata:      &cmdMetadata,
-		AuthorizationContext: &authContext,
-	}
-
-	_, err = s.raClient.NotifyResourceChanged(ctx, &request)
-	return err
 }
 
 func trimDeviceIDFromHref(deviceID, href string) string {

@@ -12,8 +12,8 @@ import (
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/sdk/schema"
-	"github.com/plgd-dev/sdk/schema/cloud"
 
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
@@ -74,7 +74,7 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter 
 		if err != nil {
 			return nil, fmt.Errorf("cannot get resource links: %w", err)
 		}
-		if resourceLink.GetHref() == cloud.StatusHref {
+		if resourceLink.GetHref() == status.Href {
 			continue
 		}
 		_, ok := resourceLinks[resourceLink.GetDeviceId()]
@@ -147,7 +147,7 @@ func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceI
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
 		}
-		if content.GetResourceId().GetHref() == cloud.StatusHref {
+		if content.GetResourceId().GetHref() == status.Href {
 			continue
 		}
 		rep, err := unmarshalContent(content.GetContent())
