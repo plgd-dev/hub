@@ -23,7 +23,7 @@ or set `PORT` into your enviroment variables.
 
 ## Building the app
 
-    $ npm build
+    $ npm run build
 
 ## Translation
 For extracting the messages from the UI components, run the following script:

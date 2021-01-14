@@ -35,8 +35,8 @@
     "shelljs": "^0.8.4"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
+    "start": "npm run generate-language-files && craco start",
+    "build": "npm run generate-language-files && craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
     "generate-pot": "node ./scripts/generate-pot.js",
