@@ -15,7 +15,7 @@ import (
 type Config struct {
 	Service service.Config
 	Nats    nats.Config        `envconfig:"NATS"`
-	MongoDB mongodb.Config     `envconfig:"MONGO"`
+	MongoDB mongodb.Config     `envconfig:"MONGODB"`
 	Listen  certManager.Config `envconfig:"LISTEN"`
 	Dial    certManager.Config `envconfig:"DIAL"`
 	Log     log.Config         `envconfig:"LOG"`
