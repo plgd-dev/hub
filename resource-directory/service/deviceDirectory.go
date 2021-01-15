@@ -134,7 +134,7 @@ func filterDevicesByUserFilters(resourceValues map[string]map[string]*resourceCt
 			}
 		}
 		if err != nil {
-			log.Debugf("filterDevicesByUserFilters: cannot process device(%v) resources: %w", deviceID, err)
+			log.Debugf("filterDevicesByUserFilters: cannot process device(%v) resources: %v", deviceID, err)
 			continue
 		}
 		var resourceTypes []string

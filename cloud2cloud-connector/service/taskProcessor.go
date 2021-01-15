@@ -94,22 +94,22 @@ func (h *TaskProcessor) runTask(ctx context.Context, e Task, subscriptionManager
 		case TaskType_PullDevice:
 			err := h.pullDevice(ctx, e, subscriptionManager)
 			if err != nil {
-				log.Errorf("cannot run task pull device: %w", err)
+				log.Errorf("cannot run task pull device: %v", err)
 			}
 		case TaskType_SubscribeToResource:
 			err := subscriptionManager.SubscribeToResource(ctx, e.deviceID, e.href, e.linkedAccount, e.linkedCloud)
 			if err != nil {
-				log.Errorf("cannot run task subscribe to resource: %w", err)
+				log.Errorf("cannot run task subscribe to resource: %v", err)
 			}
 		case TaskType_SubscribeToDevice:
 			err := subscriptionManager.SubscribeToDevice(ctx, e.deviceID, e.linkedAccount, e.linkedCloud)
 			if err != nil {
-				log.Errorf("cannot run task subscribe to device: %w", err)
+				log.Errorf("cannot run task subscribe to device: %v", err)
 			}
 		case TaskType_SubscribeToDevices:
 			err := subscriptionManager.SubscribeToDevices(ctx, e.linkedAccount, e.linkedCloud)
 			if err != nil {
-				log.Errorf("cannot run task subscribe to devices: %w", err)
+				log.Errorf("cannot run task subscribe to devices: %v", err)
 			}
 		}
 	}()

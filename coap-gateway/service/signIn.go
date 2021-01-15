@@ -45,7 +45,7 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 		if status.Convert(err).Code() == codes.NotFound {
 			return
 		}
-		log.Errorf("signIn: cannot get resource links for the device %v: %w", deviceID, err)
+		log.Errorf("signIn: cannot get resource links for the device %v: %v", deviceID, err)
 		return
 	}
 	for {
