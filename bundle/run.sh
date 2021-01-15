@@ -134,7 +134,6 @@ done
 # resource-aggregate
 echo "starting resource-aggregate"
 ADDRESS=${RESOURCE_AGGREGATE_ADDRESS} \
-LOG_ENABLE_DEBUG=true \
 resource-aggregate >$LOGS_PATH/resource-aggregate.log 2>&1 &
 status=$?
 resource_aggregate_pid=$!
@@ -169,7 +168,6 @@ fi
 # coap-gateway-unsecure
 echo "starting coap-gateway-unsecure"
 ADDRESS=${COAP_GATEWAY_UNSECURE_ADDRESS} \
-LOG_ENABLE_DEBUG=true \
 LOG_MESSAGES=${COAP_GATEWAY_LOG_MESSAGES} \
 EXTERNAL_PORT=${COAP_GATEWAY_UNSECURE_PORT} \
 FQDN=${COAP_GATEWAY_UNSECURE_FQDN} \
@@ -190,7 +188,6 @@ fi
 # coap-gateway-secure
 echo "starting coap-gateway-secure"
 ADDRESS=${COAP_GATEWAY_ADDRESS} \
-LOG_ENABLE_DEBUG=true \
 LOG_MESSAGES=${COAP_GATEWAY_LOG_MESSAGES} \
 EXTERNAL_PORT=${COAP_GATEWAY_PORT} \
 FQDN=${COAP_GATEWAY_FQDN} \
@@ -214,7 +211,6 @@ fi
 # grpc-gateway
 echo "starting grpc-gateway"
 ADDRESS=${GRPC_GATEWAY_ADDRESS} \
-LOG_ENABLE_DEBUG=true \
 LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS} \
 grpc-gateway >$LOGS_PATH/grpc-gateway.log 2>&1 &
 status=$?
@@ -253,7 +249,6 @@ ResourceDirectoryAddr: ${RESOURCE_DIRECTORY_ADDRESS}
 CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
 EOF
 ADDRESS=${HTTP_GATEWAY_ADDRESS} \
-LOG_ENABLE_DEBUG=true \
 LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
 http-gateway --config=/data/httpgw.yaml >$LOGS_PATH/http-gateway.log 2>&1 &
 status=$?
@@ -268,7 +263,6 @@ fi
 # certificate-authority
 echo "starting certificate-authority"
 ADDRESS=${CERTIFICATE_AUTHORITY_ADDRESS} \
-LOG_ENABLE_DEBUG=true \
 SIGNER_CERTIFICATE=${CA_POOL_CERT_PATH} \
 SIGNER_PRIVATE_KEY=${CA_POOL_CERT_KEY_PATH} \
 LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${CERTIFICATE_AUTHORITY_DISABLE_VERIFY_CLIENTS} \

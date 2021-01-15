@@ -9,6 +9,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/plgd-dev/kit/security/certManager"
 
@@ -55,17 +56,27 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 
 	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
 
+	var streamInterceptors []grpc.StreamServerInterceptor
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	var unaryInterceptors []grpc.UnaryServerInterceptor
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
+
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
 	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(logger),
-			auth.Stream(),
+			streamInterceptors...,
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(logger),
-			auth.Unary(),
+			unaryInterceptors...,
 		)),
 	)
 
