@@ -39,17 +39,17 @@ func New(cfg Config) (*Server, error) {
 
 	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
 	if err != nil {
-		log.Fatalf("cannot create listen cert manager: %w", err)
+		log.Fatalf("cannot create listen cert manager: %v", err)
 	}
 	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
 	if err != nil {
-		log.Fatalf("cannot create dial cert manager: %w", err)
+		log.Fatalf("cannot create dial cert manager: %v", err)
 	}
 	listenTLSCfg := listenCertManager.GetServerTLSConfig()
 
 	ln, err := tls.Listen("tcp", cfg.Address, listenTLSCfg)
 	if err != nil {
-		log.Fatalf("cannot listen tls and serve: %w", err)
+		log.Fatalf("cannot listen tls and serve: %v", err)
 	}
 
 	rdConn, err := grpc.Dial(
@@ -62,7 +62,7 @@ func New(cfg Config) (*Server, error) {
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
 	client, err := client.NewClient("http://localhost", resourceDirectoryClient)
 	if err != nil {
-		log.Fatalf("cannot initialize new client: %w", err)
+		log.Fatalf("cannot initialize new client: %v", err)
 	}
 	var caConn *grpc.ClientConn
 	var caClient pbCA.CertificateAuthorityClient

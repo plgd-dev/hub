@@ -108,12 +108,12 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 
 	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
 	if err != nil {
-		log.Fatalf("cannot create oauth manager: %w", err)
+		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
 	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
-		log.Fatalf("cannot connect to authorization server: %w", err)
+		log.Fatalf("cannot connect to authorization server: %v", err)
 	}
 	authClient := pbAS.NewAuthorizationServiceClient(asConn)
 
