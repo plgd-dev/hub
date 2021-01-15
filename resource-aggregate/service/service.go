@@ -12,6 +12,7 @@ import (
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
@@ -88,18 +89,31 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 	rateLimiter := NewNumParallelProcessedRequestLimiter(config.NumParallelRequest)
 
 	auth := NewAuth(config.JwksURL, dialTLSConfig)
+
+	streamInterceptors := []grpc.StreamServerInterceptor{
+		rateLimiter.StreamServerInterceptor,
+	}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		rateLimiter.UnaryServerInterceptor,
+	}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
+
 	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			rateLimiter.StreamServerInterceptor,
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(logger),
-			auth.Stream(),
+			streamInterceptors...,
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			rateLimiter.UnaryServerInterceptor,
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(logger),
-			auth.Unary(),
+			unaryInterceptors...,
 		)),
 	)
 	if err != nil {

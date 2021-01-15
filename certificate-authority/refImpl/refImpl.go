@@ -52,16 +52,26 @@ func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*Ref
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
 
+	var streamInterceptors []grpc.StreamServerInterceptor
+	if config.Log.Debug {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	var unaryInterceptors []grpc.UnaryServerInterceptor
+	if config.Log.Debug {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
+
 	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(logger),
-			auth.Stream(),
+			streamInterceptors...,
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(logger),
-			auth.Unary(),
+			unaryInterceptors...,
 		)),
 	)
 	if err != nil {
