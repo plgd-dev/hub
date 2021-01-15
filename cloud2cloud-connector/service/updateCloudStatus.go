@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -24,7 +23,10 @@ func updateCloudStatus(ctx context.Context, raClient pbRA.ResourceAggregateClien
 	}
 
 	request := pbRA.NotifyResourceChangedRequest{
-		ResourceId: raCqrs.MakeResourceId(deviceID, cloud.StatusHref),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     cloud.StatusHref,
+		},
 		Content: &pbRA.Content{
 			ContentType:       message.AppOcfCbor.String(),
 			CoapContentFormat: int32(message.AppOcfCbor),

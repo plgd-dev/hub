@@ -16,9 +16,6 @@ import (
 func sortDevices(s map[string]client.DeviceDetails) map[string]client.DeviceDetails {
 	for key, x := range s {
 		x.Resources = test.SortResources(x.Resources)
-		for i := range x.Resources {
-			x.Resources[i].InstanceId = 0
-		}
 		x.Device.ProtocolIndependentId = ""
 		s[key] = x
 	}
@@ -81,7 +78,7 @@ func TestClient_GetDevices(t *testing.T) {
 			}
 			require.NoError(t, err)
 			got = sortDevices(got)
-			require.Equal(t, tt.want, got)
+			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

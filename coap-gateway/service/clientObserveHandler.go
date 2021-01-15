@@ -67,10 +67,10 @@ func SendResourceContentToObserver(client *Client, resourceChanged *pb.Event_Res
 	decodeMsgToDebug(client, msg, "SEND-NOTIFICATION")
 }
 
-func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx authCtx, deviceID, href string) {
+func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx *authCtx, deviceID, href string) {
 	userIdsFilter := []string(nil)
-	if authCtx.UserID != "" {
-		userIdsFilter = []string{authCtx.UserID}
+	if authCtx.GetUserID() != "" {
+		userIdsFilter = []string{authCtx.GetUserID()}
 	}
 	getUserDevicesClient, err := client.server.asClient.GetUserDevices(req.Context, &pbAS.GetUserDevicesRequest{
 		UserIdsFilter:   userIdsFilter,
@@ -144,7 +144,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 	// response will be send from projection
 }
 
-func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx authCtx, deviceID, href string) {
+func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx *authCtx, deviceID, href string) {
 	token := req.Token.String()
 	cancelled, err := client.cancelResourceSubscription(token, true)
 	if err != nil {
@@ -158,7 +158,7 @@ func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cli
 	SendResourceContentToObserver(client, nil, 1, req.Token)
 }
 
-func clientResetObservationHandler(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx pbCQRS.AuthorizationContext) {
+func clientResetObservationHandler(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx *pbCQRS.AuthorizationContext) {
 	token := req.Token.String()
 	cancelled, err := client.cancelResourceSubscription(token, true)
 	if err != nil {

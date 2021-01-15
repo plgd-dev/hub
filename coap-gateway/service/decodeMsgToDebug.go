@@ -36,6 +36,9 @@ func readBody(r io.ReadSeeker) []byte {
 }
 
 func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
+	if !client.server.LogMessages {
+		return
+	}
 	buf := bytes.NewBuffer(make([]byte, 0, 2048))
 	path, _ := resp.Options().Path()
 	queries, _ := resp.Options().Queries()

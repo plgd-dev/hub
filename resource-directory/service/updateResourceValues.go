@@ -145,7 +145,10 @@ func (r *RequestHandler) UpdateResourcesValues(ctx context.Context, req *pb.Upda
 	}
 	seq := atomic.AddUint64(&r.seqNum, 1)
 	raReq := pbRA.UpdateResourceRequest{
-		ResourceId:        resourceID,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
 		CorrelationId:     correlationID,
 		ResourceInterface: req.GetResourceInterface(),
 		Content: &pbRA.Content{

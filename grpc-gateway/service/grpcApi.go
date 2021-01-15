@@ -19,6 +19,7 @@ import (
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
+	pb.UnimplementedGrpcGatewayServer
 	resourceDirectoryClient pb.GrpcGatewayClient
 	closeFunc               func()
 }

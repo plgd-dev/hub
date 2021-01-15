@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/plgd-dev/cqrs/event"
-	"github.com/plgd-dev/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/sdk/schema/cloud"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
@@ -215,7 +214,7 @@ func (m *resourceCtx) sendEventResourceDeleted(ctx context.Context, resourceDele
 }
 
 func (m *resourceCtx) onResourceChangedLocked(ctx context.Context, do func(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error) error {
-	log.Debugf("onResourceChangedLocked %v%v", m.resource.GetDeviceId(), m.resource.GetHref())
+	log.Debugf("onResourceChangedLocked %v%v %v", m.resource.GetDeviceId(), m.resource.GetHref(), m.onResourceChangedVersion)
 	return do(ctx, pb.Event_ResourceChanged{
 		ResourceId: &pb.ResourceId{
 			DeviceId: m.resource.GetDeviceId(),
@@ -303,8 +302,7 @@ func (m *resourceCtx) SnapshotEventType() string {
 	return s.SnapshotEventType()
 }
 
-func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
-	var eu event.EventUnmarshaler
+func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 	var onResourcePublished, onResourceUnpublished, onResourceContentChanged, onResourceUpdatePending, onResourceRetrievePending, onResourceDeletePending bool
 	resourceUpdated := make([]raEvents.ResourceUpdated, 0, 16)
 	resourceRetrieved := make([]raEvents.ResourceRetrieved, 0, 16)
@@ -312,11 +310,18 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	var anyEventProcessed bool
-	for iter.Next(ctx, &eu) {
+	var groupID, aggregateID string
+	for {
+		eu, ok := iter.Next(ctx)
+		if !ok {
+			break
+		}
+		groupID = eu.GroupID()
+		aggregateID = eu.AggregateID()
 		anyEventProcessed = true
-		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
-		m.version = eu.Version
-		switch eu.EventType {
+		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupID(), eu.AggregateID(), eu.Version(), eu.EventType())
+		m.version = eu.Version()
+		switch eu.EventType() {
 		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
 			var s raEvents.ResourceStateSnapshotTaken
 			if err := eu.Unmarshal(&s); err != nil {
@@ -329,9 +334,9 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 			m.content = s.LatestResourceChange
 			m.resource = s.Resource
 			m.isPublished = s.IsPublished
-			m.onResourcePublishedVersion = eu.Version
-			m.onResourceUnpublishedVersion = eu.Version
-			m.onResourceChangedVersion = eu.Version
+			m.onResourcePublishedVersion = eu.Version()
+			m.onResourceUnpublishedVersion = eu.Version()
+			m.onResourceChangedVersion = eu.Version()
 			onResourceContentChanged = true
 		case http.ProtobufContentType(&pbRA.ResourcePublished{}):
 			var s raEvents.ResourcePublished
@@ -342,7 +347,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 				onResourcePublished = true
 				onResourceUnpublished = false
 			}
-			m.onResourcePublishedVersion = eu.Version
+			m.onResourcePublishedVersion = eu.Version()
 			m.isPublished = true
 			m.resource = s.Resource
 		case http.ProtobufContentType(&pbRA.ResourceUnpublished{}):
@@ -350,7 +355,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 				onResourcePublished = false
 				onResourceUnpublished = true
 			}
-			m.onResourceUnpublishedVersion = eu.Version
+			m.onResourceUnpublishedVersion = eu.Version()
 			m.isPublished = false
 		case http.ProtobufContentType(&pbRA.ResourceChanged{}):
 			var s raEvents.ResourceChanged
@@ -358,7 +363,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 				return err
 			}
 			m.content = &s.ResourceChanged
-			m.onResourceChangedVersion = eu.Version
+			m.onResourceChangedVersion = eu.Version()
 			onResourceContentChanged = true
 		case http.ProtobufContentType(&pbRA.ResourceUpdatePending{}):
 			var s raEvents.ResourceUpdatePending
@@ -449,7 +454,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	}
 
 	if m.resource == nil {
-		return fmt.Errorf("DeviceId: %v, ResourceId: %v: invalid resource is stored in eventstore: Resource attribute is not set", eu.GroupId, eu.AggregateId)
+		return fmt.Errorf("DeviceId: %v, ResourceId: %v: invalid resource is stored in eventstore: Resource attribute is not set", groupID, aggregateID)
 	}
 
 	if onResourcePublished {
@@ -463,7 +468,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter event.Iter) error {
 	}
 
 	if onResourceContentChanged && m.isPublished {
-		if cqrsRA.MakeResourceId(m.resource.GetDeviceId(), cloud.StatusHref) == m.resource.GetId() {
+		if utils.MakeResourceId(m.resource.GetDeviceId(), cloud.StatusHref) == m.resource.GetId() {
 			if err := m.onCloudStatusChangedLocked(ctx); err != nil {
 				log.Errorf("cannot make action on cloud status changed: %v", err)
 			}

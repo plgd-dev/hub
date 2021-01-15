@@ -95,12 +95,9 @@ func TestClient_GetDevice(t *testing.T) {
 			}
 			require.NoError(t, err)
 			got.Resources = test.SortResources(got.Resources)
-			for i := range got.Resources {
-				got.Resources[i].InstanceId = 0
-			}
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
-			require.Equal(t, tt.want, got)
+			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

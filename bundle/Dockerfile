@@ -50,11 +50,11 @@ RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
 FROM ubuntu:20.04 as service
 RUN apt update
-RUN apt install -y wget gnupg curl iproute2 systemctl
+RUN apt install -y wget gnupg iproute2 systemctl openssl
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
-RUN apt-get install -y mongodb-org-server
+RUN apt-get install -y mongodb-org-server mongodb-org
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
@@ -79,6 +79,7 @@ ENV COAP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 ENV COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER=false
 ENV COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX="1024"
 ENV COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=false
+ENV COAP_GATEWAY_LOG_MESSAGES=false
 
 # grpc-gateway
 ENV GRPC_GATEWAY_ADDRESS="0.0.0.0:9084"

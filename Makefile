@@ -98,7 +98,7 @@ test: env
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
 		cloud-test \
-		go test -mod=mod -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
+		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 
@@ -107,9 +107,9 @@ clean:
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true
 	docker rm -f devsim || true
-	rm -rf ./.tmp/certs || true
-	rm -rf ./.tmp/mongo || true
-	rm -rf ./.tmp/home || true
+	sudo rm -rf ./.tmp/certs || true
+	sudo rm -rf ./.tmp/mongo || true
+	sudo rm -rf ./.tmp/home || true
 
 proto/generate: $(SUBDIRS)
 push: cloud-build $(SUBDIRS) 

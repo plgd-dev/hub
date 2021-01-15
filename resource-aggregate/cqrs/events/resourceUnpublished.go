@@ -3,6 +3,7 @@ package events
 import (
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/net/http"
+	"google.golang.org/protobuf/proto"
 )
 
 type ResourceUnpublished struct {
@@ -14,11 +15,11 @@ func (e ResourceUnpublished) Version() uint64 {
 }
 
 func (e ResourceUnpublished) Marshal() ([]byte, error) {
-	return e.ResourceUnpublished.Marshal()
+	return proto.Marshal(&e.ResourceUnpublished)
 }
 
 func (e *ResourceUnpublished) Unmarshal(b []byte) error {
-	return e.ResourceUnpublished.Unmarshal(b)
+	return proto.Unmarshal(b, &e.ResourceUnpublished)
 }
 
 func (e ResourceUnpublished) EventType() string {

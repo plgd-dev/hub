@@ -14,8 +14,8 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -29,6 +29,7 @@ import (
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
+	pb.UnimplementedGrpcGatewayServer
 	authServiceClient       pbAS.AuthorizationServiceClient
 	resourceAggregateClient pbRA.ResourceAggregateClient
 	fqdn                    string
@@ -47,7 +48,7 @@ type RequestHandler struct {
 }
 
 type HandlerConfig struct {
-	Mongo   mongodb.Config
+	MongoDB mongodb.Config `envconfig:"MONGO"`
 	Nats    nats.Config
 	Service Config
 
@@ -104,7 +105,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 
-	resourceEventStore, err := mongodb.NewEventStore(config.Mongo, pool.Submit, mongodb.WithTLS(clientTLS))
+	resourceEventStore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(clientTLS))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}

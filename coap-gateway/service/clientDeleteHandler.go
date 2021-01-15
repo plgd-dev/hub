@@ -40,7 +40,7 @@ func clientDeleteHandler(s mux.ResponseWriter, req *mux.Message, client *Client)
 
 func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
 	authCtx := client.loadAuthorizationContext()
-	processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, authCtx.UserID), &pbGRPC.DeleteResourceRequest{
+	processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, authCtx.GetUserID()), &pbGRPC.DeleteResourceRequest{
 		ResourceId: &pbGRPC.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,

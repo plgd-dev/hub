@@ -149,7 +149,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.GetAllBackendResourceLinks()),
+				test.ResourceLinkToPublishEvent(deviceID, test.GetAllBackendResourceLinks()),
 			},
 		},
 	}
@@ -184,16 +184,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					require.NoError(t, err)
 					ev.SubscriptionId = w.SubscriptionId
 					if ev.GetResourcePublished() != nil {
-						links := ev.GetResourcePublished().GetLinks()
-						for _, link := range links {
-							link.InstanceId = 0
-						}
 						ev.GetResourcePublished().Links = test.SortResources(ev.GetResourcePublished().GetLinks())
 					}
 					if w.GetResourcePublished() != nil {
 						w.GetResourcePublished().Links = test.SortResources(w.GetResourcePublished().GetLinks())
 					}
-					require.Contains(t, tt.want, ev)
+					test.CheckProtobufs(t, tt.want, ev, test.RequireToCheckFunc(require.Contains))
 				}
 			}()
 			err = client.Send(&tt.args.sub)

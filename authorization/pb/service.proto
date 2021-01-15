@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.auth.pb;
 
-import "auth.proto";
+import "github.com/plgd-dev/cloud/authorization/pb/auth.proto";
 
 option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
 

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -26,7 +25,10 @@ func notifyResourceChanged(ctx context.Context, raClient pbRA.ResourceAggregateC
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: deviceID,
 		},
-		ResourceId:      raCqrs.MakeResourceId(deviceID, kitHttp.CanonicalHref(href)),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     kitHttp.CanonicalHref(href),
+		},
 		CommandMetadata: &cmdMeta,
 		Content: &pbRA.Content{
 			Data:              body,

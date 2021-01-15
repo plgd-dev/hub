@@ -80,7 +80,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 					dev.ProtocolIndependentId = ""
 					devices = append(devices, dev)
 				}
-				require.Equal(t, tt.want, devices)
+				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

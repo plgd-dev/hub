@@ -15,7 +15,6 @@ import (
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
@@ -69,7 +68,10 @@ func retrieveResource(ctx context.Context, raClient pbRA.ResourceAggregateClient
 	}
 
 	_, err = raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithUserID(ctx, linkedAccount.UserID), &pbRA.ConfirmResourceRetrieveRequest{
-		ResourceId:    raCqrs.MakeResourceId(deviceID, href),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
 		CorrelationId: e.GetCorrelationId(),
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			ConnectionId: linkedAccount.ID,

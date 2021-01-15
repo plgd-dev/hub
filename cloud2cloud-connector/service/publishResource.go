@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -20,20 +20,22 @@ func publishResource(ctx context.Context, raClient pbRA.ResourceAggregateClient,
 			Priority: int64(endpoint.Priority),
 		})
 	}
-	href := trimDeviceIDFromHref(link.DeviceID, link.Href)
-	resourceId := raCqrs.MakeResourceId(link.DeviceID, kitHttp.CanonicalHref(href))
+	href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
+	resourceID := utils.MakeResourceId(link.DeviceID, href)
 	_, err := raClient.PublishResource(kitNetGrpc.CtxWithUserID(ctx, userID), &pbRA.PublishResourceRequest{
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: link.DeviceID,
 		},
-		ResourceId: resourceId,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: link.DeviceID,
+			Href:     href,
+		},
 		Resource: &pbRA.Resource{
-			Id:                    resourceId,
+			Id:                    resourceID,
 			Href:                  href,
 			ResourceTypes:         link.ResourceTypes,
 			Interfaces:            link.Interfaces,
 			DeviceId:              link.DeviceID,
-			InstanceId:            link.InstanceID,
 			Anchor:                link.Anchor,
 			Policies:              &pbRA.Policies{BitFlags: int32(link.Policy.BitMask)},
 			Title:                 link.Title,

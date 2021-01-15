@@ -7,6 +7,9 @@ import (
 	"fmt"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+
 	"github.com/plgd-dev/kit/security/certManager"
 
 	"google.golang.org/grpc"
@@ -33,36 +36,12 @@ func (c Config) String() string {
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
-// StreamServerInterceptor returns a new unary server interceptors that performs per-request auth.
-func StreamServerInterceptor(authFunc func(ctx context.Context, method string) (context.Context, error)) grpc.StreamServerInterceptor {
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		var newCtx context.Context
-		var err error
-		newCtx, err = authFunc(stream.Context(), info.FullMethod)
-		if err != nil {
-			return err
-		}
-		wrapped := grpc_middleware.WrapServerStream(stream)
-		wrapped.WrappedContext = newCtx
-		return handler(srv, wrapped)
-	}
-}
-
-// UnaryServerInterceptor returns a new unary server interceptors that performs per-request auth.
-func UnaryServerInterceptor(authFunc func(ctx context.Context, method string) (context.Context, error)) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		var newCtx context.Context
-		var err error
-		newCtx, err = authFunc(ctx, info.FullMethod)
-		if err != nil {
-			return nil, err
-		}
-		return handler(newCtx, req)
-	}
-}
-
 func Init(config Config) (*kitNetGrpc.Server, error) {
-	log.Setup(config.Log)
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
 	log.Info(config.String())
 
 	listenCertManager, err := certManager.NewCertManager(config.Listen)
@@ -77,16 +56,17 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), /*
-			grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-				grpc_zap.StreamServerInterceptor(logger),
-				StreamServerInterceptor(authFunc),
-			)),
-			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-				grpc_zap.UnaryServerInterceptor(logger),
-				UnaryServerInterceptor(authFunc),
-			)),*/
-		auth.Stream(), auth.Unary(),
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger),
+			auth.Stream(),
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger),
+			auth.Unary(),
+		)),
 	)
 
 	if err != nil {

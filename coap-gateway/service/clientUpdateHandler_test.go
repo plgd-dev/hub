@@ -35,9 +35,18 @@ func Test_clientUpdateHandler(t *testing.T) {
 		wantsCode coapCodes.Code
 	}{
 		{
-			name: "not found",
+			name: "forbidden",
 			args: args{
 				href:          uri.ResourceRoute + "/a/b",
+				contentFormat: message.TextPlain,
+				payload:       []byte{},
+			},
+			wantsCode: coapCodes.Forbidden,
+		},
+		{
+			name: "not found",
+			args: args{
+				href:          uri.ResourceRoute + "/" + CertIdentity + "/notFound",
 				contentFormat: message.TextPlain,
 				payload:       []byte{},
 			},

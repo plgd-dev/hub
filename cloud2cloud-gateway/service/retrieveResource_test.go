@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const TEST_TIMEOUT = time.Second * 20
+const TEST_TIMEOUT = time.Second * 30
 
 func TestRequestHandler_RetrieveResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -79,7 +79,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
-			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): cannot retrieve resource({" + deviceID + " /notFound}): cannot retrieve resources values: rpc error: code = NotFound desc = not found",
+			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): cannot retrieve resources values: rpc error: code = NotFound desc = not found",
 		},
 		{
 			name: "invalidAccept",

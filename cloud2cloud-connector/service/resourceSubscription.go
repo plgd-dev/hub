@@ -4,15 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gofrs/uuid"
+	"github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	kitHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/gofrs/uuid"
-	"github.com/patrickmn/go-cache"
 )
 
 func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -96,7 +95,10 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: subscriptionData.subscription.DeviceID,
 		},
-		ResourceId: raCqrs.MakeResourceId(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: subscriptionData.subscription.DeviceID,
+			Href:     kitHttp.CanonicalHref(subscriptionData.subscription.Href),
+		},
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			ConnectionId: subscriptionData.linkedAccount.ID + "." + subscriptionData.subscription.ID,
 			Sequence:     header.SequenceNumber,

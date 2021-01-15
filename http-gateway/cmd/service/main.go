@@ -5,6 +5,7 @@ import (
 
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/kit/config"
+	_ "gopkg.in/yaml.v2"
 )
 
 func main() {

@@ -6,14 +6,13 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
 
-	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/sdk/schema"
 	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
-func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext) error {
+func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID string, authCtx *pbCQRS.AuthorizationContext) error {
 	devStatus := schema.ResourceLink{
 		Href:          cloud.StatusHref,
 		ResourceTypes: cloud.StatusResourceTypes,
@@ -28,7 +27,7 @@ func (client *Client) PublishCloudDeviceStatus(ctx context.Context, deviceID str
 	return err
 }
 
-func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID string, authCtx pbCQRS.AuthorizationContext, online bool) error {
+func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID string, authCtx *pbCQRS.AuthorizationContext, online bool) error {
 	status := cloud.Status{
 		ResourceTypes: cloud.StatusResourceTypes,
 		Interfaces:    cloud.StatusInterfaces,
@@ -40,7 +39,10 @@ func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID stri
 	}
 
 	request := pbRA.NotifyResourceChangedRequest{
-		ResourceId: cqrsRA.MakeResourceId(deviceID, cloud.StatusHref),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     cloud.StatusHref,
+		},
 		Content: &pbRA.Content{
 			ContentType:       message.AppOcfCbor.String(),
 			CoapContentFormat: int32(message.AppOcfCbor),
@@ -51,7 +53,7 @@ func (client *Client) UpdateCloudDeviceStatus(ctx context.Context, deviceID stri
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),
 		},
-		AuthorizationContext: &authCtx,
+		AuthorizationContext: authCtx,
 	}
 
 	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)

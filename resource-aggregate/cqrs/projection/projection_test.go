@@ -4,16 +4,15 @@ import (
 	"context"
 	"testing"
 
-	kitCqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/cqrs/event"
-	"github.com/plgd-dev/cqrs/eventstore"
-	cqrsEventStore "github.com/plgd-dev/cqrs/eventstore"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/http"
 	"github.com/stretchr/testify/assert"
@@ -29,12 +28,14 @@ func (m *mockResourceCtx) SnapshotEventType() string {
 	return s.SnapshotEventType()
 }
 
-func (m *mockResourceCtx) Handle(ctx context.Context, iter event.Iter) error {
-	var eu event.EventUnmarshaler
-
-	for iter.Next(ctx, &eu) {
-		log.Debugf("resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupId, eu.AggregateId, eu.Version, eu.EventType)
-		switch eu.EventType {
+func (m *mockResourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
+	for {
+		eu, ok := iter.Next(ctx)
+		if !ok {
+			break
+		}
+		log.Debugf("resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupID(), eu.AggregateID(), eu.Version(), eu.EventType())
+		switch eu.EventType() {
 		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
 			var s raEvents.ResourceStateSnapshotTaken
 			if err := eu.Unmarshal(&s); err != nil {
@@ -108,7 +109,7 @@ var res4 = pbRA.Resource{
 }
 
 func makeEventMeta(connectionId string, sequence, version uint64) pb.EventMetadata {
-	e := kitCqrsUtils.MakeEventMeta(connectionId, sequence, version)
+	e := utils.MakeEventMeta(connectionId, sequence, version)
 	e.TimestampMs = 12345
 	return e
 }

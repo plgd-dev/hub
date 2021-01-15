@@ -29,12 +29,9 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
-	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	test "github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,29 +48,6 @@ type testEl struct {
 	name string
 	in   input
 	out  output
-}
-
-func testCreateResourceStoreSub(t *testing.T, resourceDBname string) (*mongodb.EventStore, *nats.Subscriber) {
-	var natsCfg nats.Config
-	err := envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	mgoCfg.DatabaseName = resourceDBname
-	assert.NoError(t, err)
-
-	var cmconfig certManager.Config
-	err = envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
-	subscriber, err := nats.NewSubscriber(natsCfg, nil, func(err error) { log.Errorf("%v", err) }, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-	return eventstore, subscriber
 }
 
 func initializeStruct(t reflect.Type, v reflect.Value) {
@@ -312,10 +286,10 @@ var (
 
 	CertIdentity      = "b5a2a42e-b285-42f1-a36b-034c8fc8efd5"
 	TestAResourceHref = "/a"
-	TestAResourceId   = cqrsUtils.MakeResourceId(CertIdentity, TestAResourceHref)
+	TestAResourceId   = utils.MakeResourceId(CertIdentity, TestAResourceHref)
 	TestAResourceType = "x.a"
 	TestBResourceHref = "/b"
-	TestBResourceId   = cqrsUtils.MakeResourceId(CertIdentity, TestBResourceHref)
+	TestBResourceId   = utils.MakeResourceId(CertIdentity, TestBResourceHref)
 	TestBResourceType = "x.b"
 
 	TestExchangeTimeout = time.Second * 15

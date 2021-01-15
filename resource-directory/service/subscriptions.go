@@ -19,7 +19,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/sdk/schema/cloud"
 
-	"github.com/plgd-dev/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
 type Subscriber interface {

@@ -63,12 +63,15 @@ func UpdateResource(t *testing.T, deviceID, uri string, request interface{}, res
 		DeviceId(deviceID).AuthToken(authTest.UserToken).Build()
 	res := test.HTTPDo(t, getReq)
 	defer res.Body.Close()
-	require.Equal(t, http.StatusOK, res.StatusCode)
+
 	b, err := ioutil.ReadAll(res.Body)
 	require.NoError(t, err)
 	if len(b) > 0 {
+		require.Equal(t, http.StatusOK, res.StatusCode)
 		err = json.Decode(b, &response)
 		require.NoError(t, err)
+	} else {
+		require.Equal(t, http.StatusNoContent, res.StatusCode)
 	}
 }
 

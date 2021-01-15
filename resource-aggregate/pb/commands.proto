@@ -47,7 +47,7 @@ message CommandMetadata {
 // https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml#L65
 message PublishResourceRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     Resource resource = 3; // Resource publish is atomic - PublishResource command per link from list. The CoAP-Gateway is responsible for the transaction.
     int32 time_to_live = 4;
     CommandMetadata command_metadata = 5;
@@ -55,13 +55,12 @@ message PublishResourceRequest {
 
 message PublishResourceResponse {
     AuditContext audit_context = 1;
-    int64 instance_id = 2;
 }
 
 // https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml #Specification CR needed
 message UnpublishResourceRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
     CommandMetadata command_metadata = 3;
 }
 
@@ -94,7 +93,7 @@ message UnpublishResourceResponse {
 
 message NotifyResourceChangedRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     Content content = 3;
     CommandMetadata command_metadata = 4;
     Status status = 5;
@@ -154,7 +153,7 @@ message NotifyResourceChangedResponse {
 
 message UpdateResourceRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     string correlation_id = 3;
     Content content = 4;
     string resource_interface = 5;
@@ -167,7 +166,7 @@ message UpdateResourceResponse {
 
 message ConfirmResourceUpdateRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     string correlation_id = 3;
     Status status = 4;
     Content content = 5;
@@ -220,7 +219,7 @@ message ConfirmResourceUpdateResponse {
 
 message RetrieveResourceRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     string correlation_id = 3;
     string resource_interface = 4;
     CommandMetadata command_metadata = 5;
@@ -232,7 +231,7 @@ message RetrieveResourceResponse {
 
 message ConfirmResourceRetrieveRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     string correlation_id = 3;
     Status status = 4;
     Content content = 5;
@@ -284,7 +283,7 @@ message ConfirmResourceRetrieveResponse {
 
 message DeleteResourceRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     string correlation_id = 3;
     CommandMetadata command_metadata = 100;
 }
@@ -295,7 +294,7 @@ message DeleteResourceResponse {
 
 message ConfirmResourceDeleteRequest {
     AuthorizationContext authorization_context = 1;
-    string resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
+    ResourceId resource_id = 2;
     string correlation_id = 3;
     Status status = 4;
     Content content = 5;
@@ -305,3 +304,9 @@ message ConfirmResourceDeleteRequest {
 message ConfirmResourceDeleteResponse {
     AuditContext audit_context = 100;
 }
+
+message ResourceId {
+    string device_id = 1;
+    string href = 2;
+}
+  

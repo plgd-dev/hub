@@ -17,7 +17,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
 
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
@@ -84,7 +83,10 @@ func updateResource(ctx context.Context, raClient pbRA.ResourceAggregateClient, 
 	}
 
 	_, err = raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithUserID(ctx, linkedAccount.UserID), &pbRA.ConfirmResourceUpdateRequest{
-		ResourceId:    raCqrs.MakeResourceId(deviceID, href),
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
 		CorrelationId: e.GetCorrelationId(),
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
