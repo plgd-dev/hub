@@ -31,21 +31,21 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 }
 
 type Endpoint struct {
-	AuthURL   	string    `yaml:"auth-url" json:"auth-url"`
-	TokenURL  	string    `yaml:"token-url" json:"token-url"`
-	AuthStyle 	AuthStyle `yaml:"auth-style" json:"auth-style"`
+	AuthURL   	string    `yaml:"authUrl" json:"authUrl"`
+	TokenURL  	string    `yaml:"tokenUrl" json:"tokenUrl"`
+	AuthStyle 	AuthStyle `yaml:"authStyle" json:"authStyle"`
 }
 
 type Config struct {
-	ClientID     string   `yaml:"client-id" json:"client-id"`
-	ClientSecret string   `yaml:"client-secret" json:"client-secret"`
+	ClientID     string   `yaml:"clientID" json:"clientID"`
+	ClientSecret string   `yaml:"clientSecret" json:"clientSecret"`
 	Scopes       []string `yaml:"scopes" json:"scopes"`
 	Endpoint     Endpoint `yaml:"endpoint" json:"endpoint"`
 	Audience     string   `yaml:"audience" json:"audience"`
-	RedirectURL  string   `yaml:"redirect-url" json:"redirect-url"`
-	AccessType   string   `yaml:"access-type" json:"access-type"`
-	ResponseType string   `yaml:"response-type" json:"response-type"`
-	ResponseMode string   `yaml:"response-mode" json:"response-mode"`
+	RedirectURL  string   `yaml:"redirectUrl" json:"redirectUrl"`
+	AccessType   string   `yaml:"accessType" json:"accessType"`
+	ResponseType string   `yaml:"responseType" json:"responseType"`
+	ResponseMode string   `yaml:"responseMode" json:"responseMode"`
 }
 
 func (c Config) ToOAuth2() oauth2.Config {

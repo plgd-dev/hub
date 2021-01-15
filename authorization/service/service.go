@@ -57,9 +57,9 @@ type Server struct {
 	grpcServer        *kitNetGrpc.Server
 	httpServer        *fasthttp.Server
 	cfg               Config
-	grpcCertManager   certManager.CertManager
-	httpCertManager   certManager.CertManager
-	mongoCertManager  certManager.CertManager
+	grpcCertManager   certManager.ServerCertManager
+	httpCertManager   certManager.ServerCertManager
+	mongoCertManager  certManager.ClientCertManager
 	listener          net.Listener
 }
 
@@ -75,52 +75,52 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 // New creates the service's HTTP server.
 func New(cfg Config) (*Server, error) {
 
-	mongoCertManager, err := certManager.NewCertManager(cfg.Clients.MogoDBConfig.MongoDBTLSConfig)
+	mongoCertManager, err := certManager.NewClientCertManager(cfg.Database.MongoDB.TLSConfig)
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}
 
 	mongoTlsConfig := mongoCertManager.GetClientTLSConfig()
-	persistence, err := mongodb.NewStore(context.Background(), cfg.Clients.MogoDBConfig.MongoDB, mongodb.WithTLS(mongoTlsConfig))
+	persistence, err := mongodb.NewStore(context.Background(), cfg.Database.MongoDB, mongodb.WithTLS(mongoTlsConfig))
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}
-	if cfg.Clients.DeviceConfig.OAuth2.AccessType == "" {
-		cfg.Clients.DeviceConfig.OAuth2.AccessType = "offline"
+	if cfg.Clients.Device.OAuth2.AccessType == "" {
+		cfg.Clients.Device.OAuth2.AccessType = "offline"
 	}
-	if cfg.Clients.DeviceConfig.OAuth2.ResponseType == "" {
-		cfg.Clients.DeviceConfig.OAuth2.ResponseType = "code"
+	if cfg.Clients.Device.OAuth2.ResponseType == "" {
+		cfg.Clients.Device.OAuth2.ResponseType = "code"
 	}
-	if cfg.Clients.DeviceConfig.OAuth2.ResponseMode == "" {
-		cfg.Clients.DeviceConfig.OAuth2.ResponseMode = "query"
+	if cfg.Clients.Device.OAuth2.ResponseMode == "" {
+		cfg.Clients.Device.OAuth2.ResponseMode = "query"
 	}
-	if cfg.Clients.SDKConfig.OAuth.AccessType == "" {
-		cfg.Clients.SDKConfig.OAuth.AccessType = "online"
+	if cfg.Clients.SDK.OAuth.AccessType == "" {
+		cfg.Clients.SDK.OAuth.AccessType = "online"
 	}
-	if cfg.Clients.SDKConfig.OAuth.ResponseType == "" {
-		cfg.Clients.SDKConfig.OAuth.ResponseType = "token"
+	if cfg.Clients.SDK.OAuth.ResponseType == "" {
+		cfg.Clients.SDK.OAuth.ResponseType = "token"
 	}
-	if cfg.Clients.SDKConfig.OAuth.ResponseMode == "" {
-		cfg.Clients.SDKConfig.OAuth.ResponseMode = "query"
+	if cfg.Clients.SDK.OAuth.ResponseMode == "" {
+		cfg.Clients.SDK.OAuth.ResponseMode = "query"
 	}
-	deviceProvider := provider.New(cfg.Clients.DeviceConfig)
+	deviceProvider := provider.New(cfg.Clients.Device)
 	sdkProvider := provider.New(provider.Config{
 		Provider: "generic",
-		OAuth2:   cfg.Clients.SDKConfig.OAuth,
+		OAuth2:   cfg.Clients.SDK.OAuth,
 	})
 	service := newService(deviceProvider, sdkProvider, persistence)
 
-	httpCertManager, err := certManager.NewCertManager(cfg.Service.HttpServer.HttpTLSConfig)
+	httpCertManager, err := certManager.NewServerCertManager(cfg.Service.HttpServer.HttpTLSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server cert manager %w", err)
 	}
 	httpServerTLSConfig := httpCertManager.GetServerTLSConfig()
-	//httpServerTLSConfig.ClientAuth = tls.NoClientCert // TODO : no need to use due to tlsConfig which set by verifyClientCertificate
+	//httpServerTLSConfig.ClientAuth = tls.NoClientCert // TODO : no need to use due to tlsConfig which set by verifyClientCertificate of ServerConfig
 	listener, err := tls.Listen("tcp", cfg.Service.HttpServer.HttpAddr, httpServerTLSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("listening failed: %w", err)
 	}
-	grpcCertManager, err := certManager.NewCertManager(cfg.Service.GrpcServer.GrpcTLSConfig)
+	grpcCertManager, err := certManager.NewServerCertManager(cfg.Service.GrpcServer.GrpcTLSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server cert manager %w", err)
 	}

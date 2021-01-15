@@ -1,0 +1,62 @@
+log:
+  debug: true
+apis:
+  coap:
+    address: "0.0.0.0:5684"
+    externalAddress: "localhost:5684" # domain:port
+    timeout: 0s  # default:10s
+    heartbeat: 4s
+    capabilities:
+      maxMessageSize: 1024  # default:262144
+      keepaliveEnabled: true
+      keepaliveTimeout: 5s   # default:20s
+      blockwiseTransferEnabled: true
+      blockwiseTransferBlockSize: 1024
+      # tcpSignalMessageCSMDisabled : false
+      # peerTcpSignalMessageCSMisabled : false
+      # errorEesponseEnabled : true
+    tls:
+      enabled: true
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/coap.crt"
+      keyFile: "/data/certs/coap.key"
+      clientCertificateRequired: true
+clients:
+  oAuthProvider:
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      tokenUrl : ""
+      timeout : 10s
+    tls:
+      enabled: true
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  authorizationServer:
+    address: "127.0.0.1:9081"
+    tls:
+      enabled: true
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceDirectory:
+    address: "127.0.0.1:9082"
+    tls:
+      enabled: true
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceAggregate:
+    address: "127.0.0.1:9083"
+    tls:
+      enabled: true
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false

@@ -522,6 +522,9 @@ github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/plgd-dev/go-coap/v2 v2.1.4-0.20201201213140-b8c428d8fccf/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
+github.com/plgd-dev/go-coap/v2 v2.2.0/go.mod h1:DccQmYY6swDlNlOCQOAX+SXTI9laSfGytskmeeNWmms=
+github.com/plgd-dev/go-coap/v2 v2.3.0/go.mod h1:0lg7sgOTxlHtfyGhPiak214vQ7CuBRD99LbdBCpDRW8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pquerna/otp v1.0.0/go.mod h1:Zad1CMQfSQZI5KLpahDiSUX4tMMREnXw98IvL1nhgMk=

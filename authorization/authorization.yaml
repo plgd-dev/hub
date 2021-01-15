@@ -5,72 +5,68 @@ apis:
     address: "0.0.0.0:9081"
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      dir-path: "/data/certs"
-      cert-file: "http.crt"
-      key-file: "http.key"
-      client-certificate-required: true
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
   http:
     address: "0.0.0.0:9085"
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      dir-path: "/data/certs"
-      cert-file: "http.crt"
-      key-file: "http.key"
-      client-certificate-required: false
-clients:
-  mongo:
-    mongodb:
-      uri: "mongodb://localhost:27017"
-      database: "authorization"
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
+database:
+  mongoDB:
+    uri: "mongodb://localhost:27017"
+    database: "authorization"
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      dir-path: "/data/certs"
-      cert-file: "http.crt"
-      key-file: "http.key"
-      use-system-ca-pool: true
-  device-oauth:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
+oAuthClients:
+  device:
     provider: "test"
-    oauth:
-      client-id: ""
-      client-secret: ""
+    providerName: "test provider"  # not implemented
+    oAuth:
+      clientID: ""
+      clientSecret: ""
       scopes: []
       audience: ""
       endpoint:
-        auth-url : ""
-        auth-token : ""
-        #auth-stype : ""  # not required
-      response-type: ""
-      response-mode: ""
-      redirect-url: ""
-      #access-type: ""   # not required
+        authUrl : ""
+        authToken : ""
+        #authStype : ""  # not required
+      responseType: ""
+      responseMode: ""
+      redirectUrl: ""
+      #accessType: ""   # not required
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      dir-path: "/data/certs"
-      cert-file: "http.crt"
-      key-file: "http.key"
-      use-system-ca-pool: true
-  sdk-oauth:
-    oauth:
-      client-id: ""
-      client-secret: ""
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
+  client:
+    oAuth:
+      clientID: ""
+      clientSecret: ""
       scopes: []
       audience: ""
       endpoint:
-        auth-url : ""
-        auth-token : ""
-        #auth-stype : ""  # not required
-      response-type: ""
-      response-mode: ""
-      redirect-url: ""
+        authUrl : ""
+        authToken : ""
+        #authType : ""  # not required
+      responseType: ""
+      responseMode: ""
+      redirectUrl: ""
       #access-type: ""   # not required
     tls:
       enabled: true
-      ca-file: "/data/certs/root_ca.crt"
-      dir-path: "/data/certs"
-      cert-file: "http.crt"
-      key-file: "http.key"
-      use-system-ca-pool: true
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true

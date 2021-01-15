@@ -39,9 +39,8 @@ var expiredKey = "Expired"
 
 //Server a configuration of coapgateway
 type Server struct {
-	FQDN                            string // fully qualified domain name of GW
-	ExternalPort                    uint16 // used to construct oic/res response
 	Addr                            string // Address to listen on, ":COAP" if empty.
+	ExternalAddress                 string // used to construct oic/res response
 	IsTLSListener                   bool
 	Keepalive                       *keepalive.KeepAlive
 	DisableTCPSignalMessageCSM      bool
@@ -73,10 +72,11 @@ type Server struct {
 	cancel          context.CancelFunc
 
 	sigs             chan os.Signal
-	oauthCertManager certManager.CertManager
-	raCertManager    certManager.CertManager
-	asCertManager    certManager.CertManager
-	rdCertManager    certManager.CertManager
+	oauthCertManager certManager.ClientCertManager
+	raCertManager    certManager.ClientCertManager
+	asCertManager    certManager.ClientCertManager
+	rdCertManager    certManager.ClientCertManager
+	listenCertManager certManager.ServerCertManager
 }
 
 type DialCertManager = interface {
@@ -102,7 +102,7 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 		}
 	})
 
-	oauthCertManager, err := certManager.NewCertManager(clients.OAuthProvider.OAuthTLSConfig)
+	oauthCertManager, err := certManager.NewClientCertManager(clients.OAuthProvider.OAuthTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth dial cert manager %v", err)
 	}
@@ -113,7 +113,7 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
-	raCertManager, err := certManager.NewCertManager(clients.ResourceAggregate.ResourceAggregateClientTLSConfig)
+	raCertManager, err := certManager.NewClientCertManager(clients.ResourceAggregate.ResourceAggregateTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create resource-aggregate dial cert manager %v", err)
 	}
@@ -129,7 +129,7 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	asCertManager, err := certManager.NewCertManager(clients.Authorization.AuthServerClientTLSConfig)
+	asCertManager, err := certManager.NewClientCertManager(clients.Authorization.AuthServerTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create authorization dial cert manager %v", err)
 	}
@@ -145,7 +145,7 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 	}
 	asClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	rdCertManager, err := certManager.NewCertManager(clients.ResourceDirectory.ResourceDirectoryClientTLSConfig)
+	rdCertManager, err := certManager.NewClientCertManager(clients.ResourceDirectory.ResourceDirectoryTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create resource-directory dial cert manager %v", err)
 	}
@@ -160,7 +160,7 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	listenCertManager, err := certManager.NewCertManager(config.CoapGW.ServerTLSConfig)
+	listenCertManager, err := certManager.NewServerCertManager(config.CoapGW.ServerTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create listen cert manager %v", err)
 	}
@@ -183,12 +183,12 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 	}
 
 	var keepAlive *keepalive.KeepAlive
-	if config.CoapGW.KeepaliveEnable {
-		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.CoapGW.KeepaliveTimeoutConnection)))
+	if config.CoapGW.Capabilities.KeepaliveEnable {
+		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.CoapGW.Capabilities.KeepaliveTimeoutConnection)))
 	}
 
 	var blockWiseTransferSZX blockwise.SZX
-	switch strings.ToLower(config.CoapGW.BlockWiseTransferSZX) {
+	switch strings.ToLower(config.CoapGW.Capabilities.BlockWiseTransferSZX) {
 	case "16":
 		blockWiseTransferSZX = blockwise.SZX16
 	case "32":
@@ -206,24 +206,23 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 	case "bert":
 		blockWiseTransferSZX = blockwise.SZXBERT
 	default:
-		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.CoapGW.BlockWiseTransferSZX)
+		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.CoapGW.Capabilities.BlockWiseTransferSZX)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	s := Server{
-		FQDN:                            config.CoapGW.FQDN,
-		ExternalPort:                    config.CoapGW.ExternalPort,
 		Addr:                            config.CoapGW.Addr,
+		ExternalAddress:                 config.CoapGW.ExternalAddress,
 		RequestTimeout:                  config.CoapGW.RequestTimeout,
-		DisableTCPSignalMessageCSM:      config.CoapGW.DisableTCPSignalMessageCSM,
-		DisablePeerTCPSignalMessageCSMs: config.CoapGW.DisablePeerTCPSignalMessageCSMs,
-		SendErrorTextInResponse:         config.CoapGW.SendErrorTextInResponse,
-		BlockWiseTransfer:               config.CoapGW.BlockWiseTransferEnable,
+		DisableTCPSignalMessageCSM:      config.CoapGW.Capabilities.DisableTCPSignalMessageCSM,
+		DisablePeerTCPSignalMessageCSMs: config.CoapGW.Capabilities.DisablePeerTCPSignalMessageCSMs,
+		SendErrorTextInResponse:         config.CoapGW.Capabilities.SendErrorTextInResponse,
+		BlockWiseTransfer:               config.CoapGW.Capabilities.BlockWiseTransferEnable,
 		BlockWiseTransferSZX:            blockWiseTransferSZX,
 		ReconnectInterval:               config.CoapGW.ReconnectInterval,
 		HeartBeat:                       config.CoapGW.HeartBeat,
-		MaxMessageSize:                  config.CoapGW.MaxMessageSize,
+		MaxMessageSize:                  config.CoapGW.Capabilities.MaxMessageSize,
 
 		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,
@@ -250,6 +249,7 @@ func New(config ServiceConfig, clients ClientsConfig) *Server {
 		raCertManager:    raCertManager,
 		asCertManager:    asCertManager,
 		rdCertManager:    rdCertManager,
+		listenCertManager: listenCertManager,
 	}
 
 	s.setupCoapServer()
@@ -449,6 +449,7 @@ func (server *Server) serveWithHandlingSignal() error {
 		server.raCertManager.Close()
 		server.asCertManager.Close()
 		server.rdCertManager.Close()
+		server.listenCertManager.Close()
 	}(server)
 
 	signal.Notify(server.sigs,

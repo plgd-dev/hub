@@ -51,8 +51,8 @@ require (
 
 replace github.com/plgd-dev/kit => ../kit
 
-replace github.com/plgd-dev/sdk => ../sdk
+//replace github.com/plgd-dev/sdk => ../sdk
 
-replace github.com/plgd-dev/cqrs => ../cqrs
+//replace github.com/plgd-dev/cqrs => ../cqrs
 
-replace github.com/plgd-dev/go-coap/v2 => ../go-coap
+//replace github.com/plgd-dev/go-coap/v2 => ../go-coap

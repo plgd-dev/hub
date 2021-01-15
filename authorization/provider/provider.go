@@ -2,7 +2,7 @@ package provider
 
 import (
 	"context"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/client"
 
 	"github.com/plgd-dev/cloud/authorization/oauth"
 )
@@ -17,8 +17,8 @@ type Provider = interface {
 // Config general configuration
 type Config struct {
 	Provider 				string       			`yaml:"provider" json:"provider" default:"generic"` // value which comes from the device during the sign-up ("apn")
-	OAuth2   				oauth.Config 			`yaml:"oauth" json:"oauth"`
-	OAuthTLSConfig			certManager.Config 		`yaml:"tls" json:"tls"`
+	OAuth2   				oauth.Config 			`yaml:"oAuth" json:"oAuth"`
+	OAuthTLSConfig			client.ClientConfig 		`yaml:"tls" json:"tls"`
 }
 
 // New creates GitHub OAuth client
