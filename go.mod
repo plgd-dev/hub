@@ -43,8 +43,6 @@ require (
 	google.golang.org/grpc/examples v0.0.0-20201008225051-06c094c3ab22 // indirect
 )
 
-replace gopkg.in/yaml.v2 v2.2.8 => github.com/cizmazia/yaml v0.0.0-20200220134304-2008791f5454
-
 replace github.com/plgd-dev/kit => ../kit
 
 //replace github.com/plgd-dev/sdk => ../sdk
