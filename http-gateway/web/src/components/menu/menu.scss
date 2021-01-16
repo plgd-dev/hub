@@ -1,0 +1,49 @@
+#menu {
+  .menu-item {
+    display: flex;
+    width: 100%;
+    height: 40px;
+    border-radius: 2px;
+    color: #fff;
+    text-decoration: none;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 10px 0 10px;
+    cursor: pointer;
+
+    &.active,
+    &:hover {
+      background: #1b4b85;
+    }
+
+    i {
+      font-size: 12px;
+    }
+
+    span.icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+    }
+
+    span.title {
+      margin-left: 10px;
+    }
+
+    &.collapse-menu-item {
+      position: absolute;
+      width: calc(100% - 20px);
+      bottom: 10px;
+    }
+  }
+
+  &.collapsed {
+    .menu-item {
+      span.title {
+        display: none;
+      }
+    }
+  }
+}

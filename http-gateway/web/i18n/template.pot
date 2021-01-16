@@ -1,0 +1,71 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2021-01-16T15:12:42.834Z\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"MIME-Version: 1.0\n"
+"X-Generator: react-intl-po\n"
+
+
+#: ./i18n/template.json
+#. [footer.API]
+#. defaultMessage is:
+#. API
+msgid "API"
+msgstr ""
+
+#: ./i18n/template.json
+#. [menu.collapse]
+#. defaultMessage is:
+#. Collapse
+msgid "Collapse"
+msgstr ""
+
+#: ./i18n/template.json
+#. [footer.contribute]
+#. defaultMessage is:
+#. Contribute
+msgid "Contribute"
+msgstr ""
+
+#: ./i18n/template.json
+#. [menu.dashboard]
+#. defaultMessage is:
+#. Dashboard
+msgid "Dashboard"
+msgstr ""
+
+#: ./i18n/template.json
+#. [footer.docs]
+#. defaultMessage is:
+#. Docs
+msgid "Docs"
+msgstr ""
+
+#: ./i18n/template.json
+#. [user-widget.logOut]
+#. defaultMessage is:
+#. Log Out
+msgid "Log Out"
+msgstr ""
+
+#: ./i18n/template.json
+#. [menu.notifications]
+#. defaultMessage is:
+#. Notifications
+msgid "Notifications"
+msgstr ""
+
+#: ./i18n/template.json
+#. [menu.services]
+#. defaultMessage is:
+#. Services
+msgid "Services"
+msgstr ""
+
+#: ./i18n/template.json
+#. [menu.things]
+#. defaultMessage is:
+#. Things
+msgid "Things"
+msgstr ""

@@ -1,0 +1,51 @@
+#left-panel {
+  position: fixed;
+  display: block;
+  width: 200px;
+  min-width: 200px;
+  height: 100vh;
+  background: #255897;
+  box-sizing: border-box;
+  padding: 10px;
+  color: #fff;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 11;
+
+  .logo {
+    display: block;
+    padding-left: 10px;
+    padding-top: 5px;
+    margin-bottom: 50px;
+
+    .logo-big {
+      display: block;
+      height: 35px;
+    }
+
+    .logo-small {
+      display: none;
+      height: 27px;
+    }
+  }
+
+  &.collapsed {
+    width: 55px;
+    min-width: 55px;
+
+    .logo {
+      padding-left: 0;
+      padding-top: 5px;
+      margin-bottom: 58px;
+
+      .logo-big {
+        display: none;
+      }
+
+      .logo-small {
+        display: block;
+      }
+    }
+  }
+}

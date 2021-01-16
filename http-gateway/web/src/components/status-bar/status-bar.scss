@@ -1,0 +1,50 @@
+#status-bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: calc(100% - 200px);
+  background: #fff;
+  height: 50px;
+  box-shadow: 0 10px 20px 0 rgba(233, 236, 239, 0.5);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 40px;
+  color: #868e96;
+
+  &.collapsed {
+    width: calc(100% - 55px);
+  }
+
+  .status-bar-item {
+    position: relative;
+    margin-left: 30px;
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      height: 50px;
+      cursor: pointer;
+
+      i {
+        font-size: 10px;
+        margin-left: 7px;
+        color: #255897;
+        width: 10px;
+        height: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    .content {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: #fff;
+      box-shadow: 0 10px 20px 0 rgba(233, 236, 239, 0.5);
+    }
+  }
+}
