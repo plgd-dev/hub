@@ -43,8 +43,8 @@
     "generate-language-files": "node ./scripts/generate-language-files.js"
   },
   "scriptComments": {
-    "generate-pot": "Maps through all js files and extract the translate messages into a .pot file, used in the translation tool outside of this app.",
-    "generate-language-files": "Maps through all .po files in i18n folder exported from the translation tool after the translators translated the strings, and generates the final languages.json file used in the application."
+    "generate-pot": "Examines all src js files and extracts the translate keys into a .pot file, to be used in a translation tool outside of this app.",
+    "generate-language-files": "Applies the .po and .pot files in i18n folder to create the final languages.json (translated strings) file to be used at run-time in the application."
   },
   "eslintConfig": {
     "extends": [

@@ -19,7 +19,7 @@ Application will be hosted on `http://localhost:3000` by default. To change the 
 
     cross-env PORT=3000 craco start
 
-or set `PORT` into your enviroment variables.
+or set `PORT` into your environment variables.
 
 ## Building the app
 
