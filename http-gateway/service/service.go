@@ -88,6 +88,15 @@ func New(cfg Config) (*Server, error) {
 	}, kitNetHttp.RequestMatcher{
 		Method: http.MethodGet,
 		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
+	}, kitNetHttp.RequestMatcher{
+		Method: http.MethodGet,
+		URI:    regexp.MustCompile(regexp.QuoteMeta("/favicon.ico")),
+	}, kitNetHttp.RequestMatcher{
+		Method: http.MethodGet,
+		URI:    regexp.MustCompile(regexp.QuoteMeta("/static") + `.*`),
+	}, kitNetHttp.RequestMatcher{
+		Method: http.MethodGet,
+		URI:    regexp.MustCompile(regexp.QuoteMeta("/index.html")),
 	},
 	)
 	requestHandler := NewRequestHandler(client, caClient, &cfg, manager)

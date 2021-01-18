@@ -48,6 +48,14 @@ RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
+FROM ubuntu:20.04 AS build-web
+RUN apt-get update && apt-get install -y gcc g++ make curl sudo
+RUN curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+RUN apt-get update
+RUN apt-get install -y nodejs
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/http-gateway/web /web
+RUN cd /web && npm install && npm run build
+
 FROM ubuntu:20.04 as service
 RUN apt update
 RUN apt install -y wget gnupg iproute2 systemctl openssl
@@ -64,6 +72,7 @@ COPY --from=build /go/bin/authorization /usr/local/bin/authorization
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
+COPY --from=build-web /web/build /usr/local/var/www
 COPY run.sh /usr/local/bin/run.sh
 
 # global

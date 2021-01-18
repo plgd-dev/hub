@@ -9,14 +9,15 @@ import (
 
 // Config represent application configuration
 type Config struct {
-	Address                  string             `envconfig:"ADDRESS"`
-	Listen                   certManager.Config `envconfig:"LISTEN"`
-	Dial                     certManager.Config `envconfig:"DIAL"`
-	JwksURL                  string             `envconfig:"JWKS_URL"`
-	ResourceDirectoryAddr    string             `envconfig:"RESOURCE_DIRECTORY_ADDRESS"`
-	CertificateAuthorityAddr string             `envconfig:"CERTIFICATE_AUTHORITY_ADDRESS"`
-	WebSocketReadLimit       int64              `envconfig:"WEBSOCKET_READ_LIMIT"`
-	WebSocketReadTimeout     time.Duration      `envconfig:"WEBSOCKET_READ_TIMEOUT"`
+	Address                  string
+	Listen                   certManager.Config
+	Dial                     certManager.Config
+	JwksURL                  string
+	ResourceDirectoryAddr    string
+	CertificateAuthorityAddr string
+	WebSocketReadLimit       int64
+	WebSocketReadTimeout     time.Duration
+	WWWDirectory             string
 }
 
 func (c Config) checkForDefaults() Config {
