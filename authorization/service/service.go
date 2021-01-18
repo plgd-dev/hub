@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"net"
 	"time"
-
-	"github.com/plgd-dev/kit/security/certManager"
 
 	"github.com/plgd-dev/cloud/authorization/uri"
 
@@ -57,9 +57,9 @@ type Server struct {
 	grpcServer        *kitNetGrpc.Server
 	httpServer        *fasthttp.Server
 	cfg               Config
-	grpcCertManager   certManager.ServerCertManager
-	httpCertManager   certManager.ServerCertManager
-	mongoCertManager  certManager.ClientCertManager
+	grpcCertManager   *server.CertManager
+	httpCertManager   *server.CertManager
+	mongoCertManager  *client.CertManager
 	listener          net.Listener
 }
 
@@ -75,16 +75,18 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 // New creates the service's HTTP server.
 func New(cfg Config) (*Server, error) {
 
-	mongoCertManager, err := certManager.NewClientCertManager(cfg.Database.MongoDB.TLSConfig)
+	logger, err := log.NewLogger(log.Config{ Debug: cfg.Log.Debug })
+	mongoCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}
 
-	mongoTlsConfig := mongoCertManager.GetClientTLSConfig()
+	mongoTlsConfig := mongoCertManager.GetTLSConfig()
 	persistence, err := mongodb.NewStore(context.Background(), cfg.Database.MongoDB, mongodb.WithTLS(mongoTlsConfig))
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}
+
 	if cfg.Clients.Device.OAuth2.AccessType == "" {
 		cfg.Clients.Device.OAuth2.AccessType = "offline"
 	}
@@ -110,21 +112,21 @@ func New(cfg Config) (*Server, error) {
 	})
 	service := newService(deviceProvider, sdkProvider, persistence)
 
-	httpCertManager, err := certManager.NewServerCertManager(cfg.Service.HttpServer.HttpTLSConfig)
+	httpCertManager, err := server.New(cfg.Service.HttpServer.HttpTLSConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server cert manager %w", err)
 	}
-	httpServerTLSConfig := httpCertManager.GetServerTLSConfig()
-	//httpServerTLSConfig.ClientAuth = tls.NoClientCert // TODO : no need to use due to tlsConfig which set by verifyClientCertificate of ServerConfig
+	httpServerTLSConfig := httpCertManager.GetTLSConfig()
+
 	listener, err := tls.Listen("tcp", cfg.Service.HttpServer.HttpAddr, httpServerTLSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("listening failed: %w", err)
 	}
-	grpcCertManager, err := certManager.NewServerCertManager(cfg.Service.GrpcServer.GrpcTLSConfig)
+	grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server cert manager %w", err)
 	}
-	grpcServerTLSConfig := grpcCertManager.GetServerTLSConfig()
+	grpcServerTLSConfig := grpcCertManager.GetTLSConfig()
 	server, err := kitNetGrpc.NewServer(cfg.Service.GrpcServer.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcServerTLSConfig)))
 	if err != nil {
 		return nil, err

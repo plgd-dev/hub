@@ -17,7 +17,7 @@ type ServiceConfig struct {
 type CoapConfig struct {
 	Addr                            string             `yaml:"address" json:"address" default:"0.0.0.0:5684"`
 	ExternalAddress                 string             `yaml:"externalAddress" json:"externalAddress" default:"5684"`
-	ServerTLSConfig                 server.ServerConfig `yaml:"tls" json:"tls"`
+	ServerTLSConfig                 server.Config      `yaml:"tls" json:"tls"`
 	RequestTimeout                  time.Duration      `yaml:"timeout" json:"timeout" default:"10s"`
 	HeartBeat                       time.Duration      `yaml:"heartbeat" json:"heartbeat" default:"4s"`
 	ReconnectInterval               time.Duration      `yaml:"reconnectInterval" json:"reconnectInterval" default:"10s"`
@@ -43,21 +43,21 @@ type ClientsConfig struct {
 }
 
 type OAuthConfig struct {
-	OAuthConfig                     manager.Config           `yaml:"oauth" json:"oauth"`
-	OAuthTLSConfig                  client.ClientConfig `yaml:"tls" json:"tls"`
+	OAuthConfig                     manager.Config      `yaml:"oauth" json:"oauth"`
+	OAuthTLSConfig                  client.Config       `yaml:"tls" json:"tls"`
 }
 
 type AuthorizationConfig struct {
-	AuthServerAddr                  string                   `yaml:"address" json:"address" default:"127.0.0.1:9081"`
-	AuthServerTLSConfig             client.ClientConfig `yaml:"tls" json:"tls"`
+	AuthServerAddr                  string              `yaml:"address" json:"address" default:"127.0.0.1:9081"`
+	AuthServerTLSConfig             client.Config       `yaml:"tls" json:"tls"`
 }
 
 type ResourceDirectoryConfig struct {
-	ResourceDirectoryAddr           string                   `yaml:"address" json:"address" default:"127.0.0.1:9082"`
-	ResourceDirectoryTLSConfig      client.ClientConfig `yaml:"tls" json:"tls"`
+	ResourceDirectoryAddr           string              `yaml:"address" json:"address" default:"127.0.0.1:9082"`
+	ResourceDirectoryTLSConfig      client.Config       `yaml:"tls" json:"tls"`
 }
 
 type ResourceAggregateConfig struct {
-	ResourceAggregateAddr            string                   `yaml:"address" json:"address" default:"127.0.0.1:9083"`
-	ResourceAggregateTLSConfig       client.ClientConfig `yaml:"tls" json:"tls"`
+	ResourceAggregateAddr            string             `yaml:"address" json:"address" default:"127.0.0.1:9083"`
+	ResourceAggregateTLSConfig       client.Config      `yaml:"tls" json:"tls"`
 }

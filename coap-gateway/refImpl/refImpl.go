@@ -25,7 +25,7 @@ func (c Config) String() string {
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config Config) (*RefImpl, error) {
 	return &RefImpl{
-		service:           service.New(config.Service, config.Clients),
+		service:           service.New(config.Log, config.Service, config.Clients),
 	}, nil
 }
 

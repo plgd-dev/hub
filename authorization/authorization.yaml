@@ -4,7 +4,6 @@ apis:
   grpc:
     address: "0.0.0.0:9081"
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
@@ -12,7 +11,6 @@ apis:
   http:
     address: "0.0.0.0:9085"
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
@@ -22,7 +20,6 @@ database:
     uri: "mongodb://localhost:27017"
     database: "authorization"
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
@@ -36,16 +33,14 @@ oAuthClients:
       clientSecret: ""
       scopes: []
       audience: ""
-      endpoint:
-        authUrl : ""
-        authToken : ""
-        #authStype : ""  # not required
+      authUrl : ""
+      authToken : ""
+      #authStype : ""  # not required
       responseType: ""
       responseMode: ""
       redirectUrl: ""
       #accessType: ""   # not required
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
@@ -56,16 +51,14 @@ oAuthClients:
       clientSecret: ""
       scopes: []
       audience: ""
-      endpoint:
-        authUrl : ""
-        authToken : ""
-        #authType : ""  # not required
+      authUrl : ""
+      authToken : ""
+      #authType : ""  # not required
       responseType: ""
       responseMode: ""
       redirectUrl: ""
       #access-type: ""   # not required
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"

@@ -16,7 +16,6 @@ apis:
       # peerTcpSignalMessageCSMisabled : false
       # errorEesponseEnabled : true
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/coap.crt"
       keyFile: "/data/certs/coap.key"
@@ -31,7 +30,6 @@ clients:
       tokenUrl : ""
       timeout : 10s
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
@@ -39,7 +37,6 @@ clients:
   authorizationServer:
     address: "127.0.0.1:9081"
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
@@ -47,7 +44,6 @@ clients:
   resourceDirectory:
     address: "127.0.0.1:9082"
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
@@ -55,7 +51,6 @@ clients:
   resourceAggregate:
     address: "127.0.0.1:9083"
     tls:
-      enabled: true
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"

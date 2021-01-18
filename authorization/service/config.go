@@ -26,12 +26,12 @@ type ServiceConfig struct {
 
 type GrpcConfig struct {
 	GrpcAddr                string                   `yaml:"address" json:"address" default:"0.0.0.0:9081"`
-	GrpcTLSConfig           server.ServerConfig `yaml:"tls" json:"tls"`
+	GrpcTLSConfig           server.Config            `yaml:"tls" json:"tls"`
 }
 
 type HttpConfig struct {
 	HttpAddr                string                   `yaml:"address" json:"address" default:"0.0.0.0:9085"`
-	HttpTLSConfig           server.ServerConfig `yaml:"tls" json:"tls"`
+	HttpTLSConfig           server.Config            `yaml:"tls" json:"tls"`
 }
 
 type OAuthClientsConfig struct {
@@ -41,7 +41,7 @@ type OAuthClientsConfig struct {
 
 type SDKOAuthConfig struct {
 	OAuth                   oauth.Config             `yaml:"oauth" json:"oAuth"`
-	OAuthTLSConfig          client.ClientConfig `yaml:"tls" json:"tls"`
+	OAuthTLSConfig          client.Config            `yaml:"tls" json:"tls"`
 }
 
 type MogoDBConfig struct {

@@ -33,9 +33,9 @@ type Store struct {
 }
 
 type Config struct {
-	URI             string                  `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
-	Database        string                  `yaml:"database" json:"database" default:"authorization"`
-	TLSConfig		client.ClientConfig 		`yaml:"tls" json:"tls"`
+	URI             string              `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
+	Database        string              `yaml:"database" json:"database" default:"authorization"`
+	TLSConfig		client.Config 		`yaml:"tls" json:"tls"`
 
 	tlsCfg   *tls.Config
 }

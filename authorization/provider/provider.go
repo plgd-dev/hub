@@ -18,7 +18,7 @@ type Provider = interface {
 type Config struct {
 	Provider 				string       			`yaml:"provider" json:"provider" default:"generic"` // value which comes from the device during the sign-up ("apn")
 	OAuth2   				oauth.Config 			`yaml:"oAuth" json:"oAuth"`
-	OAuthTLSConfig			client.ClientConfig 		`yaml:"tls" json:"tls"`
+	OAuthTLSConfig			client.Config 		    `yaml:"tls" json:"tls"`
 }
 
 // New creates GitHub OAuth client
