@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
@@ -32,6 +35,24 @@ type Server struct {
 	caConn            *grpc.ClientConn
 }
 
+func buildWhiteList(uidirectory string, whiteList *[]kitNetHttp.RequestMatcher) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		path = strings.TrimLeft(path, uidirectory)
+		log.Debugf("white listed path: %v", path)
+		*whiteList = append(*whiteList, kitNetHttp.RequestMatcher{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta(path)),
+		})
+		return nil
+	}
+}
+
 // New parses configuration and creates new Server with provided store and bus
 func New(cfg Config) (*Server, error) {
 	cfg = cfg.checkForDefaults()
@@ -39,17 +60,17 @@ func New(cfg Config) (*Server, error) {
 
 	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
 	if err != nil {
-		log.Fatalf("cannot create listen cert manager: %v", err)
+		return nil, fmt.Errorf("cannot create listen cert manager: %v", err)
 	}
 	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
 	if err != nil {
-		log.Fatalf("cannot create dial cert manager: %v", err)
+		return nil, fmt.Errorf("cannot create dial cert manager: %v", err)
 	}
 	listenTLSCfg := listenCertManager.GetServerTLSConfig()
 
 	ln, err := tls.Listen("tcp", cfg.Address, listenTLSCfg)
 	if err != nil {
-		log.Fatalf("cannot listen tls and serve: %v", err)
+		return nil, fmt.Errorf("cannot listen tls and serve: %v", err)
 	}
 
 	rdConn, err := grpc.Dial(
@@ -62,7 +83,7 @@ func New(cfg Config) (*Server, error) {
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
 	client, err := client.NewClient("http://localhost", resourceDirectoryClient)
 	if err != nil {
-		log.Fatalf("cannot initialize new client: %v", err)
+		return nil, fmt.Errorf("cannot initialize new client: %v", err)
 	}
 	var caConn *grpc.ClientConn
 	var caClient pbCA.CertificateAuthorityClient
@@ -80,16 +101,26 @@ func New(cfg Config) (*Server, error) {
 
 	manager, err := NewObservationManager()
 	if err != nil {
-		log.Fatal("unable to initialize new observation manager %w", err)
+		return nil, fmt.Errorf("unable to initialize new observation manager %v", err)
 	}
-	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, kitNetHttp.RequestMatcher{
-		Method: http.MethodGet,
-		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.WsStartDevicesObservation) + `.*`),
-	}, kitNetHttp.RequestMatcher{
-		Method: http.MethodGet,
-		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
-	},
-	)
+
+	whiteList := []kitNetHttp.RequestMatcher{
+		{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.WsStartDevicesObservation) + `.*`),
+		},
+		{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
+		},
+	}
+	if cfg.UIEnabled {
+		err := filepath.Walk(cfg.UIDirectory, buildWhiteList(cfg.UIDirectory, &whiteList))
+		if err != nil {
+			return nil, fmt.Errorf("cannot build whitelist for ui directory(%v) %w", cfg.UIDirectory, err)
+		}
+	}
+	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, whiteList...)
 	requestHandler := NewRequestHandler(client, caClient, &cfg, manager)
 
 	server := Server{

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/gofrs/uuid"
 
 	"github.com/plgd-dev/kit/codec/json"
 )

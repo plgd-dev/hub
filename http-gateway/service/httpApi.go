@@ -93,9 +93,6 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	}))
 	r.StrictSlash(true)
 
-	// health check
-	r.HandleFunc("/", healthCheck).Methods(http.MethodGet)
-
 	// client configuration
 	r.HandleFunc(uri.ClientConfiguration, requestHandler.getClientConfiguration).Methods(http.MethodGet)
 
@@ -119,6 +116,11 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.PathPrefix(uri.WsStartDeviceResourceObservation).MatcherFunc(wsResourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.startResourceObservation)
 	r.HandleFunc(uri.WsStartDevicesObservation, requestHandler.startDevicesObservation).Methods(http.MethodGet)
 	r.HandleFunc(uri.WsStartDeviceResourcesObservation, requestHandler.startDeviceResourcesObservation).Methods(http.MethodGet)
+
+	// serve www directory
+	if requestHandler.config.UIEnabled {
+		r.PathPrefix("/").Handler(http.FileServer(http.Dir(requestHandler.config.UIDirectory))).Methods(http.MethodGet)
+	}
 
 	return &http.Server{Handler: r}
 }
