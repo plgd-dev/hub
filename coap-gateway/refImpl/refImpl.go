@@ -1,31 +1,25 @@
 package refImpl
 
 import (
-	"github.com/plgd-dev/kit/config"
-
+	"fmt"
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	"github.com/plgd-dev/kit/log"
 )
-
-type Config struct {
-	Log              log.Config            	`yaml:"log" json:"log"`
-	Service          service.ServiceConfig	`yaml:"apis" json:"apis"`
-	Clients			 service.ClientsConfig  `yaml:"clients" json:"clients"`
-}
 
 type RefImpl struct {
 	service           *service.Server
 }
 
-//String return string representation of Config
-func (c Config) String() string {
-	return config.ToString(c)
-}
-
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
-func Init(config Config) (*RefImpl, error) {
+func Init(config service.Config) (*RefImpl, error) {
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
+
 	return &RefImpl{
-		service:           service.New(config.Log, config.Service, config.Clients),
+		service:           service.New(logger, config.Service, config.Clients),
 	}, nil
 }
 

@@ -1,17 +1,24 @@
 package service
 
 import (
+	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
 	"time"
 
-	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/plgd-dev/kit/security/oauth/manager"
 )
 
 // Config for application.
-type ServiceConfig struct {
+type Config struct {
+	Log              log.Config     `yaml:"log" json:"log"`
+	Service          APIsConfig	`yaml:"apis" json:"apis"`
+	Clients			 ClientsConfig  `yaml:"clients" json:"clients"`
+}
 
-	CoapGW                CoapConfig       `yaml:"coap" json:"coap"`
+type APIsConfig struct {
+	CoapGW           CoapConfig     `yaml:"coap" json:"coap"`
 }
 
 type CoapConfig struct {
@@ -60,4 +67,9 @@ type ResourceDirectoryConfig struct {
 type ResourceAggregateConfig struct {
 	ResourceAggregateAddr            string             `yaml:"address" json:"address" default:"127.0.0.1:9083"`
 	ResourceAggregateTLSConfig       client.Config      `yaml:"tls" json:"tls"`
+}
+
+//String return string representation of Config
+func (c Config) String() string {
+	return config.ToString(c)
 }

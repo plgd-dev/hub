@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"os"
@@ -89,7 +90,8 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(logcfg log.Config, service ServiceConfig, clients ClientsConfig) *Server {
+func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server {
+
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -103,7 +105,6 @@ func New(logcfg log.Config, service ServiceConfig, clients ClientsConfig) *Serve
 		}
 	})
 
-	logger, err := log.NewLogger(log.Config{ Debug: logcfg.Debug })
 	oauthCertManager, err := client.New(clients.OAuthProvider.OAuthTLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot create oauth dial cert manager %v", err)

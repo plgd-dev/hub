@@ -76,6 +76,7 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 func New(cfg Config) (*Server, error) {
 
 	logger, err := log.NewLogger(log.Config{ Debug: cfg.Log.Debug })
+	log.Set(logger)
 	mongoCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)

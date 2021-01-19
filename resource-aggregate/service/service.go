@@ -3,6 +3,11 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"os"
 	"os/signal"
 	"sync"
@@ -15,7 +20,6 @@ import (
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
@@ -36,11 +40,19 @@ type EventStore interface {
 //Server handle HTTP request
 type Server struct {
 	server             *kitNetGrpc.Server
-	cfg                Config
 	handler            *RequestHandler
 	sigs               chan os.Signal
 	authConn           *grpc.ClientConn
 	userDevicesManager *clientAS.UserDevicesManager
+
+	eventstore         *mongodb.EventStore
+	publisher          *nats.Publisher
+
+	grpcCertManager    *server.CertManager
+	mongoCertManager   *client.CertManager
+	natsCertManager    *client.CertManager
+	oauthCertManager   *client.CertManager
+	asCertManager      *client.CertManager
 }
 
 type ClientCertManager = interface {
@@ -81,44 +93,75 @@ func (l *NumParallelProcessedRequestLimiter) UnaryServerInterceptor(ctx context.
 }
 
 // New creates new Server with provided store and publisher.
-func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
-	dialTLSConfig := clientCertManager.GetClientTLSConfig()
-	listenTLSConfig := serverCertManager.GetServerTLSConfig()
+func New(logger *zap.Logger, service APIsConfig, database Database, clients ClientsConfig ) *Server {
 
-	rateLimiter := NewNumParallelProcessedRequestLimiter(config.NumParallelRequest)
+	mongoCertManager, err := client.New(database.MongoDB.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create mongodb client cert manager %w", err)
+	}
+	eventStore, err := mongodb.NewEventStore(database.MongoDB, nil, mongodb.WithTLS(mongoCertManager.GetTLSConfig()))
+	if err != nil {
+		log.Errorf("cannot create mongodb eventstore %w", err)
+	}
 
-	auth := NewAuth(config.JwksURL, dialTLSConfig)
-	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+	natsCertManager, err := client.New(clients.Nats.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create nats client cert manager %w", err)
+	}
+	publisher, err := nats.NewPublisher(clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
+	if err != nil {
+		log.Errorf("cannot create kafka publisher %w", err)
+	}
+
+	grpcCertManager, err := server.New(service.RA.GrpcTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create server cert manager %w", err)
+	}
+
+	oauthCertManager, err := client.New(clients.OAuth.OAuthTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create oauth client cert manager %w", err)
+	}
+	jwksAuth := NewAuth(clients.OAuth.JwksURL, oauthCertManager.GetTLSConfig())
+	rateLimiter := NewNumParallelProcessedRequestLimiter(service.RA.Capabilities.NumParallelRequest)
+	grpcServer, err := kitNetGrpc.NewServer(service.RA.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			rateLimiter.StreamServerInterceptor,
 			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 			grpc_zap.StreamServerInterceptor(logger),
-			auth.Stream(),
+			jwksAuth.Stream(),
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			rateLimiter.UnaryServerInterceptor,
 			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 			grpc_zap.UnaryServerInterceptor(logger),
-			auth.Unary(),
+			jwksAuth.Unary(),
 		)),
 	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	oauthMgr, err := manager.NewManagerFromConfiguration(clients.OAuth.OAuth, oauthCertManager.GetTLSConfig())
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %w", err)
 	}
 
-	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	asCertManager, err := client.New(clients.AuthServer.AuthTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create oauth client cert manager %w", err)
+	}
+	asConn, err := grpc.Dial(clients.AuthServer.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
 		log.Fatalf("cannot connect to authorization server: %w", err)
 	}
 	authClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
-	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, userID, deviceID string) (bool, error) {
+	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient,
+		service.RA.Capabilities.UserDevicesManagerTickFrequency, service.RA.Capabilities.UserDevicesManagerExpiration,
+		func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
+		requestHandler := NewRequestHandler(service, eventStore, publisher, func(ctx context.Context, userID, deviceID string) (bool, error) {
 		devices, err := userDevicesManager.GetUserDevices(ctx, userID)
 		if err != nil {
 			return false, err
@@ -143,11 +186,19 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 
 	server := Server{
 		server:             grpcServer,
-		cfg:                config,
 		handler:            requestHandler,
 		sigs:               make(chan os.Signal, 1),
 		authConn:           asConn,
 		userDevicesManager: userDevicesManager,
+
+		eventstore:         eventStore,
+		publisher:          publisher,
+
+		grpcCertManager:    grpcCertManager,
+		mongoCertManager:   mongoCertManager,
+		natsCertManager:    natsCertManager,
+		asCertManager:      asCertManager,
+		oauthCertManager:   oauthCertManager,
 	}
 
 	return &server
@@ -174,6 +225,14 @@ func (s *Server) serveWithHandlingSignal(serve func() error) error {
 	s.userDevicesManager.Close()
 	s.authConn.Close()
 
+	s.eventstore.Close(context.Background())
+	s.publisher.Close()
+	s.oauthCertManager.Close()
+	s.asCertManager.Close()
+	s.grpcCertManager.Close()
+	s.natsCertManager.Close()
+	s.mongoCertManager.Close()
+
 	return err
 }
 
@@ -185,6 +244,7 @@ func (s *Server) Serve() error {
 // Shutdown ends serving
 func (s *Server) Shutdown() {
 	s.sigs <- syscall.SIGTERM
+	return
 }
 
 func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {

@@ -14,12 +14,12 @@ import (
 // Config provides defaults and enables configuring via env variables.
 type Config struct {
 	Log                     log.Config               `yaml:"log" json:"log"`
-	Service	                ServiceConfig            `yaml:"apis" json:"apis"`
+	Service	                APIsConfig               `yaml:"apis" json:"apis"`
 	Clients	                OAuthClientsConfig       `yaml:"oAuthClients" json:"oAuthClients"`
 	Database                MogoDBConfig             `yaml:"database" json:"database"`
 }
 
-type ServiceConfig struct {
+type APIsConfig struct {
 	GrpcServer              GrpcConfig               `yaml:"grpc" json:"grpc"`
 	HttpServer              HttpConfig               `yaml:"http" json:"http"`
 }

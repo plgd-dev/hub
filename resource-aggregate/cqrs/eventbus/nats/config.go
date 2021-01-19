@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/plgd-dev/kit/security/certManager/client"
 
 	nats "github.com/nats-io/nats.go"
 )
@@ -12,8 +13,9 @@ import (
 type Option func(Config) Config
 
 type Config struct {
-	URL     string `envconfig:"URL" default:"nats://localhost:4222"`
-	Options []nats.Option
+	URL       string         `yaml:"url" json:"url" default:"nats://localhost:4222"`
+	TLSConfig client.Config  `yaml:"tls" json:"tls"`
+	Options   []nats.Option
 }
 
 // String returns string representation of Config.

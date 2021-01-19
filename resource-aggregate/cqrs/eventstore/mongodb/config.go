@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"github.com/plgd-dev/kit/security/certManager/client"
 )
 
 // Option provides the means to use function call chaining
@@ -36,11 +37,13 @@ func WithTLS(cfg *tls.Config) Option {
 
 // Config provides Mongo DB configuration options
 type Config struct {
-	URI             string        `long:"uri" env:"URI" envconfig:"URI" default:"mongodb://localhost:27017"`
-	DatabaseName    string        `long:"dbName" env:"DATABASE" envconfig:"DATABASE" default:"eventStore"`
-	BatchSize       int           `long:"batchSize" env:"BATCH_SIZE" envconfig:"BATCH_SIZE" default:"16"`
-	MaxPoolSize     uint64        `long:"maxPoolSize" env:"MAX_POOL_SIZE" envconfig:"MAX_POOL_SIZE" default:"16"`
-	MaxConnIdleTime time.Duration `long:"maxConnIdleTime" env:"MAX_CONN_IDLE_TIME" envconfig:"MAX_CONN_IDLE_TIME" default:"240s"`
+	URI             string        `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
+	DatabaseName    string        `yaml:"database" json:"database" default:"eventStore"`
+	TLSConfig       client.Config `yaml:"tls" json:"tls"`
+	BatchSize       int           `yaml:"batchSize" json:"batchSize" default:"16"`
+	MaxPoolSize     uint64        `yaml:"maxPoolSize" json:"maxPoolSize" default:"16"`
+	MaxConnIdleTime time.Duration `yaml:"maxConnIdleTime" json:"maxConnIdleTime" default:"240s"`
+
 	tlsCfg          *tls.Config
 	marshalerFunc   MarshalerFunc
 	unmarshalerFunc UnmarshalerFunc
