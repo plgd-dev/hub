@@ -1,11 +1,10 @@
 @import '~bootstrap/scss/bootstrap';
 @import '@/assets/fonts/fontawesome/css/all.min.css';
 
-html,body,input,textarea,select{
-  font-family: 'Muli', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-}
+@import '@/common/styles/default.scss';
+@import '@/components/page-loader/page-loader.scss';
+@import '@/components/breadcrumbs/breadcrumbs.scss';
+@import '@/components/layout/layout.scss';
 
 #app {
   padding: 0;
@@ -19,11 +18,14 @@ html,body,input,textarea,select{
   box-sizing: border-box;
   width: 100%;
   position: relative;
-  margin-left: 200px;
-  padding: 80px 0 90px 40px;
+  margin-left: $left_panel_expanded;
+  padding: 80px 40px 90px 40px;
   min-height: 100vh;
+}
 
-  &.collapsed {
-    margin-left: 55px;
+// Collapsed menu state
+#app.collapsed {
+  #content {
+    margin-left: $left_panel_collapsed;
   }
 }

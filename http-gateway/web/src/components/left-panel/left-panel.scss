@@ -1,17 +1,20 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
 #left-panel {
   position: fixed;
   display: block;
-  width: 200px;
-  min-width: 200px;
+  width: $left_panel_expanded;
+  min-width: $left_panel_expanded;
   height: 100vh;
-  background: #255897;
+  background: $text_primary;
   box-sizing: border-box;
   padding: 10px;
-  color: #fff;
+  color: $white_100;
   top: 0;
   left: 0;
   bottom: 0;
-  z-index: 11;
+  z-index: 15;
 
   .logo {
     display: block;
@@ -29,10 +32,13 @@
       height: 27px;
     }
   }
+}
 
-  &.collapsed {
-    width: 55px;
-    min-width: 55px;
+// Collapsed menu state
+#app.collapsed {
+  #left-panel {
+    width: $left_panel_collapsed;
+    min-width: $left_panel_collapsed;
 
     .logo {
       padding-left: 0;

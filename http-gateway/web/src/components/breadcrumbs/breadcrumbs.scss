@@ -1,0 +1,16 @@
+@import '@/common/styles/colors.scss';
+
+.breadcrumbs {
+  display: flex;
+  color: $text_desc;
+  align-items: center;
+  margin-right: 20px;
+
+  a {
+    color: $text_primary;
+  }
+
+  .divider {
+    margin: 0 12px;
+  }
+}

@@ -6,9 +6,9 @@ import { useLocalStorage } from '@/common/hooks'
 
 const DEFAULT_LANGUAGE = 'en'
 
-export const LanguageContext = createContext(DEFAULT_LANGUAGE)
+export const LanguageContext = createContext()
 
-export const IntlProvider = props => {
+export const IntlProvider = ({ children }) => {
   const [language, setLanguage] = useLocalStorage('language', DEFAULT_LANGUAGE)
   const providerProps = {
     setLanguage,
@@ -29,7 +29,7 @@ export const IntlProvider = props => {
           throw err
         }}
       >
-        {props.children}
+        {children}
       </ReactIntlProvider>
     </LanguageContext.Provider>
   )
