@@ -17,7 +17,8 @@ type Config struct {
 	CertificateAuthorityAddr string
 	WebSocketReadLimit       int64
 	WebSocketReadTimeout     time.Duration
-	WWWDirectory             string
+	UIEnabled                bool
+	UIDirectory              string
 }
 
 func (c Config) checkForDefaults() Config {
@@ -27,6 +28,10 @@ func (c Config) checkForDefaults() Config {
 	if c.WebSocketReadTimeout == 0 {
 		c.WebSocketReadTimeout = time.Second * 4
 	}
+	if c.UIDirectory == "" {
+		c.UIDirectory = "/usr/local/var/www"
+	}
+
 	return c
 }
 

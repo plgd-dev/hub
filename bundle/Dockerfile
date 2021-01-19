@@ -48,11 +48,7 @@ RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server
 
-FROM ubuntu:20.04 AS build-web
-RUN apt-get update && apt-get install -y gcc g++ make curl sudo
-RUN curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-RUN apt-get update
-RUN apt-get install -y nodejs
+FROM node:12 AS build-web
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/http-gateway/web /web
 RUN cd /web && npm install && npm run build
 
