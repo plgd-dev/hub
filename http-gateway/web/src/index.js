@@ -1,17 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-// import { IntlProvider } from 'react-intl'
 import { Provider } from 'react-redux'
 import { Auth0Provider } from '@auth0/auth0-react'
-// import { useHistory } from 'react-router-dom'
 
 import { App } from '@/containers/app'
 import { store } from '@/store'
-// import languages from '@/languages/languages.json'
 import { history } from '@/store/history'
 import { IntlProvider } from '@/components/intl-provider'
 
-// import config from './auth_config.json'
 import reportWebVitals from './reportWebVitals'
 
 fetch('/auth_config.json')
