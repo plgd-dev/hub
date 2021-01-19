@@ -102,7 +102,7 @@ func (s *subscribeSession) OnClose() {
 }
 
 func (s *subscribeSession) Error(err error) {
-	log.Errorf("%w", err)
+	log.Errorf("%v", err)
 	s.ws.Close()
 }
 
@@ -113,7 +113,7 @@ type TokenMessage struct {
 func (requestHandler *RequestHandler) ServeWs(w http.ResponseWriter, r *http.Request, ob ObservationResolver) error {
 	c, err := requestHandler.manager.ws.Upgrade(w, r, nil)
 	if err != nil {
-		log.Errorf("unable to upgrade into websocket: %w", err)
+		log.Errorf("unable to upgrade into websocket: %v", err)
 		return err
 	}
 	c.SetReadLimit(requestHandler.config.WebSocketReadLimit)
@@ -122,7 +122,7 @@ func (requestHandler *RequestHandler) ServeWs(w http.ResponseWriter, r *http.Req
 	err = c.ReadJSON(&tokenMessage)
 	if err != nil {
 		c.Close()
-		log.Errorf("unable read token message from websocket: %w", err)
+		log.Errorf("unable read token message from websocket: %v", err)
 		return err
 	}
 	s, err := ob.StartObservation(r, c, tokenMessage.Token)
@@ -141,7 +141,7 @@ func (s *subscribeSession) ReadLoop(rh *RequestHandler, ob ObservationResolver) 
 	defer func() {
 		err := ob.StopObservation(s.subscriptionId)
 		if err != nil {
-			log.Errorf("unable to close observation: %w", err)
+			log.Errorf("unable to close observation: %v", err)
 		}
 		rh.removeSession(s)
 	}()

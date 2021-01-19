@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -23,7 +24,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitSync "github.com/plgd-dev/kit/sync"
 	"github.com/plgd-dev/sdk/schema"
-	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 type observedResource struct {
@@ -152,7 +152,7 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID, href string, observale bool) error {
 	var observation *tcp.Observation
 	obs := observale
-	if href == cloud.StatusHref {
+	if href == status.Href {
 		return nil
 	}
 	instanceID := getInstanceID(href)
@@ -361,7 +361,10 @@ func (client *Client) OnClose() {
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.DeviceId, err)
 			return
 		}
-		err = client.UpdateCloudDeviceStatus(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), oldAuthCtx.UserID), oldAuthCtx.DeviceId, oldAuthCtx.AuthorizationContext, false)
+		err = status.SetOffline(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), oldAuthCtx.UserID), client.server.raClient, oldAuthCtx.DeviceId, &pbCQRS.CommandMetadata{
+			Sequence:     client.coapConn.Sequence(),
+			ConnectionId: client.remoteAddrString(),
+		}, oldAuthCtx.AuthorizationContext)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.DeviceId, err)
@@ -439,7 +442,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 		client.Close()
 		return err
 	}
-	if event.GetResourceId().GetHref() == cloud.StatusHref {
+	if event.GetResourceId().GetHref() == status.Href {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
 		msg.SetCode(coapCodes.MethodNotAllowed)
@@ -521,7 +524,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 		return err
 	}
 
-	if event.GetResourceId().GetHref() == cloud.StatusHref {
+	if event.GetResourceId().GetHref() == status.Href {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
 		msg.SetCode(coapCodes.Content)
@@ -608,7 +611,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 		return err
 	}
 
-	if event.GetResourceId().GetHref() == cloud.StatusHref {
+	if event.GetResourceId().GetHref() == status.Href {
 		authCtx := client.loadAuthorizationContext()
 		msg := pool.AcquireMessage(ctx)
 		msg.SetCode(coapCodes.Forbidden)

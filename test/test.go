@@ -33,9 +33,9 @@ import (
 	"github.com/plgd-dev/sdk/local"
 	"github.com/plgd-dev/sdk/schema"
 	"github.com/plgd-dev/sdk/schema/acl"
-	"github.com/plgd-dev/sdk/schema/cloud"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	coapgwService "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
@@ -107,13 +107,13 @@ func init() {
 
 	TestDevsimBackendResources = []schema.ResourceLink{
 		{
-			Href:          cloud.StatusHref,
-			ResourceTypes: cloud.StatusResourceTypes,
-			Interfaces:    cloud.StatusInterfaces,
+			Href:          status.Href,
+			ResourceTypes: status.ResourceTypes,
+			Interfaces:    status.Interfaces,
 			Policy: &schema.Policy{
 				BitMask: 3,
 			},
-			Title: "Cloud device status",
+			Title: status.Title,
 		},
 	}
 }

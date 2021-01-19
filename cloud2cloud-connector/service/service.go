@@ -89,7 +89,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
 	if err != nil {
-		log.Fatalf("cannot create oauth manager: %w", err)
+		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
 	raConn, err := grpc.Dial(config.ResourceAggregateAddr,

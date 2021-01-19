@@ -14,6 +14,7 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/codec/json"
@@ -160,11 +161,13 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 					errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
 					continue
 				}
-
-				err = publishCloudDeviceStatus(ctx, p.raClient, userID, deviceID, pbCQRS.CommandMetadata{
+				err = status.Publish(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &pbCQRS.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
+				}, &pbCQRS.AuthorizationContext{
+					DeviceId: deviceID,
 				})
+
 				if err != nil {
 					errors = append(errors, fmt.Errorf("cannot publish cloud status: %v: %w", deviceID, err))
 					continue
@@ -172,15 +175,21 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 
 			}
 			delete(registeredDevices, deviceID)
-			var online bool
 			if strings.ToLower(dev.Status) == "online" {
-				online = true
+				err = status.SetOnline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, time.Time{}, &pbCQRS.CommandMetadata{
+					ConnectionId: linkedAccount.ID,
+					Sequence:     uint64(time.Now().UnixNano()),
+				}, &pbCQRS.AuthorizationContext{
+					DeviceId: deviceID,
+				})
+			} else {
+				err = status.SetOffline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &pbCQRS.CommandMetadata{
+					ConnectionId: linkedAccount.ID,
+					Sequence:     uint64(time.Now().UnixNano()),
+				}, &pbCQRS.AuthorizationContext{
+					DeviceId: deviceID,
+				})
 			}
-
-			err = updateCloudStatus(ctx, p.raClient, userID, deviceID, online, pbCQRS.CommandMetadata{
-				ConnectionId: linkedAccount.ID,
-				Sequence:     uint64(time.Now().UnixNano()),
-			})
 			if err != nil {
 				errors = append(errors, fmt.Errorf("cannot update cloud status: %v: %w", deviceID, err))
 			}

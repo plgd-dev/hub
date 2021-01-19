@@ -12,11 +12,11 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/sdk/schema/cloud"
 
 	cbor "github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/security/certManager"
 
+	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
@@ -234,10 +234,14 @@ func testMakeDeviceResourceContent(deviceId string) pbRA.Content {
 }
 
 func testMakeCloudResourceContent(deviceId string, online bool) pbRA.Content {
-	s := cloud.Status{
-		ResourceTypes: cloud.StatusResourceTypes,
-		Interfaces:    cloud.StatusInterfaces,
-		Online:        online,
+	state := deviceStatus.State_Online
+	if !online {
+		state = deviceStatus.State_Offline
+	}
+	s := deviceStatus.Status{
+		ResourceTypes: deviceStatus.ResourceTypes,
+		Interfaces:    deviceStatus.Interfaces,
+		State:         state,
 	}
 	d, err := cbor.Encode(s)
 	if err != nil {
@@ -259,7 +263,7 @@ func makeTestDeviceResourceContent(deviceId string) ResourceContent {
 
 func makeTestCloudResourceContent(deviceId string, online bool) ResourceContent {
 	return ResourceContent{
-		Resource: testMakeDeviceResource(deviceId, cloud.StatusHref, cloud.StatusResourceTypes),
+		Resource: testMakeDeviceResource(deviceId, deviceStatus.Href, deviceStatus.ResourceTypes),
 		Content:  testMakeCloudResourceContent(deviceId, online),
 	}
 }

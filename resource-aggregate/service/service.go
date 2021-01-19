@@ -17,6 +17,7 @@ import (
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
@@ -113,29 +114,40 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 		log.Errorf("cannot create kafka publisher %w", err)
 	}
 
-	grpcCertManager, err := server.New(service.RA.GrpcTLSConfig, logger)
-	if err != nil {
-		log.Errorf("cannot create server cert manager %w", err)
-	}
-
 	oauthCertManager, err := client.New(clients.OAuth.OAuthTLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create oauth client cert manager %w", err)
 	}
-	jwksAuth := NewAuth(clients.OAuth.JwksURL, oauthCertManager.GetTLSConfig())
+	auth := NewAuth(clients.OAuth.JwksURL, oauthCertManager.GetTLSConfig())
 	rateLimiter := NewNumParallelProcessedRequestLimiter(service.RA.Capabilities.NumParallelRequest)
+	streamInterceptors := []grpc.StreamServerInterceptor{
+		rateLimiter.StreamServerInterceptor,
+	}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		rateLimiter.UnaryServerInterceptor,
+	}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
+
+	grpcCertManager, err := server.New(service.RA.GrpcTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create server cert manager %w", err)
+	}
 	grpcServer, err := kitNetGrpc.NewServer(service.RA.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			rateLimiter.StreamServerInterceptor,
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(logger),
-			jwksAuth.Stream(),
+			streamInterceptors...,
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			rateLimiter.UnaryServerInterceptor,
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(logger),
-			jwksAuth.Unary(),
+			unaryInterceptors...,
 		)),
 	)
 	if err != nil {
@@ -144,7 +156,7 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 
 	oauthMgr, err := manager.NewManagerFromConfiguration(clients.OAuth.OAuth, oauthCertManager.GetTLSConfig())
 	if err != nil {
-		log.Fatalf("cannot create oauth manager: %w", err)
+		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
 	asCertManager, err := client.New(clients.AuthServer.AuthTLSConfig, logger)
@@ -154,7 +166,7 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 	asConn, err := grpc.Dial(clients.AuthServer.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
-		log.Fatalf("cannot connect to authorization server: %w", err)
+		log.Fatalf("cannot connect to authorization server: %v", err)
 	}
 	authClient := pbAS.NewAuthorizationServiceClient(asConn)
 
