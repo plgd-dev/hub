@@ -15,7 +15,7 @@ const { FULL_PAGE, SPLIT } = layoutTypes
  * Basic layout component.
  * @param {Element} header - Elements to be rendered inline with the breadcrumbs, but justified to the end.
  * @param {Array} breadcrumbs - Breadcrumbs to be rendered.
- * @param {Boolean} loading - Dispaly's a loader below status bar.
+ * @param {Boolean} loading - Display's a loader below status bar.
  * @param {String} title - Sets the title of the browser tab.
  * @param {String} type - Layout type. When set to SPLIT,
  * the first n children will be rendered on the left side and the last child will be rendered to the right side.
