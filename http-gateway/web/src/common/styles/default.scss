@@ -1,0 +1,30 @@
+@import './colors.scss';
+@import './sizes.scss';
+
+html,
+body,
+input,
+textarea,
+select {
+  font-family: 'Muli', sans-serif;
+  font-size: $font_size;
+  font-weight: 400;
+}
+
+a {
+  color: $text_primary;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: $text_primary;
+}
+
+h2 {
+  font-size: $font_size_h2;
+}
