@@ -13,6 +13,10 @@ import reportWebVitals from './reportWebVitals'
 fetch('/auth_config.json')
   .then(response => response.json())
   .then(config => {
+    if (!config.clientID || !config.domain) {
+      throw new Error('clientID and domain must be set in auth_config.json')
+    }
+
     const BaseComponent = () => {
       const onRedirectCallback = appState => {
         // Use the router's history module to replace the url
@@ -47,4 +51,9 @@ fetch('/auth_config.json')
     // to log results (for example: reportWebVitals(console.log))
     // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
     reportWebVitals()
+  })
+  .catch(error => {
+    const rootDiv = document.getElementById('root')
+
+    rootDiv.innerHTML = `<div class="client-error-message">${error.message}</div>`
   })
