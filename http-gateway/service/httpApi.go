@@ -118,8 +118,9 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.HandleFunc(uri.WsStartDeviceResourcesObservation, requestHandler.startDeviceResourcesObservation).Methods(http.MethodGet)
 
 	// serve www directory
-	if requestHandler.config.UIEnabled {
-		r.PathPrefix("/").Handler(http.FileServer(http.Dir(requestHandler.config.UIDirectory))).Methods(http.MethodGet)
+	if requestHandler.config.UI.Enabled {
+		r.HandleFunc(uri.OAuthConfiguration, requestHandler.getOAuthConfiguration).Methods(http.MethodGet)
+		r.PathPrefix("/").Handler(http.FileServer(http.Dir(requestHandler.config.UI.Directory))).Methods(http.MethodGet)
 	}
 
 	return &http.Server{Handler: r}
