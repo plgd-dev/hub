@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httputil"
 	"strings"
 
@@ -120,7 +121,20 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	// serve www directory
 	if requestHandler.config.UI.Enabled {
 		r.HandleFunc(uri.OAuthConfiguration, requestHandler.getOAuthConfiguration).Methods(http.MethodGet)
-		r.PathPrefix("/").Handler(http.FileServer(http.Dir(requestHandler.config.UI.Directory))).Methods(http.MethodGet)
+		fs := http.FileServer(http.Dir(requestHandler.config.UI.Directory))
+		r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			c := httptest.NewRecorder()
+			fs.ServeHTTP(c, r)
+			if c.Code == http.StatusNotFound {
+				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+				return
+			}
+			for k, v := range c.HeaderMap {
+				w.Header().Set(k, strings.Join(v, ""))
+			}
+			w.WriteHeader(c.Code)
+			c.Body.WriteTo(w)
+		}))
 	}
 
 	return &http.Server{Handler: r}
