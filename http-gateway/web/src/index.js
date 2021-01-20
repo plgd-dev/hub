@@ -15,11 +15,8 @@ fetch('/auth_config.json')
   .then(config => {
     const BaseComponent = () => {
       const onRedirectCallback = appState => {
-        const { returnTo } = appState || {}
         // Use the router's history module to replace the url
-        if (returnTo && returnTo !== '/') {
-          history.replace(appState.returnTo)
-        }
+        history.replace(appState?.returnTo || '/')
       }
 
       return (
