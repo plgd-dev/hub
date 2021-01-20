@@ -114,11 +114,19 @@ func New(cfg Config) (*Server, error) {
 			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
 		},
 	}
-	if cfg.UIEnabled {
-		err := filepath.Walk(cfg.UIDirectory, buildWhiteList(cfg.UIDirectory, &whiteList))
+	if cfg.UI.Enabled {
+		err := filepath.Walk(cfg.UI.Directory, buildWhiteList(cfg.UI.Directory, &whiteList))
 		if err != nil {
-			return nil, fmt.Errorf("cannot build whitelist for ui directory(%v) %w", cfg.UIDirectory, err)
+			return nil, fmt.Errorf("cannot build whitelist for ui directory(%v) %w", cfg.UI.Directory, err)
 		}
+		whiteList = append(whiteList, kitNetHttp.RequestMatcher{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta("/?") + ".*"),
+		})
+		whiteList = append(whiteList, kitNetHttp.RequestMatcher{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta("/#") + ".*"),
+		})
 	}
 	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, whiteList...)
 	requestHandler := NewRequestHandler(client, caClient, &cfg, manager)
