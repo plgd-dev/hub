@@ -24,7 +24,7 @@ fetch('/auth_config.json')
           <IntlProvider>
             <Auth0Provider
               domain={config.domain}
-              clientId={config.clientId}
+              clientId={config.clientID}
               redirectUri={window.location.origin}
               onRedirectCallback={onRedirectCallback}
               audience={config.audience}
