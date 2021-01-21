@@ -3,11 +3,11 @@ package service
 import (
 	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
+	client2 "github.com/plgd-dev/kit/security/oauth/service/client"
 	"time"
 
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 )
 
 // Config for application.
@@ -43,15 +43,15 @@ type CapabilitiesConfig struct {
 }
 
 type ClientsConfig struct {
-	OAuthProvider                   OAuthConfig             `yaml:"oAuthProvider" json:"oAuthProvider"`
+	OAuthProvider                   OAuthProvider           `yaml:"oAuthProvider" json:"oAuthProvider"`
 	Authorization                   AuthorizationConfig     `yaml:"authorizationServer" json:"authorizationServer"`
 	ResourceDirectory               ResourceDirectoryConfig `yaml:"resourceDirectory" json:"resourceDirectory"`
 	ResourceAggregate               ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 }
 
-type OAuthConfig struct {
-	OAuthConfig                     manager.Config      `yaml:"oauth" json:"oauth"`
-	OAuthTLSConfig                  client.Config       `yaml:"tls" json:"tls"`
+type OAuthProvider struct {
+	OAuthConfig    client2.Config `yaml:"oauth" json:"oauth"`
+	OAuthTLSConfig client.Config  `yaml:"tls" json:"tls"`
 }
 
 type AuthorizationConfig struct {

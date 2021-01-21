@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	client2 "github.com/plgd-dev/kit/security/oauth/service/client"
+	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"time"
@@ -21,7 +23,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/kit/security/oauth/manager"
+	"github.com/plgd-dev/kit/security/certManager/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -47,18 +49,8 @@ type RequestHandler struct {
 	userDevicesManager            *clientAS.UserDevicesManager
 }
 
-type HandlerConfig struct {
-	MongoDB mongodb.Config `envconfig:"MONGO"`
-	Nats    nats.Config
-	Service Config
-
-	GoRoutinePoolSize               int           `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
-	UserDevicesManagerTickFrequency time.Duration `envconfig:"USER_MGMT_TICK_FREQUENCY" default:"15s"`
-	UserDevicesManagerExpiration    time.Duration `envconfig:"USER_MGMT_EXPIRATION" default:"1m"`
-}
-
-func AddHandler(svr *kitNetGrpc.Server, config HandlerConfig, clientTLS *tls.Config) error {
-	handler, err := NewRequestHandlerFromConfig(config, clientTLS)
+func AddHandler(svr *kitNetGrpc.Server, config Config, logger *zap.Logger) error {
+	handler, err := NewRequestHandlerFromConfig(config, logger)
 	if err != nil {
 		return err
 	}
@@ -72,45 +64,68 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(config Config, logger *zap.Logger) (*RequestHandler, error) {
 	svc := config.Service
+	cli := config.Clients
+	db := config.Database
 
-	if svc.ClientConfiguration.CloudCAPool != "" {
-		content, err := ioutil.ReadFile(svc.ClientConfiguration.CloudCAPool)
+
+	if cli.ClientConfiguration.CloudCAPool != "" {
+		content, err := ioutil.ReadFile(cli.ClientConfiguration.CloudCAPool)
 		if err != nil {
-			return nil, fmt.Errorf("cannot read file %v: %w", svc.ClientConfiguration.CloudCAPool, err)
+			return nil, fmt.Errorf("cannot read file %v: %w", cli.ClientConfiguration.CloudCAPool, err)
 		}
-		svc.ClientConfiguration.CloudCertificateAuthorities = string(content)
+		cli.ClientConfiguration.CloudCertificateAuthorities = string(content)
 	}
 
-	oauthMgr, err := manager.NewManagerFromConfiguration(svc.OAuth, clientTLS)
+	oauthCertManager, err := client.New(cli.OAuthProvider.OAuthTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create oauth client cert manager %w", err)
+	}
+	oauthMgr, err := client2.NewManagerFromConfiguration(cli.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
 	if err != nil {
 		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
 	}
 
-	asConn, err := grpc.Dial(svc.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	asCertManager, err := client.New(cli.Authorization.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create oauth client cert manager %w", err)
+	}
+	asConn, err := grpc.Dial(cli.Authorization.Addr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
 	}
 	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	raConn, err := grpc.Dial(svc.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)))
+	raCertManager, err := client.New(cli.ResourceAggregate.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create oauth client cert manager %w", err)
+	}
+	raConn, err := grpc.Dial(cli.ResourceAggregate.Addr, grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())))
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
 	resourceAggregateClient := pbRA.NewResourceAggregateClient(raConn)
 
-	pool, err := ants.NewPool(config.GoRoutinePoolSize)
+	pool, err := ants.NewPool(svc.RD.Capabilities.GoRoutinePoolSize)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 
-	resourceEventStore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(clientTLS))
+	mongoCertManager, err := client.New(db.MongoDB.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create mongodb client cert manager %w", err)
+	}
+	resourceEventStore, err := mongodb.NewEventStore(db.MongoDB, pool.Submit, mongodb.WithTLS(mongoCertManager.GetTLSConfig()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(clientTLS))
+	natsCertManager, err := client.New(cli.Nats.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create nats client cert manager %w", err)
+	}
+	resourceSubscriber, err := nats.NewSubscriber(cli.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource nats subscriber %w", err)
 	}
@@ -118,7 +133,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 	ctx := context.Background()
 
 	subscriptions := NewSubscriptions()
-	userDevicesManager := clientAS.NewUserDevicesManager(subscriptions.UserDevicesChanged, authServiceClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving devices: %v", err) })
+	userDevicesManager := clientAS.NewUserDevicesManager(subscriptions.UserDevicesChanged, authServiceClient, svc.RD.Capabilities.UserDevicesManagerTickFrequency, svc.RD.Capabilities.UserDevicesManagerExpiration, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving devices: %v", err) })
 	subscriptions.userDevicesManager = userDevicesManager
 
 	updateNotificationContainer := notification.NewUpdateNotificationContainer()
@@ -128,7 +143,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 	if err != nil {
 		return nil, fmt.Errorf("cannot create uuid for projection %w", err)
 	}
-	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), svc.ProjectionCacheExpiration)
+	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.RD.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), svc.RD.Capabilities.ProjectionCacheExpiration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
@@ -141,6 +156,12 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		raConn.Close()
 		asConn.Close()
 		oauthMgr.Close()
+
+		oauthCertManager.Close()
+		asCertManager.Close()
+		raCertManager.Close()
+		mongoCertManager.Close()
+		natsCertManager.Close()
 	}
 
 	h := NewRequestHandler(
@@ -151,13 +172,12 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		updateNotificationContainer,
 		retrieveNotificationContainer,
 		deleteNotificationContainer,
-		svc.TimeoutForRequests,
+		svc.RD.Capabilities.TimeoutForRequests,
 		closeFunc,
-		svc.ClientConfiguration.ClientConfigurationResponse,
+		cli.ClientConfiguration.ClientConfigurationResponse,
 		userDevicesManager,
-		svc.FQDN,
+		svc.RD.FQDN,
 	)
-	h.clientTLS = clientTLS
 	return h, nil
 }
 
@@ -215,8 +235,4 @@ func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEvent
 
 func (r *RequestHandler) Close() {
 	r.closeFunc()
-}
-
-func (r *RequestHandler) GetClientTLSConfig() *tls.Config {
-	return r.clientTLS
 }

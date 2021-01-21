@@ -10,7 +10,8 @@ endif
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := resource-aggregate authorization resource-directory cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
+SUBDIRS := authorization resource-aggregate resource-directory coap-gateway
+#cloud2cloud-connector cloud2cloud-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
 
 default: build
@@ -29,7 +30,7 @@ cloud-test:
 		-f Dockerfile.configtest \
 		.
 
-certificates: cloud-test
+certificates: #cloud-test
 	mkdir -p $(shell pwd)/.tmp/certs
 	docker run \
 		--network=host \
@@ -43,15 +44,17 @@ certificates: cloud-test
 nats: #certificates
 	docker run \
 	    -d \
-		--network=host \
+		-p 4222:4222 -p 6222:6222 -p 8222:8222 \
 		--name=nats \
+		--hostname=nats \
 		-v $(shell pwd)/.tmp/certs:/certs \
 		--user $(shell id -u):$(shell id -g) \
 		nats --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 	docker run \
 	    -d \
-		--network=host \
+		-p 34222:34222 \
 		--name=nats-cloud-connector \
+		--hostname=nats-cloud-connector \
 		-v $(shell pwd)/.tmp/certs:/certs \
 		--user $(shell id -u):$(shell id -g) \
 		nats --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
@@ -60,12 +63,14 @@ mongo: #certificates
 	mkdir -p $(shell pwd)/.tmp/mongo
 	docker run \
 	    -d \
-		--network=host \
+		-p 27017:27017 \
 		--name=mongo \
+		--hostname=mongo \
 		-v $(shell pwd)/.tmp/mongo:/data/db \
-		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
-		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
-
+		-v $(shell pwd)/.tmp/certs:/certs \
+	  	--user $(shell id -u):$(shell id -g) \
+		mongo --port 27017 --bind_ip_all --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
+		#--noauth --bind_ip_all requireTLS
 env: clean certificates nats mongo
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
@@ -101,7 +106,7 @@ test: env
 		cloud-test \
 		go test -mod=mod -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
-build: cloud-build $(SUBDIRS)
+build: cloud-test $(SUBDIRS)
 
 clean:
 	docker rm -f mongo || true

@@ -34,11 +34,11 @@ type Config struct {
 	ClientID     string    `yaml:"clientID" json:"clientID"`
 	ClientSecret string    `yaml:"clientSecret" json:"clientSecret"`
 	Scopes       []string  `yaml:"scopes" json:"scopes"`
-	AuthURL   	 string    `yaml:"authUrl" json:"authUrl"`
-	TokenURL  	 string    `yaml:"tokenUrl" json:"tokenUrl"`
+	AuthURL   	 string    `yaml:"authURL" json:"authURL"`
+	TokenURL  	 string    `yaml:"tokenURL" json:"tokenURL"`
 	AuthStyle 	 AuthStyle `yaml:"authStyle" json:"authStyle"`
 	Audience     string    `yaml:"audience" json:"audience"`
-	RedirectURL  string    `yaml:"redirectUrl" json:"redirectUrl"`
+	RedirectURL  string    `yaml:"redirectURL" json:"redirectURL"`
 	AccessType   string    `yaml:"accessType" json:"accessType"`
 	ResponseType string    `yaml:"responseType" json:"responseType"`
 	ResponseMode string    `yaml:"responseMode" json:"responseMode"`

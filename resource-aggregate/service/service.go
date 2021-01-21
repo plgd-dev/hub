@@ -27,7 +27,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/jwt"
-	"github.com/plgd-dev/kit/security/oauth/manager"
+	"github.com/plgd-dev/kit/security/oauth/service"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -114,11 +114,11 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 		log.Errorf("cannot create kafka publisher %w", err)
 	}
 
-	oauthCertManager, err := client.New(clients.OAuth.OAuthTLSConfig, logger)
+	oauthCertManager, err := client.New(clients.OAuthProvider.OAuthTLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create oauth client cert manager %w", err)
 	}
-	auth := NewAuth(clients.OAuth.JwksURL, oauthCertManager.GetTLSConfig())
+	auth := NewAuth(clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig())
 	rateLimiter := NewNumParallelProcessedRequestLimiter(service.RA.Capabilities.NumParallelRequest)
 	streamInterceptors := []grpc.StreamServerInterceptor{
 		rateLimiter.StreamServerInterceptor,
@@ -154,7 +154,7 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	oauthMgr, err := manager.NewManagerFromConfiguration(clients.OAuth.OAuth, oauthCertManager.GetTLSConfig())
+	oauthMgr, err := service.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}

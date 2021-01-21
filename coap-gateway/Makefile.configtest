@@ -15,6 +15,12 @@ define build-docker-image
 		.
 endef
 
+test: build-servicecontainer
+	#docker stop $(SERVICE_NAME)
+	docker rm $(SERVICE_NAME)
+	docker run -d -p 5684:5684 --name=$(SERVICE_NAME) plgd/$(SERVICE_NAME):$(LATEST_TAG)
+	#--network=host
+
 build-servicecontainer:
 	$(call build-docker-image,service)
 

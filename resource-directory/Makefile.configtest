@@ -18,8 +18,8 @@ endef
 test: build-servicecontainer
 	#docker stop $(SERVICE_NAME)
 	docker rm $(SERVICE_NAME)
-	docker run -d -p 9083:9083 --name=$(SERVICE_NAME) plgd/$(SERVICE_NAME):$(LATEST_TAG)
-	#--network=machost -P
+	docker run -d -P -p 9082:9082 --name=$(SERVICE_NAME) plgd/$(SERVICE_NAME):$(LATEST_TAG)
+	#--network=host
 
 build-servicecontainer:
 	$(call build-docker-image,service)

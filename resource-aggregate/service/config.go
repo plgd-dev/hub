@@ -7,7 +7,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
-	"github.com/plgd-dev/kit/security/oauth/manager"
+	client2 "github.com/plgd-dev/kit/security/oauth/service/client"
 	"time"
 )
 
@@ -38,19 +38,19 @@ type CapabilitiesConfig struct {
 }
 
 type Database struct {
-	MongoDB    mongodb.Config     `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB            mongodb.Config     `yaml:"mongoDB" json:"mongoDB"`
 }
 
 type ClientsConfig struct {
-	Nats       nats.Config        `yaml:"nats" json:"nats"`
-	OAuth      OAuthProvider      `yaml:"oAuthProvider" json:"oAuthProvider"`
-	AuthServer AuthServer         `yaml:"authorizationServer" json:"authorizationServer"`
+	Nats               nats.Config        `yaml:"nats" json:"nats"`
+	OAuthProvider      OAuthProvider      `yaml:"oAuthProvider" json:"oAuthProvider"`
+	AuthServer         AuthServer         `yaml:"authorizationServer" json:"authorizationServer"`
 }
 
 type OAuthProvider struct {
-	JwksURL            string             `yaml:"jwksUrl" json:"jwksUrl"`
-	OAuth              manager.Config     `yaml:"oauth" json:"oauth"`
-	OAuthTLSConfig     client.Config      `yaml:"tls" json:"tls"`
+	JwksURL        string         `yaml:"jwksUrl" json:"jwksUrl"`
+	OAuthConfig    client2.Config `yaml:"oauth" json:"oauth"`
+	OAuthTLSConfig client.Config  `yaml:"tls" json:"tls"`
 }
 
 type AuthServer struct {

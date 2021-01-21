@@ -15,7 +15,7 @@ type Option func(Config) Config
 type Config struct {
 	URL       string         `yaml:"url" json:"url" default:"nats://localhost:4222"`
 	TLSConfig client.Config  `yaml:"tls" json:"tls"`
-	Options   []nats.Option
+	Options   []nats.Option  `yaml:",omitempty"`
 }
 
 // String returns string representation of Config.

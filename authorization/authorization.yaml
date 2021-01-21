@@ -17,7 +17,7 @@ apis:
       clientCertificateRequired: true
 database:
   mongoDB:
-    uri: "mongodb://localhost:27017"
+    uri: "mongodb://127.0.0.1:27017"
     database: "authorization"
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -33,12 +33,12 @@ oAuthClients:
       clientSecret: ""
       scopes: []
       audience: ""
-      authUrl : ""
-      authToken : ""
+      authURL : ""
+      tokenURL : ""
       #authStype : ""  # not required
       responseType: ""
       responseMode: ""
-      redirectUrl: ""
+      redirectURL: ""
       #accessType: ""   # not required
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -51,13 +51,13 @@ oAuthClients:
       clientSecret: ""
       scopes: []
       audience: ""
-      authUrl : ""
-      authToken : ""
-      #authType : ""  # not required
+      authURL : ""
+      tokenURL : ""
+      #authStype : ""  # not required
       responseType: ""
       responseMode: ""
-      redirectUrl: ""
-      #access-type: ""   # not required
+      redirectURL: ""
+      #accessType: ""   # not required
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"

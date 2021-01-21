@@ -298,7 +298,7 @@ func (d *UserDevicesManager) run(ctx context.Context, tickFrequency, expiration 
 	}
 }
 
-// Close stops userID manager goroutine.
+// Close stops userID service goroutine.
 func (d *UserDevicesManager) Close() {
 	d.done()
 	d.doneWg.Wait()

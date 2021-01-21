@@ -3,7 +3,7 @@ log:
 apis:
   coap:
     address: "0.0.0.0:5684"
-    externalAddress: "localhost:5684" # domain:port
+    externalAddress: "127.0.0.1:5684" # domain:port
     timeout: 0s  # default:10s
     heartbeat: 4s
     capabilities:

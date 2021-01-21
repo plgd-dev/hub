@@ -2,18 +2,13 @@ log:
   debug: true
 apis:
   grpc:
-    address: "0.0.0.0:9083"
+    address: "0.0.0.0:9082"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       clientCertificateRequired: true
-    capabilities:
-      snapshotThreshold: 16
-      occMaxRetry: 8
-      userMgmtTickFrequency: 15s
-      userMgmtExpiration: 1m
-      maxParallelRequest: 8
+    fqdn: "grpcgw.ocf.cloud"
 database:
   mongoDB:
     uri: "mongodb://127.0.0.1:27017"
@@ -38,6 +33,13 @@ clients:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
+  resourceAggregate:
+    address: "127.0.0.1:9083"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
   oAuthProvider:
     jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
     oauth:
@@ -52,3 +54,5 @@ clients:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
+  clientConfiguration:
+    cloudCAPool: "/data/certs/root_ca.crt"

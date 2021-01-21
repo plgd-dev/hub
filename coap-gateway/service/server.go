@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	client2 "github.com/plgd-dev/kit/security/oauth/service/client"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -14,10 +15,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/plgd-dev/kit/security/certManager/client"
-	"github.com/plgd-dev/kit/security/certManager/server"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
@@ -32,6 +29,8 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/kit/log"
@@ -61,7 +60,7 @@ type Server struct {
 	rdClient pbGRPC.GrpcGatewayClient
 
 	oicPingCache          *cache.Cache
-	oauthMgr              *manager.Manager
+	oauthMgr              *client2.Manager
 	expirationClientCache *cache.Cache
 
 	coapServer      *tcp.Server
@@ -111,7 +110,7 @@ func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server 
 	}
 
 	oauthDialTLSConfig := oauthCertManager.GetTLSConfig()
-	oauthMgr, err := manager.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthDialTLSConfig)
+	oauthMgr, err := service.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthDialTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
