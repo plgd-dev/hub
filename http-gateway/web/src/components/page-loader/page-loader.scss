@@ -1,0 +1,73 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
+@keyframes increase {
+  from {
+    left: -5%;
+    width: 5%;
+  }
+  to {
+    left: 130%;
+    width: 100%;
+  }
+}
+@keyframes decrease {
+  from {
+    left: -80%;
+    width: 80%;
+  }
+  to {
+    left: 110%;
+    width: 10%;
+  }
+}
+
+#page-loader {
+  position: fixed;
+  top: $status_bar_height;
+  right: 0;
+  width: calc(100% - #{$left_panel_expanded});
+  z-index: 9;
+
+  .bar {
+    width: 100%;
+    height: $page_loader_height;
+    background-color: $box_bg_color;
+    overflow: hidden;
+    position: relative;
+
+    .progress {
+      width: 0;
+      height: $page_loader_height;
+      background-color: $text_primary;
+    }
+  }
+
+  .bar {
+    .progress {
+      width: 100%;
+      position: relative;
+      background-color: transparent !important;
+
+      .subline {
+        position: absolute;
+        background-color: $text_primary;
+        height: $page_loader_height;
+
+        &.inc {
+          animation: increase 2s infinite;
+        }
+        &.dec {
+          animation: decrease 2s 0.5s infinite;
+        }
+      }
+    }
+  }
+}
+
+// Collapsed menu state
+#app.collapsed {
+  #page-loader {
+    width: calc(100% - #{$left_panel_collapsed});
+  }
+}

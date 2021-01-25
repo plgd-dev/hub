@@ -1,3 +1,6 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
 #footer {
   display: flex;
   align-items: center;
@@ -5,15 +8,14 @@
   box-sizing: border-box;
   padding: 0 40px;
   width: 100%;
-  height: 50px;
-  border-top: 1px solid #E9ECEF;
-  background: #fff;
+  height: $footer_height;
+  border-top: 1px solid $default_border_color;
+  background: $white_100;
   position: absolute;
   bottom: 0;
   left: 0;
 
   a {
-    color: #255897;
     margin-left: 20px;
   }
 }

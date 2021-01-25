@@ -2,18 +2,34 @@ package service
 
 import (
 	"time"
-	"github.com/plgd-dev/kit/log"
 
 	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
 )
 
-// Config represent application configuration
+// OAuthClientConfig represents oauth configuration for user interface exposed via getOAuthConfiguration handler
+type OAuthClientConfig struct {
+	Domain   string `json:"domain" yaml:"domain"`
+	ClientID string `json:"clientID" yaml:"clientID"`
+	Audience string `json:"audience" yaml:"audience"`
+	Scope    string `json:"scope" yaml:"scope"`
+}
+
+// UIConfig represents user interface configuration
+type UIConfig struct {
+	Enabled     bool              `json:"enabled" yaml:"enabled"`
+	Directory   string            `json:"directory" yaml:"directory"`
+	OAuthClient OAuthClientConfig `json:"oauthClient" yaml:"oauthClient"`
+}
+
+// Config represents application configuration
 type Config struct {
 	Log        log.Config      `yaml:"log" json:"log"`
 	Service    APIsConfig	   `yaml:"apis" json:"apis"`
 	Clients	   ClientsConfig   `yaml:"clients" json:"clients"`
+	UI         UIConfig        `yaml:"ui" json:"ui"`
 }
 
 type APIsConfig struct {
@@ -59,6 +75,10 @@ func (c Config) checkForDefaults() Config {
 	if c.Service.Capabilities.WebSocketReadTimeout == 0 {
 		c.Service.Capabilities.WebSocketReadTimeout = time.Second * 4
 	}
+	if c.UI.Directory == "" {
+		c.UI.Directory = "/usr/local/var/www"
+	}
+
 	return c
 }
 

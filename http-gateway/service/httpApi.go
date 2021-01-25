@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httputil"
 	"strings"
 
@@ -93,9 +94,6 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	}))
 	r.StrictSlash(true)
 
-	// health check
-	r.HandleFunc("/", healthCheck).Methods(http.MethodGet)
-
 	// client configuration
 	r.HandleFunc(uri.ClientConfiguration, requestHandler.getClientConfiguration).Methods(http.MethodGet)
 
@@ -119,6 +117,25 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.PathPrefix(uri.WsStartDeviceResourceObservation).MatcherFunc(wsResourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.startResourceObservation)
 	r.HandleFunc(uri.WsStartDevicesObservation, requestHandler.startDevicesObservation).Methods(http.MethodGet)
 	r.HandleFunc(uri.WsStartDeviceResourcesObservation, requestHandler.startDeviceResourcesObservation).Methods(http.MethodGet)
+
+	// serve www directory
+	if requestHandler.config.UI.Enabled {
+		r.HandleFunc(uri.OAuthConfiguration, requestHandler.getOAuthConfiguration).Methods(http.MethodGet)
+		fs := http.FileServer(http.Dir(requestHandler.config.UI.Directory))
+		r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			c := httptest.NewRecorder()
+			fs.ServeHTTP(c, r)
+			if c.Code == http.StatusNotFound {
+				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+				return
+			}
+			for k, v := range c.HeaderMap {
+				w.Header().Set(k, strings.Join(v, ""))
+			}
+			w.WriteHeader(c.Code)
+			c.Body.WriteTo(w)
+		}))
+	}
 
 	return &http.Server{Handler: r}
 }

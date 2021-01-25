@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	GrpcGWClient "github.com/plgd-dev/cloud/grpc-gateway/client"
@@ -37,6 +40,24 @@ type Server struct {
 	oauthCertManager  *client.CertManager
 }
 
+func buildWhiteList(uidirectory string, whiteList *[]kitNetHttp.RequestMatcher) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		path = strings.TrimLeft(path, uidirectory)
+		log.Debugf("white listed path: %v", path)
+		*whiteList = append(*whiteList, kitNetHttp.RequestMatcher{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta(path)),
+		})
+		return nil
+	}
+}
+
 // New parses configuration and creates new Server with provided store and bus
 func New(config Config) (*Server, error) {
 	logger, err := log.NewLogger(config.Log)
@@ -54,7 +75,7 @@ func New(config Config) (*Server, error) {
 	}
 	ln, err := tls.Listen("tcp", config.Service.HttpConfig.HttpAddr, httpCertManager.GetTLSConfig())
 	if err != nil {
-		log.Fatalf("cannot listen tls and serve: %v", err)
+		return nil, fmt.Errorf("cannot listen tls and serve: %v", err)
 	}
 
 	rdCertManager, err := client.New(config.Clients.RDConfig.ResourceDirectoryTLSConfig, logger)
@@ -72,7 +93,7 @@ func New(config Config) (*Server, error) {
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
 	grpcClient, err := GrpcGWClient.NewClient("http://localhost", resourceDirectoryClient)
 	if err != nil {
-		log.Fatalf("cannot initialize new client: %v", err)
+		return nil, fmt.Errorf("cannot initialize new client: %v", err)
 	}
 
 	caCertManager, err := client.New(config.Clients.CAConfig.CertificateAuthorityTLSConfig, logger)
@@ -96,21 +117,31 @@ func New(config Config) (*Server, error) {
 
 	manager, err := NewObservationManager()
 	if err != nil {
-		log.Fatal("unable to initialize new observation manager %w", err)
+		return nil, fmt.Errorf("unable to initialize new observation manager %v", err)
 	}
 
 	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create oauth client cert manager %w", err)
 	}
-	auth := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), authRules, kitNetHttp.RequestMatcher{
-		Method: http.MethodGet,
-		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.WsStartDevicesObservation) + `.*`),
-	}, kitNetHttp.RequestMatcher{
-		Method: http.MethodGet,
-		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
-	},
-	)
+
+	whiteList := []kitNetHttp.RequestMatcher{
+		{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.WsStartDevicesObservation) + `.*`),
+		},
+		{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
+		},
+	}
+	if config.UI.Enabled {
+		whiteList = append(whiteList, kitNetHttp.RequestMatcher{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(`(\/[^a]pi\/.*)|(\/a[^p]i\/.*)|(\/ap[^i]\/.*)||(\/api[^/].*)`),
+		})
+	}
+	auth := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), authRules, whiteList...)
 	requestHandler := NewRequestHandler(grpcClient, caClient, &config, manager)
 
 	server := Server{

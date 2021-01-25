@@ -14,6 +14,9 @@ const (
 	// ocfcloud configuration
 	ClientConfiguration = "/.well-known/ocfcloud-configuration"
 
+	// oauth configuration for ui
+	OAuthConfiguration = "/auth_config.json"
+
 	//devices
 	Devices         = API + "/devices"
 	Device          = Devices + "/{" + DeviceIDKey + "}"
