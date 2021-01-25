@@ -5,6 +5,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
+	"time"
 )
 
 // Config represent application configuration
@@ -19,8 +20,8 @@ type APIsConfig struct {
 }
 
 type ClientsConfig struct {
-	OAuthProvider OAuthProvider    `yaml:"oAuthProvider" json:"oAuthProvider"`
-	RDConfig      RDConfig         `yaml:"resourceDirectory" json:"resourceDirectory"`
+	OAuthProvider OAuthProvider   `yaml:"oAuthProvider" json:"oAuthProvider"`
+	SignerConfig  SignerConfig    `yaml:"signer" json:"signer"`
 }
 
 type OAuthProvider struct {
@@ -28,9 +29,11 @@ type OAuthProvider struct {
 	OAuthTLSConfig client.Config  `yaml:"tls" json:"tls"`
 }
 
-type RDConfig struct {
-	ResourceDirectoryAddr      string        `yaml:"address" json:"address" default:"127.0.0.1:9082"`
-	ResourceDirectoryTLSConfig client.Config `yaml:"tls" json:"tls"`
+type SignerConfig struct {
+	Certificate   string           `yaml:"certificate" json:"certificate"`
+	PrivateKey    string           `yaml:"privateKey" json:"privateKey"`
+	ValidFrom     ValidFromDecoder `yaml:"-" json:"validFrom" default:"now"`
+	ValidDuration time.Duration    `yaml:"-" json:"validDuration" default:"87600h"`
 }
 
 //String return string representation of Config

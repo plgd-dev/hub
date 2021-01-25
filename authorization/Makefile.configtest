@@ -18,7 +18,12 @@ endef
 test: build-servicecontainer
 	docker stop $(SERVICE_NAME)
 	docker rm $(SERVICE_NAME)
-	docker run -p 9081:9081 -p 9085:9085 --network=bridge --name=$(SERVICE_NAME) --hostname=$(SERVICE_NAME) plgd/$(SERVICE_NAME):$(LATEST_TAG)
+	docker run -p 9081:9081 -p 9085:9085 \
+	--network=bridge \
+	--name=$(SERVICE_NAME) \
+	--hostname=$(SERVICE_NAME) \
+	-v $(shell pwd)/../.tmp/certs:/data/certs \
+	plgd/$(SERVICE_NAME):$(LATEST_TAG)
     # --network=host
 
 build-servicecontainer:

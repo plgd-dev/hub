@@ -49,13 +49,6 @@ func (d *ValidFromDecoder) Decode(value string) error {
 	return nil
 }
 
-type SignerConfig struct {
-	Certificate   string           `envconfig:"CERTIFICATE"`
-	PrivateKey    string           `envconfig:"PRIVATE_KEY"`
-	ValidFrom     ValidFromDecoder `envconfig:"VALID_FROM" default:"now"`
-	ValidDuration time.Duration    `envconfig:"VALID_DURATION" default:"87600h"`
-}
-
 func AddHandler(svr *kitNetGrpc.Server, cfg SignerConfig) error {
 	handler, err := NewRequestHandlerFromConfig(cfg)
 	if err != nil {

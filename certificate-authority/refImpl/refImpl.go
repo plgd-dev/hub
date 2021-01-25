@@ -3,14 +3,15 @@ package refImpl
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/plgd-dev/kit/security/jwt"
 
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
@@ -21,36 +22,40 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-type Config struct {
-	Log     log.Config           `envconfig:"LOG"`
-	Signer  service.SignerConfig `envconfig:"SIGNER"`
-	Listen  certManager.Config   `envconfig:"LISTEN"`
-	Dial    certManager.Config   `envconfig:"DIAL"`
-	JwksURL string               `envconfig:"JWKS_URL"`
-	kitNetGrpc.Config
-}
-
 type RefImpl struct {
 	handle            *service.RequestHandler
 	server            *kitNetGrpc.Server
-	listenCertManager certManager.CertManager
-	dialCertManager   certManager.CertManager
+	oauthCertManager  *client.CertManager
+	grpcCertManager   *server.CertManager
+
 }
 
-// NewRequestHandlerFromConfig creates RegisterGrpcGatewayServer with all dependencies.
-func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*RefImpl, error) {
+func Init(config service.Config) (*RefImpl, error) {
 	logger, err := log.NewLogger(config.Log)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create logger %w", err)
 	}
+
 	log.Set(logger)
 	log.Info(config.String())
-	listenCertManager, err := certManager.NewCertManager(config.Listen)
+
+	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create listen cert manager %w", err)
+		return nil, fmt.Errorf("cannot create client cert manager %v", err)
 	}
 
-	listenTLSConfig := listenCertManager.GetServerTLSConfig()
+	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), "openid")
+	r, err := InitWithAuth(config, auth, logger)
+	if err != nil {
+		oauthCertManager.Close()
+		return nil, err
+	}
+	r.oauthCertManager = oauthCertManager
+	return r, nil
+}
+
+// NewRequestHandlerFromConfig creates RegisterGrpcGatewayServer with all dependencies.
+func NewRefImplFromConfig(config service.Config, auth kitNetGrpc.AuthInterceptors, logger *zap.Logger) (*RefImpl, error) {
 
 	var streamInterceptors []grpc.StreamServerInterceptor
 	if config.Log.Debug {
@@ -66,7 +71,11 @@ func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*Ref
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
-	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+	grpcCertManager, err := server.New(config.Service.GrpcConfig.TLSConfig, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create server cert manager %w", err)
+	}
+	svr, err := kitNetGrpc.NewServer(config.Service.GrpcConfig.Addr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),
@@ -75,48 +84,24 @@ func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*Ref
 		)),
 	)
 	if err != nil {
-		listenCertManager.Close()
+		grpcCertManager.Close()
 		return nil, err
 	}
 
-	handler, err := service.NewRequestHandlerFromConfig(config.Signer)
+	handler, err := service.NewRequestHandlerFromConfig(config.Clients.SignerConfig)
 	if err != nil {
 		return nil, err
 	}
 	return &RefImpl{
 		handle:            handler,
-		listenCertManager: listenCertManager,
+		grpcCertManager: grpcCertManager,
 		server:            svr,
 	}, nil
 }
 
-//String return string representation of Config
-func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
-}
+func InitWithAuth(config service.Config, auth kitNetGrpc.AuthInterceptors, logger *zap.Logger) (*RefImpl, error) {
 
-func Init(config Config) (*RefImpl, error) {
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
-	}
-
-	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig(), "openid")
-	r, err := InitWithAuth(config, auth)
-	if err != nil {
-		dialCertManager.Close()
-		return nil, err
-	}
-	r.dialCertManager = dialCertManager
-	return r, nil
-}
-
-func InitWithAuth(config Config, auth kitNetGrpc.AuthInterceptors) (*RefImpl, error) {
-	log.Setup(config.Log)
-	log.Info(config.String())
-
-	impl, err := NewRefImplFromConfig(config, auth)
+	impl, err := NewRefImplFromConfig(config, auth, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -132,9 +117,9 @@ func (r *RefImpl) Serve() error {
 
 func (r *RefImpl) Shutdown() {
 	r.server.Stop()
-	r.listenCertManager.Close()
-	if r.dialCertManager != nil {
-		r.dialCertManager.Close()
+	r.grpcCertManager.Close()
+	if r.oauthCertManager != nil {
+		r.oauthCertManager.Close()
 	}
 }
 

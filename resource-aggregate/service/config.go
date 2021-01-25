@@ -24,7 +24,7 @@ type APIsConfig struct {
 }
 
 type GrpcServer struct {
-	GrpcAddr          string                  `yaml:"address" json:"address" default:"0.0.0.0:9100"`
+	GrpcAddr          string                  `yaml:"address" json:"address" default:"0.0.0.0:9083"`
 	GrpcTLSConfig     server.Config           `yaml:"tls" json:"tls"`
 	Capabilities	  CapabilitiesConfig      `yaml:"capabilities" json:"capabilities"`
 }

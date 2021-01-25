@@ -24,11 +24,11 @@ type RequestHandler struct {
 	closeFunc               func()
 }
 
-type HandlerConfig struct {
-	Service Config
+/*type HandlerConfig struct {
+	Service RDConfig
 }
-
-func AddHandler(svr *kitNetGrpc.Server, config HandlerConfig, clientTLS *tls.Config) error {
+*/
+func AddHandler(svr *kitNetGrpc.Server, config RDConfig, clientTLS *tls.Config) error {
 	handler, err := NewRequestHandlerFromConfig(config, clientTLS)
 	if err != nil {
 		return err
@@ -43,10 +43,9 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*RequestHandler, error) {
-	svc := config.Service
+func NewRequestHandlerFromConfig(config RDConfig, clientTLS *tls.Config) (*RequestHandler, error) {
 	rdConn, err := grpc.Dial(
-		svc.ResourceDirectoryAddr,
+		config.ResourceDirectoryAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
 	)
 	if err != nil {

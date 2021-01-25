@@ -18,7 +18,7 @@ func Init(config service.Config) (*RefImpl, error) {
 	log.Set(logger)
 
 	return &RefImpl{
-		service:           service.New(logger, config.Service, config.Database, config.Clients),
+		service:      service.New(logger, config.Service, config.Database, config.Clients),
 	}, nil
 }
 

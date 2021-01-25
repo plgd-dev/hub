@@ -1,8 +1,8 @@
 FROM cloud-test AS build
-WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/resource-aggregate
+WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/http-gateway
 RUN go build -o /go/bin/service ./cmd/service
 RUN mkdir -p /data/
-COPY resource-aggregate.yaml /data/resource-aggregate.yaml
+COPY http-gateway.yaml /data/http-gateway.yaml
 
 # alpine
 FROM alpine:3.12 as service
@@ -14,8 +14,8 @@ RUN apk add --no-cache ca-certificates
 
 RUN mkdir -p /data
 COPY --from=build /go/bin/service /usr/local/bin/service
-COPY --from=build /data/resource-aggregate.yaml /data/resource-aggregate.yaml
+COPY --from=build /data/http-gateway.yaml /data/http-gateway.yaml
 RUN ls -al /data/
-RUN cat /data/resource-aggregate.yaml
+RUN cat /data/http-gateway.yaml
 
-ENTRYPOINT ["/usr/local/bin/service", "--config=/data/resource-aggregate.yaml"]
+ENTRYPOINT ["/usr/local/bin/service", "--config=/data/http-gateway.yaml"]

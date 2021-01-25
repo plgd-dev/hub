@@ -1,0 +1,32 @@
+log:
+  debug: true
+apis:
+  http:
+    address: "0.0.0.0:9086"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
+clients:
+  oAuthProvider:
+    jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceDirectory:
+    address: "127.0.0.1:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  certificateAuthority:
+    address: "127.0.0.1:9087"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false

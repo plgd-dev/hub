@@ -3,14 +3,13 @@ package refImpl
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-
-	"github.com/plgd-dev/kit/security/certManager"
 
 	"google.golang.org/grpc"
 
@@ -21,22 +20,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-type Config struct {
-	Log     log.Config
-	JwksURL string             `envconfig:"JWKS_URL"`
-	Listen  certManager.Config `envconfig:"LISTEN"`
-	Dial    certManager.Config `envconfig:"DIAL"`
-	kitNetGrpc.Config
-	service.HandlerConfig
-}
-
-//String return string representation of Config
-func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
-}
-
-func Init(config Config) (*kitNetGrpc.Server, error) {
+func Init(config service.Config) (*kitNetGrpc.Server, error) {
 	logger, err := log.NewLogger(config.Log)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create logger %w", err)
@@ -44,16 +28,11 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	log.Set(logger)
 	log.Info(config.String())
 
-	listenCertManager, err := certManager.NewCertManager(config.Listen)
+	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create server cert manager %w", err)
+		log.Errorf("cannot create oauth client cert manager %w", err)
 	}
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create client cert manager %w", err)
-	}
-
-	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
+	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig())
 	var streamInterceptors []grpc.StreamServerInterceptor
 	if config.Log.Debug {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
@@ -68,8 +47,11 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
-	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+	grpcCertManager, err := server.New(config.Service.GrpcConfig.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create server cert manager %w", err)
+	}
+	server, err := kitNetGrpc.NewServer(config.Service.GrpcConfig.Addr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),
@@ -80,14 +62,20 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	server.AddCloseFunc(func() {
-		listenCertManager.Close()
-		dialCertManager.Close()
-	})
 
-	if err := service.AddHandler(server, config.HandlerConfig, dialCertManager.GetClientTLSConfig()); err != nil {
+	rdCertManager, err := client.New(config.Clients.RDConfig.ResourceDirectoryTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create server cert manager %w", err)
+	}
+	if err := service.AddHandler(server, config.Clients.RDConfig, rdCertManager.GetTLSConfig()); err != nil {
 		return nil, err
 	}
+
+	server.AddCloseFunc(func() {
+		oauthCertManager.Close()
+		grpcCertManager.Close()
+		rdCertManager.Close()
+	})
 
 	return server, nil
 }

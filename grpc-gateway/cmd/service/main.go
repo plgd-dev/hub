@@ -2,16 +2,22 @@ package main
 
 import (
 	"github.com/plgd-dev/cloud/grpc-gateway/refImpl"
+	"github.com/plgd-dev/cloud/grpc-gateway/service"
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
-	"github.com/kelseyhightower/envconfig"
 )
 
 func main() {
-	var config refImpl.Config
-	if err := envconfig.Process("", &config); err != nil {
+	var cfg service.Config
+	err := config.Load(&cfg)
+	if err != nil {
 		log.Fatalf("cannot parse configuration: %v", err)
 	}
-	if server, err := refImpl.Init(config); err != nil {
+
+	log.Setup(cfg.Log)
+	log.Info(cfg.String())
+
+	if server, err := refImpl.Init(cfg); err != nil {
 		log.Fatalf("cannot init server: %v", err)
 	} else {
 		if err = server.Serve(); err != nil {

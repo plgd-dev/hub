@@ -17,7 +17,7 @@ apis:
       clientCertificateRequired: true
 database:
   mongoDB:
-    uri: "mongodb://127.0.0.1:27017"
+    uri: "mongodb://mongo:27017"
     database: "authorization"
     tls:
       caFile: "/data/certs/root_ca.crt"

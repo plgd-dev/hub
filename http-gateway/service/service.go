@@ -9,12 +9,13 @@ import (
 	"regexp"
 
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	GrpcGWClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -27,50 +28,65 @@ type Server struct {
 	cfg               *Config
 	requestHandler    *RequestHandler
 	ln                net.Listener
-	listenCertManager certManager.CertManager
 	rdConn            *grpc.ClientConn
 	caConn            *grpc.ClientConn
+
+	httpCertManager   *server.CertManager
+	rdCertManager     *client.CertManager
+	caCertManager     *client.CertManager
+	oauthCertManager  *client.CertManager
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(cfg Config) (*Server, error) {
-	cfg = cfg.checkForDefaults()
-	log.Info(cfg.String())
-
-	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
+func New(config Config) (*Server, error) {
+	logger, err := log.NewLogger(config.Log)
 	if err != nil {
-		log.Fatalf("cannot create listen cert manager: %v", err)
+		return nil, fmt.Errorf("cannot create logger %w", err)
 	}
-	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
-	if err != nil {
-		log.Fatalf("cannot create dial cert manager: %v", err)
-	}
-	listenTLSCfg := listenCertManager.GetServerTLSConfig()
 
-	ln, err := tls.Listen("tcp", cfg.Address, listenTLSCfg)
+	log.Set(logger)
+	log.Info(config.String())
+
+	config = config.checkForDefaults()
+	httpCertManager, err := server.New(config.Service.HttpConfig.HttpTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create http server cert manager %w", err)
+	}
+	ln, err := tls.Listen("tcp", config.Service.HttpConfig.HttpAddr, httpCertManager.GetTLSConfig())
 	if err != nil {
 		log.Fatalf("cannot listen tls and serve: %v", err)
 	}
 
+	rdCertManager, err := client.New(config.Clients.RDConfig.ResourceDirectoryTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create rd client cert manager %w", err)
+	}
 	rdConn, err := grpc.Dial(
-		cfg.ResourceDirectoryAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
+		config.Clients.RDConfig.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(rdCertManager.GetTLSConfig())),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
+	//TODO : need to check below logics
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
-	client, err := client.NewClient("http://localhost", resourceDirectoryClient)
+	grpcClient, err := GrpcGWClient.NewClient("http://localhost", resourceDirectoryClient)
 	if err != nil {
 		log.Fatalf("cannot initialize new client: %v", err)
 	}
+
+	caCertManager, err := client.New(config.Clients.CAConfig.CertificateAuthorityTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create ca client cert manager %w", err)
+	}
+
 	var caConn *grpc.ClientConn
 	var caClient pbCA.CertificateAuthorityClient
 
-	if cfg.CertificateAuthorityAddr != "" {
+	if config.Clients.CAConfig.CertificateAuthorityAddr != "" {
 		caConn, err = grpc.Dial(
-			cfg.CertificateAuthorityAddr,
-			grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
+			config.Clients.CAConfig.CertificateAuthorityAddr,
+			grpc.WithTransportCredentials(credentials.NewTLS(caCertManager.GetTLSConfig())),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("cannot connect to certificate authority: %w", err)
@@ -82,7 +98,12 @@ func New(cfg Config) (*Server, error) {
 	if err != nil {
 		log.Fatal("unable to initialize new observation manager %w", err)
 	}
-	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, kitNetHttp.RequestMatcher{
+
+	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create oauth client cert manager %w", err)
+	}
+	auth := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), authRules, kitNetHttp.RequestMatcher{
 		Method: http.MethodGet,
 		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.WsStartDevicesObservation) + `.*`),
 	}, kitNetHttp.RequestMatcher{
@@ -90,16 +111,19 @@ func New(cfg Config) (*Server, error) {
 		URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
 	},
 	)
-	requestHandler := NewRequestHandler(client, caClient, &cfg, manager)
+	requestHandler := NewRequestHandler(grpcClient, caClient, &config, manager)
 
 	server := Server{
 		server:            NewHTTP(requestHandler, auth),
-		cfg:               &cfg,
+		cfg:               &config,
 		requestHandler:    requestHandler,
 		ln:                ln,
-		listenCertManager: listenCertManager,
 		rdConn:            rdConn,
 		caConn:            caConn,
+		httpCertManager:   httpCertManager,
+		rdCertManager:     rdCertManager,
+		caCertManager:     caCertManager,
+		oauthCertManager:  oauthCertManager,
 	}
 
 	return &server, nil
@@ -122,8 +146,17 @@ func (s *Server) Shutdown() error {
 	if s.caConn != nil {
 		s.caConn.Close()
 	}
-	if s.listenCertManager != nil {
-		s.listenCertManager.Close()
+	if s.httpCertManager != nil {
+		s.httpCertManager.Close()
+	}
+	if s.rdCertManager != nil {
+		s.rdCertManager.Close()
+	}
+	if s.caCertManager != nil {
+		s.caCertManager.Close()
+	}
+	if s.oauthCertManager != nil {
+		s.oauthCertManager.Close()
 	}
 	return s.server.Shutdown(context.Background())
 }

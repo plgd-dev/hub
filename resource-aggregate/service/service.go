@@ -27,7 +27,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/jwt"
-	"github.com/plgd-dev/kit/security/oauth/service"
+	oAuthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -154,7 +154,7 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	oauthMgr, err := service.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
+	oauthMgr, err := oAuthClient.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}

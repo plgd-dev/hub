@@ -13,7 +13,7 @@ import (
 // Config for application.
 type Config struct {
 	Log              log.Config     `yaml:"log" json:"log"`
-	Service          APIsConfig	`yaml:"apis" json:"apis"`
+	Service          APIsConfig	    `yaml:"apis" json:"apis"`
 	Clients			 ClientsConfig  `yaml:"clients" json:"clients"`
 }
 

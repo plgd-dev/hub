@@ -31,6 +31,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
+	oAuthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/kit/log"
@@ -110,7 +111,7 @@ func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server 
 	}
 
 	oauthDialTLSConfig := oauthCertManager.GetTLSConfig()
-	oauthMgr, err := service.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthDialTLSConfig)
+	oauthMgr, err := oAuthClient.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthDialTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
