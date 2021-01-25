@@ -1,40 +1,79 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
+	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
+	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
+	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 	"time"
-
-	"github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 )
-
-type TaskProcessorConfig struct {
-	CacheSize   int           `envconfig:"CACHE_SIZE" default:"2048"`
-	Timeout     time.Duration `envconfig:"TIMEOUT" default:"5s"`
-	MaxParallel int64         `envconfig:"MAX_PARALLEL" default:"128"`
-	Delay       time.Duration `envconfig:"DELAY"` // Used for CTT test with 10s.
-}
 
 //Config represent application configuration
 type Config struct {
-	grpc.Config
-	AuthServerAddr        string              `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
-	ResourceAggregateAddr string              `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
-	ResourceDirectoryAddr string              `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
-	OAuthCallback         string              `envconfig:"OAUTH_CALLBACK"`
-	EventsURL             string              `envconfig:"EVENTS_URL"`
-	PullDevicesDisabled   bool                `envconfig:"PULL_DEVICES_DISABLED" default:"false"`
-	PullDevicesInterval   time.Duration       `envconfig:"PULL_DEVICES_INTERVAL" default:"5s"`
-	TaskProcessor         TaskProcessorConfig `envconfig:"TASK_PROCESSOR"`
-	ReconnectInterval     time.Duration       `envconfig:"RECONNECT_INTERVAL" default:"10s"`
-	ResubscribeInterval   time.Duration       `envconfig:"RESUBSCRIBE_INTERVAL" default:"10s"`
-	JwksURL               string              `envconfig:"JWKS_URL"`
-	OAuth                 manager.Config      `envconfig:"OAUTH"`
+	Log              log.Config     `yaml:"log" json:"log"`
+	Service          APIsConfig	    `yaml:"apis" json:"apis"`
+	Clients			 ClientsConfig  `yaml:"clients" json:"clients"`
+	Database         MogoDBConfig   `yaml:"database" json:"database"`
+}
+
+type APIsConfig struct {
+	HttpConfig            HttpConfig          `yaml:"http" json:"http"`
+	PullDevicesDisabled   bool                `yaml:"pullDevicesDisabled" json:"pullDevicesDisabled" default:"false"`
+	PullDevicesInterval   time.Duration       `yaml:"pullDevicesInterval" json:"pullDevicesInterval" default:"5s"`
+	ReconnectInterval     time.Duration       `yaml:"reconnectInterval" json:"reconnectInterval" default:"10s"`
+	ResubscribeInterval   time.Duration       `yaml:"resubscribeInterval" json:"resubscribeInterval" default:"10s"`
+	TaskProcessor         TaskProcessorConfig `yaml:"taskProcessor" json:"taskProcessor"`
+}
+
+type HttpConfig struct {
+	HttpAddr          string           `yaml:"address" json:"address" default:"0.0.0.0:9089"`
+	HttpTLSConfig     server.Config    `yaml:"tls" json:"tls"`
+	OAuthCallback     string           `yaml:"callbackURL" json:"callbackURL"`
+	EventsURL         string           `yaml:"eventURL" json:"eventURL"`
+}
+
+type ClientsConfig struct {
+	OAuthProvider         OAuthProvider           `yaml:"oAuthProvider" json:"oAuthProvider"`
+	Authorization         AuthorizationConfig     `yaml:"authorizationServer" json:"authorizationServer"`
+	ResourceDirectory     ResourceDirectoryConfig `yaml:"resourceDirectory" json:"resourceDirectory"`
+	ResourceAggregate     ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
+}
+
+type MogoDBConfig struct {
+	MongoDB    storeMongodb.Config    `yaml:"mongoDB" json:"mongoDB"`
+}
+
+type TaskProcessorConfig struct {
+	CacheSize   int           `yaml:"cacheSize" json:"cacheSize" default:"2048"`
+	Timeout     time.Duration `yaml:"timeout" json:"timeout" default:"5s"`
+	MaxParallel int64         `yaml:"maxParallel" json:"maxParallel" default:"128"`
+	Delay       time.Duration `yaml:"delay" json:"delay"` // Used for CTT test with 10s.
+}
+
+type OAuthProvider struct {
+	JwksURL               string              `yaml:"jwksUrl" json:"jwksUrl"`
+	OAuthConfig           oauthClient.Config  `yaml:"oauth" json:"oauth"`
+	OAuthTLSConfig        client.Config       `yaml:"tls" json:"tls"`
+}
+
+type AuthorizationConfig struct {
+	AuthServerAddr                  string              `yaml:"address" json:"address" default:"127.0.0.1:9081"`
+	AuthServerTLSConfig             client.Config       `yaml:"tls" json:"tls"`
+}
+
+type ResourceDirectoryConfig struct {
+	ResourceDirectoryAddr           string              `yaml:"address" json:"address" default:"127.0.0.1:9082"`
+	ResourceDirectoryTLSConfig      client.Config       `yaml:"tls" json:"tls"`
+}
+
+type ResourceAggregateConfig struct {
+	ResourceAggregateAddr            string             `yaml:"address" json:"address" default:"127.0.0.1:9083"`
+	ResourceAggregateTLSConfig       client.Config      `yaml:"tls" json:"tls"`
 }
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }

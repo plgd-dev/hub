@@ -27,7 +27,7 @@ clients:
       clientSecret: ""
       scopes: []
       audience: ""
-      tokenUrl : ""
+      tokenURL : ""
       timeout : 10s
     tls:
       caFile: "/data/certs/root_ca.crt"

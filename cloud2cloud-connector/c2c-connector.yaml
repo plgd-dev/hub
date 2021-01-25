@@ -1,0 +1,50 @@
+log:
+  debug: true
+apis:
+  http:
+    address: "0.0.0.0:9089"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
+    callbackURL: "https://localhost:9089/api/v1/c2cCallback"
+    eventURL: "https://localhost:9089/api/v1/events"
+database:
+  mongoDB:
+    uri: "mongodb://localhost:27017"
+    database: "cloud2cloudConnector"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
+clients:
+  oAuthProvider:
+    jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      tokenURL: ""
+      timeout: 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceDirectory:
+    address: "127.0.0.1:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  certificateAuthority:
+    address: "127.0.0.1:9087"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false

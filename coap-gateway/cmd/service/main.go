@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-
 	var cfg service.Config
 	err := config.Load(&cfg)
 	if err != nil {

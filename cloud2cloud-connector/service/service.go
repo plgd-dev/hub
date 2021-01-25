@@ -3,6 +3,11 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
+	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
+	"go.uber.org/zap"
 	"net"
 	"net/http"
 	"net/url"
@@ -11,11 +16,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	connectorStore "github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
@@ -35,6 +38,13 @@ type Server struct {
 	raConn   *grpc.ClientConn
 	authConn *grpc.ClientConn
 	rdConn   *grpc.ClientConn
+
+	httpCertManager *server.CertManager
+	dbCertManager   *client.CertManager
+	asCertManager   *client.CertManager
+	raCertManager   *client.CertManager
+	rdCertManager   *client.CertManager
+	oauthCertManager *client.CertManager
 }
 
 type DialCertManager = interface {
@@ -54,9 +64,9 @@ func runDevicePulling(ctx context.Context,
 	subscriptionManager *SubscriptionManager,
 	triggerTask func(Task),
 ) bool {
-	ctx, cancel := context.WithTimeout(ctx, config.PullDevicesInterval)
+	ctx, cancel := context.WithTimeout(ctx, config.Service.PullDevicesInterval)
 	defer cancel()
-	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.OAuthCallback, triggerTask)
+	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.Service.HttpConfig.OAuthCallback, triggerTask)
 	if err != nil {
 		log.Errorf("cannot pull devices: %v", err)
 	}
@@ -70,30 +80,47 @@ func runDevicePulling(ctx context.Context,
 }
 
 //New create new Server with provided store and bus
-func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager, db connectorStore.Store) *Server {
-	dialTLSConfig := dialCertManager.GetClientTLSConfig()
+func New(config Config, logger *zap.Logger) *Server {
+	dbCertManager, err := client.New(config.Database.MongoDB.TLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create db dial cert manager %v", err)
+	}
+	db, err := storeMongodb.NewStore(context.Background(), config.Database.MongoDB, storeMongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	if err != nil {
+		log.Fatalf("cannot create mongodb store %w", err)
+		//return nil
+	}
+
 	var ln net.Listener
-	var err error
-	if listenCertManager != nil {
-		listenTLSConfig := listenCertManager.GetServerTLSConfig()
-		ln, err = tls.Listen("tcp", config.Addr, listenTLSConfig)
+	httpCertManager, err := server.New(config.Service.HttpConfig.HttpTLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create db dial cert manager %v", err)
+		ln, err = net.Listen("tcp", config.Service.HttpConfig.HttpAddr)
 		if err != nil {
 			log.Fatalf("cannot listen and serve: %v", err)
 		}
 	} else {
-		ln, err = net.Listen("tcp", config.Addr)
+		ln, err = tls.Listen("tcp", config.Service.HttpConfig.HttpAddr, httpCertManager.GetTLSConfig())
 		if err != nil {
-			log.Fatalf("cannot listen and serve: %v", err)
+			log.Fatalf("cannot listen and serve with tls: %v", err)
 		}
 	}
 
-	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create oauth dial cert manager %v", err)
+	}
+	oauthMgr, err := oauthClient.NewManagerFromConfiguration(config.Clients.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
-	raConn, err := grpc.Dial(config.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+	raCertManager, err := client.New(config.Clients.ResourceAggregate.ResourceAggregateTLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create oauth dial cert manager %v", err)
+	}
+	raConn, err := grpc.Dial(config.Clients.ResourceAggregate.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
@@ -101,8 +128,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 	raClient := pbRA.NewResourceAggregateClient(raConn)
 
-	authConn, err := grpc.Dial(config.AuthServerAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+	asCertManager, err := client.New(config.Clients.Authorization.AuthServerTLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create authorization dial cert manager %v", err)
+	}
+	authConn, err := grpc.Dial(config.Clients.Authorization.AuthServerAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
@@ -110,8 +141,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 	asClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+	rdCertManager, err := client.New(config.Clients.ResourceDirectory.ResourceDirectoryTLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create authorization dial cert manager %v", err)
+	}
+	rdConn, err := grpc.Dial(config.Clients.ResourceDirectory.ResourceDirectoryAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(rdCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
@@ -119,7 +154,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	_, err = url.Parse(config.OAuthCallback)
+	_, err = url.Parse(config.Service.HttpConfig.OAuthCallback)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -129,13 +164,13 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.ReconnectInterval)
-	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize, config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
-	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger, config.ResubscribeInterval)
-	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
+	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.Service.ReconnectInterval)
+	taskProcessor := NewTaskProcessor(raClient, config.Service.TaskProcessor.MaxParallel, config.Service.TaskProcessor.CacheSize, config.Service.TaskProcessor.Timeout, config.Service.TaskProcessor.Delay)
+	subscriptionManager := NewSubscriptionManager(config.Service.HttpConfig.EventsURL, asClient, raClient, store, devicesSubscription, config.Service.HttpConfig.OAuthCallback, taskProcessor.Trigger, config.Service.ResubscribeInterval)
+	requestHandler := NewRequestHandler(config.Service.HttpConfig.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
 
 	var wg sync.WaitGroup
-	if !config.PullDevicesDisabled {
+	if !config.Service.PullDevicesDisabled {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -154,8 +189,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		subscriptionManager.Run(ctx)
 	}()
 
-	oauthURL, _ := url.Parse(config.OAuthCallback)
-	auth := kitNetHttp.NewInterceptor(config.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, kitNetHttp.RequestMatcher{
+	oauthURL, _ := url.Parse(config.Service.HttpConfig.OAuthCallback)
+	auth := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), authRules, kitNetHttp.RequestMatcher{
 		Method: http.MethodGet,
 		URI:    regexp.MustCompile(regexp.QuoteMeta(oauthURL.Path)),
 	}, kitNetHttp.RequestMatcher{
@@ -176,6 +211,13 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		raConn:   raConn,
 		rdConn:   rdConn,
 		authConn: authConn,
+
+		httpCertManager: httpCertManager,
+		dbCertManager: dbCertManager,
+		asCertManager: asCertManager,
+		raCertManager: raCertManager,
+		rdCertManager: rdCertManager,
+		oauthCertManager: oauthCertManager,
 	}
 
 	return &server
@@ -187,6 +229,13 @@ func (s *Server) Serve() error {
 		s.raConn.Close()
 		s.rdConn.Close()
 		s.authConn.Close()
+
+		s.httpCertManager.Close()
+		s.dbCertManager.Close()
+		s.asCertManager.Close()
+		s.raCertManager.Close()
+		s.rdCertManager.Close()
+		s.oauthCertManager.Close()
 	}()
 	return s.server.Serve(s.ln)
 }
