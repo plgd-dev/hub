@@ -74,14 +74,14 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 
 // New creates the service's HTTP server.
 func New(cfg Config) (*Server, error) {
-
 	logger, err := log.NewLogger(log.Config{ Debug: cfg.Log.Debug })
 	log.Set(logger)
+	log.Info(cfg.String())
+
 	mongoCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
 	}
-
 	mongoTlsConfig := mongoCertManager.GetTLSConfig()
 	persistence, err := mongodb.NewStore(context.Background(), cfg.Database.MongoDB, mongodb.WithTLS(mongoTlsConfig))
 	if err != nil {

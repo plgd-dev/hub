@@ -23,7 +23,7 @@ database:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: true
+      useSystemCAPool: false
 oauthClients:
   device:
     provider: "test"
@@ -44,7 +44,7 @@ oauthClients:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: true
+      useSystemCAPool: false
   client:
     oauth:
       clientID: ""
@@ -62,4 +62,4 @@ oauthClients:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: true
+      useSystemCAPool: false

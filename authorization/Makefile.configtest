@@ -16,10 +16,8 @@ define build-docker-image
 endef
 
 test: build-servicecontainer
-	docker stop $(SERVICE_NAME)
-	docker rm $(SERVICE_NAME)
-	docker run -p 9081:9081 -p 9085:9085 \
-	--network=bridge \
+	docker run -d --network=machost \
+	-p 9081:9081 -p 9085:9085 \
 	--name=$(SERVICE_NAME) \
 	--hostname=$(SERVICE_NAME) \
 	-v $(shell pwd)/../.tmp/certs:/data/certs \

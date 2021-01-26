@@ -43,7 +43,7 @@ certificates: #cloud-test
 
 nats: #certificates
 	docker run \
-	    -d \
+	    -d --network=machost \
 		-p 4222:4222 -p 6222:6222 -p 8222:8222 \
 		--name=nats \
 		--hostname=nats \
@@ -51,7 +51,7 @@ nats: #certificates
 		--user $(shell id -u):$(shell id -g) \
 		nats --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 	docker run \
-	    -d \
+	    -d --network=machost \
 		-p 34222:34222 \
 		--name=nats-cloud-connector \
 		--hostname=nats-cloud-connector \
@@ -62,15 +62,17 @@ nats: #certificates
 mongo: #certificates
 	mkdir -p $(shell pwd)/.tmp/mongo
 	docker run \
-	    -d \
+	    -d --network=machost \
 		-p 27017:27017 \
 		--name=mongo \
 		--hostname=mongo \
 		-v $(shell pwd)/.tmp/mongo:/data/db \
 		-v $(shell pwd)/.tmp/certs:/certs \
-	  	--user $(shell id -u):$(shell id -g) \
-		mongo --port 27017 --bind_ip_all --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
-		#--noauth --bind_ip_all requireTLS
+		mongo --port 27017 --bind_ip_all --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key --tlsAllowInvalidCertificates
+	  	#--user $(shell id -u):$(shell id -g) \
+		#-e MONGO_INITDB_ROOT_USERNAME=mongoadmin \
+		#-e MONGO_INITDB_ROOT_PASSWORD=secret \
+		#--noauth --bind_ip_all --tlsMode requireTLS
 env: clean certificates nats mongo
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \

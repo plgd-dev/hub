@@ -18,5 +18,6 @@ COPY --from=build /data/authorization.yaml /data/authorization.yaml
 RUN ls -al /data/
 RUN cat /data/authorization.yaml
 
-ENTRYPOINT ["/usr/local/bin/service", "--config=/data/authorization.yaml", ">$LOGS_PATH/authorization.log 2>&1", "&& openssl s_client -connect 192.168.0.7:27017 <<< 'Q' "]
+ENTRYPOINT ["/usr/local/bin/service", "--config=/data/authorization.yaml", ">/data/log/authorization.log 2>&1"]
+#, "&& openssl s_client -connect mongo:27017 <<< 'Q' "]
 
