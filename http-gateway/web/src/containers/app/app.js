@@ -4,8 +4,10 @@ import classNames from 'classnames'
 import { Router } from 'react-router-dom'
 import Container from 'react-bootstrap/Container'
 import { Helmet } from 'react-helmet'
+import { ToastContainer } from 'react-toastify'
 import { useIntl } from 'react-intl'
 
+import { PageLoader } from '@/components/page-loader'
 import { LeftPanel } from '@/components/left-panel'
 import { Menu } from '@/components/menu'
 import { StatusBar } from '@/components/status-bar'
@@ -21,14 +23,31 @@ const App = () => {
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
   const { formatMessage: _ } = useIntl()
 
+  // Render an error box with an auth error
   if (error) {
-    return <div>Oops... {error.message}</div>
+    return (
+      <div className="client-error-message">
+        {`${_(t.authError)}: ${error.message}`}
+      </div>
+    )
+  }
+
+  // Placeholder loader while waiting for the auth status
+  const renderLoader = () => {
+    return (
+      <>
+        <PageLoader className="auth-loader" loading />
+        <div className="page-loading-text">{`${_(t.loading)}...`}</div>
+      </>
+    )
   }
 
   if (isLoading) {
-    return <div>{_(t.loading)}</div>
+    return renderLoader()
   }
 
+  // If the loading is finished but still unauthenticated, it means the user is not logged in.
+  // Calling the loginWithRedirect will make a rediret to the login page where the user can login.
   if (!isLoading && !isAuthenticated) {
     loginWithRedirect({
       appState: {
@@ -36,7 +55,7 @@ const App = () => {
       },
     })
 
-    return <div>{_(t.loading)}</div>
+    return renderLoader()
   }
 
   return (
@@ -58,6 +77,7 @@ const App = () => {
           <Footer />
         </div>
       </Container>
+      <ToastContainer />
     </Router>
   )
 }

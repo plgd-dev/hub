@@ -5,10 +5,12 @@ html,
 body,
 input,
 textarea,
-select {
-  font-family: 'Muli', sans-serif;
+select,
+table {
+  font-family: 'Mulish', sans-serif;
   font-size: $font_size;
   font-weight: 400;
+  color: $text_desc;
 }
 
 a {
