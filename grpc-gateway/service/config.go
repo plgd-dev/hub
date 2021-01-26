@@ -19,7 +19,7 @@ type APIsConfig struct {
 }
 
 type ClientsConfig struct {
-	OAuthProvider OAuthProvider    `yaml:"oAuthProvider" json:"oAuthProvider"`
+	OAuthProvider OAuthProvider    `yaml:"oauthProvider" json:"oauthProvider"`
 	RDConfig      RDConfig         `yaml:"resourceDirectory" json:"resourceDirectory"`
 }
 

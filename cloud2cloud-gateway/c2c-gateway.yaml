@@ -1,16 +1,36 @@
 log:
   debug: true
 apis:
-  grpc:
-    address: "0.0.0.0:9084"
+  http:
+    address: "0.0.0.0:9088"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       clientCertificateRequired: true
+    fqdn: "cloud2cloud.pluggedin.cloud"
+  capabilities:
+    reconnectInterval: 10s
+    emitEventTimeout: 5s
+database:
+  mongoDB:
+    uri: "mongodb://localhost:27017"
+    database: "cloud2cloudGateway"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
 clients:
   oauthProvider:
     jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      tokenURL: ""
+      timeout: 10s
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
@@ -23,10 +43,3 @@ clients:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
-#  resourceAggregate:
-#    address: "127.0.0.1:9083"
-#    tls:
-#      caFile: "/data/certs/root_ca.crt"
-#      certFile: "/data/certs/http.crt"
-#      keyFile: "/data/certs/http.key"
-#      useSystemCAPool: false

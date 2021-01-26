@@ -9,7 +9,17 @@ apis:
       keyFile: "/data/certs/http.key"
       clientCertificateRequired: true
     callbackURL: "https://localhost:9089/api/v1/c2cCallback"
-    eventURL: "https://localhost:9089/api/v1/events"
+    eventsURL: "https://localhost:9089/api/v1/events"
+  capabilities:
+    pullDevicesDisabled: false
+    pullDevicesInterval: 5s
+    reconnectInterval: 10s
+    resubscribeInterval: 10s
+  taskProccessor:
+    cacheSize: 2048
+    timeout: 5s
+    maxParallel: 128
+    delay: 0s  # 10s for CTT test
 database:
   mongoDB:
     uri: "mongodb://localhost:27017"
@@ -20,7 +30,7 @@ database:
       keyFile: "/data/certs/http.key"
       useSystemCAPool: true
 clients:
-  oAuthProvider:
+  oauthProvider:
     jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
     oauth:
       clientID: ""
@@ -34,6 +44,13 @@ clients:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
+  authorizationServer:
+    address: "127.0.0.1:9081"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
   resourceDirectory:
     address: "127.0.0.1:9082"
     tls:
@@ -41,8 +58,8 @@ clients:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
-  certificateAuthority:
-    address: "127.0.0.1:9087"
+  resourceAggregate:
+    address: "127.0.0.1:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"

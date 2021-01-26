@@ -17,7 +17,7 @@ type Provider = interface {
 // Config general configuration
 type Config struct {
 	Provider 				string       			`yaml:"provider" json:"provider" default:"generic"` // value which comes from the device during the sign-up ("apn")
-	OAuth2   				oauth.Config 			`yaml:"oAuth" json:"oAuth"`
+	OAuth2   				oauth.Config 			`yaml:"oauth" json:"oauth"`
 	OAuthTLSConfig			client.Config 		    `yaml:"tls" json:"tls"`
 }
 

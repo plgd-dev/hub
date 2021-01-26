@@ -16,9 +16,9 @@ define build-docker-image
 endef
 
 test: build-servicecontainer
-	docker stop $(SERVICE_NAME)
-	docker rm $(SERVICE_NAME)
-	docker run -p 9086:9086 \
+	#docker stop $(SERVICE_NAME)
+	#docker rm $(SERVICE_NAME)
+	docker run -p 9088:9088 \
 		--name=$(SERVICE_NAME) \
 		--hostname=$(SERVICE_NAME) \
 		-v $(shell pwd)/../.tmp/certs:/data/certs \

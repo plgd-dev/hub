@@ -12,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+
+	"github.com/plgd-dev/kit/security/certManager/client"
 )
 
 // Store implements an Store for MongoDB.
@@ -21,8 +23,10 @@ type Store struct {
 }
 
 type Config struct {
-	Host         string `envconfig:"SUBSTORE_MONGO_HOST" default:"localhost:27017"`
-	DatabaseName string `envconfig:"SUBSTORE_MONGO_DATABASE" default:"cloud2cloudGateway"`
+	Host         string `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
+	DatabaseName string `yaml:"database" json:"database" default:"cloud2cloudGateway"`
+	TLSConfig    client.Config `yaml:"tls" json:"tls"`
+
 	tlsCfg       *tls.Config
 }
 
@@ -44,7 +48,7 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://"+cfg.Host).SetTLSConfig(cfg.tlsCfg))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.Host).SetTLSConfig(cfg.tlsCfg))
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}

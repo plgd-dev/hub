@@ -12,16 +12,16 @@ apis:
       keepaliveTimeout: 5s   # default:20s
       blockwiseTransferEnabled: true
       blockwiseTransferBlockSize: 1024
-      # tcpSignalMessageCSMDisabled : false
-      # peerTcpSignalMessageCSMisabled : false
-      # errorEesponseEnabled : true
+      tcpSignalMessageCSMDisabled : false
+      peerTcpSignalMessageCSMisabled : false
+      errorEesponseEnabled : true
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/coap.crt"
       keyFile: "/data/certs/coap.key"
       clientCertificateRequired: true
 clients:
-  oAuthProvider:
+  oauthProvider:
     oauth:
       clientID: ""
       clientSecret: ""

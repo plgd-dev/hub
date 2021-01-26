@@ -46,7 +46,7 @@ type Database struct {
 
 type ClientsConfig struct {
 	Nats                      nats.Config             `yaml:"nats" json:"nats"`
-	OAuthProvider             OAuthProvider           `yaml:"oAuthProvider" json:"oAuthProvider"`
+	OAuthProvider             OAuthProvider           `yaml:"oauthProvider" json:"oauthProvider"`
 	Authorization             AuthorizationConfig     `yaml:"authorizationServer" json:"authorizationServer"`
 	ResourceAggregate         ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 	ClientConfiguration       CloudConfig             `yaml:"clientConfiguration"`

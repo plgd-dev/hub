@@ -64,9 +64,9 @@ func runDevicePulling(ctx context.Context,
 	subscriptionManager *SubscriptionManager,
 	triggerTask func(Task),
 ) bool {
-	ctx, cancel := context.WithTimeout(ctx, config.Service.PullDevicesInterval)
+	ctx, cancel := context.WithTimeout(ctx, config.Service.Capabilities.PullDevicesInterval)
 	defer cancel()
-	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.Service.HttpConfig.OAuthCallback, triggerTask)
+	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, config.Service.Http.OAuthCallback, triggerTask)
 	if err != nil {
 		log.Errorf("cannot pull devices: %v", err)
 	}
@@ -92,15 +92,15 @@ func New(config Config, logger *zap.Logger) *Server {
 	}
 
 	var ln net.Listener
-	httpCertManager, err := server.New(config.Service.HttpConfig.HttpTLSConfig, logger)
+	httpCertManager, err := server.New(config.Service.Http.TLSConfig, logger)
 	if err != nil {
-		log.Fatalf("cannot create db dial cert manager %v", err)
-		ln, err = net.Listen("tcp", config.Service.HttpConfig.HttpAddr)
+		log.Fatalf("cannot create http listen cert manager %v", err)
+		ln, err = net.Listen("tcp", config.Service.Http.Addr)
 		if err != nil {
 			log.Fatalf("cannot listen and serve: %v", err)
 		}
 	} else {
-		ln, err = tls.Listen("tcp", config.Service.HttpConfig.HttpAddr, httpCertManager.GetTLSConfig())
+		ln, err = tls.Listen("tcp", config.Service.Http.Addr, httpCertManager.GetTLSConfig())
 		if err != nil {
 			log.Fatalf("cannot listen and serve with tls: %v", err)
 		}
@@ -117,7 +117,7 @@ func New(config Config, logger *zap.Logger) *Server {
 
 	raCertManager, err := client.New(config.Clients.ResourceAggregate.ResourceAggregateTLSConfig, logger)
 	if err != nil {
-		log.Fatalf("cannot create oauth dial cert manager %v", err)
+		log.Fatalf("cannot create resource-aggregate dial cert manager %v", err)
 	}
 	raConn, err := grpc.Dial(config.Clients.ResourceAggregate.ResourceAggregateAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())),
@@ -143,7 +143,7 @@ func New(config Config, logger *zap.Logger) *Server {
 
 	rdCertManager, err := client.New(config.Clients.ResourceDirectory.ResourceDirectoryTLSConfig, logger)
 	if err != nil {
-		log.Fatalf("cannot create authorization dial cert manager %v", err)
+		log.Fatalf("cannot create resource-directory dial cert manager %v", err)
 	}
 	rdConn, err := grpc.Dial(config.Clients.ResourceDirectory.ResourceDirectoryAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(rdCertManager.GetTLSConfig())),
@@ -154,7 +154,7 @@ func New(config Config, logger *zap.Logger) *Server {
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	_, err = url.Parse(config.Service.HttpConfig.OAuthCallback)
+	_, err = url.Parse(config.Service.Http.OAuthCallback)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -164,13 +164,13 @@ func New(config Config, logger *zap.Logger) *Server {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.Service.ReconnectInterval)
+	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.Service.Capabilities.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.Service.TaskProcessor.MaxParallel, config.Service.TaskProcessor.CacheSize, config.Service.TaskProcessor.Timeout, config.Service.TaskProcessor.Delay)
-	subscriptionManager := NewSubscriptionManager(config.Service.HttpConfig.EventsURL, asClient, raClient, store, devicesSubscription, config.Service.HttpConfig.OAuthCallback, taskProcessor.Trigger, config.Service.ResubscribeInterval)
-	requestHandler := NewRequestHandler(config.Service.HttpConfig.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
+	subscriptionManager := NewSubscriptionManager(config.Service.Http.EventsURL, asClient, raClient, store, devicesSubscription, config.Service.Http.OAuthCallback, taskProcessor.Trigger, config.Service.Capabilities.ResubscribeInterval)
+	requestHandler := NewRequestHandler(config.Service.Http.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
 
 	var wg sync.WaitGroup
-	if !config.Service.PullDevicesDisabled {
+	if !config.Service.Capabilities.PullDevicesDisabled {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -189,7 +189,7 @@ func New(config Config, logger *zap.Logger) *Server {
 		subscriptionManager.Run(ctx)
 	}()
 
-	oauthURL, _ := url.Parse(config.Service.HttpConfig.OAuthCallback)
+	oauthURL, _ := url.Parse(config.Service.Http.OAuthCallback)
 	auth := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), authRules, kitNetHttp.RequestMatcher{
 		Method: http.MethodGet,
 		URI:    regexp.MustCompile(regexp.QuoteMeta(oauthURL.Path)),

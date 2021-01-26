@@ -24,11 +24,11 @@ database:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: true
-oAuthClients:
+oauthClients:
   device:
     provider: "test"
     providerName: "test provider"  # not implemented
-    oAuth:
+    oauth:
       clientID: ""
       clientSecret: ""
       scopes: []
@@ -46,7 +46,7 @@ oAuthClients:
       keyFile: "/data/certs/http.key"
       useSystemCAPool: true
   client:
-    oAuth:
+    oauth:
       clientID: ""
       clientSecret: ""
       scopes: []

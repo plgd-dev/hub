@@ -1,41 +1,41 @@
 package refImpl
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"regexp"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/service"
-	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
 	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/kit/security/certManager"
 )
 
-type Config struct {
-	Log          log.Config `envconfig:"LOG"`
-	Service      service.Config
-	StoreMongoDB storeMongodb.Config
-	Dial         certManager.Config `envconfig:"DIAL"`
-	Listen       certManager.Config `envconfig:"LISTEN"`
-	JwksURL      string             `envconfig:"JWKS_URL"`
-}
-
-//String return string representation of Config
-func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
-}
-
 type RefImpl struct {
-	server            *service.Server
-	dialCertManager   certManager.CertManager
-	listenCertManager certManager.CertManager
+	service            *service.Server
 }
 
-func Init(config Config) (*RefImpl, error) {
+func Init(config service.Config) (*RefImpl, error) {
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
+	log.Info(config.String())
+
+	return &RefImpl{
+		service:           service.New(config, logger),
+	}, nil
+}
+
+// Serve starts handling coap requests.
+func (r *RefImpl) Serve() error {
+	return r.service.Serve()
+}
+
+// Shutdown shutdowns the service.
+func (r *RefImpl) Shutdown() error {
+	err := r.service.Shutdown()
+	return err
+}
+
+/*func Init(config service.Config) (*RefImpl, error) {
 	log.Setup(config.Log)
 
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
@@ -73,9 +73,9 @@ func (r *RefImpl) Close() {
 	r.server.Shutdown()
 	r.dialCertManager.Close()
 	r.listenCertManager.Close()
-}
+}*/
 
-// https://openconnectivity.org/draftspecs/Gaborone/OCF_Cloud_API_for_Cloud_Services.pdf
+/*// https://openconnectivity.org/draftspecs/Gaborone/OCF_Cloud_API_for_Cloud_Services.pdf
 var authRules = map[string][]kitNetHttp.AuthArgs{
 	http.MethodGet: {
 		{
@@ -175,4 +175,4 @@ var authRules = map[string][]kitNetHttp.AuthArgs{
 			},
 		},
 	},
-}
+}*/

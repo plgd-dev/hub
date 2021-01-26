@@ -19,23 +19,27 @@ type Config struct {
 }
 
 type APIsConfig struct {
-	HttpConfig            HttpConfig          `yaml:"http" json:"http"`
-	PullDevicesDisabled   bool                `yaml:"pullDevicesDisabled" json:"pullDevicesDisabled" default:"false"`
-	PullDevicesInterval   time.Duration       `yaml:"pullDevicesInterval" json:"pullDevicesInterval" default:"5s"`
-	ReconnectInterval     time.Duration       `yaml:"reconnectInterval" json:"reconnectInterval" default:"10s"`
-	ResubscribeInterval   time.Duration       `yaml:"resubscribeInterval" json:"resubscribeInterval" default:"10s"`
-	TaskProcessor         TaskProcessorConfig `yaml:"taskProcessor" json:"taskProcessor"`
+	Http             HttpConfig          `yaml:"http" json:"http"`
+	Capabilities     Capabilities        `yaml:"capabilities,omitempty" json:"capabilities"`
+	TaskProcessor    TaskProcessorConfig `yaml:"taskProcessor,omitempty" json:"taskProcessor"`
 }
 
 type HttpConfig struct {
-	HttpAddr          string           `yaml:"address" json:"address" default:"0.0.0.0:9089"`
-	HttpTLSConfig     server.Config    `yaml:"tls" json:"tls"`
+	Addr              string           `yaml:"address" json:"address" default:"0.0.0.0:9089"`
+	TLSConfig         server.Config    `yaml:"tls" json:"tls"`
 	OAuthCallback     string           `yaml:"callbackURL" json:"callbackURL"`
-	EventsURL         string           `yaml:"eventURL" json:"eventURL"`
+	EventsURL         string           `yaml:"eventsURL" json:"eventsURL"`
+}
+
+type Capabilities struct {
+	PullDevicesDisabled   bool                `yaml:"pullDevicesDisabled,omitempty" json:"pullDevicesDisabled" default:"false"`
+	PullDevicesInterval   time.Duration       `yaml:"pullDevicesInterval,omitempty" json:"pullDevicesInterval" default:"5s"`
+	ReconnectInterval     time.Duration       `yaml:"reconnectInterval,omitempty" json:"reconnectInterval" default:"10s"`
+	ResubscribeInterval   time.Duration       `yaml:"resubscribeInterval,omitempty" json:"resubscribeInterval" default:"10s"`
 }
 
 type ClientsConfig struct {
-	OAuthProvider         OAuthProvider           `yaml:"oAuthProvider" json:"oAuthProvider"`
+	OAuthProvider         OAuthProvider           `yaml:"oauthProvider" json:"oauthProvider"`
 	Authorization         AuthorizationConfig     `yaml:"authorizationServer" json:"authorizationServer"`
 	ResourceDirectory     ResourceDirectoryConfig `yaml:"resourceDirectory" json:"resourceDirectory"`
 	ResourceAggregate     ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
@@ -46,10 +50,10 @@ type MogoDBConfig struct {
 }
 
 type TaskProcessorConfig struct {
-	CacheSize   int           `yaml:"cacheSize" json:"cacheSize" default:"2048"`
-	Timeout     time.Duration `yaml:"timeout" json:"timeout" default:"5s"`
-	MaxParallel int64         `yaml:"maxParallel" json:"maxParallel" default:"128"`
-	Delay       time.Duration `yaml:"delay" json:"delay"` // Used for CTT test with 10s.
+	CacheSize   int           `yaml:"cacheSize,omitempty" json:"cacheSize" default:"2048"`
+	Timeout     time.Duration `yaml:"timeout,omitempty" json:"timeout" default:"5s"`
+	MaxParallel int64         `yaml:"maxParallel,omitempty" json:"maxParallel" default:"128"`
+	Delay       time.Duration `yaml:"delay,omitempty" json:"delay"` // Used for CTT test with 10s.
 }
 
 type OAuthProvider struct {

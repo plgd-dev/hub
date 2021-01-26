@@ -43,7 +43,7 @@ type CapabilitiesConfig struct {
 }
 
 type ClientsConfig struct {
-	OAuthProvider         OAuthProvider           `yaml:"oAuthProvider" json:"oAuthProvider"`
+	OAuthProvider         OAuthProvider           `yaml:"oauthProvider" json:"oauthProvider"`
 	Authorization         AuthorizationConfig     `yaml:"authorizationServer" json:"authorizationServer"`
 	ResourceDirectory     ResourceDirectoryConfig `yaml:"resourceDirectory" json:"resourceDirectory"`
 	ResourceAggregate     ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`

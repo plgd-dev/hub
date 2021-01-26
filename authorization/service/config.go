@@ -15,7 +15,7 @@ import (
 type Config struct {
 	Log                     log.Config               `yaml:"log" json:"log"`
 	Service	                APIsConfig               `yaml:"apis" json:"apis"`
-	Clients	                OAuthClientsConfig       `yaml:"oAuthClients" json:"oAuthClients"`
+	Clients	                OAuthClientsConfig       `yaml:"oauthClients" json:"oauthClients"`
 	Database                MogoDBConfig             `yaml:"database" json:"database"`
 }
 
@@ -40,7 +40,7 @@ type OAuthClientsConfig struct {
 }
 
 type SDKOAuthConfig struct {
-	OAuth                   oauth.Config             `yaml:"oauth" json:"oAuth"`
+	OAuth                   oauth.Config             `yaml:"oauth" json:"oauth"`
 	OAuthTLSConfig          client.Config            `yaml:"tls" json:"tls"`
 }
 
