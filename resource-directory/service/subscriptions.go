@@ -599,8 +599,8 @@ func isDeviceOnline(content *pbRA.Content) (bool, error) {
 	return cloudStatus.IsOnline(), nil
 }
 
-func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
-	sub := NewDevicesSubscription(subscriptionID, userID, send, resourceProjection, req)
+func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
+	sub := NewDevicesSubscription(subscriptionID, userID, token, send, resourceProjection, req)
 	err := s.InsertDevicesSubscription(ctx, sub)
 	if err != nil {
 		sub.Close(err)
@@ -614,8 +614,8 @@ func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID str
 	return nil
 }
 
-func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
-	sub := NewDeviceSubscription(subscriptionID, userID, send, resourceProjection, req)
+func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
+	sub := NewDeviceSubscription(subscriptionID, userID, token, send, resourceProjection, req)
 	err := s.InsertDeviceSubscription(ctx, sub)
 	if err != nil {
 		sub.Close(err)
@@ -629,8 +629,8 @@ func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID stri
 	return nil
 }
 
-func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
-	sub := NewResourceSubscription(subscriptionID, userID, send, resourceProjection, req)
+func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
+	sub := NewResourceSubscription(subscriptionID, userID, token, send, resourceProjection, req)
 	err := s.InsertResourceSubscription(ctx, sub)
 	if err != nil {
 		sub.Close(err)
@@ -722,6 +722,7 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 		}
 
 		subRes := pb.Event{
+			Token: subReq.Token,
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					Token: subReq.Token,
@@ -757,11 +758,11 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 
 		switch r := subReq.GetFilterBy().(type) {
 		case *pb.SubscribeForEvents_DevicesEvent:
-			err = s.SubscribeForDevicesEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, send, r.DevicesEvent)
+			err = s.SubscribeForDevicesEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DevicesEvent)
 		case *pb.SubscribeForEvents_DeviceEvent:
-			err = s.SubscribeForDeviceEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, send, r.DeviceEvent)
+			err = s.SubscribeForDeviceEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DeviceEvent)
 		case *pb.SubscribeForEvents_ResourceEvent:
-			err = s.SubscribeForResourceEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, send, r.ResourceEvent)
+			err = s.SubscribeForResourceEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.ResourceEvent)
 		case *pb.SubscribeForEvents_CancelSubscription_:
 			//handled by cancelation
 			err = nil
@@ -769,6 +770,7 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 			err = fmt.Errorf("not supported")
 			send(ctx, pb.Event{
 				SubscriptionId: subRes.SubscriptionId,
+				Token:          subReq.Token,
 				Type: &pb.Event_SubscriptionCanceled_{
 					SubscriptionCanceled: &pb.Event_SubscriptionCanceled{
 						Reason: err.Error(),

@@ -178,6 +178,7 @@ message Event {
   }
 
   string subscription_id = 1; // subscription id provided by grpc
+  string token = 2;
   oneof type {
     DeviceRegistered device_registered = 3;
     DeviceUnregistered device_unregistered = 4;

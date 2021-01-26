@@ -12,6 +12,7 @@ import (
 type subscription struct {
 	id     string
 	userID string
+	token  string
 
 	resourceProjection *Projection
 	send               SendEventFunc
@@ -23,10 +24,11 @@ type subscription struct {
 	eventVersions     map[string]uint64
 }
 
-func NewSubscription(userID, id string, send SendEventFunc, resourceProjection *Projection) *subscription {
+func NewSubscription(userID, id, token string, send SendEventFunc, resourceProjection *Projection) *subscription {
 	return &subscription{
 		userID:                        userID,
 		id:                            id,
+		token:                         token,
 		send:                          send,
 		resourceProjection:            resourceProjection,
 		eventVersions:                 make(map[string]uint64),
@@ -40,6 +42,10 @@ func (s *subscription) UserID() string {
 
 func (s *subscription) ID() string {
 	return s.id
+}
+
+func (s *subscription) Token() string {
+	return s.token
 }
 
 func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version uint64) bool {
@@ -99,6 +105,7 @@ func (s *subscription) Close(reason error) error {
 	}
 
 	err = s.Send(context.Background(), pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_SubscriptionCanceled_{
 			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{
