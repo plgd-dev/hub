@@ -1,23 +1,62 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
+import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 import { Layout } from '@/components/layout'
+import { Badge } from '@/components/badge'
+import { Table } from '@/components/table'
+import { useApi } from '@/common/hooks'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
+import { thingsStatuses } from './constants'
+import { messages as t } from './things-i18n'
+
 export const Things = () => {
-  const [loading, setLoading] = useState(true)
   const { formatMessage: _ } = useIntl()
 
-  // Demo for showing the loader for 2 seconds after page visit
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setLoading(false)
-    }, 2000)
+  const { data, loading, error } = useApi(
+    'https://api.try.plgd.cloud/api/v1/devices',
+    { audience: 'https://try.plgd.cloud' }
+  )
 
-    return () => {
-      clearTimeout(timeout)
-    }
-  }, [])
+  const columns = useMemo(
+    () => [
+      {
+        Header: _(t.name),
+        accessor: 'device.n',
+        Cell: ({ value, row }) => (
+          <Link to={`/things/${row.values.id}`}>{value}</Link>
+        ),
+      },
+      {
+        Header: 'ID',
+        accessor: 'device.di',
+      },
+      {
+        Header: _(t.status),
+        accessor: 'status',
+        Cell: ({ value }) => {
+          const isOnline = thingsStatuses.ONLINE === value
+          return (
+            <Badge className={isOnline ? 'green' : 'red'}>
+              {isOnline ? _(t.online) : _(t.offline)}
+            </Badge>
+          )
+        },
+      },
+    ],
+    [] //eslint-disable-line
+  )
+
+  useEffect(
+    () => {
+      if (error) {
+        toast.error(error?.response?.data?.err || error?.message)
+      }
+    },
+    [error]
+  )
 
   return (
     <Layout
@@ -32,9 +71,19 @@ export const Things = () => {
         },
       ]}
       loading={loading}
-      header={<div><i>{'Filter goes here'}</i></div>}
+      header={<div />}
     >
-      {<i>{'Table goes here'}</i>}
+      <Table
+        columns={columns}
+        data={data || []}
+        defaultSortBy={[
+          {
+            id: 'device.n',
+            desc: false,
+          },
+        ]}
+        autoFillEmptyRows
+      />
     </Layout>
   )
 }

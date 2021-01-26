@@ -1,0 +1,18 @@
+@import '@/common/styles/colors.scss';
+
+.badge {
+  text-transform: lowercase;
+  font-size: 12px;
+  padding: 3px 7px;
+  font-weight: 400;
+
+  &.green {
+    background-color: $green_50;
+    color: $green_100;
+  }
+
+  &.red {
+    background-color: $red_50;
+    color: $red_100;
+  }
+}
