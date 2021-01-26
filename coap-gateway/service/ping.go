@@ -18,7 +18,7 @@ type oicwkping struct {
 	Interval      int64   `json:"in,omitempty"`
 }
 
-func getPingConfiguration(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func getPingConfiguration(req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePingGetConfiguration takes %v", time.Since(t))
@@ -45,7 +45,7 @@ func getPingConfiguration(s mux.ResponseWriter, req *mux.Message, client *Client
 	client.sendResponse(coapCodes.Content, req.Token, accept, out)
 }
 
-func ping(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func ping(req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourcePing takes %v", time.Since(t))
@@ -87,13 +87,13 @@ func pingOnEvicted(key string, v interface{}) {
 	}
 }
 
-func resourcePingHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourcePingHandler(req *mux.Message, client *Client) {
 	switch req.Code {
 	case coapCodes.GET:
-		getPingConfiguration(s, req, client)
+		getPingConfiguration(req, client)
 	case coapCodes.POST:
-		ping(s, req, client)
+		ping(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

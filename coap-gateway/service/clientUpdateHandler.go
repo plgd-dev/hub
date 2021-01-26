@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func clientUpdateHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func clientUpdateHandler(req *mux.Message, client *Client) {
 	authCtx := client.loadAuthorizationContext()
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {

@@ -47,7 +47,7 @@ func validateSignUp(req CoapSignUpRequest) error {
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
+func signUpPostHandler(r *mux.Message, client *Client) {
 	var signUp CoapSignUpRequest
 	err := cbor.ReadFrom(r.Body, &signUp)
 	if err != nil {
@@ -95,14 +95,14 @@ func signUpPostHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
 
 // Sign-up
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signUpHandler(w mux.ResponseWriter, r *mux.Message, client *Client) {
+func signUpHandler(r *mux.Message, client *Client) {
 	switch r.Code {
 	case coapCodes.POST:
-		signUpPostHandler(w, r, client)
+		signUpPostHandler(r, client)
 	case coapCodes.DELETE:
-		signOffHandler(w, r, client)
+		signOffHandler(r, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, r.Token)
 	}
 }
 
@@ -118,7 +118,7 @@ func validateSignOff(deviceID, accessToken string) error {
 
 // Sign-off
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
-func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func signOffHandler(req *mux.Message, client *Client) {
 	//from QUERY: di, accesstoken
 	var deviceID string
 	var accessToken string
@@ -156,7 +156,7 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 
 	err := validateSignOff(deviceID, accessToken)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	_, err = client.server.asClient.SignOff(ctx, &pbAS.SignOffRequest{
@@ -165,7 +165,7 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		AccessToken: accessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
 		return
 	}
 	client.replaceAuthorizationContext(nil)

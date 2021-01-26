@@ -14,6 +14,8 @@ import (
 
 	"github.com/plgd-dev/kit/security/oauth/manager"
 
+	"github.com/plgd-dev/kit/task/queue"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -72,6 +74,8 @@ type Server struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 
+	taskQueue *queue.TaskQueue
+
 	sigs chan os.Signal
 }
 
@@ -85,6 +89,10 @@ type ListenCertManager = interface {
 
 // New creates server.
 func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager) *Server {
+	p, err := queue.New(config.NumTaskWorkers, config.LimitTasks)
+	if err != nil {
+		log.Fatalf("cannot job queue %v", err)
+	}
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -212,6 +220,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 		sigs: make(chan os.Signal, 1),
 
+		taskQueue: p,
+
 		ctx:    ctx,
 		cancel: cancel,
 	}
@@ -232,20 +242,20 @@ func getDeviceID(client *Client) string {
 	return deviceID
 }
 
-func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(s mux.ResponseWriter, req *mux.Message, client *Client)) {
+func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(req *mux.Message, client *Client)) {
 	client, ok := s.Client().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
 		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
 	}
 	switch req.Code {
 	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-		fnc(s, req, client)
+		fnc(req, client)
 	case coapCodes.Empty:
 		if !ok {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
 			return
 		}
-		clientResetHandler(s, req, client)
+		clientResetHandler(req, client)
 	case coapCodes.Content:
 		// Unregistered observer at a peer send us a notification
 		deviceID := getDeviceID(client)
@@ -261,12 +271,12 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc
 	}
 }
 
-func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func defaultHandler(req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
 
 	switch {
 	case strings.HasPrefix("/"+path, uri.ResourceRoute):
-		resourceRouteHandler(s, req, client)
+		resourceRouteHandler(req, client)
 	default:
 		deviceID := getDeviceID(client)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
@@ -384,6 +394,9 @@ func (server *Server) setupCoapServer() {
 	opts = append(opts, tcp.WithContext(server.ctx))
 	opts = append(opts, tcp.WithHeartBeat(server.HeartBeat))
 	opts = append(opts, tcp.WithMaxMessageSize(server.MaxMessageSize))
+	opts = append(opts, tcp.WithGoPool(func(f func()) error {
+		return server.taskQueue.Submit(f)
+	}))
 	server.coapServer = tcp.NewServer(opts...)
 }
 
@@ -417,6 +430,7 @@ func (server *Server) serveWithHandlingSignal() error {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 	<-server.sigs
+	server.taskQueue.Release()
 
 	server.coapServer.Stop()
 	wg.Wait()
