@@ -30,15 +30,21 @@ func (c Config) String() string {
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
+func (c Config) CheckForDefaults() Config {
+	c.Service = c.Service.CheckForDefaults()
+	return c
+}
+
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config Config) (*RefImpl, error) {
+	config = config.CheckForDefaults()
+	log.Setup(config.Log)
+	log.Info(config.String())
+
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}
-
-	log.Setup(config.Log)
-	log.Info(config.String())
 
 	var listenCertManager certManager.CertManager
 	if !config.ListenWithoutTLS {

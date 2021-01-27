@@ -38,7 +38,7 @@ func getResourceInterface(msg *mux.Message) string {
 	return ""
 }
 
-func clientRetrieveHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func clientRetrieveHandler(req *mux.Message, client *Client) {
 	authCtx := client.loadAuthorizationContext()
 
 	deviceID, href, err := URIToDeviceIDHref(req)

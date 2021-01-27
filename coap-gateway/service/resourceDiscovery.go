@@ -98,7 +98,7 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 	return resp, codes.OK, nil
 }
 
-func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourceDirectoryFind(req *mux.Message, client *Client) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("resourceDirectoryFind takes %v", time.Since(t))
@@ -155,11 +155,11 @@ func resourceDirectoryFind(s mux.ResponseWriter, req *mux.Message, client *Clien
 	client.sendResponse(coapCode, req.Token, accept, out)
 }
 
-func resourceDiscoveryHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourceDiscoveryHandler(req *mux.Message, client *Client) {
 	switch req.Code {
 	case coapCodes.GET:
-		resourceDirectoryFind(s, req, client)
+		resourceDirectoryFind(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

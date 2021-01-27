@@ -7,18 +7,18 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 )
 
-func resourceRouteHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourceRouteHandler(req *mux.Message, client *Client) {
 	switch req.Code {
 	case coapCodes.POST:
-		clientUpdateHandler(s, req, client)
+		clientUpdateHandler(req, client)
 	case coapCodes.DELETE:
-		clientDeleteHandler(s, req, client)
+		clientDeleteHandler(req, client)
 	case coapCodes.GET:
 		if observe, err := req.Options.Observe(); err == nil {
-			clientObserveHandler(s, req, client, observe)
+			clientObserveHandler(req, client, observe)
 			return
 		}
-		clientRetrieveHandler(s, req, client)
+		clientRetrieveHandler(req, client)
 	default:
 		deviceID := getDeviceID(client)
 		path, _ := req.Options.Path()

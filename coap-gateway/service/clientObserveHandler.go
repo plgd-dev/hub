@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func clientObserveHandler(s mux.ResponseWriter, req *mux.Message, client *Client, observe uint32) {
+func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("clientObserveHandler takes %v", time.Since(t))
@@ -36,9 +36,9 @@ func clientObserveHandler(s mux.ResponseWriter, req *mux.Message, client *Client
 
 	switch observe {
 	case 0:
-		startResourceObservation(s, req, client, authCtx, deviceID, href)
+		startResourceObservation(req, client, authCtx, deviceID, href)
 	case 1:
-		stopResourceObservation(s, req, client, authCtx, deviceID, href)
+		stopResourceObservation(req, client, authCtx, deviceID, href)
 	default:
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: invalid Observe value", authCtx.DeviceId, deviceID, href), coapCodes.BadRequest, req.Token)
 		return
@@ -67,7 +67,7 @@ func SendResourceContentToObserver(client *Client, resourceChanged *pb.Event_Res
 	decodeMsgToDebug(client, msg, "SEND-NOTIFICATION")
 }
 
-func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx *authCtx, deviceID, href string) {
+func startResourceObservation(req *mux.Message, client *Client, authCtx *authCtx, deviceID, href string) {
 	userIdsFilter := []string(nil)
 	if authCtx.GetUserID() != "" {
 		userIdsFilter = []string{authCtx.GetUserID()}
@@ -144,7 +144,7 @@ func startResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cl
 	// response will be send from projection
 }
 
-func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx *authCtx, deviceID, href string) {
+func stopResourceObservation(req *mux.Message, client *Client, authCtx *authCtx, deviceID, href string) {
 	token := req.Token.String()
 	cancelled, err := client.cancelResourceSubscription(token, true)
 	if err != nil {
@@ -158,7 +158,7 @@ func stopResourceObservation(s mux.ResponseWriter, req *mux.Message, client *Cli
 	SendResourceContentToObserver(client, nil, 1, req.Token)
 }
 
-func clientResetObservationHandler(s mux.ResponseWriter, req *mux.Message, client *Client, authCtx *pbCQRS.AuthorizationContext) {
+func clientResetObservationHandler(req *mux.Message, client *Client, authCtx *pbCQRS.AuthorizationContext) {
 	token := req.Token.String()
 	cancelled, err := client.cancelResourceSubscription(token, true)
 	if err != nil {

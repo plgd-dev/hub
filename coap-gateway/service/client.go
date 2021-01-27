@@ -27,8 +27,24 @@ import (
 )
 
 type observedResource struct {
-	href        string
+	href string
+
+	mutex       sync.Mutex
 	observation *tcp.Observation
+}
+
+func (r *observedResource) SetObservation(o *tcp.Observation) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.observation = o
+}
+
+func (r *observedResource) PopObservation() *tcp.Observation {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	o := r.observation
+	r.observation = nil
+	return o
 }
 
 type authCtx struct {
@@ -59,7 +75,7 @@ type Client struct {
 	server   *Server
 	coapConn *tcp.ClientConn
 
-	observedResources     map[string]map[int64]observedResource // [deviceID][instanceID]
+	observedResources     map[string]map[int64]*observedResource // [deviceID][instanceID]
 	observedResourcesLock sync.Mutex
 
 	resourceSubscriptions *kitSync.Map // [token]
@@ -74,7 +90,7 @@ func newClient(server *Server, client *tcp.ClientConn) *Client {
 	return &Client{
 		server:                server,
 		coapConn:              client,
-		observedResources:     make(map[string]map[int64]observedResource),
+		observedResources:     make(map[string]map[int64]*observedResource),
 		resourceSubscriptions: kitSync.NewMap(),
 		deviceSubscriptions:   kitSync.NewMap(),
 	}
@@ -120,7 +136,7 @@ func (client *Client) observeResource(ctx context.Context, deviceID, href string
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 	if _, ok := client.observedResources[deviceID]; !ok {
-		client.observedResources[deviceID] = make(map[int64]observedResource)
+		client.observedResources[deviceID] = make(map[int64]*observedResource)
 	}
 	if _, ok := client.observedResources[deviceID][instanceID]; ok {
 		if allowDuplicit {
@@ -128,7 +144,9 @@ func (client *Client) observeResource(ctx context.Context, deviceID, href string
 		}
 		return fmt.Errorf("resource is already already published")
 	}
-	return client.addObservedResourceLocked(ctx, deviceID, href, observable)
+	obsRes := observedResource{href: href}
+	client.observedResources[deviceID][instanceID] = &obsRes
+	return client.server.taskQueue.Submit(func() { client.addObservedResourceLocked(ctx, deviceID, observable, &obsRes) })
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
@@ -149,36 +167,30 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 	}
 }
 
-func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID, href string, observale bool) error {
-	var observation *tcp.Observation
-	obs := observale
-	if href == status.Href {
-		return nil
+func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, obs bool, obsRes *observedResource) {
+	if obsRes.href == status.Href {
+		return
 	}
-	instanceID := getInstanceID(href)
-
 	if obs {
-		obs, err := client.coapConn.Observe(ctx, href, func(req *pool.Message) {
-			err := client.notifyContentChanged(deviceID, href, req)
+		obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
+			err := client.notifyContentChanged(deviceID, obsRes.href, req)
 			if err != nil {
 				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-				log.Errorf("cannot observe resource /%v%v: %v", deviceID, href, err)
+				log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
 				client.Close()
 			}
 			if req.Code() == coapCodes.NotFound {
-				client.unpublishResources(req.Context(), []pbRA.ResourceId{pbRA.ResourceId{DeviceId: deviceID, Href: href}})
+				client.unpublishResources(req.Context(), []pbRA.ResourceId{{DeviceId: deviceID, Href: obsRes.href}})
 			}
 		})
 		if err != nil {
-			log.Errorf("cannot observe resource /%v%v: %v", deviceID, href, err)
+			log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
 		} else {
-			observation = obs
+			obsRes.SetObservation(obs)
 		}
 	} else {
-		go client.getResourceContent(ctx, deviceID, href)
+		client.getResourceContent(ctx, deviceID, obsRes.href)
 	}
-	client.observedResources[deviceID][instanceID] = observedResource{href: href, observation: observation}
-	return nil
 }
 
 func (client *Client) getObservedResources(deviceID string, instanceIDs []int64) []pbRA.ResourceId {
@@ -223,15 +235,13 @@ func (client *Client) removeResource(deviceID string, instanceID int64) {
 func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Observation {
 	log.Debugf("remove published resource ocf://%v/%v", deviceID, instanceID)
 
-	var obs *tcp.Observation
 	if device, ok := client.observedResources[deviceID]; ok {
 		if res, ok := device[instanceID]; ok {
-			obs = res.observation
-			res.observation = nil
+			return res.PopObservation()
 		}
 	}
 
-	return obs
+	return nil
 }
 
 func (client *Client) unobserveResources(ctx context.Context, resourceIDs []pbRA.ResourceId, rscsUnpublished map[string]bool) {
