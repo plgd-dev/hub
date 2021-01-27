@@ -12,7 +12,7 @@ import { messages as menuT } from '@/components/menu/menu-i18n'
 import { thingsStatuses } from './constants'
 import { messages as t } from './things-i18n'
 
-export const Things = () => {
+export const ThingsListPage = () => {
   const { formatMessage: _ } = useIntl()
 
   const { data, loading, error } = useApi(
@@ -26,7 +26,7 @@ export const Things = () => {
         Header: _(t.name),
         accessor: 'device.n',
         Cell: ({ value, row }) => (
-          <Link to={`/things/${row.values.id}`}>{value}</Link>
+          <Link to={`/things/${row.original?.device?.di}`}>{value}</Link>
         ),
       },
       {
