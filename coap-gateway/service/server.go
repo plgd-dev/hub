@@ -247,27 +247,34 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc
 	if !ok || client == nil {
 		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
 	}
-	switch req.Code {
-	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-		fnc(req, client)
-	case coapCodes.Empty:
-		if !ok {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
-			return
+	err := server.taskQueue.Submit(func() {
+		switch req.Code {
+		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
+			fnc(req, client)
+		case coapCodes.Empty:
+			if !ok {
+				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
+				return
+			}
+			clientResetHandler(req, client)
+		case coapCodes.Content:
+			// Unregistered observer at a peer send us a notification
+			deviceID := getDeviceID(client)
+			tmp, err := pool.ConvertFrom(req.Message)
+			if err != nil {
+				log.Errorf("DeviceId: %v: cannot convert dropped notification: %v", deviceID, err)
+			} else {
+				decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
+			}
+		default:
+			deviceID := getDeviceID(client)
+			log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
 		}
-		clientResetHandler(req, client)
-	case coapCodes.Content:
-		// Unregistered observer at a peer send us a notification
+	})
+	if err != nil {
 		deviceID := getDeviceID(client)
-		tmp, err := pool.ConvertFrom(req.Message)
-		if err != nil {
-			log.Errorf("DeviceId: %v: cannot convert dropped notification: %v", deviceID, err)
-		} else {
-			decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
-		}
-	default:
-		deviceID := getDeviceID(client)
-		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
+		client.Close()
+		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %v", deviceID, req.String(), err)
 	}
 }
 
@@ -395,7 +402,13 @@ func (server *Server) setupCoapServer() {
 	opts = append(opts, tcp.WithHeartBeat(server.HeartBeat))
 	opts = append(opts, tcp.WithMaxMessageSize(server.MaxMessageSize))
 	opts = append(opts, tcp.WithGoPool(func(f func()) error {
-		return server.taskQueue.Submit(f)
+		// we call directly function in connection-goroutine because
+		// pairing request/response cannot be done in taskQueue for a observe resource.
+		// - the observe resource creates task which wait for the response and this wait can be infinite
+		// if all task goroutines are processing observations and they are waiting for the responses, which
+		// will be stored in task queue.  it happens when we use task queue here.
+		f()
+		return nil
 	}))
 	server.coapServer = tcp.NewServer(opts...)
 }
