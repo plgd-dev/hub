@@ -10,7 +10,7 @@ apis:
       clientCertificateRequired: true
 clients:
   oauthProvider:
-    jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"

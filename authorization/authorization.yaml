@@ -14,15 +14,15 @@ apis:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      clientCertificateRequired: true
+      clientCertificateRequired: false
 database:
   mongoDB:
-    uri: "mongodb://mongo:27017"
+    uri: "mongodb://172.17.0.1:27017"
     database: "authorization"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/mongo.crt"
+      keyFile: "/data/certs/mongo.key"
       useSystemCAPool: false
 oauthClients:
   device:

@@ -34,12 +34,12 @@ type Config struct {
 
 type APIsConfig struct {
 	HttpConfig    HttpConfig    `yaml:"http" json:"http"`
-	Capabilities  Capabilities  `yaml:"capabilities" json:"capabilities"`
 }
 
 type HttpConfig struct {
 	HttpAddr          string           `yaml:"address" json:"address" default:"0.0.0.0:9086"`
 	HttpTLSConfig     server.Config    `yaml:"tls" json:"tls"`
+	Capabilities      Capabilities     `yaml:"capabilities" json:"capabilities"`
 }
 
 type Capabilities struct {
@@ -69,11 +69,11 @@ type CAConfig struct {
 }
 
 func (c Config) checkForDefaults() Config {
-	if c.Service.Capabilities.WebSocketReadLimit == 0 {
-		c.Service.Capabilities.WebSocketReadLimit = 8192
+	if c.Service.HttpConfig.Capabilities.WebSocketReadLimit == 0 {
+		c.Service.HttpConfig.Capabilities.WebSocketReadLimit = 8192
 	}
-	if c.Service.Capabilities.WebSocketReadTimeout == 0 {
-		c.Service.Capabilities.WebSocketReadTimeout = time.Second * 4
+	if c.Service.HttpConfig.Capabilities.WebSocketReadTimeout == 0 {
+		c.Service.HttpConfig.Capabilities.WebSocketReadTimeout = time.Second * 4
 	}
 	if c.UI.Directory == "" {
 		c.UI.Directory = "/usr/local/var/www"

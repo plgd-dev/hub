@@ -64,9 +64,8 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 
-	ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
+	ctx2, _ := context.WithTimeout(ctx, 2*time.Second)
+	err = client.Ping(ctx2, readpref.Primary())
 	if err != nil {
 		return nil, fmt.Errorf("could not ping database: %w", err)
 	}

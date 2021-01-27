@@ -16,36 +16,39 @@ apis:
       maxParallelRequest: 8
 database:
   mongoDB:
-    uri: "mongodb://127.0.0.1:27017"
+    uri: "mongodb://172.17.0.1:27017"
     database: "eventStore"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: true
+      certFile: "/data/certs/mongo.crt"
+      keyFile: "/data/certs/mongo.key"
+      useSystemCAPool: false
+    batchSize: 16
+    maxPoolSize: 16
+    maxConnIdleTime: 240s
 clients:
   nats:
-    url: "nats://127.0.0.1:4222"
+    url: "nats://172.17.0.1:4222"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   authorizationServer:
-    address: "127.0.0.1:9081"
+    address: "172.17.0.1:9081"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   oauthProvider:
-    jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
     oauth:
       clientID: ""
       clientSecret: ""
       scopes: []
       audience: ""
-      tokenURL : ""
+      tokenURL : "https://172.17.0.1:9085/api/authz/token"
       timeout : 10s
     tls:
       caFile: "/data/certs/root_ca.crt"

@@ -8,25 +8,36 @@ apis:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       clientCertificateRequired: true
+    capabilities:
+      websocketReadLimit: 8192
+      websocketReadTimeout: 4s
 clients:
   oauthProvider:
-    jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   resourceDirectory:
-    address: "127.0.0.1:9082"
+    address: "172.17.0.1:9082"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   certificateAuthority:
-    address: "127.0.0.1:9087"
+    address: "172.17.0.1:9087"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
+ui:
+  enabled: false
+  directory: ""
+  oauthClient:
+    domain: ""
+    clientID: ""
+    audience: ""
+    scope: ""

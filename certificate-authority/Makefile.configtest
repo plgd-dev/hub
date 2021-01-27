@@ -16,14 +16,12 @@ define build-docker-image
 endef
 
 test: build-servicecontainer
-	docker stop $(SERVICE_NAME)
-	docker rm $(SERVICE_NAME)
-	docker run -d -p 9087:9087 \
+	docker run -d --network=bridge \
+		-p 9087:9087 \
 		--name=$(SERVICE_NAME) \
 		--hostname=$(SERVICE_NAME) \
 		-v $(shell pwd)/../.tmp/certs:/data/certs \
 		plgd/$(SERVICE_NAME):$(LATEST_TAG)
-	#--network=host
 
 build-servicecontainer:
 	$(call build-docker-image,service)

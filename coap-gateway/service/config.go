@@ -35,8 +35,8 @@ type CapabilitiesConfig struct {
 	MaxMessageSize                  int                `yaml:"maxMessageSize" json:"maxMessageSize" default:"262144"`
 	KeepaliveEnable                 bool               `yaml:"keepaliveEnabled" json:"keepaliveEnabled" default:"true"`
 	KeepaliveTimeoutConnection      time.Duration      `yaml:"keepaliveTimeout" json:"keepaliveTimeout" default:"20s"`
-	BlockWiseTransferEnable         bool               `yaml:"blockwiseTransferEenabled" json:"blockwiseTransferEenabled" default:"true"`
-	BlockWiseTransferSZX            string             `yaml:"blockwiseBlockSize" json:"blockwiseBlockSize" default:"1024"`
+	BlockWiseTransferEnable         bool               `yaml:"blockwiseTransferEnabled" json:"blockwiseTransferEnabled" default:"true"`
+	BlockWiseTransferSZX            string             `yaml:"blockwiseTransferBlockSize" json:"blockwiseTransferBlockSize" default:"1024"`
 	DisableTCPSignalMessageCSM      bool               `yaml:"tcpSignalMessageCSMDisabled" json:"tcpSignalMessageCSMDisabled" default:"false"`
 	DisablePeerTCPSignalMessageCSMs bool               `yaml:"peerTcpSignalMessageCSMDisabled" json:"peerTcpSignalMessageCSMDisabled" default:"false"`
 	SendErrorTextInResponse         bool               `yaml:"errorResponseEnabled" json:"errorResponseEnabled" default:"true"`
