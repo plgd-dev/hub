@@ -22,7 +22,7 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/panjf2000/ants/v2 v2.4.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210127165037-9882abce3b91
+	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210127193502-843831900a67
 	github.com/plgd-dev/kit v0.0.0-20210126204005-bd8ff5e17406
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
