@@ -13,15 +13,44 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
-type DeviceSubscriptions struct {
-	processedOperations *kitSync.Map
-	handlers            *kitSync.Map
-	client              pb.GrpcGateway_SubscribeForEventsClient
-	mutex               sync.Mutex
-	errFunc             func(err error)
+// ResourcePublishedHandler handler of events.
+type ResourcePublishedHandler = interface {
+	HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error
+}
 
-	wait     func()
-	canceled uint32
+// ResourceUnpublishedHandler handler of events.
+type ResourceUnpublishedHandler = interface {
+	HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error
+}
+
+// ResourceUpdatePendingHandler handler of events
+type ResourceUpdatePendingHandler = interface {
+	HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error
+}
+
+// ResourceUpdatedHandler handler of events
+type ResourceUpdatedHandler = interface {
+	HandleResourceUpdated(ctx context.Context, val *pb.Event_ResourceUpdated) error
+}
+
+// ResourceRetrievePendingHandler handler of events
+type ResourceRetrievePendingHandler = interface {
+	HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error
+}
+
+// ResourceRetrievedHandler handler of events
+type ResourceRetrievedHandler = interface {
+	HandleResourceRetrieved(ctx context.Context, val *pb.Event_ResourceRetrieved) error
+}
+
+// ResourceDeletePendingHandler handler of events
+type ResourceDeletePendingHandler = interface {
+	HandleResourceDeletePending(ctx context.Context, val *pb.Event_ResourceDeletePending) error
+}
+
+// ResourceDeletedHandler handler of events
+type ResourceDeletedHandler = interface {
+	HandleResourceDeleted(ctx context.Context, val *pb.Event_ResourceDeleted) error
 }
 
 func NewDeviceSubscriptions(ctx context.Context, gwClient pb.GrpcGatewayClient, errFunc func(err error)) (*DeviceSubscriptions, error) {
@@ -76,6 +105,17 @@ func (s *DeviceSubscriptions) doOp(ctx context.Context, req *pb.SubscribeForEven
 		return nil, fmt.Errorf(op.GetErrorStatus().GetMessage())
 	}
 	return ev, nil
+}
+
+type DeviceSubscriptions struct {
+	processedOperations *kitSync.Map
+	handlers            *kitSync.Map
+	client              pb.GrpcGateway_SubscribeForEventsClient
+	mutex               sync.Mutex
+	errFunc             func(err error)
+
+	wait     func()
+	canceled uint32
 }
 
 type deviceSub struct {
@@ -146,7 +186,20 @@ func (s *deviceSub) HandleResourceDeleted(ctx context.Context, val *pb.Event_Res
 	return s.ResourceDeletedHandler.HandleResourceDeleted(ctx, val)
 }
 
-func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, closeErrorHandler SubscriptionHandler, handle interface{}) (func(ctx context.Context) error, error) {
+type Subcription struct {
+	id     string
+	cancel func(context.Context) error
+}
+
+func (s *Subcription) ID() string {
+	return s.id
+}
+
+func (s *Subcription) Cancel(ctx context.Context) error {
+	return s.cancel(ctx)
+}
+
+func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, closeErrorHandler SubscriptionHandler, handle interface{}) (*Subcription, error) {
 	if closeErrorHandler == nil {
 		return nil, fmt.Errorf("invalid closeErrorHandler")
 	}
@@ -250,7 +303,10 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		return err
 	}
 
-	return cancel, nil
+	return &Subcription{
+		id:     ev.GetSubscriptionId(),
+		cancel: cancel,
+	}, nil
 }
 
 // Cancel cancels subscription.

@@ -271,6 +271,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
+		Token:          "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				Token: "testToken",
@@ -311,6 +312,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
+		Token: "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				Token: "testToken",
@@ -357,6 +359,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
+		Token:          "testToken",
 		Type: &pb.Event_SubscriptionCanceled_{
 			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 		},
@@ -367,6 +370,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
+		Token:          "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				Token: "testToken",
@@ -399,6 +403,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent := &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
+			Token:          "testToken",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					Token: "testToken",
@@ -429,6 +434,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent = &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
+			Token:          "testToken",
 			Type: &pb.Event_SubscriptionCanceled_{
 				SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 			},
@@ -439,6 +445,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent = &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
+			Token:          "testToken",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					Token: "testToken",
