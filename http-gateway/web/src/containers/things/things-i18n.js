@@ -13,6 +13,10 @@ export const messages = defineMessages({
     id: 'things.name',
     defaultMessage: 'Name',
   },
+  types: {
+    id: 'things.types',
+    defaultMessage: 'Types',
+  },
   status: {
     id: 'things.status',
     defaultMessage: 'Status',

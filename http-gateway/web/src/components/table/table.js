@@ -122,7 +122,28 @@ export const Table = ({
 
 Table.propTypes = {
   data: PropTypes.arrayOf(PropTypes.object).isRequired,
-  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
+  columns: PropTypes.arrayOf(
+    PropTypes.shape({
+      accessor: PropTypes.oneOfType([PropTypes.string, PropTypes.func])
+        .isRequired,
+      id: PropTypes.string, // required if accessor is function
+      columns: PropTypes.array,
+      Header: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.func,
+        PropTypes.element,
+      ]),
+      Footer: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.func,
+        PropTypes.element,
+      ]),
+      Cell: PropTypes.oneOfType([PropTypes.func, PropTypes.element]),
+      width: PropTypes.number,
+      minWidth: PropTypes.number,
+      maxWidth: PropTypes.number,
+    })
+  ).isRequired,
   defaultSortBy: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.string,
