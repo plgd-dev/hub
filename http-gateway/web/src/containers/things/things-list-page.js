@@ -26,7 +26,7 @@ export const ThingsListPage = () => {
         Header: _(t.name),
         accessor: 'device.n',
         Cell: ({ value, row }) => (
-          <Link to={`/things/${row.values?.['device.di']}`}>{value}</Link>
+          <Link to={`/things/${row.original?.device?.di}`}>{value}</Link>
         ),
       },
       {
