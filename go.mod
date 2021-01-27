@@ -19,10 +19,10 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v1.0.5
 	github.com/nats-io/nats.go v1.10.1-0.20201111151633-9e1f4a0d80d8
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/panjf2000/ants/v2 v2.4.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616
-	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210126203731-e5cb5d9a20da
+	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210127165037-9882abce3b91
 	github.com/plgd-dev/kit v0.0.0-20210126204005-bd8ff5e17406
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
