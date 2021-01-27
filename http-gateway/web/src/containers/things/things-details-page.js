@@ -35,7 +35,7 @@ export const ThingsDetailsPage = props => {
 
   const deviceName = data?.device?.n
   const pageTitle = deviceName || id
-  const isOnline = thingsStatuses.ONLINE === data?.device?.status
+  const isOnline = thingsStatuses.ONLINE === data?.status
   
   return (
     <Layout
