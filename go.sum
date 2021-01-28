@@ -497,6 +497,12 @@ github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612/go.mod h1:fvVHdNe5H/m
 github.com/plgd-dev/kit v0.0.0-20201012075715-45376a9f2c61/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
 github.com/plgd-dev/kit v0.0.0-20210126204005-bd8ff5e17406 h1:BIwZQ6IOeI87CxnC/BoSCjsmOcf0DWW/+w6fnzPiHcI=
 github.com/plgd-dev/kit v0.0.0-20210126204005-bd8ff5e17406/go.mod h1:QBSNUD9RFKTQydtos8CBfE4MTSDYoJXuQE/DzA6IKtk=
+github.com/plgd-dev/kit v0.0.0-20210128184604-219fd8e14f72 h1:ZDXFbPtdDvs9JfEtWcpGWQGz51uxm3i7RUmMbEHm1E4=
+github.com/plgd-dev/kit v0.0.0-20210128184604-219fd8e14f72/go.mod h1:QBSNUD9RFKTQydtos8CBfE4MTSDYoJXuQE/DzA6IKtk=
+github.com/plgd-dev/kit v0.0.0-20210128201120-4f8634d17ed2 h1:4biSaDqyM8BQTfrpMorC1NwgSZ7DorML7PzOuV/j+AU=
+github.com/plgd-dev/kit v0.0.0-20210128201120-4f8634d17ed2/go.mod h1:QBSNUD9RFKTQydtos8CBfE4MTSDYoJXuQE/DzA6IKtk=
+github.com/plgd-dev/kit v0.0.0-20210128203157-0a29120d0f48 h1:hVMEYEUy5HLPsuqNm3sFGsS0odhYaU5qL2hEF882GYk=
+github.com/plgd-dev/kit v0.0.0-20210128203157-0a29120d0f48/go.mod h1:QBSNUD9RFKTQydtos8CBfE4MTSDYoJXuQE/DzA6IKtk=
 github.com/plgd-dev/sdk v0.0.0-20200819123823-4047b3e387d9/go.mod h1:8IzIQh/+2ZnNgtdpgWwaiBrI0hSox63ojTWHc4KlPTY=
 github.com/plgd-dev/sdk v0.0.0-20200917124432-caf96ab63f2d/go.mod h1:jbuh5K0ZIMDWcJEuRWtJZWve9CmjN0ZFGrLm4B09ytk=
 github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280 h1:vQUZcewGHy0cZzTxvF9we+OE2ISKP1NtrAEbQgN05qk=
