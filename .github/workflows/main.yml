@@ -22,6 +22,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
+      - name: Setup kernel for multicast messages, increase read buffer to 8MB
+        run: sydo sysctl -w net.core.rmem_max=8388608
+
       - name: Run a test
         if: "!contains(github.event.head_commit.message, '[doc]')"
         run: make test
