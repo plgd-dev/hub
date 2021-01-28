@@ -10,8 +10,7 @@ endif
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := authorization resource-aggregate resource-directory coap-gateway
-#cloud2cloud-connector cloud2cloud-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
+SUBDIRS := authorization resource-aggregate resource-directory coap-gateway cloud2cloud-connector cloud2cloud-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
 
 default: build
@@ -67,7 +66,7 @@ nats: #certificates
 		--user $(shell id -u):$(shell id -g) \
 		nats --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 
-mongo: #certificates
+mongo: #certificates mongo-certs
 	mkdir -p $(shell pwd)/.tmp/mongo
 	docker run \
 	    -d --network=bridge \
@@ -78,10 +77,8 @@ mongo: #certificates
 		-v $(shell pwd)/.tmp/certs:/certs \
 		mongo --port 27017 --bind_ip_all --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.certkey --tlsAllowInvalidCertificates
 	  	#--user $(shell id -u):$(shell id -g) \
-		#-e MONGO_INITDB_ROOT_USERNAME=mongoadmin \
-		#-e MONGO_INITDB_ROOT_PASSWORD=secret \
 		#--noauth --bind_ip_all --tlsMode requireTLS
-env: clean certificates nats mongo
+env: clean certificates mongo-certs nats mongo
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi

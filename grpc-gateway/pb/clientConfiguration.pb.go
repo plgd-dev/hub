@@ -70,7 +70,7 @@ type ClientConfigurationResponse struct {
 	CloudId                     string `yaml:"cloudID" protobuf:"bytes,5,opt,name=cloud_id,json=cloudId,proto3" json:"cloud_id,omitempty"`
 	CloudUrl                    string `yaml:"cloudURL" protobuf:"bytes,6,opt,name=cloud_url,json=cloudUrl,proto3" json:"cloud_url,omitempty"`
 	CloudAuthorizationProvider  string `yaml:"cloudAuthorizationProvider" protobuf:"bytes,7,opt,name=cloud_authorization_provider,json=cloudAuthorizationProvider,proto3" json:"cloud_authorization_provider,omitempty"`
-	CloudCertificateAuthorities string `yaml:"cloudCertificateAuthorities" protobuf:"bytes,8,opt,name=cloud_certificate_authorities,json=cloudCertificateAuthorities,proto3" json:"cloud_certificate_authorities,omitempty"`
+	CloudCertificateAuthorities string `yaml:"cloudCertificateAuthorities,omitempty" protobuf:"bytes,8,opt,name=cloud_certificate_authorities,json=cloudCertificateAuthorities,proto3" json:"cloud_certificate_authorities,omitempty"`
 }
 
 func (x *ClientConfigurationResponse) Reset() {

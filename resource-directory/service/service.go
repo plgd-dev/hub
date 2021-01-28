@@ -42,7 +42,7 @@ func NewService(logger *zap.Logger, config Config) (*kitNetGrpc.Server, error) {
 
 	grpcCertManager, err := server.New(config.Service.RD.GrpcTLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create server cert manager %w", err)
+		log.Errorf("cannot create grpc server cert manager %w", err)
 	}
 	server, err := kitNetGrpc.NewServer(config.Service.RD.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(

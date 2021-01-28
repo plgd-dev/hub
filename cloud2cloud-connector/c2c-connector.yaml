@@ -8,8 +8,8 @@ apis:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       clientCertificateRequired: true
-    callbackURL: "https://localhost:9089/api/v1/c2cCallback"
-    eventsURL: "https://localhost:9089/api/v1/events"
+    callbackURL: "https://172.17.0.1:9089/api/v1/c2cCallback"
+    eventsURL: "https://172.17.0.1:9089/api/v1/events"
   capabilities:
     pullDevicesDisabled: false
     pullDevicesInterval: 5s
@@ -22,22 +22,22 @@ apis:
     delay: 0s  # 10s for CTT test
 database:
   mongoDB:
-    uri: "mongodb://localhost:27017"
+    uri: "mongodb://172.17.0.1:27017"
     database: "cloud2cloudConnector"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: true
+      certFile: "/data/certs/mongo.crt"
+      keyFile: "/data/certs/mongo.key"
+      useSystemCAPool: false
 clients:
   oauthProvider:
-    jwksUrl: "https://127.0.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
     oauth:
       clientID: ""
       clientSecret: ""
       scopes: []
       audience: ""
-      tokenURL: ""
+      tokenURL: "https://172.17.0.1:9085/api/authz/token"
       timeout: 10s
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -45,21 +45,21 @@ clients:
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   authorizationServer:
-    address: "127.0.0.1:9081"
+    address: "172.17.0.1:9081"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   resourceDirectory:
-    address: "127.0.0.1:9082"
+    address: "172.17.0.1:9082"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   resourceAggregate:
-    address: "127.0.0.1:9083"
+    address: "172.17.0.1:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"

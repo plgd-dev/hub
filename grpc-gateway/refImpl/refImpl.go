@@ -49,7 +49,7 @@ func Init(config service.Config) (*kitNetGrpc.Server, error) {
 
 	grpcCertManager, err := server.New(config.Service.GrpcConfig.TLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create server cert manager %w", err)
+		log.Errorf("cannot create grpc server cert manager %w", err)
 	}
 	server, err := kitNetGrpc.NewServer(config.Service.GrpcConfig.Addr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
@@ -65,7 +65,7 @@ func Init(config service.Config) (*kitNetGrpc.Server, error) {
 
 	rdCertManager, err := client.New(config.Clients.RDConfig.ResourceDirectoryTLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create server cert manager %w", err)
+		log.Errorf("cannot create rd client cert manager %w", err)
 	}
 	if err := service.AddHandler(server, config.Clients.RDConfig, rdCertManager.GetTLSConfig()); err != nil {
 		return nil, err

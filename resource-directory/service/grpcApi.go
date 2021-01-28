@@ -89,7 +89,7 @@ func NewRequestHandlerFromConfig(config Config, logger *zap.Logger) (*RequestHan
 
 	asCertManager, err := client.New(cli.Authorization.TLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create oauth client cert manager %w", err)
+		log.Errorf("cannot create as grpc client cert manager %w", err)
 	}
 	asConn, err := grpc.Dial(cli.Authorization.Addr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
@@ -99,7 +99,7 @@ func NewRequestHandlerFromConfig(config Config, logger *zap.Logger) (*RequestHan
 
 	raCertManager, err := client.New(cli.ResourceAggregate.TLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create oauth client cert manager %w", err)
+		log.Errorf("cannot create ra grpc client cert manager %w", err)
 	}
 	raConn, err := grpc.Dial(cli.ResourceAggregate.Addr, grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())))
 	if err != nil {

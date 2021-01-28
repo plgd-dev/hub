@@ -140,7 +140,7 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 
 	grpcCertManager, err := server.New(service.RA.GrpcTLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create server cert manager %w", err)
+		log.Errorf("cannot create grpc server cert manager %w", err)
 	}
 	grpcServer, err := kitNetGrpc.NewServer(service.RA.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
@@ -161,7 +161,7 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 
 	asCertManager, err := client.New(clients.AuthServer.AuthTLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create oauth client cert manager %w", err)
+		log.Errorf("cannot create as client cert manager %w", err)
 	}
 	asConn, err := grpc.Dial(clients.AuthServer.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))

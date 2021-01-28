@@ -7,7 +7,7 @@ apis:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      clientCertificateRequired: true
+      clientCertificateRequired: false
     capabilities:
       websocketReadLimit: 8192
       websocketReadTimeout: 4s
@@ -34,7 +34,7 @@ clients:
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
 ui:
-  enabled: false
+  enabled: true
   directory: ""
   oauthClient:
     domain: ""
