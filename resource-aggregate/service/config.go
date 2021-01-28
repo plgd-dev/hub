@@ -19,7 +19,6 @@ type Config struct {
 	OAuth                           manager.Config `envconfig:"OAUTH"`
 	UserDevicesManagerTickFrequency time.Duration  `envconfig:"USER_MGMT_TICK_FREQUENCY" default:"15s"`
 	UserDevicesManagerExpiration    time.Duration  `envconfig:"USER_MGMT_EXPIRATION" default:"1m"`
-	NumParallelRequest              int            `envconfig:"NUM_PARALLEL_REQUEST" default:"8"`
 }
 
 //String return string representation of Config

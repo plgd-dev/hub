@@ -1,10 +1,10 @@
 package service
 
 import (
-	"runtime"
 	"time"
 
 	"github.com/plgd-dev/kit/security/oauth/manager"
+	"github.com/plgd-dev/kit/sync/task/queue"
 )
 
 // Config for application.
@@ -28,16 +28,10 @@ type Config struct {
 	HeartBeat                       time.Duration  `envconfig:"HEARTBEAT" default:"4s"`
 	MaxMessageSize                  int            `envconfig:"MAX_MESSAGE_SIZE" default:"262144"`
 	LogMessages                     bool           `envconfig:"LOG_MESSAGES" default:"false"`
-	NumTaskWorkers                  int            `envconfig:"NUM_TASK_WORKERS"`
-	LimitTasks                      int            `envconfig:"LIMIT_TASKS"`
+	TaskQueue                       queue.Config
 }
 
 func (c Config) CheckForDefaults() Config {
-	if c.NumTaskWorkers == 0 {
-		c.NumTaskWorkers = runtime.NumCPU() * 2
-	}
-	if c.LimitTasks == 0 {
-		c.LimitTasks = 1024 * 1024 * 2
-	}
+	c.TaskQueue.SetDefaults()
 	return c
 }

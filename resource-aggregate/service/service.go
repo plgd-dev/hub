@@ -56,52 +56,21 @@ type NumParallelProcessedRequestLimiter struct {
 	w *semaphore.Weighted
 }
 
-func NewNumParallelProcessedRequestLimiter(n int) *NumParallelProcessedRequestLimiter {
-	return &NumParallelProcessedRequestLimiter{
-		w: semaphore.NewWeighted(int64(n)),
-	}
-}
-
-func (l *NumParallelProcessedRequestLimiter) StreamServerInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	err := l.w.Acquire(stream.Context(), 1)
-	if err != nil {
-		return err
-	}
-	defer l.w.Release(1)
-	wrapped := grpc_middleware.WrapServerStream(stream)
-	return handler(srv, wrapped)
-}
-
-func (l *NumParallelProcessedRequestLimiter) UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	err := l.w.Acquire(ctx, 1)
-	if err != nil {
-		return nil, err
-	}
-	defer l.w.Release(1)
-	return handler(ctx, req)
-}
-
 // New creates new Server with provided store and publisher.
 func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 	listenTLSConfig := serverCertManager.GetServerTLSConfig()
 
-	rateLimiter := NewNumParallelProcessedRequestLimiter(config.NumParallelRequest)
-
 	auth := NewAuth(config.JwksURL, dialTLSConfig)
 
-	streamInterceptors := []grpc.StreamServerInterceptor{
-		rateLimiter.StreamServerInterceptor,
-	}
+	streamInterceptors := []grpc.StreamServerInterceptor{}
 	if logger.Core().Enabled(zapcore.DebugLevel) {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 			grpc_zap.StreamServerInterceptor(logger))
 	}
 	streamInterceptors = append(streamInterceptors, auth.Stream())
 
-	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		rateLimiter.UnaryServerInterceptor,
-	}
+	unaryInterceptors := []grpc.UnaryServerInterceptor{}
 	if logger.Core().Enabled(zapcore.DebugLevel) {
 		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 			grpc_zap.UnaryServerInterceptor(logger))

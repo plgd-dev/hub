@@ -14,7 +14,7 @@ import (
 
 	"github.com/plgd-dev/kit/security/oauth/manager"
 
-	"github.com/plgd-dev/kit/task/queue"
+	"github.com/plgd-dev/kit/sync/task/queue"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -74,7 +74,7 @@ type Server struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 
-	taskQueue *queue.TaskQueue
+	taskQueue *queue.Queue
 
 	sigs chan os.Signal
 }
@@ -89,7 +89,7 @@ type ListenCertManager = interface {
 
 // New creates server.
 func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager) *Server {
-	p, err := queue.New(config.NumTaskWorkers, config.LimitTasks)
+	p, err := queue.New(config.TaskQueue)
 	if err != nil {
 		log.Fatalf("cannot job queue %v", err)
 	}
