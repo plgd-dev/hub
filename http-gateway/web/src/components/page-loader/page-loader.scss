@@ -29,6 +29,12 @@
   width: calc(100% - #{$left_panel_expanded});
   z-index: 9;
 
+  // Loader displayed when waiting for auth status
+  &.auth-loader {
+    top: 0;
+    width: 100%;
+  }
+
   .bar {
     width: 100%;
     height: $page_loader_height;

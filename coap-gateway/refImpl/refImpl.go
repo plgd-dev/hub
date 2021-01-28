@@ -10,6 +10,11 @@ type RefImpl struct {
 	service           *service.Server
 }
 
+func (c Config) CheckForDefaults() Config {
+	c.Service = c.Service.CheckForDefaults()
+	return c
+}
+
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config service.Config) (*RefImpl, error) {
 	logger, err := log.NewLogger(config.Log)

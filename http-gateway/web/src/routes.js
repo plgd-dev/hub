@@ -1,18 +1,18 @@
 import { Switch, Route } from 'react-router-dom'
 
 import { Dashboard } from '@/containers/dashboard'
-import { Things } from '@/containers/things'
+import { ThingsListPage, ThingsDetailsPage } from '@/containers/things'
 import { Services } from '@/containers/services'
 import { Notifications } from '@/containers/notifications'
 
 export const Routes = () => {
   return (
     <Switch>
-      <Route path="/things">
-        <Things />
+      <Route path="/things" exact>
+        <ThingsListPage />
       </Route>
-      <Route path="/services">
-        <Services />
+      <Route path="/things/:id">
+        <ThingsDetailsPage />
       </Route>
       <Route path="/notifications">
         <Notifications />

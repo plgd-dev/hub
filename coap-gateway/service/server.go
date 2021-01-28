@@ -16,6 +16,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/plgd-dev/kit/task/queue"
+
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -73,7 +75,9 @@ type Server struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 
-	sigs             chan os.Signal
+	taskQueue       *queue.TaskQueue
+	sigs            chan os.Signal
+
 	oauthCertManager *client.CertManager
 	raCertManager    *client.CertManager
 	asCertManager    *client.CertManager
@@ -92,6 +96,10 @@ type ListenCertManager = interface {
 // New creates server.
 func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server {
 
+	p, err := queue.New(service.CoapGW.NumTaskWorkers, service.CoapGW.LimitTasks)
+	if err != nil {
+		log.Fatalf("cannot job queue %v", err)
+	}
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -245,6 +253,8 @@ func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server 
 
 		sigs: make(chan os.Signal, 1),
 
+		taskQueue: p,
+
 		ctx:    ctx,
 		cancel: cancel,
 
@@ -271,41 +281,48 @@ func getDeviceID(client *Client) string {
 	return deviceID
 }
 
-func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(s mux.ResponseWriter, req *mux.Message, client *Client)) {
+func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(req *mux.Message, client *Client)) {
 	client, ok := s.Client().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
 		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
 	}
-	switch req.Code {
-	case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
-		fnc(s, req, client)
-	case coapCodes.Empty:
-		if !ok {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
-			return
+	err := server.taskQueue.Submit(func() {
+		switch req.Code {
+		case coapCodes.POST, coapCodes.DELETE, coapCodes.PUT, coapCodes.GET:
+			fnc(req, client)
+		case coapCodes.Empty:
+			if !ok {
+				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
+				return
+			}
+			clientResetHandler(req, client)
+		case coapCodes.Content:
+			// Unregistered observer at a peer send us a notification
+			deviceID := getDeviceID(client)
+			tmp, err := pool.ConvertFrom(req.Message)
+			if err != nil {
+				log.Errorf("DeviceId: %v: cannot convert dropped notification: %v", deviceID, err)
+			} else {
+				decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
+			}
+		default:
+			deviceID := getDeviceID(client)
+			log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
 		}
-		clientResetHandler(s, req, client)
-	case coapCodes.Content:
-		// Unregistered observer at a peer send us a notification
+	})
+	if err != nil {
 		deviceID := getDeviceID(client)
-		tmp, err := pool.ConvertFrom(req.Message)
-		if err != nil {
-			log.Errorf("DeviceId: %v: cannot convert dropped notification: %v", deviceID, err)
-		} else {
-			decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
-		}
-	default:
-		deviceID := getDeviceID(client)
-		log.Errorf("DeviceId: %v: received invalid code: CoapCode(%v)", deviceID, req.Code)
+		client.Close()
+		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %v", deviceID, req.String(), err)
 	}
 }
 
-func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func defaultHandler(req *mux.Message, client *Client) {
 	path, _ := req.Options.Path()
 
 	switch {
 	case strings.HasPrefix("/"+path, uri.ResourceRoute):
-		resourceRouteHandler(s, req, client)
+		resourceRouteHandler(req, client)
 	default:
 		deviceID := getDeviceID(client)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: unknown path %v", deviceID, path), coapCodes.NotFound, req.Token)
@@ -423,6 +440,15 @@ func (server *Server) setupCoapServer() {
 	opts = append(opts, tcp.WithContext(server.ctx))
 	opts = append(opts, tcp.WithHeartBeat(server.HeartBeat))
 	opts = append(opts, tcp.WithMaxMessageSize(server.MaxMessageSize))
+	opts = append(opts, tcp.WithGoPool(func(f func()) error {
+		// we call directly function in connection-goroutine because
+		// pairing request/response cannot be done in taskQueue for a observe resource.
+		// - the observe resource creates task which wait for the response and this wait can be infinite
+		// if all task goroutines are processing observations and they are waiting for the responses, which
+		// will be stored in task queue.  it happens when we use task queue here.
+		f()
+		return nil
+	}))
 	server.coapServer = tcp.NewServer(opts...)
 }
 
@@ -461,6 +487,7 @@ func (server *Server) serveWithHandlingSignal() error {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 	<-server.sigs
+	server.taskQueue.Release()
 
 	server.coapServer.Stop()
 	wg.Wait()

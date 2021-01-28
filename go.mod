@@ -21,10 +21,10 @@ require (
 	github.com/lestrrat-go/jwx v1.0.5
 	github.com/nats-io/nats.go v1.10.1-0.20201111151633-9e1f4a0d80d8
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/panjf2000/ants/v2 v2.4.2
+	github.com/panjf2000/ants/v2 v2.4.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210120114953-b35ce3a31147
-	github.com/plgd-dev/kit v0.0.0-20210115130350-b15ec8f1b200
+	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210127193502-843831900a67
+	github.com/plgd-dev/kit v0.0.0-20210126204005-bd8ff5e17406
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.15.5
@@ -46,5 +46,5 @@ require (
 	google.golang.org/grpc v1.34.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

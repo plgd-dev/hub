@@ -1,9 +1,8 @@
 FROM alpine:3.12 AS build
 
 RUN apk add --no-cache curl git build-base gcc linux-headers patch
-RUN git clone --recursive https://github.com/iotivity/iotivity-lite.git
-COPY ./patches/devsim.diff /devsim.diff
-RUN (cd /iotivity-lite && patch -p1 < /devsim.diff)
+RUN git clone --recursive -b plgd.dev https://github.com/iotivity/iotivity-lite.git
+COPY ./src/ /iotivity-lite/
 RUN make -C /iotivity-lite/port/linux CLOUD=1 SECURE=1 DEBUG=1 MNT=1 cloud_server
 
 FROM alpine:3.12 AS service

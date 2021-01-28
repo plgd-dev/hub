@@ -64,7 +64,7 @@ func validatePublish(w wkRd) error {
 	return nil
 }
 
-func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	authCtx := client.loadAuthorizationContext()
 
 	var w wkRd
@@ -151,7 +151,7 @@ func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs [
 	return
 }
 
-func resourceDirectoryUnpublishHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 	queries, err := req.Options.Queries()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot get queries: %w", err), coapCodes.BadRequest, req.Token)
@@ -178,7 +178,7 @@ type resourceDirectorySelector struct {
 	SelectionCriteria int `json:"sel"`
 }
 
-func resourceDirectoryGetSelector(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourceDirectoryGetSelector(req *mux.Message, client *Client) {
 	var rds resourceDirectorySelector //we want to use sel:0 to prefer cloud RD
 
 	accept := coap.GetAccept(req.Options)
@@ -196,15 +196,15 @@ func resourceDirectoryGetSelector(s mux.ResponseWriter, req *mux.Message, client
 	client.sendResponse(coapCodes.Content, req.Token, accept, out)
 }
 
-func resourceDirectoryHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func resourceDirectoryHandler(req *mux.Message, client *Client) {
 	switch req.Code {
 	case coapCodes.POST:
-		resourceDirectoryPublishHandler(s, req, client)
+		resourceDirectoryPublishHandler(req, client)
 	case coapCodes.DELETE:
-		resourceDirectoryUnpublishHandler(s, req, client)
+		resourceDirectoryUnpublishHandler(req, client)
 	case coapCodes.GET:
-		resourceDirectoryGetSelector(s, req, client)
+		resourceDirectoryGetSelector(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

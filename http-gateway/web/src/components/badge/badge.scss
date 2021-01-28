@@ -1,0 +1,69 @@
+@import '@/common/styles/colors.scss';
+
+$margin_size: 5px;
+
+.badge {
+  text-transform: lowercase;
+  font-size: 12px;
+  padding: 2px 7px;
+  font-weight: 400;
+  white-space: nowrap;
+  color: $blue_100;
+  background-color: $white_100;
+  box-sizing: border-box;
+  border: 1px solid $default_border_color;
+
+  // Margin horizontal
+  &.mh-l {
+    margin-left: $margin_size;
+  }
+  &.mh-r {
+    margin-right: $margin_size;
+  }
+
+  // Margin vertical
+  &.mv-t {
+    margin-top: $margin_size;
+  }
+  &.mv-b {
+    margin-bottom: $margin_size;
+  }
+
+  &.green {
+    background-color: $green_50;
+    color: $green_100;
+    border-color: $green_50;
+  }
+
+  &.red {
+    background-color: $red_50;
+    color: $red_100;
+    border-color: $red_50;
+  }
+}
+
+.badges-box-vertical {
+  display: flex;
+  flex-direction: column;
+
+  span.badge {
+    margin-bottom: $margin_size;
+
+    &:last-child {
+      margin: 0;
+    }
+  }
+}
+
+.badges-box-horizontal {
+  display: flex;
+  flex-direction: row;
+
+  span.badge {
+    margin-right: $margin_size;
+
+    &:last-child {
+      margin: 0;
+    }
+  }
+}

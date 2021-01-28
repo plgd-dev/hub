@@ -1,1 +1,2 @@
-export * from './things'
+export * from './things-list-page'
+export * from './things-details-page'

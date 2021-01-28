@@ -38,7 +38,7 @@ func validateRefreshToken(req CoapRefreshTokenReq) error {
 	return nil
 }
 
-func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	var refreshToken CoapRefreshTokenReq
 	err := cbor.ReadFrom(req.Body, &refreshToken)
 	if err != nil {
@@ -58,7 +58,7 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 		RefreshToken: refreshToken.RefreshToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token for %v: %w", refreshToken.DeviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
 		return
 	}
 
@@ -71,12 +71,12 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token for %v: %w", refreshToken.DeviceID, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(coapResp)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token for %v: %w", refreshToken.DeviceID, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
@@ -85,11 +85,11 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 
 // RefreshToken
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.tokenrefresh.swagger.json
-func refreshTokenHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func refreshTokenHandler(req *mux.Message, client *Client) {
 	switch req.Code {
 	case coapCodes.POST:
-		refreshTokenPostHandler(s, req, client)
+		refreshTokenPostHandler(req, client)
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

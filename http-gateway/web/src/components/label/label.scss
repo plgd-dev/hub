@@ -1,0 +1,56 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
+.label {
+  display: block;
+  margin-bottom: 10px;
+
+  .label-data {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &.inline {
+    margin-bottom: 0;
+
+    .label-data {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 35px;
+      border-bottom: 1px solid $default_border_color;
+      box-sizing: border-box;
+      padding: 6px 0;
+    }
+
+    .label-title {
+      margin: 0;
+      font-size: $font_size;
+      padding-right: 20px;
+    }
+  }
+
+  .label-title {
+    font-size: $font_size_small;
+    text-align: left;
+    margin-bottom: 5px;
+
+    .required {
+      display: inline-block;
+      margin-left: 2px;
+      color: $blue_100;
+    }
+
+    &.has-error {
+      .required {
+        color: $red_100;
+      }
+    }
+  }
+
+  .label-error-message {
+    color: $red_100;
+    margin-top: 5px;
+    font-size: $font_size_small;
+  }
+}

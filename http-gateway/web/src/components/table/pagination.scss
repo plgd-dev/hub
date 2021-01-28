@@ -1,0 +1,67 @@
+@import '@/common/styles/colors.scss';
+
+.plgd-pagination {
+  margin: 0;
+
+  .page-item {
+    .page-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      height: 40px;
+      min-width: 40px;
+      padding: 0;
+      border-radius: 2px;
+      color: $blue_100;
+      background-color: $white_100;
+      border-color: $black_20;
+    }
+
+    &.step {
+      .page-link {
+        padding: 0 15px;
+      }
+    }
+
+    &.active,
+    &:hover {
+      .page-link {
+        background-color: rgba($black_20, 0.4);
+      }
+    }
+
+    &.active {
+      cursor: default;
+    }
+
+    .page-link {
+      &:active:not(.active),
+      &:focus {
+        background-color: $black_20 !important;
+        box-shadow: none;
+      }
+    }
+
+    &.disabled,
+    &.disabled:hover {
+      .page-link {
+        background-color: $white_100;
+      }
+    }
+
+    &:last-child {
+      .page-link {
+        border-top-right-radius: 2px;
+        border-bottom-right-radius: 2px;
+      }
+    }
+
+    &:last-child {
+      .page-link {
+        border-top-left-radius: 2px;
+        border-bottom-left-radius: 2px;
+      }
+    }
+  }
+}

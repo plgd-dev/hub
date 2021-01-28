@@ -4,6 +4,7 @@ import (
 	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
 	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
+	"runtime"
 	"time"
 
 	"github.com/plgd-dev/kit/security/certManager/client"
@@ -15,6 +16,16 @@ type Config struct {
 	Log              log.Config     `yaml:"log" json:"log"`
 	Service          APIsConfig	    `yaml:"apis" json:"apis"`
 	Clients			 ClientsConfig  `yaml:"clients" json:"clients"`
+}
+
+func (c Config) CheckForDefaults() Config {
+	if c.Service.CoapGW.NumTaskWorkers == 0 {
+		c.Service.CoapGW.NumTaskWorkers = runtime.NumCPU() * 2
+	}
+	if c.Service.CoapGW.LimitTasks == 0 {
+		c.Service.CoapGW.LimitTasks = 1024 * 1024 * 2
+	}
+	return c
 }
 
 type APIsConfig struct {
@@ -29,6 +40,9 @@ type CoapConfig struct {
 	HeartBeat                       time.Duration      `yaml:"heartbeat" json:"heartbeat" default:"4s"`
 	ReconnectInterval               time.Duration      `yaml:"reconnectInterval" json:"reconnectInterval" default:"10s"`
 	Capabilities                    CapabilitiesConfig `yaml:"capabilities" json:"capabilities"`
+	LogMessages                     bool           `yaml:"logMessageEnabled" json:"logMessageEnabled" default:"false"`
+	NumTaskWorkers                  int            `yaml:"numTaskWorkers,omitempty" json:"numTaskWorkers"`
+	LimitTasks                      int            `yaml:"limitTasks,omitempty" json:"limitTasks"`
 }
 
 type CapabilitiesConfig struct {

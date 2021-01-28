@@ -53,8 +53,11 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 		if err == io.EOF {
 			break
 		}
+		if status.Convert(err).Code() == codes.NotFound {
+			return
+		}
 		if err != nil {
-			fmt.Errorf("signIn: cannot receive link for the device %v: %w", deviceID, err)
+			log.Errorf("signIn: cannot receive link for the device %v: %v", deviceID, err)
 			return
 		}
 		client.observeResource(ctx, m.GetDeviceId(), m.GetHref(), m.GetPolicies().GetBitFlags()&int32(schema.Observable) == int32(schema.Observable), true)
@@ -62,7 +65,7 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, signIn CoapSignInReq) {
+func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	resp, err := client.server.asClient.SignIn(req.Context, &pbAS.SignInRequest{
 		DeviceId:    signIn.DeviceID,
 		UserId:      signIn.UserID,
@@ -222,7 +225,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	registerObservationsForPublishedResources(req.Context, client, signIn.DeviceID)
 }
 
-func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, signOut CoapSignInReq) {
+func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
 	// fix for iotivity-classic
 	authCurrentCtx := client.loadAuthorizationContext()
 	userID := signOut.UserID
@@ -273,7 +276,7 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 
 // Sign-in
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
-func signInHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
+func signInHandler(req *mux.Message, client *Client) {
 	switch req.Code {
 	case coapCodes.POST:
 		var signIn CoapSignInReq
@@ -284,11 +287,11 @@ func signInHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 		}
 		switch signIn.Login {
 		case true:
-			signInPostHandler(s, req, client, signIn)
+			signInPostHandler(req, client, signIn)
 		default:
-			signOutPostHandler(s, req, client, signIn)
+			signOutPostHandler(req, client, signIn)
 		}
 	default:
-		client.logAndWriteErrorResponse(fmt.Errorf("Forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("forbidden request from %v", client.remoteAddrString()), coapCodes.Forbidden, req.Token)
 	}
 }

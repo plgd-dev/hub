@@ -5,10 +5,12 @@ html,
 body,
 input,
 textarea,
-select {
-  font-family: 'Muli', sans-serif;
+select,
+table {
+  font-family: 'Mulish', sans-serif;
   font-size: $font_size;
   font-weight: 400;
+  color: $text_desc;
 }
 
 a {
@@ -27,4 +29,28 @@ h6 {
 
 h2 {
   font-size: $font_size_h2;
+}
+
+.row {
+  margin-right: -10px;
+  margin-left: -10px;
+}
+
+.col {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+// Generate m and p classes
+$spaceamounts: (0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100);
+$sides: (top, bottom, left, right); // Leave this variable alone
+@each $space in $spaceamounts {
+  @each $side in $sides {
+    .m-#{str-slice($side, 0, 1)}-#{$space} {
+      margin-#{$side}: #{$space}px !important;
+    }
+    .p-#{str-slice($side, 0, 1)}-#{$space} {
+      padding-#{$side}: #{$space}px !important;
+    }
+  }
 }

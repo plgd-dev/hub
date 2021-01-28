@@ -24,13 +24,6 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
         {_(t.things)}
       </MenuItem>
       <MenuItem
-        to="/services"
-        icon="fa-cloud"
-        tooltip={collapsed && _(t.services)}
-      >
-        {_(t.services)}
-      </MenuItem>
-      <MenuItem
         to="/notifications"
         icon="fa-bell"
         tooltip={collapsed && _(t.notifications)}

@@ -80,7 +80,7 @@ func Test_clientDeleteHandler(t *testing.T) {
 			defer cancel()
 			req, err := tcp.NewDeleteRequest(ctx, tt.args.path)
 			resp, err := co.Do(req)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 			if tt.wantsContent != nil {
 				require.NotEmpty(t, resp.Body())

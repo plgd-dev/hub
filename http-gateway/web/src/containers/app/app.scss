@@ -1,10 +1,16 @@
 @import '~bootstrap/scss/bootstrap';
 @import '@/assets/fonts/fontawesome/css/all.min.css';
+@import 'react-toastify/dist/ReactToastify.css';
 
+@import '@/common/styles/colors.scss';
 @import '@/common/styles/default.scss';
 @import '@/components/page-loader/page-loader.scss';
 @import '@/components/breadcrumbs/breadcrumbs.scss';
 @import '@/components/layout/layout.scss';
+@import '@/components/table/table.scss';
+@import '@/components/table/pagination.scss';
+@import '@/components/badge/badge.scss';
+@import '@/components/label/label.scss';
 
 #app {
   padding: 0;
@@ -30,7 +36,15 @@
   }
 }
 
-.client-error-message {
-  margin: 20px;
+.client-error-message,
+.page-loading-text {
   text-align: center;
+  margin: 10px;
+  padding: 10px;
+}
+
+.client-error-message {
+  background-color: $red_50;
+  border: 1px solid $red_100;
+  color: $red_100;
 }
