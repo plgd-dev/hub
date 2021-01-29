@@ -6,7 +6,7 @@ import isEqual from 'lodash/isEqual'
 import { breadcrumbsShape } from './shapes'
 
 export const Breadcrumbs = memo(props => {
-  const { className, items, loading, ...rest } = props
+  const { className, items, ...rest } = props
 
   const renderedItems = items.map((item, index) => {
     const key = `breadcrumb-item-${index}`
@@ -50,10 +50,7 @@ export const Breadcrumbs = memo(props => {
   })
 
   return (
-    <div
-      {...rest}
-      className={classNames('breadcrumbs', className)}
-    >
+    <div {...rest} className={classNames('breadcrumbs', className)}>
       {renderedItems}
     </div>
   )

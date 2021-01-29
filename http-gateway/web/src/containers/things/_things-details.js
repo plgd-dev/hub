@@ -1,6 +1,7 @@
 import { createElement, memo } from 'react'
 import { useIntl } from 'react-intl'
 import PropTypes from 'prop-types'
+import classNames from 'classnames'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 
@@ -16,7 +17,11 @@ export const ThingsDetails = memo(({ data, loading }) => {
   const { formatMessage: _ } = useIntl()
   const isOnline = thingsStatuses.ONLINE === data?.status
   const LabelWithLoading = p =>
-    createElement(Label, { ...p, inline: true, shimmering: loading })
+    createElement(Label, {
+      ...p,
+      inline: true,
+      className: classNames({ shimmering: loading }),
+    })
 
   return (
     <Row>
