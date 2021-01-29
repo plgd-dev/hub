@@ -87,8 +87,8 @@ func (s *subscription) UnregisterFromProjection(ctx context.Context, deviceID st
 	return s.resourceProjection.Unregister(deviceID)
 }
 
-func (s *subscription) Send(ctx context.Context, event pb.Event) error {
-	return s.send(ctx, event)
+func (s *subscription) Send(event *pb.Event) error {
+	return s.send(event)
 }
 
 func (s *subscription) Close(reason error) error {
@@ -104,7 +104,7 @@ func (s *subscription) Close(reason error) error {
 		errors = append(errors, err)
 	}
 
-	err = s.Send(context.Background(), pb.Event{
+	err = s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_SubscriptionCanceled_{

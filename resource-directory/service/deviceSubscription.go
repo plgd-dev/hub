@@ -52,7 +52,7 @@ func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link
 	if len(toSend) == 0 && len(links) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourcePublished_{
@@ -84,7 +84,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 	if len(toSend) == 0 && len(links) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUnpublished_{
@@ -108,7 +108,7 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdatePending_{
@@ -130,7 +130,7 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 	if s.FilterByVersion(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdated_{
@@ -152,7 +152,7 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 	if s.FilterByVersion(retrievePending.GetResourceId().GetDeviceId(), retrievePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrievePending_{
@@ -174,7 +174,7 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 	if s.FilterByVersion(retrieved.GetResourceId().GetDeviceId(), retrieved.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrieved_{
@@ -196,7 +196,7 @@ func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, 
 	if s.FilterByVersion(deletePending.GetResourceId().GetDeviceId(), deletePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeletePending_{
@@ -218,7 +218,7 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 	if s.FilterByVersion(deleted.GetResourceId().GetDeviceId(), deleted.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeleted_{

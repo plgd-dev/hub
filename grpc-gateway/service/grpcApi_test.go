@@ -39,12 +39,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
-							Token: "testToken",
 							ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 								Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 							},
 						},
 					},
+					Token: "testToken",
 				},
 				{
 					Type: &pb.Event_SubscriptionCanceled_{
@@ -52,6 +52,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 							Reason: "not supported",
 						},
 					},
+					Token: "testToken",
 				},
 			},
 		},
@@ -73,12 +74,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
-							Token: "testToken",
 							ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 								Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 							},
 						},
 					},
+					Token: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceRegistered_{
@@ -86,6 +87,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 							DeviceIds: []string{deviceID},
 						},
 					},
+					Token: "testToken",
 				},
 			},
 		},
@@ -107,12 +109,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
-							Token: "testToken",
 							ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 								Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 							},
 						},
 					},
+					Token: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceOnline_{
@@ -120,6 +122,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 							DeviceIds: []string{deviceID},
 						},
 					},
+					Token: "testToken",
 				},
 			},
 		},
@@ -142,14 +145,14 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 				{
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
-							Token: "testToken",
 							ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 								Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 							},
 						},
 					},
+					Token: "testToken",
 				},
-				test.ResourceLinkToPublishEvent(deviceID, test.GetAllBackendResourceLinks()),
+				test.ResourceLinkToPublishEvent(deviceID, "testToken", test.GetAllBackendResourceLinks()),
 			},
 		},
 	}

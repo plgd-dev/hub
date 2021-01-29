@@ -274,7 +274,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		Token:          "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
-				Token: "testToken",
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 				},
@@ -315,7 +314,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		Token: "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
-				Token: "testToken",
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 				},
@@ -373,7 +371,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		Token:          "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
-				Token: "testToken",
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 				},
@@ -406,7 +403,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			Token:          "testToken",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
-					Token: "testToken",
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 					},
@@ -448,7 +444,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			Token:          "testToken",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
-					Token: "testToken",
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 					},
@@ -570,7 +565,7 @@ func EncodeToCbor(t *testing.T, v interface{}) []byte {
 	return d
 }
 
-func ResourceLinkToPublishEvent(deviceID string, links []schema.ResourceLink) *pb.Event {
+func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceLink) *pb.Event {
 	out := make([]*pb.ResourceLink, 0, 32)
 	for _, l := range links {
 		link := pb.SchemaResourceLinkToProto(l)
@@ -583,6 +578,7 @@ func ResourceLinkToPublishEvent(deviceID string, links []schema.ResourceLink) *p
 				Links: out,
 			},
 		},
+		Token: token,
 	}
 }
 

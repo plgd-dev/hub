@@ -42,7 +42,7 @@ type subscriptions struct {
 	initSubscriptions     map[string]map[string]Subscriber // map[userId]map[subscriptionID]
 }
 
-type SendEventFunc func(senderCtx context.Context, e pb.Event) error
+type SendEventFunc func(e *pb.Event) error
 
 func NewSubscriptions() *subscriptions {
 	return &subscriptions{
@@ -659,11 +659,7 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
 
-	var wg sync.WaitGroup
 	var localSubscriptions sync.Map
-
-	defer wg.Wait()
-	wg.Add(1)
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -682,33 +678,12 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 		}
 	}()
 
-	sendChan := make(chan pb.Event, 16)
-	go func() {
-		defer wg.Done()
-		for {
-			select {
-			case e := <-sendChan:
-				err := srv.Send(&e)
-				if err != nil {
-					log.Errorf("cannot send event %+v: %v", e, err)
-					return
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	send := func(senderCtx context.Context, e pb.Event) error {
+	var sendMutex sync.Mutex
+	send := func(e *pb.Event) error {
 		log.Debugf("subscriptions.SubscribeForEvents.send: %v %+v", e.GetSubscriptionId(), e.GetType())
-
-		select {
-		case sendChan <- e:
-			return nil
-		case <-ctx.Done():
-			return fmt.Errorf("cannot send event: stream context returns error: %v", ctx.Err())
-		case <-senderCtx.Done():
-			return fmt.Errorf("cannot send event: sender context returns error: %v", ctx.Err())
-		}
+		sendMutex.Lock()
+		defer sendMutex.Unlock()
+		return srv.Send(e)
 	}
 
 	for {
@@ -725,7 +700,6 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 			Token: subReq.Token,
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
-					Token: subReq.Token,
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
 						Code: pb.Event_OperationProcessed_ErrorStatus_OK,
 					},
@@ -740,7 +714,7 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 				subRes.GetOperationProcessed().ErrorStatus.Message = err.Error()
 			}
 			subRes.SubscriptionId = r.GetSubscriptionId()
-			send(ctx, subRes)
+			send(&subRes)
 			continue
 		}
 
@@ -748,13 +722,13 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 		if err != nil {
 			subRes.GetOperationProcessed().ErrorStatus.Code = pb.Event_OperationProcessed_ErrorStatus_ERROR
 			subRes.GetOperationProcessed().ErrorStatus.Message = fmt.Sprintf("cannot generate subscription ID: %v", err)
-			send(ctx, subRes)
+			send(&subRes)
 			continue
 		}
 
 		subRes.SubscriptionId = subID.String()
 		localSubscriptions.Store(subRes.SubscriptionId, true)
-		send(ctx, subRes)
+		send(&subRes)
 
 		switch r := subReq.GetFilterBy().(type) {
 		case *pb.SubscribeForEvents_DevicesEvent:
@@ -768,7 +742,7 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 			err = nil
 		default:
 			err = fmt.Errorf("not supported")
-			send(ctx, pb.Event{
+			send(&pb.Event{
 				SubscriptionId: subRes.SubscriptionId,
 				Token:          subReq.Token,
 				Type: &pb.Event_SubscriptionCanceled_{

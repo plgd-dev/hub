@@ -92,7 +92,7 @@ func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Contex
 	if !found {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceChanged_{

@@ -96,7 +96,7 @@ func (s *devicesSubscription) NotifyOfRegisteredDevice(ctx context.Context, devi
 	if !found {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceRegistered_{
@@ -118,7 +118,7 @@ func (s *devicesSubscription) NotifyOfUnregisteredDevice(ctx context.Context, de
 	if !found {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceUnregistered_{
@@ -154,7 +154,7 @@ func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []D
 	if len(toSend) == 0 && len(devs) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceOnline_{
@@ -185,7 +185,7 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 	if len(toSend) == 0 && len(devs) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceOffline_{
