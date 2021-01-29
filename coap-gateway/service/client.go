@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
@@ -81,8 +80,9 @@ type Client struct {
 	resourceSubscriptions *kitSync.Map // [token]
 	//deviceSubscriptions   *kitSync.Map // [token]
 
-	mutex   sync.Mutex
-	authCtx *authCtx
+	mutex                        sync.Mutex
+	authCtx                      *authCtx
+	deviceSubscriptionCancelFunc func(ctx context.Context) error
 }
 
 //newClient create and initialize client
@@ -334,19 +334,28 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 	}
 }
 
-func (client *Client) cancelDeviceSubscriptions(wantWait bool) {
-	deviceSubscriptions := client.deviceSubscriptions.PullOutAll()
-	for _, v := range deviceSubscriptions {
-		o, ok := grpcClient.ToDeviceSubscription(v.(*atomic.Value).Load(), true)
-		if !ok {
-			continue
-		}
-		wait, err := o.Cancel()
-		if err != nil {
-			log.Errorf("cannot cancel device subscription: %v", err)
-		} else if wantWait {
-			wait()
-		}
+func (client *Client) pullOutDeviceSubscription() func(ctx context.Context) error {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	c := client.deviceSubscriptionCancelFunc
+	client.deviceSubscriptionCancelFunc = nil
+	return c
+}
+
+func (client *Client) storeDeviceSubscription(cancel func(ctx context.Context) error) bool {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	if client.deviceSubscriptionCancelFunc != nil {
+		return false
+	}
+	client.deviceSubscriptionCancelFunc = cancel
+	return true
+}
+
+func (client *Client) cancelDeviceSubscriptions(ctx context.Context) {
+	cancel := client.pullOutDeviceSubscription()
+	if cancel != nil {
+		cancel(ctx)
 	}
 }
 
@@ -358,7 +367,10 @@ func (client *Client) OnClose() {
 	client.server.oicPingCache.Delete(client.remoteAddrString())
 	client.cleanObservedResources()
 	client.cancelResourceSubscriptions(false)
-	client.cancelDeviceSubscriptions(false)
+
+	ctx, cancel := context.WithTimeout(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(context.Background(), aCtx.AccessToken), aCtx.UserID), client.server.RequestTimeout)
+	defer cancel()
+	client.cancelDeviceSubscriptions(ctx)
 
 	oldAuthCtx := client.replaceAuthorizationContext(nil)
 

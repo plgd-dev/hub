@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
-	"sync/atomic"
 	"time"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
-	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -143,76 +140,65 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		newDevice = true
 	case oldAuthCtx.GetDeviceId() != signIn.DeviceID || oldAuthCtx.UserID != signIn.UserID:
 		client.cancelResourceSubscriptions(true)
-		client.cancelDeviceSubscriptions(true)
+		client.cancelDeviceSubscriptions(req.Context)
 		newDevice = true
 	}
 
 	if newDevice {
 		h := deviceSubscriptionHandlers{
 			onResourceUpdatePending: func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
-				return client.updateResource(ctx, val)
+				client.server.taskQueue.Submit(func() {
+					err := client.updateResource(ctx, val)
+					if err != nil {
+						log.Error(err)
+					}
+				})
+				return nil
 			},
 			onResourceRetrievePending: func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
-				return client.retrieveResource(ctx, val)
+				client.server.taskQueue.Submit(func() {
+					err := client.retrieveResource(ctx, val)
+					if err != nil {
+						log.Error(err)
+					}
+				})
+				return nil
 			},
 			onResourceDeletePending: func(ctx context.Context, val *pb.Event_ResourceDeletePending) error {
-				return client.deleteResource(ctx, val)
+				return client.server.taskQueue.Submit(func() {
+					err := client.deleteResource(ctx, val)
+					if err != nil {
+						log.Error(err)
+					}
+				})
 			},
 			onClose: func() {
-				log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", signIn.DeviceID)
+				client.server.taskQueue.Submit(func() {
+					log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending, ResourceDeletePending) was closed", signIn.DeviceID)
+					cancelSubscription := client.pullOutDeviceSubscription()
+					if cancelSubscription != nil {
+						ctx, cancel := context.WithCancel(context.Background())
+						cancel()
+						cancelSubscription(ctx)
+					}
+				})
+			},
+			onError: func(err error) {
+				client.server.taskQueue.Submit(func() {
+					log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending, ResourceDeletePending) ends with error: %v", signIn.DeviceID, err)
+					client.Close()
+				})
 			},
 		}
-		h.onError = func(err error) {
-			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) ends with error: %v", signIn.DeviceID, err)
-			if !strings.Contains(err.Error(), "transport is closing") {
-				client.Close()
-				return
-			}
-
-			client.deviceSubscriptions.Delete(pendingDeviceSubscriptionToken)
-			for {
-				log.Debugf("reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending)", signIn.DeviceID)
-				var devSub atomic.Value
-				_, loaded := client.deviceSubscriptions.LoadOrStore(pendingDeviceSubscriptionToken, &devSub)
-				if loaded {
-					return
-				}
-				sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
-				if err == nil {
-					devSub.Store(sub)
-					return
-				}
-				client.deviceSubscriptions.Delete(pendingDeviceSubscriptionToken)
-				if strings.Contains(err.Error(), "connection refused") {
-					err = nil
-				}
-				if err != nil {
-					client.Close()
-					log.Errorf("cannot reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending): %v", signIn.DeviceID, err)
-					return
-				}
-				select {
-				case <-client.Context().Done():
-					client.Close()
-					return
-				case <-time.After(client.server.ReconnectInterval):
-				}
-			}
-		}
-		var devSub atomic.Value
-		_, loaded := client.deviceSubscriptions.LoadOrStore(pendingDeviceSubscriptionToken, &devSub)
-		if loaded {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot store device %v pending subscription: device subscription with token %v already exist", signIn.DeviceID, pendingDeviceSubscriptionToken), coapCodes.InternalServerError, req.Token)
-			client.Close()
-			return
-		}
-		sub, err := grpcClient.NewDeviceSubscription(req.Context, signIn.DeviceID, &h, &h, client.server.rdClient)
+		cancelSubscription, err := client.server.subscribeToDevice(req.Context, signIn.UserID, signIn.DeviceID, &h)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
-		devSub.Store(sub)
+		if !client.storeDeviceSubscription(cancelSubscription) {
+			cancelSubscription(req.Context)
+		}
 	}
 	if expired.IsZero() {
 		client.server.expirationClientCache.Delete(signIn.DeviceID)
@@ -247,19 +233,20 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		client.Close()
 		return
 	}
+	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
+		client.Close()
+		return
+	}
+	ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
 
 	client.cancelResourceSubscriptions(true)
-	client.cancelDeviceSubscriptions(true)
+	client.cancelDeviceSubscriptions(ctx)
 	oldAuthCtx := client.replaceAuthorizationContext(nil)
 	if oldAuthCtx.DeviceId != "" {
 		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
-		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
-			client.Close()
-			return
-		}
-		req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), oldAuthCtx.UserID)
+		req.Context = kitNetGrpc.CtxWithUserID(ctx, oldAuthCtx.UserID)
 		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.DeviceId, &pbCQRS.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),

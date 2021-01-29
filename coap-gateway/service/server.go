@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -302,7 +303,7 @@ func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
 	return func() {}, nil
 }
 
-func (server *Server) subscribeToDevice(ctx context.Context, userID string, deviceID string, handler deviceSubscriptionHandlers) (func(context.Context) error, error) {
+func (server *Server) subscribeToDevice(ctx context.Context, userID string, deviceID string, handler *deviceSubscriptionHandlers) (func(context.Context) error, error) {
 	channel := &userDeviceSubscriptionChannel{
 		counter: 1,
 		userID:  userID,
@@ -331,12 +332,16 @@ func (server *Server) subscribeToDevice(ctx context.Context, userID string, devi
 		cancel()
 		return nil, err
 	}
-	sub, err := ch.Subscribe(ctx, deviceID, nil, handler)
+	sub, err := ch.Subscribe(ctx, deviceID, handler, handler)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
+	var cancelled uint32
 	return func(context.Context) error {
+		if !atomic.CompareAndSwapUint32(&cancelled, 0, 1) {
+			return nil
+		}
 		defer cancel()
 		return sub.Cancel(ctx)
 	}, nil

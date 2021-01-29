@@ -286,7 +286,11 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		return nil, err
 	}
 
+	var cancelled uint32
 	cancel := func(ctx context.Context) error {
+		if !atomic.CompareAndSwapUint32(&cancelled, 0, 1) {
+			return nil
+		}
 		cancelToken, err := uuid.NewV4()
 		if err != nil {
 			return fmt.Errorf("cannot generate token for cancellation")
@@ -334,7 +338,7 @@ func (s *DeviceSubscriptions) cancelSubscription(subID string) error {
 func (s *DeviceSubscriptions) getHandler(ev *pb.Event) *deviceSub {
 	ha, ok := s.handlers.Load(ev.GetToken())
 	if !ok {
-		s.errFunc(fmt.Errorf("invalid event from subscription - ID: %v, Token: %v, Type %v", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType()))
+		s.errFunc(fmt.Errorf("invalid event from subscription - ID: %v, Token: %v, Type %T", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType()))
 		err := s.send(&pb.SubscribeForEvents{
 			FilterBy: &pb.SubscribeForEvents_CancelSubscription_{
 				CancelSubscription: &pb.SubscribeForEvents_CancelSubscription{
@@ -343,7 +347,7 @@ func (s *DeviceSubscriptions) getHandler(ev *pb.Event) *deviceSub {
 			},
 		})
 		if err != nil {
-			s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+			s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 		}
 		return nil
 	}
@@ -386,12 +390,8 @@ func (s *DeviceSubscriptions) runRecv() {
 			ha.Error(fmt.Errorf(reason))
 			continue
 		}
-
-		h := s.getHandler(ev)
-		if h == nil {
-			continue
-		}
-		if ct := ev.GetOperationProcessed(); ct != nil {
+		operationProcessed := ev.GetOperationProcessed()
+		if operationProcessed != nil {
 			opChan, ok := s.processedOperations.Load(ev.GetToken())
 			if !ok {
 				continue
@@ -399,16 +399,23 @@ func (s *DeviceSubscriptions) runRecv() {
 			select {
 			case opChan.(chan *pb.Event) <- ev:
 			default:
-				s.errFunc(fmt.Errorf("cannot send operation processed - ID: %v, Token: %v, Type %v: channel is exhausted", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType()))
+				s.errFunc(fmt.Errorf("cannot send operation processed - ID: %v, Token: %v, Type %T: channel is exhausted", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType()))
 			}
-		} else if ct := ev.GetResourcePublished(); ct != nil {
+			continue
+		}
+
+		h := s.getHandler(ev)
+		if h == nil {
+			continue
+		}
+		if ct := ev.GetResourcePublished(); ct != nil {
 			err = h.HandleResourcePublished(s.client.Context(), ct)
 			if err == nil {
 				continue
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceUnpublished(); ct != nil {
 			err = h.HandleResourceUnpublished(s.client.Context(), ct)
@@ -417,7 +424,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceUpdatePending(); ct != nil {
 			err = h.HandleResourceUpdatePending(s.client.Context(), ct)
@@ -426,7 +433,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceUpdated(); ct != nil {
 			err = h.HandleResourceUpdated(s.client.Context(), ct)
@@ -435,7 +442,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceRetrievePending(); ct != nil {
 			err = h.HandleResourceRetrievePending(s.client.Context(), ct)
@@ -444,7 +451,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceRetrieved(); ct != nil {
 			err = h.HandleResourceRetrieved(s.client.Context(), ct)
@@ -453,7 +460,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceDeletePending(); ct != nil {
 			err = h.HandleResourceDeletePending(s.client.Context(), ct)
@@ -462,7 +469,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceDeleted(); ct != nil {
 			err = h.HandleResourceDeleted(s.client.Context(), ct)
@@ -471,7 +478,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		} else {
 			h, ok := s.handlers.PullOut(ev.GetToken())
@@ -482,7 +489,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			ha.Error(fmt.Errorf("unknown event %T occurs on recv device events: %+v", ev, ev))
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %v: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
 			}
 		}
 	}
