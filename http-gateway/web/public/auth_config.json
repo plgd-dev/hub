@@ -1,6 +1,7 @@
 {
-  "domain": "auth.plgd.cloud",
-  "clientID": "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS",
+  "domain": "",
+  "clientID": "",
   "audience": "",
-  "scope": ""
+  "scope": "",
+  "apiEndpointUrl": ""
 }

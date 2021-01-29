@@ -5,19 +5,22 @@ import classNames from 'classnames'
 import { Layout } from '@/components/layout'
 import { NotFoundPage } from '@/containers/not-found-page'
 import { useApi } from '@/common/hooks'
+import { useAppConfig } from '@/containers/app'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
 import { ThingsDetails } from './_things-details'
 import { ThingsResourcesList } from './_things-resources-list'
+import { thingsApiEndpoints } from './constants'
 import { messages as t } from './things-i18n'
 
 export const ThingsDetailsPage = props => {
   const { formatMessage: _ } = useIntl()
   const { id } = useParams()
+  const { audience, apiEndpointUrl } = useAppConfig()
 
   const { data, loading, error } = useApi(
-    `https://api.try.plgd.cloud/api/v1/devices/${id}`,
-    { audience: 'https://try.plgd.cloud' }
+    `${apiEndpointUrl}${thingsApiEndpoints.THINGS}/${id}`,
+    { audience }
   )
 
   if (error) {
@@ -51,9 +54,7 @@ export const ThingsDetailsPage = props => {
       breadcrumbs={breadcrumbs}
       loading={loading}
     >
-      <h2 className={classNames({ shimmering: loading })}>
-        {deviceName}
-      </h2>
+      <h2 className={classNames({ shimmering: loading })}>{deviceName}</h2>
       <ThingsDetails data={data} loading={loading} />
 
       <h2>{_(t.resources)}</h2>

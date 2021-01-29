@@ -4,16 +4,19 @@ import { toast } from 'react-toastify'
 
 import { Layout } from '@/components/layout'
 import { useApi } from '@/common/hooks'
+import { useAppConfig } from '@/containers/app'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
+import { thingsApiEndpoints } from './constants'
 import { ThingsList } from './_things-list'
 
 export const ThingsListPage = () => {
   const { formatMessage: _ } = useIntl()
+  const { audience, apiEndpointUrl } = useAppConfig()
 
   const { data, loading, error } = useApi(
-    'https://api.try.plgd.cloud/api/v1/devices',
-    { audience: 'https://try.plgd.cloud' }
+    `${apiEndpointUrl}${thingsApiEndpoints.THINGS}`,
+    { audience }
   )
 
   useEffect(
