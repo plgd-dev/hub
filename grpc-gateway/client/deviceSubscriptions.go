@@ -313,12 +313,19 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 	}, nil
 }
 
+func (s *DeviceSubscriptions) closeSend() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.client.CloseSend()
+}
+
 // Cancel cancels subscription.
 func (s *DeviceSubscriptions) Cancel() (wait func(), err error) {
 	if !atomic.CompareAndSwapUint32(&s.canceled, 0, 1) {
 		return s.wait, nil
 	}
-	err = s.client.CloseSend()
+
+	err = s.closeSend()
 	if err != nil {
 		return nil, err
 	}

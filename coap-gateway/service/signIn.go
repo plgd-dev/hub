@@ -190,7 +190,8 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 				})
 			},
 		}
-		cancelSubscription, err := client.server.subscribeToDevice(req.Context, signIn.UserID, signIn.DeviceID, &h)
+		ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(client.server.ctx, serviceToken.AccessToken), signIn.UserID)
+		cancelSubscription, err := client.server.subscribeToDevice(ctx, signIn.UserID, signIn.DeviceID, &h)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
 			client.Close()
