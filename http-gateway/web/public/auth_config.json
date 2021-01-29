@@ -3,5 +3,5 @@
   "clientID": "",
   "audience": "",
   "scope": "",
-  "apiEndpointUrl": ""
+  "httpGatewayAddress": ""
 }

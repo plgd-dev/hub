@@ -16,10 +16,10 @@ import { messages as t } from './things-i18n'
 export const ThingsDetailsPage = props => {
   const { formatMessage: _ } = useIntl()
   const { id } = useParams()
-  const { audience, apiEndpointUrl } = useAppConfig()
+  const { audience, httpGatewayAddress } = useAppConfig()
 
   const { data, loading, error } = useApi(
-    `${apiEndpointUrl}${thingsApiEndpoints.THINGS}/${id}`,
+    `${httpGatewayAddress}${thingsApiEndpoints.THINGS}/${id}`,
     { audience }
   )
 

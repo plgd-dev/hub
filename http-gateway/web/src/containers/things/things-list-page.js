@@ -12,10 +12,10 @@ import { ThingsList } from './_things-list'
 
 export const ThingsListPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { audience, apiEndpointUrl } = useAppConfig()
+  const { audience, httpGatewayAddress } = useAppConfig()
 
   const { data, loading, error } = useApi(
-    `${apiEndpointUrl}${thingsApiEndpoints.THINGS}`,
+    `${httpGatewayAddress}${thingsApiEndpoints.THINGS}`,
     { audience }
   )
 

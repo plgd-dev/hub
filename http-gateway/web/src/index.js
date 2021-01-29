@@ -17,10 +17,10 @@ fetch('/auth_config.json')
       !config.clientID ||
       !config.domain ||
       !config.audience ||
-      !config.apiEndpointUrl
+      !config.httpGatewayAddress
     ) {
       throw new Error(
-        'clientID, domain, audience and apiEndpointUrl must be set in auth_config.json'
+        'clientID, domain, audience and httpGatewayAddress must be set in auth_config.json'
       )
     }
 
