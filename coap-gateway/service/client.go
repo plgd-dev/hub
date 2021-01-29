@@ -79,7 +79,7 @@ type Client struct {
 	observedResourcesLock sync.Mutex
 
 	resourceSubscriptions *kitSync.Map // [token]
-	deviceSubscriptions   *kitSync.Map // [token]
+	//deviceSubscriptions   *kitSync.Map // [token]
 
 	mutex   sync.Mutex
 	authCtx *authCtx
@@ -92,7 +92,7 @@ func newClient(server *Server, client *tcp.ClientConn) *Client {
 		coapConn:              client,
 		observedResources:     make(map[string]map[int64]*observedResource),
 		resourceSubscriptions: kitSync.NewMap(),
-		deviceSubscriptions:   kitSync.NewMap(),
+		//deviceSubscriptions:   kitSync.NewMap(),
 	}
 }
 
