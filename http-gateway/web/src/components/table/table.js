@@ -51,7 +51,14 @@ export const Table = ({
               <tr {...headerGroup.getHeaderGroupProps()}>
                 {headerGroup.headers.map(column => (
                   // Sorting props to control sorting
-                  <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                  <th
+                    {...column.getHeaderProps(column.getSortByToggleProps())}
+                    style={{
+                      ...column.getHeaderProps(column.getSortByToggleProps())
+                        .style,
+                      ...column.style,
+                    }}
+                  >
                     <div className="th-div">
                       {column.render('Header')}
                       {column.canSort && (

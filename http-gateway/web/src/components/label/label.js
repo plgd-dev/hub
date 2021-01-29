@@ -24,11 +24,10 @@ export const Label = props => {
     labelRef,
     required,
     dataClassName,
+    shimmering,
     ...rest
   } = props
-  const dataAttributes = pickBy(props, (_, key) =>
-    startsWith(key, 'data-')
-  )
+  const dataAttributes = pickBy(props, (_, key) => startsWith(key, 'data-'))
   const titleClassName = classNames('label-title', {
     'has-error': !isEmpty(errorMessage),
   })
@@ -39,7 +38,7 @@ export const Label = props => {
       id={id}
       htmlFor={htmlFor}
       style={style}
-      className={classNames('label', { inline }, className)}
+      className={classNames('label', { inline, shimmering }, className)}
       onClick={onClick}
     >
       <div className={classNames('label-data', dataClassName)}>
@@ -60,8 +59,8 @@ export const Label = props => {
         })}
       </div>
       {errorMessage && (
-          <div className="label-error-message">{errorMessage}</div>
-        )}
+        <div className="label-error-message">{errorMessage}</div>
+      )}
     </label>
   )
 }
@@ -77,6 +76,7 @@ Label.propTypes = {
   inline: PropTypes.bool,
   labelRef: PropTypeRef,
   dataClassName: PropTypes.string,
+  shimmering: PropTypes.bool,
 }
 
 Label.defaultProps = {
@@ -90,4 +90,5 @@ Label.defaultProps = {
   inline: false,
   labelRef: () => {},
   dataClassName: null,
+  shimmering: false,
 }
