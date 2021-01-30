@@ -4,6 +4,7 @@
 
 @import '@/common/styles/colors.scss';
 @import '@/common/styles/default.scss';
+@import '@/common/styles/animations.scss';
 @import '@/components/page-loader/page-loader.scss';
 @import '@/components/breadcrumbs/breadcrumbs.scss';
 @import '@/components/layout/layout.scss';
@@ -18,6 +19,7 @@
   box-sizing: border-box;
   display: flex;
   position: relative;
+  overflow: hidden;
 }
 
 #content {
@@ -27,6 +29,7 @@
   margin-left: $left_panel_expanded;
   padding: 80px 40px 90px 40px;
   min-height: 100vh;
+  overflow: auto;
 }
 
 // Collapsed menu state

@@ -33,12 +33,16 @@
 
     &.active {
       cursor: default;
+
+      .page-link:active {
+        background-color: rgba($black_20, 0.4);
+      }
     }
 
     .page-link {
-      &:active:not(.active),
+      &:active,
       &:focus {
-        background-color: $black_20 !important;
+        background-color: $black_20;
         box-shadow: none;
       }
     }

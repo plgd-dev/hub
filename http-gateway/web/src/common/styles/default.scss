@@ -24,6 +24,7 @@ h3,
 h4,
 h5,
 h6 {
+  position: relative;
   color: $text_primary;
 }
 
@@ -53,4 +54,8 @@ $sides: (top, bottom, left, right); // Leave this variable alone
       padding-#{$side}: #{$space}px !important;
     }
   }
+}
+
+.no-wrap-text {
+  white-space: nowrap;
 }

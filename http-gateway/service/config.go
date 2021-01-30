@@ -9,10 +9,11 @@ import (
 
 // OAuthClientConfig represents oauth configuration for user interface exposed via getOAuthConfiguration handler
 type OAuthClientConfig struct {
-	Domain   string `json:"domain" yaml:"domain"`
-	ClientID string `json:"clientID" yaml:"clientID"`
-	Audience string `json:"audience" yaml:"audience"`
-	Scope    string `json:"scope" yaml:"scope"`
+	Domain             string `json:"domain" yaml:"domain"`
+	ClientID           string `json:"clientID" yaml:"clientID"`
+	Audience           string `json:"audience" yaml:"audience"`
+	Scope              string `json:"scope" yaml:"scope"`
+	HTTPGatewayAddress string `json:"httpGatewayAddress" yaml:"httpGatewayAddress"`
 }
 
 // UIConfig represents user interface configuration
