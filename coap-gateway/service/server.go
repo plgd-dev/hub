@@ -286,6 +286,7 @@ func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
 	c.store.ReplaceWithFunc(c.userID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
 		if oldLoaded == true {
 			oldValue.(*userDeviceSubscriptionChannel).counter--
+			fmt.Printf("userDeviceSubscriptionChannel.cancel: %v: %v\n", c.userID, oldValue.(*userDeviceSubscriptionChannel).counter)
 			if oldValue.(*userDeviceSubscriptionChannel).counter == 0 {
 				cancelSubscription = true
 				return nil, true
@@ -295,6 +296,7 @@ func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
 		return nil, false
 	})
 	if cancelSubscription {
+		fmt.Printf("userDeviceSubscriptionChannel.cancel.cancelSubscription: %v\n", c.userID)
 		ch := c.pop()
 		if ch != nil {
 			return ch.Cancel()
@@ -304,6 +306,12 @@ func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
 }
 
 func (server *Server) subscribeToDevice(ctx context.Context, userID string, deviceID string, handler *deviceSubscriptionHandlers) (func(context.Context) error, error) {
+	if userID == "" {
+		return nil, fmt.Errorf("subscribeToDevice: invalid userID")
+	}
+	if deviceID == "" {
+		return nil, fmt.Errorf("subscribeToDevice: invalid deviceID")
+	}
 	channel := &userDeviceSubscriptionChannel{
 		counter: 1,
 		userID:  userID,
@@ -312,6 +320,7 @@ func (server *Server) subscribeToDevice(ctx context.Context, userID string, devi
 	oldValue, ok := server.userDeviceSubscriptions.ReplaceWithFunc(userID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
 		if oldLoaded == true {
 			oldValue.(*userDeviceSubscriptionChannel).counter++
+			fmt.Printf("subscribeToDevice: %v: %v\n", userID, oldValue.(*userDeviceSubscriptionChannel).counter)
 			return oldValue, false
 		}
 		return channel, false

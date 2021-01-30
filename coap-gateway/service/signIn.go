@@ -145,53 +145,9 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	if newDevice {
-		h := deviceSubscriptionHandlers{
-			onResourceUpdatePending: func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
-				client.server.taskQueue.Submit(func() {
-					err := client.updateResource(ctx, val)
-					if err != nil {
-						log.Error(err)
-					}
-				})
-				return nil
-			},
-			onResourceRetrievePending: func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
-				client.server.taskQueue.Submit(func() {
-					err := client.retrieveResource(ctx, val)
-					if err != nil {
-						log.Error(err)
-					}
-				})
-				return nil
-			},
-			onResourceDeletePending: func(ctx context.Context, val *pb.Event_ResourceDeletePending) error {
-				return client.server.taskQueue.Submit(func() {
-					err := client.deleteResource(ctx, val)
-					if err != nil {
-						log.Error(err)
-					}
-				})
-			},
-			onClose: func() {
-				client.server.taskQueue.Submit(func() {
-					log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending, ResourceDeletePending) was closed", signIn.DeviceID)
-					cancelSubscription := client.pullOutDeviceSubscription()
-					if cancelSubscription != nil {
-						ctx, cancel := context.WithCancel(context.Background())
-						cancel()
-						cancelSubscription(ctx)
-					}
-				})
-			},
-			onError: func(err error) {
-				client.server.taskQueue.Submit(func() {
-					log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending, ResourceDeletePending) ends with error: %v", signIn.DeviceID, err)
-					client.Close()
-				})
-			},
-		}
+		h := NewDeviceSubscriptionHandlers(client, signIn.DeviceID)
 		ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(client.server.ctx, serviceToken.AccessToken), signIn.UserID)
-		cancelSubscription, err := client.server.subscribeToDevice(ctx, signIn.UserID, signIn.DeviceID, &h)
+		cancelSubscription, err := client.server.subscribeToDevice(ctx, signIn.UserID, signIn.DeviceID, h)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
 			client.Close()

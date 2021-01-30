@@ -2,34 +2,80 @@ package service
 
 import (
 	"context"
+	"sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/kit/log"
 )
 
 type deviceSubscriptionHandlers struct {
-	onResourceUpdatePending   func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error
-	onResourceRetrievePending func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error
-	onResourceDeletePending   func(ctx context.Context, val *pb.Event_ResourceDeletePending) error
-	onClose                   func()
-	onError                   func(err error)
+	client   *Client
+	deviceID string
+	mutex    sync.Mutex
+}
+
+func NewDeviceSubscriptionHandlers(client *Client, deviceID string) *deviceSubscriptionHandlers {
+	return &deviceSubscriptionHandlers{
+		client:   client,
+		deviceID: deviceID,
+	}
 }
 
 func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
-	return h.onResourceUpdatePending(ctx, val)
+	h.client.server.taskQueue.Submit(func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+		err := h.client.updateResource(ctx, val)
+		if err != nil {
+			log.Error(err)
+		}
+	})
+	return nil
 }
 
 func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
-	return h.onResourceRetrievePending(ctx, val)
+	h.client.server.taskQueue.Submit(func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+		err := h.client.retrieveResource(ctx, val)
+		if err != nil {
+			log.Error(err)
+		}
+	})
+	return nil
 }
 
 func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Context, val *pb.Event_ResourceDeletePending) error {
-	return h.onResourceDeletePending(ctx, val)
+	h.client.server.taskQueue.Submit(func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+		err := h.client.deleteResource(ctx, val)
+		if err != nil {
+			log.Error(err)
+		}
+	})
+	return nil
 }
 
 func (h *deviceSubscriptionHandlers) Error(err error) {
-	h.onError(err)
+	h.client.server.taskQueue.Submit(func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+		log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending, ResourceDeletePending) ends with error: %v", h.deviceID, err)
+		h.client.Close()
+	})
 }
 
 func (h *deviceSubscriptionHandlers) OnClose() {
-	h.onClose()
+	h.client.server.taskQueue.Submit(func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+		log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending, ResourceDeletePending) was closed", h.deviceID)
+		cancelSubscription := h.client.pullOutDeviceSubscription()
+		if cancelSubscription != nil {
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+			cancelSubscription(ctx)
+		}
+	})
 }
