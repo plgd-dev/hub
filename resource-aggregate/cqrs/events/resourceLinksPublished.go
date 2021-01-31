@@ -1,6 +1,7 @@
 package events
 
 import (
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/net/http"
 	"google.golang.org/protobuf/proto"
@@ -24,4 +25,8 @@ func (e *ResourceLinksPublished) Unmarshal(b []byte) error {
 
 func (e ResourceLinksPublished) EventType() string {
 	return http.ProtobufContentType(&pb.ResourceLinksPublished{})
+}
+
+func (e ResourceLinksPublished) AggregateId() string {
+	return utils.MakeResourceId(e.DeviceId, "/oic/res")
 }
