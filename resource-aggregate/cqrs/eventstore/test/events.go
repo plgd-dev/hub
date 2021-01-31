@@ -10,8 +10,8 @@ import (
 )
 
 func MakeResourcePublishedEvent(resource pb.Resource, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	rp := events.ResourcePublished{
-		ResourcePublished: pb.ResourcePublished{
+	rp := events.ResourceLinksPublished{
+		ResourceLinksPublished: pb.ResourceLinksPublished{
 			Id:       resource.Id,
 			Resource: &resource,
 			AuditContext: &pb.AuditContext{
@@ -36,9 +36,9 @@ func MakeResourcePublishedEvent(resource pb.Resource, eventMetadata pb.EventMeta
 	)
 }
 
-func MakeResourceUnpublishedEvent(id, deviceID string, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	ru := events.ResourceUnpublished{
-		ResourceUnpublished: pb.ResourceUnpublished{
+func MakeResourceLinksUnpublishedEvent(id, deviceID string, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
+	ru := events.ResourceLinksUnpublished{
+		ResourceLinksUnpublished: pb.ResourceLinksUnpublished{
 			Id: id,
 			AuditContext: &pb.AuditContext{
 				UserId:   "userId",
@@ -49,11 +49,11 @@ func MakeResourceUnpublishedEvent(id, deviceID string, eventMetadata pb.EventMet
 	}
 	return eventstore.NewLoadedEvent(
 		ru.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceUnpublished{}),
+		httpUtils.ProtobufContentType(&pb.ResourceLinksUnpublished{}),
 		ru.Id,
 		deviceID,
 		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceUnpublished); ok {
+			if x, ok := v.(*events.ResourceLinksUnpublished); ok {
 				*x = ru
 				return nil
 			}
@@ -66,7 +66,6 @@ func MakeResourceStateSnapshotTaken(isPublished bool, resource pb.Resource, late
 	rs := events.NewResourceStateSnapshotTaken()
 	rs.Id = resource.Id
 	rs.Resource = &resource
-	rs.IsPublished = isPublished
 	rs.LatestResourceChange = &latestResourceChange
 	rs.EventMetadata = &eventMetadata
 

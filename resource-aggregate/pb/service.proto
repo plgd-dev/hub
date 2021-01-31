@@ -7,8 +7,8 @@ import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
 option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
 
 service ResourceAggregate {
-  rpc PublishResource (PublishResourceRequest) returns (PublishResourceResponse) {}
-  rpc UnpublishResource (UnpublishResourceRequest) returns (UnpublishResourceResponse) {}
+  rpc PublishResourceLinks (PublishResourceLinksRequest) returns (PublishResourceLinksResponse) {}
+  rpc UnpublishResourceLinks (UnpublishResourceLinksRequest) returns (UnpublishResourceLinksResponse) {}
   rpc NotifyResourceChanged (NotifyResourceChangedRequest) returns (NotifyResourceChangedResponse){}
   rpc UpdateResource (UpdateResourceRequest) returns (UpdateResourceResponse) {}
   rpc ConfirmResourceUpdate (ConfirmResourceUpdateRequest) returns (ConfirmResourceUpdateResponse) {}

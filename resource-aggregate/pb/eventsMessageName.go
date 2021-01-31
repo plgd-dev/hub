@@ -8,11 +8,14 @@ func (*AuditContext) XXX_MessageName() string {
 func (*EventMetadata) XXX_MessageName() string {
 	return "ocf.cloud.resourceaggregate.pb.EventMetadata"
 }
-func (*ResourcePublished) XXX_MessageName() string {
-	return "ocf.cloud.resourceaggregate.pb.ResourcePublished"
+func (*ResourceLinksPublished) XXX_MessageName() string {
+	return "ocf.cloud.resourceaggregate.pb.ResourceLinksPublished"
 }
-func (*ResourceUnpublished) XXX_MessageName() string {
-	return "ocf.cloud.resourceaggregate.pb.ResourceUnpublished"
+func (*ResourceLinksUnpublished) XXX_MessageName() string {
+	return "ocf.cloud.resourceaggregate.pb.ResourceLinksUnpublished"
+}
+func (*ResourceLinksSnapshotTaken) XXX_MessageName() string {
+	return "ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken"
 }
 func (*ResourceChanged) XXX_MessageName() string {
 	return "ocf.cloud.resourceaggregate.pb.ResourceChanged"

@@ -11,14 +11,15 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // ResourceAggregateClient is the client API for ResourceAggregate service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ResourceAggregateClient interface {
-	PublishResource(ctx context.Context, in *PublishResourceRequest, opts ...grpc.CallOption) (*PublishResourceResponse, error)
-	UnpublishResource(ctx context.Context, in *UnpublishResourceRequest, opts ...grpc.CallOption) (*UnpublishResourceResponse, error)
+	PublishResourceLinks(ctx context.Context, in *PublishResourceLinksRequest, opts ...grpc.CallOption) (*PublishResourceLinksResponse, error)
+	UnpublishResourceLinks(ctx context.Context, in *UnpublishResourceLinksRequest, opts ...grpc.CallOption) (*UnpublishResourceLinksResponse, error)
 	NotifyResourceChanged(ctx context.Context, in *NotifyResourceChangedRequest, opts ...grpc.CallOption) (*NotifyResourceChangedResponse, error)
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error)
 	ConfirmResourceUpdate(ctx context.Context, in *ConfirmResourceUpdateRequest, opts ...grpc.CallOption) (*ConfirmResourceUpdateResponse, error)
@@ -36,18 +37,18 @@ func NewResourceAggregateClient(cc grpc.ClientConnInterface) ResourceAggregateCl
 	return &resourceAggregateClient{cc}
 }
 
-func (c *resourceAggregateClient) PublishResource(ctx context.Context, in *PublishResourceRequest, opts ...grpc.CallOption) (*PublishResourceResponse, error) {
-	out := new(PublishResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/PublishResource", in, out, opts...)
+func (c *resourceAggregateClient) PublishResourceLinks(ctx context.Context, in *PublishResourceLinksRequest, opts ...grpc.CallOption) (*PublishResourceLinksResponse, error) {
+	out := new(PublishResourceLinksResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/PublishResourceLinks", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *resourceAggregateClient) UnpublishResource(ctx context.Context, in *UnpublishResourceRequest, opts ...grpc.CallOption) (*UnpublishResourceResponse, error) {
-	out := new(UnpublishResourceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/UnpublishResource", in, out, opts...)
+func (c *resourceAggregateClient) UnpublishResourceLinks(ctx context.Context, in *UnpublishResourceLinksRequest, opts ...grpc.CallOption) (*UnpublishResourceLinksResponse, error) {
+	out := new(UnpublishResourceLinksResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/UnpublishResourceLinks", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +122,8 @@ func (c *resourceAggregateClient) ConfirmResourceDelete(ctx context.Context, in 
 // All implementations must embed UnimplementedResourceAggregateServer
 // for forward compatibility
 type ResourceAggregateServer interface {
-	PublishResource(context.Context, *PublishResourceRequest) (*PublishResourceResponse, error)
-	UnpublishResource(context.Context, *UnpublishResourceRequest) (*UnpublishResourceResponse, error)
+	PublishResourceLinks(context.Context, *PublishResourceLinksRequest) (*PublishResourceLinksResponse, error)
+	UnpublishResourceLinks(context.Context, *UnpublishResourceLinksRequest) (*UnpublishResourceLinksResponse, error)
 	NotifyResourceChanged(context.Context, *NotifyResourceChangedRequest) (*NotifyResourceChangedResponse, error)
 	UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error)
 	ConfirmResourceUpdate(context.Context, *ConfirmResourceUpdateRequest) (*ConfirmResourceUpdateResponse, error)
@@ -137,11 +138,11 @@ type ResourceAggregateServer interface {
 type UnimplementedResourceAggregateServer struct {
 }
 
-func (UnimplementedResourceAggregateServer) PublishResource(context.Context, *PublishResourceRequest) (*PublishResourceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishResource not implemented")
+func (UnimplementedResourceAggregateServer) PublishResourceLinks(context.Context, *PublishResourceLinksRequest) (*PublishResourceLinksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishResourceLinks not implemented")
 }
-func (UnimplementedResourceAggregateServer) UnpublishResource(context.Context, *UnpublishResourceRequest) (*UnpublishResourceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnpublishResource not implemented")
+func (UnimplementedResourceAggregateServer) UnpublishResourceLinks(context.Context, *UnpublishResourceLinksRequest) (*UnpublishResourceLinksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnpublishResourceLinks not implemented")
 }
 func (UnimplementedResourceAggregateServer) NotifyResourceChanged(context.Context, *NotifyResourceChangedRequest) (*NotifyResourceChangedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyResourceChanged not implemented")
@@ -174,41 +175,41 @@ type UnsafeResourceAggregateServer interface {
 }
 
 func RegisterResourceAggregateServer(s grpc.ServiceRegistrar, srv ResourceAggregateServer) {
-	s.RegisterService(&_ResourceAggregate_serviceDesc, srv)
+	s.RegisterService(&ResourceAggregate_ServiceDesc, srv)
 }
 
-func _ResourceAggregate_PublishResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishResourceRequest)
+func _ResourceAggregate_PublishResourceLinks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishResourceLinksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResourceAggregateServer).PublishResource(ctx, in)
+		return srv.(ResourceAggregateServer).PublishResourceLinks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/PublishResource",
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/PublishResourceLinks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceAggregateServer).PublishResource(ctx, req.(*PublishResourceRequest))
+		return srv.(ResourceAggregateServer).PublishResourceLinks(ctx, req.(*PublishResourceLinksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResourceAggregate_UnpublishResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnpublishResourceRequest)
+func _ResourceAggregate_UnpublishResourceLinks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnpublishResourceLinksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResourceAggregateServer).UnpublishResource(ctx, in)
+		return srv.(ResourceAggregateServer).UnpublishResourceLinks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/UnpublishResource",
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/UnpublishResourceLinks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceAggregateServer).UnpublishResource(ctx, req.(*UnpublishResourceRequest))
+		return srv.(ResourceAggregateServer).UnpublishResourceLinks(ctx, req.(*UnpublishResourceLinksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -339,17 +340,20 @@ func _ResourceAggregate_ConfirmResourceDelete_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-var _ResourceAggregate_serviceDesc = grpc.ServiceDesc{
+// ResourceAggregate_ServiceDesc is the grpc.ServiceDesc for ResourceAggregate service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.resourceaggregate.pb.ResourceAggregate",
 	HandlerType: (*ResourceAggregateServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "PublishResource",
-			Handler:    _ResourceAggregate_PublishResource_Handler,
+			MethodName: "PublishResourceLinks",
+			Handler:    _ResourceAggregate_PublishResourceLinks_Handler,
 		},
 		{
-			MethodName: "UnpublishResource",
-			Handler:    _ResourceAggregate_UnpublishResource_Handler,
+			MethodName: "UnpublishResourceLinks",
+			Handler:    _ResourceAggregate_UnpublishResourceLinks_Handler,
 		},
 		{
 			MethodName: "NotifyResourceChanged",

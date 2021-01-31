@@ -45,26 +45,29 @@ func NewAggregate(resourceID *pb.ResourceId, SnapshotThreshold int, eventstore E
 	return a, nil
 }
 
-func validatePublish(request *pb.PublishResourceRequest) error {
-	resID := utils.MakeResourceId(request.GetResourceId().GetDeviceId(), request.GetResourceId().GetHref())
-	if request.Resource.Id != resID {
-		return status.Errorf(codes.InvalidArgument, "invalid Resource.Id")
+func validatePublish(request *pb.PublishResourceLinksRequest) error {
+	if len(request.Resources) == 0 {
+		return status.Errorf(codes.InvalidArgument, "empty publish is not accepted")
 	}
-	if request.Resource == nil {
-		return status.Errorf(codes.InvalidArgument, "invalid Resource")
+	for _, res := range request.Resources {
+		if res.Href == "" {
+			return status.Errorf(codes.InvalidArgument, "invalid resource href")
+		}
 	}
-	if request.Resource.DeviceId == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid Resource.DeviceId")
+	if request.DeviceId == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid deviceID")
 	}
 	return nil
 }
 
-func validateUnpublish(request *pb.UnpublishResourceRequest) error {
-	if request.GetResourceId().GetDeviceId() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+func validateUnpublish(request *pb.UnpublishResourceLinksRequest) error {
+	if request.GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid deviceID")
 	}
-	if request.GetResourceId().GetHref() == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+	for _, id := range request.Ids {
+		if id == "" {
+			return status.Errorf(codes.InvalidArgument, "invalid resource id")
+		}
 	}
 	return nil
 }
@@ -201,16 +204,16 @@ func (a *aggregate) DeviceID() string {
 	return a.model.GroupId()
 }
 
-// HandlePublishResource handles a command PublishResource
-func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishResourceRequest) (events []eventstore.Event, err error) {
+// HandlePublishResource handles a command PublishResourceLinks
+func (a *aggregate) PublishResourceLinks(ctx context.Context, request *pb.PublishResourceLinksRequest) (events []eventstore.Event, err error) {
 	if err = validatePublish(request); err != nil {
-		err = fmt.Errorf("invalid publish command: %w", err)
+		err = fmt.Errorf("invalid publish resource links command: %w", err)
 		return
 	}
 
 	events, err = a.ag.HandleCommand(ctx, request)
 	if err != nil {
-		err = fmt.Errorf("unable to process publish command: %w", err)
+		err = fmt.Errorf("unable to process publish resource links command: %w", err)
 		return
 	}
 
@@ -219,16 +222,16 @@ func (a *aggregate) PublishResource(ctx context.Context, request *pb.PublishReso
 	return
 }
 
-// HandleUnpublishResource handles a command UnpublishResource
-func (a *aggregate) UnpublishResource(ctx context.Context, request *pb.UnpublishResourceRequest) (events []eventstore.Event, err error) {
+// HandleUnpublishResource handles a command UnpublishResourceLinks
+func (a *aggregate) UnpublishResourceLinks(ctx context.Context, request *pb.UnpublishResourceLinksRequest) (events []eventstore.Event, err error) {
 	if err = validateUnpublish(request); err != nil {
-		err = fmt.Errorf("invalid unpublish command: %w", err)
+		err = fmt.Errorf("invalid unpublish resource links command: %w", err)
 		return
 	}
 
 	events, err = a.ag.HandleCommand(ctx, request)
 	if err != nil {
-		err = fmt.Errorf("unable to process unpublish command: %w", err)
+		err = fmt.Errorf("unable to process unpublish resource links command: %w", err)
 		return
 	}
 	cleanUpToSnapshot(ctx, a, events)

@@ -19,52 +19,52 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type ResourcePublished struct {
-	pb.ResourcePublished
+type ResourceLinksPublished struct {
+	pb.ResourceLinksPublished
 }
 
-func (e ResourcePublished) Version() uint64 {
+func (e ResourceLinksPublished) Version() uint64 {
 	return e.EventMetadata.Version
 }
 
-func (e ResourcePublished) Marshal() ([]byte, error) {
-	return proto.Marshal(&e.ResourcePublished)
+func (e ResourceLinksPublished) Marshal() ([]byte, error) {
+	return proto.Marshal(&e.ResourceLinksPublished)
 }
 
-func (e *ResourcePublished) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, &e.ResourcePublished)
+func (e *ResourceLinksPublished) Unmarshal(b []byte) error {
+	return proto.Unmarshal(b, &e.ResourceLinksPublished)
 }
 
-func (e ResourcePublished) EventType() string {
-	return http.ProtobufContentType(&pb.ResourcePublished{})
+func (e ResourceLinksPublished) EventType() string {
+	return http.ProtobufContentType(&pb.ResourceLinksPublished{})
 }
 
-func (e ResourcePublished) AggregateID() string {
-	return e.Id
+func (e ResourceLinksPublished) AggregateID() string {
+	return utils.MakeResourceId(e.DeviceId, "/oic/res")
 }
 
-type ResourceUnpublished struct {
-	pb.ResourceUnpublished
+type ResourceLinksUnpublished struct {
+	pb.ResourceLinksUnpublished
 }
 
-func (e ResourceUnpublished) Version() uint64 {
+func (e ResourceLinksUnpublished) Version() uint64 {
 	return e.EventMetadata.Version
 }
 
-func (e ResourceUnpublished) Marshal() ([]byte, error) {
-	return proto.Marshal(&e.ResourceUnpublished)
+func (e ResourceLinksUnpublished) Marshal() ([]byte, error) {
+	return proto.Marshal(&e.ResourceLinksUnpublished)
 }
 
-func (e *ResourceUnpublished) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, &e.ResourceUnpublished)
+func (e *ResourceLinksUnpublished) Unmarshal(b []byte) error {
+	return proto.Unmarshal(b, &e.ResourceLinksUnpublished)
 }
 
-func (e ResourceUnpublished) EventType() string {
-	return http.ProtobufContentType(&pb.ResourceUnpublished{})
+func (e ResourceLinksUnpublished) EventType() string {
+	return http.ProtobufContentType(&pb.ResourceLinksUnpublished{})
 }
 
-func (e ResourceUnpublished) AggregateID() string {
-	return e.Id
+func (e ResourceLinksUnpublished) AggregateID() string {
+	return utils.MakeResourceId(e.DeviceId, "/oic/res")
 }
 
 type ResourceStateSnapshotTaken struct {
@@ -92,18 +92,10 @@ func (rs *ResourceStateSnapshotTaken) EventType() string {
 }
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourcePublished(ctx context.Context, pub ResourcePublished) error {
-	if rs.IsPublished {
-		return fmt.Errorf("already published")
-	}
-	rs.IsPublished = true
 	return nil
 }
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourceUnpublished(ctx context.Context, pub ResourceUnpublished) error {
-	if !rs.IsPublished {
-		return fmt.Errorf("already unpublished")
-	}
-	rs.IsPublished = false
 	return nil
 }
 

@@ -9,7 +9,7 @@ option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
 message AuditContext {
     string user_id = 1;
     string device_id = 2;
-    string correlation_id = 3;
+    string correlation_id = 3; // do we need this here? for tracing not, for audit log?
 }
 
 message EventMetadata {
@@ -19,19 +19,25 @@ message EventMetadata {
    uint64 sequence = 4;
 }
 
-// https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml#L106
-message ResourcePublished {
-    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
-    Resource resource = 2; // Resource publish is atomic. The CoAP-Gateway is responsible for the transaction.
-    int32 time_to_live = 3;
-    AuditContext audit_context = 4;
-    EventMetadata event_metadata = 5;
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173
+message ResourceLinksPublished {
+    map<string, Resource> resources = 1; // id resource map where id is calculated per resource from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    string device_id = 2;
+    AuditContext audit_context = 3;
+    EventMetadata event_metadata = 4;
 }
 
-// https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml #Specification CR needed
-message ResourceUnpublished {
-    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
-    AuditContext audit_context = 2;
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
+message ResourceLinksUnpublished {
+    repeated string ids = 1; // calucalated per resource from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
+    string device_id = 2;
+    AuditContext audit_context = 3;
+    EventMetadata event_metadata = 4;
+}
+
+message ResourceLinksSnapshotTaken {
+    map<string, Resource> resources = 1;
+    string device_id = 2;
     EventMetadata event_metadata = 3;
 }
 
@@ -93,7 +99,5 @@ message ResourceStateSnapshotTaken {
     Resource resource = 2;
     ResourceChanged  latest_resource_change = 3;
     uint32 pending_requests_count = 4;
-    int32 time_to_live = 5;
-    bool is_published = 6;
-    EventMetadata event_metadata = 7;
+    EventMetadata event_metadata = 5;
 }

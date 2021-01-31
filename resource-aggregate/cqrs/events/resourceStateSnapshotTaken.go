@@ -53,41 +53,16 @@ func (rs *ResourceStateSnapshotTaken) EventType() string {
 	return http.ProtobufContentType(&pb.ResourceStateSnapshotTaken{})
 }
 
-func (rs *ResourceStateSnapshotTaken) HandleEventResourcePublished(ctx context.Context, pub ResourcePublished) error {
-	rs.Id = pub.Resource.Id
-	rs.Resource = pub.Resource
-	rs.TimeToLive = pub.TimeToLive
-	rs.IsPublished = true
-	return nil
-}
-
-func (rs *ResourceStateSnapshotTaken) HandleEventResourceUnpublished(ctx context.Context, pub ResourceUnpublished) error {
-	if !rs.IsPublished {
-		return status.Errorf(codes.FailedPrecondition, "resource is already unpublished")
-	}
-	rs.IsPublished = false
-	return nil
-}
-
 func (rs *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, contentUpdatePending ResourceUpdatePending) error {
-	if !rs.IsPublished {
-		return status.Errorf(codes.FailedPrecondition, "resource is unpublished")
-	}
 	rs.mapForCalculatePendingRequestsCount[contentUpdatePending.AuditContext.CorrelationId] = true
 	return nil
 }
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, contentRetrievePending ResourceRetrievePending) error {
-	if !rs.IsPublished {
-		return status.Errorf(codes.FailedPrecondition, "resource is unpublished")
-	}
 	return nil
 }
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, req ResourceDeletePending) error {
-	if !rs.IsPublished {
-		return status.Errorf(codes.FailedPrecondition, "resource is unpublished")
-	}
 	return nil
 }
 
@@ -133,8 +108,6 @@ func (rs *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx 
 	rs.Id = s.Resource.Id
 	rs.Resource = s.Resource
 	rs.LatestResourceChange = s.LatestResourceChange
-	rs.TimeToLive = s.TimeToLive
-	rs.IsPublished = s.IsPublished
 	rs.EventMetadata = s.EventMetadata
 
 	return nil
@@ -156,22 +129,6 @@ func (rs *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstor
 				return status.Errorf(codes.Internal, "%v", err)
 			}
 			if err := rs.HandleEventResourceStateSnapshotTaken(ctx, s); err != nil {
-				return err
-			}
-		case http.ProtobufContentType(&pb.ResourcePublished{}):
-			var s ResourcePublished
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			if err := rs.HandleEventResourcePublished(ctx, s); err != nil {
-				return err
-			}
-		case http.ProtobufContentType(&pb.ResourceUnpublished{}):
-			var s ResourceUnpublished
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			if err := rs.HandleEventResourceUnpublished(ctx, s); err != nil {
 				return err
 			}
 		case http.ProtobufContentType(&pb.ResourceUpdatePending{}):
@@ -281,55 +238,6 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		return nil, status.Errorf(codes.InvalidArgument, "invalid userID: %v", err)
 	}
 	switch req := cmd.(type) {
-	case *pb.PublishResourceRequest:
-		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
-		if rs.Id != resourceID && rs.Id != "" {
-			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
-		}
-		if req.CommandMetadata == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
-
-		rp := ResourcePublished{pb.ResourcePublished{
-			Id:            resourceID,
-			Resource:      req.Resource,
-			TimeToLive:    req.TimeToLive,
-			AuditContext:  &ac,
-			EventMetadata: &em,
-		},
-		}
-		err := rs.HandleEventResourcePublished(ctx, rp)
-		if err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{rp}, nil
-	case *pb.UnpublishResourceRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
-		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
-		if rs.Id != resourceID {
-			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
-		}
-		if req.CommandMetadata == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
-		ru := ResourceUnpublished{pb.ResourceUnpublished{
-			Id:            resourceID,
-			AuditContext:  &ac,
-			EventMetadata: &em,
-		}}
-		err := rs.HandleEventResourceUnpublished(ctx, ru)
-		if err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{ru}, nil
 	case *pb.NotifyResourceChangedRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
