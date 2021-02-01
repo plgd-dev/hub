@@ -332,7 +332,7 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 	}
 }
 
-func (client *Client) extractCancelDeviceSubscription() func(ctx context.Context) error {
+func (client *Client) unsetCancelDeviceSubscription() func(ctx context.Context) error {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	c := client.cancelDeviceSubscription
@@ -351,7 +351,7 @@ func (client *Client) storeDeviceSubscription(cancel func(ctx context.Context) e
 }
 
 func (client *Client) cancelDeviceSubscriptions(ctx context.Context) {
-	cancel := client.extractCancelDeviceSubscription()
+	cancel := client.unsetCancelDeviceSubscription()
 	if cancel != nil {
 		cancel(ctx)
 	}
