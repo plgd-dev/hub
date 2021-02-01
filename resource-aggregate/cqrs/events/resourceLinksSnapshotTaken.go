@@ -53,16 +53,20 @@ func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx con
 }
 
 func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) error {
-	for _, rid := range upub.GetIds() {
-		delete(rls.GetResources(), rid)
+	if len(upub.Ids) == 0 {
+		rls.Resources = make(map[string]*pb.Resource)
+	} else {
+		for _, rid := range upub.GetIds() {
+			delete(rls.GetResources(), rid)
+		}
 	}
 	return nil
 }
 
 func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s *ResourceLinksSnapshotTaken) error {
-	rls.Resources = s.Resources
-	rls.DeviceId = s.DeviceId
-	rls.EventMetadata = s.EventMetadata
+	rls.Resources = s.GetResources()
+	rls.DeviceId = s.GetDeviceId()
+	rls.EventMetadata = s.GetEventMetadata()
 	return nil
 }
 
@@ -112,14 +116,11 @@ func (rls *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd ag
 	}
 	switch req := cmd.(type) {
 	case *pb.PublishResourceLinksRequest:
-		if rls.DeviceId != req.GetDeviceId() {
-			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
-		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		resMap := make(map[string]*pb.Resource)
+		resMap := rls.GetResources()
 		for _, res := range req.GetResources() {
 			resMap[res.GetId()] = res
 		}
@@ -141,9 +142,6 @@ func (rls *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd ag
 	case *pb.UnpublishResourceLinksRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
-		if rls.DeviceId != req.GetDeviceId() {
-			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
