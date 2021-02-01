@@ -9,6 +9,8 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
+const ResourceLinksHref = "/oic/res"
+
 func GetTopics(deviceId string) []string {
 	return []string{"events-" + deviceId + "-resource-aggregate"}
 }

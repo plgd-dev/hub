@@ -25,19 +25,22 @@ type aggregate struct {
 	eventstore EventStore
 }
 
-func (a *aggregate) factoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	a.model = raEvents.NewResourceStateSnapshotTaken()
-	return a.model, nil
+func ResourceStateFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return raEvents.NewResourceStateSnapshotTaken(), nil
+}
+
+func ResourceLinksFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return raEvents.NewResourceLinksSnapshotTaken(), nil
 }
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *pb.ResourceId, SnapshotThreshold int, eventstore EventStore, retry cqrsAggregate.RetryFunc) (*aggregate, error) {
+func NewAggregate(resourceID *pb.ResourceId, SnapshotThreshold int, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*aggregate, error) {
 	resID := utils.MakeResourceId(resourceID.GetDeviceId(), resourceID.GetHref())
 	a := &aggregate{
 		resourceID: resID,
 		eventstore: eventstore,
 	}
-	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(), resID, retry, SnapshotThreshold, eventstore, a.factoryModel, func(template string, args ...interface{}) {})
+	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(), resID, retry, SnapshotThreshold, eventstore, factoryModel, func(template string, args ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}

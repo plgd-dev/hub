@@ -17,25 +17,23 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
-const linksResourceHref = "/oic/res"
-
 type ResourceLinksSnapshotTaken struct {
 	pb.ResourceLinksSnapshotTaken
 }
 
 func (rls *ResourceLinksSnapshotTaken) AggregateId() string {
-	return utils.MakeResourceId(rls.DeviceId, linksResourceHref)
+	return utils.MakeResourceId(rls.GetDeviceId(), utils.ResourceLinksHref)
 }
 
 func (rls *ResourceLinksSnapshotTaken) GroupId() string {
-	return rls.DeviceId
+	return rls.GetDeviceId()
 }
 
 func (rls *ResourceLinksSnapshotTaken) Version() uint64 {
-	return rls.ResourceLinksSnapshotTaken.EventMetadata.Version
+	return rls.GetEventMetadata().GetVersion()
 }
 
-func (rls ResourceLinksSnapshotTaken) Marshal() ([]byte, error) {
+func (rls *ResourceLinksSnapshotTaken) Marshal() ([]byte, error) {
 	return proto.Marshal(&rls.ResourceLinksSnapshotTaken)
 }
 
@@ -47,21 +45,21 @@ func (rls *ResourceLinksSnapshotTaken) EventType() string {
 	return http.ProtobufContentType(&pb.ResourceLinksSnapshotTaken{})
 }
 
-func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx context.Context, pub ResourceLinksPublished) error {
-	for rid, res := range pub.Resources {
-		rls.Resources[rid] = res
+func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx context.Context, pub *ResourceLinksPublished) error {
+	for rid, res := range pub.GetResources() {
+		rls.GetResources()[rid] = res
 	}
 	return nil
 }
 
-func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub ResourceLinksUnpublished) error {
-	for _, rid := range upub.Ids {
-		delete(rls.Resources, rid)
+func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) error {
+	for _, rid := range upub.GetIds() {
+		delete(rls.GetResources(), rid)
 	}
 	return nil
 }
 
-func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s ResourceLinksSnapshotTaken) error {
+func (rls *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s *ResourceLinksSnapshotTaken) error {
 	rls.Resources = s.Resources
 	rls.DeviceId = s.DeviceId
 	rls.EventMetadata = s.EventMetadata
@@ -83,7 +81,7 @@ func (rls *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventsto
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := rls.HandleEventResourceLinksSnapshotTaken(ctx, s); err != nil {
+			if err := rls.HandleEventResourceLinksSnapshotTaken(ctx, &s); err != nil {
 				return err
 			}
 		case http.ProtobufContentType(&pb.ResourceLinksPublished{}):
@@ -91,7 +89,7 @@ func (rls *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventsto
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := rls.HandleEventResourceLinksPublished(ctx, s); err != nil {
+			if err := rls.HandleEventResourceLinksPublished(ctx, &s); err != nil {
 				return err
 			}
 		case http.ProtobufContentType(&pb.ResourceLinksUnpublished{}):
@@ -99,7 +97,7 @@ func (rls *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventsto
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := rls.HandleEventResourceLinksUnpublished(ctx, s); err != nil {
+			if err := rls.HandleEventResourceLinksUnpublished(ctx, &s); err != nil {
 				return err
 			}
 		}
@@ -123,7 +121,7 @@ func (rls *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd ag
 
 		resMap := make(map[string]*pb.Resource)
 		for _, res := range req.GetResources() {
-			resMap[res.Id] = res
+			resMap[res.GetId()] = res
 		}
 
 		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
@@ -135,11 +133,11 @@ func (rls *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd ag
 			EventMetadata: &em,
 		},
 		}
-		err := rls.HandleEventResourceLinksPublished(ctx, rlp)
+		err := rls.HandleEventResourceLinksPublished(ctx, &rlp)
 		if err != nil {
 			return nil, err
 		}
-		return []eventstore.Event{rlp}, nil
+		return []eventstore.Event{&rlp}, nil
 	case *pb.UnpublishResourceLinksRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
@@ -158,11 +156,11 @@ func (rls *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd ag
 			AuditContext:  &ac,
 			EventMetadata: &em,
 		}}
-		err := rls.HandleEventResourceLinksUnpublished(ctx, rlu)
+		err := rls.HandleEventResourceLinksUnpublished(ctx, &rlu)
 		if err != nil {
 			return nil, err
 		}
-		return []eventstore.Event{rlu}, nil
+		return []eventstore.Event{&rlu}, nil
 	}
 
 	return nil, fmt.Errorf("unknown command")

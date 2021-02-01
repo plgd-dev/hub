@@ -40,7 +40,7 @@ func (e ResourceLinksPublished) EventType() string {
 }
 
 func (e ResourceLinksPublished) AggregateID() string {
-	return utils.MakeResourceId(e.DeviceId, "/oic/res")
+	return utils.MakeResourceId(e.DeviceId, utils.ResourceLinksHref)
 }
 
 type ResourceLinksUnpublished struct {
@@ -64,7 +64,7 @@ func (e ResourceLinksUnpublished) EventType() string {
 }
 
 func (e ResourceLinksUnpublished) AggregateID() string {
-	return utils.MakeResourceId(e.DeviceId, "/oic/res")
+	return utils.MakeResourceId(e.DeviceId, utils.ResourceLinksHref)
 }
 
 type ResourceStateSnapshotTaken struct {

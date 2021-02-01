@@ -11,11 +11,11 @@ type ResourceLinksPublished struct {
 	pb.ResourceLinksPublished
 }
 
-func (e ResourceLinksPublished) Version() uint64 {
-	return e.EventMetadata.Version
+func (e *ResourceLinksPublished) Version() uint64 {
+	return e.GetEventMetadata().GetVersion()
 }
 
-func (e ResourceLinksPublished) Marshal() ([]byte, error) {
+func (e *ResourceLinksPublished) Marshal() ([]byte, error) {
 	return proto.Marshal(&e.ResourceLinksPublished)
 }
 
@@ -23,10 +23,10 @@ func (e *ResourceLinksPublished) Unmarshal(b []byte) error {
 	return proto.Unmarshal(b, &e.ResourceLinksPublished)
 }
 
-func (e ResourceLinksPublished) EventType() string {
+func (e *ResourceLinksPublished) EventType() string {
 	return http.ProtobufContentType(&pb.ResourceLinksPublished{})
 }
 
-func (e ResourceLinksPublished) AggregateId() string {
-	return utils.MakeResourceId(e.DeviceId, "/oic/res")
+func (e *ResourceLinksPublished) AggregateId() string {
+	return utils.MakeResourceId(e.GetDeviceId(), utils.ResourceLinksHref)
 }

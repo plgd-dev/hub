@@ -10,11 +10,11 @@ type ResourceUpdated struct {
 	pb.ResourceUpdated
 }
 
-func (e ResourceUpdated) Version() uint64 {
-	return e.EventMetadata.Version
+func (e *ResourceUpdated) Version() uint64 {
+	return e.GetEventMetadata().GetVersion()
 }
 
-func (e ResourceUpdated) Marshal() ([]byte, error) {
+func (e *ResourceUpdated) Marshal() ([]byte, error) {
 	return proto.Marshal(&e.ResourceUpdated)
 }
 
@@ -22,10 +22,10 @@ func (e *ResourceUpdated) Unmarshal(b []byte) error {
 	return proto.Unmarshal(b, &e.ResourceUpdated)
 }
 
-func (e ResourceUpdated) EventType() string {
+func (e *ResourceUpdated) EventType() string {
 	return http.ProtobufContentType(&pb.ResourceUpdated{})
 }
 
-func (e ResourceUpdated) AggregateId() string {
-	return e.Id
+func (e *ResourceUpdated) AggregateId() string {
+	return e.GetId()
 }

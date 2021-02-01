@@ -10,11 +10,11 @@ type ResourceChanged struct {
 	pb.ResourceChanged
 }
 
-func (e ResourceChanged) Version() uint64 {
-	return e.EventMetadata.Version
+func (e *ResourceChanged) Version() uint64 {
+	return e.GetEventMetadata().GetVersion()
 }
 
-func (e ResourceChanged) Marshal() ([]byte, error) {
+func (e *ResourceChanged) Marshal() ([]byte, error) {
 	return proto.Marshal(&e.ResourceChanged)
 }
 
@@ -22,10 +22,10 @@ func (e *ResourceChanged) Unmarshal(b []byte) error {
 	return proto.Unmarshal(b, &e.ResourceChanged)
 }
 
-func (e ResourceChanged) EventType() string {
+func (e *ResourceChanged) EventType() string {
 	return http.ProtobufContentType(&pb.ResourceChanged{})
 }
 
-func (e ResourceChanged) AggregateId() string {
-	return e.Id
+func (e *ResourceChanged) AggregateId() string {
+	return e.GetId()
 }
