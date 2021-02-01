@@ -2755,7 +2755,6 @@ type Event_OperationProcessed struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//string token = 1;
 	ErrorStatus *Event_OperationProcessed_ErrorStatus `protobuf:"bytes,2,opt,name=error_status,json=errorStatus,proto3" json:"error_status,omitempty"`
 }
 

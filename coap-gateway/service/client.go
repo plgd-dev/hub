@@ -78,11 +78,10 @@ type Client struct {
 	observedResourcesLock sync.Mutex
 
 	resourceSubscriptions *kitSync.Map // [token]
-	//deviceSubscriptions   *kitSync.Map // [token]
 
-	mutex                        sync.Mutex
-	authCtx                      *authCtx
-	deviceSubscriptionCancelFunc func(ctx context.Context) error
+	mutex                    sync.Mutex
+	authCtx                  *authCtx
+	cancelDeviceSubscription func(ctx context.Context) error
 }
 
 //newClient create and initialize client
@@ -92,7 +91,6 @@ func newClient(server *Server, client *tcp.ClientConn) *Client {
 		coapConn:              client,
 		observedResources:     make(map[string]map[int64]*observedResource),
 		resourceSubscriptions: kitSync.NewMap(),
-		//deviceSubscriptions:   kitSync.NewMap(),
 	}
 }
 
@@ -334,26 +332,26 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 	}
 }
 
-func (client *Client) pullOutDeviceSubscription() func(ctx context.Context) error {
+func (client *Client) extractCancelDeviceSubscription() func(ctx context.Context) error {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
-	c := client.deviceSubscriptionCancelFunc
-	client.deviceSubscriptionCancelFunc = nil
+	c := client.cancelDeviceSubscription
+	client.cancelDeviceSubscription = nil
 	return c
 }
 
 func (client *Client) storeDeviceSubscription(cancel func(ctx context.Context) error) bool {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
-	if client.deviceSubscriptionCancelFunc != nil {
+	if client.cancelDeviceSubscription != nil {
 		return false
 	}
-	client.deviceSubscriptionCancelFunc = cancel
+	client.cancelDeviceSubscription = cancel
 	return true
 }
 
 func (client *Client) cancelDeviceSubscriptions(ctx context.Context) {
-	cancel := client.pullOutDeviceSubscription()
+	cancel := client.extractCancelDeviceSubscription()
 	if cancel != nil {
 		cancel(ctx)
 	}

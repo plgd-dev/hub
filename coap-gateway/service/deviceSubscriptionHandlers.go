@@ -71,7 +71,7 @@ func (h *deviceSubscriptionHandlers) OnClose() {
 		h.mutex.Lock()
 		defer h.mutex.Unlock()
 		log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending, ResourceDeletePending) was closed", h.deviceID)
-		cancelSubscription := h.client.pullOutDeviceSubscription()
+		cancelSubscription := h.client.extractCancelDeviceSubscription()
 		if cancelSubscription != nil {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
