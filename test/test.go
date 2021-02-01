@@ -18,8 +18,9 @@ import (
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/http/transport"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/client"
 	"go.uber.org/atomic"
 
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -133,16 +134,21 @@ func FindResourceLink(href string) schema.ResourceLink {
 }
 
 func ClearDB(ctx context.Context, t *testing.T) {
-	var cmconfig certManager.Config
+	var cmconfig client.Config
 	err := envconfig.Process("DIAL", &cmconfig)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(tlsConfig))
+	var logconfig = log.Config { Debug: true }
+	logger, err := log.NewLogger(logconfig)
+	assert.NoError(t, err)
+
+	dialCertManager, err := client.New(cmconfig, logger)
 	require.NoError(t, err)
-	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
+	tlsConfig := dialCertManager.GetTLSConfig()
+
+	dbClient, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(tlsConfig))
+	require.NoError(t, err)
+	dbs, err := dbClient.ListDatabaseNames(ctx, bson.M{})
 	if mongo.ErrNilDocument == err {
 		return
 	}
@@ -151,10 +157,10 @@ func ClearDB(ctx context.Context, t *testing.T) {
 		if db == "admin" {
 			continue
 		}
-		err = client.Database(db).Drop(ctx)
+		err = dbClient.Database(db).Drop(ctx)
 		require.NoError(t, err)
 	}
-	err = client.Disconnect(ctx)
+	err = dbClient.Disconnect(ctx)
 	require.NoError(t, err)
 	/*
 		var jsmCfg mongodb.Config

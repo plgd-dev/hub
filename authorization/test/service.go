@@ -1,30 +1,27 @@
 package test
 
 import (
-	"context"
-	"crypto/tls"
 	"fmt"
+	"github.com/plgd-dev/kit/log"
 	"sync"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
-	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/authorization/service"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/plgd-dev/kit/security/certManager"
 )
 
-func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, error) {
-	oauth := provider.NewTestProvider()
-	persistence, err := mongodb.NewStore(context.Background(), config.MongoDB, mongodb.WithTLS(tlsConfig))
+func newService(config service.Config) (*service.Server, error) {
+	logger, err := log.NewLogger(config.Log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot create logger %w", err)
 	}
+	log.Set(logger)
 
-	s, err := service.New(config, persistence, oauth, oauth)
+	s, err := service.New(config)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server cert manager %w", err)
 	}
@@ -36,9 +33,9 @@ func MakeConfig(t *testing.T) service.Config {
 	var authCfg service.Config
 	err := envconfig.Process("", &authCfg)
 	require.NoError(t, err)
-	authCfg.Addr = testCfg.AUTH_HOST
-	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
-	authCfg.Device.Provider = "test"
+	authCfg.Service.GrpcServer.GrpcAddr = testCfg.AUTH_HOST
+	authCfg.Service.HttpServer.HttpAddr = testCfg.AUTH_HTTP_HOST
+	authCfg.Clients.Device.Provider = "test"
 	return authCfg
 }
 
@@ -47,11 +44,14 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 func New(t *testing.T, config service.Config) func() {
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	logger, err := log.NewLogger(config.Log)
+	assert.NoError(t, err)
+	if err != nil {
+		fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
 
-	auth, err := newService(config, tlsConfig)
+	auth, err := newService(config)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -63,7 +63,6 @@ func New(t *testing.T, config service.Config) func() {
 
 	return func() {
 		auth.Shutdown()
-		dialCertManager.Close()
 		wg.Wait()
 	}
 }
