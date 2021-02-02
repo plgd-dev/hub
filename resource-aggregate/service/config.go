@@ -20,13 +20,13 @@ type Config struct {
 }
 
 type APIsConfig struct {
-	RA          GrpcServer       `yaml:"grpc" json:"grpc"`
+	RA    GrpcServer    `yaml:"grpc" json:"grpc"`
 }
 
 type GrpcServer struct {
-	GrpcAddr          string                  `yaml:"address" json:"address" default:"0.0.0.0:9083"`
-	GrpcTLSConfig     server.Config           `yaml:"tls" json:"tls"`
-	Capabilities	  CapabilitiesConfig      `yaml:"capabilities" json:"capabilities"`
+	GrpcAddr          string             `yaml:"address" json:"address" default:"0.0.0.0:9083"`
+	GrpcTLSConfig     server.Config      `yaml:"tls" json:"tls"`
+	Capabilities	  CapabilitiesConfig `yaml:"capabilities" json:"capabilities"`
 }
 
 type CapabilitiesConfig struct {
@@ -38,24 +38,24 @@ type CapabilitiesConfig struct {
 }
 
 type Database struct {
-	MongoDB            mongodb.Config     `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB    mongodb.Config    `yaml:"mongoDB" json:"mongoDB"`
 }
 
 type ClientsConfig struct {
-	Nats               nats.Config        `yaml:"nats" json:"nats"`
-	OAuthProvider      OAuthProvider      `yaml:"oauthProvider" json:"oauthProvider"`
-	AuthServer         AuthServer         `yaml:"authorizationServer" json:"authorizationServer"`
+	Nats             nats.Config   `yaml:"nats" json:"nats"`
+	OAuthProvider    OAuthProvider `yaml:"oauthProvider" json:"oauthProvider"`
+	AuthServer       AuthServer    `yaml:"authorizationServer" json:"authorizationServer"`
 }
 
 type OAuthProvider struct {
-	JwksURL        string         `yaml:"jwksUrl" json:"jwksUrl"`
-	OAuthConfig    client2.Config `yaml:"oauth" json:"oauth"`
-	OAuthTLSConfig client.Config  `yaml:"tls" json:"tls"`
+	JwksURL           string         `yaml:"jwksUrl" json:"jwksUrl"`
+	OAuthConfig       client2.Config `yaml:"oauth" json:"oauth"`
+	OAuthTLSConfig    client.Config  `yaml:"tls" json:"tls"`
 }
 
 type AuthServer struct {
-	AuthServerAddr     string         `yaml:"address" json:"address" default:"127.0.0.1:9100"`
-	AuthTLSConfig      client.Config  `yaml:"tls" json:"tls"`
+	AuthServerAddr    string        `yaml:"address" json:"address" default:"127.0.0.1:9100"`
+	AuthTLSConfig     client.Config `yaml:"tls" json:"tls"`
 }
 
 //String return string representation of Config

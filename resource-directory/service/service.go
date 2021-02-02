@@ -3,18 +3,21 @@ package service
 import (
 	"context"
 	"crypto/tls"
+
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/plgd-dev/kit/security/jwt"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"github.com/plgd-dev/kit/security/certManager/client"
-	"github.com/plgd-dev/kit/security/certManager/server"
 )
 
 func NewService(logger *zap.Logger, config Config) (*kitNetGrpc.Server, error) {

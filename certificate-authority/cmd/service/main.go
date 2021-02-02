@@ -8,13 +8,11 @@ import (
 )
 
 func main() {
-
 	var cfg service.Config
 	err := config.Load(&cfg)
 	if err != nil {
 		log.Fatalf("cannot parse configuration: %v", err)
 	}
-
 	log.Setup(cfg.Log)
 	log.Info(cfg.String())
 
@@ -25,5 +23,4 @@ func main() {
 			log.Fatalf("unexpected ends: %v", err)
 		}
 	}
-
 }

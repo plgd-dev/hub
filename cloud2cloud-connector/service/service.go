@@ -3,10 +3,6 @@ package service
 import (
 	"context"
 	"crypto/tls"
-	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
-	"github.com/plgd-dev/kit/security/certManager/client"
-	"github.com/plgd-dev/kit/security/certManager/server"
-	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 	"go.uber.org/zap"
 	"net"
 	"net/http"
@@ -15,16 +11,19 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
-
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetHttp "github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
+	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 )
 
 //Server handle HTTP request

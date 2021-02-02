@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	client2 "github.com/plgd-dev/kit/security/oauth/service/client"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
@@ -21,9 +20,10 @@ import (
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/kit/security/certManager/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -82,7 +82,7 @@ func NewRequestHandlerFromConfig(config Config, logger *zap.Logger) (*RequestHan
 	if err != nil {
 		log.Errorf("cannot create oauth client cert manager %w", err)
 	}
-	oauthMgr, err := client2.NewManagerFromConfiguration(cli.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
+	oauthMgr, err := oauthClient.NewManagerFromConfiguration(cli.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
 	if err != nil {
 		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
 	}

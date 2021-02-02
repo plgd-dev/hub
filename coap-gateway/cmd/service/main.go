@@ -14,7 +14,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot parse configuration: %v", err)
 	}
-
 	log.Setup(cfg.Log)
 	log.Info(cfg.String())
 

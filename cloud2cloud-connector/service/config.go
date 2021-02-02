@@ -32,10 +32,10 @@ type HttpConfig struct {
 }
 
 type Capabilities struct {
-	PullDevicesDisabled   bool                `yaml:"pullDevicesDisabled,omitempty" json:"pullDevicesDisabled" default:"false"`
-	PullDevicesInterval   time.Duration       `yaml:"pullDevicesInterval,omitempty" json:"pullDevicesInterval" default:"5s"`
-	ReconnectInterval     time.Duration       `yaml:"reconnectInterval,omitempty" json:"reconnectInterval" default:"10s"`
-	ResubscribeInterval   time.Duration       `yaml:"resubscribeInterval,omitempty" json:"resubscribeInterval" default:"10s"`
+	PullDevicesDisabled   bool             `yaml:"pullDevicesDisabled,omitempty" json:"pullDevicesDisabled" default:"false"`
+	PullDevicesInterval   time.Duration    `yaml:"pullDevicesInterval,omitempty" json:"pullDevicesInterval" default:"5s"`
+	ReconnectInterval     time.Duration    `yaml:"reconnectInterval,omitempty" json:"reconnectInterval" default:"10s"`
+	ResubscribeInterval   time.Duration    `yaml:"resubscribeInterval,omitempty" json:"resubscribeInterval" default:"10s"`
 }
 
 type ClientsConfig struct {
@@ -57,24 +57,24 @@ type TaskProcessorConfig struct {
 }
 
 type OAuthProvider struct {
-	JwksURL               string              `yaml:"jwksUrl" json:"jwksUrl"`
-	OAuthConfig           oauthClient.Config  `yaml:"oauth" json:"oauth"`
-	OAuthTLSConfig        client.Config       `yaml:"tls" json:"tls"`
+	JwksURL           string             `yaml:"jwksUrl" json:"jwksUrl"`
+	OAuthConfig       oauthClient.Config `yaml:"oauth" json:"oauth"`
+	OAuthTLSConfig    client.Config      `yaml:"tls" json:"tls"`
 }
 
 type AuthorizationConfig struct {
-	AuthServerAddr                  string              `yaml:"address" json:"address" default:"127.0.0.1:9081"`
-	AuthServerTLSConfig             client.Config       `yaml:"tls" json:"tls"`
+	AuthServerAddr         string        `yaml:"address" json:"address" default:"127.0.0.1:9081"`
+	AuthServerTLSConfig    client.Config `yaml:"tls" json:"tls"`
 }
 
 type ResourceDirectoryConfig struct {
-	ResourceDirectoryAddr           string              `yaml:"address" json:"address" default:"127.0.0.1:9082"`
-	ResourceDirectoryTLSConfig      client.Config       `yaml:"tls" json:"tls"`
+	ResourceDirectoryAddr         string        `yaml:"address" json:"address" default:"127.0.0.1:9082"`
+	ResourceDirectoryTLSConfig    client.Config `yaml:"tls" json:"tls"`
 }
 
 type ResourceAggregateConfig struct {
-	ResourceAggregateAddr            string             `yaml:"address" json:"address" default:"127.0.0.1:9083"`
-	ResourceAggregateTLSConfig       client.Config      `yaml:"tls" json:"tls"`
+	ResourceAggregateAddr         string        `yaml:"address" json:"address" default:"127.0.0.1:9083"`
+	ResourceAggregateTLSConfig    client.Config `yaml:"tls" json:"tls"`
 }
 
 //String return string representation of Config

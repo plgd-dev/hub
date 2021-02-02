@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	client2 "github.com/plgd-dev/kit/security/oauth/service/client"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -29,6 +28,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/net/keepalive"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"github.com/plgd-dev/kit/log"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
@@ -36,7 +36,6 @@ import (
 	oAuthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/kit/log"
 )
 
 var expiredKey = "Expired"
@@ -63,7 +62,7 @@ type Server struct {
 	rdClient pbGRPC.GrpcGatewayClient
 
 	oicPingCache          *cache.Cache
-	oauthMgr              *client2.Manager
+	oauthMgr              *oAuthClient.Manager
 	expirationClientCache *cache.Cache
 
 	coapServer      *tcp.Server
@@ -95,7 +94,6 @@ type ListenCertManager = interface {
 
 // New creates server.
 func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server {
-
 	p, err := queue.New(service.CoapGW.NumTaskWorkers, service.CoapGW.LimitTasks)
 	if err != nil {
 		log.Fatalf("cannot job queue %v", err)

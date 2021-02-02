@@ -4,20 +4,20 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/plgd-dev/kit/security/certManager/client"
-	"github.com/plgd-dev/kit/security/certManager/server"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/plgd-dev/kit/security/jwt"
-	"google.golang.org/grpc/credentials"
 )
 
 func Init(config service.Config) (*kitNetGrpc.Server, error) {

@@ -18,6 +18,7 @@ func Init(config service.Config) (*RefImpl, error) {
 		return nil, fmt.Errorf("cannot create logger %w", err)
 	}
 	log.Set(logger)
+	log.Info(config.String())
 
 	server, err := service.NewService(logger, config)
 	if err != nil {

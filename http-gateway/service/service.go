@@ -64,7 +64,6 @@ func New(config Config) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create logger %w", err)
 	}
-
 	log.Set(logger)
 	log.Info(config.String())
 

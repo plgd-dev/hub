@@ -35,7 +35,7 @@ type GrpcConfig struct {
 type CapabilitiesConfig struct {
 	TimeoutForRequests        time.Duration  `yaml:"timeout" json:"timeout" default:"10s"`
 	ProjectionCacheExpiration time.Duration  `yaml:"cacheExpiration" json:"cacheExpiration" default:"1m"`
-	GoRoutinePoolSize               int            `yaml:"goRoutinePoolSize" json:"goRoutinePoolSize" default:"16"`
+	GoRoutinePoolSize         int            `yaml:"goRoutinePoolSize" json:"goRoutinePoolSize" default:"16"`
 	UserDevicesManagerTickFrequency time.Duration  `yaml:"userMgmtTickFrequency" json:"userMgmtTickFrequency" default:"15s"`
 	UserDevicesManagerExpiration    time.Duration  `yaml:"userMgmtExpiration" json:"userMgmtExpiration" default:"1m"`
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+
 	"github.com/plgd-dev/kit/security/certManager/client"
 
 	nats "github.com/nats-io/nats.go"

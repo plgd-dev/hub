@@ -24,10 +24,6 @@ type RequestHandler struct {
 	closeFunc               func()
 }
 
-/*type HandlerConfig struct {
-	Service RDConfig
-}
-*/
 func AddHandler(svr *kitNetGrpc.Server, config RDConfig, clientTLS *tls.Config) error {
 	handler, err := NewRequestHandlerFromConfig(config, clientTLS)
 	if err != nil {

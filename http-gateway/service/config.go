@@ -43,8 +43,8 @@ type HttpConfig struct {
 }
 
 type Capabilities struct {
-	WebSocketReadLimit       int64              `yaml:"websocketReadLimit" json:"websocketReadLimit" default:"8192"`
-	WebSocketReadTimeout     time.Duration      `yaml:"websocketReadTimeout" json:"websocketReadTimeout" default:"4s"`
+	WebSocketReadLimit      int64         `yaml:"websocketReadLimit" json:"websocketReadLimit" default:"8192"`
+	WebSocketReadTimeout    time.Duration `yaml:"websocketReadTimeout" json:"websocketReadTimeout" default:"4s"`
 }
 
 type ClientsConfig struct {

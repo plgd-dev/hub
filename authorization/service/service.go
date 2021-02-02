@@ -4,14 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
-	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/certManager/client"
-	"github.com/plgd-dev/kit/security/certManager/server"
 	"net"
 	"time"
 
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/authorization/uri"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -74,7 +74,10 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *
 
 // New creates the service's HTTP server.
 func New(cfg Config) (*Server, error) {
-	logger, err := log.NewLogger(log.Config{ Debug: cfg.Log.Debug })
+	logger, err := log.NewLogger(cfg.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
 	log.Set(logger)
 	log.Info(cfg.String())
 
@@ -88,24 +91,7 @@ func New(cfg Config) (*Server, error) {
 		log.Fatalf("cannot parse config: %v", err)
 	}
 
-	if cfg.Clients.Device.OAuth2.AccessType == "" {
-		cfg.Clients.Device.OAuth2.AccessType = "offline"
-	}
-	if cfg.Clients.Device.OAuth2.ResponseType == "" {
-		cfg.Clients.Device.OAuth2.ResponseType = "code"
-	}
-	if cfg.Clients.Device.OAuth2.ResponseMode == "" {
-		cfg.Clients.Device.OAuth2.ResponseMode = "query"
-	}
-	if cfg.Clients.SDK.OAuth.AccessType == "" {
-		cfg.Clients.SDK.OAuth.AccessType = "online"
-	}
-	if cfg.Clients.SDK.OAuth.ResponseType == "" {
-		cfg.Clients.SDK.OAuth.ResponseType = "token"
-	}
-	if cfg.Clients.SDK.OAuth.ResponseMode == "" {
-		cfg.Clients.SDK.OAuth.ResponseMode = "query"
-	}
+	cfg.CheckForDefaults()
 	deviceProvider := provider.New(cfg.Clients.Device)
 	sdkProvider := provider.New(provider.Config{
 		Provider: "generic",

@@ -3,11 +3,6 @@ package service
 import (
 	"context"
 	"crypto/tls"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-
-	"github.com/plgd-dev/kit/security/certManager/client"
-	"github.com/plgd-dev/kit/security/certManager/server"
 	"os"
 	"os/signal"
 	"sync"
@@ -21,11 +16,15 @@ import (
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/plgd-dev/kit/security/jwt"
 	oAuthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 	"golang.org/x/sync/semaphore"
@@ -95,7 +94,6 @@ func (l *NumParallelProcessedRequestLimiter) UnaryServerInterceptor(ctx context.
 
 // New creates new Server with provided store and publisher.
 func New(logger *zap.Logger, service APIsConfig, database Database, clients ClientsConfig ) *Server {
-
 	mongoCertManager, err := client.New(database.MongoDB.TLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create mongodb client cert manager %w", err)
