@@ -4,6 +4,10 @@ RUN go build -o /go/bin/service ./cmd/service
 RUN mkdir -p /data/
 COPY http-gateway.yaml /data/http-gateway.yaml
 
+FROM node:12 AS build-web
+COPY web /web
+RUN cd /web && npm install && npm run build
+
 # alpine
 FROM alpine:3.12 as service
 RUN apk add --no-cache ca-certificates

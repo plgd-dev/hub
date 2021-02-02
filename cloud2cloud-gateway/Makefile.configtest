@@ -21,6 +21,7 @@ test: build-servicecontainer
 		--name=$(SERVICE_NAME) \
 		--hostname=$(SERVICE_NAME) \
 		-v $(shell pwd)/../.tmp/certs:/data/certs \
+		-v $(shell pwd)/c2c-gateway.yaml:/data/c2c-gateway.yaml \
 		plgd/$(SERVICE_NAME):$(LATEST_TAG)
 	#--network=host
 

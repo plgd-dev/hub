@@ -21,6 +21,7 @@ test: build-servicecontainer
 		--name=$(SERVICE_NAME) \
 		--hostname=$(SERVICE_NAME) \
 		-v $(shell pwd)/../.tmp/certs:/data/certs \
+		-v $(shell pwd)/resource-directory.yaml:/data/resource-directory.yaml \
 		plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 build-servicecontainer:

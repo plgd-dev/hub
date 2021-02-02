@@ -113,7 +113,7 @@ test: env
 		cloud-test \
 		go test -mod=mod -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
-build: cloud-test $(SUBDIRS)
+build: cloud-build $(SUBDIRS)
 
 clean:
 	docker rm -f mongo || true

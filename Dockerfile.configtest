@@ -6,7 +6,7 @@
 #    && sudo ./update-golang.sh \
 #    && ln -s /usr/local/go/bin/go /usr/bin/go
 
-FROM golang:1.14-alpine AS cloud-test
+FROM golang:1.14-alpine AS cloud-build
 RUN apk add --no-cache curl git build-base bash
 
 WORKDIR $GOPATH/src/github.com/plgd-dev
