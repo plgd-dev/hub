@@ -1,7 +1,7 @@
 package service
 
 import (
-	"runtime"
+	"github.com/plgd-dev/kit/sync/task/queue"
 	"time"
 
 	"github.com/plgd-dev/kit/config"
@@ -19,12 +19,7 @@ type Config struct {
 }
 
 func (c Config) CheckForDefaults() Config {
-	if c.Service.CoapGW.NumTaskWorkers == 0 {
-		c.Service.CoapGW.NumTaskWorkers = runtime.NumCPU() * 2
-	}
-	if c.Service.CoapGW.LimitTasks == 0 {
-		c.Service.CoapGW.LimitTasks = 1024 * 1024 * 2
-	}
+	c.Service.CoapGW.TaskQueue.SetDefaults()
 	return c
 }
 
@@ -43,6 +38,7 @@ type CoapConfig struct {
 	LogMessages          bool               `yaml:"logMessageEnabled" json:"logMessageEnabled" default:"false"`
 	NumTaskWorkers       int                `yaml:"numTaskWorkers,omitempty" json:"numTaskWorkers"`
 	LimitTasks           int                `yaml:"limitTasks,omitempty" json:"limitTasks"`
+	TaskQueue            queue.Config       `yaml:"inline" json:"taskQueue"`
 }
 
 type CapabilitiesConfig struct {

@@ -1,4 +1,5 @@
 import { hot } from 'react-hot-loader/root'
+import { createContext, useContext } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import classNames from 'classnames'
 import { Router } from 'react-router-dom'
@@ -18,7 +19,9 @@ import { history } from '@/store/history'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
-const App = () => {
+const AppContext = createContext()
+
+const App = ({ config }) => {
   const { isLoading, isAuthenticated, error, loginWithRedirect } = useAuth0()
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
   const { formatMessage: _ } = useIntl()
@@ -59,27 +62,31 @@ const App = () => {
   }
 
   return (
-    <Router history={history}>
-      <Helmet
-        defaultTitle={_(t.defaultTitle)}
-        titleTemplate={`%s | ${_(t.defaultTitle)}`}
-      />
-      <Container fluid id="app" className={classNames({ collapsed })}>
-        <LeftPanel>
-          <Menu
-            collapsed={collapsed}
-            toggleCollapsed={() => setCollapsed(!collapsed)}
-          />
-        </LeftPanel>
-        <StatusBar />
-        <div id="content">
-          <Routes />
-          <Footer />
-        </div>
-      </Container>
-      <ToastContainer />
-    </Router>
+    <AppContext.Provider value={config}>
+      <Router history={history}>
+        <Helmet
+          defaultTitle={_(t.defaultTitle)}
+          titleTemplate={`%s | ${_(t.defaultTitle)}`}
+        />
+        <Container fluid id="app" className={classNames({ collapsed })}>
+          <LeftPanel>
+            <Menu
+              collapsed={collapsed}
+              toggleCollapsed={() => setCollapsed(!collapsed)}
+            />
+          </LeftPanel>
+          <StatusBar />
+          <div id="content">
+            <Routes />
+            <Footer />
+          </div>
+        </Container>
+        <ToastContainer />
+      </Router>
+    </AppContext.Provider>
   )
 }
+
+export const useAppConfig = () => useContext(AppContext)
 
 export default hot(App)

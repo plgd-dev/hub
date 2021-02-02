@@ -13,8 +13,15 @@ import reportWebVitals from './reportWebVitals'
 fetch('/auth_config.json')
   .then(response => response.json())
   .then(config => {
-    if (!config.clientID || !config.domain) {
-      throw new Error('clientID and domain must be set in auth_config.json')
+    if (
+      !config.clientID ||
+      !config.domain ||
+      !config.audience ||
+      !config.httpGatewayAddress
+    ) {
+      throw new Error(
+        'clientID, domain, audience and httpGatewayAddress must be set in auth_config.json'
+      )
     }
 
     const BaseComponent = () => {
@@ -34,7 +41,7 @@ fetch('/auth_config.json')
               audience={config.audience}
               scope={config.scope}
             >
-              <App />
+              <App config={config} />
             </Auth0Provider>
           </IntlProvider>
         </Provider>
@@ -55,5 +62,7 @@ fetch('/auth_config.json')
   .catch(error => {
     const rootDiv = document.getElementById('root')
 
-    rootDiv.innerHTML = `<div class="client-error-message">${error.message}</div>`
+    rootDiv.innerHTML = `<div class="client-error-message">${
+      error.message
+    }</div>`
   })

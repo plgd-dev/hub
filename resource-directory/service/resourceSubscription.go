@@ -15,11 +15,11 @@ type resourceSubscription struct {
 	resourceEvent *pb.SubscribeForEvents_ResourceEventFilter
 }
 
-func NewResourceSubscription(id, userID string, send SendEventFunc, resourceProjection *Projection, resourceEvent *pb.SubscribeForEvents_ResourceEventFilter) *resourceSubscription {
+func NewResourceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, resourceEvent *pb.SubscribeForEvents_ResourceEventFilter) *resourceSubscription {
 	log.Debugf("subscription.NewResourceSubscription %v %+v", id, resourceEvent.GetResourceId())
 	defer log.Debugf("subscription.NewResourceSubscription %v done", id)
 	return &resourceSubscription{
-		subscription:  NewSubscription(userID, id, send, resourceProjection),
+		subscription:  NewSubscription(userID, id, token, send, resourceProjection),
 		resourceEvent: resourceEvent,
 	}
 }
@@ -92,7 +92,8 @@ func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Contex
 	if !found {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceChanged_{
 			ResourceChanged: &resourceChanged,

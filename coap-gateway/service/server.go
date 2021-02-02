@@ -12,13 +12,17 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
-	"github.com/plgd-dev/kit/task/queue"
+	kitSync "github.com/plgd-dev/kit/sync"
+
+	"github.com/plgd-dev/kit/sync/task/queue"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -74,14 +78,15 @@ type Server struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 
-	taskQueue       *queue.TaskQueue
-	sigs            chan os.Signal
-
 	oauthCertManager *client.CertManager
 	raCertManager    *client.CertManager
 	asCertManager    *client.CertManager
 	rdCertManager    *client.CertManager
 	listenCertManager *server.CertManager
+
+	taskQueue *queue.Queue
+	sigs chan os.Signal
+	userDeviceSubscriptions *kitSync.Map
 }
 
 type DialCertManager = interface {
@@ -94,10 +99,11 @@ type ListenCertManager = interface {
 
 // New creates server.
 func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server {
-	p, err := queue.New(service.CoapGW.NumTaskWorkers, service.CoapGW.LimitTasks)
+	p, err := queue.New(service.CoapGW.TaskQueue)
 	if err != nil {
 		log.Fatalf("cannot job queue %v", err)
 	}
+
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -261,6 +267,8 @@ func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server 
 		asCertManager:    asCertManager,
 		rdCertManager:    rdCertManager,
 		listenCertManager: listenCertManager,
+
+		userDeviceSubscriptions: kitSync.NewMap(),
 	}
 
 	s.setupCoapServer()
@@ -277,6 +285,111 @@ func getDeviceID(client *Client) string {
 		}
 	}
 	return deviceID
+}
+
+type userDeviceSubscriptionChannel struct {
+	counter int
+	userID  string
+	store   *kitSync.Map
+
+	channel *grpcClient.DeviceSubscriptions
+	mutex   sync.Mutex
+}
+
+func (c *userDeviceSubscriptionChannel) getOrCreate(ctx context.Context, userID string, rdClient pbGRPC.GrpcGatewayClient) (*grpcClient.DeviceSubscriptions, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if c.channel == nil {
+		sub, err := grpcClient.NewDeviceSubscriptions(kitNetGrpc.CtxWithUserID(ctx, userID), rdClient, func(err error) {
+			log.Errorf("userDeviceSubscriptionChannel: %v", err)
+		})
+		if err == nil {
+			c.channel = sub
+		}
+		return sub, err
+	}
+	return c.channel, nil
+}
+
+func (c *userDeviceSubscriptionChannel) pop() *grpcClient.DeviceSubscriptions {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	ch := c.channel
+	c.channel = nil
+	return ch
+}
+
+func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
+	var cancelSubscription bool
+	c.store.ReplaceWithFunc(c.userID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		if oldLoaded == true {
+			oldValue.(*userDeviceSubscriptionChannel).counter--
+			if oldValue.(*userDeviceSubscriptionChannel).counter == 0 {
+				cancelSubscription = true
+				return nil, true
+			}
+			return oldValue, false
+		}
+		return nil, false
+	})
+	if cancelSubscription {
+		ch := c.pop()
+		if ch != nil {
+			return ch.Cancel()
+		}
+	}
+	return func() {}, nil
+}
+
+func (server *Server) subscribeToDevice(ctx context.Context, userID string, deviceID string, handler *deviceSubscriptionHandlers) (func(context.Context) error, error) {
+	if userID == "" {
+		return nil, fmt.Errorf("subscribeToDevice: invalid userID")
+	}
+	if deviceID == "" {
+		return nil, fmt.Errorf("subscribeToDevice: invalid deviceID")
+	}
+	channel := &userDeviceSubscriptionChannel{
+		counter: 1,
+		userID:  userID,
+		store:   server.userDeviceSubscriptions,
+	}
+	oldValue, ok := server.userDeviceSubscriptions.ReplaceWithFunc(userID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		if oldLoaded == true {
+			oldValue.(*userDeviceSubscriptionChannel).counter++
+			return oldValue, false
+		}
+		return channel, false
+	})
+	if ok {
+		channel = oldValue.(*userDeviceSubscriptionChannel)
+	}
+	cancel := func() {
+		wait, err1 := channel.cancel()
+		if err1 == nil {
+			wait()
+		} else {
+			log.Errorf("subscribeToDevice: cannot cancel channel for user %v device %v: %v", userID, deviceID, err1)
+		}
+	}
+	ch, err := channel.getOrCreate(ctx, userID, server.rdClient)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	sub, err := ch.Subscribe(ctx, deviceID, handler, handler)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	var cancelled uint32
+	return func(context.Context) error {
+		if !atomic.CompareAndSwapUint32(&cancelled, 0, 1) {
+			return nil
+		}
+		defer cancel()
+		return sub.Cancel(ctx)
+	}, nil
+
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(req *mux.Message, client *Client)) {

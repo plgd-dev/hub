@@ -26,9 +26,7 @@ export const Label = props => {
     dataClassName,
     ...rest
   } = props
-  const dataAttributes = pickBy(props, (_, key) =>
-    startsWith(key, 'data-')
-  )
+  const dataAttributes = pickBy(props, (_, key) => startsWith(key, 'data-'))
   const titleClassName = classNames('label-title', {
     'has-error': !isEmpty(errorMessage),
   })
@@ -60,8 +58,8 @@ export const Label = props => {
         })}
       </div>
       {errorMessage && (
-          <div className="label-error-message">{errorMessage}</div>
-        )}
+        <div className="label-error-message">{errorMessage}</div>
+      )}
     </label>
   )
 }

@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import axios from 'axios'
 
+import { useIsMounted } from '@/common/hooks'
+
 export const useApi = (url, options = {}) => {
   const { getAccessTokenSilently } = useAuth0()
+  const isMounted = useIsMounted()
   const [state, setState] = useState({
     error: null,
     loading: true,
@@ -32,19 +35,23 @@ export const useApi = (url, options = {}) => {
             url,
           })
 
-          setState({
-            ...state,
-            data,
-            error: null,
-            loading: false,
-          })
+          if (isMounted.current) {
+            setState({
+              ...state,
+              data,
+              error: null,
+              loading: false,
+            })
+          }
         } catch (error) {
-          setState({
-            ...state,
-            data: null,
-            error,
-            loading: false,
-          })
+          if (isMounted.current) {
+            setState({
+              ...state,
+              data: null,
+              error,
+              loading: false,
+            })
+          }
         }
       })()
     },

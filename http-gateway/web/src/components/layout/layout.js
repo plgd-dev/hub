@@ -17,11 +17,20 @@ const { FULL_PAGE, SPLIT } = layoutTypes
  * @param {Array} breadcrumbs - Breadcrumbs to be rendered.
  * @param {Boolean} loading - Display's a loader below status bar.
  * @param {String} title - Sets the title of the browser tab.
- * @param {String} type - Layout type. When set to SPLIT,
+ * @param {String} type - Layout type. When set to SPLIT.
+ * @param {Boolean} shimmeringBreadcrumbs - Enables a "shimmering" loader to be rendered when loading is true.
  * the first n children will be rendered on the left side and the last child will be rendered to the right side.
  */
 export const Layout = props => {
-  const { header, breadcrumbs, loading, title, type, children } = props
+  const {
+    header,
+    breadcrumbs,
+    loading,
+    title,
+    type,
+    shimmeringBreadcrumbs,
+    children,
+  } = props
   const isSplit = type === SPLIT && Array.isArray(children)
 
   return (
@@ -33,7 +42,14 @@ export const Layout = props => {
       <div id="layout">
         {(breadcrumbs || header) && (
           <div className="layout-header">
-            {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
+            {breadcrumbs && (
+              <Breadcrumbs
+                items={breadcrumbs}
+                className={classNames({
+                  shimmering: shimmeringBreadcrumbs && loading,
+                })}
+              />
+            )}
             <div>{header}</div>
           </div>
         )}
@@ -64,6 +80,7 @@ Layout.propTypes = {
   header: PropTypes.node,
   title: PropTypes.string,
   type: PropTypes.oneOf([FULL_PAGE, SPLIT]),
+  shimmeringBreadcrumbs: PropTypes.bool,
 }
 
 Layout.defaultProps = {
@@ -72,4 +89,5 @@ Layout.defaultProps = {
   header: null,
   title: null,
   type: FULL_PAGE,
+  shimmeringBreadcrumbs: false,
 }
