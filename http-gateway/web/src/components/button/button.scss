@@ -1,0 +1,64 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 40px;
+  border-radius: 2px;
+  line-height: 1;
+  font-size: $font_size;
+  outline: 0;
+  padding: 0 20px;
+  min-width: 100px;
+  border: 0;
+
+  // Primary button
+  &.btn-primary {
+    color: $white_100;
+    background-color: $blue_100;
+
+    &.btn-primary:not(:disabled):not(.disabled):hover,
+    &.btn-primary:not(:disabled):not(.disabled).hover,
+    &.btn-primary:not(:disabled):not(.disabled):active,
+    &.btn-primary:not(:disabled):not(.disabled).active,
+    &.btn-primary.dropdown-toggle {
+      background-color: $blue_200;
+      box-shadow: none;
+    }
+
+    &:focus,
+    &.focus {
+      box-shadow: none;
+    }
+  }
+
+  // Secondary button
+  &.btn-secondary {
+    color: $blue_100;
+    background-color: $black_20;
+
+    &.btn-secondary:not(:disabled):not(.disabled):hover,
+    &.btn-secondary:not(:disabled):not(.disabled).hover,
+    &.btn-secondary:not(:disabled):not(.disabled):active,
+    &.btn-secondary:not(:disabled):not(.disabled).active,
+    &.btn-secondary.dropdown-toggle {
+      background-color: $black_25;
+      box-shadow: none;
+      color: $blue_100;
+    }
+
+    &:focus,
+    &.focus {
+      box-shadow: none;
+    }
+  }
+
+  &.loading {
+    .fa-spinner {
+      animation: spin 0.9s linear infinite;
+    }
+  }
+}

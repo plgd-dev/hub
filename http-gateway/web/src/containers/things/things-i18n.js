@@ -17,6 +17,14 @@ export const messages = defineMessages({
     id: 'things.types',
     defaultMessage: 'Types',
   },
+  interfaces: {
+    id: 'things.interfaces',
+    defaultMessage: 'Interfaces',
+  },
+  deviceInterfaces: {
+    id: 'things.deviceInterfaces',
+    defaultMessage: 'Device Interfaces',
+  },
   status: {
     id: 'things.status',
     defaultMessage: 'Status',
@@ -33,12 +41,28 @@ export const messages = defineMessages({
     id: 'things.location',
     defaultMessage: 'Location',
   },
-  type: {
-    id: 'things.type',
-    defaultMessage: 'Type',
-  },
   resources: {
     id: 'things.resources',
     defaultMessage: 'Resources',
+  },
+  deviceId: {
+    id: 'things.deviceId',
+    defaultMessage: 'Device ID',
+  },
+  update: {
+    id: 'things.update',
+    defaultMessage: 'Update',
+  },
+  updating: {
+    id: 'things.updating',
+    defaultMessage: 'Updating',
+  },
+  retrieve: {
+    id: 'things.retrieve',
+    defaultMessage: 'Retrieve',
+  },
+  retrieving: {
+    id: 'things.retrieving',
+    defaultMessage: 'Retrieving',
   },
 })
