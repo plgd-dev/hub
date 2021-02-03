@@ -96,7 +96,7 @@ message ResourceDeleted {
 
 message ResourceStateSnapshotTaken {
     string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
-    Resource resource = 2;
+    string device_id = 2;
     ResourceChanged  latest_resource_change = 3;
     uint32 pending_requests_count = 4;
     EventMetadata event_metadata = 5;
