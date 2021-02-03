@@ -16,15 +16,25 @@ import { Footer } from '@/components/footer'
 import { useLocalStorage } from '@/common/hooks'
 import { Routes } from '@/routes'
 import { history } from '@/store/history'
+import { security } from '@/common/services/security'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
 const AppContext = createContext()
 
 const App = ({ config }) => {
-  const { isLoading, isAuthenticated, error, loginWithRedirect } = useAuth0()
+  const {
+    isLoading,
+    isAuthenticated,
+    error,
+    loginWithRedirect,
+    getAccessTokenSilently,
+  } = useAuth0()
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
   const { formatMessage: _ } = useIntl()
+
+  // Set the getAccessTokenSilently method to the security singleton
+  security.setAccessTokenSilently(getAccessTokenSilently)
 
   // Render an error box with an auth error
   if (error) {
@@ -62,7 +72,7 @@ const App = ({ config }) => {
   }
 
   return (
-    <AppContext.Provider value={config}>
+    <AppContext.Provider value={{ ...config, collapsed }}>
       <Router history={history}>
         <Helmet
           defaultTitle={_(t.defaultTitle)}

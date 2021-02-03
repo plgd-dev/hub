@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
 
-import { thingsStatuses } from './constants'
+import { thingsStatuses, THINGS_DEFAULT_PAGE_SIZE } from './constants'
 import { thingShape } from './shapes'
 import { messages as t } from './things-i18n'
 
@@ -58,6 +58,7 @@ export const ThingsList = ({ data }) => {
         },
       ]}
       autoFillEmptyRows
+      defaultPageSize={THINGS_DEFAULT_PAGE_SIZE}
     />
   )
 }

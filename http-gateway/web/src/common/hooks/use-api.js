@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
-import axios from 'axios'
 
 import { useIsMounted } from '@/common/hooks'
+import { fetchApi } from '@/common/services'
 
 export const useApi = (url, options = {}) => {
-  const { getAccessTokenSilently } = useAuth0()
   const isMounted = useIsMounted()
   const [state, setState] = useState({
     error: null,
@@ -18,22 +16,7 @@ export const useApi = (url, options = {}) => {
     () => {
       ;(async () => {
         try {
-          const { audience, scope, ...fetchOptions } = options
-          const accessToken = await getAccessTokenSilently({ audience, scope })
-          const oAuthSettings = {
-            ...fetchOptions,
-            headers: {
-              'Content-Type': 'application/json',
-              ...fetchOptions.headers,
-              // Add the Authorization header to the existing headers
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-
-          const { data } = await axios({
-            ...oAuthSettings,
-            url,
-          })
+          const { data } = await fetchApi(url, options)
 
           if (isMounted.current) {
             setState({

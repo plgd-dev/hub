@@ -13,12 +13,13 @@
 
   &.inline {
     margin-bottom: 0;
+    cursor: auto;
 
     .label-data {
       flex-direction: row;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      min-height: 35px;
+      min-height: 34px;
       border-bottom: 1px solid $default_border_color;
       box-sizing: border-box;
       padding: 6px 0;

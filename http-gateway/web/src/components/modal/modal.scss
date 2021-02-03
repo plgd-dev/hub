@@ -1,0 +1,73 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
+$padding: 25px;
+
+.modal-backdrop {
+  opacity: 1;
+  background: rgba($white_100, 0.7);
+  width: calc(100vw - #{$left_panel_expanded});
+  left: $left_panel_expanded;
+
+  &.collapsed {
+    width: calc(100vw - #{$left_panel_collapsed});
+    left: $left_panel_collapsed;
+  }
+
+  &.show {
+    opacity: 1;
+  }
+}
+
+.modal-dialog {
+  width: 600px;
+  max-width: 600px;
+  left: $left_panel_expanded / 2;
+
+  &.collapsed {
+    left: $left_panel_collapsed / 2;
+  }
+
+  .modal-content {
+    box-shadow: 0px 10px 40px #e9ecef;
+    border: 0;
+    border-radius: 0;
+    min-height: 200px;
+
+    .modal-header {
+      border: 0;
+      border-radius: 0;
+      padding: $padding;
+      padding-bottom: $padding - 5px;
+
+      .close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        margin: -10px -10px -10px auto;
+        font-size: 10px;
+        outline: 0;
+        color: $blue_100;
+        opacity: 1;
+      }
+    }
+
+    .modal-body {
+      padding: 0 $padding;
+    }
+
+    .modal-footer {
+      border: 0;
+      border-radius: 0;
+      padding: 10px $padding 20px $padding;
+
+      > * {
+        margin: 0;
+      }
+
+      .btn {
+        margin-left: 10px;
+      }
+    }
+  }
+}

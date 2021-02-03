@@ -1,15 +1,15 @@
 import { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
-import { Link } from 'react-router-dom'
 
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
 
+import { RESOURCES_DEFAULT_PAGE_SIZE } from './constants'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
-export const ThingsResourcesList = ({ data }) => {
+export const ThingsResourcesList = ({ data, onClick }) => {
   const { formatMessage: _ } = useIntl()
 
   const columns = useMemo(
@@ -17,15 +17,20 @@ export const ThingsResourcesList = ({ data }) => {
       {
         Header: _(t.location),
         accessor: 'href',
-        Cell: ({ value, row }) => (
-          <Link to={`/things/${row.original?.di}${row.original?.href}`}>
-            {value}
-          </Link>
-        ),
+        Cell: ({ value, row }) => {
+          const {
+            original: { di, href },
+          } = row
+          return (
+            <span className="link" onClick={() => onClick({ di, href })}>
+              {value}
+            </span>
+          )
+        },
         style: { width: '50%' },
       },
       {
-        Header: _(t.type),
+        Header: _(t.types),
         accessor: 'rt',
         Cell: ({ value }) => {
           return (
@@ -36,7 +41,7 @@ export const ThingsResourcesList = ({ data }) => {
         },
       },
     ],
-    [] //eslint-disable-line
+    [onClick] //eslint-disable-line
   )
 
   return (
@@ -49,7 +54,7 @@ export const ThingsResourcesList = ({ data }) => {
           desc: false,
         },
       ]}
-      defaultPageSize={5}
+      defaultPageSize={RESOURCES_DEFAULT_PAGE_SIZE}
       autoFillEmptyRows
     />
   )
@@ -57,6 +62,7 @@ export const ThingsResourcesList = ({ data }) => {
 
 ThingsResourcesList.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
+  onClick: PropTypes.func.isRequired,
 }
 
 ThingsResourcesList.defaultProps = {
