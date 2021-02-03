@@ -5,6 +5,9 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"github.com/plgd-dev/cloud/coap-gateway/service"
+	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -19,14 +22,13 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/net/coap"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/server"
 
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 
-	"github.com/kelseyhightower/envconfig"
 	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -204,13 +206,16 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 }
 
 func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn {
-	var config certManager.OcfConfig
-	err := envconfig.Process("LISTEN", &config)
+	var cfg service.Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	listenCertManager, err := certManager.NewOcfCertManager(config)
+
+	logger, err := log.NewLogger(cfg.Log)
+	assert.NoError(t, err)
+	listenCertManager, err := server.New(cfg.Service.CoapGW.ServerTLSConfig, logger)
 	require.NoError(t, err)
 
-	tlsConfig := listenCertManager.GetClientTLSConfig()
+	tlsConfig := listenCertManager.GetTLSConfig()
 	tlsConfig.InsecureSkipVerify = true
 	tlsConfig.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 		if len(rawCerts) == 0 {

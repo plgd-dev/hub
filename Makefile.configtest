@@ -10,7 +10,8 @@ endif
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := authorization resource-aggregate resource-directory coap-gateway cloud2cloud-connector cloud2cloud-gateway grpc-gateway certificate-authority portal-webapi bundle http-gateway
+SUBDIRS := authorization resource-aggregate resource-directory coap-gateway cloud2cloud-connector cloud2cloud-gateway grpc-gateway certificate-authority http-gateway
+#portal-webapi bundle
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
 
 default: build

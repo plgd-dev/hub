@@ -1,29 +1,30 @@
 package test
 
 import (
+	"github.com/plgd-dev/kit/config"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/resource-directory/refImpl"
+	"github.com/plgd-dev/cloud/resource-directory/service"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) refImpl.Config {
-	var rdCfg refImpl.Config
-	err := envconfig.Process("", &rdCfg)
+func MakeConfig(t *testing.T) service.Config {
+	var rdCfg service.Config
+	err := config.Load(&rdCfg)
 	require.NoError(t, err)
-	rdCfg.Addr = testCfg.RESOURCE_DIRECTORY_HOST
-	rdCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
-	rdCfg.Service.FQDN = "resource-directory-" + t.Name()
-	rdCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
-	rdCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	rdCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	rdCfg.UserDevicesManagerTickFrequency = time.Millisecond * 500
-	rdCfg.UserDevicesManagerExpiration = time.Millisecond * 500
-	rdCfg.JwksURL = testCfg.JWKS_URL
+	rdCfg.Service.RD.GrpcAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	rdCfg.Service.RD.FQDN = "resource-directory-" + t.Name()
+	rdCfg.Clients.Authorization.Addr = testCfg.AUTH_HOST
+	rdCfg.Clients.ResourceAggregate.Addr = testCfg.RESOURCE_AGGREGATE_HOST
+	rdCfg.Clients.OAuthProvider.OAuthConfig.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	rdCfg.Clients.OAuthProvider.OAuthConfig.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	rdCfg.Service.RD.Capabilities.UserDevicesManagerTickFrequency = time.Millisecond * 500
+	rdCfg.Service.RD.Capabilities.UserDevicesManagerExpiration = time.Millisecond * 500
+	rdCfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
 	rdCfg.Log.Debug = true
 	return rdCfg
 }
@@ -32,7 +33,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
-func New(t *testing.T, cfg refImpl.Config) func() {
+func New(t *testing.T, cfg service.Config) func() {
 
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
@@ -46,7 +47,7 @@ func New(t *testing.T, cfg refImpl.Config) func() {
 	}()
 
 	return func() {
-		s.Close()
+		s.Shutdown()
 		wg.Wait()
 	}
 }

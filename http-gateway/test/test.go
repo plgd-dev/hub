@@ -3,6 +3,7 @@ package test
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/plgd-dev/kit/config"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,15 +12,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/kit/net/http/transport"
-
 	"github.com/jtacoma/uritemplates"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/kit/net/http/transport"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,11 +28,13 @@ const TestTimeout = 20 * time.Second
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
-	envconfig.Process("", &cfg)
-	cfg.Address = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
-	cfg.Listen.File.DisableVerifyClientCertificate = true
-	cfg.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	cfg.JwksURL = testCfg.JWKS_URL
+	err := config.Load(&cfg)
+	require.NoError(t, err)
+
+	cfg.Service.HttpConfig.HttpAddr = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
+	cfg.Service.HttpConfig.HttpTLSConfig.ClientCertificateRequired = false
+	cfg.Clients.RDConfig.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
 	return cfg
 }
 

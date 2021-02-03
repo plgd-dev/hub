@@ -3,15 +3,17 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
+	"github.com/smallstep/assert"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/service"
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -93,21 +95,19 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	trigger := newTestTrigger()
 
 	var cfg service.Config
-	err := envconfig.Process("", &cfg)
+	err := config.Load(&cfg)
 	require.NoError(t, err)
-	cfg.Addr = "localhost:1234"
+	logger, err := log.NewLogger(cfg.Log)
+	assert.NoError(t, err)
+
+	cfg.Service.GrpcServer.GrpcAddr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
-	err = envconfig.Process("LISTEN", &acmeCfg)
-	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
-	require.NoError(t, err)
-	tlsConfig := certMgr.GetClientTLSConfig()
-
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+    grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
+	assert.NoError(t, err)
+	conn, err := grpc.Dial(cfg.Service.GrpcServer.GrpcAddr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 
@@ -211,21 +211,19 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	}
 
 	var cfg service.Config
-	err := envconfig.Process("", &cfg)
+	err := config.Load(&cfg)
 	require.NoError(t, err)
-	cfg.Addr = "localhost:1234"
+	logger, err := log.NewLogger(cfg.Log)
+	assert.NoError(t, err)
+
+	cfg.Service.GrpcServer.GrpcAddr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
-	err = envconfig.Process("LISTEN", &acmeCfg)
-	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
-	require.NoError(t, err)
-	tlsConfig := certMgr.GetClientTLSConfig()
-
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
+	assert.NoError(t, err)
+	conn, err := grpc.Dial(cfg.Service.GrpcServer.GrpcAddr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 
@@ -302,21 +300,19 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	}
 
 	var cfg service.Config
-	err := envconfig.Process("", &cfg)
+	err := config.Load(&cfg)
 	require.NoError(t, err)
-	cfg.Addr = "localhost:1234"
+	logger, err := log.NewLogger(cfg.Log)
+	assert.NoError(t, err)
+
+	cfg.Service.GrpcServer.GrpcAddr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
-	err = envconfig.Process("LISTEN", &acmeCfg)
-	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
-	require.NoError(t, err)
-	tlsConfig := certMgr.GetClientTLSConfig()
-
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
+	assert.NoError(t, err)
+	conn, err := grpc.Dial(cfg.Service.GrpcServer.GrpcAddr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 

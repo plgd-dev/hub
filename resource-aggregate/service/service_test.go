@@ -2,17 +2,19 @@ package service_test
 
 import (
 	"context"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
+	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"testing"
 	"time"
-
-	"github.com/plgd-dev/kit/security/certManager"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
@@ -27,44 +29,51 @@ import (
 func TestPublishUnpublish(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), authProvider.UserToken)
 
-	var config refImpl.Config
-	err := envconfig.Process("", &config)
+	var cfg service.Config
+	err := config.Load(&cfg)
 	require.NoError(t, err)
 
 	authShutdown := authService.SetUp(t)
 	defer authShutdown()
 
-	config.Service.AuthServerAddr = testCfg.AUTH_HOST
-	config.Service.JwksURL = testCfg.JWKS_URL
-	config.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	config.Service.UserDevicesManagerTickFrequency = time.Millisecond * 500
-	config.Service.UserDevicesManagerExpiration = time.Millisecond * 500
+	cfg.Clients.AuthServer.AuthServerAddr = testCfg.AUTH_HOST
+	cfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
+	cfg.Clients.OAuthProvider.OAuthConfig.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	cfg.Clients.OAuthProvider.OAuthConfig.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	cfg.Service.RA.Capabilities.UserDevicesManagerTickFrequency = time.Millisecond * 500
+	cfg.Service.RA.Capabilities.UserDevicesManagerExpiration = time.Millisecond * 500
 
-	clientCertManager, err := certManager.NewCertManager(config.Dial)
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	dialTLSConfig := clientCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
-	config.Service.Addr = "localhost:9888"
-	config.Service.SnapshotThreshold = 1
+	cfg.Service.RA.GrpcAddr = "localhost:9888"
+	cfg.Service.RA.Capabilities.SnapshotThreshold = 1
 
-	server, err := refImpl.Init(config)
+	service, err := refImpl.Init(cfg)
 	require.NoError(t, err)
-	defer server.Shutdown()
+	defer service.Shutdown()
 	go func() {
-		err := server.Serve()
+		err := service.Serve()
 		require.NoError(t, err)
 	}()
 
-	authConn, err := grpc.Dial(config.Service.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	asCertManager, err := client.New(cfg.Clients.AuthServer.AuthTLSConfig, logger)
+	require.NoError(t, err)
+	authConn, err := grpc.Dial(cfg.Clients.AuthServer.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	authClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	raConn, err := grpc.Dial(config.Service.Addr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
+	raCertManager, err := server.New(cfg.Service.RA.GrpcTLSConfig, logger)
+	require.NoError(t, err)
+	raConn, err := grpc.Dial(cfg.Service.RA.GrpcAddr, grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	raClient := pb.NewResourceAggregateClient(raConn)
 

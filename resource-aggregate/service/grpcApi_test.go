@@ -2,15 +2,16 @@ package service
 
 import (
 	"context"
+	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
@@ -61,35 +62,32 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -160,35 +158,32 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
@@ -240,35 +235,32 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -334,35 +326,32 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -416,35 +405,32 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -498,35 +484,32 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -580,35 +563,32 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -662,35 +642,32 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)
@@ -744,35 +721,32 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
+	var cfg Config
+	err := config.Load(&cfg)
 	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	log.Set(logger)
+	log.Info(cfg.String())
+
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var config Config
-	err = envconfig.Process("", &config)
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	assert.NoError(t, err)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceId, resId)
 	_, err = requestHandler.PublishResource(ctx, pubReq)

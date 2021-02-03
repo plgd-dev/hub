@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/plgd-dev/kit/config"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -9,11 +10,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
-	"github.com/plgd-dev/kit/security/certManager"
-
-	"github.com/kelseyhightower/envconfig"
-	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
-	oauthProvider "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,34 +25,16 @@ func newTestService(t *testing.T) (*Server, func()) {
 }
 
 func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provider) (*Server, func()) {
-	os.Setenv("CLIENTID", "test client id")
-	os.Setenv("CLIENTSECRET", "test client secret")
-	os.Setenv("OAUTHENDPOINTDOMAIN", "")
-	os.Setenv("CALLBACKURL", "")
-
 	var cfg Config
-	err := envconfig.Process("", &cfg)
+	err := config.Load(&cfg)
 	require.NoError(t, err)
-
 	t.Log(cfg.String())
-	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
-	if deviceProvider == nil {
-		deviceProvider = oauthProvider.NewTestProvider()
-	}
-	if sdkProvider == nil {
-		deviceProvider = oauthProvider.NewTestProvider()
-	}
-	persistence, err := mongodb.NewStore(context.Background(), cfg.MongoDB, mongodb.WithTLS(tlsConfig))
-	require.NoError(t, err)
 
 	dir, err := ioutil.TempDir("", "gotesttmp")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	s, err := New(cfg, persistence, deviceProvider, sdkProvider)
+	s, err := New(cfg)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)

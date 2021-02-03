@@ -1,27 +1,34 @@
 package refImpl
 
 import (
+	"github.com/plgd-dev/cloud/certificate-authority/service"
+	"github.com/plgd-dev/kit/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInit(t *testing.T) {
-	var config Config
+	var cfg service.Config
+	err := config.Load(&cfg)
+	require.NoError(t, err)
+
 	dir, err := ioutil.TempDir("", "gotesttmp")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 	testSignerCerts(t, dir)
-	os.Setenv("VALID_FROM", "now-1d")
-	err = envconfig.Process("", &config)
-	require.NoError(t, err)
 
-	got, err := Init(config)
+	cfg.Clients.SignerConfig.ValidFrom = func() time.Time {
+		return time.Now()  // now
+	}
+	cfg.Clients.SignerConfig.ValidDuration = time.Duration(time.Hour * 24) // 1d
+
+	got, err := Init(cfg)
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
 }

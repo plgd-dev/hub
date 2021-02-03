@@ -1,26 +1,28 @@
 package test
 
 import (
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/service"
+	"github.com/plgd-dev/kit/config"
 	"sync"
 	"testing"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) refImpl.Config {
-	var cfg refImpl.Config
-	err := envconfig.Process("", &cfg)
+func MakeConfig(t *testing.T) service.Config {
+	var cfg service.Config
+	err := config.Load(&cfg)
 	require.NoError(t, err)
-	cfg.Service.Addr = testCfg.C2C_GW_HOST
-	cfg.JwksURL = testCfg.JWKS_URL
-	cfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	cfg.Service.FQDN = "cloud2cloud-gateway-" + t.Name()
-	cfg.Listen.File.DisableVerifyClientCertificate = true
-	cfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	cfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+
+	cfg.Service.Http.Addr = testCfg.C2C_GW_HOST
+	cfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
+	cfg.Clients.ResourceDirectory.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.Service.Http.FQDN = "cloud2cloud-gateway-" + t.Name()
+	cfg.Service.Http.TLSConfig.ClientCertificateRequired = false
+	cfg.Clients.OAuthProvider.OAuthConfig.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	cfg.Clients.OAuthProvider.OAuthConfig.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 	return cfg
 }
 
@@ -28,7 +30,7 @@ func SetUp(t *testing.T) (TearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
-func New(t *testing.T, cfg refImpl.Config) func() {
+func New(t *testing.T, cfg service.Config) func() {
 
 	s, err := refImpl.Init(cfg)
 	require.NoError(t, err)
@@ -41,7 +43,7 @@ func New(t *testing.T, cfg refImpl.Config) func() {
 	}()
 
 	return func() {
-		s.Close()
+		s.Shutdown()
 		wg.Wait()
 	}
 }

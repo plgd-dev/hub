@@ -30,41 +30,41 @@ const cloudConnectormongodbURL = "nats://localhost:34223"
 
 func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	authCfg := authService.MakeConfig(t)
-	authCfg.Addr = AUTH_HOST
-	authCfg.HTTPAddr = AUTH_HTTP_HOST
-	authCfg.MongoDB.Database = cloudConnectorDB
+	authCfg.Service.GrpcServer.GrpcAddr = AUTH_HOST
+	authCfg.Service.HttpServer.HttpAddr = AUTH_HTTP_HOST
+	authCfg.Database.MongoDB.Database = cloudConnectorDB
 	authShutdown := authService.New(t, authCfg)
 
 	raCfg := raService.MakeConfig(t)
 	//raCfg.mongodb.URL = cloudConnectormongodbURL
-	raCfg.MongoDB.DatabaseName = cloudConnectorDB
-	raCfg.Service.Addr = RESOURCE_AGGREGATE_HOST
-	raCfg.Service.AuthServerAddr = AUTH_HOST
-	raCfg.Nats.URL = cloudConnectorNatsURL
+	raCfg.Database.MongoDB.DatabaseName = cloudConnectorDB
+	raCfg.Service.RA.GrpcAddr = RESOURCE_AGGREGATE_HOST
+	raCfg.Clients.AuthServer.AuthServerAddr = AUTH_HOST
+	raCfg.Clients.Nats.URL = cloudConnectorNatsURL
 	raShutdown := raService.New(t, raCfg)
 
 	rdCfg := rdService.MakeConfig(t)
-	rdCfg.Addr = RESOURCE_DIRECTORY_HOST
-	rdCfg.JwksURL = JWKS_URL
-	rdCfg.MongoDB.DatabaseName = cloudConnectorDB
+	rdCfg.Service.RD.GrpcAddr = RESOURCE_DIRECTORY_HOST
+	rdCfg.Clients.OAuthProvider.JwksURL = JWKS_URL
+	rdCfg.Database.MongoDB.DatabaseName = cloudConnectorDB
 	//rdCfg.mongodb.URL = cloudConnectormongodbURL
-	rdCfg.Nats.URL = cloudConnectorNatsURL
-	rdCfg.Service.AuthServerAddr = AUTH_HOST
-	rdCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
-	rdCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
-	rdCfg.Listen.File.DisableVerifyClientCertificate = true
+	rdCfg.Clients.Nats.URL = cloudConnectorNatsURL
+	rdCfg.Clients.Authorization.Addr = AUTH_HOST
+	rdCfg.Clients.OAuthProvider.OAuthConfig.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
+	rdCfg.Clients.ResourceAggregate.Addr = RESOURCE_AGGREGATE_HOST
+	rdCfg.Service.RD.GrpcTLSConfig.ClientCertificateRequired = false
 	rdShutdown := rdService.New(t, rdCfg)
 
 	c2cConnectorCfg := MakeConfig(t)
-	c2cConnectorCfg.StoreMongoDB.DatabaseName = cloudConnectorDB
-	c2cConnectorCfg.Service.Addr = C2C_CONNECTOR_HOST
-	c2cConnectorCfg.Service.AuthServerAddr = AUTH_HOST
-	c2cConnectorCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
-	c2cConnectorCfg.Service.OAuthCallback = C2C_CONNECTOR_OAUTH_CALLBACK
-	c2cConnectorCfg.Service.EventsURL = C2C_CONNECTOR_EVENTS_URL
-	c2cConnectorCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
-	c2cConnectorCfg.Service.ResourceDirectoryAddr = RESOURCE_DIRECTORY_HOST
-	c2cConnectorCfg.Service.JwksURL = JWKS_URL
+	c2cConnectorCfg.Database.MongoDB.DatabaseName = cloudConnectorDB
+	c2cConnectorCfg.Service.Http.Addr = C2C_CONNECTOR_HOST
+	c2cConnectorCfg.Clients.Authorization.AuthServerAddr = AUTH_HOST
+	c2cConnectorCfg.Clients.OAuthProvider.OAuthConfig.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
+	c2cConnectorCfg.Service.Http.OAuthCallback = C2C_CONNECTOR_OAUTH_CALLBACK
+	c2cConnectorCfg.Service.Http.EventsURL = C2C_CONNECTOR_EVENTS_URL
+	c2cConnectorCfg.Clients.ResourceAggregate.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
+	c2cConnectorCfg.Clients.ResourceDirectory.ResourceDirectoryAddr = RESOURCE_DIRECTORY_HOST
+	c2cConnectorCfg.Clients.OAuthProvider.JwksURL = JWKS_URL
 	c2cConnectorShutdown := New(t, c2cConnectorCfg)
 
 	return func() {

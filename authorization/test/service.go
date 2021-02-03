@@ -2,11 +2,11 @@ package test
 
 import (
 	"fmt"
+	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
 	"sync"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -31,7 +31,7 @@ func newService(config service.Config) (*service.Server, error) {
 
 func MakeConfig(t *testing.T) service.Config {
 	var authCfg service.Config
-	err := envconfig.Process("", &authCfg)
+	err := config.Load(&authCfg)
 	require.NoError(t, err)
 	authCfg.Service.GrpcServer.GrpcAddr = testCfg.AUTH_HOST
 	authCfg.Service.HttpServer.HttpAddr = testCfg.AUTH_HTTP_HOST
