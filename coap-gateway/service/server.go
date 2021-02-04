@@ -30,7 +30,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
 	"github.com/plgd-dev/go-coap/v2/net/blockwise"
-	"github.com/plgd-dev/go-coap/v2/net/keepalive"
+	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
@@ -40,7 +40,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 )
 
-var expiredKey = "Expired"
+var authCtxKey = "AuthCtx"
 
 //Server a configuration of coapgateway
 type Server struct {
@@ -48,7 +48,8 @@ type Server struct {
 	ExternalPort                    uint16 // used to construct oic/res response
 	Addr                            string // Address to listen on, ":COAP" if empty.
 	IsTLSListener                   bool
-	Keepalive                       *keepalive.KeepAlive
+	KeepaliveTimeoutConnection      time.Duration
+	KeepaliveOnInactivity           func(cc inactivity.ClientConn)
 	DisableTCPSignalMessageCSM      bool
 	DisablePeerTCPSignalMessageCSMs bool
 	SendErrorTextInResponse         bool
@@ -103,11 +104,14 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
 	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
+		if c == nil {
+			return
+		}
 		client := c.(*Client)
-		authCtx := client.loadAuthorizationContext()
-		if isExpired(authCtx.Expire) {
+		authCtx, err := client.loadAuthorizationContext()
+		if err != nil {
 			client.Close()
-			log.Debugf("device %v token has ben expired", authCtx.GetDeviceId())
+			log.Debugf("device %v token has ben expired", authCtx.GetDeviceID())
 		}
 	})
 
@@ -163,9 +167,18 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	var keepAlive *keepalive.KeepAlive
+	onInactivity := func(cc inactivity.ClientConn) {}
 	if config.KeepaliveEnable {
-		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.KeepaliveTimeoutConnection)))
+		onInactivity = func(cc inactivity.ClientConn) {
+			cc.Close()
+			client, ok := cc.Context().Value(clientKey).(*Client)
+			if ok {
+				deviceID := getDeviceID(client)
+				log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
+			} else {
+				log.Errorf("keep alive was reached fail limit:: closing connection")
+			}
+		}
 	}
 
 	var blockWiseTransferSZX blockwise.SZX
@@ -206,8 +219,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		HeartBeat:                       config.HeartBeat,
 		MaxMessageSize:                  config.MaxMessageSize,
 		LogMessages:                     config.LogMessages,
+		KeepaliveOnInactivity:           onInactivity,
 
-		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,
 		raClient:      raClient,
 		asClient:      asClient,
@@ -241,7 +254,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 func getDeviceID(client *Client) string {
 	deviceID := "unknown"
 	if client != nil {
-		deviceID = client.loadAuthorizationContext().DeviceId
+		authCtx, _ := client.loadAuthorizationContext()
+		deviceID = authCtx.GetDeviceID()
 		if deviceID == "" {
 			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
 		}
@@ -434,10 +448,8 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
-
-		authCtx := client.loadAuthorizationContext()
-		ctx := kitNetCoap.CtxWithToken(r.Context, authCtx.AccessToken)
-		ctx = context.WithValue(ctx, &expiredKey, authCtx.Expire)
+		authCtx, _ := client.loadAuthorizationContext()
+		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
@@ -506,7 +518,7 @@ func (server *Server) setupCoapServer() {
 	if server.DisablePeerTCPSignalMessageCSMs {
 		opts = append(opts, tcp.WithDisablePeerTCPSignalMessageCSMs())
 	}
-	opts = append(opts, tcp.WithKeepAlive(server.Keepalive))
+	opts = append(opts, tcp.WithKeepAlive(3, server.KeepaliveTimeoutConnection/3, server.KeepaliveOnInactivity))
 	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
 	opts = append(opts, tcp.WithBlockwise(server.BlockWiseTransfer, server.BlockWiseTransferSZX, server.RequestTimeout))
 	opts = append(opts, tcp.WithMux(m))

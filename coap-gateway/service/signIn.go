@@ -93,8 +93,8 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	authCtx := authCtx{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
+	authCtx := authorizationContext{
+		pbData: &pbCQRS.AuthorizationContext{
 			DeviceId: signIn.DeviceID,
 		},
 		UserID:      signIn.UserID,
@@ -124,7 +124,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &pbCQRS.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
-	}, authCtx.AuthorizationContext)
+	}, authCtx.GetPbData())
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
@@ -136,9 +136,9 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	newDevice := false
 
 	switch {
-	case oldAuthCtx.GetDeviceId() == "":
+	case oldAuthCtx.GetDeviceID() == "":
 		newDevice = true
-	case oldAuthCtx.GetDeviceId() != signIn.DeviceID || oldAuthCtx.UserID != signIn.UserID:
+	case oldAuthCtx.GetDeviceID() != signIn.DeviceID || oldAuthCtx.GetUserID() != signIn.UserID:
 		client.cancelResourceSubscriptions(true)
 		client.cancelDeviceSubscriptions(req.Context)
 		newDevice = true
@@ -158,7 +158,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		}
 	}
 	if expired.IsZero() {
-		client.server.expirationClientCache.Delete(signIn.DeviceID)
+		client.server.expirationClientCache.Set(signIn.DeviceID, nil, time.Millisecond)
 	} else {
 		client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
 	}
@@ -170,14 +170,14 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
 	// fix for iotivity-classic
-	authCurrentCtx := client.loadAuthorizationContext()
+	authCurrentCtx, _ := client.loadAuthorizationContext()
 	userID := signOut.UserID
 	deviceID := signOut.DeviceID
 	if userID == "" {
-		userID = authCurrentCtx.UserID
+		userID = authCurrentCtx.GetUserID()
 	}
 	if deviceID == "" {
-		deviceID = authCurrentCtx.GetDeviceId()
+		deviceID = authCurrentCtx.GetDeviceID()
 	}
 
 	_, err := client.server.asClient.SignOut(req.Context, &pbAS.SignOutRequest{
@@ -190,27 +190,24 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		client.Close()
 		return
 	}
-	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
-		client.Close()
-		return
-	}
-	ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
-
-	client.cancelResourceSubscriptions(true)
-	client.cancelDeviceSubscriptions(ctx)
-	oldAuthCtx := client.replaceAuthorizationContext(nil)
-	if oldAuthCtx.DeviceId != "" {
-		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
-		req.Context = kitNetGrpc.CtxWithUserID(ctx, oldAuthCtx.UserID)
-		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.DeviceId, &pbCQRS.CommandMetadata{
+	oldAuthCtx := client.CleanUp()
+	if oldAuthCtx.GetDeviceID() != "" {
+		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
+		}
+		ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
+		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
+		req.Context = kitNetGrpc.CtxWithUserID(ctx, oldAuthCtx.GetUserID())
+		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.GetDeviceID(), &pbCQRS.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),
-		}, oldAuthCtx.AuthorizationContext)
+		}, oldAuthCtx.GetPbData())
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceId(), err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)
 			return
 		}
 	}

@@ -5,6 +5,5 @@ import (
 )
 
 func clientResetHandler(req *mux.Message, client *Client) {
-	authCtx := client.loadAuthorizationContext()
-	clientResetObservationHandler(req, client, authCtx.AuthorizationContext)
+	clientResetObservationHandler(req, client)
 }
