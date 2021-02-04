@@ -146,12 +146,12 @@ func signOffHandler(req *mux.Message, client *Client) {
 			userID = uid
 		}
 	}
-	authCurrentCtx := client.loadAuthorizationContext()
+	authCurrentCtx, _ := client.loadAuthorizationContext()
 	if userID == "" {
-		userID = authCurrentCtx.UserID
+		userID = authCurrentCtx.GetUserID()
 	}
 	if deviceID == "" {
-		deviceID = authCurrentCtx.GetDeviceId()
+		deviceID = authCurrentCtx.GetDeviceID()
 	}
 
 	err := validateSignOff(deviceID, accessToken)
@@ -168,6 +168,6 @@ func signOffHandler(req *mux.Message, client *Client) {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
 		return
 	}
-	client.replaceAuthorizationContext(nil)
+	client.CleanUp()
 	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
 }

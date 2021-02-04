@@ -65,17 +65,21 @@ func validatePublish(w wkRd) error {
 }
 
 func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
-	authCtx := client.loadAuthorizationContext()
+	authCtx, err := client.loadAuthorizationContext()
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
+		return
+	}
 
 	var w wkRd
-	err := cbor.ReadFrom(req.Body, &w)
+	err = cbor.ReadFrom(req.Body, &w)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	if err := validatePublish(w); err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -87,17 +91,17 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		if resource.DeviceID == "" {
 			resource.DeviceID = w.DeviceID
 		}
-		resource, err := client.publishResource(req.Context, resource, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber, authCtx.AuthorizationContext)
+		resource, err := client.publishResource(req.Context, resource, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber, authCtx.GetPbData())
 		if err != nil {
 			// publish resource is not critical, it cause unaccessible resource
-			log.Errorf("DeviceId %v: cannot handle coap req to publish resource: %v", authCtx.DeviceId, err)
+			log.Errorf("DeviceId %v: cannot handle coap req to publish resource: %v", authCtx.GetDeviceID(), err)
 		} else {
 			links = append(links, resource)
 		}
 	}
 
 	if len(links) == 0 {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: empty links", authCtx.DeviceId), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: empty links", authCtx.GetDeviceID()), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -113,12 +117,12 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(w)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
