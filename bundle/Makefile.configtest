@@ -16,14 +16,15 @@ define build-docker-image
 endef
 
 test: build-servicecontainer
-	docker run -d --network=bridge \
-		-p 5684:5684 \
+	docker run -d \
+		-p 5684:5684 -p 5683:5683 \
 		--name=$(SERVICE_NAME) \
 		--hostname=$(SERVICE_NAME) \
 		-e FQDN=localhost \
-		-v $(shell pwd)/../.tmp/certs:/data/certs \
-		-v $(shell pwd)/coap-gateway.yaml:/data/coap-gateway.yaml \
-		plgd/$(SERVICE_NAME):$(LATEST_TAG) --config=/data/coap-gateway.yaml
+		-v $(shell pwd)/.tmp/data/log:/data/log \
+		-v $(shell pwd)/.tmp/data/certs:/data/certs \
+		plgd/$(SERVICE_NAME):$(LATEST_TAG)
+		#--network=host
 
 build-servicecontainer:
 	$(call build-docker-image,service)
@@ -37,3 +38,5 @@ push: build-servicecontainer
 proto/generate:
 
 .PHONY: build-servicecontainer build push proto/generate
+
+

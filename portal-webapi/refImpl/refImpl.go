@@ -6,20 +6,21 @@ import (
 
 	"github.com/plgd-dev/cloud/portal-webapi/service"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 )
 
 type Config struct {
 	Log     log.Config `envconfig:"LOG"`
 	Service service.Config
-	Dial    certManager.Config `envconfig:"DIAL"`
-	Listen  certManager.Config `envconfig:"LISTEN"`
+	Dial    client.Config `envconfig:"DIAL"`
+	Listen  server.Config `envconfig:"LISTEN"`
 }
 
 type RefImpl struct {
 	server            *service.Server
-	dialCertManager   certManager.CertManager
-	listenCertManager certManager.CertManager
+	dialCertManager   *client.CertManager
+	listenCertManager *server.CertManager
 }
 
 //String return string representation of Config
@@ -29,13 +30,18 @@ func (c Config) String() string {
 }
 
 func Init(config Config) (*RefImpl, error) {
-	log.Setup(config.Log)
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
+	log.Info(config.String())
 
-	dialCertManager, err := certManager.NewCertManager(config.Dial)
+	dialCertManager, err := client.New(config.Dial, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
 	}
-	listenCertManager, err := certManager.NewCertManager(config.Listen)
+	listenCertManager, err := server.New(config.Listen, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listen cert manager %w", err)
 	}

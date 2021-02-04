@@ -1,0 +1,21 @@
+log:
+  debug: true
+apis:
+  grpc:
+    address: "0.0.0.0:9087"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
+clients:
+  oauthProvider:
+    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  signer:
+    certificate: "/data/certs/root_ca.crt"
+    privateKey: "/data/certs/root_ca.key"

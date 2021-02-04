@@ -1,0 +1,45 @@
+log:
+  debug: true
+apis:
+  http:
+    address: "0.0.0.0:9088"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
+    fqdn: "cloud2cloud.pluggedin.cloud"
+  capabilities:
+    reconnectInterval: 10s
+    emitEventTimeout: 5s
+database:
+  mongoDB:
+    uri: "mongodb://localhost:27017"
+    database: "cloud2cloudGateway"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/mongo.crt"
+      keyFile: "/data/certs/mongo.key"
+      useSystemCAPool: false
+clients:
+  oauthProvider:
+    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      tokenURL: "https://localhost:9085/api/authz/token"
+      timeout: 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceDirectory:
+    address: "localhost:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false

@@ -1,0 +1,67 @@
+log:
+  debug: true
+apis:
+  http:
+    address: "0.0.0.0:9089"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
+    callbackURL: "https://localhost:9089/api/v1/c2cCallback"
+    eventsURL: "https://localhost:9089/api/v1/events"
+  capabilities:
+    pullDevicesDisabled: false
+    pullDevicesInterval: 5s
+    reconnectInterval: 10s
+    resubscribeInterval: 10s
+  taskProccessor:
+    cacheSize: 2048
+    timeout: 5s
+    maxParallel: 128
+    delay: 0s  # 10s for CTT test
+database:
+  mongoDB:
+    uri: "mongodb://localhost:27017"
+    database: "cloud2cloudConnector"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/mongo.crt"
+      keyFile: "/data/certs/mongo.key"
+      useSystemCAPool: false
+clients:
+  oauthProvider:
+    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      tokenURL: "https://localhost:9085/api/authz/token"
+      timeout: 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  authorizationServer:
+    address: "localhost:9081"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceDirectory:
+    address: "localhost:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceAggregate:
+    address: "localhost:9083"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false

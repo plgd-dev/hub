@@ -22,7 +22,7 @@ test: build-servicecontainer
 	--hostname=$(SERVICE_NAME) \
 	-v $(shell pwd)/../.tmp/certs:/data/certs \
 	-v $(shell pwd)/authorization.yaml:/data/authorization.yaml \
-	plgd/$(SERVICE_NAME):$(LATEST_TAG)
+	plgd/$(SERVICE_NAME):$(LATEST_TAG) --config=/data/authorization.yaml
 
 build-servicecontainer:
 	$(call build-docker-image,service)

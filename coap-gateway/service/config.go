@@ -38,7 +38,7 @@ type CoapConfig struct {
 	LogMessages          bool               `yaml:"logMessageEnabled" json:"logMessageEnabled" default:"false"`
 	NumTaskWorkers       int                `yaml:"numTaskWorkers,omitempty" json:"numTaskWorkers"`
 	LimitTasks           int                `yaml:"limitTasks,omitempty" json:"limitTasks"`
-	TaskQueue            queue.Config       `yaml:"inline" json:"taskQueue"`
+	TaskQueue            queue.Config       `yaml:"taskQueue" json:"taskQueue"`
 }
 
 type CapabilitiesConfig struct {

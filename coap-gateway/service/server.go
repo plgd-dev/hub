@@ -99,6 +99,7 @@ type ListenCertManager = interface {
 
 // New creates server.
 func New(logger *zap.Logger, service APIsConfig, clients ClientsConfig) *Server {
+	service.CoapGW.TaskQueue.SetDefaults()
 	p, err := queue.New(service.CoapGW.TaskQueue)
 	if err != nil {
 		log.Fatalf("cannot job queue %v", err)

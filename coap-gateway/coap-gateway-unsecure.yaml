@@ -1,0 +1,53 @@
+log:
+  debug: true
+apis:
+  coap:
+    address: "0.0.0.0:5683"
+    externalAddress: "localhost:5683" # domain:port
+    timeout: 10s  # default:10s
+    heartbeat: 4s
+    reconnectInterval: 10s
+    capabilities:
+      maxMessageSize: 1024  # default:262144
+      keepaliveEnabled: true
+      keepaliveTimeout: 5s   # default:20s
+      blockwiseTransferEnabled: true
+      blockwiseTransferBlockSize: 1024
+      tcpSignalMessageCSMDisabled : false
+      peerTcpSignalMessageCSMisabled : false
+      errorResponseEnabled : true
+clients:
+  oauthProvider:
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      tokenURL : "https://172.17.0.1:9085/api/authz/token"
+      timeout : 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  authorizationServer:
+    address: "172.17.0.1:9081"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceDirectory:
+    address: "172.17.0.1:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceAggregate:
+    address: "172.17.0.1:9083"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false

@@ -2,6 +2,8 @@ package service
 
 import (
 	"crypto/tls"
+	"github.com/plgd-dev/kit/security/certManager/client"
+	"github.com/plgd-dev/kit/security/certManager/server"
 	"net"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -20,17 +22,17 @@ type Server struct {
 }
 
 type DialCertManager = interface {
-	GetClientTLSConfig() *tls.Config
+	GetTLSConfig() *tls.Config
 }
 
 type ListenCertManager = interface {
-	GetServerTLSConfig() *tls.Config
+	GetTLSConfig() *tls.Config
 }
 
 //New create new Server with provided stores
-func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager) *Server {
-	dialTLSConfig := dialCertManager.GetClientTLSConfig()
-	listenTLSConfig := listenCertManager.GetServerTLSConfig()
+func New(config Config, dialCertManager *client.CertManager, listenCertManager *server.CertManager) *Server {
+	dialTLSConfig := dialCertManager.GetTLSConfig()
+	listenTLSConfig := listenCertManager.GetTLSConfig()
 	listenTLSConfig.ClientAuth = tls.NoClientCert
 
 	ln, err := tls.Listen("tcp", config.Addr, listenTLSConfig)

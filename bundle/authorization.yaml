@@ -1,0 +1,65 @@
+log:
+  debug: true
+apis:
+  grpc:
+    address: "0.0.0.0:9081"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: true
+  http:
+    address: "0.0.0.0:9085"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: false
+database:
+  mongoDB:
+    uri: "mongodb://localhost:27017"
+    database: "authorization"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/mongo.crt"
+      keyFile: "/data/certs/mongo.key"
+      useSystemCAPool: false
+oauthClients:
+  device:
+    provider: "test"
+    providerName: "test provider"  # not implemented
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      authURL : ""
+      tokenURL : ""
+      #authStype : ""  # not required
+      responseType: ""
+      responseMode: ""
+      redirectURL: ""
+      #accessType: ""   # not required
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  client:
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      audience: ""
+      authURL : ""
+      tokenURL : ""
+      #authStype : ""  # not required
+      responseType: ""
+      responseMode: ""
+      redirectURL: ""
+      #accessType: ""   # not required
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false

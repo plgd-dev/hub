@@ -1,4 +1,6 @@
 Dockerfile.customized
 run.sh.customized
 client/
+.tmp/
+
 
