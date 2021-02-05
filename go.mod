@@ -20,7 +20,7 @@ require (
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lestrrat-go/jwx v1.0.5
+	github.com/lestrrat-go/jwx v1.1.1
 	github.com/nats-io/nats.go v1.10.0
 	github.com/panjf2000/ants/v2 v2.4.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -36,9 +36,9 @@ require (
 	github.com/valyala/fasthttp v1.16.0
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/atomic v1.7.0
-	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	golang.org/x/sync v0.0.0-20201008141435-b3e1573b7520
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	google.golang.org/grpc v1.32.0
 	google.golang.org/grpc/examples v0.0.0-20201008225051-06c094c3ab22 // indirect
 )
