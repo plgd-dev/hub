@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
 import classNames from 'classnames'
-// import { toast } from 'react-toastify'
 
 import { Layout } from '@/components/layout'
 import { NotFoundPage } from '@/containers/not-found-page'
