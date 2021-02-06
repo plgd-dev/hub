@@ -65,4 +65,16 @@ export const messages = defineMessages({
     id: 'things.retrieving',
     defaultMessage: 'Retrieving',
   },
+  resourceWasUpdated: {
+    id: 'things.resourceWasUpdated',
+    defaultMessage: 'Resource was updated successfully.',
+  },
+  resourceWasUpdatedOffline: {
+    id: 'things.resourceWasUpdatedOffline',
+    defaultMessage: 'Resource was updated successfully, but the changes will be applied once the device goes online.',
+  },
+  invalidArgument: {
+    id: 'things.invalidArgument',
+    defaultMessage: 'Invalid argument in the JSON structure.',
+  }
 })

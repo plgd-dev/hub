@@ -31,6 +31,13 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
         {_(t.notifications)}
       </MenuItem>
       <MenuItem
+        to="/configuration"
+        icon="fa-cogs"
+        tooltip={collapsed && _(t.configuration)}
+      >
+        {_(t.configuration)}
+      </MenuItem>
+      <MenuItem
         className="collapse-menu-item"
         icon={classNames({
           'fa-arrow-left': !collapsed,
