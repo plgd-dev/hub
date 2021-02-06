@@ -5,9 +5,9 @@ import classNames from 'classnames'
 import { Router } from 'react-router-dom'
 import Container from 'react-bootstrap/Container'
 import { Helmet } from 'react-helmet'
-import { ToastContainer } from 'react-toastify'
 import { useIntl } from 'react-intl'
 
+import { ToastContainer } from '@/components/toast'
 import { PageLoader } from '@/components/page-loader'
 import { LeftPanel } from '@/components/left-panel'
 import { Menu } from '@/components/menu'
@@ -35,6 +35,7 @@ const App = ({ config }) => {
 
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
+  security.setDefaultAudience(config.audience)
 
   // Render an error box with an auth error
   if (error) {

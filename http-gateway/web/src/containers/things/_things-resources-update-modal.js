@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
 
+import { Editor } from '@/components/editor'
 import { Select } from '@/components/select'
 import { Button } from '@/components/button'
 import { Badge } from '@/components/badge'
@@ -19,10 +20,13 @@ export const ThingsResourcesUpdateModal = ({
   retrieving,
   fetchResource,
   isDeviceOnline,
+  updating,
+  updateResource,
 }) => {
   const { formatMessage: _ } = useIntl()
-  const [updating, setUpdating] = useState(false)
+  const editor = useRef()
   const [selectedIntefaceData, setSelectedInterfaceData] = useState(null)
+  const [interfaceJsonError, setInterfaceJsonError] = useState(false)
 
   const initialInterfaceValue = { value: '', label: _(t.deviceInterfaces) }
   const [selectedInterface, setSelectedInterface] = useState(
@@ -32,11 +36,50 @@ export const ThingsResourcesUpdateModal = ({
   useEffect(
     () => {
       setSelectedInterfaceData(resourceData)
+
+      if (resourceData) {
+        // Set the retrieved JSON object to the editor
+        if (typeof resourceData === 'object') {
+          editor?.current?.set(resourceData)
+        } else if (typeof resourceData === 'string') {
+          editor?.current?.setText(resourceData)
+        }
+      }
     },
     [resourceData]
   )
 
   const disabled = retrieving || updating
+
+  const handleRetrieve = () => {
+    fetchResource({
+      href: data?.href,
+      currentInterface: selectedInterface.value,
+    })
+  }
+
+  const handleUpdate = () => {
+    updateResource(
+      {
+        href: data?.href,
+        currentInterface: selectedInterface.value,
+      },
+      selectedIntefaceData
+    )
+  }
+
+  const handleCleanup = () => {
+    setSelectedInterface(initialInterfaceValue)
+    setSelectedInterfaceData(null)
+  }
+
+  const handleOnEditorChange = json => {
+    if (json) {
+      setSelectedInterfaceData(json)
+    }
+  }
+
+  const handleOnEditorError = error => setInterfaceJsonError(error.length > 0)
 
   const renderBody = () => {
     return (
@@ -56,10 +99,19 @@ export const ThingsResourcesUpdateModal = ({
               '-'}
           </div>
         </Label>
-        <pre className="m-t-20 m-b-0">
-          {selectedIntefaceData &&
-            JSON.stringify(selectedIntefaceData, null, 2)}
-        </pre>
+        <div className="m-t-20 m-b-0">
+          {selectedIntefaceData && (
+            <Editor
+              json={selectedIntefaceData}
+              onChange={handleOnEditorChange}
+              onError={handleOnEditorError}
+              editorRef={node => {
+                editor.current = node
+              }}
+              disabled={disabled}
+            />
+          )}
+        </div>
       </>
     )
   }
@@ -88,28 +140,15 @@ export const ThingsResourcesUpdateModal = ({
           </Button>
           <Button
             variant="primary"
-            onClick={() => setUpdating(true)}
+            onClick={handleUpdate}
             loading={updating}
-            disabled={disabled || true} // temporary disabled, next user story will implement the update
+            disabled={disabled || interfaceJsonError}
           >
             {!updating ? _(t.update) : _(t.updating)}
           </Button>
         </div>
       </div>
     )
-  }
-
-  const handleRetrieve = () => {
-    fetchResource({
-      di: data?.di,
-      href: data?.href,
-      currentInterface: selectedInterface.value,
-    })
-  }
-
-  const handleCleanup = () => {
-    setSelectedInterface(initialInterfaceValue)
-    setSelectedInterfaceData(null)
   }
 
   return (
@@ -136,6 +175,8 @@ ThingsResourcesUpdateModal.propTypes = {
   resourceData: PropTypes.object,
   retrieving: PropTypes.bool.isRequired,
   fetchResource: PropTypes.func.isRequired,
+  updating: PropTypes.bool.isRequired,
+  updateResource: PropTypes.func.isRequired,
   isDeviceOnline: PropTypes.bool.isRequired,
 }
 

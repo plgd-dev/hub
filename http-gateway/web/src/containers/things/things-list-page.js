@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { Layout } from '@/components/layout'
 import { useApi } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
+import { getApiErrorMessage } from '@/common/utils'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
 import { thingsApiEndpoints } from './constants'
@@ -12,17 +13,16 @@ import { ThingsList } from './_things-list'
 
 export const ThingsListPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { audience, httpGatewayAddress } = useAppConfig()
+  const { httpGatewayAddress } = useAppConfig()
 
   const { data, loading, error } = useApi(
-    `${httpGatewayAddress}${thingsApiEndpoints.THINGS}`,
-    { audience }
+    `${httpGatewayAddress}${thingsApiEndpoints.THINGS}`
   )
 
   useEffect(
     () => {
       if (error) {
-        toast.error(error?.response?.data?.err || error?.message)
+        toast.error(getApiErrorMessage(error))
       }
     },
     [error]

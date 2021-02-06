@@ -15,6 +15,7 @@
     "classnames": "^2.2.6",
     "cross-env": "^7.0.3",
     "history": "^4.10.1",
+    "jsoneditor": "^9.1.9",
     "lodash": "^4.17.20",
     "node-sass": "4.14.1",
     "prettier": "1.14.3",
