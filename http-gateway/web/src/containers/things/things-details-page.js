@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
 import classNames from 'classnames'
-import { toast } from 'react-toastify'
+// import { toast } from 'react-toastify'
 
 import { Layout } from '@/components/layout'
 import { NotFoundPage } from '@/containers/not-found-page'
@@ -11,6 +11,11 @@ import { useAppConfig } from '@/containers/app'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 import { fetchApi } from '@/common/services'
 import { getApiErrorMessage } from '@/common/utils'
+import {
+  showSuccessToast,
+  showErrorToast,
+  showWarningToast,
+} from '@/components/toast'
 
 import { ThingsDetails } from './_things-details'
 import { ThingsResourcesList } from './_things-resources-list'
@@ -86,7 +91,10 @@ export const ThingsDetailsPage = () => {
     } catch (error) {
       if (error && isMounted.current) {
         setLoadingResource(false)
-        toast.error(getApiErrorMessage(error))
+        showErrorToast({
+          title: _(t.resourceRetrieveError),
+          message: getApiErrorMessage(error),
+        })
       }
     }
   }
@@ -106,7 +114,10 @@ export const ThingsDetailsPage = () => {
       )
 
       if (isMounted.current) {
-        toast.success(_(t.resourceWasUpdated))
+        showSuccessToast({
+          title: _(t.resourceUpdateSuccess),
+          message: _(t.resourceWasUpdated),
+        })
 
         setUpdatingResource(false)
       }
@@ -116,12 +127,21 @@ export const ThingsDetailsPage = () => {
 
         if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
           // Device update went through, but it will be applied once the device comes online
-          toast.warning(_(t.resourceWasUpdatedOffline))
+          showWarningToast({
+            title: _(t.resourceUpdateSuccess),
+            message: _(t.resourceWasUpdatedOffline),
+          })
         } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
           // JSON validation error
-          toast.error(_(t.invalidArgument))
+          showErrorToast({
+            title: _(t.resourceUpdateError),
+            message: _(t.invalidArgument),
+          })
         } else {
-          toast.error(errorMessage)
+          showErrorToast({
+            title: _(t.resourceUpdateError),
+            message: errorMessage,
+          })
         }
 
         setUpdatingResource(false)
