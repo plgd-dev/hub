@@ -62,15 +62,15 @@ export class Editor extends PureComponent {
         schema,
       }
 
-      this.jsoneditor = new JSONEditor(this.container, options)
+      this.jsonEditor = new JSONEditor(this.container, options)
       if (typeof json === 'object') {
-        this.jsoneditor.set(json)
+        this.jsonEditor.set(json)
       } else if (typeof json === 'string') {
-        this.jsoneditor.setText(json)
+        this.jsonEditor.setText(json)
       }
 
       if (autofocus) {
-        this.jsoneditor.focus()
+        this.jsonEditor.focus()
       }
 
       if (typeof ResizeObserver === 'function' && this.container) {
@@ -78,14 +78,14 @@ export class Editor extends PureComponent {
         this.resizeObserver.observe(this.container)
       }
 
-      this.handleEditorRef(this.jsoneditor)
+      this.handleEditorRef(this.jsonEditor)
     }, 1)
   }
 
   componentWillUnmount() {
-    if (this.jsoneditor) {
+    if (this.jsonEditor) {
       this.handleEditorRef(null)
-      this.jsoneditor.destroy()
+      this.jsonEditor.destroy()
     }
 
     if (typeof ResizeObserver === 'function' && this.container) {

@@ -67,14 +67,30 @@ export const messages = defineMessages({
   },
   resourceWasUpdated: {
     id: 'things.resourceWasUpdated',
-    defaultMessage: 'Resource was updated successfully.',
+    defaultMessage: 'The resource was updated successfully.',
   },
   resourceWasUpdatedOffline: {
     id: 'things.resourceWasUpdatedOffline',
-    defaultMessage: 'Resource was updated successfully, but the changes will be applied once the device goes online.',
+    defaultMessage:
+      'The resource was updated successfully, changes will be applied once the device is online.',
   },
   invalidArgument: {
     id: 'things.invalidArgument',
-    defaultMessage: 'Invalid argument in the JSON structure.',
-  }
+    defaultMessage: 'There was an invalid argument in the JSON structure.',
+  },
+  resourceUpdateSuccess: {
+    id: 'things.resourceUpdateSuccess',
+    defaultMessage: 'Resource update successful',
+    description: 'Title of the toast message on resource retrieve success.',
+  },
+  resourceUpdateError: {
+    id: 'things.resourceUpdateError',
+    defaultMessage: 'Resource update failed',
+    description: 'Title of the toast message on resource update error.',
+  },
+  resourceRetrieveError: {
+    id: 'things.resourceRetrieveError',
+    defaultMessage: 'Resource retrieve failed',
+    description: 'Title of the toast message on resource retrieve error.',
+  },
 })
