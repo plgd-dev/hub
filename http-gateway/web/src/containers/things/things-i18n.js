@@ -80,7 +80,7 @@ export const messages = defineMessages({
   },
   resourceUpdateSuccess: {
     id: 'things.resourceUpdateSuccess',
-    defaultMessage: 'Resource update successfull',
+    defaultMessage: 'Resource update successful',
     description: 'Title of the toast message on resource retrieve success.',
   },
   resourceUpdateError: {

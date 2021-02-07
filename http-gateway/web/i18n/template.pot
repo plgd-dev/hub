@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2021-02-07T14:19:16.939Z\n"
+"POT-Creation-Date: 2021-02-07T14:27:26.123Z\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "MIME-Version: 1.0\n"
@@ -150,8 +150,8 @@ msgstr ""
 #: ./i18n/template.json
 #. [things.resourceUpdateSuccess]
 #. defaultMessage is:
-#. Resource update successfull
-msgid "Resource update successfull"
+#. Resource update successful
+msgid "Resource update successful"
 msgstr ""
 
 #: ./i18n/template.json
