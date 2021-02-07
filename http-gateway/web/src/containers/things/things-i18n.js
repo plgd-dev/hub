@@ -81,13 +81,16 @@ export const messages = defineMessages({
   resourceUpdateSuccess: {
     id: 'things.resourceUpdateSuccess',
     defaultMessage: 'Resource update successfull',
+    description: 'Title of the toast message on resource retrieve success.',
   },
   resourceUpdateError: {
     id: 'things.resourceUpdateError',
     defaultMessage: 'Resource update failed',
+    description: 'Title of the toast message on resource update error.',
   },
   resourceRetrieveError: {
     id: 'things.resourceRetrieveError',
     defaultMessage: 'Resource retrieve failed',
+    description: 'Title of the toast message on resource retrieve error.',
   },
 })
