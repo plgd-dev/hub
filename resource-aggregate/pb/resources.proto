@@ -6,17 +6,16 @@ option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
 
 // https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json
 message Resource {
-    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
-    string href = 2;
+    string href = 1;
+    string device_id = 2;
     repeated string resource_types = 3;
     repeated string interfaces = 4;
-    string device_id = 5;
-    string anchor = 6;
-    Policies policies = 7; // is this information valuable for the cloud or cloud user?
-    string title = 8;
-    repeated string supported_content_types = 9;
-    repeated EndpointInformation endpoint_informations = 10; // is this information valuable for the cloud or cloud user?
-    int32 time_to_live = 11;
+    string anchor = 5;
+    Policies policies = 6;
+    string title = 7;
+    repeated string supported_content_types = 8;
+    repeated EndpointInformation endpoint_informations = 9;
+    int32 time_to_live = 10;
 }
 
 message Policies {
