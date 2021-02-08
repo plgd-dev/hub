@@ -59,7 +59,7 @@ message PublishResourceLinksResponse {
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
 message UnpublishResourceLinksRequest {
     AuthorizationContext authorization_context = 1;
-    repeated string ids = 2;
+    repeated string hrefs = 2;
     string device_id = 3;
     CommandMetadata command_metadata = 4;
 }
@@ -303,10 +303,5 @@ message ConfirmResourceDeleteRequest {
 
 message ConfirmResourceDeleteResponse {
     AuditContext audit_context = 100;
-}
-
-message ResourceId {
-    string device_id = 1;
-    string href = 2;
 }
   
