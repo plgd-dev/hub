@@ -5,7 +5,7 @@ package ocf.cloud.resourceaggregate.pb;
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/commands;commands";
 
 message AuthorizationContext {
     string device_id = 1;

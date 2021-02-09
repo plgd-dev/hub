@@ -4,7 +4,7 @@ package ocf.cloud.resourceaggregate.pb;
 
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/events;events";
 
 message AuditContext {
     string user_id = 1;
