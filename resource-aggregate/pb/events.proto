@@ -2,26 +2,16 @@ syntax = "proto3";
 
 package ocf.cloud.resourceaggregate.pb;
 
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
 
 option go_package = "github.com/plgd-dev/cloud/resource-aggregate/events;events";
-
-message AuditContext {
-    string user_id = 1;
-    string device_id = 2;
-    string correlation_id = 3;
-}
 
 message EventMetadata {
    uint64 version = 1;
    uint64 timestamp_ms = 2;
    string connection_id = 3;
    uint64 sequence = 4;
-}
-
-message ResourceId {
-    string device_id = 1;
-    string href = 2;
 }
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173

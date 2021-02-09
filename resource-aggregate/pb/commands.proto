@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package ocf.cloud.resourceaggregate.pb;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
 
 option go_package = "github.com/plgd-dev/cloud/resource-aggregate/commands;commands";
@@ -14,6 +13,17 @@ message AuthorizationContext {
 message CommandMetadata {
     string connection_id = 1;
     uint64 sequence = 2;
+}
+
+message AuditContext {
+    string user_id = 1;
+    string device_id = 2;
+    string correlation_id = 3;
+}
+
+message ResourceId {
+    string device_id = 1;
+    string href = 2;
 }
 
 //******************************************************************************************************************************************************
