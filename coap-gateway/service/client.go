@@ -323,19 +323,22 @@ func (client *Client) cancelDeviceSubscriptions(wantWait bool) {
 	}
 }
 
-// OnClose action when coap connection was closed.
-func (client *Client) OnClose() {
-	log.Debugf("close client %v", client.coapConn.RemoteAddr())
-
+func (client *Client) CleanUp() (oldDeviceID authCtx) {
+	log.Debugf("clenaup %v", client.coapConn.RemoteAddr())
 	client.server.oicPingCache.Delete(client.remoteAddrString())
 	client.cleanObservedResources()
 	client.cancelResourceSubscriptions(false)
 	client.cancelDeviceSubscriptions(false)
+	return client.replaceAuthorizationContext(authCtx{})
+}
 
-	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
+// OnClose action when coap connection was closed.
+func (client *Client) OnClose() {
+	log.Debugf("close client %v", client.coapConn.RemoteAddr())
+	oldAuthCtx := client.CleanUp()
 
 	if oldAuthCtx.DeviceId != "" {
-		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
+		client.server.expirationClientCache.Set(oldAuthCtx.DeviceId, nil, time.Second)
 		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
 		defer cancel()
 		token, err := client.server.oauthMgr.GetToken(ctx)
@@ -363,7 +366,12 @@ func (client *Client) replaceAuthorizationContext(authCtx authCtx) (oldDeviceID 
 func (client *Client) loadAuthorizationContext() authCtx {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
-	return client.authCtx
+	a := client.authCtx
+	if a.UserID == "" {
+		// set expired time for validation
+		a.Expire = time.Unix(1, 0)
+	}
+	return a
 }
 
 func (client *Client) notifyContentChanged(res *pbRA.Resource, notification *pool.Message) error {

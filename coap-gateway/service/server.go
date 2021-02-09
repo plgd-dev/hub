@@ -87,6 +87,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
 	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
+		if c == nil {
+			return
+		}
 		client := c.(*Client)
 		authCtx := client.loadAuthorizationContext()
 		if isExpired(authCtx.Expire) {
