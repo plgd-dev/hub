@@ -89,6 +89,21 @@ message ResourceDeleted {
     EventMetadata event_metadata = 101;
 }
 
+message ResourceCreatePending {
+    ResourceId resource_id = 1;
+    Content content = 2;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+}
+
+message ResourceCreated {
+    ResourceId resource_id = 1;
+    Status status = 2;
+    Content content = 3;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+}
+
 message ResourceStateSnapshotTaken {
     ResourceId resource_id = 1;
     ResourceChanged  latest_resource_change = 3;

@@ -828,6 +828,156 @@ func (x *ResourceDeleted) GetEventMetadata() *EventMetadata {
 	return nil
 }
 
+type ResourceCreatePending struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ResourceId    *commands.ResourceId   `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	Content       *commands.Content      `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	AuditContext  *commands.AuditContext `protobuf:"bytes,100,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
+	EventMetadata *EventMetadata         `protobuf:"bytes,101,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
+}
+
+func (x *ResourceCreatePending) Reset() {
+	*x = ResourceCreatePending{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ResourceCreatePending) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceCreatePending) ProtoMessage() {}
+
+func (x *ResourceCreatePending) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourceCreatePending.ProtoReflect.Descriptor instead.
+func (*ResourceCreatePending) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ResourceCreatePending) GetResourceId() *commands.ResourceId {
+	if x != nil {
+		return x.ResourceId
+	}
+	return nil
+}
+
+func (x *ResourceCreatePending) GetContent() *commands.Content {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *ResourceCreatePending) GetAuditContext() *commands.AuditContext {
+	if x != nil {
+		return x.AuditContext
+	}
+	return nil
+}
+
+func (x *ResourceCreatePending) GetEventMetadata() *EventMetadata {
+	if x != nil {
+		return x.EventMetadata
+	}
+	return nil
+}
+
+type ResourceCreated struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ResourceId    *commands.ResourceId   `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	Status        commands.Status        `protobuf:"varint,2,opt,name=status,proto3,enum=ocf.cloud.resourceaggregate.pb.Status" json:"status,omitempty"`
+	Content       *commands.Content      `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	AuditContext  *commands.AuditContext `protobuf:"bytes,100,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
+	EventMetadata *EventMetadata         `protobuf:"bytes,101,opt,name=event_metadata,json=eventMetadata,proto3" json:"event_metadata,omitempty"`
+}
+
+func (x *ResourceCreated) Reset() {
+	*x = ResourceCreated{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ResourceCreated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceCreated) ProtoMessage() {}
+
+func (x *ResourceCreated) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourceCreated.ProtoReflect.Descriptor instead.
+func (*ResourceCreated) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ResourceCreated) GetResourceId() *commands.ResourceId {
+	if x != nil {
+		return x.ResourceId
+	}
+	return nil
+}
+
+func (x *ResourceCreated) GetStatus() commands.Status {
+	if x != nil {
+		return x.Status
+	}
+	return commands.Status_UNKNOWN
+}
+
+func (x *ResourceCreated) GetContent() *commands.Content {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *ResourceCreated) GetAuditContext() *commands.AuditContext {
+	if x != nil {
+		return x.AuditContext
+	}
+	return nil
+}
+
+func (x *ResourceCreated) GetEventMetadata() *EventMetadata {
+	if x != nil {
+		return x.EventMetadata
+	}
+	return nil
+}
+
 type ResourceStateSnapshotTaken struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -842,7 +992,7 @@ type ResourceStateSnapshotTaken struct {
 func (x *ResourceStateSnapshotTaken) Reset() {
 	*x = ResourceStateSnapshotTaken{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[11]
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -855,7 +1005,7 @@ func (x *ResourceStateSnapshotTaken) String() string {
 func (*ResourceStateSnapshotTaken) ProtoMessage() {}
 
 func (x *ResourceStateSnapshotTaken) ProtoReflect() protoreflect.Message {
-	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[11]
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -868,7 +1018,7 @@ func (x *ResourceStateSnapshotTaken) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceStateSnapshotTaken.ProtoReflect.Descriptor instead.
 func (*ResourceStateSnapshotTaken) Descriptor() ([]byte, []int) {
-	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{11}
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ResourceStateSnapshotTaken) GetResourceId() *commands.ResourceId {
@@ -1141,6 +1291,52 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDesc = 
 	0x2d, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f,
 	0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62,
 	0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x0d,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0xd0, 0x02,
+	0x0a, 0x15, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x4b, 0x0a, 0x0b, 0x72, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f,
+	0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x52, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x52, 0x0a, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x49, 0x64, 0x12, 0x41, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75,
+	0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67,
+	0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x07,
+	0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x51, 0x0a, 0x0d, 0x61, 0x75, 0x64, 0x69, 0x74,
+	0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x64, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c,
+	0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e,
+	0x41, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75,
+	0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x54, 0x0a, 0x0e, 0x65, 0x76,
+	0x65, 0x6e, 0x74, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x65, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72,
+	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
+	0x2e, 0x70, 0x62, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0x52, 0x0d, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0x22, 0x8a, 0x03, 0x0a, 0x0f, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x43, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x64, 0x12, 0x4b, 0x0a, 0x0b, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x66, 0x2e,
+	0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67,
+	0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x49, 0x64, 0x52, 0x0a, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49,
+	0x64, 0x12, 0x3e, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0e, 0x32, 0x26, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e,
+	0x70, 0x62, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x12, 0x41, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72,
+	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
+	0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x07, 0x63, 0x6f, 0x6e,
+	0x74, 0x65, 0x6e, 0x74, 0x12, 0x51, 0x0a, 0x0d, 0x61, 0x75, 0x64, 0x69, 0x74, 0x5f, 0x63, 0x6f,
+	0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x64, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6f, 0x63,
+	0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75, 0x64,
+	0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75, 0x64, 0x69, 0x74,
+	0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x54, 0x0a, 0x0e, 0x65, 0x76, 0x65, 0x6e, 0x74,
+	0x5f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x65, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x2d, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62,
+	0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x0d,
 	0x65, 0x76, 0x65, 0x6e, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0xdc, 0x02,
 	0x0a, 0x1a, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x53,
 	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x54, 0x61, 0x6b, 0x65, 0x6e, 0x12, 0x4b, 0x0a, 0x0b,
@@ -1183,7 +1379,7 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDescGZ
 	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDescData
 }
 
-var file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_goTypes = []interface{}{
 	(*EventMetadata)(nil),              // 0: ocf.cloud.resourceaggregate.pb.EventMetadata
 	(*ResourceLinksPublished)(nil),     // 1: ocf.cloud.resourceaggregate.pb.ResourceLinksPublished
@@ -1196,61 +1392,72 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_goTypes = 
 	(*ResourceRetrieved)(nil),          // 8: ocf.cloud.resourceaggregate.pb.ResourceRetrieved
 	(*ResourceDeletePending)(nil),      // 9: ocf.cloud.resourceaggregate.pb.ResourceDeletePending
 	(*ResourceDeleted)(nil),            // 10: ocf.cloud.resourceaggregate.pb.ResourceDeleted
-	(*ResourceStateSnapshotTaken)(nil), // 11: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken
-	nil,                                // 12: ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
-	(*commands.Resource)(nil),          // 13: ocf.cloud.resourceaggregate.pb.Resource
-	(*commands.AuditContext)(nil),      // 14: ocf.cloud.resourceaggregate.pb.AuditContext
-	(*commands.ResourceId)(nil),        // 15: ocf.cloud.resourceaggregate.pb.ResourceId
-	(*commands.Content)(nil),           // 16: ocf.cloud.resourceaggregate.pb.Content
-	(commands.Status)(0),               // 17: ocf.cloud.resourceaggregate.pb.Status
+	(*ResourceCreatePending)(nil),      // 11: ocf.cloud.resourceaggregate.pb.ResourceCreatePending
+	(*ResourceCreated)(nil),            // 12: ocf.cloud.resourceaggregate.pb.ResourceCreated
+	(*ResourceStateSnapshotTaken)(nil), // 13: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken
+	nil,                                // 14: ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
+	(*commands.Resource)(nil),          // 15: ocf.cloud.resourceaggregate.pb.Resource
+	(*commands.AuditContext)(nil),      // 16: ocf.cloud.resourceaggregate.pb.AuditContext
+	(*commands.ResourceId)(nil),        // 17: ocf.cloud.resourceaggregate.pb.ResourceId
+	(*commands.Content)(nil),           // 18: ocf.cloud.resourceaggregate.pb.Content
+	(commands.Status)(0),               // 19: ocf.cloud.resourceaggregate.pb.Status
 }
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_depIdxs = []int32{
-	13, // 0: ocf.cloud.resourceaggregate.pb.ResourceLinksPublished.resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
-	14, // 1: ocf.cloud.resourceaggregate.pb.ResourceLinksPublished.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	15, // 0: ocf.cloud.resourceaggregate.pb.ResourceLinksPublished.resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
+	16, // 1: ocf.cloud.resourceaggregate.pb.ResourceLinksPublished.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 2: ocf.cloud.resourceaggregate.pb.ResourceLinksPublished.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	14, // 3: ocf.cloud.resourceaggregate.pb.ResourceLinksUnpublished.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	16, // 3: ocf.cloud.resourceaggregate.pb.ResourceLinksUnpublished.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 4: ocf.cloud.resourceaggregate.pb.ResourceLinksUnpublished.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	12, // 5: ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.resources:type_name -> ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
+	14, // 5: ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.resources:type_name -> ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry
 	0,  // 6: ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	15, // 7: ocf.cloud.resourceaggregate.pb.ResourceChanged.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	16, // 8: ocf.cloud.resourceaggregate.pb.ResourceChanged.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
-	14, // 9: ocf.cloud.resourceaggregate.pb.ResourceChanged.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	17, // 7: ocf.cloud.resourceaggregate.pb.ResourceChanged.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	18, // 8: ocf.cloud.resourceaggregate.pb.ResourceChanged.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	16, // 9: ocf.cloud.resourceaggregate.pb.ResourceChanged.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 10: ocf.cloud.resourceaggregate.pb.ResourceChanged.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	17, // 11: ocf.cloud.resourceaggregate.pb.ResourceChanged.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	15, // 12: ocf.cloud.resourceaggregate.pb.ResourceUpdatePending.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	16, // 13: ocf.cloud.resourceaggregate.pb.ResourceUpdatePending.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
-	14, // 14: ocf.cloud.resourceaggregate.pb.ResourceUpdatePending.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	19, // 11: ocf.cloud.resourceaggregate.pb.ResourceChanged.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	17, // 12: ocf.cloud.resourceaggregate.pb.ResourceUpdatePending.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	18, // 13: ocf.cloud.resourceaggregate.pb.ResourceUpdatePending.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	16, // 14: ocf.cloud.resourceaggregate.pb.ResourceUpdatePending.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 15: ocf.cloud.resourceaggregate.pb.ResourceUpdatePending.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	15, // 16: ocf.cloud.resourceaggregate.pb.ResourceUpdated.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	17, // 17: ocf.cloud.resourceaggregate.pb.ResourceUpdated.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	16, // 18: ocf.cloud.resourceaggregate.pb.ResourceUpdated.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
-	14, // 19: ocf.cloud.resourceaggregate.pb.ResourceUpdated.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	17, // 16: ocf.cloud.resourceaggregate.pb.ResourceUpdated.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	19, // 17: ocf.cloud.resourceaggregate.pb.ResourceUpdated.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	18, // 18: ocf.cloud.resourceaggregate.pb.ResourceUpdated.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	16, // 19: ocf.cloud.resourceaggregate.pb.ResourceUpdated.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 20: ocf.cloud.resourceaggregate.pb.ResourceUpdated.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	15, // 21: ocf.cloud.resourceaggregate.pb.ResourceRetrievePending.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	14, // 22: ocf.cloud.resourceaggregate.pb.ResourceRetrievePending.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	17, // 21: ocf.cloud.resourceaggregate.pb.ResourceRetrievePending.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	16, // 22: ocf.cloud.resourceaggregate.pb.ResourceRetrievePending.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 23: ocf.cloud.resourceaggregate.pb.ResourceRetrievePending.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	15, // 24: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	17, // 25: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	16, // 26: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
-	14, // 27: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	17, // 24: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	19, // 25: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	18, // 26: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	16, // 27: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 28: ocf.cloud.resourceaggregate.pb.ResourceRetrieved.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	15, // 29: ocf.cloud.resourceaggregate.pb.ResourceDeletePending.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	14, // 30: ocf.cloud.resourceaggregate.pb.ResourceDeletePending.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	17, // 29: ocf.cloud.resourceaggregate.pb.ResourceDeletePending.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	16, // 30: ocf.cloud.resourceaggregate.pb.ResourceDeletePending.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 31: ocf.cloud.resourceaggregate.pb.ResourceDeletePending.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	15, // 32: ocf.cloud.resourceaggregate.pb.ResourceDeleted.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	17, // 33: ocf.cloud.resourceaggregate.pb.ResourceDeleted.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	16, // 34: ocf.cloud.resourceaggregate.pb.ResourceDeleted.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
-	14, // 35: ocf.cloud.resourceaggregate.pb.ResourceDeleted.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	17, // 32: ocf.cloud.resourceaggregate.pb.ResourceDeleted.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	19, // 33: ocf.cloud.resourceaggregate.pb.ResourceDeleted.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	18, // 34: ocf.cloud.resourceaggregate.pb.ResourceDeleted.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	16, // 35: ocf.cloud.resourceaggregate.pb.ResourceDeleted.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 36: ocf.cloud.resourceaggregate.pb.ResourceDeleted.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	15, // 37: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	4,  // 38: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken.latest_resource_change:type_name -> ocf.cloud.resourceaggregate.pb.ResourceChanged
-	0,  // 39: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
-	13, // 40: ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry.value:type_name -> ocf.cloud.resourceaggregate.pb.Resource
-	41, // [41:41] is the sub-list for method output_type
-	41, // [41:41] is the sub-list for method input_type
-	41, // [41:41] is the sub-list for extension type_name
-	41, // [41:41] is the sub-list for extension extendee
-	0,  // [0:41] is the sub-list for field type_name
+	17, // 37: ocf.cloud.resourceaggregate.pb.ResourceCreatePending.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	18, // 38: ocf.cloud.resourceaggregate.pb.ResourceCreatePending.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	16, // 39: ocf.cloud.resourceaggregate.pb.ResourceCreatePending.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	0,  // 40: ocf.cloud.resourceaggregate.pb.ResourceCreatePending.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
+	17, // 41: ocf.cloud.resourceaggregate.pb.ResourceCreated.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	19, // 42: ocf.cloud.resourceaggregate.pb.ResourceCreated.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	18, // 43: ocf.cloud.resourceaggregate.pb.ResourceCreated.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	16, // 44: ocf.cloud.resourceaggregate.pb.ResourceCreated.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	0,  // 45: ocf.cloud.resourceaggregate.pb.ResourceCreated.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
+	17, // 46: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	4,  // 47: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken.latest_resource_change:type_name -> ocf.cloud.resourceaggregate.pb.ResourceChanged
+	0,  // 48: ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken.event_metadata:type_name -> ocf.cloud.resourceaggregate.pb.EventMetadata
+	15, // 49: ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken.ResourcesEntry.value:type_name -> ocf.cloud.resourceaggregate.pb.Resource
+	50, // [50:50] is the sub-list for method output_type
+	50, // [50:50] is the sub-list for method input_type
+	50, // [50:50] is the sub-list for extension type_name
+	50, // [50:50] is the sub-list for extension extendee
+	0,  // [0:50] is the sub-list for field type_name
 }
 
 func init() { file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_init() }
@@ -1392,6 +1599,30 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_init() {
 			}
 		}
 		file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ResourceCreatePending); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ResourceCreated); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ResourceStateSnapshotTaken); i {
 			case 0:
 				return &v.state
@@ -1410,7 +1641,7 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_github_com_plgd_dev_cloud_resource_aggregate_pb_events_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
