@@ -314,4 +314,69 @@ message ConfirmResourceDeleteRequest {
 message ConfirmResourceDeleteResponse {
     AuditContext audit_context = 100;
 }
-  
+
+/*******************************************************************************************************************************************************
+                                                    Create Resource                                               
+                                                                                                                  
+     ┌──────────┐          ┌───────┐                   ┌──────────────────┐          ┌─────────┐          ┌──────┐
+     │OCF Server│          │Gateway│                   │Resource Aggregate│          │Event Bus│          │Client│
+     └──────────┘          └───┬───┘                   └────────┬─────────┘          └─────────┘          └──────┘
+          │                    │                                ┌┴┐          CreateResourceRequest           ┌┴┐  
+          │                    │                                │ │ <────────────────────────────────────────│ │  
+          │                    │                                │ │                       │                  │ │  
+          │                    │                                │ │          CreateResourceResponse          │ │  
+          │                    │                                │ │ ────────────────────────────────────────>│ │  
+          │                    │                                └┬┘                       │                  │ │  
+          │                    │                                │  ResourceCreatePending  │                  │ │  
+          │                    │                                │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │ │  
+          │                    │                                │                         │                  │ │  
+          │                   ┌┴┐                  ResourceCreatePending                  │                  │ │  
+          │                   │ │ <─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                   │ │  
+          │                   │ │                               │                         │                  │ │  
+         ┌┴┐[CREATE] '/light' │ │                               │                         │                  │ │  
+         │ │ <─────────────── │ │                               │                         │                  │ │  
+         └┬┘                  │ │                               │                         │                  │ │  
+          │        OK         │ │                               │                         │                  │ │  
+          │ ─────────────────>│ │                               │                         │                  │ │  
+          │                   │ │                               │                         │                  │ │  
+          │                   │ │ ConfirmResourceCreateRequest  ┌┴┐                       │                  │ │  
+          │                   │ │ ─────────────────────────────>│ │                       │                  │ │  
+          │                   └┬┘                               │ │                       │                  │ │  
+          │                    │ConfirmResourceCreateResponse   │ │                       │                  │ │  
+          │                    │<────────────────────────────── │ │                       │                  │ │  
+          │                    │                                └┬┘                       │                  │ │  
+          │                    │                                │     ResourceCreated     │                  │ │  
+          │                    │                                │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │ │  
+          │                    │                                │                         │                  └┬┘  
+          │                    │                                │                         │  ResourceCreated │    
+          │                    │                                │                         │  ─ ─ ─ ─ ─ ─ ─ ─ >    
+     ┌──────────┐          ┌───┴───┐                   ┌────────┴─────────┐          ┌─────────┐          ┌──────┐
+     │OCF Server│          │Gateway│                   │Resource Aggregate│          │Event Bus│          │Client│
+     └──────────┘          └───────┘                   └──────────────────┘          └─────────┘          └──────┘
+******************************************************************************************************************************************************/
+
+message CreateResourceRequest {
+    AuthorizationContext authorization_context = 1;
+    ResourceId resource_id = 2;
+    string correlation_id = 3;
+    Content content = 4;
+    CommandMetadata command_metadata = 100;
+}
+
+message CreateResourceResponse {
+    AuditContext audit_context = 1;
+}
+
+message ConfirmResourceCreateRequest {
+    AuthorizationContext authorization_context = 1;
+    ResourceId resource_id = 2;
+    string correlation_id = 3;
+    Status status = 4;
+    Content content = 5;
+    CommandMetadata command_metadata = 100;
+}
+
+message ConfirmResourceCreateResponse {
+    AuditContext audit_context = 100;
+}
+

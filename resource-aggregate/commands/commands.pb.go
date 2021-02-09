@@ -1384,6 +1384,266 @@ func (x *ConfirmResourceDeleteResponse) GetAuditContext() *AuditContext {
 	return nil
 }
 
+type CreateResourceRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	AuthorizationContext *AuthorizationContext `protobuf:"bytes,1,opt,name=authorization_context,json=authorizationContext,proto3" json:"authorization_context,omitempty"`
+	ResourceId           *ResourceId           `protobuf:"bytes,2,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	CorrelationId        string                `protobuf:"bytes,3,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
+	Content              *Content              `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	CommandMetadata      *CommandMetadata      `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
+}
+
+func (x *CreateResourceRequest) Reset() {
+	*x = CreateResourceRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateResourceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateResourceRequest) ProtoMessage() {}
+
+func (x *CreateResourceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateResourceRequest.ProtoReflect.Descriptor instead.
+func (*CreateResourceRequest) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *CreateResourceRequest) GetAuthorizationContext() *AuthorizationContext {
+	if x != nil {
+		return x.AuthorizationContext
+	}
+	return nil
+}
+
+func (x *CreateResourceRequest) GetResourceId() *ResourceId {
+	if x != nil {
+		return x.ResourceId
+	}
+	return nil
+}
+
+func (x *CreateResourceRequest) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
+func (x *CreateResourceRequest) GetContent() *Content {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *CreateResourceRequest) GetCommandMetadata() *CommandMetadata {
+	if x != nil {
+		return x.CommandMetadata
+	}
+	return nil
+}
+
+type CreateResourceResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	AuditContext *AuditContext `protobuf:"bytes,1,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
+}
+
+func (x *CreateResourceResponse) Reset() {
+	*x = CreateResourceResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateResourceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateResourceResponse) ProtoMessage() {}
+
+func (x *CreateResourceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[23]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateResourceResponse.ProtoReflect.Descriptor instead.
+func (*CreateResourceResponse) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *CreateResourceResponse) GetAuditContext() *AuditContext {
+	if x != nil {
+		return x.AuditContext
+	}
+	return nil
+}
+
+type ConfirmResourceCreateRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	AuthorizationContext *AuthorizationContext `protobuf:"bytes,1,opt,name=authorization_context,json=authorizationContext,proto3" json:"authorization_context,omitempty"`
+	ResourceId           *ResourceId           `protobuf:"bytes,2,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	CorrelationId        string                `protobuf:"bytes,3,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
+	Status               Status                `protobuf:"varint,4,opt,name=status,proto3,enum=ocf.cloud.resourceaggregate.pb.Status" json:"status,omitempty"`
+	Content              *Content              `protobuf:"bytes,5,opt,name=content,proto3" json:"content,omitempty"`
+	CommandMetadata      *CommandMetadata      `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
+}
+
+func (x *ConfirmResourceCreateRequest) Reset() {
+	*x = ConfirmResourceCreateRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConfirmResourceCreateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmResourceCreateRequest) ProtoMessage() {}
+
+func (x *ConfirmResourceCreateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmResourceCreateRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmResourceCreateRequest) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ConfirmResourceCreateRequest) GetAuthorizationContext() *AuthorizationContext {
+	if x != nil {
+		return x.AuthorizationContext
+	}
+	return nil
+}
+
+func (x *ConfirmResourceCreateRequest) GetResourceId() *ResourceId {
+	if x != nil {
+		return x.ResourceId
+	}
+	return nil
+}
+
+func (x *ConfirmResourceCreateRequest) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
+func (x *ConfirmResourceCreateRequest) GetStatus() Status {
+	if x != nil {
+		return x.Status
+	}
+	return Status_UNKNOWN
+}
+
+func (x *ConfirmResourceCreateRequest) GetContent() *Content {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *ConfirmResourceCreateRequest) GetCommandMetadata() *CommandMetadata {
+	if x != nil {
+		return x.CommandMetadata
+	}
+	return nil
+}
+
+type ConfirmResourceCreateResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	AuditContext *AuditContext `protobuf:"bytes,100,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
+}
+
+func (x *ConfirmResourceCreateResponse) Reset() {
+	*x = ConfirmResourceCreateResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[25]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConfirmResourceCreateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmResourceCreateResponse) ProtoMessage() {}
+
+func (x *ConfirmResourceCreateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[25]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmResourceCreateResponse.ProtoReflect.Descriptor instead.
+func (*ConfirmResourceCreateResponse) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ConfirmResourceCreateResponse) GetAuditContext() *AuditContext {
+	if x != nil {
+		return x.AuditContext
+	}
+	return nil
+}
+
 var File_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto protoreflect.FileDescriptor
 
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc = []byte{
@@ -1710,12 +1970,81 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc 
 	0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75,
 	0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e,
 	0x41, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75,
-	0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65,
-	0x76, 0x2f, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2f, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
-	0x6e, 0x64, 0x73, 0x3b, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x22, 0x95, 0x03, 0x0a, 0x15, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x69, 0x0a, 0x15, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e,
+	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
+	0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x14, 0x61, 0x75, 0x74, 0x68, 0x6f,
+	0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12,
+	0x4b, 0x0a, 0x0b, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64,
+	0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61,
+	0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64,
+	0x52, 0x0a, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x12, 0x25, 0x0a, 0x0e,
+	0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x49, 0x64, 0x12, 0x41, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64,
+	0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61,
+	0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x07, 0x63,
+	0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x5a, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
+	0x64, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x64, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x2f, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70,
+	0x62, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0x52, 0x0f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0x22, 0x6b, 0x0a, 0x16, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x51, 0x0a, 0x0d,
+	0x61, 0x75, 0x64, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e,
+	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
+	0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78,
+	0x74, 0x52, 0x0c, 0x61, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x22,
+	0xdc, 0x03, 0x0a, 0x1c, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x52, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x12, 0x69, 0x0a, 0x15, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x34, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62,
+	0x2e, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f,
+	0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x14, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x4b, 0x0a, 0x0b, 0x72,
+	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70,
+	0x62, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x52, 0x0a, 0x72, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x6f, 0x72, 0x72,
+	0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0d, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12,
+	0x3e, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32,
+	0x26, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62,
+	0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,
+	0x41, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x27, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70,
+	0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65,
+	0x6e, 0x74, 0x12, 0x5a, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x5f, 0x6d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x64, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x6f,
+	0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f,
+	0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x0f, 0x63,
+	0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0x72,
+	0x0a, 0x1d, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x51, 0x0a, 0x0d, 0x61, 0x75, 0x64, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74,
+	0x18, 0x64, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f,
+	0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65,
+	0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e,
+	0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65,
+	0x78, 0x74, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2f,
+	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61,
+	0x74, 0x65, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x3b, 0x63, 0x6f, 0x6d, 0x6d,
+	0x61, 0x6e, 0x64, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1730,7 +2059,7 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc
 	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescData
 }
 
-var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_goTypes = []interface{}{
 	(*AuthorizationContext)(nil),            // 0: ocf.cloud.resourceaggregate.pb.AuthorizationContext
 	(*CommandMetadata)(nil),                 // 1: ocf.cloud.resourceaggregate.pb.CommandMetadata
@@ -1754,13 +2083,17 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_goTypes 
 	(*DeleteResourceResponse)(nil),          // 19: ocf.cloud.resourceaggregate.pb.DeleteResourceResponse
 	(*ConfirmResourceDeleteRequest)(nil),    // 20: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest
 	(*ConfirmResourceDeleteResponse)(nil),   // 21: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteResponse
-	(*Resource)(nil),                        // 22: ocf.cloud.resourceaggregate.pb.Resource
-	(*Content)(nil),                         // 23: ocf.cloud.resourceaggregate.pb.Content
-	(Status)(0),                             // 24: ocf.cloud.resourceaggregate.pb.Status
+	(*CreateResourceRequest)(nil),           // 22: ocf.cloud.resourceaggregate.pb.CreateResourceRequest
+	(*CreateResourceResponse)(nil),          // 23: ocf.cloud.resourceaggregate.pb.CreateResourceResponse
+	(*ConfirmResourceCreateRequest)(nil),    // 24: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest
+	(*ConfirmResourceCreateResponse)(nil),   // 25: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateResponse
+	(*Resource)(nil),                        // 26: ocf.cloud.resourceaggregate.pb.Resource
+	(*Content)(nil),                         // 27: ocf.cloud.resourceaggregate.pb.Content
+	(Status)(0),                             // 28: ocf.cloud.resourceaggregate.pb.Status
 }
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_depIdxs = []int32{
 	0,  // 0: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
-	22, // 1: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest.resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
+	26, // 1: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest.resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
 	1,  // 2: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	2,  // 3: ocf.cloud.resourceaggregate.pb.PublishResourceLinksResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 4: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
@@ -1768,19 +2101,19 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_depIdxs 
 	2,  // 6: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 7: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
 	3,  // 8: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	23, // 9: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	27, // 9: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	1,  // 10: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
-	24, // 11: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	28, // 11: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
 	2,  // 12: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 13: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
 	3,  // 14: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	23, // 15: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	27, // 15: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	1,  // 16: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	2,  // 17: ocf.cloud.resourceaggregate.pb.UpdateResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 18: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
 	3,  // 19: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	24, // 20: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	23, // 21: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	28, // 20: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	27, // 21: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	1,  // 22: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	2,  // 23: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 24: ocf.cloud.resourceaggregate.pb.RetrieveResourceRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
@@ -1789,8 +2122,8 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_depIdxs 
 	2,  // 27: ocf.cloud.resourceaggregate.pb.RetrieveResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 28: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
 	3,  // 29: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	24, // 30: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	23, // 31: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	28, // 30: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	27, // 31: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	1,  // 32: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	2,  // 33: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 34: ocf.cloud.resourceaggregate.pb.DeleteResourceRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
@@ -1799,15 +2132,26 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_depIdxs 
 	2,  // 37: ocf.cloud.resourceaggregate.pb.DeleteResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	0,  // 38: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
 	3,  // 39: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	24, // 40: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	23, // 41: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	28, // 40: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	27, // 41: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	1,  // 42: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	2,  // 43: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
-	44, // [44:44] is the sub-list for method output_type
-	44, // [44:44] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	0,  // 44: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
+	3,  // 45: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	27, // 46: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	1,  // 47: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
+	2,  // 48: ocf.cloud.resourceaggregate.pb.CreateResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	0,  // 49: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.authorization_context:type_name -> ocf.cloud.resourceaggregate.pb.AuthorizationContext
+	3,  // 50: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	28, // 51: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	27, // 52: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	1,  // 53: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
+	2,  // 54: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	55, // [55:55] is the sub-list for method output_type
+	55, // [55:55] is the sub-list for method input_type
+	55, // [55:55] is the sub-list for extension type_name
+	55, // [55:55] is the sub-list for extension extendee
+	0,  // [0:55] is the sub-list for field type_name
 }
 
 func init() { file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_init() }
@@ -2081,6 +2425,54 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_init() 
 				return nil
 			}
 		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateResourceRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateResourceResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConfirmResourceCreateRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConfirmResourceCreateResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2088,7 +2480,7 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_init() 
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
