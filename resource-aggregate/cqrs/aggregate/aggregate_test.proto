@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package ocf.cloud.resourceaggregate.cqrs.aggregate.test;
+
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate;aggregate";
+
+message Publish {
+    string device_id = 1;
+    string href = 2;
+}
+
+message Unpublish {
+    string device_id = 1;
+    string href = 2;
+}
+
+message Published {
+    string device_id = 1;
+    string href = 2;
+    uint64 event_version = 3;
+    
+}
+
+message Unpublished {
+    string device_id = 1;
+    string href = 2;
+    uint64 event_version = 3;
+    
+}
+
+message Snapshot {
+    string device_id = 1;
+    string href = 2;
+    bool is_published = 3;
+    uint64 event_version = 4;
+    
+}
