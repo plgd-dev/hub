@@ -190,7 +190,7 @@ type testGenerateUnknownEvent struct {
 
 func testMakeDeviceResource(deviceId string, href string, types []string) pbRA.Resource {
 	return pbRA.Resource{
-		Id:            utils.MakeResourceId(deviceId, href),
+		Id:            utils.MakeResourceID(deviceId, href),
 		DeviceId:      deviceId,
 		Href:          href,
 		ResourceTypes: types,

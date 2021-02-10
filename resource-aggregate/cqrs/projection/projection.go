@@ -100,12 +100,12 @@ func (p *Projection) Unregister(deviceID string) error {
 }
 
 // Models returns models for device, resource or nil for non exist.
-func (p *Projection) Models(deviceID, resourceId string) []eventstore.Model {
-	return p.cqrsProjection.Models([]eventstore.SnapshotQuery{{GroupID: deviceID, AggregateID: resourceId}})
+func (p *Projection) Models(deviceID, resourceID string) []eventstore.Model {
+	return p.cqrsProjection.Models([]eventstore.SnapshotQuery{{GroupID: deviceID, AggregateID: resourceID}})
 }
 
 // ForceUpdate invokes update registered resource model from evenstore.
-func (p *Projection) ForceUpdate(ctx context.Context, deviceID, resourceId string) error {
+func (p *Projection) ForceUpdate(ctx context.Context, deviceID, resourceID string) error {
 	v, ok := p.refCountMap.LoadWithFunc(deviceID, func(v interface{}) interface{} {
 		r := v.(*kitSync.RefCounter)
 		r.Acquire()
@@ -120,7 +120,7 @@ func (p *Projection) ForceUpdate(ctx context.Context, deviceID, resourceId strin
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	err := p.cqrsProjection.Project(ctx, []eventstore.SnapshotQuery{{GroupID: deviceID, AggregateID: resourceId}})
+	err := p.cqrsProjection.Project(ctx, []eventstore.SnapshotQuery{{GroupID: deviceID, AggregateID: resourceID}})
 	if err != nil {
 		return fmt.Errorf("cannot force update projection for %v: %w", deviceID, err)
 	}

@@ -6,9 +6,9 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
@@ -17,45 +17,45 @@ import (
 )
 
 func TestRequestHandler_PublishResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	href := "res0"
 	user0 := "user0"
 	type args struct {
-		request *pb.PublishResourceRequest
+		request *commands.PublishResourceLinksRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.PublishResourceResponse
+		want      *commands.PublishResourceLinksResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
 			args: args{
-				request: testMakePublishResourceRequest(deviceId, resId),
+				request: testMakePublishResourceRequest(deviceID, []string{href}),
 			},
-			want: &pb.PublishResourceResponse{
-				AuditContext: &pb.AuditContext{
+			want: &commands.PublishResourceLinksResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:   user0,
-					DeviceId: deviceId,
+					DeviceId: deviceID,
 				},
 			},
 		},
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakePublishResourceRequest(deviceId, resId),
+				request: testMakePublishResourceRequest(deviceID, []string{href}),
 			},
-			want: &pb.PublishResourceResponse{
-				AuditContext: &pb.AuditContext{
+			want: &commands.PublishResourceLinksResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:   user0,
-					DeviceId: deviceId,
+					DeviceId: deviceID,
 				},
 			},
 		},
 		{
 			args: args{
-				request: &pb.PublishResourceRequest{},
+				request: &commands.PublishResourceLinksRequest{},
 			},
 			name:      "invalid",
 			wantError: true,
@@ -93,7 +93,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.PublishResource(ctx, tt.args.request)
+			response, err := requestHandler.PublishResourceLinks(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -108,45 +108,37 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 }
 
 func TestRequestHandler_UnpublishResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
 
 	type args struct {
-		request *pb.UnpublishResourceRequest
+		request *commands.UnpublishResourceLinksRequest
 		userID  string
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.UnpublishResourceResponse
+		want      *commands.UnpublishResourceLinksResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
 			args: args{
-				request: testMakeUnpublishResourceRequest(deviceId, resId),
+				request: testMakeUnpublishResourceRequest(deviceID, []string{resID}),
 				userID:  user0,
 			},
-			want: &pb.UnpublishResourceResponse{
-				AuditContext: &pb.AuditContext{
+			want: &commands.UnpublishResourceLinksResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:   user0,
-					DeviceId: deviceId,
+					DeviceId: deviceID,
 				},
 			},
 		},
 		{
-			name: "duplicit",
-			args: args{
-				request: testMakeUnpublishResourceRequest(deviceId, resId),
-				userID:  user0,
-			},
-			wantError: true,
-		},
-		{
 			name: "unauthorized",
 			args: args{
-				request: testMakeUnpublishResourceRequest(deviceId, resId),
+				request: testMakeUnpublishResourceRequest(deviceID, []string{resID}),
 				userID:  testUnauthorizedUser,
 			},
 			wantError: true,
@@ -154,7 +146,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.UnpublishResourceRequest{},
+				request: &commands.UnpublishResourceLinksRequest{},
 			},
 			wantError: true,
 		},
@@ -190,13 +182,13 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
+	pubReq := testMakePublishResourceRequest(deviceID, []string{resID})
+	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
 	assert.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.UnpublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
+			response, err := requestHandler.UnpublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -209,33 +201,33 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 }
 
 func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
 
 	type args struct {
-		request *pb.NotifyResourceChangedRequest
+		request *commands.NotifyResourceChangedRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.NotifyResourceChangedResponse
+		want      *commands.NotifyResourceChangedResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeNotifyResourceChangedRequest(deviceId, resId, 2)},
-			want: &pb.NotifyResourceChangedResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeNotifyResourceChangedRequest(deviceID, resID, 2)},
+			want: &commands.NotifyResourceChangedResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:   user0,
-					DeviceId: deviceId,
+					DeviceId: deviceID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.NotifyResourceChangedRequest{},
+				request: &commands.NotifyResourceChangedRequest{},
 			},
 			wantError: true,
 		},
@@ -269,11 +261,6 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	}()
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.NotifyResourceChanged(ctx, tt.args.request)
@@ -289,46 +276,46 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 }
 
 func TestRequestHandler_UpdateResourceContent(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.UpdateResourceRequest
+		request *commands.UpdateResourceRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.UpdateResourceResponse
+		want      *commands.UpdateResourceResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "", correlationId)},
-			want: &pb.UpdateResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "", correlationID)},
+			want: &commands.UpdateResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "oic.if.baseline", correlationId)},
-			want: &pb.UpdateResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "oic.if.baseline", correlationID)},
+			want: &commands.UpdateResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.UpdateResourceRequest{},
+				request: &commands.UpdateResourceRequest{},
 			},
 			wantError: true,
 		},
@@ -363,11 +350,6 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	}()
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.UpdateResource(ctx, tt.args.request)
@@ -383,35 +365,35 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 }
 
 func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.ConfirmResourceUpdateRequest
+		request *commands.ConfirmResourceUpdateRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.ConfirmResourceUpdateResponse
+		want      *commands.ConfirmResourceUpdateResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceUpdateRequest(deviceId, resId, correlationId)},
-			want: &pb.ConfirmResourceUpdateResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeConfirmResourceUpdateRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceUpdateResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.ConfirmResourceUpdateRequest{},
+				request: &commands.ConfirmResourceUpdateRequest{},
 			},
 			wantError: true,
 		},
@@ -445,11 +427,6 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	}()
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.ConfirmResourceUpdate(ctx, tt.args.request)
@@ -465,35 +442,35 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 }
 
 func TestRequestHandler_RetrieveResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.RetrieveResourceRequest
+		request *commands.RetrieveResourceRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.RetrieveResourceResponse
+		want      *commands.RetrieveResourceResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeRetrieveResourceRequest(deviceId, resId, correlationId)},
-			want: &pb.RetrieveResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeRetrieveResourceRequest(deviceID, resID, correlationID)},
+			want: &commands.RetrieveResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.RetrieveResourceRequest{},
+				request: &commands.RetrieveResourceRequest{},
 			},
 			wantError: true,
 		},
@@ -527,11 +504,6 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	}()
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.RetrieveResource(ctx, tt.args.request)
@@ -547,35 +519,35 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 }
 
 func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.ConfirmResourceRetrieveRequest
+		request *commands.ConfirmResourceRetrieveRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.ConfirmResourceRetrieveResponse
+		want      *commands.ConfirmResourceRetrieveResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceRetrieveRequest(deviceId, resId, correlationId)},
-			want: &pb.ConfirmResourceRetrieveResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeConfirmResourceRetrieveRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceRetrieveResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.ConfirmResourceRetrieveRequest{},
+				request: &commands.ConfirmResourceRetrieveRequest{},
 			},
 			wantError: true,
 		},
@@ -609,11 +581,6 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	}()
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.ConfirmResourceRetrieve(ctx, tt.args.request)
@@ -629,35 +596,35 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 }
 
 func TestRequestHandler_DeleteResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.DeleteResourceRequest
+		request *commands.DeleteResourceRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.DeleteResourceResponse
+		want      *commands.DeleteResourceResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeDeleteResourceRequest(deviceId, resId, correlationId)},
-			want: &pb.DeleteResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeDeleteResourceRequest(deviceID, resID, correlationID)},
+			want: &commands.DeleteResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.DeleteResourceRequest{},
+				request: &commands.DeleteResourceRequest{},
 			},
 			wantError: true,
 		},
@@ -691,11 +658,6 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	}()
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.DeleteResource(ctx, tt.args.request)
@@ -711,35 +673,35 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 }
 
 func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.ConfirmResourceDeleteRequest
+		request *commands.ConfirmResourceDeleteRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.ConfirmResourceDeleteResponse
+		want      *commands.ConfirmResourceDeleteResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceDeleteRequest(deviceId, resId, correlationId)},
-			want: &pb.ConfirmResourceDeleteResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeConfirmResourceDeleteRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceDeleteResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.ConfirmResourceDeleteRequest{},
+				request: &commands.ConfirmResourceDeleteRequest{},
 			},
 			wantError: true,
 		},
@@ -773,11 +735,6 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	}()
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.ConfirmResourceDelete(ctx, tt.args.request)

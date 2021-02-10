@@ -33,5 +33,4 @@ message Snapshot {
     string href = 2;
     bool is_published = 3;
     uint64 event_version = 4;
-    
 }

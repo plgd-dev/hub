@@ -31,7 +31,7 @@ message ResourceLinksUnpublished {
 }
 
 message ResourceLinksSnapshotTaken {
-    repeated Resource resources = 1;
+    map<string, Resource> resources = 1;
     string device_id = 2;
     EventMetadata event_metadata = 3;
 }

@@ -68,7 +68,7 @@ func (l ResourceLink) ToRAProto() pbRA.Resource {
 		DeviceId:             l.GetDeviceId(),
 		EndpointInformations: EndpointInformations(l.GetEndpointInformations()).ToRAProto(),
 		Href:                 l.GetHref(),
-		Id:                   utils.MakeResourceId(l.GetDeviceId(), l.GetHref()),
+		Id:                   utils.MakeResourceID(l.GetDeviceId(), l.GetHref()),
 		// InstanceId:            l.GetInstanceId(),
 		Interfaces:            l.GetInterfaces(),
 		Policies:              l.GetPolicies().ToRAProto(),
@@ -80,7 +80,7 @@ func (l ResourceLink) ToRAProto() pbRA.Resource {
 
 func (l ResourceLink) ToSchema() schema.ResourceLink {
 	return schema.ResourceLink{
-		ID:        utils.MakeResourceId(l.GetDeviceId(), l.GetHref()),
+		ID:        utils.MakeResourceID(l.GetDeviceId(), l.GetHref()),
 		Anchor:    l.GetAnchor(),
 		DeviceID:  l.GetDeviceId(),
 		Endpoints: EndpointInformations(l.GetEndpointInformations()).ToSchema(),

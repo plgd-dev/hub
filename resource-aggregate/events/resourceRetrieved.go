@@ -1,31 +1,27 @@
 package events
 
 import (
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/kit/net/http"
 	"google.golang.org/protobuf/proto"
 )
 
-type ResourceRetrieved struct {
-	pb.ResourceRetrieved
-}
+const eventTypeResourceRetrieved = "ocf.cloud.resourceaggregate.events.resourceretrieved"
 
 func (e *ResourceRetrieved) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
 }
 
 func (e *ResourceRetrieved) Marshal() ([]byte, error) {
-	return proto.Marshal(&e.ResourceRetrieved)
+	return proto.Marshal(e)
 }
 
 func (e *ResourceRetrieved) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, &e.ResourceRetrieved)
+	return proto.Unmarshal(b, e)
 }
 
 func (e *ResourceRetrieved) EventType() string {
-	return http.ProtobufContentType(&pb.ResourceRetrieved{})
+	return eventTypeResourceRetrieved
 }
 
 func (e *ResourceRetrieved) AggregateId() string {
-	return e.GetId()
+	return e.GetResourceId().ToUUID()
 }

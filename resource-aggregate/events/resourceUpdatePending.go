@@ -1,31 +1,27 @@
 package events
 
 import (
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/kit/net/http"
 	"google.golang.org/protobuf/proto"
 )
 
-type ResourceUpdatePending struct {
-	pb.ResourceUpdatePending
-}
+const eventTypeResourceUpdatePending = "ocf.cloud.resourceaggregate.events.resourceupdatepending"
 
 func (e *ResourceUpdatePending) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
 }
 
 func (e *ResourceUpdatePending) Marshal() ([]byte, error) {
-	return proto.Marshal(&e.ResourceUpdatePending)
+	return proto.Marshal(e)
 }
 
 func (e *ResourceUpdatePending) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, &e.ResourceUpdatePending)
+	return proto.Unmarshal(b, e)
 }
 
 func (e *ResourceUpdatePending) EventType() string {
-	return http.ProtobufContentType(&pb.ResourceUpdatePending{})
+	return eventTypeResourceUpdatePending
 }
 
 func (e *ResourceUpdatePending) AggregateId() string {
-	return e.GetId()
+	return e.GetResourceId().ToUUID()
 }

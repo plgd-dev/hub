@@ -322,7 +322,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 		log.Debugf("grpc-gateway.resourceCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupID(), eu.AggregateID(), eu.Version(), eu.EventType())
 		m.version = eu.Version()
 		switch eu.EventType() {
-		case http.ProtobufContentType(&pbRA.ResourceStateSnapshotTaken{}):
+		case (&pbRA.ResourceStateSnapshotTaken{}).EventType():
 			var s raEvents.ResourceStateSnapshotTaken
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
@@ -338,7 +338,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 			m.onResourceUnpublishedVersion = eu.Version()
 			m.onResourceChangedVersion = eu.Version()
 			onResourceContentChanged = true
-		case http.ProtobufContentType(&pbRA.ResourcePublished{}):
+		case (&pbRA.ResourcePublished{}).EventType():
 			var s raEvents.ResourcePublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
@@ -350,14 +350,14 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 			m.onResourcePublishedVersion = eu.Version()
 			m.isPublished = true
 			m.resource = s.Resource
-		case http.ProtobufContentType(&pbRA.ResourceUnpublished{}):
+		case (&pbRA.ResourceUnpublished{}).EventType():
 			if m.isPublished {
 				onResourcePublished = false
 				onResourceUnpublished = true
 			}
 			m.onResourceUnpublishedVersion = eu.Version()
 			m.isPublished = false
-		case http.ProtobufContentType(&pbRA.ResourceChanged{}):
+		case (&pbRA.ResourceChanged{}).EventType():
 			var s raEvents.ResourceChanged
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
@@ -365,14 +365,14 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 			m.content = &s.ResourceChanged
 			m.onResourceChangedVersion = eu.Version()
 			onResourceContentChanged = true
-		case http.ProtobufContentType(&pbRA.ResourceUpdatePending{}):
+		case (&pbRA.ResourceUpdatePending{}).EventType():
 			var s raEvents.ResourceUpdatePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
 			m.resourceUpdatePendings = append(m.resourceUpdatePendings, s)
 			onResourceUpdatePending = true
-		case http.ProtobufContentType(&pbRA.ResourceUpdated{}):
+		case (&pbRA.ResourceUpdated{}).EventType():
 			var s raEvents.ResourceUpdated
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
@@ -391,21 +391,21 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 				onResourceUpdatePending = true
 				m.resourceUpdatePendings = tmp
 			}
-		case http.ProtobufContentType(&pbRA.ResourceRetrievePending{}):
+		case &pbRA.ResourceRetrievePending{}).EventType():
 			var s raEvents.ResourceRetrievePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
 			m.resourceRetrievePendings = append(m.resourceRetrievePendings, s)
 			onResourceRetrievePending = true
-		case http.ProtobufContentType(&pbRA.ResourceDeletePending{}):
+		case (&pbRA.ResourceDeletePending{}).EventType():
 			var s raEvents.ResourceDeletePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
 			m.resourceDeletePendings = append(m.resourceDeletePendings, s)
 			onResourceDeletePending = true
-		case http.ProtobufContentType(&pbRA.ResourceRetrieved{}):
+		case (&pbRA.ResourceRetrieved{}).EventType():
 			var s raEvents.ResourceRetrieved
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
@@ -425,7 +425,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 				onResourceRetrievePending = true
 				m.resourceRetrievePendings = tmp
 			}
-		case http.ProtobufContentType(&pbRA.ResourceDeleted{}):
+		case (&pbRA.ResourceDeleted{}).EventType():
 			var s raEvents.ResourceDeleted
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
@@ -468,7 +468,7 @@ func (m *resourceCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
 	}
 
 	if onResourceContentChanged && m.isPublished {
-		if utils.MakeResourceId(m.resource.GetDeviceId(), status.Href) == m.resource.GetId() {
+		if utils.MakeResourceID(m.resource.GetDeviceId(), status.Href) == m.resource.GetId() {
 			if err := m.onCloudStatusChangedLocked(ctx); err != nil {
 				log.Errorf("cannot make action on cloud status changed: %v", err)
 			}

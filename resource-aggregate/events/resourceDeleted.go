@@ -1,31 +1,27 @@
 package events
 
 import (
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/kit/net/http"
 	"google.golang.org/protobuf/proto"
 )
 
-type ResourceDeleted struct {
-	pb.ResourceDeleted
-}
+const eventTypeResourceDeleted = "ocf.cloud.resourceaggregate.events.resourcedeleted"
 
 func (e *ResourceDeleted) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
 }
 
 func (e *ResourceDeleted) Marshal() ([]byte, error) {
-	return proto.Marshal(&e.ResourceDeleted)
+	return proto.Marshal(e)
 }
 
 func (e *ResourceDeleted) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, &e.ResourceDeleted)
+	return proto.Unmarshal(b, e)
 }
 
 func (e *ResourceDeleted) EventType() string {
-	return http.ProtobufContentType(&pb.ResourceDeleted{})
+	return eventTypeResourceDeleted
 }
 
 func (e *ResourceDeleted) AggregateId() string {
-	return e.GetId()
+	return e.GetResourceId().ToUUID()
 }

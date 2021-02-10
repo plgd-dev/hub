@@ -19,7 +19,7 @@ func Publish(ctx context.Context, client pb.ResourceAggregateClient, deviceID st
 			Href:     Href,
 		},
 		Resource: &pb.Resource{
-			Id:            utils.MakeResourceId(deviceID, Href),
+			Id:            utils.MakeResourceID(deviceID, Href),
 			Href:          Href,
 			ResourceTypes: ResourceTypes,
 			Interfaces:    Interfaces,

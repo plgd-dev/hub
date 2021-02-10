@@ -108,7 +108,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			})
 		}
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-		resourceID := utils.MakeResourceId(link.DeviceID, href)
+		resourceID := utils.MakeResourceID(link.DeviceID, href)
 		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,

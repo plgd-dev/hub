@@ -19,7 +19,6 @@ import (
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/jwt"
@@ -122,7 +121,7 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 		}
 		return false, nil
 	})
-	pb.RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
+	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	server := Server{
 		server:             grpcServer,

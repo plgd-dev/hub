@@ -3,32 +3,29 @@ package test
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	httpUtils "github.com/plgd-dev/kit/net/http"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-func MakeResourcePublishedEvent(resource pb.Resource, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	rp := events.ResourceLinksPublished{
-		ResourceLinksPublished: pb.ResourceLinksPublished{
-			Id:       resource.Id,
-			Resource: &resource,
-			AuditContext: &pb.AuditContext{
-				UserId:   "userId",
-				DeviceId: resource.DeviceId,
-			},
-			EventMetadata: &eventMetadata,
+func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ResourceLinksPublished{
+		Resources: resources,
+		DeviceId:  deviceID,
+		AuditContext: &commands.AuditContext{
+			UserId:   "userId",
+			DeviceId: deviceID,
 		},
+		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
-		rp.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourcePublished{}),
-		rp.Id,
-		rp.Resource.DeviceId,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceLinksPublished{}).EventType(),
+		commands.MakeLinksResourceUUID(e.GetDeviceId()),
+		e.GetDeviceId(),
 		func(v interface{}) error {
-			if x, ok := v.(*events.ResourcePublished); ok {
-				*x = rp
+			if x, ok := v.(*events.ResourceLinksPublished); ok {
+				*x = e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -36,25 +33,24 @@ func MakeResourcePublishedEvent(resource pb.Resource, eventMetadata pb.EventMeta
 	)
 }
 
-func MakeResourceLinksUnpublishedEvent(id, deviceID string, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	ru := events.ResourceLinksUnpublished{
-		ResourceLinksUnpublished: pb.ResourceLinksUnpublished{
-			Id: id,
-			AuditContext: &pb.AuditContext{
-				UserId:   "userId",
-				DeviceId: deviceID,
-			},
-			EventMetadata: &eventMetadata,
+func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ResourceLinksUnpublished{
+		Hrefs:    hrefs,
+		DeviceId: deviceID,
+		AuditContext: &commands.AuditContext{
+			UserId:   "userId",
+			DeviceId: deviceID,
 		},
+		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
-		ru.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceLinksUnpublished{}),
-		ru.Id,
-		deviceID,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceLinksUnpublished{}).EventType(),
+		commands.MakeLinksResourceUUID(e.GetDeviceId()),
+		e.GetDeviceId(),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksUnpublished); ok {
-				*x = ru
+				*x = e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -62,21 +58,20 @@ func MakeResourceLinksUnpublishedEvent(id, deviceID string, eventMetadata pb.Eve
 	)
 }
 
-func MakeResourceStateSnapshotTaken(isPublished bool, resource pb.Resource, latestResourceChange pb.ResourceChanged, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	rs := events.NewResourceStateSnapshotTaken()
-	rs.Id = resource.Id
-	rs.Resource = &resource
-	rs.LatestResourceChange = &latestResourceChange
-	rs.EventMetadata = &eventMetadata
+func MakeResourceLinksSnapshotTaken(resources map[string]*commands.Resource, deviceID string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.NewResourceLinksSnapshotTaken()
+	e.Resources = resources
+	e.DeviceId = deviceID
+	e.EventMetadata = eventMetadata
 
 	return eventstore.NewLoadedEvent(
-		rs.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceStateSnapshotTaken{}),
-		rs.Id,
-		rs.Resource.DeviceId,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceLinksSnapshotTaken{}).EventType(),
+		commands.MakeLinksResourceUUID(e.GetDeviceId()),
+		e.GetDeviceId(),
 		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
-				*x = *rs
+			if x, ok := v.(*events.ResourceLinksSnapshotTaken); ok {
+				*x = *e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -84,26 +79,24 @@ func MakeResourceStateSnapshotTaken(isPublished bool, resource pb.Resource, late
 	)
 }
 
-func MakeResourceUpdatePending(deviceId, resourceId string, content pb.Content, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	rc := events.ResourceUpdatePending{
-		ResourceUpdatePending: pb.ResourceUpdatePending{
-			Id:      resourceId,
-			Content: &content,
-			AuditContext: &pb.AuditContext{
-				UserId:   "userId",
-				DeviceId: deviceId,
-			},
-			EventMetadata: &eventMetadata,
+func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ResourceUpdatePending{
+		ResourceId: resourceId,
+		Content:    content,
+		AuditContext: &commands.AuditContext{
+			UserId:   "userId",
+			DeviceId: resourceId.GetDeviceId(),
 		},
+		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
-		rc.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceUpdatePending{}),
-		rc.Id,
-		deviceId,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceUpdatePending{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdatePending); ok {
-				*x = rc
+				*x = e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -111,27 +104,25 @@ func MakeResourceUpdatePending(deviceId, resourceId string, content pb.Content, 
 	)
 }
 
-func MakeResourceUpdated(deviceId, resourceId string, status pb.Status, content pb.Content, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	rc := events.ResourceUpdated{
-		ResourceUpdated: pb.ResourceUpdated{
-			Id:      resourceId,
-			Content: &content,
-			Status:  status,
-			AuditContext: &pb.AuditContext{
-				UserId:   "userId",
-				DeviceId: deviceId,
-			},
-			EventMetadata: &eventMetadata,
+func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ResourceUpdated{
+		ResourceId: resourceId,
+		Content:    content,
+		Status:     status,
+		AuditContext: &commands.AuditContext{
+			UserId:   "userId",
+			DeviceId: resourceId.GetDeviceId(),
 		},
+		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
-		rc.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceUpdated{}),
-		rc.Id,
-		deviceId,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceUpdated{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdated); ok {
-				*x = rc
+				*x = e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -139,26 +130,24 @@ func MakeResourceUpdated(deviceId, resourceId string, status pb.Status, content 
 	)
 }
 
-func MakeResourceChangedEvent(id, deviceID string, content pb.Content, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	ru := events.ResourceChanged{
-		ResourceChanged: pb.ResourceChanged{
-			Id: id,
-			AuditContext: &pb.AuditContext{
-				UserId:   "userId",
-				DeviceId: deviceID,
-			},
-			Content:       &content,
-			EventMetadata: &eventMetadata,
+func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ResourceChanged{
+		ResourceId: resourceId,
+		AuditContext: &commands.AuditContext{
+			UserId:   "userId",
+			DeviceId: resourceId.GetDeviceId(),
 		},
+		Content:       content,
+		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
-		ru.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceChanged{}),
-		ru.Id,
-		deviceID,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceChanged{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceChanged); ok {
-				*x = ru
+				*x = e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -166,26 +155,24 @@ func MakeResourceChangedEvent(id, deviceID string, content pb.Content, eventMeta
 	)
 }
 
-func MakeResourceRetrievePending(deviceId, resourceId string, resourceInterface string, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	rc := events.ResourceRetrievePending{
-		ResourceRetrievePending: pb.ResourceRetrievePending{
-			Id:                resourceId,
-			ResourceInterface: resourceInterface,
-			AuditContext: &pb.AuditContext{
-				UserId:   "userId",
-				DeviceId: deviceId,
-			},
-			EventMetadata: &eventMetadata,
+func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ResourceRetrievePending{
+		ResourceId:        resourceId,
+		ResourceInterface: resourceInterface,
+		AuditContext: &commands.AuditContext{
+			UserId:   "userId",
+			DeviceId: resourceId.GetDeviceId(),
 		},
+		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
-		rc.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceRetrievePending{}),
-		rc.Id,
-		deviceId,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceRetrievePending{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrievePending); ok {
-				*x = rc
+				*x = e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -193,27 +180,46 @@ func MakeResourceRetrievePending(deviceId, resourceId string, resourceInterface 
 	)
 }
 
-func MakeResourceRetrieved(deviceId, resourceId string, status pb.Status, content pb.Content, eventMetadata pb.EventMetadata) eventstore.EventUnmarshaler {
-	rc := events.ResourceRetrieved{
-		ResourceRetrieved: pb.ResourceRetrieved{
-			Id:      resourceId,
-			Content: &content,
-			Status:  status,
-			AuditContext: &pb.AuditContext{
-				UserId:   "userId",
-				DeviceId: deviceId,
-			},
-			EventMetadata: &eventMetadata,
+func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.ResourceRetrieved{
+		ResourceId: resourceId,
+		Content:    content,
+		Status:     status,
+		AuditContext: &commands.AuditContext{
+			UserId:   "userId",
+			DeviceId: resourceId.GetDeviceId(),
 		},
+		EventMetadata: &eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
-		rc.EventMetadata.Version,
-		httpUtils.ProtobufContentType(&pb.ResourceRetrieved{}),
-		rc.Id,
-		deviceId,
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceRetrieved{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrieved); ok {
-				*x = rc
+				*x = e
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}
+
+func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.NewResourceStateSnapshotTaken()
+	e.ResourceId = resourceId
+	e.LatestResourceChange = latestResourceChange
+	e.EventMetadata = eventMetadata
+
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceStateSnapshotTaken{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
+				*x = *e
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")

@@ -12,6 +12,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // ResourceAggregateClient is the client API for ResourceAggregate service.
@@ -175,7 +176,7 @@ type UnsafeResourceAggregateServer interface {
 }
 
 func RegisterResourceAggregateServer(s grpc.ServiceRegistrar, srv ResourceAggregateServer) {
-	s.RegisterService(&_ResourceAggregate_serviceDesc, srv)
+	s.RegisterService(&ResourceAggregate_ServiceDesc, srv)
 }
 
 func _ResourceAggregate_PublishResourceLinks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -340,7 +341,10 @@ func _ResourceAggregate_ConfirmResourceDelete_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-var _ResourceAggregate_serviceDesc = grpc.ServiceDesc{
+// ResourceAggregate_ServiceDesc is the grpc.ServiceDesc for ResourceAggregate service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.resourceaggregate.pb.ResourceAggregate",
 	HandlerType: (*ResourceAggregateServer)(nil),
 	Methods: []grpc.MethodDesc{

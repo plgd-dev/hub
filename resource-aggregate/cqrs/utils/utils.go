@@ -4,43 +4,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gofrs/uuid"
 	"github.com/golang/snappy"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
-const ResourceLinksHref = "/oic/res"
-
-func GetTopics(deviceId string) []string {
-	return []string{"events-" + deviceId + "-resource-aggregate"}
-}
-
-func MakeResourceId(deviceID, href string) string {
-	return uuid.NewV5(uuid.NamespaceURL, deviceID+href).String()
+func GetTopics(deviceID string) []string {
+	return []string{"events-" + deviceID + "-resource-aggregate"}
 }
 
 func TimeNowMs() uint64 {
 	now := time.Now()
 	unix := now.UnixNano()
 	return uint64(unix / int64(time.Millisecond))
-}
-
-//CreateEventMeta for creating EventMetadata for event.
-func MakeEventMeta(connectionId string, sequence, version uint64) pb.EventMetadata {
-	return pb.EventMetadata{
-		ConnectionId: connectionId,
-		Sequence:     sequence,
-		Version:      version,
-		TimestampMs:  TimeNowMs(),
-	}
-}
-
-func MakeAuditContext(deviceID, userID, correlationId string) pb.AuditContext {
-	return pb.AuditContext{
-		UserId:        userID,
-		DeviceId:      deviceID,
-		CorrelationId: correlationId,
-	}
 }
 
 type ProtobufMarshaler interface {

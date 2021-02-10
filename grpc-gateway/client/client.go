@@ -298,7 +298,7 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 	tc := make(map[string]func(pb.ResourceValue), len(resourceIDsCallbacks))
 	resourceIDs := make([]*pb.ResourceId, 0, len(resourceIDsCallbacks))
 	for _, c := range resourceIDsCallbacks {
-		tc[utils.MakeResourceId(c.ResourceID.DeviceId, c.ResourceID.Href)] = c.Callback
+		tc[utils.MakeResourceID(c.ResourceID.DeviceId, c.ResourceID.Href)] = c.Callback
 		resourceIDs = append(resourceIDs, c.ResourceID)
 	}
 
@@ -309,7 +309,7 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 		if !it.Next(&v) {
 			break
 		}
-		c, ok := tc[utils.MakeResourceId(v.GetResourceId().GetDeviceId(), v.GetResourceId().GetHref())]
+		c, ok := tc[utils.MakeResourceID(v.GetResourceId().GetDeviceId(), v.GetResourceId().GetHref())]
 		if ok {
 			c(v)
 		}

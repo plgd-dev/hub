@@ -154,7 +154,7 @@ func newAggrModel(ctx context.Context, groupID, aggregateID string, store events
 	amodel := &aggrModel{model: model}
 	ep := eventstore.NewProjection(store, func(ctx context.Context) (eventstore.Model, error) { return amodel, nil }, logDebugfFunc)
 	err := ep.Project(ctx, []eventstore.SnapshotQuery{
-		eventstore.SnapshotQuery{
+		{
 			GroupID:           groupID,
 			AggregateID:       aggregateID,
 			SnapshotEventType: model.SnapshotEventType(),
@@ -240,4 +240,8 @@ func (a *Aggregate) HandleCommand(ctx context.Context, cmd Command) ([]eventstor
 		}
 		return events, nil
 	}
+}
+
+func (a *Aggregate) DeviceID() string {
+	return a.groupID
 }

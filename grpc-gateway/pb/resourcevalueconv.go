@@ -56,7 +56,7 @@ func (s Status) ToGrpcCode() codes.Code {
 }
 
 func (r *ResourceId) ID() string {
-	return utils.MakeResourceId(r.GetDeviceId(), r.GetHref())
+	return utils.MakeResourceID(r.GetDeviceId(), r.GetHref())
 }
 
 func RAContent2Content(s *pbRA.Content) *Content {

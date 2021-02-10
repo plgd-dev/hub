@@ -195,7 +195,7 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		cloudResourceID := utils.MakeResourceId(deviceID, status.Href)
+		cloudResourceID := utils.MakeResourceID(deviceID, status.Href)
 		models := s.resourceProjection.Models(deviceID, cloudResourceID)
 		if len(models) == 0 {
 			continue
@@ -225,7 +225,7 @@ func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, devi
 func (s *devicesSubscription) initNotifyOfOfflineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		cloudResourceID := utils.MakeResourceId(deviceID, status.Href)
+		cloudResourceID := utils.MakeResourceID(deviceID, status.Href)
 		models := s.resourceProjection.Models(deviceID, cloudResourceID)
 		if len(models) == 0 {
 			continue

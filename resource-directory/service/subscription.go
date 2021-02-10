@@ -43,7 +43,7 @@ func (s *subscription) ID() string {
 }
 
 func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version uint64) bool {
-	resourceID := utils.MakeResourceId(deviceID, href+"."+typeEvent)
+	resourceID := utils.MakeResourceID(deviceID, href+"."+typeEvent)
 
 	s.eventVersionsLock.Lock()
 	defer s.eventVersionsLock.Unlock()

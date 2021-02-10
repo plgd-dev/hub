@@ -7,10 +7,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -20,7 +20,7 @@ type isUserDeviceFunc = func(ctx context.Context, userID, deviceID string) (bool
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	pb.UnimplementedResourceAggregateServer
+	UnimplementedResourceAggregateServer
 	config           Config
 	eventstore       EventStore
 	publisher        eventbus.Publisher
@@ -75,7 +75,7 @@ func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID str
 	return "", kitNetGrpc.ForwardErrorf(codes.PermissionDenied, "access denied")
 }
 
-func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *pb.PublishResourceLinksRequest) (*pb.PublishResourceLinksResponse, error) {
+func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *commands.PublishResourceLinksRequest) (*commands.PublishResourceLinksResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.PublishResourceLinks(%v) took %v\n", request.DeviceId, time.Now().Sub(t))
@@ -85,8 +85,8 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *pb.Pu
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource links: %v", err))
 	}
 
-	resID := &pb.ResourceId{
-		Href:     utils.ResourceLinksHref,
+	resID := &commands.ResourceId{
+		Href:     commands.ResourceLinksHref,
 		DeviceId: request.DeviceId,
 	}
 	aggregate, err := NewAggregate(resID, r.config.SnapshotThreshold, r.eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
@@ -103,13 +103,13 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *pb.Pu
 	if err != nil {
 		log.Errorf("cannot publish events for publish resource links command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
-	return &pb.PublishResourceLinksResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
+	return &commands.PublishResourceLinksResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *pb.UnpublishResourceLinksRequest) (*pb.UnpublishResourceLinksResponse, error) {
+func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *commands.UnpublishResourceLinksRequest) (*commands.UnpublishResourceLinksResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.UnpublishResourceLinks(%v) took %v\n", request.DeviceId, time.Now().Sub(t))
@@ -119,8 +119,8 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *pb.
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot unpublish resource links: %v", err))
 	}
 
-	resID := &pb.ResourceId{
-		Href:     utils.ResourceLinksHref,
+	resID := &commands.ResourceId{
+		Href:     commands.ResourceLinksHref,
 		DeviceId: request.DeviceId,
 	}
 	aggregate, err := NewAggregate(resID, r.config.SnapshotThreshold, r.eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
@@ -137,13 +137,13 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *pb.
 	if err != nil {
 		log.Errorf("cannot publish events for unpublish resource links command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
-	return &pb.UnpublishResourceLinksResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
+	return &commands.UnpublishResourceLinksResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *pb.NotifyResourceChangedRequest) (*pb.NotifyResourceChangedResponse, error) {
+func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest) (*commands.NotifyResourceChangedResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.NotifyResourceChanged(%v) takes %v\n", request.ResourceId, time.Now().Sub(t))
@@ -166,13 +166,13 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *pb.N
 	if err != nil {
 		log.Errorf("cannot publish events for notify content changed command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
-	return &pb.NotifyResourceChangedResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
+	return &commands.NotifyResourceChangedResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) UpdateResource(ctx context.Context, request *pb.UpdateResourceRequest) (*pb.UpdateResourceResponse, error) {
+func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.UpdateResourceRequest) (*commands.UpdateResourceResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.UpdateResource(%v) takes %v\n", request.ResourceId, time.Now().Sub(t))
@@ -195,13 +195,13 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *pb.UpdateRe
 	if err != nil {
 		log.Errorf("cannot publish events for update resource content command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
-	return &pb.UpdateResourceResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	return &commands.UpdateResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *pb.ConfirmResourceUpdateRequest) (*pb.ConfirmResourceUpdateResponse, error) {
+func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *commands.ConfirmResourceUpdateRequest) (*commands.ConfirmResourceUpdateResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.ConfirmResourceUpdate(%v) takes %v\n", request.ResourceId, time.Now().Sub(t))
@@ -224,13 +224,13 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *pb.C
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource content update processed command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
-	return &pb.ConfirmResourceUpdateResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	return &commands.ConfirmResourceUpdateResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) RetrieveResource(ctx context.Context, request *pb.RetrieveResourceRequest) (*pb.RetrieveResourceResponse, error) {
+func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.RetrieveResourceRequest) (*commands.RetrieveResourceResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.RetrieveResource(%v) takes %v\n", request.ResourceId, time.Now().Sub(t))
@@ -253,13 +253,13 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *pb.Retrie
 	if err != nil {
 		log.Errorf("cannot publish events for retrieve resource content command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
-	return &pb.RetrieveResourceResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	return &commands.RetrieveResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *pb.ConfirmResourceRetrieveRequest) (*pb.ConfirmResourceRetrieveResponse, error) {
+func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *commands.ConfirmResourceRetrieveRequest) (*commands.ConfirmResourceRetrieveResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.ConfirmResourceRetrieve(%v) takes %v\n", request.ResourceId, time.Now().Sub(t))
@@ -282,13 +282,13 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *pb
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource content retrieve processed command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
-	return &pb.ConfirmResourceRetrieveResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	return &commands.ConfirmResourceRetrieveResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) DeleteResource(ctx context.Context, request *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
+func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.DeleteResourceRequest) (*commands.DeleteResourceResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.DeleteResource(%v) takes %v\n", request.ResourceId, time.Now().Sub(t))
@@ -311,13 +311,13 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *pb.DeleteRe
 	if err != nil {
 		log.Errorf("cannot publish events for delete resource command: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
-	return &pb.DeleteResourceResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	return &commands.DeleteResourceResponse{
 		AuditContext: &auditContext,
 	}, nil
 }
 
-func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *pb.ConfirmResourceDeleteRequest) (*pb.ConfirmResourceDeleteResponse, error) {
+func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *commands.ConfirmResourceDeleteRequest) (*commands.ConfirmResourceDeleteResponse, error) {
 	t := time.Now()
 	defer func() {
 		log.Debugf("RequestHandler.ConfirmResourceDelete(%v) takes %v\n", request.ResourceId, time.Now().Sub(t))
@@ -341,8 +341,8 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *pb.C
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource delete processed: %v", err)
 	}
-	auditContext := utils.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
-	return &pb.ConfirmResourceDeleteResponse{
+	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
+	return &commands.ConfirmResourceDeleteResponse{
 		AuditContext: &auditContext,
 	}, nil
 }

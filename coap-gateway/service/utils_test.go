@@ -286,10 +286,10 @@ var (
 
 	CertIdentity      = "b5a2a42e-b285-42f1-a36b-034c8fc8efd5"
 	TestAResourceHref = "/a"
-	TestAResourceId   = utils.MakeResourceId(CertIdentity, TestAResourceHref)
+	TestAResourceId   = utils.MakeResourceID(CertIdentity, TestAResourceHref)
 	TestAResourceType = "x.a"
 	TestBResourceHref = "/b"
-	TestBResourceId   = utils.MakeResourceId(CertIdentity, TestBResourceHref)
+	TestBResourceId   = utils.MakeResourceID(CertIdentity, TestBResourceHref)
 	TestBResourceType = "x.b"
 
 	TestExchangeTimeout = time.Second * 15

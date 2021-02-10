@@ -47,8 +47,8 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pb.ResourceLink{
-				utils.MakeResourceId(Resource1.DeviceId, Resource1.Href): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
-				utils.MakeResourceId(Resource3.DeviceId, Resource3.Href): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
+				utils.MakeResourceID(Resource1.DeviceId, Resource1.Href): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
+				utils.MakeResourceID(Resource3.DeviceId, Resource3.Href): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
 			},
 		},
 	}
@@ -97,7 +97,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 
 func newResourceContent(deviceID, href string, resourceTypesp []string, content pbRA.Content) ResourceContent {
 	return ResourceContent{
-		Resource: pbRA.Resource{Id: utils.MakeResourceId(deviceID, href), Href: href, DeviceId: deviceID, ResourceTypes: resourceTypesp},
+		Resource: pbRA.Resource{Id: utils.MakeResourceID(deviceID, href), Href: href, DeviceId: deviceID, ResourceTypes: resourceTypesp},
 		Content:  content,
 	}
 }
@@ -133,6 +133,6 @@ func (s *testGrpcGateway_GetResourceLinksServer) Send(d *pb.ResourceLink) error 
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceLink)
 	}
-	s.got[utils.MakeResourceId(d.DeviceId, d.Href)] = d
+	s.got[utils.MakeResourceID(d.DeviceId, d.Href)] = d
 	return nil
 }

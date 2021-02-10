@@ -245,6 +245,6 @@ func (s *testGrpcGateway_RetrieveResourcesValuesServer) Send(d *pb.ResourceValue
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceValue)
 	}
-	s.got[utils.MakeResourceId(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetHref())] = d
+	s.got[utils.MakeResourceID(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetHref())] = d
 	return nil
 }

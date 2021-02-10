@@ -10,11 +10,10 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 
@@ -113,93 +112,47 @@ func TestProjection(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	type Path struct {
-		DeviceID string
-		Href     string
-	}
-
-	path1 := Path{
-		DeviceID: "1",
+	res1 := commands.ResourceId{
+		DeviceId: "1",
 		Href:     "ID1",
 	}
 
-	path2 := Path{
-		DeviceID: "1",
+	res2 := commands.ResourceId{
+		DeviceId: "1",
 		Href:     "ID2",
 	}
 
-	path3 := Path{
-		DeviceID: "1",
+	res3 := commands.ResourceId{
+		DeviceId: "1",
 		Href:     "ID3",
 	}
 
-	commandPub1 := pb.PublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: path1.DeviceID,
-			Href:     path1.Href,
-		},
-		Resource: &pb.Resource{
-			Id:       utils.MakeResourceId(path1.DeviceID, path1.Href),
-			DeviceId: path1.DeviceID,
-		},
-		AuthorizationContext: &pb.AuthorizationContext{},
-		CommandMetadata:      &pb.CommandMetadata{},
+	commandPub1 := commands.NotifyResourceChangedRequest{
+		ResourceId:           &res1,
+		Content:              &commands.Content{Data: []byte("asd")},
+		AuthorizationContext: &commands.AuthorizationContext{},
+		CommandMetadata:      &commands.CommandMetadata{},
 	}
 
-	commandPub2 := pb.PublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: path2.DeviceID,
-			Href:     path2.Href,
-		},
-		Resource: &pb.Resource{
-			Id:       utils.MakeResourceId(path2.DeviceID, path2.Href),
-			DeviceId: path2.DeviceID,
-		},
-		AuthorizationContext: &pb.AuthorizationContext{},
-		CommandMetadata:      &pb.CommandMetadata{},
+	commandPub2 := commands.NotifyResourceChangedRequest{
+		ResourceId:           &res2,
+		Content:              &commands.Content{Data: []byte("asd")},
+		AuthorizationContext: &commands.AuthorizationContext{},
+		CommandMetadata:      &commands.CommandMetadata{},
 	}
 
-	commandPub3 := pb.PublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: path3.DeviceID,
-			Href:     path3.Href,
-		},
-		Resource: &pb.Resource{
-			Id:       utils.MakeResourceId(path3.DeviceID, path3.Href),
-			DeviceId: path3.DeviceID,
-		},
-		AuthorizationContext: &pb.AuthorizationContext{},
-		CommandMetadata:      &pb.CommandMetadata{},
+	commandPub3 := commands.NotifyResourceChangedRequest{
+		ResourceId:           &res3,
+		Content:              &commands.Content{Data: []byte("asd")},
+		AuthorizationContext: &commands.AuthorizationContext{},
+		CommandMetadata:      &commands.CommandMetadata{},
 	}
 
-	commandUnpub1 := pb.UnpublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: path1.DeviceID,
-			Href:     path1.Href,
-		},
-		AuthorizationContext: &pb.AuthorizationContext{},
-		CommandMetadata:      &pb.CommandMetadata{},
-	}
-
-	commandUnpub3 := pb.UnpublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: path3.DeviceID,
-			Href:     path3.Href,
-		},
-		AuthorizationContext: &pb.AuthorizationContext{},
-		CommandMetadata:      &pb.CommandMetadata{},
-	}
-
-	/*
-		path2topics := func(path Path, event event.Event) []string {
-			return topics
-		}
-	*/
-
-	a1, err := aggregate.NewAggregate(path1.DeviceID, utils.MakeResourceId(path1.DeviceID, path1.Href), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
-		return &events.ResourceStateSnapshotTaken{ResourceStateSnapshotTaken: pb.ResourceStateSnapshotTaken{Id: utils.MakeResourceId(path1.DeviceID, path1.Href), Resource: &pb.Resource{
-			DeviceId: path1.DeviceID,
-		}, EventMetadata: &pb.EventMetadata{}}}, nil
+	a1, err := aggregate.NewAggregate(res1.DeviceId, res1.ToUUID(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
+		return &events.ResourceStateSnapshotTaken{
+			ResourceId:    &res1,
+			EventMetadata: &events.EventMetadata{},
+		}, nil
 	}, nil)
 	require.NoError(t, err)
 
@@ -212,10 +165,11 @@ func TestProjection(t *testing.T) {
 		return s.SnapshotEventType()
 	}
 
-	a2, err := aggregate.NewAggregate(path2.DeviceID, utils.MakeResourceId(path2.DeviceID, path2.Href), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
-		return &events.ResourceStateSnapshotTaken{ResourceStateSnapshotTaken: pb.ResourceStateSnapshotTaken{Id: utils.MakeResourceId(path2.DeviceID, path2.Href), Resource: &pb.Resource{
-			DeviceId: path2.DeviceID,
-		}, EventMetadata: &pb.EventMetadata{}}}, nil
+	a2, err := aggregate.NewAggregate(res2.DeviceId, res2.ToUUID(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
+		return &events.ResourceStateSnapshotTaken{
+			ResourceId:    &res2,
+			EventMetadata: &events.EventMetadata{},
+		}, nil
 	}, nil)
 	require.NoError(t, err)
 
@@ -226,23 +180,19 @@ func TestProjection(t *testing.T) {
 	projection, err := newProjection(ctx, store, "testProjection", subscriber, func(context.Context) (eventstore.Model, error) { return &mockEventHandler{}, nil }, nil)
 	require.NoError(t, err)
 
-	err = projection.Project(ctx, []eventstore.SnapshotQuery{
-		eventstore.SnapshotQuery{
-			GroupID:           path1.DeviceID,
-			AggregateID:       utils.MakeResourceId(path1.DeviceID, path1.Href),
-			SnapshotEventType: snapshotEventType(),
-		},
-	})
+	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
+		GroupID:           res1.DeviceId,
+		AggregateID:       res1.ToUUID(),
+		SnapshotEventType: snapshotEventType(),
+	}})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(projection.Models(nil)))
 
-	err = projection.Project(ctx, []eventstore.SnapshotQuery{
-		eventstore.SnapshotQuery{
-			GroupID:           path2.DeviceID,
-			AggregateID:       utils.MakeResourceId(path2.DeviceID, path2.Href),
-			SnapshotEventType: snapshotEventType(),
-		},
-	})
+	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
+		GroupID:           res2.DeviceId,
+		AggregateID:       res2.ToUUID(),
+		SnapshotEventType: snapshotEventType(),
+	}})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(projection.Models(nil)))
 
@@ -251,53 +201,35 @@ func TestProjection(t *testing.T) {
 
 	time.Sleep(waitForSubscription)
 
-	a3, err := aggregate.NewAggregate(path3.DeviceID, utils.MakeResourceId(path3.DeviceID, path3.Href), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
-		return &events.ResourceStateSnapshotTaken{ResourceStateSnapshotTaken: pb.ResourceStateSnapshotTaken{Id: utils.MakeResourceId(path3.DeviceID, path3.Href), Resource: &pb.Resource{
-			DeviceId: path3.DeviceID,
-		}, EventMetadata: &pb.EventMetadata{}}}, nil
+	a3, err := aggregate.NewAggregate(res3.DeviceId, res3.ToUUID(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
+		return &events.ResourceStateSnapshotTaken{
+			ResourceId:    &res3,
+			EventMetadata: &events.EventMetadata{},
+		}, nil
 	}, nil)
-	require.NoError(t, err)
 
 	evs, err = a3.HandleCommand(ctx, &commandPub3)
 	require.NoError(t, err)
 	require.NotNil(t, evs)
 	for _, e := range evs {
-		err = publisher.Publish(ctx, topics, path3.DeviceID, utils.MakeResourceId(path3.DeviceID, path3.Href), e)
+		err = publisher.Publish(ctx, topics, res3.DeviceId, res3.ToUUID(), e)
 		require.NoError(t, err)
 	}
 	time.Sleep(time.Second)
 
 	require.Equal(t, 3, len(projection.Models(nil)))
 
-	evs, err = a1.HandleCommand(ctx, &commandUnpub1)
-	require.NoError(t, err)
-	require.NotNil(t, evs)
-	for _, e := range evs {
-		err = publisher.Publish(ctx, topics, path3.DeviceID, utils.MakeResourceId(path3.DeviceID, path3.Href), e)
-		require.NoError(t, err)
-	}
-
 	err = projection.SubscribeTo(topics[0:1])
 	require.NoError(t, err)
 
 	time.Sleep(waitForSubscription)
 
-	err = projection.Forget([]eventstore.SnapshotQuery{
-		eventstore.SnapshotQuery{
-			GroupID:           path3.DeviceID,
-			AggregateID:       utils.MakeResourceId(path3.DeviceID, path3.Href),
-			SnapshotEventType: snapshotEventType(),
-		},
-	})
+	err = projection.Forget([]eventstore.SnapshotQuery{{
+		GroupID:           res3.DeviceId,
+		AggregateID:       res3.ToUUID(),
+		SnapshotEventType: snapshotEventType(),
+	}})
 	require.NoError(t, err)
-
-	evs, err = a3.HandleCommand(ctx, &commandUnpub3)
-	require.NoError(t, err)
-	require.NotNil(t, evs)
-	for _, e := range evs {
-		err = publisher.Publish(ctx, topics[1:], path3.DeviceID, utils.MakeResourceId(path3.DeviceID, path3.Href), e)
-		require.NoError(t, err)
-	}
 
 	time.Sleep(time.Second)
 	projection.lock.Lock()
@@ -313,7 +245,7 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evs)
 	for _, e := range evs {
-		err = publisher.Publish(ctx, topics, path1.DeviceID, utils.MakeResourceId(path1.DeviceID, path1.Href), e)
+		err = publisher.Publish(ctx, topics, res1.DeviceId, res1.ToUUID(), e)
 		require.NoError(t, err)
 	}
 

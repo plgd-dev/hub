@@ -98,7 +98,7 @@ test: env
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
 		cloud-test \
-		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
+		go test -race -p 1 -v ./resource-aggregate/... -covermode=atomic -coverprofile=/home/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 

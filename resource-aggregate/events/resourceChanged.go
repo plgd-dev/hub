@@ -1,31 +1,27 @@
 package events
 
 import (
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/kit/net/http"
 	"google.golang.org/protobuf/proto"
 )
 
-type ResourceChanged struct {
-	pb.ResourceChanged
-}
+const eventTypeResourceChanged = "ocf.cloud.resourceaggregate.events.resourcechanged"
 
 func (e *ResourceChanged) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
 }
 
 func (e *ResourceChanged) Marshal() ([]byte, error) {
-	return proto.Marshal(&e.ResourceChanged)
+	return proto.Marshal(e)
 }
 
 func (e *ResourceChanged) Unmarshal(b []byte) error {
-	return proto.Unmarshal(b, &e.ResourceChanged)
+	return proto.Unmarshal(b, e)
 }
 
 func (e *ResourceChanged) EventType() string {
-	return http.ProtobufContentType(&pb.ResourceChanged{})
+	return eventTypeResourceChanged
 }
 
 func (e *ResourceChanged) AggregateId() string {
-	return e.GetId()
+	return e.GetResourceId().ToUUID()
 }
