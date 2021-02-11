@@ -269,7 +269,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-	assert.Equal(t, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs, []string{resourceID1, resourceID2, resourceID3})
+	assert.Equal(t, []string{resourceID1, resourceID2, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
 	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
 	assert.NoError(t, err)
@@ -277,7 +277,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-	assert.Equal(t, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs, []string{})
+	assert.Equal(t, []string{}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 }
 
 func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
@@ -323,7 +323,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-	assert.Equal(t, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs, []string{resourceID1, resourceID3})
+	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
 	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
 	assert.NoError(t, err)
@@ -332,7 +332,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-	assert.Equal(t, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs, []string{resourceID4})
+	assert.Equal(t, []string{resourceID4}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 }
 
 func testMakePublishResourceRequest(deviceID string, href []string) *commands.PublishResourceLinksRequest {

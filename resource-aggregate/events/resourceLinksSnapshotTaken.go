@@ -50,24 +50,25 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 	return nil
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) error {
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
+	unpublished := []string{}
 	if len(upub.GetHrefs()) == 0 {
-		for href, _ := range e.GetResources() {
-			upub.Hrefs = append(upub.Hrefs, href)
+		unpublished = make([]string, 0, len(e.GetResources()))
+		for href := range e.GetResources() {
+			unpublished = append(unpublished, href)
 		}
 		e.Resources = make(map[string]*commands.Resource)
 	} else {
-		unpublished := []string{}
+		unpublished = make([]string, 0, len(upub.GetHrefs()))
 		for _, href := range upub.GetHrefs() {
 			if _, present := e.GetResources()[href]; present {
 				unpublished = append(unpublished, href)
 				delete(e.GetResources(), href)
 			}
 		}
-		upub.Hrefs = unpublished
 	}
 	e.EventMetadata = upub.GetEventMetadata()
-	return nil
+	return unpublished, nil
 }
 
 func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s *ResourceLinksSnapshotTaken) error {
@@ -108,7 +109,7 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceLinksUnpublished(ctx, &s); err != nil {
+			if _, err := e.HandleEventResourceLinksUnpublished(ctx, &s); err != nil {
 				return err
 			}
 		}
@@ -157,10 +158,11 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			AuditContext:  &ac,
 			EventMetadata: &em,
 		}
-		err := e.HandleEventResourceLinksUnpublished(ctx, &rlu)
+		unpublished, err := e.HandleEventResourceLinksUnpublished(ctx, &rlu)
 		if err != nil {
 			return nil, err
 		}
+		rlu.Hrefs = unpublished
 		return []eventstore.Event{&rlu}, nil
 	}
 

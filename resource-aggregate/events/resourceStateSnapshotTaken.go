@@ -48,25 +48,35 @@ func (e *ResourceStateSnapshotTaken) EventType() string {
 	return eventTypeResourceStateSnapshotTaken
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, contentUpdatePending *ResourceUpdatePending) error {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
 	e.PendingRequestsCount++
+	e.ResourceId = updatePending.GetResourceId()
+	e.EventMetadata = updatePending.GetEventMetadata()
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, contentRetrievePending *ResourceRetrievePending) error {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, retrievePending *ResourceRetrievePending) error {
+	e.ResourceId = retrievePending.GetResourceId()
+	e.EventMetadata = retrievePending.GetEventMetadata()
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, req *ResourceDeletePending) error {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
+	e.ResourceId = deletePending.GetResourceId()
+	e.EventMetadata = deletePending.GetEventMetadata()
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdated(ctx context.Context, contentUpdateProcessed *ResourceUpdated) error {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdated(ctx context.Context, updated *ResourceUpdated) error {
 	e.PendingRequestsCount--
+	e.ResourceId = updated.GetResourceId()
+	e.EventMetadata = updated.GetEventMetadata()
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrieved(ctx context.Context, contentUpdateProcessed *ResourceRetrieved) error {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrieved(ctx context.Context, retrieved *ResourceRetrieved) error {
+	e.ResourceId = retrieved.GetResourceId()
+	e.EventMetadata = retrieved.GetEventMetadata()
 	return nil
 }
 
@@ -83,25 +93,29 @@ func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetada
 	return false
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Context, contentChanged *ResourceChanged) (bool, error) {
-	if e.ValidateSequence(contentChanged.GetEventMetadata()) {
-		e.LatestResourceChange = contentChanged
+func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Context, changed *ResourceChanged) (bool, error) {
+	if e.ValidateSequence(changed.GetEventMetadata()) {
+		e.ResourceId = changed.GetResourceId()
+		e.EventMetadata = changed.GetEventMetadata()
+		e.LatestResourceChange = changed
 		return true, nil
 	}
 	return false, nil
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Context, deleted *ResourceDeleted) error {
+	e.ResourceId = deleted.GetResourceId()
+	e.EventMetadata = deleted.GetEventMetadata()
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, s *ResourceStateSnapshotTaken) error {
-	if s.GetPendingRequestsCount() != 0 {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) error {
+	if snapshot.GetPendingRequestsCount() != 0 {
 		return status.Errorf(codes.FailedPrecondition, "invalid pending requests")
 	}
-	e.ResourceId = s.GetResourceId()
-	e.LatestResourceChange = s.GetLatestResourceChange()
-	e.EventMetadata = s.GetEventMetadata()
+	e.ResourceId = snapshot.GetResourceId()
+	e.LatestResourceChange = snapshot.GetLatestResourceChange()
+	e.EventMetadata = snapshot.GetEventMetadata()
 
 	return nil
 }
@@ -386,6 +400,5 @@ func NewResourceStateSnapshotTaken() *ResourceStateSnapshotTaken {
 
 	return &ResourceStateSnapshotTaken{
 		EventMetadata: &EventMetadata{},
-		//mapForCalculatePendingRequestsCount: make(map[string]bool),
 	}
 }
