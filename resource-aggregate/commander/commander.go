@@ -116,7 +116,7 @@ func (c *Commander) DeleteResource(ctx context.Context, req *commands.DeleteReso
 	h := newDeleteHandler(req.GetCorrelationId())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
-		return nil, fmt.Errorf("cannot subscribe to subscriber: %w", err)
+		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
 	defer obs.Close()
 
@@ -131,9 +131,9 @@ func (c *Commander) DeleteResource(ctx context.Context, req *commands.DeleteReso
 // UpdateResource sends update resource command to resource aggregate and wait for resource updated event from eventbus.
 func (c *Commander) UpdateResource(ctx context.Context, req *commands.UpdateResourceRequest) (*events.ResourceUpdated, error) {
 	h := newUpdateHandler(req.GetCorrelationId())
-	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), []string{req.GetResourceId().GetDeviceId()}, h)
+	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
-		return nil, fmt.Errorf("cannot subscribe to subscriber: %w", err)
+		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
 	defer obs.Close()
 
@@ -191,13 +191,73 @@ func (h *retrieveHandler) recv(ctx context.Context) (*events.ResourceRetrieved, 
 // RetrieveResource sends retrieve resource command to resource aggregate and wait for resource retrieved event from eventbus.
 func (c *Commander) RetrieveResource(ctx context.Context, req *commands.RetrieveResourceRequest) (*events.ResourceRetrieved, error) {
 	h := newRetrieveHandler(req.GetCorrelationId())
-	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), []string{req.GetResourceId().GetDeviceId()}, h)
+	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
-		return nil, fmt.Errorf("cannot subscribe to subscriber: %w", err)
+		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
 	defer obs.Close()
 
 	_, err = c.raClient.RetrieveResource(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return h.recv(ctx)
+}
+
+type createHandler struct {
+	correlationID string
+	res           chan *events.ResourceCreated
+}
+
+func newCreateHandler(correlationID string) *createHandler {
+	return &createHandler{
+		correlationID: correlationID,
+		res:           make(chan *events.ResourceCreated, 1),
+	}
+}
+
+func (h *createHandler) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
+	for {
+		ev, ok := iter.Next(ctx)
+		if !ok {
+			return iter.Err()
+		}
+		var s events.ResourceCreated
+		if ev.EventType() == s.EventType() {
+			if err := ev.Unmarshal(&s); err != nil {
+				return err
+			}
+			if s.GetAuditContext().GetCorrelationId() == h.correlationID {
+				select {
+				case h.res <- &s:
+				default:
+				}
+				return nil
+			}
+		}
+	}
+}
+
+func (h *createHandler) recv(ctx context.Context) (*events.ResourceCreated, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case v := <-h.res:
+		return v, nil
+	}
+}
+
+// CreateResource sends retrieve resource command to resource aggregate and wait for resource retrieved event from eventbus.
+func (c *Commander) CreateResource(ctx context.Context, req *commands.CreateResourceRequest) (*events.ResourceRetrieved, error) {
+	h := newRetrieveHandler(req.GetCorrelationId())
+	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
+	if err != nil {
+		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
+	}
+	defer obs.Close()
+
+	_, err = c.raClient.CreateResource(ctx, req)
 	if err != nil {
 		return nil, err
 	}
