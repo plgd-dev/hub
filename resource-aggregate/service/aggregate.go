@@ -94,7 +94,7 @@ func validateUpdateResourceContent(request *commands.UpdateResourceRequest) erro
 	if request.GetResourceId().GetHref() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
-	if request.CorrelationId == "" {
+	if request.GetCorrelationId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
 	}
 	return nil
@@ -107,7 +107,7 @@ func validateRetrieveResource(request *commands.RetrieveResourceRequest) error {
 	if request.GetResourceId().GetHref() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
-	if request.CorrelationId == "" {
+	if request.GetCorrelationId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
 	}
 	return nil
@@ -123,7 +123,7 @@ func validateConfirmResourceUpdate(request *commands.ConfirmResourceUpdateReques
 	if request.GetResourceId().GetHref() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
-	if request.CorrelationId == "" {
+	if request.GetCorrelationId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
 	}
 
@@ -140,7 +140,7 @@ func validateConfirmResourceRetrieve(request *commands.ConfirmResourceRetrieveRe
 	if request.GetResourceId().GetHref() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
-	if request.CorrelationId == "" {
+	if request.GetCorrelationId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
 	}
 
@@ -154,14 +154,33 @@ func validateDeleteResource(request *commands.DeleteResourceRequest) error {
 	if request.GetResourceId().GetHref() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
-	if request.CorrelationId == "" {
+	if request.GetCorrelationId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
 	}
 	return nil
 }
 
-func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteRequest) error {
-	if request.Content == nil {
+func validateCreateResource(request *commands.CreateResourceRequest) error {
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+	}
+	if request.GetCorrelationId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+	}
+	if request.GetContent() == nil {
+		return status.Errorf(codes.InvalidArgument, "invalid Content")
+	}
+	if request.GetContent().GetData() == nil {
+		return status.Errorf(codes.InvalidArgument, "invalid Content.Data")
+	}
+	return nil
+}
+
+func validateConfirmResourceCreate(request *commands.ConfirmResourceCreateRequest) error {
+	if request.GetContent() == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content")
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
@@ -170,7 +189,21 @@ func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteReques
 	if request.GetResourceId().GetHref() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
 	}
-	if request.CorrelationId == "" {
+	if request.GetCorrelationId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
+	}
+
+	return nil
+}
+
+func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteRequest) error {
+	if request.GetResourceId().GetDeviceId() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
+	}
+	if request.GetResourceId().GetHref() == "" {
+		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.Href")
+	}
+	if request.GetCorrelationId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid CorrelationId")
 	}
 
@@ -345,6 +378,39 @@ func (a *aggregate) ConfirmResourceDelete(ctx context.Context, request *commands
 	events, err = a.ag.HandleCommand(ctx, request)
 	if err != nil {
 		err = fmt.Errorf("unable to process delete resource content notification command: %w", err)
+		return
+	}
+	cleanUpToSnapshot(ctx, a, events)
+
+	return
+}
+
+// CreateResource handles a command CreateResource
+func (a *aggregate) CreateResource(ctx context.Context, request *commands.CreateResourceRequest) (events []eventstore.Event, err error) {
+	if err = validateCreateResource(request); err != nil {
+		err = fmt.Errorf("invalid create resource content command: %w", err)
+		return
+	}
+
+	events, err = a.ag.HandleCommand(ctx, request)
+	if err != nil {
+		err = fmt.Errorf("unable to process create resource content command: %w", err)
+		return
+	}
+	cleanUpToSnapshot(ctx, a, events)
+
+	return
+}
+
+func (a *aggregate) ConfirmResourceCreate(ctx context.Context, request *commands.ConfirmResourceCreateRequest) (events []eventstore.Event, err error) {
+	if err = validateConfirmResourceCreate(request); err != nil {
+		err = fmt.Errorf("invalid create resource content notification command: %w", err)
+		return
+	}
+
+	events, err = a.ag.HandleCommand(ctx, request)
+	if err != nil {
+		err = fmt.Errorf("unable to process create resource content notification command: %w", err)
 		return
 	}
 	cleanUpToSnapshot(ctx, a, events)

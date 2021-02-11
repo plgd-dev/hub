@@ -749,6 +749,160 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	}
 }
 
+func TestRequestHandler_CreateResource(t *testing.T) {
+	deviceID := "dev0"
+	resID := "res0"
+	user0 := "user0"
+	correlationID := "123"
+
+	type args struct {
+		request *commands.CreateResourceRequest
+	}
+	test := []struct {
+		name      string
+		args      args
+		want      *commands.CreateResourceResponse
+		wantError bool
+	}{
+		{
+			name: "valid",
+			args: args{request: testMakeCreateResourceRequest(deviceID, resID, correlationID)},
+			want: &commands.CreateResourceResponse{
+				AuditContext: &commands.AuditContext{
+					UserId:        user0,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
+				},
+			},
+		},
+		{
+			name: "invalid",
+			args: args{
+				request: &commands.CreateResourceRequest{},
+			},
+			wantError: true,
+		},
+	}
+	var cmconfig certManager.Config
+	err := envconfig.Process("DIAL", &cmconfig)
+	assert.NoError(t, err)
+	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	require.NoError(t, err)
+	tlsConfig := dialCertManager.GetClientTLSConfig()
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+
+	var config Config
+	err = envconfig.Process("", &config)
+	assert.NoError(t, err)
+
+	var natsCfg nats.Config
+	err = envconfig.Process("", &natsCfg)
+	assert.NoError(t, err)
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
+	assert.NoError(t, err)
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	for _, tt := range test {
+		tfunc := func(t *testing.T) {
+			response, err := requestHandler.CreateResource(ctx, tt.args.request)
+			if tt.wantError {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, response)
+		}
+		t.Run(tt.name, tfunc)
+	}
+}
+
+func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
+	deviceID := "dev0"
+	resID := "res0"
+	user0 := "user0"
+	correlationID := "123"
+
+	type args struct {
+		request *commands.ConfirmResourceCreateRequest
+	}
+	test := []struct {
+		name      string
+		args      args
+		want      *commands.ConfirmResourceCreateResponse
+		wantError bool
+	}{
+		{
+			name: "valid",
+			args: args{request: testMakeConfirmResourceCreateRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceCreateResponse{
+				AuditContext: &commands.AuditContext{
+					UserId:        user0,
+					DeviceId:      deviceID,
+					CorrelationId: correlationID,
+				},
+			},
+		},
+		{
+			name: "invalid",
+			args: args{
+				request: &commands.ConfirmResourceCreateRequest{},
+			},
+			wantError: true,
+		},
+	}
+	var cmconfig certManager.Config
+	err := envconfig.Process("DIAL", &cmconfig)
+	assert.NoError(t, err)
+	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	require.NoError(t, err)
+	tlsConfig := dialCertManager.GetClientTLSConfig()
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+
+	var config Config
+	err = envconfig.Process("", &config)
+	assert.NoError(t, err)
+
+	var natsCfg nats.Config
+	err = envconfig.Process("", &natsCfg)
+	assert.NoError(t, err)
+	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
+	assert.NoError(t, err)
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	for _, tt := range test {
+		tfunc := func(t *testing.T) {
+			response, err := requestHandler.ConfirmResourceCreate(ctx, tt.args.request)
+			if tt.wantError {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, response)
+		}
+		t.Run(tt.name, tfunc)
+	}
+}
+
 type mockAuthorizationServiceClient struct {
 	pbAS.AuthorizationServiceClient
 }

@@ -16,4 +16,6 @@ service ResourceAggregate {
   rpc ConfirmResourceRetrieve (ConfirmResourceRetrieveRequest) returns (ConfirmResourceRetrieveResponse) {}
   rpc DeleteResource (DeleteResourceRequest) returns (DeleteResourceResponse) {}
   rpc ConfirmResourceDelete (ConfirmResourceDeleteRequest) returns (ConfirmResourceDeleteResponse) {}
+  rpc CreateResource (CreateResourceRequest) returns (CreateResourceResponse) {}
+  rpc ConfirmResourceCreate (ConfirmResourceCreateRequest) returns (ConfirmResourceCreateResponse) {}
 }
