@@ -48,6 +48,13 @@ func (e *ResourceStateSnapshotTaken) EventType() string {
 	return eventTypeResourceStateSnapshotTaken
 }
 
+func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
+	e.PendingRequestsCount++
+	e.ResourceId = createPending.GetResourceId()
+	e.EventMetadata = createPending.GetEventMetadata()
+	return nil
+}
+
 func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
 	e.PendingRequestsCount++
 	e.ResourceId = updatePending.GetResourceId()
@@ -64,6 +71,13 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx cont
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
 	e.ResourceId = deletePending.GetResourceId()
 	e.EventMetadata = deletePending.GetEventMetadata()
+	return nil
+}
+
+func (e *ResourceStateSnapshotTaken) HandleEventResourceCreated(ctx context.Context, created *ResourceCreated) error {
+	e.PendingRequestsCount--
+	e.ResourceId = created.GetResourceId()
+	e.EventMetadata = created.GetEventMetadata()
 	return nil
 }
 
@@ -152,6 +166,22 @@ func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore
 				return status.Errorf(codes.Internal, "%v", err)
 			}
 			if err := e.HandleEventResourceUpdated(ctx, &s); err != nil {
+				return err
+			}
+		case (&ResourceCreatePending{}).EventType():
+			var s ResourceCreatePending
+			if err := eu.Unmarshal(&s); err != nil {
+				return status.Errorf(codes.Internal, "%v", err)
+			}
+			if err := e.HandleEventResourceCreatePending(ctx, &s); err != nil {
+				return err
+			}
+		case (&ResourceCreated{}).EventType():
+			var s ResourceCreated
+			if err := eu.Unmarshal(&s); err != nil {
+				return status.Errorf(codes.Internal, "%v", err)
+			}
+			if err := e.HandleEventResourceCreated(ctx, &s); err != nil {
 				return err
 			}
 		case (&ResourceChanged{}).EventType():
@@ -378,6 +408,46 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			Status:        req.GetStatus(),
 		}
 		if err := e.HandleEventResourceDeleted(ctx, &rc); err != nil {
+			return nil, err
+		}
+		return []eventstore.Event{&rc}, nil
+	case *commands.CreateResourceRequest:
+		if req.GetCommandMetadata() == nil {
+			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+		}
+
+		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
+		content, err := convertContent(req.GetContent(), e.GetLatestResourceChange().GetContent().GetContentType())
+		if err != nil {
+			return nil, err
+		}
+		rc := ResourceCreatePending{
+			ResourceId:    req.GetResourceId(),
+			Content:       content,
+			AuditContext:  &ac,
+			EventMetadata: &em,
+		}
+
+		if err := e.HandleEventResourceCreatePending(ctx, &rc); err != nil {
+			return nil, err
+		}
+		return []eventstore.Event{&rc}, nil
+	case *commands.ConfirmResourceCreateRequest:
+		if req.GetCommandMetadata() == nil {
+			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+		}
+
+		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
+		rc := ResourceCreated{
+			ResourceId:    req.GetResourceId(),
+			AuditContext:  &ac,
+			EventMetadata: &em,
+			Content:       req.GetContent(),
+			Status:        req.GetStatus(),
+		}
+		if err := e.HandleEventResourceCreated(ctx, &rc); err != nil {
 			return nil, err
 		}
 		return []eventstore.Event{&rc}, nil

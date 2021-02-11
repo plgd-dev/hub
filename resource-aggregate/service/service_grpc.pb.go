@@ -12,7 +12,6 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // ResourceAggregateClient is the client API for ResourceAggregate service.
@@ -28,6 +27,8 @@ type ResourceAggregateClient interface {
 	ConfirmResourceRetrieve(ctx context.Context, in *commands.ConfirmResourceRetrieveRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceRetrieveResponse, error)
 	DeleteResource(ctx context.Context, in *commands.DeleteResourceRequest, opts ...grpc.CallOption) (*commands.DeleteResourceResponse, error)
 	ConfirmResourceDelete(ctx context.Context, in *commands.ConfirmResourceDeleteRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceDeleteResponse, error)
+	CreateResource(ctx context.Context, in *commands.CreateResourceRequest, opts ...grpc.CallOption) (*commands.CreateResourceResponse, error)
+	ConfirmResourceCreate(ctx context.Context, in *commands.ConfirmResourceCreateRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceCreateResponse, error)
 }
 
 type resourceAggregateClient struct {
@@ -119,6 +120,24 @@ func (c *resourceAggregateClient) ConfirmResourceDelete(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *resourceAggregateClient) CreateResource(ctx context.Context, in *commands.CreateResourceRequest, opts ...grpc.CallOption) (*commands.CreateResourceResponse, error) {
+	out := new(commands.CreateResourceResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CreateResource", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceAggregateClient) ConfirmResourceCreate(ctx context.Context, in *commands.ConfirmResourceCreateRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceCreateResponse, error) {
+	out := new(commands.ConfirmResourceCreateResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/ConfirmResourceCreate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceAggregateServer is the server API for ResourceAggregate service.
 // All implementations must embed UnimplementedResourceAggregateServer
 // for forward compatibility
@@ -132,6 +151,8 @@ type ResourceAggregateServer interface {
 	ConfirmResourceRetrieve(context.Context, *commands.ConfirmResourceRetrieveRequest) (*commands.ConfirmResourceRetrieveResponse, error)
 	DeleteResource(context.Context, *commands.DeleteResourceRequest) (*commands.DeleteResourceResponse, error)
 	ConfirmResourceDelete(context.Context, *commands.ConfirmResourceDeleteRequest) (*commands.ConfirmResourceDeleteResponse, error)
+	CreateResource(context.Context, *commands.CreateResourceRequest) (*commands.CreateResourceResponse, error)
+	ConfirmResourceCreate(context.Context, *commands.ConfirmResourceCreateRequest) (*commands.ConfirmResourceCreateResponse, error)
 	mustEmbedUnimplementedResourceAggregateServer()
 }
 
@@ -166,6 +187,12 @@ func (UnimplementedResourceAggregateServer) DeleteResource(context.Context, *com
 func (UnimplementedResourceAggregateServer) ConfirmResourceDelete(context.Context, *commands.ConfirmResourceDeleteRequest) (*commands.ConfirmResourceDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConfirmResourceDelete not implemented")
 }
+func (UnimplementedResourceAggregateServer) CreateResource(context.Context, *commands.CreateResourceRequest) (*commands.CreateResourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateResource not implemented")
+}
+func (UnimplementedResourceAggregateServer) ConfirmResourceCreate(context.Context, *commands.ConfirmResourceCreateRequest) (*commands.ConfirmResourceCreateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmResourceCreate not implemented")
+}
 func (UnimplementedResourceAggregateServer) mustEmbedUnimplementedResourceAggregateServer() {}
 
 // UnsafeResourceAggregateServer may be embedded to opt out of forward compatibility for this service.
@@ -176,7 +203,7 @@ type UnsafeResourceAggregateServer interface {
 }
 
 func RegisterResourceAggregateServer(s grpc.ServiceRegistrar, srv ResourceAggregateServer) {
-	s.RegisterService(&ResourceAggregate_ServiceDesc, srv)
+	s.RegisterService(&_ResourceAggregate_serviceDesc, srv)
 }
 
 func _ResourceAggregate_PublishResourceLinks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -341,10 +368,43 @@ func _ResourceAggregate_ConfirmResourceDelete_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-// ResourceAggregate_ServiceDesc is the grpc.ServiceDesc for ResourceAggregate service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
+func _ResourceAggregate_CreateResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.CreateResourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceAggregateServer).CreateResource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CreateResource",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceAggregateServer).CreateResource(ctx, req.(*commands.CreateResourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceAggregate_ConfirmResourceCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.ConfirmResourceCreateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceAggregateServer).ConfirmResourceCreate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/ConfirmResourceCreate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceAggregateServer).ConfirmResourceCreate(ctx, req.(*commands.ConfirmResourceCreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _ResourceAggregate_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.resourceaggregate.pb.ResourceAggregate",
 	HandlerType: (*ResourceAggregateServer)(nil),
 	Methods: []grpc.MethodDesc{
@@ -383,6 +443,14 @@ var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConfirmResourceDelete",
 			Handler:    _ResourceAggregate_ConfirmResourceDelete_Handler,
+		},
+		{
+			MethodName: "CreateResource",
+			Handler:    _ResourceAggregate_CreateResource_Handler,
+		},
+		{
+			MethodName: "ConfirmResourceCreate",
+			Handler:    _ResourceAggregate_ConfirmResourceCreate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -6,7 +6,8 @@ import (
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
@@ -113,7 +114,7 @@ func (h *updateHandler) recv(ctx context.Context) (*events.ResourceUpdated, erro
 // DeleteResource sends delete resource command to resource aggregate and wait for resource deleted event from eventbus.
 func (c *Commander) DeleteResource(ctx context.Context, req *commands.DeleteResourceRequest) (*events.ResourceDeleted, error) {
 	h := newDeleteHandler(req.GetCorrelationId())
-	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), []string{req.GetResourceId().GetDeviceId()}, h)
+	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to subscriber: %w", err)
 	}

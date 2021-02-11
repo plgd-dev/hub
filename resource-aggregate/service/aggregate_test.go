@@ -436,6 +436,25 @@ func testMakeDeleteResourceRequest(deviceID, href string, correlationID string) 
 	return &r
 }
 
+func testMakeCreateResourceRequest(deviceID, href string, correlationID string) *commands.CreateResourceRequest {
+	r := commands.CreateResourceRequest{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		Content: &commands.Content{
+			Data: []byte("create hello world"),
+		},
+		CorrelationId:        correlationID,
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			Sequence:     0,
+		},
+	}
+	return &r
+}
+
 func testMakeConfirmResourceUpdateRequest(deviceID, href, correlationID string) *commands.ConfirmResourceUpdateRequest {
 	r := commands.ConfirmResourceUpdateRequest{
 		ResourceId: &commands.ResourceId{
@@ -478,6 +497,26 @@ func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationID string
 
 func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) *commands.ConfirmResourceDeleteRequest {
 	r := commands.ConfirmResourceDeleteRequest{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId:        correlationID,
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		Content: &commands.Content{
+			Data: []byte("hello world"),
+		},
+		Status: commands.Status_OK,
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			Sequence:     0,
+		},
+	}
+	return &r
+}
+
+func testMakeConfirmResourceCreateRequest(deviceID, href, correlationID string) *commands.ConfirmResourceCreateRequest {
+	r := commands.ConfirmResourceCreateRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
@@ -1109,6 +1148,169 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotEvents, err := ag.ConfirmResourceDelete(ctx, tt.args.req)
+			if tt.wantErr {
+				require.Error(t, err)
+				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
+				require.True(t, ok)
+				assert.Equal(t, tt.wantStatusCode, s.Code())
+				return
+			}
+			require.NoError(t, err)
+
+			if tt.wantEvents {
+				assert.NotEmpty(t, gotEvents)
+			}
+		})
+	}
+}
+
+func Test_aggregate_HandleCreateResource(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "/oic/p"
+	userID := "user0"
+
+	type args struct {
+		req *commands.CreateResourceRequest
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantEvents     bool
+		wantStatusCode codes.Code
+		wantErr        bool
+	}{
+		{
+			name: "invalid",
+			args: args{
+				&commands.CreateResourceRequest{
+					ResourceId:           &commands.ResourceId{},
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				},
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
+		},
+		{
+			name: "valid",
+			args: args{
+				testMakeCreateResourceRequest(deviceID, resourceID, "123"),
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+	}
+	var cmconfig certManager.Config
+	err := envconfig.Process("DIAL", &cmconfig)
+	assert.NoError(t, err)
+	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	require.NoError(t, err)
+	tlsConfig := dialCertManager.GetClientTLSConfig()
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	var natsCfg nats.Config
+	err = envconfig.Process("", &natsCfg)
+	assert.NoError(t, err)
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotEvents, err := ag.CreateResource(ctx, tt.args.req)
+			if tt.wantErr {
+				require.Error(t, err)
+				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
+				require.True(t, ok)
+				assert.Equal(t, tt.wantStatusCode, s.Code())
+				return
+			}
+			require.NoError(t, err)
+			if tt.wantEvents {
+				assert.NotEmpty(t, gotEvents)
+			}
+		})
+	}
+}
+
+func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "/oic/p"
+	userID := "user0"
+
+	type args struct {
+		req *commands.ConfirmResourceCreateRequest
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantEvents     bool
+		wantStatusCode codes.Code
+		wantErr        bool
+	}{
+		{
+			name: "invalid",
+			args: args{
+				&commands.ConfirmResourceCreateRequest{
+					ResourceId:           &commands.ResourceId{},
+					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					Status:               commands.Status_OK,
+				},
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
+		},
+		{
+			name: "valid",
+			args: args{
+				testMakeConfirmResourceCreateRequest(deviceID, resourceID, "123"),
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+	}
+
+	var cmconfig certManager.Config
+	err := envconfig.Process("DIAL", &cmconfig)
+	assert.NoError(t, err)
+	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	require.NoError(t, err)
+	tlsConfig := dialCertManager.GetClientTLSConfig()
+	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	var natsCfg nats.Config
+	err = envconfig.Process("", &natsCfg)
+	assert.NoError(t, err)
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotEvents, err := ag.ConfirmResourceCreate(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
