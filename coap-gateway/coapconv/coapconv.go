@@ -12,6 +12,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -267,4 +268,39 @@ func MakeRetrieveResourceRequest(deviceID, href string, resourceInterface, corre
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   &metadata,
 	}
+}
+
+func MakeConfirmResourceCreateRequest(deviceID, href string, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceCreateRequest {
+	content := MakeContent(req.Options(), req.Body())
+	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
+
+	return commands.ConfirmResourceCreateRequest{
+		AuthorizationContext: authCtx,
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         &content,
+		CommandMetadata: &metadata,
+	}
+}
+
+func NewCoapResourceCreateRequest(ctx context.Context, event *pb.Event_ResourceCreatePending) (*pool.Message, error) {
+	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())
+	if err != nil {
+		return nil, fmt.Errorf("invalid content type for create content: %w", err)
+	}
+	if event.Content == nil {
+		return nil, fmt.Errorf("invalid content for create content")
+	}
+
+	req, err := tcp.NewPostRequest(ctx, event.GetResourceId().GetHref(), mediaType, bytes.NewReader(event.GetContent().GetData()))
+	if err != nil {
+		return nil, err
+	}
+	req.AddOptionString(message.URIQuery, "if=oic.if.create")
+
+	return req, nil
 }
