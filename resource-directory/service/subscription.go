@@ -12,6 +12,7 @@ import (
 type subscription struct {
 	id     string
 	userID string
+	token  string
 
 	resourceProjection *Projection
 	send               SendEventFunc
@@ -23,10 +24,11 @@ type subscription struct {
 	eventVersions     map[string]uint64
 }
 
-func NewSubscription(userID, id string, send SendEventFunc, resourceProjection *Projection) *subscription {
+func NewSubscription(userID, id, token string, send SendEventFunc, resourceProjection *Projection) *subscription {
 	return &subscription{
 		userID:                        userID,
 		id:                            id,
+		token:                         token,
 		send:                          send,
 		resourceProjection:            resourceProjection,
 		eventVersions:                 make(map[string]uint64),
@@ -40,6 +42,10 @@ func (s *subscription) UserID() string {
 
 func (s *subscription) ID() string {
 	return s.id
+}
+
+func (s *subscription) Token() string {
+	return s.token
 }
 
 func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version uint64) bool {
@@ -81,8 +87,8 @@ func (s *subscription) UnregisterFromProjection(ctx context.Context, deviceID st
 	return s.resourceProjection.Unregister(deviceID)
 }
 
-func (s *subscription) Send(ctx context.Context, event pb.Event) error {
-	return s.send(ctx, event)
+func (s *subscription) Send(event *pb.Event) error {
+	return s.send(event)
 }
 
 func (s *subscription) Close(reason error) error {
@@ -98,7 +104,8 @@ func (s *subscription) Close(reason error) error {
 		errors = append(errors, err)
 	}
 
-	err = s.Send(context.Background(), pb.Event{
+	err = s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_SubscriptionCanceled_{
 			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{

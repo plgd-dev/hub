@@ -15,11 +15,11 @@ type devicesSubscription struct {
 	devicesEvent *pb.SubscribeForEvents_DevicesEventFilter
 }
 
-func NewDevicesSubscription(id, userID string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeForEvents_DevicesEventFilter) *devicesSubscription {
+func NewDevicesSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeForEvents_DevicesEventFilter) *devicesSubscription {
 	log.Debugf("subscription.NewDevicesSubscription %v", id)
 	defer log.Debugf("subscription.NewDevicesSubscription %v done", id)
 	return &devicesSubscription{
-		subscription: NewSubscription(userID, id, send, resourceProjection),
+		subscription: NewSubscription(userID, id, token, send, resourceProjection),
 		devicesEvent: devicesEvent,
 	}
 }
@@ -96,7 +96,8 @@ func (s *devicesSubscription) NotifyOfRegisteredDevice(ctx context.Context, devi
 	if !found {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
@@ -117,7 +118,8 @@ func (s *devicesSubscription) NotifyOfUnregisteredDevice(ctx context.Context, de
 	if !found {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceUnregistered_{
 			DeviceUnregistered: &pb.Event_DeviceUnregistered{
@@ -152,7 +154,8 @@ func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []D
 	if len(toSend) == 0 && len(devs) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceOnline_{
 			DeviceOnline: &pb.Event_DeviceOnline{
@@ -182,7 +185,8 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 	if len(toSend) == 0 && len(devs) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceOffline_{
 			DeviceOffline: &pb.Event_DeviceOffline{

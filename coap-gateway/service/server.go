@@ -9,10 +9,12 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/plgd-dev/kit/security/oauth/manager"
+	kitSync "github.com/plgd-dev/kit/sync"
 
 	"github.com/plgd-dev/kit/sync/task/queue"
 
@@ -21,13 +23,14 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
 	"github.com/plgd-dev/go-coap/v2/net/blockwise"
-	"github.com/plgd-dev/go-coap/v2/net/keepalive"
+	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
@@ -37,7 +40,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 )
 
-var expiredKey = "Expired"
+var authCtxKey = "AuthCtx"
 
 //Server a configuration of coapgateway
 type Server struct {
@@ -45,7 +48,8 @@ type Server struct {
 	ExternalPort                    uint16 // used to construct oic/res response
 	Addr                            string // Address to listen on, ":COAP" if empty.
 	IsTLSListener                   bool
-	Keepalive                       *keepalive.KeepAlive
+	KeepaliveTimeoutConnection      time.Duration
+	KeepaliveOnInactivity           func(cc inactivity.ClientConn)
 	DisableTCPSignalMessageCSM      bool
 	DisablePeerTCPSignalMessageCSMs bool
 	SendErrorTextInResponse         bool
@@ -77,6 +81,8 @@ type Server struct {
 	taskQueue *queue.Queue
 
 	sigs chan os.Signal
+
+	userDeviceSubscriptions *kitSync.Map
 }
 
 type DialCertManager = interface {
@@ -98,11 +104,14 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
 	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
+		if c == nil {
+			return
+		}
 		client := c.(*Client)
-		authCtx := client.loadAuthorizationContext()
-		if isExpired(authCtx.Expire) {
+		authCtx, err := client.loadAuthorizationContext()
+		if err != nil {
 			client.Close()
-			log.Debugf("device %v token has ben expired", authCtx.GetDeviceId())
+			log.Debugf("device %v token has ben expired", authCtx.GetDeviceID())
 		}
 	})
 
@@ -158,9 +167,18 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	var keepAlive *keepalive.KeepAlive
+	onInactivity := func(cc inactivity.ClientConn) {}
 	if config.KeepaliveEnable {
-		keepAlive = keepalive.New(keepalive.WithConfig(keepalive.MakeConfig(config.KeepaliveTimeoutConnection)))
+		onInactivity = func(cc inactivity.ClientConn) {
+			cc.Close()
+			client, ok := cc.Context().Value(clientKey).(*Client)
+			if ok {
+				deviceID := getDeviceID(client)
+				log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
+			} else {
+				log.Errorf("keep alive was reached fail limit:: closing connection")
+			}
+		}
 	}
 
 	var blockWiseTransferSZX blockwise.SZX
@@ -201,8 +219,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		HeartBeat:                       config.HeartBeat,
 		MaxMessageSize:                  config.MaxMessageSize,
 		LogMessages:                     config.LogMessages,
+		KeepaliveOnInactivity:           onInactivity,
 
-		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,
 		raClient:      raClient,
 		asClient:      asClient,
@@ -224,6 +242,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 		ctx:    ctx,
 		cancel: cancel,
+
+		userDeviceSubscriptions: kitSync.NewMap(),
 	}
 
 	s.setupCoapServer()
@@ -234,12 +254,118 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 func getDeviceID(client *Client) string {
 	deviceID := "unknown"
 	if client != nil {
-		deviceID = client.loadAuthorizationContext().DeviceId
+		authCtx, _ := client.loadAuthorizationContext()
+		deviceID = authCtx.GetDeviceID()
 		if deviceID == "" {
 			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
 		}
 	}
 	return deviceID
+}
+
+type userDeviceSubscriptionChannel struct {
+	counter int
+	userID  string
+	store   *kitSync.Map
+
+	channel *client.DeviceSubscriptions
+	mutex   sync.Mutex
+}
+
+func (c *userDeviceSubscriptionChannel) getOrCreate(ctx context.Context, userID string, rdClient pbGRPC.GrpcGatewayClient) (*client.DeviceSubscriptions, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if c.channel == nil {
+		sub, err := client.NewDeviceSubscriptions(kitNetGrpc.CtxWithUserID(ctx, userID), rdClient, func(err error) {
+			log.Errorf("userDeviceSubscriptionChannel: %v", err)
+		})
+		if err == nil {
+			c.channel = sub
+		}
+		return sub, err
+	}
+	return c.channel, nil
+}
+
+func (c *userDeviceSubscriptionChannel) pop() *client.DeviceSubscriptions {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	ch := c.channel
+	c.channel = nil
+	return ch
+}
+
+func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
+	var cancelSubscription bool
+	c.store.ReplaceWithFunc(c.userID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		if oldLoaded == true {
+			oldValue.(*userDeviceSubscriptionChannel).counter--
+			if oldValue.(*userDeviceSubscriptionChannel).counter == 0 {
+				cancelSubscription = true
+				return nil, true
+			}
+			return oldValue, false
+		}
+		return nil, false
+	})
+	if cancelSubscription {
+		ch := c.pop()
+		if ch != nil {
+			return ch.Cancel()
+		}
+	}
+	return func() {}, nil
+}
+
+func (server *Server) subscribeToDevice(ctx context.Context, userID string, deviceID string, handler *deviceSubscriptionHandlers) (func(context.Context) error, error) {
+	if userID == "" {
+		return nil, fmt.Errorf("subscribeToDevice: invalid userID")
+	}
+	if deviceID == "" {
+		return nil, fmt.Errorf("subscribeToDevice: invalid deviceID")
+	}
+	channel := &userDeviceSubscriptionChannel{
+		counter: 1,
+		userID:  userID,
+		store:   server.userDeviceSubscriptions,
+	}
+	oldValue, ok := server.userDeviceSubscriptions.ReplaceWithFunc(userID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
+		if oldLoaded == true {
+			oldValue.(*userDeviceSubscriptionChannel).counter++
+			return oldValue, false
+		}
+		return channel, false
+	})
+	if ok {
+		channel = oldValue.(*userDeviceSubscriptionChannel)
+	}
+	cancel := func() {
+		wait, err1 := channel.cancel()
+		if err1 == nil {
+			wait()
+		} else {
+			log.Errorf("subscribeToDevice: cannot cancel channel for user %v device %v: %v", userID, deviceID, err1)
+		}
+	}
+	ch, err := channel.getOrCreate(ctx, userID, server.rdClient)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	sub, err := ch.Subscribe(ctx, deviceID, handler, handler)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	var cancelled uint32
+	return func(context.Context) error {
+		if !atomic.CompareAndSwapUint32(&cancelled, 0, 1) {
+			return nil
+		}
+		defer cancel()
+		return sub.Cancel(ctx)
+	}, nil
+
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(req *mux.Message, client *Client)) {
@@ -322,10 +448,8 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
-
-		authCtx := client.loadAuthorizationContext()
-		ctx := kitNetCoap.CtxWithToken(r.Context, authCtx.AccessToken)
-		ctx = context.WithValue(ctx, &expiredKey, authCtx.Expire)
+		authCtx, _ := client.loadAuthorizationContext()
+		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
@@ -394,7 +518,7 @@ func (server *Server) setupCoapServer() {
 	if server.DisablePeerTCPSignalMessageCSMs {
 		opts = append(opts, tcp.WithDisablePeerTCPSignalMessageCSMs())
 	}
-	opts = append(opts, tcp.WithKeepAlive(server.Keepalive))
+	opts = append(opts, tcp.WithKeepAlive(3, server.KeepaliveTimeoutConnection/3, server.KeepaliveOnInactivity))
 	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
 	opts = append(opts, tcp.WithBlockwise(server.BlockWiseTransfer, server.BlockWiseTransferSZX, server.RequestTimeout))
 	opts = append(opts, tcp.WithMux(m))

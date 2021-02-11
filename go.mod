@@ -21,8 +21,8 @@ require (
 	github.com/nats-io/nats.go v1.10.1-0.20201111151633-9e1f4a0d80d8
 	github.com/panjf2000/ants/v2 v2.4.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210127193502-843831900a67
-	github.com/plgd-dev/kit v0.0.0-20210128203157-0a29120d0f48
+	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210204203130-38a043760811
+	github.com/plgd-dev/kit v0.0.0-20210205135220-6c16c4ac0fd5
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094

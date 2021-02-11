@@ -39,7 +39,7 @@ func TestObserveDeviceResources(t *testing.T) {
 	select {
 	case res := <-h.res:
 		t.Logf("res %+v\n", res)
-		exp := test.ResourceLinkToPublishEvent(deviceID, test.GetAllBackendResourceLinks())
+		exp := test.ResourceLinkToPublishEvent(deviceID, "", test.GetAllBackendResourceLinks())
 		test.CheckProtobufs(t, test.SortResources(exp.GetResourcePublished().GetLinks()), test.SortResources(res.Links), test.RequireToCheckFunc(require.Equal))
 	case <-time.After(TestTimeout):
 		t.Error("timeout")

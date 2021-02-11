@@ -13,23 +13,39 @@ table {
   color: $text_desc;
 }
 
-a {
+a,
+.link {
   color: $text_primary;
   text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 h1,
+.h1,
 h2,
+.h2,
 h3,
+.h3,
 h4,
+.h4,
 h5,
-h6 {
+.h5,
+h6,
+.h6 {
   position: relative;
   color: $text_primary;
 }
 
-h2 {
+h2,
+.h2,
+h4,
+.h4 {
   font-size: $font_size_h2;
+  line-height: $font_size_h2 + 2px;
 }
 
 .row {

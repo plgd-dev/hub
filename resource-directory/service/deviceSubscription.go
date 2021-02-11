@@ -13,11 +13,11 @@ type deviceSubscription struct {
 	deviceEvent *pb.SubscribeForEvents_DeviceEventFilter
 }
 
-func NewDeviceSubscription(id, userID string, send SendEventFunc, resourceProjection *Projection, deviceEvent *pb.SubscribeForEvents_DeviceEventFilter) *deviceSubscription {
+func NewDeviceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, deviceEvent *pb.SubscribeForEvents_DeviceEventFilter) *deviceSubscription {
 	log.Debugf("subscription.NewDeviceSubscription %v", id)
 	defer log.Debugf("subscription.NewDeviceSubscription %v done", id)
 	return &deviceSubscription{
-		subscription: NewSubscription(userID, id, send, resourceProjection),
+		subscription: NewSubscription(userID, id, token, send, resourceProjection),
 		deviceEvent:  deviceEvent,
 	}
 }
@@ -52,7 +52,8 @@ func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link
 	if len(toSend) == 0 && len(links) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourcePublished_{
 			ResourcePublished: &pb.Event_ResourcePublished{
@@ -83,7 +84,8 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 	if len(toSend) == 0 && len(links) > 0 {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUnpublished_{
 			ResourceUnpublished: &pb.Event_ResourceUnpublished{
@@ -106,7 +108,8 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdatePending_{
 			ResourceUpdatePending: &updatePending,
@@ -127,7 +130,8 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 	if s.FilterByVersion(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdated_{
 			ResourceUpdated: &updated,
@@ -148,7 +152,8 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 	if s.FilterByVersion(retrievePending.GetResourceId().GetDeviceId(), retrievePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrievePending_{
 			ResourceRetrievePending: &retrievePending,
@@ -169,7 +174,8 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 	if s.FilterByVersion(retrieved.GetResourceId().GetDeviceId(), retrieved.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrieved_{
 			ResourceRetrieved: &retrieved,
@@ -190,7 +196,8 @@ func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, 
 	if s.FilterByVersion(deletePending.GetResourceId().GetDeviceId(), deletePending.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeletePending_{
 			ResourceDeletePending: &deletePending,
@@ -211,7 +218,8 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 	if s.FilterByVersion(deleted.GetResourceId().GetDeviceId(), deleted.GetResourceId().GetHref(), "res", version) {
 		return nil
 	}
-	return s.Send(ctx, pb.Event{
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeleted_{
 			ResourceDeleted: &deleted,

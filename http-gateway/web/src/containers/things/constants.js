@@ -6,3 +6,12 @@ export const thingsStatuses = {
 export const thingsApiEndpoints = {
   THINGS: '/api/v1/devices',
 }
+
+export const RESOURCES_DEFAULT_PAGE_SIZE = 5
+
+export const THINGS_DEFAULT_PAGE_SIZE = 10
+
+export const errorCodes = {
+  DEADLINE_EXCEEDED: 'DeadlineExceeded',
+  INVALID_ARGUMENT: 'InvalidArgument',
+}

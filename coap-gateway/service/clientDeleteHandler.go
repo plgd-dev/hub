@@ -13,16 +13,20 @@ import (
 )
 
 func clientDeleteHandler(req *mux.Message, client *Client) {
-	authCtx := client.loadAuthorizationContext()
+	authCtx, err := client.loadAuthorizationContext()
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle delete resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
+		return
+	}
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle delete resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle delete resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
-	content, code, err := clientDeleteResourceHandler(req, client, deviceID, href)
+	content, code, err := clientDeleteResourceHandler(req, client, deviceID, href, authCtx.GetUserID())
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v from device: %w", authCtx.DeviceId, deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
 
@@ -32,15 +36,14 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
 	client.sendResponse(code, req.Token, mediaType, content.Data)
 }
 
-func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
-	authCtx := client.loadAuthorizationContext()
-	processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, authCtx.GetUserID()), &pbGRPC.DeleteResourceRequest{
+func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*pbGRPC.Content, coapCodes.Code, error) {
+	processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, userID), &pbGRPC.DeleteResourceRequest{
 		ResourceId: &pbGRPC.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,

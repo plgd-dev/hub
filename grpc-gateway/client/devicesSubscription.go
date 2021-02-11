@@ -160,6 +160,7 @@ func (s *DevicesSubscription) runRecv() {
 			reason := cancel.GetReason()
 			if reason == "" {
 				s.closeErrorHandler.OnClose()
+				return
 			}
 			s.closeErrorHandler.Error(fmt.Errorf(reason))
 			return

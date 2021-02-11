@@ -1,0 +1,54 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
+div.select__control {
+  min-width: 180px;
+  color: $text_desc;
+  border-color: $default_border_color;
+  outline: 0 !important;
+  border-radius: 2px;
+  min-height: $input_height;
+
+  &.select__control--is-focused {
+    border-color: $text_primary;
+    box-shadow: none;
+
+    &:hover {
+      border-color: $text_primary;
+    }
+  }
+
+  .select__value-container {
+    .select__single-value {
+      color: $text_desc;
+    }
+  }
+
+  .select__indicators {
+    .select__indicator-separator {
+      display: none;
+    }
+
+    .select__indicator {
+      color: $text_primary;
+      font-size: 12px;
+    }
+  }
+}
+
+div.select__menu {
+  margin-top: 0;
+
+  .select__option {
+    cursor: pointer;
+    
+    &.select__option--is-focused {
+      background-color: $black_20;
+      color: $blue_100;
+    }
+    &.select__option--is-selected {
+      background-color: $blue_100;
+      color: $white;
+    }
+  }
+}

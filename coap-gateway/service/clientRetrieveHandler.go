@@ -39,11 +39,15 @@ func getResourceInterface(msg *mux.Message) string {
 }
 
 func clientRetrieveHandler(req *mux.Message, client *Client) {
-	authCtx := client.loadAuthorizationContext()
+	authCtx, err := client.loadAuthorizationContext()
+	if err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
+		return
+	}
 
 	deviceID, href, err := URIToDeviceIDHref(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.DeviceId, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -53,13 +57,13 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	if resourceInterface == "" {
 		content, code, err = clientRetrieveFromResourceShadowHandler(req.Context, client, deviceID, href)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.DeviceId, deviceID, href, err), code, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from resource shadow: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 			return
 		}
 	} else {
-		content, code, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href, resourceInterface)
+		content, code, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href, resourceInterface, authCtx.GetUserID())
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.DeviceId, deviceID, href, err), code, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 			return
 		}
 	}
@@ -70,7 +74,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.DeviceId, deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
 	client.sendResponse(code, req.Token, mediaType, content.Data)
@@ -104,9 +108,8 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href, resourceInterface string) (*pbGRPC.Content, coapCodes.Code, error) {
-	authCtx := client.loadAuthorizationContext()
-	processed, err := client.server.rdClient.RetrieveResourceFromDevice(kitNetGrpc.CtxWithUserID(req.Context, authCtx.GetUserID()), &pbGRPC.RetrieveResourceFromDeviceRequest{
+func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href, resourceInterface, userID string) (*pbGRPC.Content, coapCodes.Code, error) {
+	processed, err := client.server.rdClient.RetrieveResourceFromDevice(kitNetGrpc.CtxWithUserID(req.Context, userID), &pbGRPC.RetrieveResourceFromDeviceRequest{
 		ResourceId: &pbGRPC.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,

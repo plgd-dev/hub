@@ -136,9 +136,7 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 		req.AddQuery(q)
 	}
 	resp, err := co.Do(req)
-	if err != nil {
-		t.Fatalf("Cannot send/retrieve msg: %v", err)
-	}
+	require.NoError(t, err)
 	testValidateResp(t, test, resp)
 }
 

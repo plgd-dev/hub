@@ -170,7 +170,6 @@ message Event {
       Code code  = 1;
       string message = 2;
     }
-    string token = 1;
     ErrorStatus error_status = 2;
   }
   message SubscriptionCanceled {
@@ -178,6 +177,7 @@ message Event {
   }
 
   string subscription_id = 1; // subscription id provided by grpc
+  string token = 2;
   oneof type {
     DeviceRegistered device_registered = 3;
     DeviceUnregistered device_unregistered = 4;
