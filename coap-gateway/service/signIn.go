@@ -10,6 +10,7 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
@@ -20,6 +21,7 @@ import (
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/sdk/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -43,7 +45,7 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 		if status.Convert(err).Code() == codes.NotFound {
 			return
 		}
-		log.Errorf("signIn: cannot get resource links for the device %v: %w", deviceID, err)
+		log.Errorf("signIn: cannot get resource links for the device %v: %v", deviceID, err)
 		return
 	}
 	for {
@@ -55,8 +57,7 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 			fmt.Errorf("signIn: cannot receive link for the device %v: %w", deviceID, err)
 			return
 		}
-		raLink := m.ToRAProto()
-		client.observeResource(ctx, &raLink, true)
+		client.observeResource(ctx, m.GetDeviceId(), m.GetHref(), m.GetPolicies().GetBitFlags()&int32(schema.Observable) == int32(schema.Observable), true)
 	}
 }
 
@@ -93,7 +94,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 	}
 
 	authCtx := authCtx{
-		AuthorizationContext: pbCQRS.AuthorizationContext{
+		AuthorizationContext: &pbCQRS.AuthorizationContext{
 			DeviceId: signIn.DeviceID,
 		},
 		UserID:      signIn.UserID,
@@ -106,9 +107,11 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		client.Close()
 		return
 	}
-	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.UserID)
-
-	err = client.PublishCloudDeviceStatus(req.Context, signIn.DeviceID, pbCQRS.AuthorizationContext{
+	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
+	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &pbCQRS.CommandMetadata{
+		Sequence:     client.coapConn.Sequence(),
+		ConnectionId: client.remoteAddrString(),
+	}, &pbCQRS.AuthorizationContext{
 		DeviceId: signIn.DeviceID,
 	})
 	if err != nil {
@@ -118,7 +121,10 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 
-	err = client.UpdateCloudDeviceStatus(req.Context, signIn.DeviceID, authCtx.AuthorizationContext, true)
+	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &pbCQRS.CommandMetadata{
+		Sequence:     client.coapConn.Sequence(),
+		ConnectionId: client.remoteAddrString(),
+	}, authCtx.AuthorizationContext)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
@@ -126,7 +132,7 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 
-	oldAuthCtx := client.replaceAuthorizationContext(authCtx)
+	oldAuthCtx := client.replaceAuthorizationContext(&authCtx)
 	newDevice := false
 
 	switch {
@@ -241,7 +247,7 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 
 	client.cancelResourceSubscriptions(true)
 	client.cancelDeviceSubscriptions(true)
-	oldAuthCtx := client.replaceAuthorizationContext(authCtx{})
+	oldAuthCtx := client.replaceAuthorizationContext(nil)
 	if oldAuthCtx.DeviceId != "" {
 		client.server.expirationClientCache.Set(oldAuthCtx.DeviceId, nil, time.Second)
 		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
@@ -251,7 +257,10 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 			return
 		}
 		req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), oldAuthCtx.UserID)
-		err = client.UpdateCloudDeviceStatus(req.Context, oldAuthCtx.DeviceId, oldAuthCtx.AuthorizationContext, false)
+		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.DeviceId, &pbCQRS.CommandMetadata{
+			Sequence:     client.coapConn.Sequence(),
+			ConnectionId: client.remoteAddrString(),
+		}, oldAuthCtx.AuthorizationContext)
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceId(), err)

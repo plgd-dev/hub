@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ocf.cloud.cqrs.eventbus;
+
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb;pb";
+
+message Event {
+    uint64 version = 1;
+    string event_type = 2;
+    string group_id = 3;
+    string aggregate_id = 4;
+    bytes data = 5;
+}

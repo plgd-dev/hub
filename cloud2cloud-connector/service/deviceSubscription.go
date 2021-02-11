@@ -5,19 +5,16 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofrs/uuid"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	raCqrs "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/sdk/schema/cloud"
-	"github.com/gofrs/uuid"
-	cache "github.com/patrickmn/go-cache"
 )
 
 func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -90,33 +87,6 @@ func cancelDeviceSubscription(ctx context.Context, linkedAccount store.LinkedAcc
 	return nil
 }
 
-func (s *SubscriptionManager) updateCloudStatus(ctx context.Context, deviceID string, online bool, authContext pbCQRS.AuthorizationContext, cmdMetadata pbCQRS.CommandMetadata) error {
-	status := cloud.Status{
-		ResourceTypes: cloud.StatusResourceTypes,
-		Interfaces:    cloud.StatusInterfaces,
-		Online:        online,
-	}
-	data, err := cbor.Encode(status)
-	if err != nil {
-		return err
-	}
-
-	request := pbRA.NotifyResourceChangedRequest{
-		ResourceId: raCqrs.MakeResourceId(deviceID, cloud.StatusHref),
-		Content: &pbRA.Content{
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: int32(message.AppOcfCbor),
-			Data:              data,
-		},
-		Status:               pbRA.Status_OK,
-		CommandMetadata:      &cmdMetadata,
-		AuthorizationContext: &authContext,
-	}
-
-	_, err = s.raClient.NotifyResourceChanged(ctx, &request)
-	return err
-}
-
 func trimDeviceIDFromHref(deviceID, href string) string {
 	if strings.HasPrefix(href, "/"+deviceID+"/") {
 		href = strings.TrimPrefix(href, "/"+deviceID)
@@ -137,20 +107,22 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 				Priority: int64(endpoint.Priority),
 			})
 		}
-		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
-		resourceId := raCqrs.MakeResourceId(link.DeviceID, kitHttp.CanonicalHref(href))
+		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
+		resourceID := utils.MakeResourceId(link.DeviceID, href)
 		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,
 			},
-			ResourceId: resourceId,
+			ResourceId: &pbRA.ResourceId{
+				DeviceId: link.DeviceID,
+				Href:     href,
+			},
 			Resource: &pbRA.Resource{
-				Id:                    resourceId,
+				Id:                    resourceID,
 				Href:                  href,
 				ResourceTypes:         link.ResourceTypes,
 				Interfaces:            link.Interfaces,
 				DeviceId:              link.DeviceID,
-				InstanceId:            link.InstanceID,
 				Anchor:                link.Anchor,
 				Policies:              &pbRA.Policies{BitFlags: int32(link.Policy.BitMask)},
 				Title:                 link.Title,
@@ -188,12 +160,15 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 	var errors []error
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
-		href := trimDeviceIDFromHref(link.DeviceID, link.Href)
+		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 		_, err := s.raClient.UnpublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.UnpublishResourceRequest{
 			AuthorizationContext: &pbCQRS.AuthorizationContext{
 				DeviceId: link.DeviceID,
 			},
-			ResourceId: raCqrs.MakeResourceId(link.GetDeviceID(), kitHttp.CanonicalHref(href)),
+			ResourceId: &pbRA.ResourceId{
+				DeviceId: link.GetDeviceID(),
+				Href:     href,
+			},
 			CommandMetadata: &pbCQRS.CommandMetadata{
 				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,

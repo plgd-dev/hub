@@ -11,12 +11,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cqrs/event"
-	"github.com/plgd-dev/cqrs/eventstore"
-	"github.com/plgd-dev/cqrs/eventstore/maintenance"
-	"github.com/plgd-dev/kit/log"
 	"github.com/jessevdk/go-flags"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/kit/log"
 )
 
 // Config represent application arguments
@@ -98,13 +97,13 @@ func handleBackupFile(file **os.File, aggregateID, backupPath string) error {
 	return nil
 }
 
-func backup(file *os.File, eu event.EventUnmarshaler) error {
+func backup(file *os.File, eu eventstore.EventUnmarshaler) error {
 	var e []byte
 	err := eu.Unmarshal(&e)
 	if err != nil {
 		return err
 	}
-	event := hEvent{VersionI: eu.Version, EventTypeI: eu.EventType, Data: e}
+	event := hEvent{VersionI: eu.Version(), EventTypeI: eu.EventType(), Data: e}
 
 	b, _ := json.MarshalIndent(event, "", "  ")
 	text := fmt.Sprintf(string(b) + "\n")
@@ -115,19 +114,21 @@ func backup(file *os.File, eu event.EventUnmarshaler) error {
 	return nil
 }
 
-func (eh *eventHandler) Handle(ctx context.Context, iter event.Iter) error {
-	var eu event.EventUnmarshaler
-
+func (eh *eventHandler) Handle(ctx context.Context, iter eventstore.Iter) error {
 	aggregateID := ""
 	var file *os.File
 
-	for iter.Next(ctx, &eu) {
-		if eu.EventType == "" {
+	for {
+		eu, ok := iter.Next(ctx)
+		if !ok {
+			break
+		}
+		if eu.EventType() == "" {
 			return errors.New("cannot determine type of event")
 		}
 
-		if aggregateID != eu.AggregateId {
-			aggregateID = eu.AggregateId
+		if aggregateID != eu.AggregateID() {
+			aggregateID = eu.AggregateID()
 
 			if err := handleBackupFile(&file, aggregateID, eh.backupPath); err != nil {
 				return err
@@ -180,7 +181,7 @@ func performMaintenanceWithEventStore(ctx context.Context, config Config, eventS
 	}
 	versionQueries := []eventstore.VersionQuery{}
 	for _, task := range handler.tasks {
-		versionQueries = append(versionQueries, eventstore.VersionQuery{AggregateId: task.AggregateID, Version: task.Version})
+		versionQueries = append(versionQueries, eventstore.VersionQuery{AggregateID: task.AggregateID, Version: task.Version})
 	}
 
 	log.Info("backing up the events")

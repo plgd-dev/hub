@@ -79,6 +79,7 @@ func refreshTokenPostHandler(s mux.ResponseWriter, req *mux.Message, client *Cli
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
 		return
 	}
+
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }
 

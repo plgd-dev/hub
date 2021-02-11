@@ -59,7 +59,10 @@ func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResou
 	}
 	seq := atomic.AddUint64(&r.seqNum, 1)
 	raReq := pbRA.DeleteResourceRequest{
-		ResourceId:    resourceID,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
 		CorrelationId: correlationID,
 		CommandMetadata: &pbCQRS.CommandMetadata{
 			ConnectionId: connectionID,

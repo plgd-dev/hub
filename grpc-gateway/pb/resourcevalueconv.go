@@ -2,7 +2,7 @@ package pb
 
 import (
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"google.golang.org/grpc/codes"
@@ -56,7 +56,7 @@ func (s Status) ToGrpcCode() codes.Code {
 }
 
 func (r *ResourceId) ID() string {
-	return cqrs.MakeResourceId(r.GetDeviceId(), r.GetHref())
+	return utils.MakeResourceId(r.GetDeviceId(), r.GetHref())
 }
 
 func RAContent2Content(s *pbRA.Content) *Content {

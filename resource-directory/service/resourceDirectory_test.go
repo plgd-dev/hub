@@ -8,13 +8,14 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/notification"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-directory/service"
+	"github.com/plgd-dev/cloud/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	type args struct {
 		request pb.GetResourceLinksRequest
 	}
-	test := []struct {
+	tests := []struct {
 		name     string
 		args     args
 		want     map[string]*pb.ResourceLink
@@ -46,8 +47,8 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pb.ResourceLink{
-				cqrs.MakeResourceId(Resource1.DeviceId, Resource1.Href): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
-				cqrs.MakeResourceId(Resource3.DeviceId, Resource3.Href): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
+				utils.MakeResourceId(Resource1.DeviceId, Resource1.Href): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
+				utils.MakeResourceId(Resource3.DeviceId, Resource3.Href): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
 			},
 		},
 	}
@@ -78,7 +79,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 
 	rd := service.New(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
 
-	for _, tt := range test {
+	for _, tt := range tests {
 		fn := func(t *testing.T) {
 			var s testGrpcGateway_GetResourceLinksServer
 			err := rd.GetResourceLinks(&tt.args.request, &s)
@@ -88,7 +89,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantCode, status.Convert(err).Code())
-			assert.Equal(t, tt.want, s.got)
+			test.CheckProtobufs(t, tt.want, s.got, test.AssertToCheckFunc(assert.Equal))
 		}
 		t.Run(tt.name, fn)
 	}
@@ -96,7 +97,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 
 func newResourceContent(deviceID, href string, resourceTypesp []string, content pbRA.Content) ResourceContent {
 	return ResourceContent{
-		Resource: pbRA.Resource{Id: cqrs.MakeResourceId(deviceID, href), Href: href, DeviceId: deviceID, ResourceTypes: resourceTypesp},
+		Resource: pbRA.Resource{Id: utils.MakeResourceId(deviceID, href), Href: href, DeviceId: deviceID, ResourceTypes: resourceTypesp},
 		Content:  content,
 	}
 }
@@ -108,14 +109,14 @@ var Resource3 = newResourceContent("1", "d", []string{"t3", "t8"}, pbRA.Content{
 
 func testCreateEventstore() *mockEventStore.MockEventStore {
 	store := mockEventStore.NewMockEventStore()
-	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourcePublishedEvent(Resource0.Resource, cqrs.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourceChangedEvent(Resource0.Id, Resource0.DeviceId, Resource0.Content, cqrs.MakeEventMeta("a", 0, 1)))
-	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourcePublishedEvent(Resource1.Resource, cqrs.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourceChangedEvent(Resource1.Id, Resource1.DeviceId, Resource1.Content, cqrs.MakeEventMeta("a", 0, 1)))
-	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourcePublishedEvent(Resource2.Resource, cqrs.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourceChangedEvent(Resource2.Id, Resource2.DeviceId, Resource2.Content, cqrs.MakeEventMeta("a", 0, 1)))
-	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourcePublishedEvent(Resource3.Resource, cqrs.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourceChangedEvent(Resource3.Id, Resource3.DeviceId, Resource3.Content, cqrs.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourcePublishedEvent(Resource0.Resource, utils.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourceChangedEvent(Resource0.Id, Resource0.DeviceId, Resource0.Content, utils.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourcePublishedEvent(Resource1.Resource, utils.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourceChangedEvent(Resource1.Id, Resource1.DeviceId, Resource1.Content, utils.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourcePublishedEvent(Resource2.Resource, utils.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourceChangedEvent(Resource2.Id, Resource2.DeviceId, Resource2.Content, utils.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourcePublishedEvent(Resource3.Resource, utils.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourceChangedEvent(Resource3.Id, Resource3.DeviceId, Resource3.Content, utils.MakeEventMeta("a", 0, 1)))
 	return store
 }
 
@@ -132,6 +133,6 @@ func (s *testGrpcGateway_GetResourceLinksServer) Send(d *pb.ResourceLink) error 
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceLink)
 	}
-	s.got[cqrs.MakeResourceId(d.DeviceId, d.Href)] = d
+	s.got[utils.MakeResourceId(d.DeviceId, d.Href)] = d
 	return nil
 }

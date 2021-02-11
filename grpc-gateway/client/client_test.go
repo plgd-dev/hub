@@ -56,6 +56,7 @@ func NewGateway(addr string) (*kit.Server, error) {
 }
 
 type gatewayHandler struct {
+	pb.UnimplementedGrpcGatewayServer
 	deviceID   string
 	deviceName string
 }

@@ -228,7 +228,7 @@ message ResourceLink {
   repeated string types = 2;
   repeated string interfaces = 3;
   string device_id = 4;
-  int64 instance_id = 5;
+  // int64 instance_id = 5;
   string anchor = 6; 
   Policies policies = 7;
   string title = 8;

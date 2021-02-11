@@ -68,10 +68,9 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 						break
 					}
 					require.NoError(t, err)
-					link.InstanceId = 0
 					links = append(links, link)
 				}
-				require.Equal(t, tt.want, test.SortResources(links))
+				test.CheckProtobufs(t, tt.want, test.SortResources(links), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

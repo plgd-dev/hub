@@ -24,8 +24,8 @@ push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
-	protoc -I=. -I=${GOPATH}/src --gogofaster_out=${GOPATH}/src $(shell pwd)/pb/cert.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=plugins=grpc:${GOPATH}/src $(shell pwd)/pb/service.proto
+	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/cert.proto
+	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(shell pwd)/pb/service.proto
 
 .PHONY: build-servicecontainer build push proto/generate
 

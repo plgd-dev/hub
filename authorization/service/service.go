@@ -42,6 +42,7 @@ type Persistence = interface {
 
 // Service holds dependencies of the authorization Service.
 type Service struct {
+	pb.UnimplementedAuthorizationServiceServer
 	deviceProvider Provider
 	sdkProvider    Provider
 	persistence    Persistence

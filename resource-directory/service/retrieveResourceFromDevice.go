@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/gofrs/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
@@ -59,7 +59,10 @@ func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb
 	}
 	seq := atomic.AddUint64(&r.seqNum, 1)
 	raReq := pbRA.RetrieveResourceRequest{
-		ResourceId:        resourceID,
+		ResourceId: &pbRA.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
 		ResourceInterface: req.GetResourceInterface(),
 		CorrelationId:     correlationID,
 		CommandMetadata: &pbCQRS.CommandMetadata{

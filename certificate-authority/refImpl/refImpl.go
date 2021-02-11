@@ -6,6 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/plgd-dev/kit/security/jwt"
 
@@ -35,13 +39,41 @@ type RefImpl struct {
 
 // NewRequestHandlerFromConfig creates RegisterGrpcGatewayServer with all dependencies.
 func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*RefImpl, error) {
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
+	log.Info(config.String())
 	listenCertManager, err := certManager.NewCertManager(config.Listen)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listen cert manager %w", err)
 	}
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
+
+	var streamInterceptors []grpc.StreamServerInterceptor
+	if config.Log.Debug {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	var unaryInterceptors []grpc.UnaryServerInterceptor
+	if config.Log.Debug {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
+
+	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			streamInterceptors...,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			unaryInterceptors...,
+		)),
+	)
 	if err != nil {
 		listenCertManager.Close()
 		return nil, err

@@ -8,9 +8,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/provider"
-	"github.com/plgd-dev/kit/net/http"
 	"github.com/stretchr/testify/assert"
-	"github.com/valyala/fasthttp"
 )
 
 func TestSignUp(t *testing.T) {
@@ -67,20 +65,6 @@ func TestPermanentToken(t *testing.T) {
 	assert.Equal(o.t.RefreshToken, r.RefreshToken)
 	assert.Equal(int64(-1), r.ExpiresIn)
 	assert.Equal(o.t.UserID, r.UserId)
-}
-
-func TestExpiredToken(t *testing.T) {
-	var ctx fasthttp.RequestCtx
-	http.WriteRequest(newSignUpRequest(), &ctx.Request)
-
-	s, o, shutdown := newSignUpTestService(t)
-	defer shutdown()
-	defer s.cleanUp()
-	o.t.Expiry = time.Now().Add(-time.Minute)
-
-	_, err := s.service.SignUp(context.Background(), newSignUpRequest())
-	assert := assert.New(t)
-	assert.Error(err)
 }
 
 type providerT struct {

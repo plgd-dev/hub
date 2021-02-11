@@ -6,6 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+
 	"github.com/plgd-dev/kit/security/certManager"
 
 	"google.golang.org/grpc"
@@ -33,7 +37,11 @@ func (c Config) String() string {
 }
 
 func Init(config Config) (*kitNetGrpc.Server, error) {
-	log.Setup(config.Log)
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
 	log.Info(config.String())
 
 	listenCertManager, err := certManager.NewCertManager(config.Listen)
@@ -46,9 +54,29 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	}
 
 	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
+	var streamInterceptors []grpc.StreamServerInterceptor
+	if config.Log.Debug {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	var unaryInterceptors []grpc.UnaryServerInterceptor
+	if config.Log.Debug {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
+	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			streamInterceptors...,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			unaryInterceptors...,
+		)),
+	)
 	if err != nil {
 		return nil, err
 	}

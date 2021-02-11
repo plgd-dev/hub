@@ -7,7 +7,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager"
@@ -69,9 +69,6 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -81,8 +78,12 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -167,9 +168,6 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -179,8 +177,12 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -246,9 +248,6 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -258,9 +257,12 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
-	assert.NoError(t, err)
 
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -340,9 +342,6 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -352,8 +351,12 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -421,9 +424,6 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -433,8 +433,12 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -502,9 +506,6 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -514,8 +515,12 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -583,9 +588,6 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -595,8 +597,12 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -664,9 +670,6 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -676,8 +679,12 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
@@ -745,9 +752,6 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
-	var mgoCfg mongodb.Config
-	err = envconfig.Process("", &mgoCfg)
-	assert.NoError(t, err)
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
@@ -757,8 +761,12 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	assert.NoError(t, err)
 	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(mgoCfg, nil, mongodb.WithTLS(tlsConfig))
+
+	var jsmCfg mongodb.Config
+	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)

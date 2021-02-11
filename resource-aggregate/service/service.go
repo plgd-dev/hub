@@ -8,16 +8,23 @@ import (
 	"sync"
 	"syscall"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	cqrsEventBus "github.com/plgd-dev/cqrs/eventbus"
-	cqrsEventStore "github.com/plgd-dev/cqrs/eventstore"
-	cqrsMaintenance "github.com/plgd-dev/cqrs/eventstore/maintenance"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/jwt"
 	"github.com/plgd-dev/kit/security/oauth/manager"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -25,8 +32,6 @@ import (
 type EventStore interface {
 	cqrsEventStore.EventStore
 	cqrsMaintenance.EventStore
-	GetInstanceId(ctx context.Context, resourceId string) (int64, error)
-	RemoveInstanceId(ctx context.Context, instanceId int64) error
 }
 
 //Server handle HTTP request
@@ -47,25 +52,82 @@ type ServerCertManager = interface {
 	GetServerTLSConfig() *tls.Config
 }
 
+type NumParallelProcessedRequestLimiter struct {
+	w *semaphore.Weighted
+}
+
+func NewNumParallelProcessedRequestLimiter(n int) *NumParallelProcessedRequestLimiter {
+	return &NumParallelProcessedRequestLimiter{
+		w: semaphore.NewWeighted(int64(n)),
+	}
+}
+
+func (l *NumParallelProcessedRequestLimiter) StreamServerInterceptor(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	err := l.w.Acquire(stream.Context(), 1)
+	if err != nil {
+		return err
+	}
+	defer l.w.Release(1)
+	wrapped := grpc_middleware.WrapServerStream(stream)
+	return handler(srv, wrapped)
+}
+
+func (l *NumParallelProcessedRequestLimiter) UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	err := l.w.Acquire(ctx, 1)
+	if err != nil {
+		return nil, err
+	}
+	defer l.w.Release(1)
+	return handler(ctx, req)
+}
+
 // New creates new Server with provided store and publisher.
-func New(config Config, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
+func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 	listenTLSConfig := serverCertManager.GetServerTLSConfig()
 
+	rateLimiter := NewNumParallelProcessedRequestLimiter(config.NumParallelRequest)
+
 	auth := NewAuth(config.JwksURL, dialTLSConfig)
-	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)), auth.Stream(), auth.Unary())
+
+	streamInterceptors := []grpc.StreamServerInterceptor{
+		rateLimiter.StreamServerInterceptor,
+	}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		rateLimiter.UnaryServerInterceptor,
+	}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
+
+	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			streamInterceptors...,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			unaryInterceptors...,
+		)),
+	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
 
 	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
 	if err != nil {
-		log.Fatalf("cannot create oauth manager: %w", err)
+		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
 	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
-		log.Fatalf("cannot connect to authorization server: %w", err)
+		log.Fatalf("cannot connect to authorization server: %v", err)
 	}
 	authClient := pbAS.NewAuthorizationServiceClient(asConn)
 

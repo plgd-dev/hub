@@ -150,7 +150,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, tt.want, got)
+			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	projectionRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs/projection"
-	"github.com/plgd-dev/cqrs/eventbus"
-	"github.com/plgd-dev/cqrs/eventstore"
-	"github.com/plgd-dev/kit/strings"
 	cache "github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	projectionRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs/projection"
+	"github.com/plgd-dev/kit/strings"
 )
 
 // hasMatchingType returns true for matching a resource type.

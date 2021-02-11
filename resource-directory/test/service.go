@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/resource-directory/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,6 +24,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	rdCfg.UserDevicesManagerTickFrequency = time.Millisecond * 500
 	rdCfg.UserDevicesManagerExpiration = time.Millisecond * 500
 	rdCfg.JwksURL = testCfg.JWKS_URL
+	rdCfg.Log.Debug = true
 	return rdCfg
 }
 

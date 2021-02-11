@@ -16,7 +16,6 @@ import (
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/sdk/schema/cloud"
 )
 
 func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.ResourceValue) {
@@ -26,7 +25,7 @@ func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.Resourc
 		datagot := got[idx].GetContent().GetData()
 		want[idx].Content.Data = nil
 		got[idx].Content.Data = nil
-		require.Equal(t, want[idx], got[idx])
+		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 		w := test.DecodeCbor(t, dataWant)
 		g := test.DecodeCbor(t, datagot)
 		require.Equal(t, w, g)
@@ -51,7 +50,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 					ResourceIdsFilter: []*pb.ResourceId{
 						{
 							DeviceId: deviceID,
-							Href:     cloud.StatusHref,
+							Href:     "/light/1",
 						},
 					},
 				},
@@ -60,15 +59,15 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 				{
 					ResourceId: &pb.ResourceId{
 						DeviceId: deviceID,
-						Href:     cloud.StatusHref,
+						Href:     "/light/1",
 					},
-					Types: cloud.StatusResourceTypes,
+					Types: []string{"core.light"},
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"if":     cloud.StatusInterfaces,
-							"rt":     cloud.StatusResourceTypes,
-							"online": true,
+							"state": false,
+							"power": uint64(0),
+							"name":  "Light",
 						}),
 					},
 					Status: pb.Status_OK,

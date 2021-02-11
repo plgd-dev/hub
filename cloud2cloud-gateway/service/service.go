@@ -57,7 +57,7 @@ func New(
 
 	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
 	if err != nil {
-		log.Fatalf("cannot create oauth manager: %w", err)
+		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
 	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,

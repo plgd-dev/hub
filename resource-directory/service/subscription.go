@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	cqrsRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 )
 
 type subscription struct {
@@ -43,7 +43,7 @@ func (s *subscription) ID() string {
 }
 
 func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version uint64) bool {
-	resourceID := cqrsRA.MakeResourceId(deviceID, href+"."+typeEvent)
+	resourceID := utils.MakeResourceId(deviceID, href+"."+typeEvent)
 
 	s.eventVersionsLock.Lock()
 	defer s.eventVersionsLock.Unlock()

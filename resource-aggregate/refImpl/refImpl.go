@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/certManager"
@@ -36,14 +36,17 @@ type RefImpl struct {
 }
 
 func Init(config Config) (*RefImpl, error) {
-	log.Setup(config.Log)
+	logger, err := log.NewLogger(config.Log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create logger %w", err)
+	}
+	log.Set(logger)
 
 	clientCertManager, err := certManager.NewCertManager(config.Dial)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 	tlsConfig := clientCertManager.GetClientTLSConfig()
-
 	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
@@ -62,7 +65,7 @@ func Init(config Config) (*RefImpl, error) {
 
 	return &RefImpl{
 		eventstore:        eventstore,
-		service:           service.New(config.Service, clientCertManager, serverCertManager, eventstore, publisher),
+		service:           service.New(config.Service, logger, clientCertManager, serverCertManager, eventstore, publisher),
 		publisher:         publisher,
 		clientCertManager: clientCertManager,
 		serverCertManager: serverCertManager,

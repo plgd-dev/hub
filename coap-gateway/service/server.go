@@ -4,13 +4,15 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"os"
+	"os/signal"
 	"reflect"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/plgd-dev/kit/security/oauth/manager"
-	kitSync "github.com/plgd-dev/kit/sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -51,12 +53,12 @@ type Server struct {
 	ReconnectInterval               time.Duration
 	HeartBeat                       time.Duration
 	MaxMessageSize                  int
+	LogMessages                     bool
 
 	raClient pbRA.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
 	rdClient pbGRPC.GrpcGatewayClient
 
-	clients               *kitSync.Map
 	oicPingCache          *cache.Cache
 	oauthMgr              *manager.Manager
 	expirationClientCache *cache.Cache
@@ -64,12 +66,13 @@ type Server struct {
 	coapServer      *tcp.Server
 	listener        tcp.Listener
 	authInterceptor kitNetCoap.Interceptor
-	wgDone          *sync.WaitGroup
 	asConn          *grpc.ClientConn
 	rdConn          *grpc.ClientConn
 	raConn          *grpc.ClientConn
 	ctx             context.Context
 	cancel          context.CancelFunc
+
+	sigs chan os.Signal
 }
 
 type DialCertManager = interface {
@@ -192,6 +195,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		ReconnectInterval:               config.ReconnectInterval,
 		HeartBeat:                       config.HeartBeat,
 		MaxMessageSize:                  config.MaxMessageSize,
+		LogMessages:                     config.LogMessages,
 
 		Keepalive:     keepAlive,
 		IsTLSListener: isTLSListener,
@@ -204,12 +208,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 		oauthMgr: oauthMgr,
 
-		clients:               kitSync.NewMap(),
 		expirationClientCache: expirationClientCache,
 		oicPingCache:          oicPingCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
-		wgDone:                new(sync.WaitGroup),
+
+		sigs: make(chan os.Signal, 1),
 
 		ctx:    ctx,
 		cancel: cancel,
@@ -232,8 +236,8 @@ func getDeviceID(client *Client) string {
 }
 
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(s mux.ResponseWriter, req *mux.Message, client *Client)) {
-	client, ok := ToClient(server.clients.Load(s.Client().RemoteAddr().String()))
-	if !ok {
+	client, ok := s.Client().Context().Value(clientKey).(*Client)
+	if !ok || client == nil {
 		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
 	}
 	switch req.Code {
@@ -272,19 +276,19 @@ func defaultHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	}
 }
 
+const clientKey = "client"
+
 func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
-	remoteAddr := coapConn.RemoteAddr().String()
+	client := newClient(server, coapConn)
+	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
-		if client, ok := ToClient(server.clients.PullOut(remoteAddr)); ok {
-			client.OnClose()
-		}
+		client.OnClose()
 	})
-	server.clients.Store(remoteAddr, newClient(server, coapConn))
 }
 
 func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := ToClient(server.clients.Load(w.Client().RemoteAddr().String()))
+		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
@@ -300,7 +304,7 @@ func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 
 func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		client, ok := ToClient(server.clients.Load(w.Client().RemoteAddr().String()))
+		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
@@ -321,7 +325,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
-		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.UserID)
+		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.GetUserID())
 		next.ServeCOAP(w, r)
 	})
 }
@@ -392,22 +396,42 @@ func (server *Server) tlsEnabled() bool {
 
 // Serve starts a coapgateway on the configured address in *Server.
 func (server *Server) Serve() error {
-	server.wgDone.Add(1)
-	defer func() {
-		defer server.wgDone.Done()
+	return server.serveWithHandlingSignal()
+}
+
+func (server *Server) serveWithHandlingSignal() error {
+	var wg sync.WaitGroup
+	var err error
+	wg.Add(1)
+	go func(server *Server) {
+		defer wg.Done()
+		err = server.coapServer.Serve(server.listener)
 		server.cancel()
 		server.oauthMgr.Close()
 		server.asConn.Close()
 		server.rdConn.Close()
 		server.raConn.Close()
 		server.listener.Close()
-	}()
-	return server.coapServer.Serve(server.listener)
+	}(server)
+
+	signal.Notify(server.sigs,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+	<-server.sigs
+
+	server.coapServer.Stop()
+	wg.Wait()
+
+	return err
 }
 
 // Shutdown turn off server.
 func (server *Server) Shutdown() error {
-	defer server.wgDone.Wait()
-	server.coapServer.Stop()
+	select {
+	case server.sigs <- syscall.SIGTERM:
+	default:
+	}
 	return nil
 }

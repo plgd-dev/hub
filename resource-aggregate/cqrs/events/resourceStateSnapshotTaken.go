@@ -6,29 +6,27 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/net/http"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
-	cqrsUtils "github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	"github.com/plgd-dev/cqrs"
-	"github.com/plgd-dev/cqrs/event"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/net/http"
 )
 
 const errInvalidResourceId = "invalid resource id"
 const errInvalidVersion = "invalid version for events"
 const errInvalidCommandMetadata = "invalid command metadata"
 
-type VerifyAccessFunc func(deviceId, resourceId string) error
-
 type ResourceStateSnapshotTaken struct {
 	pb.ResourceStateSnapshotTaken
 	mapForCalculatePendingRequestsCount map[string]bool
-	verifyAccess                        VerifyAccessFunc
 }
 
 func (rs *ResourceStateSnapshotTaken) AggregateId() string {
@@ -43,12 +41,12 @@ func (rs *ResourceStateSnapshotTaken) Version() uint64 {
 	return rs.ResourceStateSnapshotTaken.EventMetadata.Version
 }
 
-func (rs *ResourceStateSnapshotTaken) Marshal() ([]byte, error) {
-	return rs.ResourceStateSnapshotTaken.Marshal()
+func (rs ResourceStateSnapshotTaken) Marshal() ([]byte, error) {
+	return proto.Marshal(&rs.ResourceStateSnapshotTaken)
 }
 
 func (rs *ResourceStateSnapshotTaken) Unmarshal(b []byte) error {
-	return rs.ResourceStateSnapshotTaken.Unmarshal(b)
+	return proto.Unmarshal(b, &rs.ResourceStateSnapshotTaken)
 }
 
 func (rs *ResourceStateSnapshotTaken) EventType() string {
@@ -57,9 +55,6 @@ func (rs *ResourceStateSnapshotTaken) EventType() string {
 
 func (rs *ResourceStateSnapshotTaken) HandleEventResourcePublished(ctx context.Context, pub ResourcePublished) error {
 	rs.Id = pub.Resource.Id
-	if rs.IsPublished {
-		pub.Resource.InstanceId = rs.Resource.InstanceId
-	}
 	rs.Resource = pub.Resource
 	rs.TimeToLive = pub.TimeToLive
 	rs.IsPublished = true
@@ -145,17 +140,16 @@ func (rs *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx 
 	return nil
 }
 
-func (rs *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter event.Iter) error {
-	var eu event.EventUnmarshaler
-	for iter.Next(ctx, &eu) {
-		if eu.EventType == "" {
+func (rs *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
+	for {
+		eu, ok := iter.Next(ctx)
+		if !ok {
+			break
+		}
+		if eu.EventType() == "" {
 			return status.Errorf(codes.Internal, "cannot determine type of event")
 		}
-		err := rs.verifyAccess(eu.GroupId, eu.AggregateId)
-		if err != nil {
-			return grpc.ForwardErrorf(codes.Unauthenticated, "unauthorized access to resource: %v", err)
-		}
-		switch eu.EventType {
+		switch eu.EventType() {
 		case http.ProtobufContentType(&pb.ResourceStateSnapshotTaken{}):
 			var s ResourceStateSnapshotTaken
 			if err := eu.Unmarshal(&s); err != nil {
@@ -281,25 +275,26 @@ func convertContent(content *pb.Content, supportedContentTypes []string) (newCon
 	}, nil
 }
 
-func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqrs.Command, newVersion uint64) ([]event.Event, error) {
+func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	userID, err := grpc.UserIDFromMD(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid userID: %v", err)
 	}
 	switch req := cmd.(type) {
 	case *pb.PublishResourceRequest:
-		if rs.Id != req.ResourceId && rs.Id != "" {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID && rs.Id != "" {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
+		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 
 		rp := ResourcePublished{pb.ResourcePublished{
-			Id:            req.ResourceId,
+			Id:            resourceID,
 			Resource:      req.Resource,
 			TimeToLive:    req.TimeToLive,
 			AuditContext:  &ac,
@@ -310,22 +305,23 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err != nil {
 			return nil, err
 		}
-		return []event.Event{rp}, nil
+		return []eventstore.Event{rp}, nil
 	case *pb.UnpublishResourceRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.ResourceId {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
+		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 		ru := ResourceUnpublished{pb.ResourceUnpublished{
-			Id:            req.ResourceId,
+			Id:            resourceID,
 			AuditContext:  &ac,
 			EventMetadata: &em,
 		}}
@@ -333,24 +329,25 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err != nil {
 			return nil, err
 		}
-		return []event.Event{ru}, nil
+		return []eventstore.Event{ru}, nil
 	case *pb.NotifyResourceChangedRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.ResourceId {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
+		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 
 		rc := ResourceChanged{
 			pb.ResourceChanged{
-				Id:            req.ResourceId,
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.Content,
@@ -363,22 +360,23 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 			return nil, err
 		}
 		if ok {
-			return []event.Event{rc}, nil
+			return []eventstore.Event{rc}, nil
 		}
 		return nil, nil
 	case *pb.UpdateResourceRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
+		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 		content, err := convertContent(req.Content, rs.Resource.SupportedContentTypes)
 		if err != nil {
 			return nil, err
@@ -386,7 +384,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 
 		rc := ResourceUpdatePending{
 			pb.ResourceUpdatePending{
-				Id:                req.GetResourceId(),
+				Id:                resourceID,
 				ResourceInterface: req.GetResourceInterface(),
 				AuditContext:      &ac,
 				EventMetadata:     &em,
@@ -397,23 +395,24 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err = rs.HandleEventResourceUpdatePending(ctx, rc); err != nil {
 			return nil, err
 		}
-		return []event.Event{rc}, nil
+		return []eventstore.Event{rc}, nil
 	case *pb.ConfirmResourceUpdateRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.ResourceId {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
+		em := utils.MakeEventMeta(req.CommandMetadata.ConnectionId, req.CommandMetadata.Sequence, newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 		rc := ResourceUpdated{
 			pb.ResourceUpdated{
-				Id:            req.ResourceId,
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.Content,
@@ -423,24 +422,25 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err := rs.HandleEventResourceUpdated(ctx, rc); err != nil {
 			return nil, err
 		}
-		return []event.Event{rc}, nil
+		return []eventstore.Event{rc}, nil
 	case *pb.RetrieveResourceRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
+		em := utils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 
 		rc := ResourceRetrievePending{
 			pb.ResourceRetrievePending{
-				Id:                req.GetResourceId(),
+				Id:                resourceID,
 				ResourceInterface: req.GetResourceInterface(),
 				AuditContext:      &ac,
 				EventMetadata:     &em,
@@ -450,23 +450,24 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err := rs.HandleEventResourceRetrievePending(ctx, rc); err != nil {
 			return nil, err
 		}
-		return []event.Event{rc}, nil
+		return []eventstore.Event{rc}, nil
 	case *pb.ConfirmResourceRetrieveRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
+		em := utils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceRetrieved{
 			pb.ResourceRetrieved{
-				Id:            req.GetResourceId(),
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.GetContent(),
@@ -476,24 +477,25 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err := rs.HandleEventResourceRetrieved(ctx, rc); err != nil {
 			return nil, err
 		}
-		return []event.Event{rc}, nil
+		return []eventstore.Event{rc}, nil
 	case *pb.DeleteResourceRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
+		em := utils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.CorrelationId)
 
 		rc := ResourceDeletePending{
 			pb.ResourceDeletePending{
-				Id:            req.GetResourceId(),
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 			},
@@ -502,23 +504,24 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err := rs.HandleEventResourceDeletePending(ctx, rc); err != nil {
 			return nil, err
 		}
-		return []event.Event{rc}, nil
+		return []eventstore.Event{rc}, nil
 	case *pb.ConfirmResourceDeleteRequest:
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if rs.Id != req.GetResourceId() {
+		resourceID := utils.MakeResourceId(req.GetResourceId().GetDeviceId(), req.GetResourceId().GetHref())
+		if rs.Id != resourceID {
 			return nil, status.Errorf(codes.Internal, errInvalidResourceId)
 		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 
-		em := cqrsUtils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := cqrsUtils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
+		em := utils.MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		ac := utils.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceDeleted{
 			pb.ResourceDeleted{
-				Id:            req.GetResourceId(),
+				Id:            resourceID,
 				AuditContext:  &ac,
 				EventMetadata: &em,
 				Content:       req.GetContent(),
@@ -528,7 +531,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 		if err := rs.HandleEventResourceDeleted(ctx, rc); err != nil {
 			return nil, err
 		}
-		return []event.Event{rc}, nil
+		return []eventstore.Event{rc}, nil
 	}
 
 	return nil, fmt.Errorf("unknown command")
@@ -536,7 +539,7 @@ func (rs *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd cqr
 
 func (rs *ResourceStateSnapshotTaken) SnapshotEventType() string { return rs.EventType() }
 
-func (rs *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (event.Event, bool) {
+func (rs *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
 	if rs.PendingRequestsCount > 0 {
 		return nil, false
 	}
@@ -544,7 +547,7 @@ func (rs *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (event.Event,
 	return rs, true
 }
 
-func NewResourceStateSnapshotTaken(verifyAccess VerifyAccessFunc) *ResourceStateSnapshotTaken {
+func NewResourceStateSnapshotTaken() *ResourceStateSnapshotTaken {
 
 	return &ResourceStateSnapshotTaken{
 		ResourceStateSnapshotTaken: pb.ResourceStateSnapshotTaken{
@@ -552,6 +555,5 @@ func NewResourceStateSnapshotTaken(verifyAccess VerifyAccessFunc) *ResourceState
 			EventMetadata: &pb.EventMetadata{},
 		},
 		mapForCalculatePendingRequestsCount: make(map[string]bool),
-		verifyAccess:                        verifyAccess,
 	}
 }

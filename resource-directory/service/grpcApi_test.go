@@ -160,7 +160,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, tt.want, got)
+			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }
@@ -383,7 +383,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 						},
 					},
 				},
-				test.ResourceLinkToPublishEvent(deviceID, 0, test.GetAllBackendResourceLinks()),
+				test.ResourceLinkToPublishEvent(deviceID, test.GetAllBackendResourceLinks()),
 			},
 		},
 	}
@@ -418,16 +418,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					require.NoError(t, err)
 					ev.SubscriptionId = w.SubscriptionId
 					if ev.GetResourcePublished() != nil {
-						links := ev.GetResourcePublished().GetLinks()
-						for _, link := range links {
-							link.InstanceId = 0
-						}
 						ev.GetResourcePublished().Links = test.SortResources(ev.GetResourcePublished().GetLinks())
 					}
 					if w.GetResourcePublished() != nil {
 						w.GetResourcePublished().Links = test.SortResources(w.GetResourcePublished().GetLinks())
 					}
-					require.Contains(t, tt.want, ev)
+					test.CheckProtobufs(t, tt.want, ev, test.RequireToCheckFunc(require.Contains))
 				}
 			}()
 			err = client.Send(&tt.args.sub)
@@ -481,7 +477,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -493,7 +489,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -503,7 +499,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			DeviceUnregistered: &pb.Event_DeviceUnregistered{},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -515,7 +511,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -525,7 +521,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			DeviceOffline: &pb.Event_DeviceOffline{},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "testToken",
@@ -556,7 +552,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subContentChangedID := ev.SubscriptionId
 
 	ev, err = client.Recv()
@@ -577,7 +573,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	err = client.Send(&pb.SubscribeForEvents{
 		Token: "updatePending + resourceUpdated",
@@ -605,7 +601,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subUpdatedID := ev.SubscriptionId
 
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
@@ -656,7 +652,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					},
 				},
 			}
-			require.Equal(t, expectedEvent, ev)
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			updCorrelationID = ev.GetResourceUpdatePending().GetCorrelationId()
 		case ev.GetResourceUpdated() != nil:
 			expectedEvent = &pb.Event{
@@ -672,7 +668,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					},
 				},
 			}
-			require.Equal(t, expectedEvent, ev)
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		case ev.GetResourceChanged() != nil:
 			expectedEvent = &pb.Event{
 				SubscriptionId: subContentChangedID,
@@ -690,7 +686,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					},
 				},
 			}
-			require.Equal(t, expectedEvent, ev)
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		}
 	}
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
@@ -738,7 +734,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					},
 				},
 			}
-			require.Equal(t, expectedEvent, ev)
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			updCorrelationID = ev.GetResourceUpdatePending().GetCorrelationId()
 		case ev.GetResourceUpdated() != nil:
 			expectedEvent = &pb.Event{
@@ -754,7 +750,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					},
 				},
 			}
-			require.Equal(t, expectedEvent, ev)
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		case ev.GetResourceChanged() != nil:
 			expectedEvent = &pb.Event{
 				SubscriptionId: subContentChangedID,
@@ -772,7 +768,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					},
 				},
 			}
-			require.Equal(t, expectedEvent, ev)
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		}
 	}
 
@@ -802,7 +798,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subReceivedID := ev.SubscriptionId
 
 	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
@@ -825,7 +821,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	recvCorrelationID := ev.GetResourceRetrievePending().GetCorrelationId()
 
 	ev, err = client.Recv()
@@ -847,7 +843,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedEvent, ev)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	shutdownDevSim()
 
@@ -868,7 +864,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 					},
 				},
 			}
-			require.Equal(t, expectedEvent, ev)
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			run = false
 		}
 	}

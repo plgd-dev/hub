@@ -3,6 +3,7 @@ package events
 import (
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/net/http"
+	"google.golang.org/protobuf/proto"
 )
 
 type ResourceDeleted struct {
@@ -14,11 +15,11 @@ func (e ResourceDeleted) Version() uint64 {
 }
 
 func (e ResourceDeleted) Marshal() ([]byte, error) {
-	return e.ResourceDeleted.Marshal()
+	return proto.Marshal(&e.ResourceDeleted)
 }
 
 func (e *ResourceDeleted) Unmarshal(b []byte) error {
-	return e.ResourceDeleted.Unmarshal(b)
+	return proto.Unmarshal(b, &e.ResourceDeleted)
 }
 
 func (e ResourceDeleted) EventType() string {

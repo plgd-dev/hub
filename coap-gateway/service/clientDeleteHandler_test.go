@@ -45,9 +45,16 @@ func Test_clientDeleteHandler(t *testing.T) {
 			wantsCode: coapCodes.BadRequest,
 		},
 		{
-			name: "not found",
+			name: "forbidden",
 			args: args{
 				path: uri.ResourceRoute + "/dev0/res0",
+			},
+			wantsCode: coapCodes.Forbidden,
+		},
+		{
+			name: "not found",
+			args: args{
+				path: uri.ResourceRoute + "/" + CertIdentity + "/notFound",
 			},
 			wantsCode: coapCodes.NotFound,
 		},

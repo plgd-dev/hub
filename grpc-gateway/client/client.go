@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/strings"
 )
@@ -298,7 +298,7 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 	tc := make(map[string]func(pb.ResourceValue), len(resourceIDsCallbacks))
 	resourceIDs := make([]*pb.ResourceId, 0, len(resourceIDsCallbacks))
 	for _, c := range resourceIDsCallbacks {
-		tc[cqrs.MakeResourceId(c.ResourceID.DeviceId, c.ResourceID.Href)] = c.Callback
+		tc[utils.MakeResourceId(c.ResourceID.DeviceId, c.ResourceID.Href)] = c.Callback
 		resourceIDs = append(resourceIDs, c.ResourceID)
 	}
 
@@ -309,7 +309,7 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 		if !it.Next(&v) {
 			break
 		}
-		c, ok := tc[cqrs.MakeResourceId(v.GetResourceId().GetDeviceId(), v.GetResourceId().GetHref())]
+		c, ok := tc[utils.MakeResourceId(v.GetResourceId().GetDeviceId(), v.GetResourceId().GetHref())]
 		if ok {
 			c(v)
 		}

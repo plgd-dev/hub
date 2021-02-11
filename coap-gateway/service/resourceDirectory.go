@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -19,8 +17,6 @@ import (
 	"github.com/plgd-dev/sdk/schema"
 	uuid "github.com/satori/go.uuid"
 )
-
-const observable = 2
 
 type wkRd struct {
 	DeviceID         string               `json:"di"`
@@ -39,17 +35,14 @@ func fixTTL(w wkRd) wkRd {
 	return w
 }
 
-func isObservable(res *pbRA.Resource) bool {
-	return res.Policies != nil && res.Policies.BitFlags&observable == observable
-}
-
 // fixHref always lead by "/"
 func fixHref(href string) string {
 	backslash := regexp.MustCompile(`\/+`)
 	p := backslash.ReplaceAllString(href, "/")
-	p = strings.TrimLeft(p, "/")
 	p = strings.TrimRight(p, "/")
-
+	if len(p) > 0 && p[0] == '/' {
+		return p
+	}
 	return "/" + p
 }
 
@@ -109,12 +102,11 @@ func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, cli
 	}
 
 	w.Links = links
-
 	for _, link := range links {
-		raLink := pbGRPC.SchemaResourceLinkToProto(link).ToRAProto()
-		err := client.observeResource(req.Context, &raLink, true)
+		observable := link.Policy != nil && link.Policy.BitMask.Has(schema.Observable)
+		err := client.observeResource(req.Context, link.GetDeviceID(), link.Href, observable, true)
 		if err != nil {
-			log.Errorf("DeviceId: %v: ResourceId: %v cannot observe published resource", link.DeviceID, link.ID)
+			log.Errorf("DeviceId: %v: cannot observe published resource /%v%v: %v", link.GetDeviceID(), link.GetDeviceID(), link.Href, err)
 		}
 	}
 
@@ -129,6 +121,7 @@ func resourceDirectoryPublishHandler(s mux.ResponseWriter, req *mux.Message, cli
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: %w", authCtx.DeviceId, err), coapCodes.InternalServerError, req.Token)
 		return
 	}
+
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 }
 

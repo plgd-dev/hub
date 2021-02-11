@@ -22,6 +22,7 @@ type CertificateSigner interface {
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
+	pb.UnimplementedCertificateAuthorityServer
 	ValidFrom   func() time.Time
 	ValidFor    time.Duration
 	Certificate []*x509.Certificate

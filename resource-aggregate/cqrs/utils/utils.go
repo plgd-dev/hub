@@ -1,12 +1,12 @@
-package cqrs
+package utils
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/gofrs/uuid"
 	"github.com/golang/snappy"
+	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 func GetTopics(deviceId string) []string {
