@@ -11,7 +11,6 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // GrpcGatewayClient is the client API for GrpcGateway service.
@@ -33,6 +32,8 @@ type GrpcGatewayClient interface {
 	GetClientConfiguration(ctx context.Context, in *ClientConfigurationRequest, opts ...grpc.CallOption) (*ClientConfigurationResponse, error)
 	// Delete resource at the device.
 	DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error)
+	// Create resource at the device.
+	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error)
 }
 
 type grpcGatewayClient struct {
@@ -44,7 +45,7 @@ func NewGrpcGatewayClient(cc grpc.ClientConnInterface) GrpcGatewayClient {
 }
 
 func (c *grpcGatewayClient) GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func (x *grpcGatewayGetDevicesClient) Recv() (*Device, error) {
 }
 
 func (c *grpcGatewayClient) GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (c *grpcGatewayClient) RetrieveResourceFromDevice(ctx context.Context, in *
 }
 
 func (c *grpcGatewayClient) RetrieveResourcesValues(ctx context.Context, in *RetrieveResourcesValuesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesValuesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourcesValues", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourcesValues", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +159,7 @@ func (c *grpcGatewayClient) UpdateResourcesValues(ctx context.Context, in *Updat
 }
 
 func (c *grpcGatewayClient) SubscribeForEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeForEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeForEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeForEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +207,15 @@ func (c *grpcGatewayClient) DeleteResource(ctx context.Context, in *DeleteResour
 	return out, nil
 }
 
+func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error) {
+	out := new(CreateResourceResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GrpcGatewayServer is the server API for GrpcGateway service.
 // All implementations must embed UnimplementedGrpcGatewayServer
 // for forward compatibility
@@ -225,6 +235,8 @@ type GrpcGatewayServer interface {
 	GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error)
 	// Delete resource at the device.
 	DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error)
+	// Create resource at the device.
+	CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error)
 	mustEmbedUnimplementedGrpcGatewayServer()
 }
 
@@ -256,6 +268,9 @@ func (UnimplementedGrpcGatewayServer) GetClientConfiguration(context.Context, *C
 func (UnimplementedGrpcGatewayServer) DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteResource not implemented")
 }
+func (UnimplementedGrpcGatewayServer) CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateResource not implemented")
+}
 func (UnimplementedGrpcGatewayServer) mustEmbedUnimplementedGrpcGatewayServer() {}
 
 // UnsafeGrpcGatewayServer may be embedded to opt out of forward compatibility for this service.
@@ -266,7 +281,7 @@ type UnsafeGrpcGatewayServer interface {
 }
 
 func RegisterGrpcGatewayServer(s grpc.ServiceRegistrar, srv GrpcGatewayServer) {
-	s.RegisterService(&GrpcGateway_ServiceDesc, srv)
+	s.RegisterService(&_GrpcGateway_serviceDesc, srv)
 }
 
 func _GrpcGateway_GetDevices_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -430,10 +445,25 @@ func _GrpcGateway_DeleteResource_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-// GrpcGateway_ServiceDesc is the grpc.ServiceDesc for GrpcGateway service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
+func _GrpcGateway_CreateResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateResourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GrpcGatewayServer).CreateResource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GrpcGatewayServer).CreateResource(ctx, req.(*CreateResourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.grpcgateway.pb.GrpcGateway",
 	HandlerType: (*GrpcGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
@@ -452,6 +482,10 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteResource",
 			Handler:    _GrpcGateway_DeleteResource_Handler,
+		},
+		{
+			MethodName: "CreateResource",
+			Handler:    _GrpcGateway_CreateResource_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
