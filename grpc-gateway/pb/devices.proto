@@ -81,6 +81,8 @@ message SubscribeForEvents {
       RESOURCE_RETRIEVED = 5;
       RESOURCE_DELETE_PENDING = 6;
       RESOURCE_DELETED = 7;
+      RESOURCE_CREATE_PENDING = 8;
+      RESOURCE_CREATED = 9;
     }
     repeated Event filter_events = 2;
   }
@@ -160,6 +162,17 @@ message Event {
     Status status = 3;
     string correlation_id = 4;
   }
+  message ResourceCreatePending {
+    ResourceId resource_id = 1;
+    Content content = 2;
+    string correlation_id = 3;
+  }
+  message ResourceCreated {
+    ResourceId resource_id = 1;
+    Content content = 2;
+    Status status = 3;
+    string correlation_id = 4;
+  }
   message OperationProcessed {
     message ErrorStatus {
       enum Code {
@@ -194,6 +207,8 @@ message Event {
     ResourceRetrieved resource_retrieved = 15;
     ResourceDeletePending resource_delete_pending = 16;
     ResourceDeleted resource_deleted = 17;
+    ResourceCreatePending resource_create_pending = 18;
+    ResourceCreated resource_created = 19;
   }
 
 }
@@ -260,6 +275,17 @@ message DeleteResourceRequest {
 }
 
 message DeleteResourceResponse {
+  Content content = 1;
+  Status status = 2;
+}
+
+
+message CreateResourceRequest {
+  ResourceId resource_id = 1;
+  Content content = 2;
+}
+
+message CreateResourceResponse {
   Content content = 1;
   Status status = 2;
 }

@@ -28,4 +28,7 @@ service GrpcGateway {
 
   // Delete resource at the device.
   rpc DeleteResource(DeleteResourceRequest) returns (DeleteResourceResponse) {}
+
+  // Create resource at the device.
+  rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse) {}
 }
