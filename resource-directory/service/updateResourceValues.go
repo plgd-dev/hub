@@ -20,29 +20,7 @@ import (
 )
 
 func statusToGrpcStatus(status pbRA.Status) codes.Code {
-	switch status {
-	case pbRA.Status_UNKNOWN:
-		return codes.Unknown
-	case pbRA.Status_OK:
-		return codes.OK
-	case pbRA.Status_BAD_REQUEST:
-		return codes.InvalidArgument
-	case pbRA.Status_UNAUTHORIZED:
-		return codes.Unauthenticated
-	case pbRA.Status_FORBIDDEN:
-		return codes.PermissionDenied
-	case pbRA.Status_NOT_FOUND:
-		return codes.NotFound
-	case pbRA.Status_UNAVAILABLE:
-		return codes.Unavailable
-	case pbRA.Status_NOT_IMPLEMENTED:
-		return codes.Unimplemented
-	case pbRA.Status_ACCEPTED:
-		return extCodes.Accepted
-	case pbRA.Status_METHOD_NOT_ALLOWED:
-		return extCodes.MethodNotAllowed
-	}
-	return extCodes.InvalidCode
+	return pb.RAStatus2Status(status).ToGrpcCode()
 }
 
 func eventContentToContent(s pbRA.Status, c *pbRA.Content) (*pb.Content, error) {
@@ -57,10 +35,11 @@ func eventContentToContent(s pbRA.Status, c *pbRA.Content) (*pb.Content, error) 
 			ContentType: contentType,
 		}
 	}
-	statusCode := statusToGrpcStatus(s)
+	statusCode := pb.RAStatus2Status(s).ToGrpcCode()
 	switch statusCode {
 	case codes.OK:
 	case extCodes.Accepted:
+	case extCodes.Created:
 	default:
 		s := status.New(statusCode, "response from device")
 		if content != nil {

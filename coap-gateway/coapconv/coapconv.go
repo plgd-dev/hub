@@ -29,11 +29,11 @@ func StatusToCoapCode(status pbGRPC.Status, cmdCode codes.Code) codes.Code {
 			return codes.Changed
 		case codes.GET:
 			return codes.Content
-		case codes.PUT:
-			return codes.Created
 		case codes.DELETE:
 			return codes.Deleted
 		}
+	case pbGRPC.Status_CREATED:
+		return codes.Created
 	case pbGRPC.Status_ACCEPTED:
 		return codes.Valid
 	case pbGRPC.Status_BAD_REQUEST:
@@ -72,6 +72,8 @@ func CoapCodeToStatus(code codes.Code) pbRA.Status {
 		return pbRA.Status_NOT_IMPLEMENTED
 	case codes.MethodNotAllowed:
 		return pbRA.Status_METHOD_NOT_ALLOWED
+	case codes.Created:
+		return pbRA.Status_CREATED
 	default:
 		return pbRA.Status_ERROR
 	}
