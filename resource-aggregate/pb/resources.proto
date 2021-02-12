@@ -45,4 +45,5 @@ enum Status {
   ACCEPTED = 8;
   ERROR = 9;
   METHOD_NOT_ALLOWED = 10;
+  CREATED = 11;
 }

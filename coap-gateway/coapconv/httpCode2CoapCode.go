@@ -21,8 +21,6 @@ func HttpCode2CoapCode(statusCode int, method coapCodes.Code) coapCodes.Code {
 			return coapCodes.Changed
 		case coapCodes.GET:
 			return coapCodes.Content
-		case coapCodes.PUT:
-			return coapCodes.Created
 		case coapCodes.DELETE:
 			return coapCodes.Deleted
 		}

@@ -34,6 +34,8 @@ var http2status = map[int]Status{
 	http.StatusForbidden:        Status_FORBIDDEN,
 	http.StatusUnauthorized:     Status_UNAUTHORIZED,
 	http.StatusMethodNotAllowed: Status_METHOD_NOT_ALLOWED,
+	http.StatusCreated:          Status_CREATED,
+	http.StatusNoContent:        Status_OK,
 }
 
 func HTTPStatus2Status(s int) Status {

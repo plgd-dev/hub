@@ -8,28 +8,24 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+var rastatus2status = map[pbRA.Status]Status{
+	pbRA.Status_OK:                 Status_OK,
+	pbRA.Status_BAD_REQUEST:        Status_BAD_REQUEST,
+	pbRA.Status_UNAUTHORIZED:       Status_UNAUTHORIZED,
+	pbRA.Status_FORBIDDEN:          Status_FORBIDDEN,
+	pbRA.Status_NOT_FOUND:          Status_NOT_FOUND,
+	pbRA.Status_UNAVAILABLE:        Status_UNAVAILABLE,
+	pbRA.Status_NOT_IMPLEMENTED:    Status_NOT_IMPLEMENTED,
+	pbRA.Status_ACCEPTED:           Status_ACCEPTED,
+	pbRA.Status_ERROR:              Status_ERROR,
+	pbRA.Status_METHOD_NOT_ALLOWED: Status_METHOD_NOT_ALLOWED,
+	pbRA.Status_CREATED:            Status_CREATED,
+}
+
 func RAStatus2Status(s pbRA.Status) Status {
-	switch s {
-	case pbRA.Status_OK:
-		return Status_OK
-	case pbRA.Status_BAD_REQUEST:
-		return Status_BAD_REQUEST
-	case pbRA.Status_UNAUTHORIZED:
-		return Status_UNAUTHORIZED
-	case pbRA.Status_FORBIDDEN:
-		return Status_FORBIDDEN
-	case pbRA.Status_NOT_FOUND:
-		return Status_NOT_FOUND
-	case pbRA.Status_UNAVAILABLE:
-		return Status_UNAVAILABLE
-	case pbRA.Status_NOT_IMPLEMENTED:
-		return Status_NOT_IMPLEMENTED
-	case pbRA.Status_ACCEPTED:
-		return Status_ACCEPTED
-	case pbRA.Status_ERROR:
-		return Status_ERROR
-	case pbRA.Status_METHOD_NOT_ALLOWED:
-		return Status_METHOD_NOT_ALLOWED
+	v, ok := rastatus2status[s]
+	if ok {
+		return v
 	}
 	return Status_UNKNOWN
 }
@@ -45,6 +41,7 @@ var status2grpcCode = map[Status]codes.Code{
 	Status_ACCEPTED:           extCodes.Accepted,
 	Status_ERROR:              codes.Internal,
 	Status_METHOD_NOT_ALLOWED: extCodes.MethodNotAllowed,
+	Status_CREATED:            extCodes.Created,
 }
 
 func (s Status) ToGrpcCode() codes.Code {

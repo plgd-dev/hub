@@ -35,6 +35,8 @@ func statusToHttpStatus(status pbGRPC.Status) int {
 		return http.StatusInternalServerError
 	case pbGRPC.Status_METHOD_NOT_ALLOWED:
 		return http.StatusMethodNotAllowed
+	case pbGRPC.Status_CREATED:
+		return http.StatusCreated
 	}
 	return http.StatusInternalServerError
 }
