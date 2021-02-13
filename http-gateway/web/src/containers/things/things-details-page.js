@@ -124,7 +124,10 @@ export const ThingsDetailsPage = () => {
       if (error && isMounted.current) {
         const errorMessage = getApiErrorMessage(error)
 
-        if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
+        if (
+          !isOnline &&
+          errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)
+        ) {
           // Device update went through, but it will be applied once the device comes online
           showWarningToast({
             title: _(t.resourceUpdateSuccess),

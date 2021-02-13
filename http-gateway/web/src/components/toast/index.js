@@ -12,6 +12,9 @@ export const ToastContainer = () => {
       closeButton={({ closeToast }) => (
         <i onClick={closeToast} className="fas fa-times close-toast" />
       )}
+      pauseOnFocusLoss={false}
+      limit={5}
+      newestOnTop
     />
   )
 }

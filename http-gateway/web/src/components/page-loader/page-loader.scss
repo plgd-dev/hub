@@ -38,14 +38,14 @@
   .bar {
     width: 100%;
     height: $page_loader_height;
-    background-color: $box_bg_color;
+    background-color: $secondary_20;
     overflow: hidden;
     position: relative;
 
     .progress {
       width: 0;
       height: $page_loader_height;
-      background-color: $text_primary;
+      background-color: $primary_100;
     }
   }
 
@@ -57,7 +57,7 @@
 
       .subline {
         position: absolute;
-        background-color: $text_primary;
+        background-color: $primary_100;
         height: $page_loader_height;
 
         &.inc {

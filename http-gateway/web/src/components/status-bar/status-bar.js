@@ -10,6 +10,7 @@ export const StatusBar = memo(() => {
     <>
       <div id="status-bar-shadow" className="status-bar" />
       <div id="status-bar" className="status-bar">
+        {/* Insert custom components here. */}
         <LanguageSwitcher />
         <UserWidget />
       </div>

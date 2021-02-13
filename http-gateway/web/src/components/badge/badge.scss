@@ -1,17 +1,18 @@
 @import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
 
 $margin_size: 5px;
 
 .badge {
   text-transform: lowercase;
-  font-size: 12px;
+  font-size: $font_size_small;
   padding: 2px 7px;
   font-weight: 400;
   white-space: nowrap;
-  color: $blue_100;
-  background-color: $white_100;
+  color: $primary_100;
+  background-color: $light_100;
   box-sizing: border-box;
-  border: 1px solid $default_border_color;
+  border: 1px solid $secondary_20;
 
   // Margin horizontal
   &.mh-l {
@@ -30,15 +31,15 @@ $margin_size: 5px;
   }
 
   &.green {
-    background-color: $green_50;
-    color: $green_100;
-    border-color: $green_50;
+    background-color: $success_50;
+    color: $success_100;
+    border-color: $success_50;
   }
 
   &.red {
-    background-color: $red_50;
-    color: $red_100;
-    border-color: $red_50;
+    background-color: $error_50;
+    color: $error_100;
+    border-color: $error_50;
   }
 }
 
