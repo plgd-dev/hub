@@ -7,7 +7,7 @@
   right: 0;
   width: calc(100% - #{$left_panel_expanded});
   height: $status_bar_height;
-  background: $white_100;
+  background: $light_100;
 }
 
 #status-bar {
@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0 40px;
-  color: $text_desc;
+  color: $secondary_40;
 
   .status-bar-item {
     position: relative;
@@ -31,7 +31,7 @@
       i {
         font-size: 10px;
         margin-left: 7px;
-        color: $text_primary;
+        color: $primary_100;
         width: 10px;
         height: 10px;
         display: flex;
@@ -44,15 +44,15 @@
       position: absolute;
       top: 100%;
       right: 0;
-      background: $white_100;
-      box-shadow: 0 10px 20px 0 rgba(233, 236, 239, 0.5);
+      background: $light_100;
+      box-shadow: 0 10px 20px 0 rgba($secondary_20, 0.5);
     }
   }
 }
 
 #status-bar-shadow {
   z-index: 8;
-  box-shadow: 0 10px 20px 0 rgba(233, 236, 239, 0.5);
+  box-shadow: 0 10px 20px 0 rgba($secondary_20, 0.5);
 }
 
 // Collapsed menu state

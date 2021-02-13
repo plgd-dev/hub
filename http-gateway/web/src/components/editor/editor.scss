@@ -13,15 +13,15 @@
       right: 0;
       bottom: 0;
       margin: auto;
-      background: rgba($white_100, 0.7);
+      background: rgba($light_100, 0.7);
     }
   }
 
   .jsoneditor {
-    border-color: $default_border_color;
+    border-color: $secondary_20;
 
     .ace-jsoneditor .ace_marker-layer .ace_active-line {
-      background-color: rgba($blue_100, 0.1);
+      background-color: rgba($primary_100, 0.1);
     }
 
     div.jsoneditor-outer {

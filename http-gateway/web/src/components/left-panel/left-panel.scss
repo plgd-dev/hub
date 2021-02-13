@@ -1,16 +1,18 @@
 @import '@/common/styles/colors.scss';
 @import '@/common/styles/sizes.scss';
 
+$logo_container_height: 35px;
+
 #left-panel {
   position: fixed;
   display: block;
   width: $left_panel_expanded;
   min-width: $left_panel_expanded;
   height: 100vh;
-  background: $text_primary;
+  background: $primary_100;
   box-sizing: border-box;
   padding: 10px;
-  color: $white_100;
+  color: $light_100;
   top: 0;
   left: 0;
   bottom: 0;
@@ -18,13 +20,15 @@
 
   .logo {
     display: block;
-    padding-left: 10px;
-    padding-top: 5px;
+    margin: 5px 0 50px 0;
     margin-bottom: 50px;
+    height: $logo_container_height;
+    max-height: $logo_container_height;
 
     .logo-big {
       display: block;
-      height: 35px;
+      height: $logo_container_height;
+      margin-left: 10px;
     }
 
     .logo-small {
@@ -42,8 +46,6 @@
 
     .logo {
       padding-left: 0;
-      padding-top: 5px;
-      margin-bottom: 58px;
 
       .logo-big {
         display: none;

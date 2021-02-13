@@ -3,24 +3,24 @@
 
 div.select__control {
   min-width: 180px;
-  color: $text_desc;
-  border-color: $default_border_color;
+  color: $secondary_40;
+  border-color: $secondary_20;
   outline: 0 !important;
   border-radius: 2px;
   min-height: $input_height;
 
   &.select__control--is-focused {
-    border-color: $text_primary;
+    border-color: $primary_100;
     box-shadow: none;
 
     &:hover {
-      border-color: $text_primary;
+      border-color: $primary_100;
     }
   }
 
   .select__value-container {
     .select__single-value {
-      color: $text_desc;
+      color: $secondary_40;
     }
   }
 
@@ -30,7 +30,7 @@ div.select__control {
     }
 
     .select__indicator {
-      color: $text_primary;
+      color: $primary_100;
       font-size: 12px;
     }
   }
@@ -43,11 +43,11 @@ div.select__menu {
     cursor: pointer;
     
     &.select__option--is-focused {
-      background-color: $black_20;
-      color: $blue_100;
+      background-color: $secondary_20;
+      color: $primary_100;
     }
     &.select__option--is-selected {
-      background-color: $blue_100;
+      background-color: $primary_100;
       color: $white;
     }
   }
