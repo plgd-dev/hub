@@ -10,15 +10,15 @@ nodejs
 
 ### Configuration
 
-Configuration for the client can be found in `./src/auth_config.json`.
+Configuration for the client can be found in `./http-gateway/web/src/auth_config.json`.
 
 ```json
 {
-  "domain": "",
-  "clientID": "",
-  "audience": "",
+  "domain": "auth.plgd.cloud",
+  "clientID": "pHdCKhnpgGEtU7KAPcLYCoCAkZ4cYVZg",
+  "audience": "https://try.plgd.cloud",
   "scope": "",
-  "httpGatewayAddress": ""
+  "httpGatewayAddress": "https://api.try.plgd.cloud"
 }
 ```
 
@@ -70,7 +70,7 @@ Now your translations are updated and ready to be used.
 
 ### Colors change
 
-All colors are defined in one `scss` file located in `/src/common/styles/colors.scss`. Changing one of the colors will have an impact on all parts of the application.
+All colors are defined in one `scss` file located in `./http-gateway/web/src/common/styles/colors.scss`. Changing one of the colors will have an impact on all parts of the application.
 
 ### Logo change
 
@@ -78,14 +78,14 @@ You can change the logo of the application by replacing these files:
 
 Big logo (when the menu is expanded):
 
-- `/src/assets/img/logo-big.svg`
+- `./http-gateway/web/src/assets/img/logo-big.svg`
   _Recommended size is 127px \* 35px_
 
 Small logo (when the menu is collapsed):
 
-- `/src/assets/img/logo-small.svg`
+- `./http-gateway/web/src/assets/img/logo-small.svg`
   _Recommended size is 45px \* 35px_
 
 Favicon:
 
-- `/public/favicon.png`
+- `./http-gateway/web/public/favicon.png`
