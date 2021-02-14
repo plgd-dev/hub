@@ -45,7 +45,8 @@ module.exports = {
             title: 'Developing with plgd',
             sidebarDepth: 1,
             children: [
-              'developing/resources'
+              'developing/resources',
+              'developing/dashboard'
             ]
           }
         ]
