@@ -34,7 +34,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go/codec v1.1.10
 	github.com/valyala/fasthttp v1.16.0
-	go.mongodb.org/mongo-driver v1.4.2
+	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/atomic v1.7.0
 	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43

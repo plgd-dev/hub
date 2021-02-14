@@ -498,14 +498,6 @@ github.com/plgd-dev/cloud v0.0.0-20200819132744-8f09150a96e1/go.mod h1:PzDJWPdQO
 github.com/plgd-dev/cloud v1.0.1/go.mod h1:U+fZ0KfH0SxSqacQy0ERgjgf3DcMHEPehJ8Jq2CQlqI=
 github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616 h1:JAAbX4g6VWpGXtuU/9TGYfVUWpqSjd4VYwKfpgGrEfA=
 github.com/plgd-dev/cqrs v0.0.0-20200819120550-a6063edff616/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204134438-ec585d6a9c7a h1:+eXuQ/JCO2965K8nJJaRlAyoaV30EPLdfJfIbL1Rwz4=
-github.com/plgd-dev/cqrs v0.0.0-20201204134438-ec585d6a9c7a/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204140735-2f1fdff49f03 h1:epctQgLgTC4DhewFR2r+SbO7QdaS2TMuNBBZtKwojps=
-github.com/plgd-dev/cqrs v0.0.0-20201204140735-2f1fdff49f03/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204141922-ed716fecda7a h1:+ulbTHdVA2H8GVvuUmey/tq2GdpbLRZFkeU5Vl1XBxc=
-github.com/plgd-dev/cqrs v0.0.0-20201204141922-ed716fecda7a/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
-github.com/plgd-dev/cqrs v0.0.0-20201204143818-b7a610a687ac h1:96KxoQha3vQIjJWfwYw5XPlJIrhmn+mShhouuqFDD9k=
-github.com/plgd-dev/cqrs v0.0.0-20201204143818-b7a610a687ac/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
 github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f h1:a5k4xGbgotuxGwhtnuBJ8IWw2UvaK2xVOEVPfl33AUA=
 github.com/plgd-dev/cqrs v0.0.0-20201204150755-6ed1490c857f/go.mod h1:xk2WtUL6WU9ePbroDGmYMHidvwcGuZ+bObK40YpyAGk=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc h1:kEOQOFCaNd7SDhf17MSQkSB519JeDbwhhrUWBffbsZI=
@@ -623,8 +615,8 @@ go.mongodb.org/mongo-driver v1.2.1/go.mod h1:u7ryQJ+DOzQmeO7zB6MHyr8jkEQvC8vH7qL
 go.mongodb.org/mongo-driver v1.3.0/go.mod h1:MSWZXKOynuguX+JSvwP8i+58jYCXxbia8HS3gZBapIE=
 go.mongodb.org/mongo-driver v1.3.2 h1:IYppNjEV/C+/3VPbhHVxQ4t04eVW0cLp0/pNdW++6Ug=
 go.mongodb.org/mongo-driver v1.3.2/go.mod h1:MSWZXKOynuguX+JSvwP8i+58jYCXxbia8HS3gZBapIE=
-go.mongodb.org/mongo-driver v1.4.2 h1:WlnEglfTg/PfPq4WXs2Vkl/5ICC6hoG8+r+LraPmGk4=
-go.mongodb.org/mongo-driver v1.4.2/go.mod h1:WcMNYLx/IlOxLe6JRJiv2uXuCz6zBLndR4SoGjYphSc=
+go.mongodb.org/mongo-driver v1.4.6 h1:rh7GdYmDrb8AQSkF8yteAus8qYOgOASWDOv1BWqBXkU=
+go.mongodb.org/mongo-driver v1.4.6/go.mod h1:WcMNYLx/IlOxLe6JRJiv2uXuCz6zBLndR4SoGjYphSc=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=
