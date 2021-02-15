@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -94,7 +94,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	authCtx := authorizationContext{
-		pbData: &pbCQRS.AuthorizationContext{
+		pbData: &commands.AuthorizationContext{
 			DeviceId: signIn.DeviceID,
 		},
 		UserID:      signIn.UserID,
@@ -108,10 +108,10 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
-	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &pbCQRS.CommandMetadata{
+	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &commands.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
-	}, &pbCQRS.AuthorizationContext{
+	}, &commands.AuthorizationContext{
 		DeviceId: signIn.DeviceID,
 	})
 	if err != nil {
@@ -121,7 +121,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &pbCQRS.CommandMetadata{
+	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &commands.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
 	}, authCtx.GetPbData())
@@ -201,7 +201,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
 		req.Context = kitNetGrpc.CtxWithUserID(ctx, oldAuthCtx.GetUserID())
-		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.GetDeviceID(), &pbCQRS.CommandMetadata{
+		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.GetDeviceID(), &commands.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),
 		}, oldAuthCtx.GetPbData())

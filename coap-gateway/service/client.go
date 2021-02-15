@@ -791,7 +791,7 @@ func (client *Client) unpublishResources(ctx context.Context, resourceIDs []pbRA
 	client.unobserveResources(ctx, resourceIDs, rscsUnpublished)
 }
 
-func (client *Client) sendErrorConfirmResourceCreate(deviceID, href, userID, correlationID string, authCtx *commands.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.ResourceId, userID, correlationID string, authCtx *commands.AuthorizationContext, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource create: %v", err)
@@ -803,7 +803,7 @@ func (client *Client) sendErrorConfirmResourceCreate(deviceID, href, userID, cor
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceCreateRequest(deviceID, href, correlationID, authCtx, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceCreateRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceCreate(ctx, &request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource create: %v", err)
@@ -814,7 +814,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	authCtx, err := client.loadAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		client.sendErrorConfirmResourceCreate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId().ToRAProto(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -829,7 +829,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
+		request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId().ToRAProto(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, &request)
 		if err != nil {
 			return err
@@ -841,7 +841,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	defer cancel()
 	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId().ToRAProto(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -850,7 +850,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId().ToRAProto(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -868,7 +868,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId().ToRAProto(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, &request)
 	if err != nil {
 		return err

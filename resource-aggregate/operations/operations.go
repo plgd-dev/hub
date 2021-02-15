@@ -1,4 +1,4 @@
-package commander
+package operations
 
 import (
 	"context"
@@ -11,15 +11,16 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
-// Commander provides sync commands.
-type Commander struct {
+// Operator makes commands synchronously. It makes request to resource aggregate
+// and it waits for the result from the device, which is arrives in the confirm event.
+type Operator struct {
 	subscriber eventbus.Subscriber
 	raClient   service.ResourceAggregateClient
 }
 
-// NewCommander instancies commander
-func NewCommander(subscriber eventbus.Subscriber, raClient service.ResourceAggregateClient) *Commander {
-	return &Commander{
+// NewOperator instancies Operator
+func NewOperator(subscriber eventbus.Subscriber, raClient service.ResourceAggregateClient) *Operator {
+	return &Operator{
 		subscriber: subscriber,
 		raClient:   raClient,
 	}
@@ -112,7 +113,7 @@ func (h *updateHandler) recv(ctx context.Context) (*events.ResourceUpdated, erro
 }
 
 // DeleteResource sends delete resource command to resource aggregate and wait for resource deleted event from eventbus.
-func (c *Commander) DeleteResource(ctx context.Context, req *commands.DeleteResourceRequest) (*events.ResourceDeleted, error) {
+func (c *Operator) DeleteResource(ctx context.Context, req *commands.DeleteResourceRequest) (*events.ResourceDeleted, error) {
 	h := newDeleteHandler(req.GetCorrelationId())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
@@ -129,7 +130,7 @@ func (c *Commander) DeleteResource(ctx context.Context, req *commands.DeleteReso
 }
 
 // UpdateResource sends update resource command to resource aggregate and wait for resource updated event from eventbus.
-func (c *Commander) UpdateResource(ctx context.Context, req *commands.UpdateResourceRequest) (*events.ResourceUpdated, error) {
+func (c *Operator) UpdateResource(ctx context.Context, req *commands.UpdateResourceRequest) (*events.ResourceUpdated, error) {
 	h := newUpdateHandler(req.GetCorrelationId())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
@@ -189,7 +190,7 @@ func (h *retrieveHandler) recv(ctx context.Context) (*events.ResourceRetrieved, 
 }
 
 // RetrieveResource sends retrieve resource command to resource aggregate and wait for resource retrieved event from eventbus.
-func (c *Commander) RetrieveResource(ctx context.Context, req *commands.RetrieveResourceRequest) (*events.ResourceRetrieved, error) {
+func (c *Operator) RetrieveResource(ctx context.Context, req *commands.RetrieveResourceRequest) (*events.ResourceRetrieved, error) {
 	h := newRetrieveHandler(req.GetCorrelationId())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
@@ -248,8 +249,8 @@ func (h *createHandler) recv(ctx context.Context) (*events.ResourceCreated, erro
 	}
 }
 
-// CreateResource sends retrieve resource command to resource aggregate and wait for resource retrieved event from eventbus.
-func (c *Commander) CreateResource(ctx context.Context, req *commands.CreateResourceRequest) (*events.ResourceRetrieved, error) {
+// CreateResource sends create resource command to resource aggregate and wait for resource created event from eventbus.
+func (c *Operator) CreateResource(ctx context.Context, req *commands.CreateResourceRequest) (*events.ResourceRetrieved, error) {
 	h := newRetrieveHandler(req.GetCorrelationId())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {

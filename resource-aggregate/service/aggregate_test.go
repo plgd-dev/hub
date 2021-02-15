@@ -455,6 +455,26 @@ func testMakeCreateResourceRequest(deviceID, href string, correlationID string) 
 	return &r
 }
 
+func testMakeConfirmResourceCreateRequest(deviceID, href, correlationID string) *commands.ConfirmResourceCreateRequest {
+	r := commands.ConfirmResourceCreateRequest{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId:        correlationID,
+		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		Content: &commands.Content{
+			Data: []byte("hello world"),
+		},
+		Status: commands.Status_OK,
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			Sequence:     0,
+		},
+	}
+	return &r
+}
+
 func testMakeConfirmResourceUpdateRequest(deviceID, href, correlationID string) *commands.ConfirmResourceUpdateRequest {
 	r := commands.ConfirmResourceUpdateRequest{
 		ResourceId: &commands.ResourceId{
@@ -497,26 +517,6 @@ func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationID string
 
 func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) *commands.ConfirmResourceDeleteRequest {
 	r := commands.ConfirmResourceDeleteRequest{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		Content: &commands.Content{
-			Data: []byte("hello world"),
-		},
-		Status: commands.Status_OK,
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
-			Sequence:     0,
-		},
-	}
-	return &r
-}
-
-func testMakeConfirmResourceCreateRequest(deviceID, href, correlationID string) *commands.ConfirmResourceCreateRequest {
-	r := commands.ConfirmResourceCreateRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,

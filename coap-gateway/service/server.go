@@ -25,7 +25,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
@@ -61,7 +61,7 @@ type Server struct {
 	MaxMessageSize                  int
 	LogMessages                     bool
 
-	raClient pbRA.ResourceAggregateClient
+	raClient service.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
 	rdClient pbGRPC.GrpcGatewayClient
 
@@ -129,7 +129,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	raClient := pbRA.NewResourceAggregateClient(raConn)
+	raClient := service.NewResourceAggregateClient(raConn)
 
 	asConn, err := grpc.Dial(
 		config.AuthServerAddr,

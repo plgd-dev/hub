@@ -1,13 +1,12 @@
 package pb
 
 import (
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/sdk/schema"
 )
 
-func (e EndpointInformation) ToRAProto() *pbRA.EndpointInformation {
-	return &pbRA.EndpointInformation{
+func (e EndpointInformation) ToRAProto() *commands.EndpointInformation {
+	return &commands.EndpointInformation{
 		Endpoint: e.GetEndpoint(),
 		Priority: e.GetPriority(),
 	}
@@ -22,11 +21,11 @@ func (e EndpointInformation) ToSchema() schema.Endpoint {
 
 type EndpointInformations []*EndpointInformation
 
-func (e EndpointInformations) ToRAProto() []*pbRA.EndpointInformation {
+func (e EndpointInformations) ToRAProto() []*commands.EndpointInformation {
 	if e == nil {
 		return nil
 	}
-	r := make([]*pbRA.EndpointInformation, 0, len(e))
+	r := make([]*commands.EndpointInformation, 0, len(e))
 	for _, v := range e {
 		r = append(r, v.ToRAProto())
 	}
@@ -44,11 +43,11 @@ func (e EndpointInformations) ToSchema() []schema.Endpoint {
 	return r
 }
 
-func (p *Policies) ToRAProto() *pbRA.Policies {
+func (p *Policies) ToRAProto() *commands.Policies {
 	if p == nil {
 		return nil
 	}
-	return &pbRA.Policies{
+	return &commands.Policies{
 		BitFlags: p.GetBitFlags(),
 	}
 }
@@ -62,14 +61,12 @@ func (p *Policies) ToSchema() *schema.Policy {
 	}
 }
 
-func (l ResourceLink) ToRAProto() pbRA.Resource {
-	return pbRA.Resource{
-		Anchor:               l.GetAnchor(),
-		DeviceId:             l.GetDeviceId(),
-		EndpointInformations: EndpointInformations(l.GetEndpointInformations()).ToRAProto(),
-		Href:                 l.GetHref(),
-		Id:                   utils.MakeResourceID(l.GetDeviceId(), l.GetHref()),
-		// InstanceId:            l.GetInstanceId(),
+func (l ResourceLink) ToRAProto() commands.Resource {
+	return commands.Resource{
+		Anchor:                l.GetAnchor(),
+		DeviceId:              l.GetDeviceId(),
+		EndpointInformations:  EndpointInformations(l.GetEndpointInformations()).ToRAProto(),
+		Href:                  l.GetHref(),
 		Interfaces:            l.GetInterfaces(),
 		Policies:              l.GetPolicies().ToRAProto(),
 		ResourceTypes:         l.GetTypes(),
@@ -79,13 +76,13 @@ func (l ResourceLink) ToRAProto() pbRA.Resource {
 }
 
 func (l ResourceLink) ToSchema() schema.ResourceLink {
+	id := (&ResourceId{DeviceId: l.GetDeviceId(), Href: l.GetHref()}).ToUUID()
 	return schema.ResourceLink{
-		ID:        utils.MakeResourceID(l.GetDeviceId(), l.GetHref()),
-		Anchor:    l.GetAnchor(),
-		DeviceID:  l.GetDeviceId(),
-		Endpoints: EndpointInformations(l.GetEndpointInformations()).ToSchema(),
-		Href:      l.GetHref(),
-		// InstanceID:            l.GetInstanceId(),
+		ID:                    id,
+		Anchor:                l.GetAnchor(),
+		DeviceID:              l.GetDeviceId(),
+		Endpoints:             EndpointInformations(l.GetEndpointInformations()).ToSchema(),
+		Href:                  l.GetHref(),
 		Interfaces:            l.GetInterfaces(),
 		Policy:                l.GetPolicies().ToSchema(),
 		ResourceTypes:         l.GetTypes(),
@@ -94,7 +91,7 @@ func (l ResourceLink) ToSchema() schema.ResourceLink {
 	}
 }
 
-func RAEndpointInformationsToProto(e []*pbRA.EndpointInformation) []*EndpointInformation {
+func RAEndpointInformationsToProto(e []*commands.EndpointInformation) []*EndpointInformation {
 	if e == nil {
 		return nil
 	}
@@ -108,7 +105,7 @@ func RAEndpointInformationsToProto(e []*pbRA.EndpointInformation) []*EndpointInf
 	return r
 }
 
-func RAResourceToProto(ra *pbRA.Resource) ResourceLink {
+func RAResourceToProto(ra *commands.Resource) ResourceLink {
 	var p *Policies
 	if ra.Policies != nil {
 		p = &Policies{
