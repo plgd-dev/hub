@@ -10,13 +10,13 @@ control "Event Bus" as Bus
 Server -> Gateway : [UPDATE] '/oic/rd'
 activate Server
 activate Gateway
-Gateway -> ResourceAggregate : PublishResourceRequest
+Gateway -> ResourceAggregate : PublishResourceLinksRequest
 activate ResourceAggregate
-ResourceAggregate -> Gateway : PublishResourceResponse
+ResourceAggregate -> Gateway : PublishResourceLinksResponse
 deactivate Gateway
-ResourceAggregate -> Bus : ResourcePublished
+ResourceAggregate -> Bus : ResourceLinksPublished
 deactivate ResourceAggregate
-Gateway <- Bus: ResourcePublished
+Gateway <- Bus: ResourceLinksPublished
 activate Gateway
 Gateway -> Server : OK
 deactivate Gateway
@@ -78,7 +78,6 @@ deactivate Client
 == Resource content changed ==
 
 Server -> Gateway : [NOTIFY] 'oic.r.temperature' changed
-
 
 @enduml
 
@@ -146,6 +145,10 @@ deactivate ResourceAggregate
 Bus --> Client : ResourceDeleted
 deactivate Client
 
+== Unpublish resource links  ==
+
+Server -> Gateway : [UNPUBLISH] '/light/1'
+
 @enduml
 
 @startuml
@@ -178,5 +181,9 @@ ResourceAggregate --> Bus : ResourceCreated
 deactivate ResourceAggregate
 Bus --> Client : ResourceCreated
 deactivate Client
+
+== Publish resource links  ==
+
+Server -> Gateway : [PUBLISH] '/light/1'
 
 @enduml
