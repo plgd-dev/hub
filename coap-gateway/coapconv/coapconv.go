@@ -13,8 +13,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -52,30 +50,30 @@ func StatusToCoapCode(status pbGRPC.Status, cmdCode codes.Code) codes.Code {
 	return codes.BadRequest
 }
 
-func CoapCodeToStatus(code codes.Code) pbRA.Status {
+func CoapCodeToStatus(code codes.Code) commands.Status {
 	switch code {
 	case codes.Changed, codes.Content, codes.Deleted:
-		return pbRA.Status_OK
+		return commands.Status_OK
 	case codes.Valid:
-		return pbRA.Status_ACCEPTED
+		return commands.Status_ACCEPTED
 	case codes.BadRequest:
-		return pbRA.Status_BAD_REQUEST
+		return commands.Status_BAD_REQUEST
 	case codes.Unauthorized:
-		return pbRA.Status_UNAUTHORIZED
+		return commands.Status_UNAUTHORIZED
 	case codes.Forbidden:
-		return pbRA.Status_FORBIDDEN
+		return commands.Status_FORBIDDEN
 	case codes.NotFound:
-		return pbRA.Status_NOT_FOUND
+		return commands.Status_NOT_FOUND
 	case codes.ServiceUnavailable:
-		return pbRA.Status_UNAVAILABLE
+		return commands.Status_UNAVAILABLE
 	case codes.NotImplemented:
-		return pbRA.Status_NOT_IMPLEMENTED
+		return commands.Status_NOT_IMPLEMENTED
 	case codes.MethodNotAllowed:
-		return pbRA.Status_METHOD_NOT_ALLOWED
+		return commands.Status_METHOD_NOT_ALLOWED
 	case codes.Created:
-		return pbRA.Status_CREATED
+		return commands.Status_CREATED
 	default:
-		return pbRA.Status_ERROR
+		return commands.Status_ERROR
 	}
 }
 
@@ -138,7 +136,7 @@ func NewCoapResourceDeleteRequest(ctx context.Context, event *pb.Event_ResourceD
 	return req, nil
 }
 
-func MakeContent(opts message.Options, body io.Reader) pbRA.Content {
+func MakeContent(opts message.Options, body io.Reader) commands.Content {
 	contentTypeString := ""
 	coapContentFormat := int32(-1)
 	mt, err := opts.ContentFormat()
@@ -150,84 +148,72 @@ func MakeContent(opts message.Options, body io.Reader) pbRA.Content {
 	if body != nil {
 		data, _ = ioutil.ReadAll(body)
 	}
-	return pbRA.Content{
+	return commands.Content{
 		ContentType:       contentTypeString,
 		CoapContentFormat: coapContentFormat,
 		Data:              data,
 	}
 }
 
-func MakeCommandMetadata(sequenceNumber uint64, connectionID string) pbCQRS.CommandMetadata {
-	return pbCQRS.CommandMetadata{
+func MakeCommandMetadata(sequenceNumber uint64, connectionID string) commands.CommandMetadata {
+	return commands.CommandMetadata{
 		Sequence:     sequenceNumber,
 		ConnectionId: connectionID,
 	}
 }
 
-func MakeConfirmResourceRetrieveRequest(deviceID, href, correlationId string, authCtx *pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceRetrieveRequest {
+func MakeConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceRetrieveRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
-	return pbRA.ConfirmResourceRetrieveRequest{
+	return commands.ConfirmResourceRetrieveRequest{
 		AuthorizationContext: authCtx,
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		CorrelationId:   correlationId,
-		Status:          CoapCodeToStatus(req.Code()),
-		Content:         &content,
-		CommandMetadata: &metadata,
+		ResourceId:           resourceID,
+		CorrelationId:        correlationId,
+		Status:               CoapCodeToStatus(req.Code()),
+		Content:              &content,
+		CommandMetadata:      &metadata,
 	}
 }
 
-func MakeConfirmResourceUpdateRequest(deviceID, href, correlationId string, authCtx *pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceUpdateRequest {
+func MakeConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceUpdateRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
-	return pbRA.ConfirmResourceUpdateRequest{
+	return commands.ConfirmResourceUpdateRequest{
 		AuthorizationContext: authCtx,
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		CorrelationId:   correlationId,
-		Status:          CoapCodeToStatus(req.Code()),
-		Content:         &content,
-		CommandMetadata: &metadata,
+		ResourceId:           resourceID,
+		CorrelationId:        correlationId,
+		Status:               CoapCodeToStatus(req.Code()),
+		Content:              &content,
+		CommandMetadata:      &metadata,
 	}
 }
 
-func MakeConfirmResourceDeleteRequest(deviceID, href string, correlationId string, authCtx *pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.ConfirmResourceDeleteRequest {
+func MakeConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceDeleteRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
-	return pbRA.ConfirmResourceDeleteRequest{
+	return commands.ConfirmResourceDeleteRequest{
 		AuthorizationContext: authCtx,
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		CorrelationId:   correlationId,
-		Status:          CoapCodeToStatus(req.Code()),
-		Content:         &content,
-		CommandMetadata: &metadata,
+		ResourceId:           resourceID,
+		CorrelationId:        correlationId,
+		Status:               CoapCodeToStatus(req.Code()),
+		Content:              &content,
+		CommandMetadata:      &metadata,
 	}
 }
 
-func MakeNotifyResourceChangedRequest(deviceID, href string, authCtx *pbCQRS.AuthorizationContext, connectionID string, req *pool.Message) pbRA.NotifyResourceChangedRequest {
+func MakeNotifyResourceChangedRequest(resourceID *commands.ResourceId, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.NotifyResourceChangedRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
-	return pbRA.NotifyResourceChangedRequest{
+	return commands.NotifyResourceChangedRequest{
 		AuthorizationContext: authCtx,
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Content:         &content,
-		CommandMetadata: &metadata,
-		Status:          CoapCodeToStatus(req.Code()),
+		ResourceId:           resourceID,
+		Content:              &content,
+		CommandMetadata:      &metadata,
+		Status:               CoapCodeToStatus(req.Code()),
 	}
 }
 
@@ -257,35 +243,29 @@ func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.
 	}
 }
 
-func MakeRetrieveResourceRequest(deviceID, href string, resourceInterface, correlationId string, authCtx pbCQRS.AuthorizationContext, connectionID string, req *mux.Message) pbRA.RetrieveResourceRequest {
+func MakeRetrieveResourceRequest(resourceID *commands.ResourceId, resourceInterface, correlationId string, authCtx commands.AuthorizationContext, connectionID string, req *mux.Message) commands.RetrieveResourceRequest {
 	metadata := MakeCommandMetadata(req.SequenceNumber, connectionID)
 
-	return pbRA.RetrieveResourceRequest{
+	return commands.RetrieveResourceRequest{
 		AuthorizationContext: &authCtx,
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		CorrelationId:     correlationId,
-		ResourceInterface: resourceInterface,
-		CommandMetadata:   &metadata,
+		ResourceId:           resourceID,
+		CorrelationId:        correlationId,
+		ResourceInterface:    resourceInterface,
+		CommandMetadata:      &metadata,
 	}
 }
 
-func MakeConfirmResourceCreateRequest(deviceID, href string, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceCreateRequest {
+func MakeConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceCreateRequest {
 	content := MakeContent(req.Options(), req.Body())
 	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
 
 	return commands.ConfirmResourceCreateRequest{
 		AuthorizationContext: authCtx,
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		CorrelationId:   correlationId,
-		Status:          CoapCodeToStatus(req.Code()),
-		Content:         &content,
-		CommandMetadata: &metadata,
+		ResourceId:           resourceID,
+		CorrelationId:        correlationId,
+		Status:               CoapCodeToStatus(req.Code()),
+		Content:              &content,
+		CommandMetadata:      &metadata,
 	}
 }
 
