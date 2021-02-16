@@ -37,7 +37,7 @@ require (
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/atomic v1.7.0
 	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
-	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
+	golang.org/x/oauth2 v0.0.0-20210216194517-16ff1888fd2e
 	golang.org/x/sync v0.0.0-20201008141435-b3e1573b7520
 	google.golang.org/grpc v1.32.0
 	google.golang.org/grpc/examples v0.0.0-20201008225051-06c094c3ab22 // indirect
