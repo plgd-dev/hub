@@ -47,6 +47,7 @@ import (
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	oauthService "github.com/plgd-dev/cloud/oauth-server/test"
 )
 
 var (
@@ -170,6 +171,7 @@ func ClearDB(ctx context.Context, t *testing.T) {
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	ClearDB(ctx, t)
+	oauthShutdown := oauthService.SetUp(t)
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
@@ -186,6 +188,7 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 		rdShutdown()
 		raShutdown()
 		authShutdown()
+		oauthShutdown()
 	}
 }
 
