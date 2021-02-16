@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -25,6 +26,10 @@ type Server struct {
 // New parses configuration and creates new Server with provided store and bus
 func New(cfg Config) (*Server, error) {
 	cfg.SetDefaults()
+	err := cfg.Validate()
+	if err != nil {
+		return nil, err
+	}
 	log.Info(cfg.String())
 
 	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
@@ -38,7 +43,24 @@ func New(cfg Config) (*Server, error) {
 		return nil, fmt.Errorf("cannot listen tls and serve: %v", err)
 	}
 
-	requestHandler := NewRequestHandler(&cfg)
+	idTokenPrivateKeyI, err := LoadPrivateKey(cfg.IDTokenPrivateKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot load private cfg.IDTokenPrivateKeyPath(%v): %v", cfg.IDTokenPrivateKeyPath, err)
+	}
+	idTokenPrivateKey, ok := idTokenPrivateKeyI.(*rsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("cannot invalid type cfg.IDTokenPrivateKeyPath(%T): %v", idTokenPrivateKey, err)
+	}
+
+	accessTokenPrivateKeyI, err := LoadPrivateKey(cfg.AccessTokenKeyPrivateKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot load private accessTokenPrivateKeyI(%v): %v", cfg.IDTokenPrivateKeyPath, err)
+	}
+
+	requestHandler, err := NewRequestHandler(&cfg, idTokenPrivateKey, accessTokenPrivateKeyI)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create request handler: %w", err)
+	}
 
 	server := Server{
 		server:            NewHTTP(requestHandler),

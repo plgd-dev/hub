@@ -39,6 +39,11 @@ certificates: cloud-test
 	cat $(shell pwd)/.tmp/certs/http.crt > $(shell pwd)/.tmp/certs/mongo.key
 	cat $(shell pwd)/.tmp/certs/http.key >> $(shell pwd)/.tmp/certs/mongo.key
 
+privateKeys:
+	mkdir -p $(shell pwd)/.tmp/privKeys
+	openssl genrsa -out $(shell pwd)/.tmp/privKeys/idTokenKey.pem 4096
+	openssl ecparam -name prime256v1 -genkey -noout -out $(shell pwd)/.tmp/privKeys/accessTokenKey.pem
+
 nats: certificates
 	docker run \
 	    -d \
@@ -65,7 +70,7 @@ mongo: certificates
 		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
-env: clean certificates nats mongo
+env: clean certificates nats mongo privateKeys
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
@@ -79,6 +84,7 @@ test: env
 		--network=host \
 		-v $(shell pwd)/.tmp/certs:/certs \
 		-v $(shell pwd)/.tmp/home:/home \
+		-v $(shell pwd)/.tmp/privKeys:/privKeys \
 		--user $(shell id -u):$(shell id -g) \
 		-e HOME=/home \
 		-e DIAL_TYPE="file" \
@@ -97,6 +103,8 @@ test: env
 		-e TEST_ROOT_CA_CRT=/certs/root_ca.crt \
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e ACME_DB_DIR=/home/certificate-authority \
+		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
+		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
 		cloud-test \
 		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
@@ -110,6 +118,7 @@ clean:
 	sudo rm -rf ./.tmp/certs || true
 	sudo rm -rf ./.tmp/mongo || true
 	sudo rm -rf ./.tmp/home || true
+	sudo rm -rf ./.tmp/privateKeys || true
 
 proto/generate: $(SUBDIRS)
 push: cloud-build $(SUBDIRS) 
