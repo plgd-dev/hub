@@ -43,7 +43,8 @@ func generateAccessToken(clientID string, lifeTime time.Duration, host string, k
 	hdr := jws.NewHeaders()
 	hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm())
 	hdr.Set(jws.TypeKey, `JWT`)
-	hdr.Set(jws.KeyIDKey, jwkKey.KeyID())
+	kid := jwkKey.KeyID()
+	hdr.Set(jws.KeyIDKey, kid)
 	payload, err := jws.Sign(buf, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to create UserToken: %s", err)
@@ -92,14 +93,21 @@ type tokenRequest struct {
 
 func (requestHandler *RequestHandler) token(w http.ResponseWriter, r *http.Request) {
 	var tokenReq tokenRequest
-	err := json.ReadFrom(r.Body, &tokenReq)
-	if err != nil {
-		writeError(w, err, http.StatusBadRequest)
-		return
+	clientID, _, ok := r.BasicAuth()
+	if ok {
+		tokenReq.ClientID = clientID
+		tokenReq.GrantType = string(AllowedGrantType_CLIENT_CREDENTIALS)
+	} else {
+		err := json.ReadFrom(r.Body, &tokenReq)
+		if err != nil {
+			writeError(w, err, http.StatusBadRequest)
+			return
+		}
 	}
 
 	var clientCfg *Client
 	var idToken string
+	var err error
 	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
 		authSessionI, ok := requestHandler.cache.Get(tokenReq.Code)
 		if !ok {
