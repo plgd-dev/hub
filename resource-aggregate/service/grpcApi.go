@@ -85,10 +85,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource links: %v", err))
 	}
 
-	resID := &commands.ResourceId{
-		Href:     commands.ResourceLinksHref,
-		DeviceId: request.DeviceId,
-	}
+	resID := commands.MakeResourceId(request.DeviceId, commands.ResourceLinksHref)
 	aggregate, err := NewAggregate(resID, r.config.SnapshotThreshold, r.eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot publish resource links: %v", err))
@@ -105,7 +102,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	return &commands.PublishResourceLinksResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -119,10 +116,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot unpublish resource links: %v", err))
 	}
 
-	resID := &commands.ResourceId{
-		Href:     commands.ResourceLinksHref,
-		DeviceId: request.DeviceId,
-	}
+	resID := commands.MakeResourceId(request.DeviceId, commands.ResourceLinksHref)
 	aggregate, err := NewAggregate(resID, r.config.SnapshotThreshold, r.eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot unpublish resource links: %v", err))
@@ -139,7 +133,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	return &commands.UnpublishResourceLinksResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -168,7 +162,7 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *comm
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, "")
 	return &commands.NotifyResourceChangedResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -197,7 +191,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.UpdateResourceResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -226,7 +220,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *comm
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.ConfirmResourceUpdateResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -255,7 +249,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.RetrieveResourceResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -284,7 +278,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *co
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.ConfirmResourceRetrieveResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -313,7 +307,7 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.DeleteResourceResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -343,7 +337,7 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *comm
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.ConfirmResourceDeleteResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -372,7 +366,7 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.CreateResourceResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }
 
@@ -402,6 +396,6 @@ func (r RequestHandler) ConfirmResourceCreate(ctx context.Context, request *comm
 	}
 	auditContext := commands.MakeAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.ConfirmResourceCreateResponse{
-		AuditContext: &auditContext,
+		AuditContext: auditContext,
 	}, nil
 }

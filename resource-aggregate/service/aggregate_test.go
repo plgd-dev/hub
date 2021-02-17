@@ -92,7 +92,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 
-			ag, err := NewAggregate(&commands.ResourceId{DeviceId: tt.args.request.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := NewAggregate(commands.MakeResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
 			events, err := ag.PublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
@@ -113,7 +113,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: pc.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.PublishResourceLinks(ctx, pc)
 	if hasErr {
@@ -154,7 +154,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc1 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 
@@ -162,14 +162,14 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag2, err := NewAggregate(commands.MakeResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 	events, err = ag2.PublishResourceLinks(ctx, pc2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag3, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag3, err := NewAggregate(commands.MakeResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc3 := testMakePublishResourceRequest(deviceID, []string{resourceID, resourceID, resourceID})
 	events, err = ag3.PublishResourceLinks(ctx, pc3)
@@ -213,7 +213,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: pc.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
@@ -264,7 +264,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: pc.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
@@ -317,7 +317,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4}, codes.OK, false)
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID,commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID3})
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
@@ -638,7 +638,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -728,7 +728,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -809,7 +809,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	assert.NoError(t, err)
@@ -891,7 +891,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -972,7 +972,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1060,7 +1060,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1142,7 +1142,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1223,7 +1223,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1305,7 +1305,7 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {

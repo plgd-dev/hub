@@ -6,7 +6,7 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 )
 
@@ -199,8 +199,8 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		cloudResourceID := utils.MakeResourceID(deviceID, status.Href)
-		models := s.resourceProjection.Models(deviceID, cloudResourceID)
+		statusResourceID := commands.MakeResourceID(deviceID, status.Href)
+		models := s.resourceProjection.Models(statusResourceID)
 		if len(models) == 0 {
 			continue
 		}
@@ -229,8 +229,8 @@ func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, devi
 func (s *devicesSubscription) initNotifyOfOfflineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		cloudResourceID := utils.MakeResourceID(deviceID, status.Href)
-		models := s.resourceProjection.Models(deviceID, cloudResourceID)
+		statusResourceID := commands.MakeResourceID(deviceID, status.Href)
+		models := s.resourceProjection.Models(statusResourceID)
 		if len(models) == 0 {
 			continue
 		}

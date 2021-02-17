@@ -13,10 +13,12 @@ import (
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
@@ -31,7 +33,7 @@ import (
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
 	authServiceClient       pbAS.AuthorizationServiceClient
-	resourceAggregateClient pbRA.ResourceAggregateClient
+	resourceAggregateClient raService.ResourceAggregateClient
 	fqdn                    string
 
 	resourceProjection            *Projection
@@ -98,7 +100,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
-	resourceAggregateClient := pbRA.NewResourceAggregateClient(raConn)
+	resourceAggregateClient := raService.NewResourceAggregateClient(raConn)
 
 	pool, err := ants.NewPool(config.GoRoutinePoolSize)
 	if err != nil {
@@ -128,7 +130,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 	if err != nil {
 		return nil, fmt.Errorf("cannot create uuid for projection %w", err)
 	}
-	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), svc.ProjectionCacheExpiration)
+	resourceProjection, err := NewProjection(ctx, projUUID.String()+"."+svc.FQDN, resourceEventStore, resourceSubscriber, newEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), svc.ProjectionCacheExpiration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
@@ -164,7 +166,7 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
 	authServiceClient pbAS.AuthorizationServiceClient,
-	resourceAggregateClient pbRA.ResourceAggregateClient,
+	resourceAggregateClient raService.ResourceAggregateClient,
 	resourceProjection *Projection,
 	subscriptions *subscriptions,
 	updateNotificationContainer *notification.UpdateNotificationContainer,
@@ -189,6 +191,15 @@ func NewRequestHandler(
 		clientConfiguration:           clientConfiguration,
 		userDevicesManager:            userDevicesManager,
 		fqdn:                          fqdn,
+	}
+}
+
+func newEventStoreModelFactory(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer) func(context.Context, string, string) (eventstore.Model, error) {
+	return func(ctx context.Context, deviceID, resourceID string) (eventstore.Model, error) {
+		if commands.MakeLinksResourceUUID(deviceID) == resourceID {
+			return NewResourceLinksCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), nil
+		}
+		return NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), nil
 	}
 }
 

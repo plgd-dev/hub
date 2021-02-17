@@ -7,8 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -23,9 +22,8 @@ func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResou
 	if req.ResourceId == nil {
 		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete resource: invalid ResourceId"))
 	}
-	deviceID := req.GetResourceId().GetDeviceId()
-	href := req.GetResourceId().GetHref()
-	errorMsg := fmt.Sprintf("cannot delete resource /%v%v", deviceID, href) + ": %v"
+	resourceID := req.GetResourceId()
+	errorMsg := fmt.Sprintf("cannot delete resource /%v", resourceID) + ": %v"
 
 	correlationIDUUID, err := uuid.NewV4()
 	if err != nil {
@@ -33,19 +31,18 @@ func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResou
 	}
 
 	correlationID := correlationIDUUID.String()
-	resourceID := req.ResourceId.ID()
 	notify := r.deleteNotificationContainer.Add(correlationID)
 	defer r.updateNotificationContainer.Remove(correlationID)
 
-	loaded, err := r.resourceProjection.Register(ctx, deviceID)
+	loaded, err := r.resourceProjection.Register(ctx, resourceID.GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.NotFound, errorMsg, fmt.Errorf("cannot register device to projection: %w", err)))
 	}
-	defer r.resourceProjection.Unregister(deviceID)
+	defer r.resourceProjection.Unregister(resourceID.GetDeviceId())
 
 	if !loaded {
-		if len(r.resourceProjection.Models(deviceID, resourceID)) == 0 {
-			err = r.resourceProjection.ForceUpdate(ctx, deviceID, resourceID)
+		if len(r.resourceProjection.Models(resourceID)) == 0 {
+			err = r.resourceProjection.ForceUpdate(ctx, resourceID)
 			if err != nil {
 				return nil, logAndReturnError(status.Errorf(codes.NotFound, errorMsg, err))
 			}
@@ -58,19 +55,16 @@ func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResou
 		connectionID = peer.Addr.String()
 	}
 	seq := atomic.AddUint64(&r.seqNum, 1)
-	raReq := pbRA.DeleteResourceRequest{
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
+	raReq := &commands.DeleteResourceRequest{
+		ResourceId:    resourceID,
 		CorrelationId: correlationID,
-		CommandMetadata: &pbCQRS.CommandMetadata{
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,
 			Sequence:     seq,
 		},
 	}
 
-	_, err = r.resourceAggregateClient.DeleteResource(kitNetGrpc.CtxWithToken(ctx, accessToken), &raReq)
+	_, err = r.resourceAggregateClient.DeleteResource(kitNetGrpc.CtxWithToken(ctx, accessToken), raReq)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, errorMsg, err))
 	}

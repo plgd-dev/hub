@@ -105,7 +105,35 @@ func RAEndpointInformationsToProto(e []*commands.EndpointInformation) []*Endpoin
 	return r
 }
 
-func RAResourceToProto(ra *commands.Resource) ResourceLink {
+func RAResourceToProto(res *commands.Resource) ResourceLink {
+	var p *Policies
+	if res.Policies != nil {
+		p = &Policies{
+			BitFlags: res.Policies.GetBitFlags(),
+		}
+	}
+	return ResourceLink{
+		Anchor:                res.Anchor,
+		DeviceId:              res.DeviceId,
+		EndpointInformations:  RAEndpointInformationsToProto(res.EndpointInformations),
+		Href:                  res.Href,
+		Interfaces:            res.Interfaces,
+		Policies:              p,
+		Types:                 res.ResourceTypes,
+		SupportedContentTypes: res.SupportedContentTypes,
+		Title:                 res.Title,
+	}
+}
+
+func RAResourcesToProto(resources map[string]*commands.Resource) []ResourceLink {
+	var resourceLinks = make([]ResourceLink, 0, len(resources))
+	for _, res := range resources {
+		resourceLinks = append(resourceLinks, RAResourceToProto(res))
+	}
+	return resourceLinks
+}
+
+func RAResourceLinksToProto(ra *commands.Resource) ResourceLink {
 	var p *Policies
 	if ra.Policies != nil {
 		p = &Policies{

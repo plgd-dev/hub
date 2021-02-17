@@ -7,8 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -33,7 +32,6 @@ func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb
 	}
 
 	correlationID := correlationIDUUID.String()
-	resourceID := req.ResourceId.ID()
 	notify := r.retrieveNotificationContainer.Add(correlationID)
 	defer r.retrieveNotificationContainer.Remove(correlationID)
 
@@ -44,8 +42,8 @@ func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb
 	defer r.resourceProjection.Unregister(deviceID)
 
 	if !loaded {
-		if len(r.resourceProjection.Models(deviceID, resourceID)) == 0 {
-			err = r.resourceProjection.ForceUpdate(ctx, deviceID, resourceID)
+		if len(r.resourceProjection.Models(req.GetResourceId())) == 0 {
+			err = r.resourceProjection.ForceUpdate(ctx, req.GetResourceId())
 			if err != nil {
 				return nil, logAndReturnError(status.Errorf(codes.NotFound, errorMsg, err))
 			}
@@ -58,14 +56,14 @@ func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb
 		connectionID = peer.Addr.String()
 	}
 	seq := atomic.AddUint64(&r.seqNum, 1)
-	raReq := pbRA.RetrieveResourceRequest{
-		ResourceId: &pbRA.ResourceId{
+	raReq := commands.RetrieveResourceRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
 		ResourceInterface: req.GetResourceInterface(),
 		CorrelationId:     correlationID,
-		CommandMetadata: &pbCQRS.CommandMetadata{
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,
 			Sequence:     seq,
 		},

@@ -177,7 +177,7 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evs)
 
-	projection, err := newProjection(ctx, store, "testProjection", subscriber, func(context.Context) (eventstore.Model, error) { return &mockEventHandler{}, nil }, nil)
+	projection, err := newProjection(ctx, store, "testProjection", subscriber, func(context.Context, string, string) (eventstore.Model, error) { return &mockEventHandler{}, nil }, nil)
 	require.NoError(t, err)
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{

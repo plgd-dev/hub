@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/sdk/schema"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -15,8 +16,6 @@ import (
 	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 )
 
 // hasMatchingStatus returns true for matching a device state.
@@ -53,7 +52,7 @@ func NewDeviceDirectory(projection *Projection, deviceIds []string) *DeviceDirec
 	return &DeviceDirectory{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-func decodeContent(content *pbRA.Content, v interface{}) error {
+func decodeContent(content *commands.Content, v interface{}) error {
 	if content == nil {
 		return fmt.Errorf("cannot parse empty content")
 	}
@@ -94,7 +93,7 @@ func updateDevice(dev *Device, resource *resourceCtx) error {
 	cloudResourceTypes := make(strings.Set)
 	cloudResourceTypes.Add(deviceStatus.ResourceTypes...)
 	switch {
-	case resource.resource.GetHref() == "/oic/d":
+	case resource.resourceId.GetHref() == "/oic/d":
 		var devContent schema.Device
 		err := decodeContent(resource.content.GetContent(), &devContent)
 		if err != nil {
@@ -102,13 +101,13 @@ func updateDevice(dev *Device, resource *resourceCtx) error {
 		}
 		dev.Resource = &devContent
 		if len(dev.Resource.ResourceTypes) == 0 {
-			dev.Resource.ResourceTypes = resource.resource.GetResourceTypes()
+			dev.Resource.ResourceTypes = resource.resourceId.GetResourceTypes()
 		}
 		if len(dev.Resource.Interfaces) == 0 {
-			dev.Resource.Interfaces = resource.resource.GetInterfaces()
+			dev.Resource.Interfaces = resource.resourceId.GetInterfaces()
 		}
 		dev.ID = devContent.ID
-	case cloudResourceTypes.HasOneOf(resource.resource.GetResourceTypes()...):
+	case cloudResourceTypes.HasOneOf(resource.resourceId.GetResourceTypes()...):
 		var cloudStatus deviceStatus.Status
 		err := decodeContent(resource.content.GetContent(), &cloudStatus)
 		if err != nil {
@@ -178,9 +177,9 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 		return status.Errorf(codes.NotFound, "not found")
 	}
 
-	resourceIdsFilter := make([]*pb.ResourceId, 0, 64)
+	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIds {
-		resourceIdsFilter = append(resourceIdsFilter, &pb.ResourceId{DeviceId: deviceID, Href: "/oic/d"}, &pb.ResourceId{DeviceId: deviceID, Href: deviceStatus.Href})
+		resourceIdsFilter = append(resourceIdsFilter, commands.MakeResourceID(deviceID, "/oic/d"), commands.MakeResourceID(deviceID, deviceStatus.Href))
 	}
 
 	resourceValues, err := dd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, nil, nil)

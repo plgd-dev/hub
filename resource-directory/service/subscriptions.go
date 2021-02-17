@@ -12,13 +12,13 @@ import (
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
@@ -168,8 +168,8 @@ func (s *subscriptions) Pop(id string) Subscriber {
 				}
 			}
 		case *resourceSubscription:
-			deviceID := v.DeviceID()
-			href := v.Href()
+			deviceID := v.ResourceID().GetDeviceId()
+			href := v.ResourceID().GetHref()
 			delete(s.resourceSubscriptions[userID][deviceID][href], id)
 			if len(s.resourceSubscriptions[userID][deviceID][href]) == 0 {
 				delete(s.resourceSubscriptions[userID][deviceID], href)
@@ -276,8 +276,8 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 		return nil
 	}
 	userID := sub.UserID()
-	deviceID := sub.DeviceID()
-	href := sub.Href()
+	deviceID := sub.ResourceID().GetDeviceId()
+	href := sub.ResourceID().GetHref()
 	userSubs, ok := s.resourceSubscriptions[userID]
 	if !ok {
 		userSubs = make(map[string]map[string]map[string]*resourceSubscription)
@@ -305,14 +305,14 @@ func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Ev
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
 		if c.isPublished {
 			return ResourceLink{
-				link:    pb.RAResourceToProto(c.resource),
+				link:    pb.RAResourceToProto(c.resourceId),
 				version: c.onResourcePublishedVersion,
 			}, true
 		}
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
 		if !c.isPublished {
 			return ResourceLink{
-				link:    pb.RAResourceToProto(c.resource),
+				link:    pb.RAResourceToProto(c.resourceId),
 				version: c.onResourceUnpublishedVersion,
 			}, true
 		}
@@ -320,17 +320,17 @@ func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Ev
 	return ResourceLink{}, false
 }
 
-func (s *subscriptions) OnResourcePublished(ctx context.Context, l ResourceLink) error {
+func (s *subscriptions) OnResourceLinksPublished(ctx context.Context, deviceID string, links ResourceLinks) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
 	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, l.link.DeviceId) {
+		if !s.userDevicesManager.IsUserDevice(userID, deviceID) {
 			continue
 		}
-		for _, sub := range userSubs[l.link.DeviceId] {
-			if err := sub.NotifyOfPublishedResource(ctx, []ResourceLink{l}); err != nil {
+		for _, sub := range userSubs[deviceID] {
+			if err := sub.NotifyOfPublishedResourceLinks(ctx, links); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -341,17 +341,17 @@ func (s *subscriptions) OnResourcePublished(ctx context.Context, l ResourceLink)
 	return nil
 }
 
-func (s *subscriptions) OnResourceUnpublished(ctx context.Context, l ResourceLink) error {
+func (s *subscriptions) OnResourceLinksUnpublished(ctx context.Context, deviceID string, links ResourceLinks) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
 	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, l.link.DeviceId) {
+		if !s.userDevicesManager.IsUserDevice(userID, deviceID) {
 			continue
 		}
-		for _, sub := range userSubs[l.link.DeviceId] {
-			if err := sub.NotifyOfUnpublishedResource(ctx, []ResourceLink{l}); err != nil {
+		for _, sub := range userSubs[deviceID] {
+			if err := sub.NotifyOfUnpublishedResourceLinks(ctx, links); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -577,7 +577,7 @@ func (s *subscriptions) CancelResourceSubscriptions(ctx context.Context, deviceI
 	}
 }
 
-func isDeviceOnline(content *pbRA.Content) (bool, error) {
+func isDeviceOnline(content *commands.Content) (bool, error) {
 	if content == nil {
 		return false, nil
 	}

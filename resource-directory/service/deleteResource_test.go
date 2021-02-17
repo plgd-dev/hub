@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -38,10 +39,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "/light/2 - MethodNotAllowed",
 			args: args{
 				req: pb.DeleteResourceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/2",
-					},
+					ResourceId: commands.MakeResourceID(deviceID, "/light/2"),
 				},
 			},
 			wantErr:     true,
@@ -51,10 +49,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.DeleteResourceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/unknown",
-					},
+					ResourceId: commands.MakeResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr:     true,
@@ -65,10 +60,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "/oic/d - PermissionDenied",
 			args: args{
 				req: pb.DeleteResourceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/oic/d",
-					},
+					ResourceId: commands.MakeResourceID(deviceID, "/oic/d"),
 				},
 			},
 			wantErr:     true,

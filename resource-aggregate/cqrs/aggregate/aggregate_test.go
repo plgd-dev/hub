@@ -235,7 +235,7 @@ func TestAggregate(t *testing.T) {
 	require.NotNil(t, ev)
 
 	handler := &mockEventHandler{}
-	p := eventstore.NewProjection(store, func(context.Context) (eventstore.Model, error) { return handler, nil }, nil)
+	p := eventstore.NewProjection(store, func(context.Context, string, string) (eventstore.Model, error) { return handler, nil }, nil)
 
 	err = p.Project(ctx, []eventstore.SnapshotQuery{
 		{

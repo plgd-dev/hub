@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/strings"
 )
@@ -272,18 +273,18 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 //	}
 //	if it.Err != nil {
 //	}
-func (c *Client) RetrieveResourcesIterator(ctx context.Context, resourceIDs []*pb.ResourceId, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
+func (c *Client) RetrieveResourcesIterator(ctx context.Context, resourceIDs []*commands.ResourceId, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
 	r := pb.RetrieveResourcesValuesRequest{ResourceIdsFilter: resourceIDs, DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
 	return kitNetGrpc.NewIterator(c.gateway.RetrieveResourcesValues(ctx, &r))
 }
 
 type ResourceIDCallback struct {
-	ResourceID *pb.ResourceId
+	ResourceID *commands.ResourceId
 	Callback   func(pb.ResourceValue)
 }
 
 func MakeResourceIDCallback(deviceID, href string, callback func(pb.ResourceValue)) ResourceIDCallback {
-	return ResourceIDCallback{ResourceID: &pb.ResourceId{
+	return ResourceIDCallback{ResourceID: &commands.ResourceId{
 		DeviceId: deviceID,
 		Href:     href,
 	}, Callback: callback}
@@ -295,7 +296,7 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 	resourceIDsCallbacks ...ResourceIDCallback,
 ) error {
 	tc := make(map[string]func(pb.ResourceValue), len(resourceIDsCallbacks))
-	resourceIDs := make([]*pb.ResourceId, 0, len(resourceIDsCallbacks))
+	resourceIDs := make([]*commands.ResourceId, 0, len(resourceIDsCallbacks))
 	for _, c := range resourceIDsCallbacks {
 		tc[c.ResourceID.GetDeviceId()+c.ResourceID.GetHref()] = c.Callback
 		resourceIDs = append(resourceIDs, c.ResourceID)

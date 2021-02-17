@@ -6,16 +6,17 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 func toResourceValue(m *resourceCtx) pb.ResourceValue {
 	return pb.ResourceValue{
-		ResourceId: &pb.ResourceId{
-			Href:     m.resource.GetHref(),
-			DeviceId: m.resource.GetDeviceId(),
+		ResourceId: &commands.ResourceId{
+			Href:     m.resourceId.GetHref(),
+			DeviceId: m.resourceId.GetDeviceId(),
 		},
 		Content: pb.RAContent2Content(m.content.GetContent()),
-		Types:   m.resource.GetResourceTypes(),
+		Types:   m.resourceId.GetResourceTypes(),
 		Status:  pb.RAStatus2Status(m.content.GetStatus()),
 	}
 }
@@ -41,7 +42,7 @@ func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValue
 	typeFilter.Add(req.TypeFilter...)
 
 	// validate access to resource
-	resourceIdsFilter := make([]*pb.ResourceId, 0, 64)
+	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
 	for _, res := range req.GetResourceIdsFilter() {
 		if len(filterDevices(rd.userDeviceIds, []string{res.GetDeviceId()})) > 0 {
 			resourceIdsFilter = append(resourceIdsFilter, res)

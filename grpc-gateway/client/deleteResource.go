@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 // DeleteResource invokes DELETE command within the resource aggregate, which transparently forwards the request to the device.
@@ -22,12 +23,7 @@ func (c *Client) DeleteResource(
 		cfg = o.applyOnDelete(cfg)
 	}
 
-	r := pb.DeleteResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-	}
+	r := pb.DeleteResourceRequest{ResourceId: commands.MakeResourceID(deviceID, href)}
 
 	resp, err := c.gateway.DeleteResource(ctx, &r)
 	if err != nil {

@@ -15,6 +15,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -40,7 +41,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},
@@ -62,7 +63,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},
@@ -84,7 +85,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},
@@ -105,7 +106,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "update RO-resource",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/oic/d",
 					},
@@ -123,7 +124,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/unknown",
 					},
@@ -181,7 +182,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/2",
 					},
@@ -194,7 +195,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/oic/d",
 					},
@@ -207,7 +208,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/unknown",
 					},
@@ -534,7 +535,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "testToken",
 		FilterBy: &pb.SubscribeForEvents_ResourceEvent{
 			ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
-				ResourceId: &pb.ResourceId{
+				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     "/light/2",
 				},
@@ -568,7 +569,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: subContentChangedID,
 		Type: &pb.Event_ResourceChanged_{
 			ResourceChanged: &pb.Event_ResourceChanged{
-				ResourceId: &pb.ResourceId{
+				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     "/light/2",
 				},
@@ -613,7 +614,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subUpdatedID := ev.SubscriptionId
 
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
-		ResourceId: &pb.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     "/light/2",
 		},
@@ -641,7 +642,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdatePending_{
 					ResourceUpdatePending: &pb.Event_ResourceUpdatePending{
-						ResourceId: &pb.ResourceId{
+						ResourceId: &commands.ResourceId{
 							DeviceId: deviceID,
 							Href:     "/light/2",
 						},
@@ -668,7 +669,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdated_{
 					ResourceUpdated: &pb.Event_ResourceUpdated{
-						ResourceId: &pb.ResourceId{
+						ResourceId: &commands.ResourceId{
 							DeviceId: deviceID,
 							Href:     "/light/2",
 						},
@@ -684,7 +685,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subContentChangedID,
 				Type: &pb.Event_ResourceChanged_{
 					ResourceChanged: &pb.Event_ResourceChanged{
-						ResourceId: &pb.ResourceId{
+						ResourceId: &commands.ResourceId{
 							DeviceId: deviceID,
 							Href:     "/light/2",
 						},
@@ -701,7 +702,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		}
 	}
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
-		ResourceId: &pb.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     "/light/2",
 		},
@@ -726,7 +727,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdatePending_{
 					ResourceUpdatePending: &pb.Event_ResourceUpdatePending{
-						ResourceId: &pb.ResourceId{
+						ResourceId: &commands.ResourceId{
 							DeviceId: deviceID,
 							Href:     "/light/2",
 						},
@@ -753,7 +754,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdated_{
 					ResourceUpdated: &pb.Event_ResourceUpdated{
-						ResourceId: &pb.ResourceId{
+						ResourceId: &commands.ResourceId{
 							DeviceId: deviceID,
 							Href:     "/light/2",
 						},
@@ -769,7 +770,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subContentChangedID,
 				Type: &pb.Event_ResourceChanged_{
 					ResourceChanged: &pb.Event_ResourceChanged{
-						ResourceId: &pb.ResourceId{
+						ResourceId: &commands.ResourceId{
 							DeviceId: deviceID,
 							Href:     "/light/2",
 						},
@@ -816,7 +817,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subReceivedID := ev.SubscriptionId
 
 	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
-		ResourceId: &pb.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     "/light/2",
 		},
@@ -827,7 +828,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrievePending_{
 			ResourceRetrievePending: &pb.Event_ResourceRetrievePending{
-				ResourceId: &pb.ResourceId{
+				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     "/light/2",
 				},
@@ -845,7 +846,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrieved_{
 			ResourceRetrieved: &pb.Event_ResourceRetrieved{
-				ResourceId: &pb.ResourceId{
+				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     "/light/2",
 				},

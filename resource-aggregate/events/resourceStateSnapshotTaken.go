@@ -282,8 +282,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 
 		rc := ResourceChanged{
 			ResourceId:    req.GetResourceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 			Content:       req.GetContent(),
 			Status:        req.GetStatus(),
 		}
@@ -311,8 +311,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		rc := ResourceUpdatePending{
 			ResourceId:        req.GetResourceId(),
 			ResourceInterface: req.GetResourceInterface(),
-			AuditContext:      &ac,
-			EventMetadata:     &em,
+			AuditContext:      ac,
+			EventMetadata:     em,
 			Content:           content,
 		}
 
@@ -329,8 +329,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceUpdated{
 			ResourceId:    req.GetResourceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 			Content:       req.GetContent(),
 			Status:        req.GetStatus(),
 		}
@@ -349,8 +349,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		rc := ResourceRetrievePending{
 			ResourceId:        req.GetResourceId(),
 			ResourceInterface: req.GetResourceInterface(),
-			AuditContext:      &ac,
-			EventMetadata:     &em,
+			AuditContext:      ac,
+			EventMetadata:     em,
 		}
 
 		if err := e.HandleEventResourceRetrievePending(ctx, &rc); err != nil {
@@ -366,8 +366,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceRetrieved{
 			ResourceId:    req.GetResourceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 			Content:       req.GetContent(),
 			Status:        req.GetStatus(),
 		}
@@ -385,8 +385,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 
 		rc := ResourceDeletePending{
 			ResourceId:    req.GetResourceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 		}
 
 		if err := e.HandleEventResourceDeletePending(ctx, &rc); err != nil {
@@ -402,8 +402,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceDeleted{
 			ResourceId:    req.GetResourceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 			Content:       req.GetContent(),
 			Status:        req.GetStatus(),
 		}
@@ -425,8 +425,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		rc := ResourceCreatePending{
 			ResourceId:    req.GetResourceId(),
 			Content:       content,
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 		}
 
 		if err := e.HandleEventResourceCreatePending(ctx, &rc); err != nil {
@@ -442,8 +442,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, req.GetCorrelationId())
 		rc := ResourceCreated{
 			ResourceId:    req.GetResourceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 			Content:       req.GetContent(),
 			Status:        req.GetStatus(),
 		}

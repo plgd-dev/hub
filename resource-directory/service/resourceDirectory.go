@@ -39,10 +39,10 @@ func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, sr
 
 	for _, resources := range resourceValues {
 		for _, resource := range resources {
-			if resource.resource == nil {
+			if resource.resourceId == nil {
 				continue
 			}
-			resourceLink := pb.RAResourceToProto(resource.resource)
+			resourceLink := pb.RAResourceToProto(resource.resourceId)
 			err = srv.Send(&resourceLink)
 			if err != nil {
 				return status.Errorf(codes.Canceled, "cannot send resource link: %v", err)

@@ -11,6 +11,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // GrpcGatewayClient is the client API for GrpcGateway service.
@@ -45,7 +46,7 @@ func NewGrpcGatewayClient(cc grpc.ClientConnInterface) GrpcGatewayClient {
 }
 
 func (c *grpcGatewayClient) GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,7 @@ func (x *grpcGatewayGetDevicesClient) Recv() (*Device, error) {
 }
 
 func (c *grpcGatewayClient) GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func (c *grpcGatewayClient) RetrieveResourceFromDevice(ctx context.Context, in *
 }
 
 func (c *grpcGatewayClient) RetrieveResourcesValues(ctx context.Context, in *RetrieveResourcesValuesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesValuesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourcesValues", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourcesValues", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (c *grpcGatewayClient) UpdateResourcesValues(ctx context.Context, in *Updat
 }
 
 func (c *grpcGatewayClient) SubscribeForEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeForEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeForEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeForEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +282,7 @@ type UnsafeGrpcGatewayServer interface {
 }
 
 func RegisterGrpcGatewayServer(s grpc.ServiceRegistrar, srv GrpcGatewayServer) {
-	s.RegisterService(&_GrpcGateway_serviceDesc, srv)
+	s.RegisterService(&GrpcGateway_ServiceDesc, srv)
 }
 
 func _GrpcGateway_GetDevices_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -463,7 +464,10 @@ func _GrpcGateway_CreateResource_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
+// GrpcGateway_ServiceDesc is the grpc.ServiceDesc for GrpcGateway service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.grpcgateway.pb.GrpcGateway",
 	HandlerType: (*GrpcGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{

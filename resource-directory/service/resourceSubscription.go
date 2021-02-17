@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 )
 
@@ -26,28 +25,27 @@ func NewResourceSubscription(id, userID, token string, send SendEventFunc, resou
 
 func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[string]bool) error {
 	log.Debugf("subscriptions.SubscribeForResourceEvent.resourceProjection.Register")
-	if !currentDevices[s.DeviceID()] {
-		return fmt.Errorf("device %v not found", s.DeviceID())
+	if !currentDevices[s.ResourceID().GetDeviceId()] {
+		return fmt.Errorf("device %v not found", s.ResourceID().GetDeviceId())
 	}
 
-	created, err := s.RegisterToProjection(ctx, s.DeviceID())
+	created, err := s.RegisterToProjection(ctx, s.ResourceID().GetDeviceId())
 	if err != nil {
 		return fmt.Errorf("cannot register to resource projection: %w", err)
 	}
 	log.Debugf("subscriptions.SubscribeForResourceEvent.resourceProjection.Register, created=%v", created)
 
-	resourceID := utils.MakeResourceID(s.DeviceID(), s.Href())
-	models := s.resourceProjection.Models(s.DeviceID(), resourceID)
+	models := s.resourceProjection.Models(s.ResourceID())
 	if len(models) == 0 {
-		err = s.resourceProjection.ForceUpdate(ctx, s.DeviceID(), resourceID)
+		err = s.resourceProjection.ForceUpdate(ctx, s.ResourceID())
 		if err != nil {
 			return fmt.Errorf("cannot load resources for device: %w", err)
 		}
-		models = s.resourceProjection.Models(s.DeviceID(), resourceID)
+		models = s.resourceProjection.Models(s.ResourceID())
 	}
 
 	if len(models) == 0 {
-		return fmt.Errorf("cannot load resource models %v%v: %w", s.DeviceID(), s.Href(), err)
+		return fmt.Errorf("cannot load resource models %v: %w", s.ResourceID(), err)
 	}
 	res := models[0].(*resourceCtx).Clone()
 	if res.content == nil {
@@ -57,7 +55,7 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	for _, f := range s.resourceEvent.FilterEvents {
 		switch f {
 		case pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED:
-			if res.content.GetStatus() == pbRA.Status_UNKNOWN {
+			if res.content.GetStatus() == commands.Status_UNKNOWN {
 				continue
 			}
 			err := res.onResourceChangedLocked(ctx, s.NotifyOfContentChangedResource)
@@ -69,12 +67,8 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	return nil
 }
 
-func (s *resourceSubscription) DeviceID() string {
-	return s.resourceEvent.GetResourceId().GetDeviceId()
-}
-
-func (s *resourceSubscription) Href() string {
-	return s.resourceEvent.GetResourceId().GetHref()
+func (s *resourceSubscription) ResourceID() *commands.ResourceId {
+	return s.resourceEvent.GetResourceId()
 }
 
 func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {

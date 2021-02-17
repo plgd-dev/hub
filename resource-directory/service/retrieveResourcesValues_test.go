@@ -12,6 +12,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -47,7 +48,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.RetrieveResourcesValuesRequest{
-					ResourceIdsFilter: []*pb.ResourceId{
+					ResourceIdsFilter: []*commands.ResourceId{
 						{
 							DeviceId: deviceID,
 							Href:     "/light/1",
@@ -57,7 +58,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 			},
 			want: []*pb.ResourceValue{
 				{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},

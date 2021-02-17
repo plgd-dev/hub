@@ -51,7 +51,7 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 }
 
 func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
-	unpublished := []string{}
+	var unpublished []string
 	if len(upub.GetHrefs()) == 0 {
 		unpublished = make([]string, 0, len(e.GetResources()))
 		for href := range e.GetResources() {
@@ -134,8 +134,8 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		rlp := ResourceLinksPublished{
 			Resources:     req.GetResources(),
 			DeviceId:      req.GetDeviceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 		}
 		err := e.HandleEventResourceLinksPublished(ctx, &rlp)
 		if err != nil {
@@ -155,8 +155,8 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		rlu := ResourceLinksUnpublished{
 			Hrefs:         req.GetHrefs(),
 			DeviceId:      req.GetDeviceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 		}
 		unpublished, err := e.HandleEventResourceLinksUnpublished(ctx, &rlu)
 		if err != nil {

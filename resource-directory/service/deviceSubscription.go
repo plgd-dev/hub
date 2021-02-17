@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 )
 
@@ -26,12 +27,12 @@ func (s *deviceSubscription) DeviceID() string {
 	return s.deviceEvent.GetDeviceId()
 }
 
-type ResourceLink struct {
-	link    pb.ResourceLink
+type ResourceLinks struct {
+	links   []pb.ResourceLink
 	version uint64
 }
 
-func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, links []ResourceLink) error {
+func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links []ResourceLink) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED {
@@ -63,7 +64,7 @@ func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, links []ResourceLink) error {
+func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Context, links []ResourceLink) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED {
@@ -228,7 +229,7 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 }
 
 func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
+	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	toSend := make([]ResourceLink, 0, 32)
 	for _, model := range models {
 		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, model)
@@ -246,7 +247,7 @@ func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) err
 }
 
 func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
+	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	toSend := make([]ResourceLink, 0, 32)
 	for _, model := range models {
 		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED, model)
@@ -263,7 +264,7 @@ func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) e
 }
 
 func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
+	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	for _, model := range models {
 		c := model.(*resourceCtx).Clone()
 		err := c.onResourceUpdatePendingLocked(ctx, s.NotifyOfUpdatePendingResource)
@@ -275,7 +276,7 @@ func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context)
 }
 
 func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
+	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	for _, model := range models {
 		c := model.(*resourceCtx).Clone()
 		err := c.onResourceRetrievePendingLocked(ctx, s.NotifyOfRetrievePendingResource)
@@ -287,7 +288,7 @@ func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Contex
 }
 
 func (s *deviceSubscription) initSendResourcesDeletePending(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
+	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	for _, model := range models {
 		c := model.(*resourceCtx).Clone()
 		err := c.onResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
