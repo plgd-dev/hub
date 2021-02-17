@@ -14,8 +14,8 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
@@ -25,11 +25,14 @@ import (
 )
 
 func TestPublishUnpublish(t *testing.T) {
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), authProvider.UserToken)
-
 	var config refImpl.Config
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
+
+	oauthShutdown := oauthTest.SetUp(t)
+	defer oauthShutdown()
+
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetServiceToken(t))
 
 	authShutdown := authService.SetUp(t)
 	defer authShutdown()
@@ -70,10 +73,11 @@ func TestPublishUnpublish(t *testing.T) {
 
 	deviceId := "dev0"
 	href := "/oic/p"
+	code := oauthTest.GetDeviceAuthorizationCode(t)
 	resp, err := authClient.SignUp(ctx, &pbAS.SignUpRequest{
 		DeviceId:              deviceId,
-		AuthorizationCode:     "authcode",
-		AuthorizationProvider: authProvider.NewTestProvider().GetProviderName(),
+		AuthorizationCode:     code,
+		AuthorizationProvider: "auth0",
 	})
 	require.NoError(t, err)
 
