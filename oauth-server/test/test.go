@@ -92,14 +92,19 @@ func (c *requestBuilder) Build() *http.Request {
 	return request
 }
 
-func HTTPDo(t *testing.T, req *http.Request) *http.Response {
+func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response {
 	trans := transport.NewDefaultTransport()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
 
-	c := http.Client{
+	c := &http.Client{
 		Transport: trans,
+	}
+	if !followRedirect {
+		c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
 	}
 	resp, err := c.Do(req)
 	require.NoError(t, err)

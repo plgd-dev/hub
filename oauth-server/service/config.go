@@ -98,25 +98,29 @@ type Config struct {
 	Clients                      ClientsConfig
 }
 
+const ClientUI = "ui"
+const ClientDevice = "device"
+const ClientService = "service"
+
 func (c *Config) SetDefaults() {
 	if len(c.Clients) == 0 {
 		c.Clients = ClientsConfig{
 			{
-				ID:                        "ui",
+				ID:                        ClientUI,
 				AccessTokenType:           AccessTokenType_JWT,
 				AllowedGrantTypes:         []AllowedGrantType{AllowedGrantType_AUTHORIZATION_CODE},
 				AuthorizationCodeLifetime: time.Minute * 10,
 				AccessTokenLifetime:       time.Hour,
 			},
 			{
-				ID:                        "device",
+				ID:                        ClientDevice,
 				AccessTokenType:           AccessTokenType_REFERENCE,
 				AllowedGrantTypes:         []AllowedGrantType{AllowedGrantType_AUTHORIZATION_CODE},
 				AuthorizationCodeLifetime: time.Minute * 10,
 				AccessTokenLifetime:       time.Hour,
 			},
 			{
-				ID:                        "service",
+				ID:                        ClientService,
 				AccessTokenType:           AccessTokenType_JWT,
 				AllowedGrantTypes:         []AllowedGrantType{AllowedGrantType_CLIENT_CREDENTIALS},
 				AuthorizationCodeLifetime: time.Minute * 10,
