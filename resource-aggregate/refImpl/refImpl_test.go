@@ -4,25 +4,21 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	authConfig "github.com/plgd-dev/cloud/authorization/service"
-	authService "github.com/plgd-dev/cloud/authorization/test"
+	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInit(t *testing.T) {
-	var authCfg authConfig.Config
-	err := envconfig.Process("", &authCfg)
-	require.NoError(t, err)
-	authCfg.Addr = "localhost:12345"
-	authCfg.HTTPAddr = "localhost:12346"
-	authCfg.Device.Provider = "test"
-	authShutdown := authService.New(t, authCfg)
+	authShutdown := oauthTest.New(t, oauthTest.MakeConfig(t))
 	defer authShutdown()
 
 	var config Config
-	err = envconfig.Process("", &config)
+	err := envconfig.Process("", &config)
 	require.NoError(t, err)
-	config.Service.OAuth.Endpoint.TokenURL = "https://" + authCfg.HTTPAddr + "/api/authz/token"
+	config.Service.OAuth.ClientID = oauthService.ClientService
+	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 
 	got, err := Init(config)
 	require.NoError(t, err)
