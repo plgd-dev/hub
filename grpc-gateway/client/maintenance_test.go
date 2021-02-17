@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -43,7 +42,7 @@ func TestClient_FactoryReset(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
@@ -94,7 +93,7 @@ func TestClient_Reboot(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), RebootTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()

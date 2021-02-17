@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	client "github.com/plgd-dev/cloud/grpc-gateway/client"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -18,7 +17,7 @@ func TestObserveDeviceResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()

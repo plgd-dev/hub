@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -32,7 +31,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid - update value",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oc/con",
 				data: map[string]interface{}{
@@ -46,7 +45,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid - revert update",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oc/con",
 				data: map[string]interface{}{
@@ -60,7 +59,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "valid with resourceInterface",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oc/con",
 				data: map[string]interface{}{
@@ -75,7 +74,7 @@ func TestClient_UpdateResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 				data: map[string]interface{}{
@@ -87,7 +86,7 @@ func TestClient_UpdateResource(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()

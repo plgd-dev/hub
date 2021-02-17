@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,12 +12,18 @@ import (
 )
 
 // NewAuth0Provider creates OAuth client
-func NewAuth0Provider(config Config) *Auth0Provider {
+func NewAuth0Provider(config Config, tls *tls.Config) *Auth0Provider {
 	oauth2 := config.OAuth2.ToOAuth2()
 	return &Auth0Provider{
-		Config:        config,
-		OAuth2:        &oauth2,
-		NewHTTPClient: func() *http.Client { return http.DefaultClient },
+		Config: config,
+		OAuth2: &oauth2,
+		NewHTTPClient: func() *http.Client {
+			return &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: tls,
+				},
+			}
+		},
 	}
 }
 
