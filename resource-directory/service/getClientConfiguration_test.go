@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -30,10 +30,10 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
