@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/go-ocf/kit/codec/json"
+	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/net/http/transport"
 
 	"github.com/jtacoma/uritemplates"
