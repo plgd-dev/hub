@@ -48,6 +48,7 @@ import (
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	oauthService "github.com/plgd-dev/cloud/oauth-server/test"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 )
 
 var (
@@ -237,7 +238,8 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 	setAccessForCloud(ctx, t, client, deviceID)
 
-	err = client.OnboardDevice(ctx, deviceID, "test", "coaps+tcp://"+gwHost, "authCode", "sid")
+	code := oauthTest.GetDeviceAuthorizationCode(t)
+	err = client.OnboardDevice(ctx, deviceID, "auth0", "coaps+tcp://"+gwHost, code, "sid")
 	require.NoError(t, err)
 
 	if len(expectedResources) > 0 {

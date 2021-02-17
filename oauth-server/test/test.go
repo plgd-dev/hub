@@ -1,6 +1,7 @@
 package test
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -10,11 +11,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/go-ocf/kit/codec/json"
 	"github.com/plgd-dev/kit/net/http/transport"
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/oauth-server/service"
+	"github.com/plgd-dev/cloud/oauth-server/uri"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -109,4 +112,45 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 	resp, err := c.Do(req)
 	require.NoError(t, err)
 	return resp
+}
+
+func GetServiceToken(t *testing.T) string {
+	reqBody := map[string]string{
+		"grant_type":         string(service.AllowedGrantType_CLIENT_CREDENTIALS),
+		uri.ClientIDQueryKey: service.ClientService,
+	}
+	d, err := json.Encode(reqBody)
+	require.NoError(t, err)
+
+	getReq := NewRequest(http.MethodPost, uri.Token, bytes.NewReader(d)).Build()
+	res := HTTPDo(t, getReq, false)
+	defer res.Body.Close()
+	require.Equal(t, http.StatusOK, res.StatusCode)
+	var body map[string]string
+	err = json.ReadFrom(res.Body, &body)
+	require.NoError(t, err)
+	token := body["access_token"]
+	require.NotEmpty(t, token)
+	return token
+}
+
+func GetDeviceAuthorizationCode(t *testing.T) string {
+	u, err := url.Parse(uri.Authorize)
+	require.NoError(t, err)
+	q, err := url.ParseQuery(u.RawQuery)
+	require.NoError(t, err)
+	q.Add(uri.ClientIDQueryKey, service.ClientDevice)
+	u.RawQuery = q.Encode()
+	getReq := NewRequest(http.MethodGet, u.String(), nil).Build()
+	res := HTTPDo(t, getReq, false)
+	defer res.Body.Close()
+	require.Equal(t, http.StatusOK, res.StatusCode)
+
+	var body map[string]string
+	err = json.ReadFrom(res.Body, &body)
+	require.NoError(t, err)
+	code := body[uri.CodeQueryKey]
+	require.NotEmpty(t, code)
+	return code
+
 }
