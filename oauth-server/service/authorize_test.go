@@ -15,14 +15,14 @@ import (
 func TestRequestHandler_authorize(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
-	Authorize(t, service.ClientUI, "https://localhost:3000", http.StatusTemporaryRedirect)
-	Authorize(t, service.ClientUI, "", http.StatusOK)
-	Authorize(t, "badClient", "", http.StatusBadRequest)
+	getAuthorize(t, service.ClientUI, "https://localhost:3000", http.StatusTemporaryRedirect)
+	getAuthorize(t, service.ClientUI, "", http.StatusOK)
+	getAuthorize(t, "badClient", "", http.StatusBadRequest)
 	// service doesn't allows use authorization_code grant type
-	Authorize(t, service.ClientService, "", http.StatusBadRequest)
+	getAuthorize(t, service.ClientService, "", http.StatusBadRequest)
 }
 
-func Authorize(t *testing.T, clientID string, redirectURI string, statusCode int) string {
+func getAuthorize(t *testing.T, clientID string, redirectURI string, statusCode int) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)

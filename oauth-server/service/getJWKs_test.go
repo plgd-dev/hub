@@ -14,6 +14,10 @@ func TestRequestHandler_getJWKs(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
+	getJWKs(t)
+}
+
+func getJWKs(t *testing.T) map[string]interface{} {
 	getReq := test.NewRequest(http.MethodGet, uri.JWKs, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer res.Body.Close()
@@ -23,5 +27,5 @@ func TestRequestHandler_getJWKs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, body["keys"])
 	require.Equal(t, 2, len(body["keys"].([]interface{})))
-
+	return body
 }
