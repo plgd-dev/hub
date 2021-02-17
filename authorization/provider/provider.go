@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/plgd-dev/cloud/authorization/oauth"
 )
@@ -20,14 +21,12 @@ type Config struct {
 }
 
 // New creates GitHub OAuth client
-func New(config Config) Provider {
+func New(config Config, tls *tls.Config) Provider {
 	switch config.Provider {
 	case "github":
 		return NewGitHubProvider(config)
-	case "test":
-		return NewTestProvider()
 	case "auth0":
-		return NewAuth0Provider(config)
+		return NewAuth0Provider(config, tls)
 	default:
 		return NewGenericProvider(config)
 	}

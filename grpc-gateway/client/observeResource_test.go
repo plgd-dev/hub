@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
@@ -18,7 +17,7 @@ func TestObservingResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()

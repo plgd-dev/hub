@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -38,7 +37,7 @@ func TestClient_GetDevices(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token: authTest.UserToken,
+				token: oauthTest.GetServiceToken(t),
 			},
 			want: map[string]client.DeviceDetails{
 				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
@@ -47,7 +46,7 @@ func TestClient_GetDevices(t *testing.T) {
 		{
 			name: "not-found",
 			args: args{
-				token: authTest.UserToken,
+				token: oauthTest.GetServiceToken(t),
 				opts:  []client.GetDevicesOption{client.WithResourceTypes("not-found")},
 			},
 			wantErr: true,
@@ -56,7 +55,7 @@ func TestClient_GetDevices(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()

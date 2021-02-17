@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/codec/json"
@@ -29,10 +29,10 @@ func TestObserveResource(t *testing.T) {
 	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-	tearDown := cloudTest.SetUp(ctx, t)
 
+	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -114,7 +114,7 @@ func webSocketConnection(t *testing.T, uri string) *websocket.Conn {
 	conn, _, err := d.Dial(uri, header)
 	require.NoError(t, err)
 	tokenMessage := service.TokenMessage{
-		Token: authTest.UserToken,
+		Token: oauthTest.GetServiceToken(t),
 	}
 	err = conn.WriteJSON(tokenMessage)
 	require.NoError(t, err)

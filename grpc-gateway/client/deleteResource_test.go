@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/cloud/test"
@@ -34,7 +33,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "/ligh/1 - method not allowd",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/ligh/1",
 			},
@@ -44,7 +43,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "/ligh/1 - permission denied",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oic/d",
 			},
@@ -54,7 +53,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 			},
@@ -64,7 +63,7 @@ func TestClient_DeleteResource(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
