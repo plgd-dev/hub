@@ -135,7 +135,7 @@ func (requestHandler *RequestHandler) token(w http.ResponseWriter, r *http.Reque
 	if clientCfg.AccessTokenType == AccessTokenType_JWT {
 		accessToken, accessTokenExpires, err = generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, r.Host, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
 	} else if clientCfg.AccessTokenType == AccessTokenType_REFERENCE {
-		accessToken = "accessToken"
+		accessToken = clientCfg.ID
 		accessTokenExpires = time.Now().Add(clientCfg.AccessTokenLifetime)
 	}
 	if err != nil {
