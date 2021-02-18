@@ -27,8 +27,8 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 
 	"github.com/kelseyhightower/envconfig"
-	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	test "github.com/plgd-dev/cloud/test"
@@ -162,9 +162,11 @@ func cbor2json(data []byte) (string, error) {
 }
 
 func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	codeEl := oauthTest.GetServiceToken(t)
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + "auth0" + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	testPostHandler(t, uri.SignUp, signUpEl, co)
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	deviceAccessToken := "device"
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + deviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	testPostHandler(t, uri.SignIn, signInEl, co)
 	publishResEl := []testEl{
 		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
@@ -266,6 +268,7 @@ func setUp(t *testing.T, withoutTLS ...bool) func() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	test.ClearDB(ctx, t)
+	oauthShutdown := oauthTest.SetUp(t)
 	auShutdown := authTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
@@ -275,6 +278,7 @@ func setUp(t *testing.T, withoutTLS ...bool) func() {
 		rdShutdown()
 		raShutdown()
 		auShutdown()
+		oauthShutdown()
 	}
 }
 
