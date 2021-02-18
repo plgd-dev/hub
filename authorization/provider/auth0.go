@@ -24,6 +24,7 @@ func NewAuth0Provider(config Config, tls *tls.Config) *Auth0Provider {
 				},
 			}
 		},
+		TLS: tls,
 	}
 }
 
@@ -32,6 +33,7 @@ type Auth0Provider struct {
 	Config        Config
 	OAuth2        *oauth2.Config
 	NewHTTPClient func() *http.Client
+	TLS           *tls.Config
 }
 
 // GetProviderName returns unique name of the provider
@@ -61,9 +63,6 @@ func (p *Auth0Provider) LogoutURL(returnTo string) string {
 
 // Exchange Auth Code for Access Token via OAuth
 func (p *Auth0Provider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
-	if p.GetProviderName() != authorizationProvider {
-		return nil, fmt.Errorf("unsupported authorization provider")
-	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.NewHTTPClient())
 
 	token, err := p.OAuth2.Exchange(ctx, authorizationCode)
@@ -103,6 +102,7 @@ func (p *Auth0Provider) Refresh(ctx context.Context, refreshToken string) (*Toke
 	restoredToken := &oauth2.Token{
 		RefreshToken: refreshToken,
 	}
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.NewHTTPClient())
 	tokenSource := p.OAuth2.TokenSource(ctx, restoredToken)
 	token, err := tokenSource.Token()
 	if err != nil {

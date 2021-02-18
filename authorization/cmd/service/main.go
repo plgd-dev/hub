@@ -49,11 +49,11 @@ func main() {
 	if cfg.SDK.ResponseMode == "" {
 		cfg.SDK.ResponseMode = "query"
 	}
-	deviceProvider := provider.New(cfg.Device)
+	deviceProvider := provider.New(cfg.Device, tlsConfig)
 	sdkProvider := provider.New(provider.Config{
 		Provider: "generic",
 		OAuth2:   cfg.SDK,
-	})
+	}, tlsConfig)
 	s, err := service.New(cfg, persistence, deviceProvider, sdkProvider)
 	if err != nil {
 		log.Fatalf("cannot parse config: %v", err)
