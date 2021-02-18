@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -16,6 +17,10 @@ const RebootTimeout = TestTimeout + RebootTakes
 
 func TestClient_FactoryReset(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
 	type args struct {
 		deviceID string
 	}
@@ -40,12 +45,7 @@ func TestClient_FactoryReset(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
@@ -67,6 +67,10 @@ func TestClient_FactoryReset(t *testing.T) {
 
 func TestClient_Reboot(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), RebootTimeout)
+	defer cancel()
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
 	type args struct {
 		deviceID string
 	}
@@ -91,12 +95,7 @@ func TestClient_Reboot(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), RebootTimeout)
-	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
