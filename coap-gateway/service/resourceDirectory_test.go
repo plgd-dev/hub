@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -88,6 +88,7 @@ var tblResourceDirectory = []testEl{
 }
 
 func TestResourceDirectoryPostHandler(t *testing.T) {
+	deviceAccessToken := "device"
 	shutdown := setUp(t)
 	defer shutdown()
 
@@ -97,11 +98,12 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	codeEl := oauthTest.GetDeviceAuthorizationCode(t)
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + "auth0" + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + deviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	t.Run(signInEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignIn, signInEl, co)
 	})
@@ -116,6 +118,7 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 
 func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	//set counter 0, when other test run with this that it can be modified
+	deviceAccessToken := "device"
 	deletetblResourceDirectory := []testEl{
 		{"NotExist1", input{coapCodes.DELETE, ``, []string{"di=c", "ins=5"}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},                 // Non-existent device ID.
 		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `cannot parse queries: deviceID not found`, nil}},                                         // Device ID empty.
@@ -133,11 +136,12 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	codeEl := oauthTest.GetDeviceAuthorizationCode(t)
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + "auth0" + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + deviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	t.Run(signInEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignIn, signInEl, co)
 	})
@@ -175,6 +179,7 @@ type TestGetSelector struct {
 }
 
 func TestResourceDirectoryGetSelector(t *testing.T) {
+	deviceAccessToken := "device"
 	tbl := []testEl{
 		{"GetSelector", input{coapCodes.GET, ``, []string{}}, output{coapCodes.Content, TestGetSelector{}, nil}},
 	}
@@ -188,11 +193,12 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	codeEl := oauthTest.GetDeviceAuthorizationCode(t)
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + "auth0" + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
 	t.Run(signUpEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignUp, signUpEl, co)
 	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + deviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
 	t.Run(signInEl.name, func(t *testing.T) {
 		testPostHandler(t, uri.SignIn, signInEl, co)
 	})
