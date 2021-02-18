@@ -13,7 +13,6 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
-	oauthProvider "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,10 +43,10 @@ func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provi
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
 	if deviceProvider == nil {
-		deviceProvider = oauthProvider.NewTestProvider()
+		deviceProvider = NewTestProvider()
 	}
 	if sdkProvider == nil {
-		deviceProvider = oauthProvider.NewTestProvider()
+		deviceProvider = NewTestProvider()
 	}
 	persistence, err := mongodb.NewStore(context.Background(), cfg.MongoDB, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
