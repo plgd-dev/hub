@@ -36,6 +36,12 @@ ARG service=certificate-authority
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
+#oauth-server
+ARG service=oauth-server
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+
+
 #certificate-generator
 ARG service=kit
 WORKDIR /
@@ -68,6 +74,7 @@ COPY --from=build /go/bin/authorization /usr/local/bin/authorization
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
+COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
 COPY --from=build-web /web/build /usr/local/var/www
 COPY run.sh /usr/local/bin/run.sh
 
@@ -102,15 +109,19 @@ ENV AUTHORIZATION_HTTP_ADDRESS="0.0.0.0:9085"
 ENV CERTIFICATE_AUTHORITY_ADDRESS="0.0.0.0:9087"
 ENV CERTIFICATE_AUTHORITY_DISABLE_VERIFY_CLIENTS=true
 
-ENV JWKS_URL="https://$AUTHORIZATION_HTTP_ADDRESS/.well-known/jwks.json"
+ENV OAUTH_SERVER_ADDRESS="0.0.0.0:9088"
+ENV OAUTH_SERVER_ADDRESS_DISABLE_VERIFY_CLIENTS=true
+
+ENV JWKS_URL="https://$OAUTH_SERVER_ADDRESS/.well-known/jwks.json"
 ENV RESOURCE_AGGREGATE_ADDRESS="localhost:9083"
 ENV RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES="8"
-ENV RESOURCE_DIRECTORY_ADDRESS="localhost:9082"
+ENV RESOURCE_DIRECTORY_ADDRESS="127.0.0.1:9082"
 ENV INITIALIZE_CERITIFICATES=true
 ENV MONGO_PATH="/data/db"
 ENV MONGO_PORT=10000
 ENV NATS_PORT=10001
 ENV CERITIFICATES_PATH="/data/certs"
+ENV OAUTH_KEYS_PATH="/data/oauth/keys"
 ENV LOGS_PATH="/data/log"
 
 ENTRYPOINT ["/usr/local/bin/run.sh"]

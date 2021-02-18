@@ -102,6 +102,7 @@ func NewHTTP(requestHandler *RequestHandler) *http.Server {
 	r.HandleFunc(uri.Token, requestHandler.tokenOptions).Methods(http.MethodOptions)
 	r.HandleFunc(uri.Token, requestHandler.token).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc(uri.UserInfo, requestHandler.getUserInfo).Methods(http.MethodGet)
+	r.HandleFunc(uri.LogOut, requestHandler.logOut)
 
 	return &http.Server{Handler: r}
 }

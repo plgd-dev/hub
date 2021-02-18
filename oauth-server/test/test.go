@@ -152,5 +152,4 @@ func GetDeviceAuthorizationCode(t *testing.T) string {
 	code := body[uri.CodeQueryKey]
 	require.NotEmpty(t, code)
 	return code
-
 }

@@ -32,6 +32,10 @@ export LISTEN_FILE_CERT_DIR_PATH="$INTERNAL_CERT_DIR_PATH"
 export LISTEN_FILE_CERT_NAME="$GRPC_INTERNAL_CERT_NAME"
 export LISTEN_FILE_CERT_KEY_NAME="$GRPC_INTERNAL_CERT_KEY_NAME"
 
+#OAUTH-SEVER KEYS
+export OAUTH_ID_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/id-token.pem
+export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
+
 export MONGODB_HOST="localhost:$MONGO_PORT"
 export MONGODB_URL="mongodb://$MONGODB_HOST"
 export MONGODB_URI="mongodb://$MONGODB_HOST"
@@ -41,14 +45,18 @@ export MONGO_URI="mongodb://$MONGODB_HOST"
 export NATS_URL="nats://localhost:$NATS_PORT"
 
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
-export OAUTH_ENDPOINT_TOKEN_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/token
-export OAUTH_ENDPOINT_CODE_URL=https://${AUTHORIZATION_HTTP_ADDRESS}/api/authz/code
+export OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token
+export OAUTH_CLIENT_ID=service
+export OAUTH_ENDPOINT_CODE_URL=https://${OAUTH_SERVER_ADDRESS}/authorize
 export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
+export SERVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
 
 export FQDN_AUTHORIZATION_HTTP=${FQDN}:`echo ${AUTHORIZATION_HTTP_ADDRESS} | rev | cut -d':' -f 1 | rev`
 export FQDN_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_AUTHORIZATION_HTTP}/api/authz/token
 export FQDN_OAUTH_ENDPOINT_CODE_URL=https://${FQDN_AUTHORIZATION_HTTP}/api/authz/code
 export FQDN_CERTIFICATE_AUTHORITY_ADDRESS=${FQDN}:`echo ${CERTIFICATE_AUTHORITY_ADDRESS} | rev | cut -d':' -f 1 | rev`
+export FQDN_OAUTH_SERVER=${FQDN}:`echo ${OAUTH_SERVER_ADDRESS} | rev | cut -d':' -f 1 | rev`
+export FQDN_HTTP_GATEWAY=${FQDN}:`echo ${HTTP_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
@@ -67,6 +75,10 @@ if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
   certificate-generator --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
   echo "generating COAP-GW cert"
   certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+
+  mkdir -p ${OAUTH_KEYS_PATH}
+  openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
+	openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}  
 fi
 
 mkdir -p $MONGO_PATH
@@ -109,10 +121,47 @@ while true; do
   echo "Try to reconnect to mongodb(${MONGODB_HOST}) $i"
   sleep 1
 done
+
+# oauth-server
+echo "starting oauth-server"
+cat > /data/oauth-server.yaml << EOF
+Address: ${OAUTH_SERVER_ADDRESS}
+Listen:
+  Type: file
+  File:
+    CAPool: ${CA_POOL_CERT_PATH}
+    TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
+    DirPath: ${INTERNAL_CERT_DIR_PATH}
+    TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
+    DisableVerifyClientCertificate: ${OAUTH_SERVER_ADDRESS_DISABLE_VERIFY_CLIENTS}
+    UseSystemCertPool: false
+IDTokenPrivateKeyPath: ${OAUTH_ID_TOKEN_KEY_PATH}
+AccessTokenKeyPrivateKeyPath: ${OAUTH_ACCESS_TOKEN_KEY_PATH}
+EOF
+ADDRESS=${HTTP_GATEWAY_ADDRESS} \
+LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
+oauth-server --config=/data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
+status=$?
+oauth_server_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start oauth-server: $status"
+  sync
+  cat $LOGS_PATH/oauth-server.log
+  exit $status
+fi
     
 # authorization
 echo "starting authorization"
-ADDRESS=${AUTHORIZATION_ADDRESS} HTTP_ADDRESS=${AUTHORIZATION_HTTP_ADDRESS} DEVICE_PROVIDER="test" authorization >$LOGS_PATH/authorization.log 2>&1 &
+ADDRESS=${AUTHORIZATION_ADDRESS} \
+HTTP_ADDRESS=${AUTHORIZATION_HTTP_ADDRESS} \
+DEVICE_PROVIDER=auth0 \
+DEVICE_PROVIDER_TYPE=test \
+DEVICE_OAUTH_CLIENT_ID=device \
+DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_OAUTH_SERVER}/authorize \
+DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_OAUTH_SERVER}/oauth/token \
+SDK_OAUTH_CLIENT_ID=service \
+SDK_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_OAUTH_SERVER}/authorize \
+authorization >$LOGS_PATH/authorization.log 2>&1 &
 status=$?
 authorization_pid=$!
 if [ $status -ne 0 ]; then
@@ -154,7 +203,7 @@ SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${FQDN_OAUTH_ENDPOINT_CODE_URL} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDID=${COAP_GATEWAY_CLOUD_ID} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDURL="coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}" \
 SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${FQDN_CERTIFICATE_AUTHORITY_ADDRESS} \
-SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="test" \
+SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="auth0" \
 SERVICE_CLIENT_CONFIGURATION_JWTCLAIMOWNERID="sub" \
 resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
 status=$?
@@ -165,6 +214,17 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/resource-directory.log
   exit $status
 fi
+
+# waiting for resource-directory. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${RESOURCE_DIRECTORY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to resource-directory(${RESOURCE_DIRECTORY_ADDRESS}) $i"
+  sleep 1
+done
 
 # coap-gateway-unsecure
 echo "starting coap-gateway-unsecure"
@@ -251,8 +311,11 @@ CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
 UI:
   enabled: true
   oauthClient:
-    domain: ${FQDN_AUTHORIZATION_HTTP}
-    clientID: clientID
+    domain: ${FQDN_OAUTH_SERVER}
+    clientID: ui
+    audience: ${FQDN_HTTP_GATEWAY}
+    scope: "openid offline_access"
+    httpGatewayAddress: https://${FQDN_HTTP_GATEWAY}
 EOF
 ADDRESS=${HTTP_GATEWAY_ADDRESS} \
 LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
@@ -356,6 +419,13 @@ while sleep 10; do
     echo "certificate-authority has already exited."
     sync
     cat $LOGS_PATH/certificate-authority.log
+   exit 1
+  fi
+  ps aux |grep $oauth_server_pid |grep -q -v grep
+  if [ $? -ne 0 ]; then 
+    echo "oauth-server has already exited."
+    sync
+    cat $LOGS_PATH/oauth-server.log
    exit 1
   fi
 done

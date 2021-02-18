@@ -108,7 +108,10 @@ func (requestHandler *RequestHandler) token(w http.ResponseWriter, r *http.Reque
 	var clientCfg *Client
 	var idToken string
 	var err error
-	if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
+	//for unsecure iotivity lite test
+	if tokenReq.Code == "test" && tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
+		clientCfg = requestHandler.config.Clients.Find(tokenReq.ClientID)
+	} else if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
 		authSessionI, ok := requestHandler.cache.Get(tokenReq.Code)
 		if !ok {
 			writeError(w, fmt.Errorf("invalid code '%v'", tokenReq.Code), http.StatusInternalServerError)
@@ -156,7 +159,7 @@ func (requestHandler *RequestHandler) token(w http.ResponseWriter, r *http.Reque
 		"expires_in":    int64(accessTokenExpires.Sub(time.Now()).Seconds()),
 		"scope":         "openid profile email",
 		"token_type":    "Bearer",
-		"refresh_token": "refresh",
+		"refresh_token": "refresh-token",
 	}
 
 	jsonResponseWriter(w, resp)
