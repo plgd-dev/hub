@@ -28,11 +28,11 @@ func (s *deviceSubscription) DeviceID() string {
 }
 
 type ResourceLinks struct {
-	links   []pb.ResourceLink
+	links   []*pb.ResourceLink
 	version uint64
 }
 
-func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links []ResourceLink) error {
+func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED {
@@ -42,15 +42,7 @@ func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context,
 	if !found {
 		return nil
 	}
-	toSend := make([]*pb.ResourceLink, 0, 32)
-	for _, l := range links {
-		if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
-			continue
-		}
-		link := l.link
-		toSend = append(toSend, &link)
-	}
-	if len(toSend) == 0 && len(links) > 0 {
+	if len(links.links) == 0 || s.FilterByVersion(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -58,13 +50,13 @@ func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context,
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourcePublished_{
 			ResourcePublished: &pb.Event_ResourcePublished{
-				Links: toSend,
+				Links: links.links,
 			},
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Context, links []ResourceLink) error {
+func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED {
@@ -74,15 +66,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Contex
 	if !found {
 		return nil
 	}
-	toSend := make([]*pb.ResourceLink, 0, 32)
-	for _, l := range links {
-		if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
-			continue
-		}
-		link := l.link
-		toSend = append(toSend, &link)
-	}
-	if len(toSend) == 0 && len(links) > 0 {
+	if len(links.links) == 0 || s.FilterByVersion(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -90,7 +74,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Contex
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUnpublished_{
 			ResourceUnpublished: &pb.Event_ResourceUnpublished{
-				Links: toSend,
+				Links: links.links,
 			},
 		},
 	})
@@ -229,16 +213,15 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 }
 
 func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
-	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
-	toSend := make([]ResourceLink, 0, 32)
-	for _, model := range models {
-		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, model)
-		if !ok {
-			continue
-		}
-		toSend = append(toSend, link)
+	models := s.resourceProjection.Models(commands.MakeResourceID(s.DeviceID(), commands.ResourceLinksHref))
+	if len(models) != 1 {
+		return fmt.Errorf("resource links resource not available")
 	}
-	err := s.NotifyOfPublishedResource(ctx, toSend)
+	links, ok := makeLinksRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, models[0])
+	if !ok {
+		return fmt.Errorf("unable to create resource links")
+	}
+	err := s.NotifyOfPublishedResourceLinks(ctx, links)
 	if err != nil {
 		return fmt.Errorf("cannot send resource published: %w", err)
 	}
@@ -247,16 +230,7 @@ func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) err
 }
 
 func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) error {
-	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
-	toSend := make([]ResourceLink, 0, 32)
-	for _, model := range models {
-		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED, model)
-		if !ok {
-			continue
-		}
-		toSend = append(toSend, link)
-	}
-	err := s.NotifyOfUnpublishedResource(ctx, toSend)
+	err := s.NotifyOfUnpublishedResourceLinks(ctx, ResourceLinks{})
 	if err != nil {
 		return fmt.Errorf("cannot send resource published: %w", err)
 	}

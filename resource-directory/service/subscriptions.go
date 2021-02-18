@@ -299,16 +299,14 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 	return nil
 }
 
-func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Event, m eventstore.Model) (ResourceLink, bool) {
-	c := m.(*resourceCtx).Clone()
+func makeLinksRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Event, m eventstore.Model) (ResourceLinks, bool) {
+	c := m.(*resourceLinksCtx).Clone()
 	switch eventType {
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
-		if c.isPublished {
-			return ResourceLink{
-				link:    pb.RAResourceToProto(c.resourceId),
-				version: c.onResourcePublishedVersion,
-			}, true
-		}
+		return ResourceLink{
+			link:    pb.RAResourceToProto(c.resourceId),
+			version: c.onResourcePublishedVersion,
+		}, true
 	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
 		if !c.isPublished {
 			return ResourceLink{

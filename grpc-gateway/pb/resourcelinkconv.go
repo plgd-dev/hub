@@ -76,7 +76,7 @@ func (l ResourceLink) ToRAProto() commands.Resource {
 }
 
 func (l ResourceLink) ToSchema() schema.ResourceLink {
-	id := (&ResourceId{DeviceId: l.GetDeviceId(), Href: l.GetHref()}).ToUUID()
+	id := (&commands.ResourceId{DeviceId: l.GetDeviceId(), Href: l.GetHref()}).ToUUID()
 	return schema.ResourceLink{
 		ID:                    id,
 		Anchor:                l.GetAnchor(),
@@ -105,14 +105,14 @@ func RAEndpointInformationsToProto(e []*commands.EndpointInformation) []*Endpoin
 	return r
 }
 
-func RAResourceToProto(res *commands.Resource) ResourceLink {
+func RAResourceToProto(res *commands.Resource) *ResourceLink {
 	var p *Policies
 	if res.Policies != nil {
 		p = &Policies{
 			BitFlags: res.Policies.GetBitFlags(),
 		}
 	}
-	return ResourceLink{
+	return &ResourceLink{
 		Anchor:                res.Anchor,
 		DeviceId:              res.DeviceId,
 		EndpointInformations:  RAEndpointInformationsToProto(res.EndpointInformations),
@@ -125,8 +125,8 @@ func RAResourceToProto(res *commands.Resource) ResourceLink {
 	}
 }
 
-func RAResourcesToProto(resources map[string]*commands.Resource) []ResourceLink {
-	var resourceLinks = make([]ResourceLink, 0, len(resources))
+func RAResourcesToProto(resources map[string]*commands.Resource) []*ResourceLink {
+	var resourceLinks = make([]*ResourceLink, 0, len(resources))
 	for _, res := range resources {
 		resourceLinks = append(resourceLinks, RAResourceToProto(res))
 	}
