@@ -15,3 +15,23 @@ export const errorCodes = {
   DEADLINE_EXCEEDED: 'DeadlineExceeded',
   INVALID_ARGUMENT: 'InvalidArgument',
 }
+
+export const resourceModalTypes = {
+  UPDATE_RESOURCE: 'update',
+  CREATE_RESOURCE: 'create',
+}
+
+export const knownInterfaces = {
+  OIC_IF_A: 'oic.if.a',
+  OIC_IF_BASELINE: 'oic.if.baseline',
+  OIC_IF_CREATE: 'oic.if.create',
+}
+
+export const defaultNewResource = {
+  rt: [],
+  if: [knownInterfaces.OIC_IF_A, knownInterfaces.OIC_IF_BASELINE],
+  rep: {},
+  p: {
+    bm: 3,
+  },
+}

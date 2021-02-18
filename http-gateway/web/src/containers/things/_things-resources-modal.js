@@ -9,25 +9,33 @@ import { Badge } from '@/components/badge'
 import { Label } from '@/components/label'
 import { Modal } from '@/components/modal'
 
+import { resourceModalTypes } from './constants'
 import { messages as t } from './things-i18n'
 
 const NOOP = () => {}
+const { CREATE_RESOURCE, UPDATE_RESOURCE } = resourceModalTypes
 
-export const ThingsResourcesUpdateModal = ({
+export const ThingsResourcesModal = ({
   data,
+  deviceId,
   resourceData,
   onClose,
   retrieving,
   fetchResource,
   isDeviceOnline,
-  updating,
+  loading,
   updateResource,
+  type,
 }) => {
   const { formatMessage: _ } = useIntl()
   const editor = useRef()
-  const [selectedIntefaceData, setSelectedInterfaceData] = useState(null)
+  const [jsonData, setJsonData] = useState(null)
   const [interfaceJsonError, setInterfaceJsonError] = useState(false)
 
+  const disabled = retrieving || loading
+  const isUpdateModal = type === UPDATE_RESOURCE
+  const updateLabel = !loading ? _(t.update) : _(t.updating)
+  const createLabel = !loading ? _(t.create) : _(t.creating)
   const initialInterfaceValue = { value: '', label: _(t.deviceInterfaces) }
   const [selectedInterface, setSelectedInterface] = useState(
     initialInterfaceValue
@@ -35,7 +43,7 @@ export const ThingsResourcesUpdateModal = ({
 
   useEffect(
     () => {
-      setSelectedInterfaceData(resourceData)
+      setJsonData(resourceData)
 
       if (resourceData) {
         // Set the retrieved JSON object to the editor
@@ -49,8 +57,6 @@ export const ThingsResourcesUpdateModal = ({
     [resourceData]
   )
 
-  const disabled = retrieving || updating
-
   const handleRetrieve = () => {
     fetchResource({
       href: data?.href,
@@ -58,24 +64,28 @@ export const ThingsResourcesUpdateModal = ({
     })
   }
 
-  const handleUpdate = () => {
-    updateResource(
-      {
-        href: data?.href,
-        currentInterface: selectedInterface.value,
-      },
-      selectedIntefaceData
-    )
+  const handleSubmit = () => {
+    if (isUpdateModal) {
+      updateResource(
+        {
+          href: data?.href,
+          currentInterface: selectedInterface.value,
+        },
+        jsonData
+      )
+    } else {
+      console.log('create resource')
+    }
   }
 
   const handleCleanup = () => {
     setSelectedInterface(initialInterfaceValue)
-    setSelectedInterfaceData(null)
+    setJsonData(null)
   }
 
   const handleOnEditorChange = json => {
     if (json) {
-      setSelectedInterfaceData(json)
+      setJsonData(json)
     }
   }
 
@@ -85,24 +95,28 @@ export const ThingsResourcesUpdateModal = ({
     return (
       <>
         <Label title={_(t.deviceId)} inline>
-          {data?.di}
+          {deviceId}
         </Label>
-        <Label title={_(t.types)} inline>
+        <Label title={isUpdateModal ? _(t.types) : _(t.supportedTypes)} inline>
           <div className="align-items-end badges-box-vertical">
             {data?.types?.map?.(type => <Badge key={type}>{type}</Badge>) ||
               '-'}
           </div>
         </Label>
-        <Label title={_(t.interfaces)} inline>
-          <div className="align-items-end badges-box-vertical">
-            {data?.interfaces?.map?.(ifs => <Badge key={ifs}>{ifs}</Badge>) ||
-              '-'}
-          </div>
-        </Label>
+
+        {isUpdateModal && (
+          <Label title={_(t.interfaces)} inline>
+            <div className="align-items-end badges-box-vertical">
+              {data?.interfaces?.map?.(ifs => <Badge key={ifs}>{ifs}</Badge>) ||
+                '-'}
+            </div>
+          </Label>
+        )}
+
         <div className="m-t-20 m-b-0">
-          {selectedIntefaceData && (
+          {jsonData && (
             <Editor
-              json={selectedIntefaceData}
+              json={jsonData}
               onChange={handleOnEditorChange}
               onError={handleOnEditorError}
               editorRef={node => {
@@ -123,28 +137,36 @@ export const ThingsResourcesUpdateModal = ({
 
     return (
       <div className="w-100 d-flex justify-content-between align-items-center">
-        <Select
-          isDisabled={disabled || !isDeviceOnline}
-          value={selectedInterface}
-          onChange={setSelectedInterface}
-          options={interfaces}
-        />
+        {isUpdateModal ? (
+          <Select
+            isDisabled={disabled || !isDeviceOnline}
+            value={selectedInterface}
+            onChange={setSelectedInterface}
+            options={interfaces}
+          />
+        ) : (
+          <div />
+        )}
+
         <div>
-          <Button
-            variant="secondary"
-            onClick={handleRetrieve}
-            loading={retrieving}
-            disabled={disabled}
-          >
-            {!retrieving ? _(t.retrieve) : _(t.retrieving)}
-          </Button>
+          {isUpdateModal && (
+            <Button
+              variant="secondary"
+              onClick={handleRetrieve}
+              loading={retrieving}
+              disabled={disabled}
+            >
+              {!retrieving ? _(t.retrieve) : _(t.retrieving)}
+            </Button>
+          )}
+
           <Button
             variant="primary"
-            onClick={handleUpdate}
-            loading={updating}
+            onClick={handleSubmit}
+            loading={loading}
             disabled={disabled || interfaceJsonError}
           >
-            {!updating ? _(t.update) : _(t.updating)}
+            {isUpdateModal ? updateLabel : createLabel}
           </Button>
         </div>
       </div>
@@ -164,24 +186,27 @@ export const ThingsResourcesUpdateModal = ({
   )
 }
 
-ThingsResourcesUpdateModal.propTypes = {
+ThingsResourcesModal.propTypes = {
   onClose: PropTypes.func,
   data: PropTypes.shape({
-    di: PropTypes.string.isRequired,
     href: PropTypes.string.isRequired,
     types: PropTypes.arrayOf(PropTypes.string),
     interfaces: PropTypes.arrayOf(PropTypes.string),
   }),
+  deviceId: PropTypes.string,
   resourceData: PropTypes.object,
   retrieving: PropTypes.bool.isRequired,
   fetchResource: PropTypes.func.isRequired,
-  updating: PropTypes.bool.isRequired,
+  loading: PropTypes.bool.isRequired,
   updateResource: PropTypes.func.isRequired,
   isDeviceOnline: PropTypes.bool.isRequired,
+  type: PropTypes.oneOf([CREATE_RESOURCE, UPDATE_RESOURCE]),
 }
 
-ThingsResourcesUpdateModal.defaultProps = {
+ThingsResourcesModal.defaultProps = {
   onClose: NOOP,
   data: null,
+  deviceId: null,
   resourceData: null,
+  type: UPDATE_RESOURCE,
 }

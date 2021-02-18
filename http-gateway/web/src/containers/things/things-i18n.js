@@ -17,6 +17,10 @@ export const messages = defineMessages({
     id: 'things.types',
     defaultMessage: 'Types',
   },
+  supportedTypes: {
+    id: 'things.supportedTypes',
+    defaultMessage: 'Supported Types',
+  },
   interfaces: {
     id: 'things.interfaces',
     defaultMessage: 'Interfaces',
@@ -57,6 +61,14 @@ export const messages = defineMessages({
     id: 'things.updating',
     defaultMessage: 'Updating',
   },
+  create: {
+    id: 'things.create',
+    defaultMessage: 'Create',
+  },
+  creating: {
+    id: 'things.creating',
+    defaultMessage: 'Creating',
+  },
   retrieve: {
     id: 'things.retrieve',
     defaultMessage: 'Retrieve',
@@ -64,6 +76,18 @@ export const messages = defineMessages({
   retrieving: {
     id: 'things.retrieving',
     defaultMessage: 'Retrieving',
+  },
+  delete: {
+    id: 'things.delete',
+    defaultMessage: 'Delete',
+  },
+  deleting: {
+    id: 'things.deleting',
+    defaultMessage: 'Deleting',
+  },
+  actions: {
+    id: 'things.actions',
+    defaultMessage: 'Actions',
   },
   resourceWasUpdated: {
     id: 'things.resourceWasUpdated',
