@@ -11,11 +11,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -76,10 +76,10 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
 	tearDown := setUp(ctx, t, deviceID, events)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(c2cConnectorTest.RESOURCE_DIRECTORY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
