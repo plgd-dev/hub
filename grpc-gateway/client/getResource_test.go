@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
@@ -17,6 +18,10 @@ import (
 
 func TestClient_GetResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
 	type args struct {
 		token    string
 		deviceID string
@@ -93,12 +98,7 @@ func TestClient_GetResource(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
@@ -124,13 +124,12 @@ func TestClient_GetResource(t *testing.T) {
 
 func TestClient_GetResourceUnavaliable(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
-
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())

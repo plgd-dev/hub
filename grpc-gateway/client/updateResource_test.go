@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -15,6 +16,10 @@ import (
 
 func TestClient_UpdateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
 	type args struct {
 		token    string
 		deviceID string
@@ -84,12 +89,8 @@ func TestClient_UpdateResource(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())

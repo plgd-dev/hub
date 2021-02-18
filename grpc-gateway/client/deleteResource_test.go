@@ -12,10 +12,17 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_DeleteResource(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
+
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		token    string
@@ -61,12 +68,8 @@ func TestClient_DeleteResource(t *testing.T) {
 			wantErrCode: codes.NotFound,
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
