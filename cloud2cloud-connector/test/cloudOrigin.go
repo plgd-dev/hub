@@ -8,7 +8,8 @@ import (
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/cloud/authorization/uri"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
+	"github.com/plgd-dev/cloud/oauth-server/uri"
 )
 
 const AUTH_HOST = "localhost:30000"
@@ -16,19 +17,24 @@ const AUTH_HTTP_HOST = "localhost:30001"
 const RESOURCE_AGGREGATE_HOST = "localhost:30003"
 const RESOURCE_DIRECTORY_HOST = "localhost:30004"
 const C2C_CONNECTOR_HOST = "localhost:30006"
+const OAUTH_HOST = "localhost:30007"
 const OAUTH_MANAGER_CLIENT_ID = "service"
 
 var C2C_CONNECTOR_EVENTS_URL = "https://" + C2C_CONNECTOR_HOST + c2curi.Events
 var C2C_CONNECTOR_OAUTH_CALLBACK = "https://" + C2C_CONNECTOR_HOST + "/oauthCbk"
-var OAUTH_MANAGER_ENDPOINT_TOKENURL = "https://" + AUTH_HTTP_HOST + uri.AccessToken
-var OAUTH_MANAGER_ENDPOINT_AUTHURL = "https://" + AUTH_HTTP_HOST + uri.AuthorizationCode
-var JWKS_URL = "https://" + AUTH_HTTP_HOST + uri.JWKs
+var OAUTH_MANAGER_ENDPOINT_TOKENURL = "https://" + OAUTH_HOST + uri.Token
+var OAUTH_MANAGER_ENDPOINT_AUTHURL = "https://" + OAUTH_HOST + uri.Authorize
+var JWKS_URL = "https://" + OAUTH_HOST + uri.JWKs
 
 const cloudConnectorDB = "cloudConnectorDB"
 const cloudConnectorNatsURL = "nats://localhost:34222"
 const cloudConnectormongodbURL = "nats://localhost:34223"
 
 func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
+	oauthCfg := oauthTest.MakeConfig(t)
+	oauthCfg.Address = OAUTH_HOST
+	oauthShutdown := oauthTest.New(t, oauthCfg)
+
 	authCfg := authService.MakeConfig(t)
 	authCfg.Addr = AUTH_HOST
 	authCfg.HTTPAddr = AUTH_HTTP_HOST
@@ -51,6 +57,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg.Nats.URL = cloudConnectorNatsURL
 	rdCfg.Service.AuthServerAddr = AUTH_HOST
 	rdCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
+	rdCfg.Service.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
 	rdCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
 	rdCfg.Listen.File.DisableVerifyClientCertificate = true
 	rdShutdown := rdService.New(t, rdCfg)
@@ -60,6 +67,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.Service.Addr = C2C_CONNECTOR_HOST
 	c2cConnectorCfg.Service.AuthServerAddr = AUTH_HOST
 	c2cConnectorCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
+	c2cConnectorCfg.Service.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
 	c2cConnectorCfg.Service.OAuthCallback = C2C_CONNECTOR_OAUTH_CALLBACK
 	c2cConnectorCfg.Service.EventsURL = C2C_CONNECTOR_EVENTS_URL
 	c2cConnectorCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
@@ -72,5 +80,6 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 		rdShutdown()
 		raShutdown()
 		authShutdown()
+		oauthShutdown()
 	}
 }

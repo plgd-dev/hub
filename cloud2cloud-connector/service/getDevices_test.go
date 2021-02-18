@@ -18,13 +18,13 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/authorization/oauth"
-	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	c2cGwUri "github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/codec/json"
@@ -34,6 +34,7 @@ import (
 func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
 	cloud1 := test.SetUp(ctx, t)
 	cloud2 := c2cConnectorTest.SetUpCloudWithConnector(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	cloud1Conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -58,7 +59,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 			RootCAs: rootCAs,
 		},
 		OAuth: oauth.Config{
-			ClientID:     testCfg.OAUTH_MANAGER_CLIENT_ID,
+			ClientID:     "ui",
 			ClientSecret: "testClientSecret",
 			//Scopes:       []string{"testScopes"},
 			Endpoint: oauth.Endpoint{
@@ -71,14 +72,14 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)
 
-	req := test.NewHTTPRequest(http.MethodPost, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(provider.UserToken).Build(ctx, t)
+	req := test.NewHTTPRequest(http.MethodPost, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp := test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	var linkCloud store.LinkedCloud
 	err = json.ReadFrom(resp.Body, &linkCloud)
 	require.NoError(t, err)
-	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(provider.UserToken).Build(ctx, t)
+	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp = test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
@@ -86,7 +87,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	// for pulling
 	time.Sleep(time.Second * 10)
 
-	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(provider.UserToken).Build(ctx, t)
+	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp = test.DoHTTPRequest(t, req)
 	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
@@ -94,7 +95,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	fmt.Println(string(b))
 
 	return func() {
-		req := test.NewHTTPRequest(http.MethodDelete, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(provider.UserToken).Build(ctx, t)
+		req := test.NewHTTPRequest(http.MethodDelete, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 		resp := test.DoHTTPRequest(t, req)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		defer resp.Body.Close()
@@ -136,10 +137,9 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
-
 	tearDown := setUp(ctx, t, deviceID, events)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(c2cConnectorTest.RESOURCE_DIRECTORY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -180,58 +180,56 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 		name string
 		args args
 	}{
-		/*
-			{
-				name: "full pulling",
-			},
-			{
-				name: "full events",
-				args: args{
-					events: store.Events{
-						Devices:  events.AllDevicesEvents,
-						Device:   events.AllDeviceEvents,
-						Resource: events.AllResourceEvents,
-					},
+		{
+			name: "full pulling",
+		},
+		{
+			name: "full events",
+			args: args{
+				events: store.Events{
+					Devices:  events.AllDevicesEvents,
+					Device:   events.AllDeviceEvents,
+					Resource: events.AllResourceEvents,
 				},
 			},
-			{
-				name: "resource events + device,devices pulling",
-				args: args{
-					events: store.Events{
-						Resource: events.AllResourceEvents,
-					},
+		},
+		{
+			name: "resource events + device,devices pulling",
+			args: args{
+				events: store.Events{
+					Resource: events.AllResourceEvents,
 				},
 			},
+		},
 
-			{
-				name: "resource, device events + devices pulling",
-				args: args{
-					events: store.Events{
-						Device:   events.AllDeviceEvents,
-						Resource: events.AllResourceEvents,
-					},
+		{
+			name: "resource, device events + devices pulling",
+			args: args{
+				events: store.Events{
+					Device:   events.AllDeviceEvents,
+					Resource: events.AllResourceEvents,
 				},
 			},
+		},
 
-			{
-				name: "device, devices events + resource pulling",
-				args: args{
-					events: store.Events{
-						Devices: events.AllDevicesEvents,
-						Device:  events.AllDeviceEvents,
-					},
+		{
+			name: "device, devices events + resource pulling",
+			args: args{
+				events: store.Events{
+					Devices: events.AllDevicesEvents,
+					Device:  events.AllDeviceEvents,
 				},
 			},
+		},
 
-			{
-				name: "pull resource, devices + static device events",
-				args: args{
-					events: store.Events{
-						StaticDeviceEvents: true,
-					},
+		{
+			name: "pull resource, devices + static device events",
+			args: args{
+				events: store.Events{
+					StaticDeviceEvents: true,
 				},
 			},
-		*/
+		},
 		{
 			name: "resource, devices events + static device events",
 			args: args{
