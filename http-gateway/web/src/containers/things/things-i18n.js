@@ -98,6 +98,15 @@ export const messages = defineMessages({
     defaultMessage:
       'The resource was updated successfully, changes will be applied once the device is online.',
   },
+  resourceWasCreated: {
+    id: 'things.resourceWasCreated',
+    defaultMessage: 'The resource was created successfully.',
+  },
+  resourceWasCreatedOffline: {
+    id: 'things.resourceWasCreatedOffline',
+    defaultMessage:
+      'The resource was created successfully, changes will be applied once the device is online.',
+  },
   invalidArgument: {
     id: 'things.invalidArgument',
     defaultMessage: 'There was an invalid argument in the JSON structure.',
@@ -105,12 +114,22 @@ export const messages = defineMessages({
   resourceUpdateSuccess: {
     id: 'things.resourceUpdateSuccess',
     defaultMessage: 'Resource update successful',
-    description: 'Title of the toast message on resource retrieve success.',
+    description: 'Title of the toast message on resource update success.',
   },
   resourceUpdateError: {
     id: 'things.resourceUpdateError',
     defaultMessage: 'Resource update failed',
     description: 'Title of the toast message on resource update error.',
+  },
+  resourceCreateSuccess: {
+    id: 'things.resourceCreateSuccess',
+    defaultMessage: 'Resource created successfully',
+    description: 'Title of the toast message on create resource success.',
+  },
+  resourceCreateError: {
+    id: 'things.resourceCreateError',
+    defaultMessage: 'Resource create failed',
+    description: 'Title of the toast message on resource create error.',
   },
   resourceRetrieveError: {
     id: 'things.resourceRetrieveError',

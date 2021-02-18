@@ -28,7 +28,7 @@ export const ActionButton = ({ children, type, menuProps, items, ...rest }) => {
           ],
         }}
       >
-        {items.map(item => {
+        {items.filter(item => !item.hidden).map(item => {
           return (
             <BDropdown.Item key={item.id || item.label} onClick={item.onClick}>
               {item.icon && <i className={`fas ${item.icon}`} />}
@@ -49,6 +49,7 @@ ActionButton.propTypes = {
       onClick: PropTypes.func.isRequired,
       label: PropTypes.string.isRequired,
       id: PropTypes.string,
+      hidden: PropTypes.bool,
     })
   ).isRequired,
   menuProps: PropTypes.shape({

@@ -50,6 +50,23 @@ $ npm run build
 
 ## Translation
 
+### Adding a new language
+
+In order to add a new language, open the file `./http-gateway/web/src/config.js` and extend the `supportedLanguages` array with additional values. Use the [language code 2](https://www.science.co.il/language/Codes.php) for the language you are about to add:
+
+`supportedLanguages: ['en', 'sk']`
+
+Once you added a new language, open the file `./http-gateway/web/src/components/language-switcher/language-switcher-i18n.js` and add a new entry for the language you added. For example, for the language with code `sk` the entry would look like this:
+
+```javascript
+sk: {
+  id: 'language-switcher.slovak',
+  defaultMessage: 'Slovak',
+},
+```
+
+### Generating language files
+
 For extracting the messages from the UI components, run the following script:
 
 ```bash
@@ -66,11 +83,17 @@ $ npm run generate-language-files
 
 Now your translations are updated and ready to be used.
 
+### Default language
+
+Default language is set to be `en`. This configuration can be overridden in `./http-gateway/web/src/config.js` by changing the `defaultLanguage` field. Change this only to a language which is supported by the application (is present in the `supportedLanguages` list).
+
+After the first visit of the application from a browser, it will remember the current language state, so in order to see the `defaultLanguage` field to work, you should clear the `localStorage` entry `language` from the browser.
+
 ## Branding
 
 ### Colors change
 
-All colors are defined in one `scss` file located in `./http-gateway/web/src/common/styles/colors.scss`. Changing one of the colors will have an impact on all parts of the application.
+All colors are defined in one `scss` file `./http-gateway/web/src/common/styles/colors.scss`. Changing one of the colors will have an impact on all parts of the application.
 
 ### Logo change
 
@@ -89,3 +112,25 @@ Small logo (when the menu is collapsed):
 Favicon:
 
 - `./http-gateway/web/public/favicon.png`
+
+You might need to adjust some CSS in order to have the Logo rendered correctly, if the size is different than the recommended one. You can modify these values in `./http-gateway/web/src/components/left-panel/left-panel.scss`, look for the classes `.logo-big` and `.logo-small`. Adjust the height in these classes to fit your needs.
+
+### Application name
+
+Change the application name which also appears as a part of the Title bar in the browser header in file `./http-gateway/web/src/config.js` by changing the `appName` field.
+
+### Header / Status Bar
+
+Header has a dedicated component which can be found in `./http-gateway/web/src/components/status-bar/status-bar.js`. You can modify the `div` whith `id` of `status-bar` by removing the already present component like `LanguageSwitcher` or `UserWidget`, or simply adding other content next to these components.
+
+### Footer
+
+Footer has a dedicated component which can be found in `./http-gateway/web/src/components/footer/footer.js`. You can modify the `footer` tag by removing the already present links, or simply adding other content next to them.
+
+### Text changes
+
+Every text in this application is comming from a translation file located in `./http-gateway/web/src/languages/langauges.json`. This object contains as many blocks, as many languages you support in your application. If some of the blocks are missing you can simply duplicate them and use the same language code you used when you added a new language.
+
+Some messages might be missing. This is due to fact that they were not yet translated. You can do that manually or automatically with some language manager like [POEditor](https://poeditor.com/).
+
+You can also override these strings to fit your need, for example if you would like to have `Devices` as a name of the menu which we call `Things`, you have to find the key `menu.things` and change its value to `Devices`.

@@ -16,7 +16,7 @@ export const handleUpdateResourceErrors = (error, isOnline, _) => {
   const errorMessage = getApiErrorMessage(error)
 
   if (!isOnline && errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
-    // Device update went through, but it will be applied once the device comes online
+    // Resource update went through, but it will be applied once the device comes online
     showWarningToast({
       title: _(t.resourceUpdateSuccess),
       message: _(t.resourceWasUpdatedOffline),
@@ -30,6 +30,30 @@ export const handleUpdateResourceErrors = (error, isOnline, _) => {
   } else {
     showErrorToast({
       title: _(t.resourceUpdateError),
+      message: errorMessage,
+    })
+  }
+}
+
+// Handle the errors occured during resource create
+export const handleCreateResourceErrors = (error, isOnline, _) => {
+  const errorMessage = getApiErrorMessage(error)
+
+  if (!isOnline && errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
+    // Resource create went through, but it will be applied once the device comes online
+    showWarningToast({
+      title: _(t.resourceCreateSuccess),
+      message: _(t.resourceWasCreatedOffline),
+    })
+  } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
+    // JSON validation error
+    showErrorToast({
+      title: _(t.resourceCreateError),
+      message: _(t.invalidArgument),
+    })
+  } else {
+    showErrorToast({
+      title: _(t.resourceCreateError),
       message: errorMessage,
     })
   }

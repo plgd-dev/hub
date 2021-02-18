@@ -45,14 +45,14 @@
       top: 100%;
       right: 0;
       background: $light_100;
-      box-shadow: 0 10px 20px 0 rgba($secondary_20, 0.5);
+      box-shadow: 0 10px 20px 0 rgba($shadow_100, 0.5);
     }
   }
 }
 
 #status-bar-shadow {
   z-index: 8;
-  box-shadow: 0 10px 20px 0 rgba($secondary_20, 0.5);
+  box-shadow: 0 10px 20px 0 rgba($shadow_100, 0.5);
 }
 
 // Collapsed menu state

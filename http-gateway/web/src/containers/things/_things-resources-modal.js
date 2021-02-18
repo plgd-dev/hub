@@ -25,6 +25,7 @@ export const ThingsResourcesModal = ({
   isDeviceOnline,
   loading,
   updateResource,
+  createResource,
   type,
 }) => {
   const { formatMessage: _ } = useIntl()
@@ -65,16 +66,15 @@ export const ThingsResourcesModal = ({
   }
 
   const handleSubmit = () => {
+    const params = {
+      href: data?.href,
+      currentInterface: selectedInterface.value,
+    }
+
     if (isUpdateModal) {
-      updateResource(
-        {
-          href: data?.href,
-          currentInterface: selectedInterface.value,
-        },
-        jsonData
-      )
+      updateResource(params, jsonData)
     } else {
-      console.log('create resource')
+      createResource(params, jsonData)
     }
   }
 
@@ -199,6 +199,7 @@ ThingsResourcesModal.propTypes = {
   fetchResource: PropTypes.func.isRequired,
   loading: PropTypes.bool.isRequired,
   updateResource: PropTypes.func.isRequired,
+  createResource: PropTypes.func.isRequired,
   isDeviceOnline: PropTypes.bool.isRequired,
   type: PropTypes.oneOf([CREATE_RESOURCE, UPDATE_RESOURCE]),
 }

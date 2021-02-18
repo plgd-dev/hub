@@ -50,31 +50,30 @@ export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
           const {
             original: { di, href, if: interfaces },
           } = row
-          const actionButtons = []
 
-          // If a resource can be created, render a create button
-          if (canCreateResource(interfaces)) {
-            actionButtons.push({
-              onClick: () => onCreate(href),
-              label: _(t.create),
-              icon: 'fa-plus',
-            })
-          }
-
-          actionButtons.push(
-            {
-              onClick: () => onUpdate({ di, href }),
-              label: _(t.update),
-              icon: 'fa-pen',
-            },
-            {
-              onClick: () => console.log('helo'),
-              label: _(t.delete),
-              icon: 'fa-trash-alt',
-            }
-          )
           return (
-            <ActionButton menuProps={{ align: 'right' }} items={actionButtons}>
+            <ActionButton
+              menuProps={{ align: 'right' }}
+              items={[
+                {
+                  onClick: () => onCreate(href),
+                  label: _(t.create),
+                  icon: 'fa-plus',
+                  hidden: !canCreateResource(interfaces) || true, // temporary disabled
+                },
+                {
+                  onClick: () => onUpdate({ di, href }),
+                  label: _(t.update),
+                  icon: 'fa-pen',
+                },
+                {
+                  onClick: () => console.log('helo'),
+                  label: _(t.delete),
+                  icon: 'fa-trash-alt',
+                  hidden: true,
+                },
+              ]}
+            >
               <i className="fas fa-ellipsis-h" />
             </ActionButton>
           )

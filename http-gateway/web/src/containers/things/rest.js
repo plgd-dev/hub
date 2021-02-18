@@ -1,0 +1,54 @@
+import { fetchApi, security } from '@/common/services'
+
+import { thingsApiEndpoints } from './constants'
+import { interfaceGetParam } from './utils'
+
+/**
+ * Get things resources Rest Api endpoint
+ * @param {*} params { deviceId, href - resource href, currentInterface - interface }
+ * @param {*} data
+ */
+export const getThingsResourcesApi = ({
+  deviceId,
+  href,
+  currentInterface = null,
+}) =>
+  fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      thingsApiEndpoints.THINGS
+    }/${deviceId}${href}${interfaceGetParam(currentInterface)}`
+  )
+
+/**
+ * Update things resource Rest Api endpoint
+ * @param {*} params { deviceId, href - resource href, currentInterface - interface }
+ * @param {*} data
+ */
+export const updateThingsResourceApi = (
+  { deviceId, href, currentInterface = null },
+  data
+) => {
+  return fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      thingsApiEndpoints.THINGS
+    }/${deviceId}${href}${interfaceGetParam(currentInterface)}`,
+    { method: 'PUT', body: data }
+  )
+}
+
+/**
+ * Create things resource Rest Api endpoint
+ * @param {*} params { deviceId, href - resource href, currentInterface - interface }
+ * @param {*} data
+ */
+export const createThingsResourceApi = (
+  { deviceId, href, currentInterface = null },
+  data
+) => {
+  return fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      thingsApiEndpoints.THINGS
+    }/${deviceId}${href}${interfaceGetParam(currentInterface)}`,
+    { method: 'POST', body: data }
+  )
+}
