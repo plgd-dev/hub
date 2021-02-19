@@ -151,68 +151,6 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 	requestHandler.processResponse(w, tokenReq)
 }
 
-/*
-func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
-	var clientCfg *Client
-	var idToken string
-	var err error
-	//for unsecure iotivity lite test
-	if tokenReq.Code == "test" && tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
-		clientCfg = requestHandler.config.Clients.Find(tokenReq.ClientID)
-	} else if tokenReq.GrantType == string(AllowedGrantType_AUTHORIZATION_CODE) {
-		authSessionI, ok := requestHandler.cache.Get(tokenReq.Code)
-		if !ok {
-			writeError(w, fmt.Errorf("invalid code '%v'", tokenReq.Code), http.StatusInternalServerError)
-			return
-		}
-		requestHandler.cache.Delete(tokenReq.Code)
-		authSession := authSessionI.(authorizedSession)
-
-		if tokenReq.ClientID != authSession.cfg.ID {
-			writeError(w, fmt.Errorf("invalid client_id(%v)", tokenReq.ClientID), http.StatusBadRequest)
-			return
-		}
-		clientCfg = authSession.cfg
-
-		if authSession.cfg.AccessTokenType == AccessTokenType_JWT {
-			idToken, err = generateIDToken(authSession.cfg.ID, authSession.cfg.AccessTokenLifetime, r.Host, authSession.nonce, requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
-			if err != nil {
-				writeError(w, err, http.StatusInternalServerError)
-				return
-			}
-		}
-	} else if tokenReq.GrantType == string(AllowedGrantType_CLIENT_CREDENTIALS) {
-		clientCfg = requestHandler.config.Clients.Find(tokenReq.ClientID)
-	}
-	if clientCfg == nil {
-		writeError(w, fmt.Errorf("invalid client_id(%v)", tokenReq.ClientID), http.StatusBadRequest)
-		return
-	}
-	var accessToken string
-	var accessTokenExpires time.Time
-
-	if clientCfg.AccessTokenType == AccessTokenType_JWT {
-		accessToken, accessTokenExpires, err = generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, r.Host, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
-	} else if clientCfg.AccessTokenType == AccessTokenType_REFERENCE {
-		accessToken = clientCfg.ID
-		accessTokenExpires = time.Now().Add(clientCfg.AccessTokenLifetime)
-	}
-	if err != nil {
-		writeError(w, err, http.StatusInternalServerError)
-		return
-	}
-	resp := map[string]interface{}{
-		"access_token":  accessToken,
-		"id_token":      idToken,
-		"expires_in":    int64(accessTokenExpires.Sub(time.Now()).Seconds()),
-		"scope":         "openid profile email",
-		"token_type":    "Bearer",
-		"refresh_token": "refresh-token",
-	}
-
-	jsonResponseWriter(w, resp)
-}
-*/
 func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
 	clientCfg := clients.Find(tokenReq.ClientID)
 	if clientCfg == nil {
@@ -224,6 +162,10 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 	requestHandler.cache.Delete(tokenReq.Code)
 	if ok {
 		authSession = authSessionI.(authorizedSession)
+		if authSession.audience != "" && tokenReq.Audience == "" {
+			tokenReq.Audience = authSession.audience
+			tokenReq.tokenType = AccessTokenType_JWT
+		}
 	}
 	var idToken string
 	var accessToken string
