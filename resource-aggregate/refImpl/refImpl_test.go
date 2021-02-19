@@ -19,6 +19,7 @@ func TestInit(t *testing.T) {
 	require.NoError(t, err)
 	config.Service.OAuth.ClientID = oauthService.ClientTest
 	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	config.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 
 	got, err := Init(config)
 	require.NoError(t, err)

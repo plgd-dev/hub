@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/resource-directory/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -18,8 +17,9 @@ func TestInit(t *testing.T) {
 	var config refImpl.Config
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
-	config.Service.OAuth.ClientID = oauthService.ClientTest
+	config.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	config.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 
 	got, err := refImpl.Init(config)
 	require.NoError(t, err)

@@ -11,7 +11,8 @@ import (
 )
 
 type authorizedSession struct {
-	nonce string
+	nonce    string
+	audience string
 }
 
 func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.Request) {
@@ -28,9 +29,11 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		return
 	}
 	nonce := r.URL.Query().Get(uri.NonceKey)
+	audience := r.URL.Query().Get(uri.AudienceKey)
 	code := hex.EncodeToString(b)
 	requestHandler.cache.Set(code, authorizedSession{
-		nonce: nonce,
+		nonce:    nonce,
+		audience: audience,
 	}, clientCfg.AuthorizationCodeLifetime)
 
 	u := r.URL.Query().Get(uri.RedirectURIKey)
