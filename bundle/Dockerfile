@@ -60,6 +60,7 @@ RUN cd /web && npm install && npm run build
 
 FROM ubuntu:20.04 as service
 RUN apt update
+RUN apt update
 RUN apt install -y wget gnupg iproute2 systemctl openssl nginx
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
@@ -77,6 +78,7 @@ COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
 COPY --from=build-web /web/build /usr/local/var/www
 COPY run.sh /usr/local/bin/run.sh
+COPY nginx /nginx
 
 # global
 ENV FQDN="localhost"
@@ -94,11 +96,11 @@ ENV COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=false
 ENV COAP_GATEWAY_LOG_MESSAGES=true
 
 # grpc-gateway
-ENV GRPC_GATEWAY_ADDRESS="0.0.0.0:9084"
+ENV GRPC_GATEWAY_ADDRESS="localhost:9084"
 ENV GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 
 # http-gateway
-ENV HTTP_GATEWAY_ADDRESS="0.0.0.0:9086"
+ENV HTTP_GATEWAY_ADDRESS="localhost:9086"
 ENV HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 
 # authorization
@@ -106,16 +108,18 @@ ENV AUTHORIZATION_ADDRESS="localhost:9081"
 ENV AUTHORIZATION_HTTP_ADDRESS="0.0.0.0:9085"
 
 # certificate-authority
-ENV CERTIFICATE_AUTHORITY_ADDRESS="0.0.0.0:9087"
+ENV CERTIFICATE_AUTHORITY_ADDRESS="localhost:9087"
 ENV CERTIFICATE_AUTHORITY_DISABLE_VERIFY_CLIENTS=true
 
-ENV OAUTH_SERVER_ADDRESS="0.0.0.0:9088"
+ENV OAUTH_SERVER_ADDRESS="localhost:9088"
 ENV OAUTH_SERVER_ADDRESS_DISABLE_VERIFY_CLIENTS=true
 
-ENV JWKS_URL="https://$OAUTH_SERVER_ADDRESS/.well-known/jwks.json"
+ENV NGINX_HTTP_PORT="8080"
+ENV NGINX_HTTPS_PORT="8443"
+
 ENV RESOURCE_AGGREGATE_ADDRESS="localhost:9083"
 ENV RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES="8"
-ENV RESOURCE_DIRECTORY_ADDRESS="127.0.0.1:9082"
+ENV RESOURCE_DIRECTORY_ADDRESS="localhost:9082"
 ENV INITIALIZE_CERITIFICATES=true
 ENV MONGO_PATH="/data/db"
 ENV MONGO_PORT=10000
@@ -123,5 +127,6 @@ ENV NATS_PORT=10001
 ENV CERITIFICATES_PATH="/data/certs"
 ENV OAUTH_KEYS_PATH="/data/oauth/keys"
 ENV LOGS_PATH="/data/log"
+ENV NGINX_PATH="/data/nginx"
 
 ENTRYPOINT ["/usr/local/bin/run.sh"]

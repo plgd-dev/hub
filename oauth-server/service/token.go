@@ -61,7 +61,7 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	token.Set(jwt.AudienceKey, clientID)
 	token.Set(jwt.IssuedAtKey, now)
 	token.Set(jwt.ExpirationKey, expires)
-	token.Set(jwt.IssuerKey, "https://"+host+"/")
+	token.Set(jwt.IssuerKey, host+"/")
 	token.Set(uri.NonceKey, nonce)
 	buf, err := json.Encode(token)
 	if err != nil {
@@ -116,8 +116,12 @@ func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Re
 
 func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.Request) {
 	tokenReq := tokenRequest{
-		host:      r.Host,
+		host:      "https://" + r.Host,
 		tokenType: AccessTokenType_REFERENCE,
+	}
+	origin := r.Header.Get("Origin")
+	if origin != "" {
+		tokenReq.host = origin
 	}
 
 	if strings.Contains(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
