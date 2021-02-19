@@ -52,13 +52,19 @@ export OAUTH_AUDIENCE=test
 export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
 export SERVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
 export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
+export JWKS_URL="https://$OAUTH_SERVER_ADDRESS/.well-known/jwks.json"
+
+export OAUTH_SERVER_PORT=`echo ${OAUTH_SERVER_ADDRESS} | rev | cut -d':' -f 1 | rev`
+export HTTP_GATEWAY_PORT=`echo ${HTTP_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
+export GRPC_GATEWAY_PORT=`echo ${GRPC_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
+
+export FQDN_NGINX_HTTP=${FQDN}:${NGINX_HTTP_PORT}
+export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_HTTPS_PORT}
 
 export FQDN_AUTHORIZATION_HTTP=${FQDN}:`echo ${AUTHORIZATION_HTTP_ADDRESS} | rev | cut -d':' -f 1 | rev`
-export FQDN_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_AUTHORIZATION_HTTP}/api/authz/token
-export FQDN_OAUTH_ENDPOINT_CODE_URL=https://${FQDN_AUTHORIZATION_HTTP}/api/authz/code
+export FQDN_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_NGINX_HTTP}/oauth/token?client_id=test&audience=test
+export FQDN_OAUTH_ENDPOINT_CODE_URL=https://${FQDN_NGINX_HTTP}/authorize?client_id=test
 export FQDN_CERTIFICATE_AUTHORITY_ADDRESS=${FQDN}:`echo ${CERTIFICATE_AUTHORITY_ADDRESS} | rev | cut -d':' -f 1 | rev`
-export FQDN_OAUTH_SERVER=${FQDN}:`echo ${OAUTH_SERVER_ADDRESS} | rev | cut -d':' -f 1 | rev`
-export FQDN_HTTP_GATEWAY=${FQDN}:`echo ${HTTP_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
@@ -80,7 +86,15 @@ if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
 
   mkdir -p ${OAUTH_KEYS_PATH}
   openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
-	openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}  
+	openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
+
+  mkdir -p ${NGINX_PATH}
+  cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_NGINX_HTTP_PORT/$NGINX_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_NGINX_HTTPS_PORT/$NGINX_HTTPS_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_OAUTH_SERVER_PORT/$OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 mkdir -p $MONGO_PATH
@@ -159,11 +173,11 @@ HTTP_ADDRESS=${AUTHORIZATION_HTTP_ADDRESS} \
 DEVICE_PROVIDER=auth0 \
 DEVICE_PROVIDER_TYPE=test \
 DEVICE_OAUTH_CLIENT_ID=test \
-DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_OAUTH_SERVER}/authorize \
-DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_OAUTH_SERVER}/oauth/token \
+DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${OAUTH_SERVER_ADDRESS}/authorize \
+DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token \
 SDK_OAUTH_CLIENT_ID=test \
-SDK_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_OAUTH_SERVER}/authorize \
-SDK_OAUTH_AUDIENCE=${FQDN_HTTP_GATEWAY} \
+SDK_OAUTH_ENDPOINT_AUTH_URL=https://${OAUTH_SERVER_ADDRESS}/authorize \
+SDK_OAUTH_AUDIENCE=${FQDN_NGINX_HTTPS} \
 authorization >$LOGS_PATH/authorization.log 2>&1 &
 status=$?
 authorization_pid=$!
@@ -196,6 +210,17 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/resource-aggregate.log
   exit $status
 fi
+
+# waiting for resource-aggregate. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${RESOURCE_AGGREGATE_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to resource-aggregate(${RESOURCE_AGGREGATE_ADDRESS}) $i"
+  sleep 1
+done
 
 # resource-directory
 echo "starting resource-directory"
@@ -286,6 +311,17 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# waiting for grpc-gateway. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${GRPC_GATEWAY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to grpc-gateway(${GRPC_GATEWAY_ADDRESS}) $i"
+  sleep 1
+done
+
 # http-gateway
 echo "starting http-gateway"
 cat > /data/httpgw.yaml << EOF
@@ -314,11 +350,11 @@ CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
 UI:
   enabled: true
   oauthClient:
-    domain: ${FQDN_OAUTH_SERVER}
+    domain: ${FQDN_NGINX_HTTPS}
     clientID: ${OAUTH_CLIENT_ID}
-    audience: ${FQDN_HTTP_GATEWAY}
+    audience: ${FQDN_NGINX_HTTPS}
     scope: "openid offline_access"
-    httpGatewayAddress: https://${FQDN_HTTP_GATEWAY}
+    httpGatewayAddress: https://${FQDN_NGINX_HTTPS}
 EOF
 ADDRESS=${HTTP_GATEWAY_ADDRESS} \
 LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
@@ -331,6 +367,17 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/http-gateway.log
   exit $status
 fi
+
+# waiting for http-gateway. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${HTTP_GATEWAY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to http-gateway(${HTTP_GATEWAY_ADDRESS}) $i"
+  sleep 1
+done
 
 # certificate-authority
 echo "starting certificate-authority"
@@ -347,6 +394,39 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/certificate-authority.log
   exit $status
 fi
+
+# waiting for grpc-gateway. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${CERTIFICATE_AUTHORITY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to certificate-authority(${CERTIFICATE_AUTHORITY_ADDRESS}) $i"
+  sleep 1
+done
+
+# starting nginx
+echo "starting nginx"
+nginx -c $NGINX_PATH/nginx.conf >$LOGS_PATH/nginx.log 2>&1
+status=$?
+nginx_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start nginx: $status"
+  sync
+  cat $LOGS_PATH/nginx.log
+  exit $status
+fi
+
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${FQDN_NGINX_HTTPS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to nginx(${FQDN_NGINX_HTTPS}) $i"
+  sleep 1
+done
 
 # Naive check runs checks once a minute to see if either of the processes exited.
 # This illustrates part of the heavy lifting you need to do if you want to run
@@ -429,6 +509,13 @@ while sleep 10; do
     echo "oauth-server has already exited."
     sync
     cat $LOGS_PATH/oauth-server.log
+   exit 1
+  fi
+  ps aux |grep $nginx_pid |grep -q -v grep
+  if [ $? -ne 0 ]; then 
+    echo "nginx has already exited."
+    sync
+    cat $LOGS_PATH/nginx.log
    exit 1
   fi
 done
