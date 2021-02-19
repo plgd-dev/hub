@@ -1,13 +1,17 @@
 package uri
 
 const (
-	RedirectURIQueryKey = "redirect_uri"
-	StateQueryKey       = "state"
-	ClientIDQueryKey    = "client_id"
-	NonceQueryKey       = "nonce"
-	CodeQueryKey        = "code"
-	ReturnToQueryKey    = "returnTo"
-	Auth0ClientQueryKey = "auth0Client"
+	RedirectURIKey = "redirect_uri"
+	StateKey       = "state"
+	ClientIDKey    = "client_id"
+	NonceKey       = "nonce"
+	CodeKey        = "code"
+	ReturnToKey    = "returnTo"
+	Auth0ClientKey = "auth0Client"
+	GrantTypeKey   = "grant_type"
+	UsernameKey    = "username"
+	PasswordKey    = "password"
+	AudienceKey    = "audience"
 
 	Token     = "/oauth/token"
 	Authorize = "/authorize"

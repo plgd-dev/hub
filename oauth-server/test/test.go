@@ -116,8 +116,9 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 
 func GetServiceToken(t *testing.T) string {
 	reqBody := map[string]string{
-		"grant_type":         string(service.AllowedGrantType_CLIENT_CREDENTIALS),
-		uri.ClientIDQueryKey: service.ClientService,
+		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
+		uri.ClientIDKey: service.ClientTest,
+		"audience":      "localhost",
 	}
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
@@ -139,7 +140,7 @@ func GetDeviceAuthorizationCode(t *testing.T) string {
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
 	require.NoError(t, err)
-	q.Add(uri.ClientIDQueryKey, service.ClientDevice)
+	q.Add(uri.ClientIDKey, service.ClientTest)
 	u.RawQuery = q.Encode()
 	getReq := NewRequest(http.MethodGet, u.String(), nil).Build()
 	res := HTTPDo(t, getReq, false)
@@ -149,7 +150,7 @@ func GetDeviceAuthorizationCode(t *testing.T) string {
 	var body map[string]string
 	err = json.ReadFrom(res.Body, &body)
 	require.NoError(t, err)
-	code := body[uri.CodeQueryKey]
+	code := body[uri.CodeKey]
 	require.NotEmpty(t, code)
 	return code
 }

@@ -19,7 +19,8 @@ const C2C_GW_HOST = "localhost:20007"
 const GW_UNSECURE_HOST = "localhost:20008"
 const OAUTH_SERVER_HOST = "localhost:20009"
 const TEST_TIMEOUT = time.Second * 20
-const OAUTH_MANAGER_CLIENT_ID = service.ClientService
+const OAUTH_MANAGER_CLIENT_ID = service.ClientTest
+const OAUTH_MANAGER_AUDIENCE = "localhost"
 
 var OAUTH_MANAGER_ENDPOINT_AUTHURL = "https://" + OAUTH_SERVER_HOST + uri.Authorize
 var OAUTH_MANAGER_ENDPOINT_TOKENURL = "https://" + OAUTH_SERVER_HOST + uri.Token

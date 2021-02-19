@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/lestrrat-go/jwx/jwa"
@@ -33,7 +34,7 @@ func generateAccessToken(clientID string, lifeTime time.Duration, host string, k
 	token.Set(jwt.IssuedAtKey, now)
 	token.Set(jwt.ExpirationKey, expires)
 	token.Set(`scope`, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"})
-	token.Set(uri.ClientIDQueryKey, clientID)
+	token.Set(uri.ClientIDKey, clientID)
 	token.Set(jwt.IssuerKey, "https://"+host+"/")
 	buf, err := json.Encode(token)
 	if err != nil {
@@ -61,7 +62,7 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	token.Set(jwt.IssuedAtKey, now)
 	token.Set(jwt.ExpirationKey, expires)
 	token.Set(jwt.IssuerKey, "https://"+host+"/")
-	token.Set(uri.NonceQueryKey, nonce)
+	token.Set(uri.NonceKey, nonce)
 	buf, err := json.Encode(token)
 	if err != nil {
 		return "", fmt.Errorf("failed to encode token: %s", err)
@@ -83,20 +84,54 @@ func (requestHandler *RequestHandler) tokenOptions(w http.ResponseWriter, r *htt
 }
 
 type tokenRequest struct {
-	RedirectURI       string `json:"redirect_uri"`
-	ClientID          string `json:"client_id"`
-	CodeVerifier      string `json:"code_verifier"`
-	GrantType         string `json:"grant_type"`
-	AuthorizationCode string `json:"authorization_code"`
-	Code              string `json:"code"`
+	// RedirectURI  string `json:"redirect_uri"`
+	ClientID     string `json:"client_id"`
+	CodeVerifier string `json:"code_verifier"`
+	GrantType    string `json:"grant_type"`
+	//	AuthorizationCode string `json:"authorization_code"`
+	Code     string `json:"code"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Audience string `json:"audience"`
+
+	host      string          `json:-`
+	tokenType AccessTokenType `json:-`
 }
 
-func (requestHandler *RequestHandler) token(w http.ResponseWriter, r *http.Request) {
-	var tokenReq tokenRequest
+// used by acquire service token
+func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Request) {
 	clientID, _, ok := r.BasicAuth()
-	if ok {
-		tokenReq.ClientID = clientID
-		tokenReq.GrantType = string(AllowedGrantType_CLIENT_CREDENTIALS)
+	if !ok {
+		writeError(w, fmt.Errorf("authorization header is not set"), http.StatusBadRequest)
+		return
+	}
+	requestHandler.processResponse(w, tokenRequest{
+		ClientID:  clientID,
+		GrantType: string(AllowedGrantType_PASSWORD),
+
+		host:      r.Host,
+		tokenType: AccessTokenType_JWT,
+	})
+}
+
+func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.Request) {
+	tokenReq := tokenRequest{
+		host:      r.Host,
+		tokenType: AccessTokenType_REFERENCE,
+	}
+
+	if strings.Contains(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
+		err := r.ParseForm()
+		if err != nil {
+			writeError(w, err, http.StatusBadRequest)
+			return
+		}
+		tokenReq.GrantType = r.PostFormValue(uri.GrantTypeKey)
+		tokenReq.ClientID = r.PostFormValue(uri.ClientIDKey)
+		tokenReq.Code = r.PostFormValue(uri.CodeKey)
+		tokenReq.Username = r.PostFormValue(uri.UsernameKey)
+		tokenReq.Password = r.PostFormValue(uri.PasswordKey)
+		tokenReq.Audience = r.PostFormValue(uri.AudienceKey)
 	} else {
 		err := json.ReadFrom(r.Body, &tokenReq)
 		if err != nil {
@@ -104,7 +139,20 @@ func (requestHandler *RequestHandler) token(w http.ResponseWriter, r *http.Reque
 			return
 		}
 	}
+	clientID, password, ok := r.BasicAuth()
+	if ok {
+		tokenReq.ClientID = clientID
+		tokenReq.Password = password
+	}
 
+	if tokenReq.Audience != "" {
+		tokenReq.tokenType = AccessTokenType_JWT
+	}
+	requestHandler.processResponse(w, tokenReq)
+}
+
+/*
+func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
 	var clientCfg *Client
 	var idToken string
 	var err error
@@ -152,6 +200,51 @@ func (requestHandler *RequestHandler) token(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
+	}
+	resp := map[string]interface{}{
+		"access_token":  accessToken,
+		"id_token":      idToken,
+		"expires_in":    int64(accessTokenExpires.Sub(time.Now()).Seconds()),
+		"scope":         "openid profile email",
+		"token_type":    "Bearer",
+		"refresh_token": "refresh-token",
+	}
+
+	jsonResponseWriter(w, resp)
+}
+*/
+func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
+	clientCfg := clients.Find(tokenReq.ClientID)
+	if clientCfg == nil {
+		writeError(w, fmt.Errorf("client(%v) not found", tokenReq.ClientID), http.StatusBadRequest)
+		return
+	}
+	var authSession authorizedSession
+	authSessionI, ok := requestHandler.cache.Get(tokenReq.Code)
+	requestHandler.cache.Delete(tokenReq.Code)
+	if ok {
+		authSession = authSessionI.(authorizedSession)
+	}
+	var idToken string
+	var accessToken string
+	var accessTokenExpires time.Time
+	var err error
+	if authSession.nonce != "" {
+		idToken, err = generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce, requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
+		if err != nil {
+			writeError(w, err, http.StatusInternalServerError)
+			return
+		}
+	}
+	if tokenReq.tokenType == AccessTokenType_JWT {
+		accessToken, accessTokenExpires, err = generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
+		if err != nil {
+			writeError(w, err, http.StatusInternalServerError)
+			return
+		}
+	} else {
+		accessToken = clientCfg.ID
+		accessTokenExpires = time.Now().Add(clientCfg.AccessTokenLifetime)
 	}
 	resp := map[string]interface{}{
 		"access_token":  accessToken,

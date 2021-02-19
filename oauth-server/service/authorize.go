@@ -11,19 +11,14 @@ import (
 )
 
 type authorizedSession struct {
-	cfg   *Client
 	nonce string
 }
 
 func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.Request) {
-	clientID := r.URL.Query().Get(uri.ClientIDQueryKey)
-	clientCfg := requestHandler.config.Clients.Find(clientID)
+	clientID := r.URL.Query().Get(uri.ClientIDKey)
+	clientCfg := clients.Find(clientID)
 	if clientCfg == nil {
 		writeError(w, fmt.Errorf("unknown client_id(%v)", clientID), http.StatusBadRequest)
-		return
-	}
-	if !clientCfg.AllowedGrantTypes.IsAllowed(AllowedGrantType_AUTHORIZATION_CODE) {
-		writeError(w, fmt.Errorf("grant_type(%v) is not supported by client(%v)", AllowedGrantType_AUTHORIZATION_CODE, clientID), http.StatusBadRequest)
 		return
 	}
 	b := make([]byte, 16)
@@ -32,21 +27,20 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
-	nonce := r.URL.Query().Get(uri.NonceQueryKey)
+	nonce := r.URL.Query().Get(uri.NonceKey)
 	code := hex.EncodeToString(b)
 	requestHandler.cache.Set(code, authorizedSession{
-		cfg:   clientCfg,
 		nonce: nonce,
 	}, clientCfg.AuthorizationCodeLifetime)
 
-	u := r.URL.Query().Get(uri.RedirectURIQueryKey)
+	u := r.URL.Query().Get(uri.RedirectURIKey)
 	if len(u) > 0 {
 		u, err := url.Parse(string(u))
 		if err != nil {
 			writeError(w, err, http.StatusBadRequest)
 			return
 		}
-		state := r.URL.Query().Get(uri.StateQueryKey)
+		state := r.URL.Query().Get(uri.StateKey)
 		q, err := url.ParseQuery(u.RawQuery)
 		if err != nil {
 			writeError(w, err, http.StatusBadRequest)

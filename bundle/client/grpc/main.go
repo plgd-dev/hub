@@ -70,8 +70,9 @@ func decodePayload(resp *pbGW.Content) {
 
 func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	reqBody := map[string]string{
-		"grant_type":         string(service.AllowedGrantType_CLIENT_CREDENTIALS),
-		uri.ClientIDQueryKey: service.ClientService,
+		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
+		uri.ClientIDKey: service.ClientTest,
+		uri.AudienceKey: "test",
 	}
 	d, err := json.Encode(reqBody)
 	if err != nil {

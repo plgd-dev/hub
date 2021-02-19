@@ -46,10 +46,12 @@ export NATS_URL="nats://localhost:$NATS_PORT"
 
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
 export OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token
-export OAUTH_CLIENT_ID=service
+export OAUTH_CLIENT_ID=test
 export OAUTH_ENDPOINT_CODE_URL=https://${OAUTH_SERVER_ADDRESS}/authorize
+export OAUTH_AUDIENCE=test
 export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
 export SERVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 
 export FQDN_AUTHORIZATION_HTTP=${FQDN}:`echo ${AUTHORIZATION_HTTP_ADDRESS} | rev | cut -d':' -f 1 | rev`
 export FQDN_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_AUTHORIZATION_HTTP}/api/authz/token
@@ -312,7 +314,7 @@ UI:
   enabled: true
   oauthClient:
     domain: ${FQDN_OAUTH_SERVER}
-    clientID: ui
+    clientID: ${OAUTH_CLIENT_ID}
     audience: ${FQDN_HTTP_GATEWAY}
     scope: "openid offline_access"
     httpGatewayAddress: https://${FQDN_HTTP_GATEWAY}

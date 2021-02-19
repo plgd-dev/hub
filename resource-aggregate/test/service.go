@@ -20,6 +20,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	raCfg.Service.JwksURL = testCfg.JWKS_URL
 	raCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	raCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	raCfg.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 	raCfg.Service.UserDevicesManagerTickFrequency = time.Millisecond * 500
 	raCfg.Service.UserDevicesManagerExpiration = time.Millisecond * 500
 	return raCfg
