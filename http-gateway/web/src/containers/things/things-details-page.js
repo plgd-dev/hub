@@ -8,19 +8,28 @@ import { NotFoundPage } from '@/containers/not-found-page'
 import { useApi, useIsMounted } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
 import { messages as menuT } from '@/components/menu/menu-i18n'
-import { fetchApi } from '@/common/services'
-import { getApiErrorMessage } from '@/common/utils'
-import {
-  showSuccessToast,
-  showErrorToast,
-  showWarningToast,
-} from '@/components/toast'
+import { showSuccessToast } from '@/components/toast'
 
 import { ThingsDetails } from './_things-details'
 import { ThingsResourcesList } from './_things-resources-list'
-import { ThingsResourcesUpdateModal } from './_things-resources-update-modal'
-import { thingsApiEndpoints, thingsStatuses, errorCodes } from './constants'
-import { interfaceGetParam } from './utils'
+import { ThingsResourcesModal } from './_things-resources-modal'
+import {
+  thingsApiEndpoints,
+  thingsStatuses,
+  defaultNewResource,
+  resourceModalTypes,
+  knownInterfaces,
+} from './constants'
+import {
+  handleCreateResourceErrors,
+  handleUpdateResourceErrors,
+  handleFetchResourceErrors,
+} from './utils'
+import {
+  getThingsResourcesApi,
+  updateThingsResourceApi,
+  createThingsResourceApi,
+} from './rest'
 import { messages as t } from './things-i18n'
 
 export const ThingsDetailsPage = () => {
@@ -29,7 +38,7 @@ export const ThingsDetailsPage = () => {
   const { httpGatewayAddress } = useAppConfig()
   const [resourceModalData, setResourceModalData] = useState(null)
   const [loadingResource, setLoadingResource] = useState(false)
-  const [updatingResource, setUpdatingResource] = useState(false)
+  const [savingResource, setSavingResource] = useState(false)
   const isMounted = useIsMounted()
 
   const { data, loading, error } = useApi(
@@ -62,7 +71,8 @@ export const ThingsDetailsPage = () => {
     breadcrumbs.push({ label: deviceName })
   }
 
-  const fetchResourceAndOpenModal = async ({ href, currentInterface = '' }) => {
+  // Fetches the resource and sets its values to the modal data, which opens the modal.
+  const openUpdateModal = async ({ href, currentInterface = '' }) => {
     // If there is already a fetch for a resource, disable the next attempt for a fetch untill the previous fetch finishes
     if (loadingResource) {
       return
@@ -73,43 +83,86 @@ export const ThingsDetailsPage = () => {
     try {
       const {
         data: { if: ifs, rt, ...resourceData }, // exclude the if and rt
-      } = await fetchApi(
-        `${httpGatewayAddress}${
-          thingsApiEndpoints.THINGS
-        }/${id}${href}${interfaceGetParam(currentInterface)}`
-      )
+      } = await getThingsResourcesApi({ deviceId: id, href, currentInterface })
 
       if (isMounted.current) {
         setLoadingResource(false)
 
-        updateResourceData({
-          href,
-          resourceData: resourceData,
+        // Retrieve the types and interfaces of this resource
+        const { rt: types = [], if: interfaces = [] } =
+          data?.links?.find?.(link => link.href === href) || {}
+
+        // Setting the data and opening the modal
+        setResourceModalData({
+          data: {
+            href,
+            types,
+            interfaces,
+          },
+          resourceData,
         })
       }
     } catch (error) {
       if (error && isMounted.current) {
         setLoadingResource(false)
-        showErrorToast({
-          title: _(t.resourceRetrieveError),
-          message: getApiErrorMessage(error),
-        })
+        handleFetchResourceErrors(error)
       }
     }
   }
 
+  // Fetches the resources supported types and sets its values to the modal data, which opens the modal.
+  const openCreateModal = async href => {
+    // If there is already a fetch for a resource, disable the next attempt for a fetch untill the previous fetch finishes
+    if (loadingResource) {
+      return
+    }
+
+    setLoadingResource(true)
+
+    try {
+      const {
+        data: { rts: supportedTypes },
+      } = await getThingsResourcesApi({
+        deviceId: id,
+        href,
+        currentInterface: knownInterfaces.OIC_IF_BASELINE,
+      })
+
+      if (isMounted.current) {
+        setLoadingResource(false)
+
+        // Setting the data and opening the modal
+        setResourceModalData({
+          data: {
+            href,
+            types: supportedTypes,
+          },
+          resourceData: {
+            ...defaultNewResource,
+            rt: supportedTypes,
+          },
+          type: resourceModalTypes.CREATE_RESOURCE,
+        })
+      }
+    } catch (error) {
+      if (error && isMounted.current) {
+        setLoadingResource(false)
+        handleFetchResourceErrors(error)
+      }
+    }
+  }
+
+  // Updates the resource through rest API
   const updateResource = async (
     { href, currentInterface = '' },
     resourceDataUpdate
   ) => {
-    setUpdatingResource(true)
+    setSavingResource(true)
 
     try {
-      await fetchApi(
-        `${httpGatewayAddress}${
-          thingsApiEndpoints.THINGS
-        }/${id}${href}${interfaceGetParam(currentInterface)}`,
-        { method: 'PUT', body: resourceDataUpdate }
+      await updateThingsResourceApi(
+        { deviceId: id, href, currentInterface },
+        resourceDataUpdate
       )
 
       if (isMounted.current) {
@@ -118,53 +171,43 @@ export const ThingsDetailsPage = () => {
           message: _(t.resourceWasUpdated),
         })
 
-        setUpdatingResource(false)
+        setSavingResource(false)
       }
     } catch (error) {
       if (error && isMounted.current) {
-        const errorMessage = getApiErrorMessage(error)
-
-        if (
-          !isOnline &&
-          errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)
-        ) {
-          // Device update went through, but it will be applied once the device comes online
-          showWarningToast({
-            title: _(t.resourceUpdateSuccess),
-            message: _(t.resourceWasUpdatedOffline),
-          })
-        } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
-          // JSON validation error
-          showErrorToast({
-            title: _(t.resourceUpdateError),
-            message: _(t.invalidArgument),
-          })
-        } else {
-          showErrorToast({
-            title: _(t.resourceUpdateError),
-            message: errorMessage,
-          })
-        }
-
-        setUpdatingResource(false)
+        handleUpdateResourceErrors(error, isOnline, _)
+        setSavingResource(false)
       }
     }
   }
 
-  const updateResourceData = ({ href, resourceData }) => {
-    // Retrieve the types and interfaces of this resource
-    const { rt: types, if: interfaces } =
-      data?.links?.find?.(link => link.di === id) || {}
+  // Created a new resource through rest API
+  const createResource = async (
+    { href, currentInterface = '' },
+    resourceDataCreate
+  ) => {
+    setSavingResource(true)
 
-    setResourceModalData({
-      data: {
-        di: id,
-        href,
-        types,
-        interfaces,
-      },
-      resourceData,
-    })
+    try {
+      await createThingsResourceApi(
+        { deviceId: id, href, currentInterface },
+        resourceDataCreate
+      )
+
+      if (isMounted.current) {
+        showSuccessToast({
+          title: _(t.resourceCreateSuccess),
+          message: _(t.resourceWasCreated),
+        })
+
+        setSavingResource(false)
+      }
+    } catch (error) {
+      if (error && isMounted.current) {
+        handleCreateResourceErrors(error, isOnline, _)
+        setSavingResource(false)
+      }
+    }
   }
 
   return (
@@ -179,17 +222,20 @@ export const ThingsDetailsPage = () => {
       <h2>{_(t.resources)}</h2>
       <ThingsResourcesList
         data={data?.links}
-        onClick={fetchResourceAndOpenModal}
+        onUpdate={openUpdateModal}
+        onCreate={openCreateModal}
       />
 
-      <ThingsResourcesUpdateModal
+      <ThingsResourcesModal
         {...resourceModalData}
         onClose={() => setResourceModalData(null)}
-        fetchResource={fetchResourceAndOpenModal}
+        fetchResource={openUpdateModal}
         updateResource={updateResource}
+        createResource={createResource}
         retrieving={loadingResource}
-        updating={updatingResource}
+        loading={savingResource}
         isDeviceOnline={isOnline}
+        deviceId={id}
       />
     </Layout>
   )

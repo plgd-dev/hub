@@ -3,13 +3,15 @@ import { createContext } from 'react'
 
 import languages from '@/languages/languages.json'
 import { useLocalStorage } from '@/common/hooks'
-
-const DEFAULT_LANGUAGE = 'en'
+import appConfig from '@/config'
 
 export const LanguageContext = createContext()
 
 export const IntlProvider = ({ children }) => {
-  const [language, setLanguage] = useLocalStorage('language', DEFAULT_LANGUAGE)
+  const [language, setLanguage] = useLocalStorage(
+    'language',
+    appConfig.defaultLanguage
+  )
   const providerProps = {
     setLanguage,
     language,
@@ -20,7 +22,7 @@ export const IntlProvider = ({ children }) => {
       <ReactIntlProvider
         messages={languages[language]}
         locale={language}
-        defaultLocale={DEFAULT_LANGUAGE}
+        defaultLocale={appConfig.defaultLanguage}
         onError={err => {
           if (err.code === 'MISSING_TRANSLATION') {
             // console.warn('Missing translation', err.message)

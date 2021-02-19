@@ -4,12 +4,14 @@ import { useIntl } from 'react-intl'
 
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
+import { ActionButton } from '@/components/action-button'
 
 import { RESOURCES_DEFAULT_PAGE_SIZE } from './constants'
+import { canCreateResource } from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
-export const ThingsResourcesList = ({ data, onClick }) => {
+export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
   const { formatMessage: _ } = useIntl()
 
   const columns = useMemo(
@@ -22,7 +24,7 @@ export const ThingsResourcesList = ({ data, onClick }) => {
             original: { di, href },
           } = row
           return (
-            <span className="link" onClick={() => onClick({ di, href })}>
+            <span className="link" onClick={() => onUpdate({ di, href })}>
               {value}
             </span>
           )
@@ -40,8 +42,45 @@ export const ThingsResourcesList = ({ data, onClick }) => {
           )
         },
       },
+      {
+        Header: _(t.actions),
+        accessor: 'actions',
+        disableSortBy: true,
+        Cell: ({ row }) => {
+          const {
+            original: { di, href, if: interfaces },
+          } = row
+
+          return (
+            <ActionButton
+              menuProps={{ align: 'right' }}
+              items={[
+                {
+                  onClick: () => onCreate(href),
+                  label: _(t.create),
+                  icon: 'fa-plus',
+                  hidden: !canCreateResource(interfaces) || true, // temporary disabled
+                },
+                {
+                  onClick: () => onUpdate({ di, href }),
+                  label: _(t.update),
+                  icon: 'fa-pen',
+                },
+                {
+                  onClick: () => console.log('helo'),
+                  label: _(t.delete),
+                  icon: 'fa-trash-alt',
+                  hidden: true,
+                },
+              ]}
+            >
+              <i className="fas fa-ellipsis-h" />
+            </ActionButton>
+          )
+        },
+      },
     ],
-    [onClick] //eslint-disable-line
+    [onUpdate, onCreate] //eslint-disable-line
   )
 
   return (
@@ -62,7 +101,7 @@ export const ThingsResourcesList = ({ data, onClick }) => {
 
 ThingsResourcesList.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
-  onClick: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
 }
 
 ThingsResourcesList.defaultProps = {

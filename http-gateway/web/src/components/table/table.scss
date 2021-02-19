@@ -4,7 +4,8 @@ $table_header_height: 40px;
 $table_row_height: 60px;
 
 .plgd-table {
-  box-shadow: -10px 0px 40px $secondary_20;
+  box-shadow: -10px 0px 40px $shadow_100;
+  position: relative;
 
   table.table {
     color: $secondary_40;
