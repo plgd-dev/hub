@@ -24,6 +24,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	c2cGwUri "github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -59,7 +60,8 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 			RootCAs: rootCAs,
 		},
 		OAuth: oauth.Config{
-			ClientID:     "ui",
+			ClientID:     oauthService.ClientTest,
+			Audience:     testCfg.C2C_GW_HOST,
 			ClientSecret: "testClientSecret",
 			//Scopes:       []string{"testScopes"},
 			Endpoint: oauth.Endpoint{
