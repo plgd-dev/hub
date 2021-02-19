@@ -42,11 +42,12 @@ func MakeConfig(t *testing.T) service.Config {
 	authCfg.Addr = testCfg.AUTH_HOST
 	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
 	authCfg.Device.Provider = "auth0"
-	authCfg.Device.OAuth2.ClientID = oauthService.ClientDevice
+	authCfg.Device.OAuth2.ClientID = oauthService.ClientTest
 	authCfg.Device.OAuth2.Endpoint.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
 	authCfg.Device.OAuth2.Endpoint.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
-	authCfg.SDK.ClientID = oauthService.ClientService
+	authCfg.SDK.ClientID = oauthService.ClientTest
 	authCfg.SDK.Endpoint.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	authCfg.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
 	return authCfg
 }
 

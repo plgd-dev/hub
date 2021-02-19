@@ -100,7 +100,8 @@ func NewHTTP(requestHandler *RequestHandler) *http.Server {
 
 	r.HandleFunc(uri.Authorize, requestHandler.authorize)
 	r.HandleFunc(uri.Token, requestHandler.tokenOptions).Methods(http.MethodOptions)
-	r.HandleFunc(uri.Token, requestHandler.token).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc(uri.Token, requestHandler.postToken).Methods(http.MethodPost)
+	r.HandleFunc(uri.Token, requestHandler.getToken).Methods(http.MethodGet)
 	r.HandleFunc(uri.UserInfo, requestHandler.getUserInfo).Methods(http.MethodGet)
 	r.HandleFunc(uri.LogOut, requestHandler.logOut)
 

@@ -20,8 +20,8 @@ func TestRequestHandler_getUItoken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, service.ClientUI, "https://localhost:3000", http.StatusTemporaryRedirect)
-	token := getToken(t, service.ClientUI, code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	code := getAuthorize(t, service.ClientTest, "https://localhost:3000", "nonse", http.StatusTemporaryRedirect)
+	token := getToken(t, service.ClientTest, "localhost", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
 		InsecureSkipVerify: true,
@@ -36,7 +36,7 @@ func TestRequestHandler_getServiceToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	token := getToken(t, service.ClientService, "", service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
+	token := getToken(t, service.ClientTest, "localhost", "", service.AllowedGrantType_CLIENT_CREDENTIALS, http.StatusOK)
 
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
 		InsecureSkipVerify: true,
@@ -49,17 +49,18 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, service.ClientDevice, "https://localhost:3000", http.StatusTemporaryRedirect)
-	token := getToken(t, service.ClientDevice, code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
+	code := getAuthorize(t, service.ClientTest, "", "https://localhost:3000", http.StatusTemporaryRedirect)
+	token := getToken(t, service.ClientTest, "", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
-	require.Equal(t, service.ClientDevice, token["access_token"])
+	require.Equal(t, service.ClientTest, token["access_token"])
 }
 
-func getToken(t *testing.T, clientID, code string, grantType service.AllowedGrantType, statusCode int) map[string]string {
+func getToken(t *testing.T, clientID, audience, code string, grantType service.AllowedGrantType, statusCode int) map[string]string {
 	reqBody := map[string]string{
-		"grant_type":         string(grantType),
-		uri.ClientIDQueryKey: clientID,
-		"code":               code,
+		"grant_type":    string(grantType),
+		uri.ClientIDKey: clientID,
+		"code":          code,
+		"audience":      audience,
 	}
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)

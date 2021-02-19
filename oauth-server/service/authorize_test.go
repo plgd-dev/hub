@@ -15,22 +15,22 @@ import (
 func TestRequestHandler_authorize(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
-	getAuthorize(t, service.ClientUI, "https://localhost:3000", http.StatusTemporaryRedirect)
-	getAuthorize(t, service.ClientUI, "", http.StatusOK)
-	getAuthorize(t, "badClient", "", http.StatusBadRequest)
-	// service doesn't allows use authorization_code grant type
-	getAuthorize(t, service.ClientService, "", http.StatusBadRequest)
+	getAuthorize(t, service.ClientTest, "nonse", "https://localhost:3000", http.StatusTemporaryRedirect)
+	getAuthorize(t, service.ClientTest, "", "", http.StatusOK)
 }
 
-func getAuthorize(t *testing.T, clientID string, redirectURI string, statusCode int) string {
+func getAuthorize(t *testing.T, clientID, nonce, redirectURI string, statusCode int) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
 	require.NoError(t, err)
-	q.Add(uri.ClientIDQueryKey, clientID)
+	q.Add(uri.ClientIDKey, clientID)
 	if redirectURI != "" {
-		q.Add(uri.RedirectURIQueryKey, redirectURI)
-		q.Add(uri.StateQueryKey, "1")
+		q.Add(uri.RedirectURIKey, redirectURI)
+		q.Add(uri.StateKey, "1")
+	}
+	if nonce != "" {
+		q.Add(uri.NonceKey, nonce)
 	}
 	u.RawQuery = q.Encode()
 	getReq := test.NewRequest(http.MethodGet, u.String(), nil).Build()
@@ -40,7 +40,7 @@ func getAuthorize(t *testing.T, clientID string, redirectURI string, statusCode 
 	if res.StatusCode == http.StatusTemporaryRedirect {
 		loc, err := res.Location()
 		require.NoError(t, err)
-		code := loc.Query().Get(uri.CodeQueryKey)
+		code := loc.Query().Get(uri.CodeKey)
 		require.NotEmpty(t, code)
 		return code
 	}
@@ -48,7 +48,7 @@ func getAuthorize(t *testing.T, clientID string, redirectURI string, statusCode 
 		var body map[string]string
 		err := json.ReadFrom(res.Body, &body)
 		require.NoError(t, err)
-		code := body[uri.CodeQueryKey]
+		code := body[uri.CodeKey]
 		require.NotEmpty(t, code)
 		return code
 	}

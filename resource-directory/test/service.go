@@ -21,6 +21,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	rdCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	rdCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	rdCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	rdCfg.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 	rdCfg.UserDevicesManagerTickFrequency = time.Millisecond * 500
 	rdCfg.UserDevicesManagerExpiration = time.Millisecond * 500
 	rdCfg.JwksURL = testCfg.JWKS_URL

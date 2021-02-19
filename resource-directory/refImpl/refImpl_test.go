@@ -18,7 +18,7 @@ func TestInit(t *testing.T) {
 	var config refImpl.Config
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
-	config.Service.OAuth.ClientID = oauthService.ClientService
+	config.Service.OAuth.ClientID = oauthService.ClientTest
 	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 
 	got, err := refImpl.Init(config)

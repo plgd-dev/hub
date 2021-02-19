@@ -7,6 +7,6 @@ import (
 )
 
 func (requestHandler *RequestHandler) logOut(w http.ResponseWriter, r *http.Request) {
-	returnTo := r.URL.Query().Get(uri.ReturnToQueryKey)
+	returnTo := r.URL.Query().Get(uri.ReturnToKey)
 	http.Redirect(w, r, returnTo, http.StatusTemporaryRedirect)
 }

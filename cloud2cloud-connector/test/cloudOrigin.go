@@ -18,7 +18,8 @@ const RESOURCE_AGGREGATE_HOST = "localhost:30003"
 const RESOURCE_DIRECTORY_HOST = "localhost:30004"
 const C2C_CONNECTOR_HOST = "localhost:30006"
 const OAUTH_HOST = "localhost:30007"
-const OAUTH_MANAGER_CLIENT_ID = "service"
+const OAUTH_MANAGER_CLIENT_ID = "oauthService"
+const OAUTH_MANAGER_AUDIENCE = "localhost"
 
 var C2C_CONNECTOR_EVENTS_URL = "https://" + C2C_CONNECTOR_HOST + c2curi.Events
 var C2C_CONNECTOR_OAUTH_CALLBACK = "https://" + C2C_CONNECTOR_HOST + "/oauthCbk"
@@ -58,6 +59,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg.Service.AuthServerAddr = AUTH_HOST
 	rdCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
 	rdCfg.Service.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
+	rdCfg.Service.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
 	rdCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
 	rdCfg.Listen.File.DisableVerifyClientCertificate = true
 	rdShutdown := rdService.New(t, rdCfg)
@@ -68,6 +70,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.Service.AuthServerAddr = AUTH_HOST
 	c2cConnectorCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
 	c2cConnectorCfg.Service.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
+	c2cConnectorCfg.Service.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
 	c2cConnectorCfg.Service.OAuthCallback = C2C_CONNECTOR_OAUTH_CALLBACK
 	c2cConnectorCfg.Service.EventsURL = C2C_CONNECTOR_EVENTS_URL
 	c2cConnectorCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
