@@ -8,6 +8,7 @@ import (
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 
 	authService "github.com/plgd-dev/cloud/authorization/test"
+	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/oauth-server/uri"
 )
@@ -18,7 +19,7 @@ const RESOURCE_AGGREGATE_HOST = "localhost:30003"
 const RESOURCE_DIRECTORY_HOST = "localhost:30004"
 const C2C_CONNECTOR_HOST = "localhost:30006"
 const OAUTH_HOST = "localhost:30007"
-const OAUTH_MANAGER_CLIENT_ID = "oauthService"
+const OAUTH_MANAGER_CLIENT_ID = oauthService.ClientTest
 const OAUTH_MANAGER_AUDIENCE = "localhost"
 
 var C2C_CONNECTOR_EVENTS_URL = "https://" + C2C_CONNECTOR_HOST + c2curi.Events
