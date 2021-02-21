@@ -19,7 +19,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
 type Subscriber interface {
@@ -297,25 +296,6 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 	s.insertToInitSubscriptions(sub)
 	s.allSubscriptions[sub.ID()] = sub
 	return nil
-}
-
-func makeLinksRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Event, m eventstore.Model) (ResourceLinks, bool) {
-	c := m.(*resourceLinksCtx).Clone()
-	switch eventType {
-	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
-		return ResourceLink{
-			link:    pb.RAResourceToProto(c.resourceId),
-			version: c.onResourcePublishedVersion,
-		}, true
-	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
-		if !c.isPublished {
-			return ResourceLink{
-				link:    pb.RAResourceToProto(c.resourceId),
-				version: c.onResourceUnpublishedVersion,
-			}, true
-		}
-	}
-	return ResourceLink{}, false
 }
 
 func (s *subscriptions) OnResourceLinksPublished(ctx context.Context, deviceID string, links ResourceLinks) error {

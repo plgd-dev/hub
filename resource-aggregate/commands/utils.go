@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gofrs/uuid"
-	statusResource "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 )
 
-const ResourceLinksHref = "/plgd/res"
+const ResourceLinksHref string = "/plgd/res"
+const StatusHref string = "/plgd/s"
 
 // ToUUID converts resource href and device id to unique resource ID
 func (r *ResourceId) ToUUID() string {
@@ -29,7 +29,7 @@ func MakeLinksResourceUUID(deviceID string) string {
 }
 
 func MakeStatusResourceUUID(deviceID string) string {
-	return uuid.NewV5(uuid.NamespaceURL, deviceID+statusResource.Href).String()
+	return uuid.NewV5(uuid.NamespaceURL, deviceID+StatusHref).String()
 }
 
 func MakeResourceID(deviceID, href string) *ResourceId {

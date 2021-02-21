@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
-type resourceLinksCtx struct {
+type resourceLinksProjection struct {
 	lock      sync.Mutex
 	deviceID  string
 	resources map[string]*commands.Resource
@@ -21,50 +21,50 @@ type resourceLinksCtx struct {
 	subscriptions *subscriptions
 }
 
-func NewResourceLinksCtx(subscriptions *subscriptions) func(context.Context) eventstore.Model {
+func NewResourceLinksProjection(subscriptions *subscriptions) func(context.Context) eventstore.Model {
 	return func(context.Context) eventstore.Model {
-		return &resourceLinksCtx{
+		return &resourceLinksProjection{
 			subscriptions: subscriptions,
 		}
 	}
 }
 
-func (m *resourceLinksCtx) Clone() *resourceLinksCtx {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+func (rlp *resourceLinksProjection) Clone() *resourceLinksProjection {
+	rlp.lock.Lock()
+	defer rlp.lock.Unlock()
 
-	return &resourceLinksCtx{
-		deviceID:  m.deviceID,
-		resources: m.resources,
-		version:   m.version,
+	return &resourceLinksProjection{
+		deviceID:  rlp.deviceID,
+		resources: rlp.resources,
+		version:   rlp.version,
 	}
 }
 
-func (m *resourceLinksCtx) onResourcePublishedLocked(ctx context.Context) error {
-	links := pb.RAResourcesToProto(m.resources)
-	return m.subscriptions.OnResourceLinksPublished(ctx, m.deviceID, ResourceLinks{
+func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Context) error {
+	links := pb.RAResourcesToProto(rlp.resources)
+	return rlp.subscriptions.OnResourceLinksPublished(ctx, rlp.deviceID, ResourceLinks{
 		links:   links,
-		version: m.version,
+		version: rlp.version,
 	})
 }
 
-func (m *resourceLinksCtx) onResourceUnpublishedLocked(ctx context.Context) error {
-	links := pb.RAResourcesToProto(m.resources)
-	return m.subscriptions.OnResourceLinksUnpublished(ctx, m.deviceID, ResourceLinks{
+func (rlp *resourceLinksProjection) onResourceUnpublishedLocked(ctx context.Context) error {
+	links := pb.RAResourcesToProto(rlp.resources)
+	return rlp.subscriptions.OnResourceLinksUnpublished(ctx, rlp.deviceID, ResourceLinks{
 		links:   links,
-		version: m.version,
+		version: rlp.version,
 	})
 }
 
-func (m *resourceLinksCtx) SnapshotEventType() string {
+func (rlp *resourceLinksProjection) SnapshotEventType() string {
 	s := &events.ResourceLinksSnapshotTaken{}
 	return s.SnapshotEventType()
 }
 
-func (m *resourceLinksCtx) Handle(ctx context.Context, iter eventstore.Iter) error {
+func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
 	var onResourcePublished, onResourceUnpublished bool
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	rlp.lock.Lock()
+	defer rlp.lock.Unlock()
 	var anyEventProcessed bool
 	for {
 		eu, ok := iter.Next(ctx)
@@ -72,8 +72,7 @@ func (m *resourceLinksCtx) Handle(ctx context.Context, iter eventstore.Iter) err
 			break
 		}
 		anyEventProcessed = true
-		log.Debugf("grpc-gateway.resourceLinksCtx.Handle: DeviceId: %v, ResourceId: %v, Version: %v, EventType: %v", eu.GroupID(), eu.AggregateID(), eu.Version(), eu.EventType())
-		m.version = eu.Version()
+		rlp.version = eu.Version()
 		switch eu.EventType() {
 		case (&events.ResourceLinksSnapshotTaken{}).EventType():
 			var s events.ResourceLinksSnapshotTaken
@@ -81,17 +80,17 @@ func (m *resourceLinksCtx) Handle(ctx context.Context, iter eventstore.Iter) err
 				return err
 			}
 
-			m.deviceID = s.GetDeviceId()
-			m.resources = s.GetResources()
+			rlp.deviceID = s.GetDeviceId()
+			rlp.resources = s.GetResources()
 		case (&events.ResourceLinksPublished{}).EventType():
 			var s events.ResourceLinksPublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
 
-			m.deviceID = s.GetDeviceId()
+			rlp.deviceID = s.GetDeviceId()
 			for _, res := range s.GetResources() {
-				m.resources[res.GetHref()] = res
+				rlp.resources[res.GetHref()] = res
 			}
 			onResourcePublished = true
 		case (&events.ResourceLinksUnpublished{}).EventType():
@@ -100,12 +99,12 @@ func (m *resourceLinksCtx) Handle(ctx context.Context, iter eventstore.Iter) err
 				return err
 			}
 
-			m.deviceID = s.GetDeviceId()
-			if len(m.resources) == len(s.GetResources()) {
-				m.resources = make(map[string]*commands.Resource)
+			rlp.deviceID = s.GetDeviceId()
+			if len(rlp.resources) == len(s.GetResources()) {
+				rlp.resources = make(map[string]*commands.Resource)
 			} else {
 				for _, res := range s.GetResources() {
-					delete(m.resources, res.GetHref())
+					delete(rlp.resources, res.GetHref())
 				}
 			}
 			onResourceUnpublished = true
@@ -118,11 +117,11 @@ func (m *resourceLinksCtx) Handle(ctx context.Context, iter eventstore.Iter) err
 	}
 
 	if onResourcePublished {
-		if err := m.onResourcePublishedLocked(ctx); err != nil {
+		if err := rlp.onResourcePublishedLocked(ctx); err != nil {
 			log.Errorf("%v", err)
 		}
 	} else if onResourceUnpublished {
-		if err := m.onResourceUnpublishedLocked(ctx); err != nil {
+		if err := rlp.onResourceUnpublishedLocked(ctx); err != nil {
 			log.Errorf("%v", err)
 		}
 	}

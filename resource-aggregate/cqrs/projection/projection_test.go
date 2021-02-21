@@ -427,7 +427,6 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 
 func TestResourceStateProjection_Models(t *testing.T) {
 	type args struct {
-		deviceID   string
 		resourceID *commands.ResourceId
 	}
 	tests := []struct {
@@ -484,7 +483,6 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev1r3",
 			args: args{
-				deviceID:   d1res3.DeviceId,
 				resourceID: commands.MakeResourceID(d1res3.DeviceId, d1res3.Href),
 			},
 			want: []eventstore.Model{
@@ -508,7 +506,6 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev1r4",
 			args: args{
-				deviceID:   d1res4.DeviceId,
 				resourceID: commands.MakeResourceID(d1res4.DeviceId, d1res4.Href),
 			},
 			want: []eventstore.Model{
@@ -532,7 +529,6 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev2r1",
 			args: args{
-				deviceID:   d2res1.DeviceId,
 				resourceID: commands.MakeResourceID(d2res1.DeviceId, d2res1.Href),
 			},
 			want: []eventstore.Model{
@@ -556,7 +552,6 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev2r2",
 			args: args{
-				deviceID:   d2res2.DeviceId,
 				resourceID: commands.MakeResourceID(d2res2.DeviceId, d2res2.Href),
 			},
 			want: []eventstore.Model{
@@ -598,7 +593,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err = p.Register(ctx, tt.args.deviceID)
+			_, err = p.Register(ctx, tt.args.resourceID.GetDeviceId())
 			assert.NoError(t, err)
 			got := p.Models(tt.args.resourceID)
 

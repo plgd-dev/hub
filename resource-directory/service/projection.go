@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	projectionRA "github.com/plgd-dev/cloud/resource-aggregate/cqrs/projection"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/strings"
 )
 
@@ -64,9 +65,36 @@ func (p *Projection) getModels(ctx context.Context, resourceID *commands.Resourc
 	return m, nil
 }
 
-func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIDsFilter []*commands.ResourceId, typeFilter, deviceIDs strings.Set) (map[string]map[string]*resourceCtx, error) {
+func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeFilter strings.Set) (map[string]map[string]*commands.Resource, error) {
+	devicesResourceLinks := make(map[string]map[string]*commands.Resource)
+	for deviceID := range deviceIDFilter {
+		models, err := p.getModels(ctx, commands.MakeResourceID(deviceID, commands.ResourceLinksHref))
+		if err != nil {
+			return nil, err
+		}
+		if len(models) != 1 {
+			return nil, fmt.Errorf("resource links for device %v are not available", deviceID)
+		}
+		resourceLinks := models[0].(*resourceLinksProjection).Clone()
+		devicesResourceLinks[resourceLinks.deviceID] = resourceLinks.resources
+	}
+
+	return devicesResourceLinks, nil
+}
+
+func (p *Projection) GetResourceProjections(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*resourceProjection, error) {
+	resourceLinks := make(map[string]map[string]*commands.Resource)
 	models := make([]eventstore.Model, 0, 32)
-	for _, rid := range resourceIDsFilter {
+	for _, rid := range resourceIDFilter {
+		// build resource links map of all devices which are requested
+		if _, present := resourceLinks[rid.GetDeviceId()]; !present {
+			rl, err := p.GetResourceLinks(ctx, strings.Set{rid.GetDeviceId(): {}}, nil)
+			if err != nil {
+				return nil, err
+			}
+			resourceLinks[rid.GetDeviceId()] = rl[rid.GetDeviceId()]
+		}
+
 		m, err := p.getModels(ctx, rid)
 		if err != nil {
 			return nil, err
@@ -74,30 +102,27 @@ func (p *Projection) GetResourceCtxs(ctx context.Context, resourceIDsFilter []*c
 		models = append(models, m...)
 	}
 
-	for deviceID := range deviceIDs {
-		m, err := p.getModels(ctx, &commands.ResourceId{DeviceId: deviceID})
-		if err != nil {
-			return nil, err
-		}
-		models = append(models, m...)
-	}
-
-	clonedModels := make(map[string]map[string]*resourceCtx)
+	clonedProjection := make(map[string]map[string]*resourceProjection)
 	for _, m := range models {
-		model := m.(*resourceCtx).Clone()
-		if !model.isPublished {
+		if m.SnapshotEventType() == events.NewResourceLinksSnapshotTaken().SnapshotEventType() {
 			continue
 		}
-		if !hasMatchingType(model.resourceId.GetResourceTypes(), typeFilter) {
+		rp := m.(*resourceProjection).Clone()
+		if _, present := resourceLinks[rp.resourceId.GetDeviceId()][rp.resourceId.GetHref()]; !present {
 			continue
 		}
-		resources, ok := clonedModels[model.resourceId.GetDeviceId()]
+
+		if !hasMatchingType(resourceLinks[rp.resourceId.GetDeviceId()][rp.resourceId.GetHref()].ResourceTypes, typeFilter) {
+			continue
+		}
+
+		resources, ok := clonedProjection[rp.resourceId.GetDeviceId()]
 		if !ok {
-			resources = make(map[string]*resourceCtx)
-			clonedModels[model.resourceId.GetDeviceId()] = resources
+			resources = make(map[string]*resourceProjection)
+			clonedProjection[rp.resourceId.GetDeviceId()] = resources
 		}
-		resources[model.resourceId.GetHref()] = model
+		resources[rp.resourceId.GetHref()] = rp
 	}
 
-	return clonedModels, nil
+	return clonedProjection, nil
 }

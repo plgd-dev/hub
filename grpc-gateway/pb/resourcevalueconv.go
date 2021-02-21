@@ -51,10 +51,6 @@ func (s Status) ToGrpcCode() codes.Code {
 	return codes.Unknown
 }
 
-func (r *ResourceId) ToUUID() string {
-	return (&commands.ResourceId{DeviceId: r.GetDeviceId(), Href: r.GetHref()}).ToUUID()
-}
-
 func RAContent2Content(s *commands.Content) *Content {
 	if s == nil {
 		return nil

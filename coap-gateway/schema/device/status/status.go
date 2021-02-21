@@ -8,8 +8,6 @@ const Title string = "Device cloud status"
 var Interfaces = []string{"oic.if.baseline"}
 var ResourceTypes = []string{ResourceType}
 
-const Href = "/plgd/s"
-
 type State uint8
 
 const (

@@ -1,7 +1,6 @@
 package pb
 
 import (
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/sdk/schema"
 )
 
@@ -31,13 +30,6 @@ func (d *Device) ToSchema() schema.Device {
 		ManufacturerName:      LocalizedStrings(d.GetManufacturerName()).ToSchema(),
 		ModelNumber:           d.GetModelNumber(),
 		ProtocolIndependentID: d.GetProtocolIndependentId(),
-	}
-}
-
-func (r *ResourceId) ToRAProto() *commands.ResourceId {
-	return &commands.ResourceId{
-		DeviceId: r.GetDeviceId(),
-		Href:     r.GetHref(),
 	}
 }
 

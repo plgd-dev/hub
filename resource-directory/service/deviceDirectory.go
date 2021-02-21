@@ -6,10 +6,10 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/sdk/schema"
 
+	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 
-	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
@@ -89,7 +89,7 @@ func (d Device) ToProto() *pb.Device {
 	return r
 }
 
-func updateDevice(dev *Device, resource *resourceCtx) error {
+func updateDevice(dev *Device, resource *resourceProjection, resourceLink *commands.Resource) error {
 	cloudResourceTypes := make(strings.Set)
 	cloudResourceTypes.Add(deviceStatus.ResourceTypes...)
 	switch {
@@ -99,15 +99,11 @@ func updateDevice(dev *Device, resource *resourceCtx) error {
 		if err != nil {
 			return err
 		}
-		dev.Resource = &devContent
-		if len(dev.Resource.ResourceTypes) == 0 {
-			dev.Resource.ResourceTypes = resource.resourceId.GetResourceTypes()
-		}
-		if len(dev.Resource.Interfaces) == 0 {
-			dev.Resource.Interfaces = resource.resourceId.GetInterfaces()
-		}
 		dev.ID = devContent.ID
-	case cloudResourceTypes.HasOneOf(resource.resourceId.GetResourceTypes()...):
+		dev.Resource = &devContent
+		dev.Resource.ResourceTypes = resourceLink.GetResourceTypes()
+		dev.Resource.Interfaces = resourceLink.GetInterfaces()
+	case cloudResourceTypes.HasOneOf(resourceLink.GetResourceTypes()...):
 		var cloudStatus deviceStatus.Status
 		err := decodeContent(resource.content.GetContent(), &cloudStatus)
 		if err != nil {
@@ -119,15 +115,15 @@ func updateDevice(dev *Device, resource *resourceCtx) error {
 	return nil
 }
 
-func filterDevicesByUserFilters(resourceValues map[string]map[string]*resourceCtx, req *pb.GetDevicesRequest) ([]Device, error) {
-	devices := make([]Device, 0, len(resourceValues))
+func filterDevicesByUserFilters(resourceProjections map[string]map[string]*resourceProjection, resourceLinks map[string]map[string]*commands.Resource, req *pb.GetDevicesRequest) ([]Device, error) {
+	devices := make([]Device, 0, len(resourceProjections))
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
-	for deviceID, resources := range resourceValues {
+	for deviceID, resources := range resourceProjections {
 		var device Device
 		var err error
 		for _, resource := range resources {
-			err = updateDevice(&device, resource)
+			err = updateDevice(&device, resource, resourceLinks[resource.resourceId.GetDeviceId()][resource.resourceId.GetHref()])
 			if err != nil {
 				break
 			}
@@ -172,22 +168,27 @@ func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set 
 
 // GetDevices provides list state of devices.
 func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) (err error) {
-	deviceIds := filterDevices(dd.userDeviceIds, req.DeviceIdsFilter)
-	if len(deviceIds) == 0 {
+	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdsFilter)
+	if len(deviceIDs) == 0 {
 		return status.Errorf(codes.NotFound, "not found")
 	}
 
 	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
-	for deviceID := range deviceIds {
-		resourceIdsFilter = append(resourceIdsFilter, commands.MakeResourceID(deviceID, "/oic/d"), commands.MakeResourceID(deviceID, deviceStatus.Href))
+	for deviceID := range deviceIDs {
+		resourceIdsFilter = append(resourceIdsFilter, commands.MakeResourceID(deviceID, "/oic/d"), commands.MakeResourceID(deviceID, commands.StatusHref))
 	}
 
-	resourceValues, err := dd.projection.GetResourceCtxs(srv.Context(), resourceIdsFilter, nil, nil)
+	resourceProjections, err := dd.projection.GetResourceProjections(srv.Context(), resourceIdsFilter, nil)
+	if err != nil {
+		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
+	}
+
+	resourceLinks, err := dd.projection.GetResourceLinks(srv.Context(), deviceIDs, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resource links by device ids: %v", err)
 	}
 
-	devices, err := filterDevicesByUserFilters(resourceValues, req)
+	devices, err := filterDevicesByUserFilters(resourceProjections, resourceLinks, req)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot filter devices by status: %v", err)
 	}

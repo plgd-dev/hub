@@ -317,7 +317,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4}, codes.OK, false)
 
-	ag, err := NewAggregate(commands.MakeResourceID(deviceID,commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID3})
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
@@ -1223,7 +1223,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.MakeResourceID(deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1305,7 +1305,7 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.MakeResourceID(deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.MakeResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {

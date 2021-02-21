@@ -47,7 +47,7 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	if len(models) == 0 {
 		return fmt.Errorf("cannot load resource models %v: %w", s.ResourceID(), err)
 	}
-	res := models[0].(*resourceCtx).Clone()
+	res := models[0].(*resourceProjection).Clone()
 	if res.content == nil {
 		return nil
 	}

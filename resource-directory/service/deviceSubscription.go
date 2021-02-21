@@ -217,9 +217,10 @@ func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) err
 	if len(models) != 1 {
 		return fmt.Errorf("resource links resource not available")
 	}
-	links, ok := makeLinksRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, models[0])
-	if !ok {
-		return fmt.Errorf("unable to create resource links")
+	c := models[0].(*resourceLinksProjection).Clone()
+	links := ResourceLinks{
+		links:   pb.RAResourcesToProto(c.resources),
+		version: c.version,
 	}
 	err := s.NotifyOfPublishedResourceLinks(ctx, links)
 	if err != nil {
@@ -240,7 +241,7 @@ func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) e
 func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context) error {
 	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	for _, model := range models {
-		c := model.(*resourceCtx).Clone()
+		c := model.(*resourceProjection).Clone()
 		err := c.onResourceUpdatePendingLocked(ctx, s.NotifyOfUpdatePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource update pending: %w", err)
@@ -252,7 +253,7 @@ func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context)
 func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Context) error {
 	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	for _, model := range models {
-		c := model.(*resourceCtx).Clone()
+		c := model.(*resourceProjection).Clone()
 		err := c.onResourceRetrievePendingLocked(ctx, s.NotifyOfRetrievePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource update pending: %w", err)
@@ -264,7 +265,7 @@ func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Contex
 func (s *deviceSubscription) initSendResourcesDeletePending(ctx context.Context) error {
 	models := s.resourceProjection.Models(&commands.ResourceId{DeviceId: s.DeviceID()})
 	for _, model := range models {
-		c := model.(*resourceCtx).Clone()
+		c := model.(*resourceProjection).Clone()
 		err := c.onResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource update pending: %w", err)

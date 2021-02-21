@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
@@ -146,7 +145,7 @@ func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []D
 	}
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.FilterByVersion(d.deviceID, status.Href, "devStatus", d.version) {
+		if s.FilterByVersion(d.deviceID, commands.StatusHref, "devStatus", d.version) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)
@@ -177,7 +176,7 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 	}
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.FilterByVersion(d.deviceID, status.Href, "devStatus", d.version) {
+		if s.FilterByVersion(d.deviceID, commands.StatusHref, "devStatus", d.version) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)
@@ -199,12 +198,12 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		statusResourceID := commands.MakeResourceID(deviceID, status.Href)
+		statusResourceID := commands.MakeResourceID(deviceID, commands.StatusHref)
 		models := s.resourceProjection.Models(statusResourceID)
 		if len(models) == 0 {
 			continue
 		}
-		res := models[0].(*resourceCtx).Clone()
+		res := models[0].(*resourceProjection).Clone()
 		online, err := isDeviceOnline(res.content.GetContent())
 		if err != nil {
 			log.Errorf("cannot determine device cloud status: %v", err)
@@ -229,12 +228,12 @@ func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, devi
 func (s *devicesSubscription) initNotifyOfOfflineDevice(ctx context.Context, deviceIDs []string) error {
 	toSend := make([]DeviceIDVersion, 0, 32)
 	for _, deviceID := range deviceIDs {
-		statusResourceID := commands.MakeResourceID(deviceID, status.Href)
+		statusResourceID := commands.MakeResourceID(deviceID, commands.StatusHref)
 		models := s.resourceProjection.Models(statusResourceID)
 		if len(models) == 0 {
 			continue
 		}
-		res := models[0].(*resourceCtx).Clone()
+		res := models[0].(*resourceProjection).Clone()
 		online, err := isDeviceOnline(res.content.GetContent())
 		if err != nil {
 			log.Errorf("cannot determine device cloud status: %v", err)
