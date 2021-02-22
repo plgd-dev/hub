@@ -12,6 +12,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 
+	"github.com/plgd-dev/cloud/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
+	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
@@ -112,6 +114,78 @@ func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 	}
 }
 
+func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignUpResponse {
+	code := oauthTest.GetDeviceAuthorizationCode(t)
+	signUpReq := service.CoapSignUpRequest{
+		DeviceID:              deviceID,
+		AuthorizationCode:     code,
+		AuthorizationProvider: oauthService.ClientTest,
+	}
+	inputCbor, err := cbor.Encode(signUpReq)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
+	defer cancel()
+	req := pool.AcquireMessage(ctx)
+	defer pool.ReleaseMessage(req)
+	token, err := message.GetToken()
+	require.NoError(t, err)
+	req.SetCode(codes.POST)
+	req.SetToken(token)
+	req.SetPath(uri.SecureSignUp)
+	req.SetContentFormat(message.AppOcfCbor)
+	req.SetBody(bytes.NewReader(inputCbor))
+
+	resp, err := co.Do(req)
+	require.NoError(t, err)
+	defer pool.ReleaseMessage(resp)
+
+	require.Equal(t, codes.Changed, resp.Code())
+	var signUpResp service.CoapSignUpResponse
+	err = cbor.ReadFrom(resp.Body(), &signUpResp)
+	require.NoError(t, err)
+	require.NotEmpty(t, signUpResp.AccessToken)
+	return signUpResp
+}
+
+func testSignIn(t *testing.T, r service.CoapSignUpResponse, co *tcp.ClientConn) service.CoapSignInResp {
+	signInReq := service.CoapSignInReq{
+		DeviceID:    CertIdentity,
+		UserID:      r.UserID,
+		AccessToken: r.AccessToken,
+		Login:       true,
+	}
+	inputCbor, err := cbor.Encode(signInReq)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
+	defer cancel()
+	req := pool.AcquireMessage(ctx)
+	defer pool.ReleaseMessage(req)
+	token, err := message.GetToken()
+	require.NoError(t, err)
+	req.SetCode(codes.POST)
+	req.SetToken(token)
+	req.SetPath(uri.SecureSignIn)
+	req.SetContentFormat(message.AppOcfCbor)
+	req.SetBody(bytes.NewReader(inputCbor))
+
+	resp, err := co.Do(req)
+	require.NoError(t, err)
+	defer pool.ReleaseMessage(resp)
+
+	require.Equal(t, codes.Changed, resp.Code())
+	var signInResp service.CoapSignInResp
+	err = cbor.ReadFrom(resp.Body(), &signInResp)
+	require.NoError(t, err)
+	return signInResp
+}
+
+func testSignUpIn(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignInResp {
+	resp := testSignUp(t, deviceID, co)
+	return testSignIn(t, resp, co)
+}
+
 func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn) {
 	var inputCbor []byte
 	var err error
@@ -162,12 +236,7 @@ func cbor2json(data []byte) (string, error) {
 }
 
 func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
-	codeEl := oauthTest.GetServiceToken(t)
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + "auth0" + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
-	testPostHandler(t, uri.SignUp, signUpEl, co)
-	deviceAccessToken := "device"
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + deviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
-	testPostHandler(t, uri.SignIn, signInEl, co)
+	testSignUpIn(t, CertIdentity, co)
 	publishResEl := []testEl{
 		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{coapCodes.Changed, TestWkRD{
