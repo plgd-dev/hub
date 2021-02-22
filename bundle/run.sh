@@ -4,16 +4,16 @@ set -e
 # Configure services
 export PATH="/usr/local/bin:$PATH"
 
-export INTERNAL_CERT_DIR_PATH="$CERITIFICATES_PATH/internal"
+export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
 export GRPC_INTERNAL_CERT_KEY_NAME="endpoint.key"
 
-export EXTERNAL_CERT_DIR_PATH="$CERITIFICATES_PATH/external"
+export EXTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/external"
 export COAP_GATEWAY_FILE_CERT_NAME="coap-gateway.crt"
 export COAP_GATEWAY_FILE_CERT_KEY_NAME="coap-gateway.key"
 
 # ROOT CERTS
-export CA_POOL_DIR="$CERITIFICATES_PATH"
+export CA_POOL_DIR="$CERTIFICATES_PATH"
 export CA_POOL_NAME_PREFIX="root_ca"
 export CA_POOL_CERT_PATH="$CA_POOL_DIR/$CA_POOL_NAME_PREFIX.crt"
 export CA_POOL_CERT_KEY_PATH="$CA_POOL_DIR/$CA_POOL_NAME_PREFIX.key"
@@ -39,7 +39,6 @@ export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
 export MONGODB_HOST="localhost:$MONGO_PORT"
 export MONGODB_URL="mongodb://$MONGODB_HOST"
 export MONGODB_URI="mongodb://$MONGODB_HOST"
-export MONGODB_MAX_POOL_SIZE="$RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES"
 export MONGO_URI="mongodb://$MONGODB_HOST"
 
 export NATS_URL="nats://localhost:$NATS_PORT"
@@ -57,19 +56,16 @@ export JWKS_URL="https://$OAUTH_SERVER_ADDRESS/.well-known/jwks.json"
 export OAUTH_SERVER_PORT=`echo ${OAUTH_SERVER_ADDRESS} | rev | cut -d':' -f 1 | rev`
 export HTTP_GATEWAY_PORT=`echo ${HTTP_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
 export GRPC_GATEWAY_PORT=`echo ${GRPC_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
+export CERTIFICATE_AUTHORITY_PORT=`echo ${CERTIFICATE_AUTHORITY_ADDRESS} | rev | cut -d':' -f 1 | rev`
 
-export FQDN_NGINX_HTTP=${FQDN}:${NGINX_HTTP_PORT}
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_HTTPS_PORT}
-
-export FQDN_AUTHORIZATION_HTTP=${FQDN}:`echo ${AUTHORIZATION_HTTP_ADDRESS} | rev | cut -d':' -f 1 | rev`
-export FQDN_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_NGINX_HTTP}/oauth/token?client_id=test&audience=test
-export FQDN_OAUTH_ENDPOINT_CODE_URL=https://${FQDN_NGINX_HTTP}/authorize?client_id=test
-export FQDN_CERTIFICATE_AUTHORITY_ADDRESS=${FQDN}:`echo ${CERTIFICATE_AUTHORITY_ADDRESS} | rev | cut -d':' -f 1 | rev`
+export FQDN_OAUTH_ENDPOINT_TOKEN_URL="https://${FQDN_NGINX_HTTPS}/oauth/token?client_id=test&audience=test"
+export FQDN_OAUTH_ENDPOINT_CODE_URL="https://${FQDN_NGINX_HTTPS}/authorize?client_id=test"
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
 
-if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
+if [ "$INITIALIZE" = "true" ]; then
   mkdir -p $CA_POOL_DIR
   mkdir -p $INTERNAL_CERT_DIR_PATH
   mkdir -p $EXTERNAL_CERT_DIR_PATH
@@ -83,6 +79,8 @@ if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
   certificate-generator --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
   echo "generating COAP-GW cert"
   certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+  echo "generating NGINX cert"
+  certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
 
   mkdir -p ${OAUTH_KEYS_PATH}
   openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
@@ -90,15 +88,15 @@ if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
 
   mkdir -p ${NGINX_PATH}
   cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_NGINX_HTTP_PORT/$NGINX_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_NGINX_HTTPS_PORT/$NGINX_HTTPS_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_OAUTH_SERVER_PORT/$OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 mkdir -p $MONGO_PATH
-mkdir -p $CERITIFICATES_PATH
+mkdir -p $CERTIFICATES_PATH
 mkdir -p $LOGS_PATH
 
 # nats
@@ -149,13 +147,12 @@ Listen:
     TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
     DirPath: ${INTERNAL_CERT_DIR_PATH}
     TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
-    DisableVerifyClientCertificate: ${OAUTH_SERVER_ADDRESS_DISABLE_VERIFY_CLIENTS}
+    DisableVerifyClientCertificate: false
     UseSystemCertPool: false
 IDTokenPrivateKeyPath: ${OAUTH_ID_TOKEN_KEY_PATH}
 AccessTokenKeyPrivateKeyPath: ${OAUTH_ACCESS_TOKEN_KEY_PATH}
 EOF
 ADDRESS=${HTTP_GATEWAY_ADDRESS} \
-LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
 oauth-server --config=/data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
 status=$?
 oauth_server_pid=$!
@@ -230,8 +227,8 @@ SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=${FQDN_OAUTH_ENDPOINT_TOKEN_URL} \
 SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${FQDN_OAUTH_ENDPOINT_CODE_URL} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDID=${COAP_GATEWAY_CLOUD_ID} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDURL="coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}" \
-SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${FQDN_CERTIFICATE_AUTHORITY_ADDRESS} \
-SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="auth0" \
+SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${FQDN_NGINX_HTTPS} \
+SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="test" \
 SERVICE_CLIENT_CONFIGURATION_JWTCLAIMOWNERID="sub" \
 resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
 status=$?
@@ -300,7 +297,6 @@ fi
 # grpc-gateway
 echo "starting grpc-gateway"
 ADDRESS=${GRPC_GATEWAY_ADDRESS} \
-LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS} \
 grpc-gateway >$LOGS_PATH/grpc-gateway.log 2>&1 &
 status=$?
 grpc_gw_pid=$!
@@ -333,7 +329,7 @@ Listen:
     TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
     DirPath: ${INTERNAL_CERT_DIR_PATH}
     TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
-    DisableVerifyClientCertificate: ${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS}
+    DisableVerifyClientCertificate: false
     UseSystemCertPool: false
 Dial:
   Type: file
@@ -357,7 +353,6 @@ UI:
     httpGatewayAddress: https://${FQDN_NGINX_HTTPS}
 EOF
 ADDRESS=${HTTP_GATEWAY_ADDRESS} \
-LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
 http-gateway --config=/data/httpgw.yaml >$LOGS_PATH/http-gateway.log 2>&1 &
 status=$?
 http_gw_pid=$!
@@ -384,7 +379,6 @@ echo "starting certificate-authority"
 ADDRESS=${CERTIFICATE_AUTHORITY_ADDRESS} \
 SIGNER_CERTIFICATE=${CA_POOL_CERT_PATH} \
 SIGNER_PRIVATE_KEY=${CA_POOL_CERT_KEY_PATH} \
-LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${CERTIFICATE_AUTHORITY_DISABLE_VERIFY_CLIENTS} \
 certificate-authority >$LOGS_PATH/certificate-authority.log 2>&1 &
 status=$?
 certificate_authority_pid=$!
