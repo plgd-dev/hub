@@ -94,20 +94,26 @@ type tokenRequest struct {
 	Password string `json:"password"`
 	Audience string `json:"audience"`
 
-	host      string          `json:-`
-	tokenType AccessTokenType `json:-`
+	host      string
+	tokenType AccessTokenType
 }
 
 // used by acquire service token
 func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Request) {
-	clientID, _, ok := r.BasicAuth()
-	if !ok {
-		writeError(w, fmt.Errorf("authorization header is not set"), http.StatusBadRequest)
-		return
+	clientID := r.URL.Query().Get(uri.ClientIDKey)
+	audience := r.URL.Query().Get(uri.AudienceKey)
+	var ok bool
+	if clientID == "" {
+		clientID, _, ok = r.BasicAuth()
+		if !ok {
+			writeError(w, fmt.Errorf("authorization header is not set"), http.StatusBadRequest)
+			return
+		}
 	}
 	requestHandler.processResponse(w, tokenRequest{
 		ClientID:  clientID,
-		GrantType: string(AllowedGrantType_PASSWORD),
+		GrantType: string(AllowedGrantType_CLIENT_CREDENTIALS),
+		Audience:  audience,
 
 		host:      r.Host,
 		tokenType: AccessTokenType_JWT,
