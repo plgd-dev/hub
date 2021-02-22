@@ -121,10 +121,8 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 
-	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &pbCQRS.CommandMetadata{
-		Sequence:     client.coapConn.Sequence(),
-		ConnectionId: client.remoteAddrString(),
-	}, authCtx.AuthorizationContext)
+	oldAuthCtx := client.replaceAuthorizationContext(&authCtx)
+	err = client.server.devicesStatusUpdater.Add(client)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
@@ -132,7 +130,6 @@ func signInPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, s
 		return
 	}
 
-	oldAuthCtx := client.replaceAuthorizationContext(&authCtx)
 	newDevice := false
 
 	switch {
@@ -244,10 +241,7 @@ func signOutPostHandler(s mux.ResponseWriter, req *mux.Message, client *Client, 
 		client.Close()
 		return
 	}
-
-	client.cancelResourceSubscriptions(true)
-	client.cancelDeviceSubscriptions(true)
-	oldAuthCtx := client.replaceAuthorizationContext(nil)
+	oldAuthCtx := client.CleanUp()
 	if oldAuthCtx.DeviceId != "" {
 		client.server.expirationClientCache.Set(oldAuthCtx.DeviceId, nil, time.Second)
 		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)

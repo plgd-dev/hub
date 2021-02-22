@@ -344,6 +344,7 @@ func (client *Client) CleanUp() (oldDeviceID *authCtx) {
 	aCtx := client.loadAuthorizationContext()
 	log.Debugf("clenaup client %v for device %v", client.coapConn.RemoteAddr(), aCtx.DeviceId)
 
+	client.server.devicesStatusUpdater.Remove(client)
 	client.server.oicPingCache.Delete(client.remoteAddrString())
 	client.cleanObservedResources()
 	client.cancelResourceSubscriptions(false)
