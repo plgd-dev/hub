@@ -72,7 +72,8 @@ type Server struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 
-	sigs chan os.Signal
+	sigs                 chan os.Signal
+	devicesStatusUpdater *devicesStatusUpdater
 }
 
 type DialCertManager = interface {
@@ -100,6 +101,10 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 			log.Debugf("device %v token has ben expired", authCtx.GetDeviceId())
 		}
 	})
+
+	if config.DeviceStatusValidity <= 0 {
+		log.Fatalf("invalid value of config.DeviceStatusValidity(%v)", config.DeviceStatusValidity)
+	}
 
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
@@ -212,6 +217,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		oicPingCache:          oicPingCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
+		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.DeviceStatusValidity),
 
 		sigs: make(chan os.Signal, 1),
 

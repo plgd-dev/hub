@@ -27,4 +27,5 @@ type Config struct {
 	HeartBeat                       time.Duration  `envconfig:"HEARTBEAT" default:"4s"`
 	MaxMessageSize                  int            `envconfig:"MAX_MESSAGE_SIZE" default:"262144"`
 	LogMessages                     bool           `envconfig:"LOG_MESSAGES" default:"false"`
+	DeviceStatusValidity            time.Duration  `envconfig:"DEVICE_STATUS_VALIDITY" default:"20m"`
 }
