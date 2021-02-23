@@ -7,13 +7,15 @@ import (
 	"github.com/plgd-dev/kit/sync/task/queue"
 )
 
-type DeviceStatusValidityConfig struct {
-	Enable   bool          `yaml:"enable" json:"enable"`
-	Validity time.Duration `yaml:"validity" json:"validity"`
+type DeviceStatusExpirationConfig struct {
+	Enabled   bool          `yaml:"enabled" json:"enabled"`
+	ExpiresIn time.Duration `yaml:"expiresIn" json:"expiresIn"`
 }
 
-func (c *DeviceStatusValidityConfig) SetDefaults() {
-	c.Validity = 20 * time.Minute
+func (c *DeviceStatusExpirationConfig) SetDefaults() {
+	if c.ExpiresIn == 0 {
+		c.ExpiresIn = 24 * time.Hour
+	}
 }
 
 // Config for application.
@@ -37,11 +39,11 @@ type Config struct {
 	HeartBeat                       time.Duration  `envconfig:"HEARTBEAT" default:"4s"`
 	MaxMessageSize                  int            `envconfig:"MAX_MESSAGE_SIZE" default:"262144"`
 	LogMessages                     bool           `envconfig:"LOG_MESSAGES" default:"false"`
-	DeviceStatusValidity            DeviceStatusValidityConfig
+	DeviceStatusExpiration          DeviceStatusExpirationConfig
 	TaskQueue                       queue.Config
 }
 
 func (c *Config) SetDefaults() {
 	c.TaskQueue.SetDefaults()
-	c.DeviceStatusValidity.SetDefaults()
+	c.DeviceStatusExpiration.SetDefaults()
 }

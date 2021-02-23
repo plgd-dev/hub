@@ -19,30 +19,30 @@ type deviceExpires struct {
 
 type devicesStatusUpdater struct {
 	ctx context.Context
-	cfg DeviceStatusValidityConfig
+	cfg DeviceStatusExpirationConfig
 
 	mutex   sync.Mutex
 	devices map[string]*deviceExpires
 }
 
-func NewDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusValidityConfig) *devicesStatusUpdater {
+func NewDevicesStatusUpdater(ctx context.Context, cfg DeviceStatusExpirationConfig) *devicesStatusUpdater {
 	u := devicesStatusUpdater{
 		ctx:     ctx,
 		cfg:     cfg,
 		devices: make(map[string]*deviceExpires),
 	}
-	if cfg.Enable {
+	if cfg.Enabled {
 		go u.run()
 	}
 	return &u
 }
 
 func (u *devicesStatusUpdater) Add(c *Client) error {
-	expires, err := u.updateOnlineStatus(c, time.Now().Add(u.cfg.Validity))
+	expires, err := u.updateOnlineStatus(c, time.Now().Add(u.cfg.ExpiresIn))
 	if err != nil {
 		return err
 	}
-	if !u.cfg.Enable {
+	if !u.cfg.Enabled {
 		return nil
 	}
 	d := deviceExpires{
@@ -71,7 +71,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 		return time.Time{}, fmt.Errorf("cannot get service token: %w", err)
 	}
 	ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(client.Context(), serviceToken.AccessToken), authCtx.GetUserID())
-	if !u.cfg.Enable || authCtx.Expire.Before(validUntil) {
+	if !u.cfg.Enabled || authCtx.Expire.Before(validUntil) {
 		validUntil = authCtx.Expire
 	}
 
@@ -90,7 +90,7 @@ func (u *devicesStatusUpdater) getDevicesToUpdate(now time.Time) []*deviceExpire
 		case <-d.client.Context().Done():
 			delete(u.devices, key)
 		default:
-			if now.Add(u.cfg.Validity / 2).After(d.expires) {
+			if now.Add(u.cfg.ExpiresIn / 2).After(d.expires) {
 				res = append(res, d)
 			}
 		}
@@ -99,14 +99,14 @@ func (u *devicesStatusUpdater) getDevicesToUpdate(now time.Time) []*deviceExpire
 }
 
 func (u *devicesStatusUpdater) run() {
-	t := time.NewTicker(u.cfg.Validity / 10)
+	t := time.NewTicker(u.cfg.ExpiresIn / 10)
 	for {
 		select {
 		case <-u.ctx.Done():
 			return
 		case now := <-t.C:
 			for _, d := range u.getDevicesToUpdate(now) {
-				expires, err := u.updateOnlineStatus(d.client, time.Now().Add(u.cfg.Validity))
+				expires, err := u.updateOnlineStatus(d.client, time.Now().Add(u.cfg.ExpiresIn))
 				if err != nil {
 					log.Errorf("cannot update device(%v) status to online: %v", getDeviceID(d.client), err)
 				} else {

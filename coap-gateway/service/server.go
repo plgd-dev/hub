@@ -234,7 +234,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		oicPingCache:          oicPingCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
-		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.DeviceStatusValidity),
+		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.DeviceStatusExpiration),
 
 		sigs: make(chan os.Signal, 1),
 
