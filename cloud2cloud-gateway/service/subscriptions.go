@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitSync "github.com/plgd-dev/kit/sync"
@@ -127,7 +128,7 @@ func (s *SubscriptionData) createResourceSubscription(ctx context.Context, emitE
 	default:
 		return nil, fmt.Errorf("createResourceSubscription: unsupported subscription eventypes %+v", s.data.EventTypes)
 	}
-	return client.NewResourceSubscription(ctx, pb.ResourceId{
+	return client.NewResourceSubscription(ctx, commands.ResourceId{
 		DeviceId: s.data.DeviceID,
 		Href:     s.data.Href,
 	}, closeEventHandler, eventHandler, s.gwClient)

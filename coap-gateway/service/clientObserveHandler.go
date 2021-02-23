@@ -12,6 +12,7 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -128,7 +129,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		},
 	}
 
-	sub, err := grpcClient.NewResourceSubscription(req.Context, pbGRPC.ResourceId{
+	sub, err := grpcClient.NewResourceSubscription(req.Context, commands.ResourceId{
 		DeviceId: deviceID,
 		Href:     href,
 	}, &h, &h, client.server.rdClient)

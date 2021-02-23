@@ -197,7 +197,7 @@ func NewRequestHandler(
 func newEventStoreModelFactory(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer) func(context.Context, string, string) (eventstore.Model, error) {
 	return func(ctx context.Context, deviceID, resourceID string) (eventstore.Model, error) {
 		if commands.MakeLinksResourceUUID(deviceID) == resourceID {
-			return NewResourceLinksProjection(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), nil
+			return NewResourceLinksProjection(subscriptions), nil
 		}
 		return NewResourceProjection(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), nil
 	}

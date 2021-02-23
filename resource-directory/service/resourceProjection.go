@@ -32,15 +32,13 @@ type resourceProjection struct {
 	resourceDeletePendings        []events.ResourceDeletePending
 }
 
-func NewResourceProjection(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer) func(context.Context) eventstore.Model {
-	return func(ctx context.Context) eventstore.Model {
-		return &resourceProjection{
-			subscriptions:                 subscriptions,
-			updateNotificationContainer:   updateNotificationContainer,
-			retrieveNotificationContainer: retrieveNotificationContainer,
-			deleteNotificationContainer:   deleteNotificationContainer,
-			resourceUpdatePendings:        make([]events.ResourceUpdatePending, 0, 8),
-		}
+func NewResourceProjection(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer) eventstore.Model {
+	return &resourceProjection{
+		subscriptions:                 subscriptions,
+		updateNotificationContainer:   updateNotificationContainer,
+		retrieveNotificationContainer: retrieveNotificationContainer,
+		deleteNotificationContainer:   deleteNotificationContainer,
+		resourceUpdatePendings:        make([]events.ResourceUpdatePending, 0, 8),
 	}
 }
 

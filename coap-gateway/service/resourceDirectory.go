@@ -15,7 +15,6 @@ import (
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/coap"
 	"github.com/plgd-dev/sdk/schema"
-	uuid "github.com/satori/go.uuid"
 )
 
 type wkRd struct {
@@ -44,10 +43,6 @@ func fixHref(href string) string {
 		return p
 	}
 	return "/" + p
-}
-
-func resource2UUID(deviceID, href string) string {
-	return uuid.NewV5(uuid.NamespaceURL, deviceID+href).String()
 }
 
 func validatePublish(w wkRd) error {
@@ -83,30 +78,20 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	// set time to live properly
 	w = fixTTL(w)
-
-	links := make(schema.ResourceLinks, 0, len(w.Links))
-	for _, resource := range w.Links {
-		if resource.DeviceID == "" {
-			resource.DeviceID = w.DeviceID
-		}
-		resource, err := client.publishResource(req.Context, resource, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber, authCtx.GetPbData())
-		if err != nil {
-			// publish resource is not critical, it cause unaccessible resource
-			log.Errorf("DeviceId %v: cannot handle coap req to publish resource: %v", authCtx.GetDeviceID(), err)
-		} else {
-			links = append(links, resource)
-		}
+	for _, link := range w.Links {
+		link.DeviceID = w.DeviceID
+		link.Href = fixHref(link.Href)
+		link.InstanceID = getInstanceID(link.Href)
 	}
 
-	if len(links) == 0 {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot publish resource: empty links", authCtx.GetDeviceID()), coapCodes.BadRequest, req.Token)
-		return
+	err = client.publishResourceLinks(req.Context, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber, authCtx.GetPbData())
+	if err != nil {
+		log.Errorf("Cannot device %v publish resources %v", w.DeviceID, authCtx.GetDeviceID(), err)
+
 	}
 
-	w.Links = links
-	for _, link := range links {
+	for _, link := range w.Links {
 		observable := link.Policy != nil && link.Policy.BitMask.Has(schema.Observable)
 		err := client.observeResource(req.Context, link.GetDeviceID(), link.Href, observable, true)
 		if err != nil {

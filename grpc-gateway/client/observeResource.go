@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	"github.com/plgd-dev/sdk/local/core"
 )
@@ -28,7 +29,7 @@ func (c *Client) ObserveResource(
 		return "", err
 	}
 
-	sub, err := c.NewResourceSubscription(ctx, pb.ResourceId{
+	sub, err := c.NewResourceSubscription(ctx, commands.ResourceId{
 		DeviceId: deviceID,
 		Href:     href,
 	}, &observationHandler{

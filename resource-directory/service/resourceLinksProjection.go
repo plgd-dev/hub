@@ -21,11 +21,9 @@ type resourceLinksProjection struct {
 	subscriptions *subscriptions
 }
 
-func NewResourceLinksProjection(subscriptions *subscriptions) func(context.Context) eventstore.Model {
-	return func(context.Context) eventstore.Model {
-		return &resourceLinksProjection{
-			subscriptions: subscriptions,
-		}
+func NewResourceLinksProjection(subscriptions *subscriptions) eventstore.Model {
+	return &resourceLinksProjection{
+		subscriptions: subscriptions,
 	}
 }
 

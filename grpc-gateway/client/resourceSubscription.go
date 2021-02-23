@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 type CloseErrorHandler struct {
@@ -54,13 +55,13 @@ type ResourceSubscription struct {
 
 // NewResourceSubscription creates new resource content changed subscription.
 // JWT token must be stored in context for grpc call.
-func (c *Client) NewResourceSubscription(ctx context.Context, resourceID pb.ResourceId, handle SubscriptionHandler) (*ResourceSubscription, error) {
+func (c *Client) NewResourceSubscription(ctx context.Context, resourceID commands.ResourceId, handle SubscriptionHandler) (*ResourceSubscription, error) {
 	return NewResourceSubscription(ctx, resourceID, handle, handle, c.gateway)
 }
 
 // NewResourceSubscription creates new resource content changed subscription.
 // JWT token must be stored in context for grpc call.
-func NewResourceSubscription(ctx context.Context, resourceID pb.ResourceId, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*ResourceSubscription, error) {
+func NewResourceSubscription(ctx context.Context, resourceID commands.ResourceId, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*ResourceSubscription, error) {
 	var resourceContentChangedHandler ResourceContentChangedHandler
 	filterEvents := make([]pb.SubscribeForEvents_ResourceEventFilter_Event, 0, 1)
 	if v, ok := handle.(ResourceContentChangedHandler); ok {

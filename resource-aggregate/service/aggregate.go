@@ -49,8 +49,11 @@ func validatePublish(request *commands.PublishResourceLinksRequest) error {
 		return status.Errorf(codes.InvalidArgument, "empty publish is not accepted")
 	}
 	for _, res := range request.Resources {
-		if res.Href == "" {
+		if len(res.Href) <= 1 || res.Href[:1] != "/" {
 			return status.Errorf(codes.InvalidArgument, "invalid resource href")
+		}
+		if res.DeviceId == "" {
+			return status.Errorf(codes.InvalidArgument, "invalid device id")
 		}
 	}
 	if request.DeviceId == "" {

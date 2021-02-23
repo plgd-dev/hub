@@ -133,33 +133,13 @@ func RAResourcesToProto(resources map[string]*commands.Resource) []*ResourceLink
 	return resourceLinks
 }
 
-func RAResourceLinksToProto(ra *commands.Resource) ResourceLink {
-	var p *Policies
-	if ra.Policies != nil {
-		p = &Policies{
-			BitFlags: ra.Policies.GetBitFlags(),
-		}
-	}
-	return ResourceLink{
-		Anchor:                ra.Anchor,
-		DeviceId:              ra.DeviceId,
-		EndpointInformations:  RAEndpointInformationsToProto(ra.EndpointInformations),
-		Href:                  ra.Href,
-		Interfaces:            ra.Interfaces,
-		Policies:              p,
-		Types:                 ra.ResourceTypes,
-		SupportedContentTypes: ra.SupportedContentTypes,
-		Title:                 ra.Title,
-	}
-}
-
-func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
+func SchemaEndpointsToProto(ra []schema.Endpoint) []*commands.EndpointInformation {
 	if ra == nil {
 		return nil
 	}
-	r := make([]*EndpointInformation, 0, len(ra))
+	r := make([]*commands.EndpointInformation, 0, len(ra))
 	for _, e := range ra {
-		r = append(r, &EndpointInformation{
+		r = append(r, &commands.EndpointInformation{
 			Endpoint: e.URI,
 			Priority: int64(e.Priority),
 		})
@@ -167,25 +147,34 @@ func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
 	return r
 }
 
-func SchemaPolicyToProto(ra *schema.Policy) *Policies {
+func SchemaPolicyToProto(ra *schema.Policy) *commands.Policies {
 	if ra == nil {
 		return nil
 	}
-	return &Policies{
+	return &commands.Policies{
 		BitFlags: int32(ra.BitMask),
 	}
 }
 
-func SchemaResourceLinkToProto(ra schema.ResourceLink) ResourceLink {
-	return ResourceLink{
-		Anchor:                ra.Anchor,
-		DeviceId:              ra.DeviceID,
-		EndpointInformations:  SchemaEndpointsToProto(ra.Endpoints),
-		Href:                  ra.Href,
-		Interfaces:            ra.Interfaces,
-		Policies:              SchemaPolicyToProto(ra.Policy),
-		Types:                 ra.ResourceTypes,
-		SupportedContentTypes: ra.SupportedContentTypes,
-		Title:                 ra.Title,
+func SchemaResourceLinkToRAResource(link schema.ResourceLink, ttl int32) *commands.Resource {
+	return &commands.Resource{
+		Href:                  link.Href,
+		DeviceId:              link.DeviceID,
+		ResourceTypes:         link.ResourceTypes,
+		Interfaces:            link.Interfaces,
+		Anchor:                link.Anchor,
+		Title:                 link.Title,
+		SupportedContentTypes: link.SupportedContentTypes,
+		TimeToLive:            ttl,
+		Policies:              SchemaPolicyToProto(link.Policy),
+		EndpointInformations:  SchemaEndpointsToProto(link.Endpoints),
 	}
+}
+
+func SchemaResourceLinksToRAResources(links schema.ResourceLinks, ttl int32) []*commands.Resource {
+	var resources = make([]*commands.Resource, 0, len(links))
+	for _, link := range links {
+		resources = append(resources, SchemaResourceLinkToRAResource(link, ttl))
+	}
+	return resources
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -44,7 +45,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 
 func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*pbGRPC.Content, coapCodes.Code, error) {
 	processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, userID), &pbGRPC.DeleteResourceRequest{
-		ResourceId: &pbGRPC.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
