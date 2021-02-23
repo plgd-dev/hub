@@ -69,20 +69,19 @@ type Server struct {
 	oauthMgr              *manager.Manager
 	expirationClientCache *cache.Cache
 
-	coapServer      *tcp.Server
-	listener        tcp.Listener
-	authInterceptor kitNetCoap.Interceptor
-	asConn          *grpc.ClientConn
-	rdConn          *grpc.ClientConn
-	raConn          *grpc.ClientConn
-	ctx             context.Context
-	cancel          context.CancelFunc
-
-	taskQueue *queue.Queue
+	coapServer              *tcp.Server
+	listener                tcp.Listener
+	authInterceptor         kitNetCoap.Interceptor
+	asConn                  *grpc.ClientConn
+	rdConn                  *grpc.ClientConn
+	raConn                  *grpc.ClientConn
+	ctx                     context.Context
+	cancel                  context.CancelFunc
+	taskQueue               *queue.Queue
+	userDeviceSubscriptions *kitSync.Map
+	devicesStatusUpdater    *devicesStatusUpdater
 
 	sigs chan os.Signal
-
-	userDeviceSubscriptions *kitSync.Map
 }
 
 type DialCertManager = interface {
@@ -235,6 +234,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		oicPingCache:          oicPingCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
+		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.DeviceStatusExpiration),
 
 		sigs: make(chan os.Signal, 1),
 

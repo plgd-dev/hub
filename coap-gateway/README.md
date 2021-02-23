@@ -1,1 +1,1 @@
-../docs/guide/architecture/4-coap-gateway.md
+../docs/guide/deployment/coap-gateway.md
