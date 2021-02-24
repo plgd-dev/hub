@@ -38,8 +38,8 @@ func WithTLS(cfg *tls.Config) Option {
 type Config struct {
 	URI             string        `long:"uri" env:"URI" envconfig:"URI" default:"mongodb://localhost:27017"`
 	DatabaseName    string        `long:"dbName" env:"DATABASE" envconfig:"DATABASE" default:"eventStore"`
-	BatchSize       int           `long:"batchSize" env:"BATCH_SIZE" envconfig:"BATCH_SIZE" default:"64"`
-	MaxPoolSize     uint64        `long:"maxPoolSize" env:"MAX_POOL_SIZE" envconfig:"MAX_POOL_SIZE" default:"64"`
+	BatchSize       int           `long:"batchSize" env:"BATCH_SIZE" envconfig:"BATCH_SIZE" default:"16"`
+	MaxPoolSize     uint64        `long:"maxPoolSize" env:"MAX_POOL_SIZE" envconfig:"MAX_POOL_SIZE" default:"16"`
 	MaxConnIdleTime time.Duration `long:"maxConnIdleTime" env:"MAX_CONN_IDLE_TIME" envconfig:"MAX_CONN_IDLE_TIME" default:"240s"`
 	tlsCfg          *tls.Config
 	marshalerFunc   MarshalerFunc
