@@ -30,7 +30,7 @@ export const Pagination = props => {
       <PaginationItems
         activePage={pageIndex + 1}
         pageCount={pageCount}
-        maxButtons={5}
+        maxButtons={10}
         onItemClick={gotoPage}
       />
       <BPagination.Next

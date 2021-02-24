@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import classNames from 'classnames'
 
 import { Pagination } from './pagination'
+import { compareIgnoreCase } from './utils'
 
 export const Table = ({
   columns,
@@ -36,6 +37,14 @@ export const Table = ({
       initialState: {
         sortBy: defaultSortBy,
         pageSize: defaultPageSize,
+      },
+      sortTypes: {
+        alphanumeric: (row1, row2, columnName) => {
+          return compareIgnoreCase(
+            row1.values[columnName],
+            row2.values[columnName]
+          )
+        },
       },
     },
     useSortBy,

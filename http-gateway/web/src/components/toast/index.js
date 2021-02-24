@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types'
 import { ToastContainer as Toastr, toast } from 'react-toastify'
 import classNames from 'classnames'
+import { useIntl } from 'react-intl'
 
 import { toastTypes } from './constants'
+import { translateToastString } from './utils'
 
 const { ERROR, SUCCESS, WARNING, INFO } = toastTypes
 
@@ -21,7 +23,11 @@ export const ToastContainer = () => {
 }
 
 const ToastComponent = props => {
+  const { formatMessage: _ } = useIntl()
   const { message, title, type } = props
+
+  const toastMessage = translateToastString(message, _)
+  const toastTitle = translateToastString(title, _)
 
   return (
     <div className="toast-component">
@@ -36,16 +42,16 @@ const ToastComponent = props => {
         />
       </div>
       <div className="toast-content">
-        {title && <div className="title">{title}</div>}
-        <div className="message">{message}</div>
+        {toastTitle && <div className="title">{toastTitle}</div>}
+        <div className="message">{toastMessage}</div>
       </div>
     </div>
   )
 }
 
 ToastComponent.propTypes = {
-  message: PropTypes.node.isRequired,
-  title: PropTypes.node,
+  message: PropTypes.oneOfType([PropTypes.node, PropTypes.object]).isRequired,
+  title: PropTypes.oneOfType([PropTypes.node, PropTypes.object]),
   type: PropTypes.oneOf([ERROR, SUCCESS, WARNING, INFO]),
 }
 

@@ -388,14 +388,16 @@ components:
     DeviceStatusEvent:
       type: object
       properties:
-        deviceId:
-          type: string
-          format: uuid
-          description: Unique identifier of the device
+        deviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Unique identifiers of the devices
         status:
             $ref: '#/components/schemas/DeviceStatus'
       example:
-        deviceId: f1b0f779-57e9-4b76-9a9b-16ff0390f89b
+        deviceIds: ["f1b0f779-57e9-4b76-9a9b-16ff0390f89b"]
         status: online
     ResourceObservation:
       type: object

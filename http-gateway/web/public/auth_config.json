@@ -1,7 +1,7 @@
 {
-  "domain": "",
-  "clientID": "",
-  "audience": "",
+  "domain": "auth.plgd.cloud",
+  "clientID": "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS",
+  "audience": "https://try.plgd.cloud",
   "scope": "",
-  "httpGatewayAddress": ""
+  "httpGatewayAddress": "https://api.try.plgd.cloud"
 }

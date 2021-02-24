@@ -121,7 +121,7 @@ The application name which also appears in the title bar can be changed by modif
 
 ### Header / Status Bar
 
-The header has a dedicated component which can be found in `./http-gateway/web/src/components/status-bar/status-bar.js`. You can modify the status-bar `<div id="status-bar">...</div>` by removing existing components like `LanguageSwitcher` and `UserWidget` or by adding different content in the `div`.
+The header has a dedicated component which can be found in `./http-gateway/web/src/components/status-bar/status-bar.js`. You can modify the status-bar `<header id="status-bar">...</header>` by removing existing components like `LanguageSwitcher` and `UserWidget` or by adding different content in the `header`.
 
 ### Footer
 

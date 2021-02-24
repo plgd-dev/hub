@@ -5,8 +5,7 @@ import classNames from 'classnames'
 
 import { Layout } from '@/components/layout'
 import { NotFoundPage } from '@/containers/not-found-page'
-import { useApi, useIsMounted } from '@/common/hooks'
-import { useAppConfig } from '@/containers/app'
+import { useIsMounted } from '@/common/hooks'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 import { showSuccessToast } from '@/components/toast'
 
@@ -14,7 +13,6 @@ import { ThingsDetails } from './_things-details'
 import { ThingsResourcesList } from './_things-resources-list'
 import { ThingsResourcesModal } from './_things-resources-modal'
 import {
-  thingsApiEndpoints,
   thingsStatuses,
   defaultNewResource,
   resourceModalTypes,
@@ -30,20 +28,17 @@ import {
   updateThingsResourceApi,
   createThingsResourceApi,
 } from './rest'
+import { useThingDetails } from './hooks'
 import { messages as t } from './things-i18n'
 
 export const ThingsDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
   const { id } = useParams()
-  const { httpGatewayAddress } = useAppConfig()
   const [resourceModalData, setResourceModalData] = useState(null)
   const [loadingResource, setLoadingResource] = useState(false)
   const [savingResource, setSavingResource] = useState(false)
   const isMounted = useIsMounted()
-
-  const { data, loading, error } = useApi(
-    `${httpGatewayAddress}${thingsApiEndpoints.THINGS}/${id}`
-  )
+  const { data, loading, error } = useThingDetails(id)
 
   if (error) {
     return (

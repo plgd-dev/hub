@@ -38,7 +38,7 @@ export const useApi = (url, options = {}) => {
         }
       })()
     },
-    [refreshIndex] // eslint-disable-line
+    [url, refreshIndex] // eslint-disable-line
   )
 
   return {
