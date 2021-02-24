@@ -90,6 +90,7 @@ type Config struct {
 	Listen                       certManager.Config
 	IDTokenPrivateKeyPath        string
 	AccessTokenKeyPrivateKeyPath string
+	Domain                       string
 }
 
 const ClientTest = "test"
@@ -103,6 +104,9 @@ func (c *Config) Validate() error {
 	}
 	if c.AccessTokenKeyPrivateKeyPath == "" {
 		return fmt.Errorf("invalid AccessTokenKeyPrivateKeyPath")
+	}
+	if c.Domain == "" {
+		return fmt.Errorf("invalid Domain")
 	}
 	return nil
 }

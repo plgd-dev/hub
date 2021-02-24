@@ -72,6 +72,10 @@ export JWKS_URL="https://$OAUTH_SERVER_ADDRESS/.well-known/jwks.json"
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
 export FQDN_OAUTH_ENDPOINT_TOKEN_URL="https://${FQDN_NGINX_HTTPS}/oauth/token?client_id=test&audience=test"
 export FQDN_OAUTH_ENDPOINT_CODE_URL="https://${FQDN_NGINX_HTTPS}/authorize?client_id=test"
+export DOMAIN=${FQDN_NGINX_HTTPS}
+if [ "$NGINX_PORT" = "443" ]; then
+  export DOMAIN=${FQDN}
+fi
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
@@ -163,6 +167,7 @@ Listen:
     UseSystemCertPool: false
 IDTokenPrivateKeyPath: ${OAUTH_ID_TOKEN_KEY_PATH}
 AccessTokenKeyPrivateKeyPath: ${OAUTH_ACCESS_TOKEN_KEY_PATH}
+Domain: ${DOMAIN}
 EOF
 ADDRESS=${HTTP_GATEWAY_ADDRESS} \
 oauth-server --config=/data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
@@ -330,6 +335,7 @@ while true; do
   sleep 1
 done
 
+
 # http-gateway
 echo "starting http-gateway"
 cat > /data/httpgw.yaml << EOF
@@ -358,9 +364,9 @@ CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
 UI:
   enabled: true
   oauthClient:
-    domain: ${FQDN_NGINX_HTTPS}
+    domain: ${DOMAIN}
     clientID: ${OAUTH_CLIENT_ID}
-    audience: ${FQDN_NGINX_HTTPS}
+    audience: https://${FQDN_NGINX_HTTPS}/
     scope: "openid offline_access"
     httpGatewayAddress: https://${FQDN_NGINX_HTTPS}
 EOF
@@ -434,7 +440,7 @@ while true; do
   sleep 1
 done
 
-echo "Open browser at https://${FQDN_NGINX_HTTPS}"
+echo "Open browser at https://${DOMAIN}"
 
 # Naive check runs checks once a minute to see if either of the processes exited.
 # This illustrates part of the heavy lifting you need to do if you want to run

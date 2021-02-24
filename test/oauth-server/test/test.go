@@ -30,6 +30,7 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.IDTokenPrivateKeyPath = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
 	cfg.AccessTokenKeyPrivateKeyPath = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")
+	cfg.Domain = "localhost"
 
 	return cfg
 }

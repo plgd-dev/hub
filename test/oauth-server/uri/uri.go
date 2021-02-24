@@ -12,6 +12,7 @@ const (
 	UsernameKey    = "username"
 	PasswordKey    = "password"
 	AudienceKey    = "audience"
+	ResponseMode   = "response_mode"
 
 	Token     = "/oauth/token"
 	Authorize = "/authorize"
