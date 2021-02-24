@@ -11,6 +11,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -32,7 +33,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},
@@ -54,7 +55,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},
@@ -76,7 +77,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},
@@ -97,7 +98,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "update RO-resource",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/oic/d",
 					},
@@ -115,7 +116,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/unknown",
 					},

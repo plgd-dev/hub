@@ -18,10 +18,10 @@ type resourceLinksProjection struct {
 	resources map[string]*commands.Resource
 	version   uint64
 
-	subscriptions *subscriptions
+	subscriptions *Subscriptions
 }
 
-func NewResourceLinksProjection(subscriptions *subscriptions) eventstore.Model {
+func NewResourceLinksProjection(subscriptions *Subscriptions) eventstore.Model {
 	return &resourceLinksProjection{
 		subscriptions: subscriptions,
 	}

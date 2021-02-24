@@ -130,7 +130,7 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nat
 
 func TestAggregateDuplicitPublishResource(t *testing.T) {
 	deviceID := "dupDeviceId"
-	resourceID := "dupResourceId"
+	resourceID := "/dupResourceId"
 	userID := "dupResourceId"
 	var cmconfig certManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
@@ -269,7 +269,10 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-	assert.Equal(t, []string{resourceID1, resourceID2, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+
+	unpublishedResourceLinks := (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs
+	assert.Equal(t, 3, len(unpublishedResourceLinks))
+	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
 
 	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
 	assert.NoError(t, err)

@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -118,7 +119,7 @@ func main() {
 	switch {
 	case *delete:
 		resp, err := ocfGW.DeleteResource(ctx, &pbGW.DeleteResourceRequest{
-			ResourceId: &pbGW.ResourceId{
+			ResourceId: &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,
 			},
@@ -137,7 +138,7 @@ func main() {
 			log.Fatalf("cannot read data for update value: %v", err)
 		}
 		resp, err := ocfGW.UpdateResourcesValues(ctx, &pbGW.UpdateResourceValuesRequest{
-			ResourceId: &pbGW.ResourceId{
+			ResourceId: &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,
 			},
@@ -189,9 +190,9 @@ func main() {
 		if *deviceID != "" {
 			deviceIdsFilter = append(deviceIdsFilter, *deviceID)
 		}
-		var resourceIdsFilter []*pbGW.ResourceId
+		var resourceIdsFilter []*commands.ResourceId
 		if *href != "" {
-			resourceIdsFilter = append(resourceIdsFilter, &pbGW.ResourceId{
+			resourceIdsFilter = append(resourceIdsFilter, &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,
 			})

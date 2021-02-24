@@ -40,7 +40,7 @@ func getResourceInterface(msg *mux.Message) string {
 }
 
 func clientRetrieveHandler(req *mux.Message, client *Client) {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return

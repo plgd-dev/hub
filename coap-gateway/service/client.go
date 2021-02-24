@@ -147,23 +147,23 @@ func (client *Client) cancelResourceSubscription(token string, wantWait bool) (b
 	return true, nil
 }
 
-func (client *Client) observeResource(ctx context.Context, deviceID, href string, observable, allowDuplicit bool) (err error) {
-	log.Debugf("coap-gw: client.observeResource /%v%v ins %v: observe resource", deviceID, href)
-	instanceID := getInstanceID(href)
+func (client *Client) observeResource(ctx context.Context, resourceID *commands.ResourceId, observable, allowDuplicit bool) (err error) {
+	log.Debugf("observation of resource %v requested", resourceID)
+	instanceID := getInstanceID(resourceID.GetHref())
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
-	if _, ok := client.observedResources[deviceID]; !ok {
-		client.observedResources[deviceID] = make(map[int64]*observedResource)
+	if _, ok := client.observedResources[resourceID.GetDeviceId()]; !ok {
+		client.observedResources[resourceID.GetDeviceId()] = make(map[int64]*observedResource)
 	}
-	if _, ok := client.observedResources[deviceID][instanceID]; ok {
+	if _, ok := client.observedResources[resourceID.GetDeviceId()][instanceID]; ok {
 		if allowDuplicit {
 			return nil
 		}
-		return fmt.Errorf("resource is already already published")
+		return fmt.Errorf("resource is already already being observed")
 	}
-	obsRes := observedResource{href: href}
-	client.observedResources[deviceID][instanceID] = &obsRes
-	return client.server.taskQueue.Submit(func() { client.addObservedResourceLocked(ctx, deviceID, observable, &obsRes) })
+	obsRes := observedResource{href: resourceID.GetHref()}
+	client.observedResources[resourceID.GetDeviceId()][instanceID] = &obsRes
+	return client.server.taskQueue.Submit(func() { client.addObservedResourceLocked(ctx, resourceID.GetDeviceId(), observable, &obsRes) })
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
@@ -180,15 +180,15 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		client.Close()
 	}
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []commands.ResourceId{commands.ResourceId{DeviceId: deviceID, Href: href}})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href})
 	}
 }
 
-func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, obs bool, obsRes *observedResource) {
+func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, isObservable bool, obsRes *observedResource) {
 	if obsRes.href == commands.StatusHref {
 		return
 	}
-	if obs {
+	if isObservable {
 		obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
 			err := client.notifyContentChanged(deviceID, obsRes.href, req)
 			if err != nil {
@@ -197,7 +197,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 				client.Close()
 			}
 			if req.Code() == coapCodes.NotFound {
-				client.unpublishResources(req.Context(), []commands.ResourceId{{DeviceId: deviceID, Href: obsRes.href}})
+				client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
 			}
 		})
 		if err != nil {
@@ -210,7 +210,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 	}
 }
 
-func (client *Client) getObservedResources(deviceID string, instanceIDs []int64) []commands.ResourceId {
+func (client *Client) getTrackedResources(deviceID string, instanceIDs []int64) []commands.ResourceId {
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 
@@ -261,8 +261,8 @@ func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Obs
 	return nil
 }
 
-func (client *Client) unobserveResources(ctx context.Context, resourceIDs []commands.ResourceId, rscsUnpublished map[string]bool) {
-	observartions := client.unobserveAndRemoveResources(resourceIDs, rscsUnpublished)
+func (client *Client) cancelResourcesObservations(ctx context.Context, hrefs []string) {
+	observartions := client.popTrackedObservation(hrefs)
 	for _, obs := range observartions {
 		obs.Cancel(ctx)
 	}
@@ -277,23 +277,18 @@ func (client *Client) Close() error {
 	return nil
 }
 
-func (client *Client) unobserveAndRemoveResources(resourceIDs []commands.ResourceId, rscsUnpublished map[string]bool) []*tcp.Observation {
+func (client *Client) popTrackedObservation(hrefs []string) []*tcp.Observation {
 	observartions := make([]*tcp.Observation, 0, 32)
 
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 
-	for _, resourceID := range resourceIDs {
-		if del, ok := rscsUnpublished[resourceID.GetHref()]; ok && del {
-			log.Debugf("delete resource /%v%v", resourceID.GetDeviceId(), resourceID.GetHref())
-		} else {
-			log.Debugf("unobserve resource /%v%v", resourceID.GetDeviceId(), resourceID.GetHref())
-		}
+	for _, href := range hrefs {
 		var instanceID int64
 		var deviceID string
 		for devID, devs := range client.observedResources {
 			for insID, r := range devs {
-				if r.href == resourceID.GetHref() {
+				if r.href == href {
 					instanceID = insID
 					deviceID = devID
 					break
@@ -305,9 +300,8 @@ func (client *Client) unobserveAndRemoveResources(resourceIDs []commands.Resourc
 		if obs != nil {
 			observartions = append(observartions, obs)
 		}
-		if rscsUnpublished[resourceID.GetHref()] {
-			client.removeResource(deviceID, instanceID)
-		}
+		client.removeResource(deviceID, instanceID)
+		log.Debugf("canceling observation on resource %v", deviceID+href)
 	}
 	return observartions
 }
@@ -377,7 +371,7 @@ func (client *Client) cancelDeviceSubscriptions(ctx context.Context) {
 }
 
 func (client *Client) CleanUp() *authorizationContext {
-	authCtx, _ := client.loadAuthorizationContext()
+	authCtx, _ := client.GetAuthorizationContext()
 	log.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
 
 	client.server.oicPingCache.Delete(client.remoteAddrString())
@@ -388,12 +382,12 @@ func (client *Client) CleanUp() *authorizationContext {
 	defer cancel()
 	client.cancelDeviceSubscriptions(ctx)
 
-	return client.replaceAuthorizationContext(nil)
+	return client.SetAuthorizationContext(nil)
 }
 
 // OnClose action when coap connection was closed.
 func (client *Client) OnClose() {
-	authCtx, _ := client.loadAuthorizationContext()
+	authCtx, _ := client.GetAuthorizationContext()
 	log.Debugf("close client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
 	oldAuthCtx := client.CleanUp()
 
@@ -417,7 +411,7 @@ func (client *Client) OnClose() {
 	}
 }
 
-func (client *Client) replaceAuthorizationContext(authCtx *authorizationContext) (oldDeviceID *authorizationContext) {
+func (client *Client) SetAuthorizationContext(authCtx *authorizationContext) (oldDeviceID *authorizationContext) {
 	log.Debugf("Authorization context replaced for client %v, device %v, user %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID(), authCtx.GetUserID())
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
@@ -426,14 +420,14 @@ func (client *Client) replaceAuthorizationContext(authCtx *authorizationContext)
 	return oldAuthContext
 }
 
-func (client *Client) loadAuthorizationContext() (*authorizationContext, error) {
+func (client *Client) GetAuthorizationContext() (*authorizationContext, error) {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	return client.authCtx, client.authCtx.IsValid()
 }
 
 func (client *Client) notifyContentChanged(deviceID string, href string, notification *pool.Message) error {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
@@ -470,7 +464,7 @@ func (client *Client) sendErrorConfirmResourceUpdate(deviceID, href, userID, cor
 }
 
 func (client *Client) updateResource(ctx context.Context, event *pb.Event_ResourceUpdatePending) error {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
@@ -515,7 +509,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []commands.ResourceId{commands.ResourceId{DeviceId: event.GetResourceId().GetDeviceId(), Href: event.GetResourceId().GetHref()}})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.GetUserID())
@@ -550,7 +544,7 @@ func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, c
 }
 
 func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_ResourceRetrievePending) error {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
@@ -597,10 +591,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []commands.ResourceId{commands.ResourceId{
-			DeviceId: event.GetResourceId().GetDeviceId(),
-			Href:     event.GetResourceId().GetHref(),
-		}})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.GetUserID())
@@ -636,7 +627,7 @@ func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, cor
 }
 
 func (client *Client) deleteResource(ctx context.Context, event *pb.Event_ResourceDeletePending) error {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
@@ -683,10 +674,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []commands.ResourceId{commands.ResourceId{
-			DeviceId: event.GetResourceId().GetDeviceId(),
-			Href:     event.GetResourceId().GetHref(),
-		}})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.GetUserID())
@@ -702,10 +690,15 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 	return nil
 }
 
-func (client *Client) publishResourceLinks(ctx context.Context, links schema.ResourceLinks, deviceID string, ttl int32, connectionID string, sequence uint64, authCtx *commands.AuthorizationContext) error {
+func (client *Client) publishResourceLinks(ctx context.Context, links schema.ResourceLinks, deviceID string, ttl int32, connectionID string, sequence uint64) ([]*commands.Resource, error) {
+	authCtx, err := client.GetAuthorizationContext()
+	if err != nil {
+		return nil, fmt.Errorf("cannot load authorization context for device %w", err)
+	}
+
 	resources := pbGRPC.SchemaResourceLinksToRAResources(links, ttl)
 	request := commands.PublishResourceLinksRequest{
-		AuthorizationContext: authCtx,
+		AuthorizationContext: authCtx.GetPbData(),
 		Resources:            resources,
 		DeviceId:             deviceID,
 		CommandMetadata: &commands.CommandMetadata{
@@ -714,59 +707,53 @@ func (client *Client) publishResourceLinks(ctx context.Context, links schema.Res
 		},
 	}
 
-	_, err := client.server.raClient.PublishResourceLinks(ctx, &request)
+	resp, err := client.server.raClient.PublishResourceLinks(ctx, &request)
 	if err != nil {
-		return fmt.Errorf("cannot process command publish resource: %w", err)
+		return nil, fmt.Errorf("error occured during resource links publish for device %v %w", deviceID, err)
 	}
 
-	return nil
+	return resp.GetPublishedResources(), nil
 }
 
-func (client *Client) unpublishResourceLinks(ctx context.Context, deviceID, hrefs []string, rscsUnpublished map[string]bool) map[string]bool {
-	authCtx, err := client.loadAuthorizationContext()
+func (client *Client) getUserAuthorizedContext(ctx context.Context) context.Context {
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		log.Errorf("ResourceId: %v: cannot unpublish resource /%v%v: %v", deviceID, href, err)
-		rscsUnpublished[href] = false
-		return rscsUnpublished
+		log.Errorf("unable to load authorization context", err)
+		return nil
 	}
+
 	token, err := client.server.oauthMgr.GetToken(ctx)
 	if err != nil {
-		log.Errorf("ResourceId: %v: cannot unpublish resource /%v%v: %v", deviceID, href, err)
-		rscsUnpublished[href] = false
-		return rscsUnpublished
+		log.Errorf("unable to get token", err)
+		return nil
 	}
-	ctx = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.GetUserID())
-	_, err = client.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
+	return kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.GetUserID())
+}
+
+func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string) {
+	authCtx, err := client.GetAuthorizationContext()
+	if err != nil {
+		log.Errorf("unable to load authorization context during resource links publish for device", err)
+	}
+
+	resp, err := client.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
 		AuthorizationContext: &commands.AuthorizationContext{
 			DeviceId: authCtx.GetDeviceID(),
 		},
-		Hrefs:    nil,
-		DeviceId: deviceID,
+		Hrefs:    hrefs,
+		DeviceId: authCtx.GetDeviceID(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: client.remoteAddrString(),
 			Sequence:     client.coapConn.Sequence(),
 		},
 	})
 	if err != nil {
-		// unpublish resource is not critical -> resource is still accessible,
-		// but next update of device resource will returns 'not found; and it triggers again unpublish.
-		log.Errorf("ResourceId: %v: cannot unpublish resource /%v%v: %v", deviceID, href, err)
-		rscsUnpublished[href] = false
-		return rscsUnpublished
+		// unpublish resource is not critical -> resource can be still accessible
+		// next resource update will return 'not found' what triggers a publish again
+		fmt.Errorf("error occured during resource links unpublish for device %v %w", authCtx.GetDeviceID(), err)
 	}
 
-	rscsUnpublished[href] = true
-	return rscsUnpublished
-}
-
-func (client *Client) unpublishResources(ctx context.Context, resourceIDs []commands.ResourceId) {
-	rscsUnpublished := make(map[string]bool, 32)
-
-	for idx := range resourceIDs {
-		rscsUnpublished = client.unpublishResource(ctx, resourceIDs[idx].DeviceId, resourceIDs[idx].Href, rscsUnpublished)
-	}
-
-	client.unobserveResources(ctx, resourceIDs, rscsUnpublished)
+	client.cancelResourcesObservations(ctx, resp.UnpublishedHrefs)
 }
 
 func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.ResourceId, userID, correlationID string, authCtx *commands.AuthorizationContext, code codes.Code, errToSend error) {
@@ -789,15 +776,15 @@ func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.Resour
 }
 
 func (client *Client) createResource(ctx context.Context, event *pb.Event_ResourceCreatePending) error {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		client.sendErrorConfirmResourceCreate(event.GetResourceId().ToRAProto(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
 		client.Close()
 		return err
 	}
 
-	if event.GetResourceId().GetHref() == status.Href {
+	if event.GetResourceId().GetHref() == commands.StatusHref {
 		msg := pool.AcquireMessage(ctx)
 		msg.SetCode(coapCodes.Forbidden)
 		msg.SetSequence(client.coapConn.Sequence())
@@ -807,7 +794,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId().ToRAProto(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
+		request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
 		_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, &request)
 		if err != nil {
 			return err
@@ -819,7 +806,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	defer cancel()
 	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(event.GetResourceId().ToRAProto(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -828,7 +815,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(event.GetResourceId().ToRAProto(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -836,17 +823,14 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	decodeMsgToDebug(client, resp, "RESOURCE-CREATE-RESPONSE")
 
 	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResources(ctx, []commands.ResourceId{{
-			DeviceId: event.GetResourceId().GetDeviceId(),
-			Href:     event.GetResourceId().GetHref(),
-		}})
+		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.GetUserID())
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId().ToRAProto(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, &request)
 	if err != nil {
 		return err

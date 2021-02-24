@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -129,7 +130,7 @@ func sendResourceValue(srv pb.GrpcGateway_RetrieveResourcesValuesServer, deviceI
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 	rv := pb.ResourceValue{
-		ResourceId: &pb.ResourceId{DeviceId: deviceId},
+		ResourceId: &commands.ResourceId{DeviceId: deviceId},
 		Types:      []string{resourceType},
 		Content:    &pb.Content{ContentType: message.AppCBOR.String(), Data: c},
 	}

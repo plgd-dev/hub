@@ -28,7 +28,7 @@ type Subscriber interface {
 	Close(reason error) error
 }
 
-type subscriptions struct {
+type Subscriptions struct {
 	userDevicesManager *clientAS.UserDevicesManager
 
 	rwlock                sync.RWMutex
@@ -43,8 +43,8 @@ type subscriptions struct {
 
 type SendEventFunc func(e *pb.Event) error
 
-func NewSubscriptions() *subscriptions {
-	return &subscriptions{
+func NewSubscriptions() *Subscriptions {
+	return &Subscriptions{
 		allSubscriptions:      make(map[string]Subscriber),
 		resourceSubscriptions: make(map[string]map[string]map[string]map[string]*resourceSubscription),
 		deviceSubscriptions:   make(map[string]map[string]map[string]*deviceSubscription),
@@ -53,7 +53,7 @@ func NewSubscriptions() *subscriptions {
 	}
 }
 
-func (s *subscriptions) popInitSubscriptions(userID string) map[string]Subscriber {
+func (s *Subscriptions) popInitSubscriptions(userID string) map[string]Subscriber {
 	s.initSubscriptionsLock.Lock()
 	defer s.initSubscriptionsLock.Unlock()
 	v := s.initSubscriptions[userID]
@@ -61,7 +61,7 @@ func (s *subscriptions) popInitSubscriptions(userID string) map[string]Subscribe
 	return v
 }
 
-func (s *subscriptions) insertToInitSubscriptions(sub Subscriber) {
+func (s *Subscriptions) insertToInitSubscriptions(sub Subscriber) {
 	s.initSubscriptionsLock.Lock()
 	defer s.initSubscriptionsLock.Unlock()
 
@@ -73,7 +73,7 @@ func (s *subscriptions) insertToInitSubscriptions(sub Subscriber) {
 	v[sub.ID()] = sub
 }
 
-func (s *subscriptions) removeFromInitSubscriptions(id, userID string) {
+func (s *Subscriptions) removeFromInitSubscriptions(id, userID string) {
 	s.initSubscriptionsLock.Lock()
 	defer s.initSubscriptionsLock.Unlock()
 
@@ -83,7 +83,7 @@ func (s *subscriptions) removeFromInitSubscriptions(id, userID string) {
 	}
 }
 
-func (s *subscriptions) getRemovedSubscriptions(userID string, removedDevices map[string]bool) []Subscriber {
+func (s *Subscriptions) getRemovedSubscriptions(userID string, removedDevices map[string]bool) []Subscriber {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 	remove := make([]Subscriber, 0, 32)
@@ -101,7 +101,7 @@ func (s *subscriptions) getRemovedSubscriptions(userID string, removedDevices ma
 	return remove
 }
 
-func (s *subscriptions) getSubscriptionsToUpdate(userID string, init map[string]Subscriber) []*devicesSubscription {
+func (s *Subscriptions) getSubscriptionsToUpdate(userID string, init map[string]Subscriber) []*devicesSubscription {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 	updated := make([]*devicesSubscription, 0, 32)
@@ -114,7 +114,7 @@ func (s *subscriptions) getSubscriptionsToUpdate(userID string, init map[string]
 	return updated
 }
 
-func (s *subscriptions) UserDevicesChanged(ctx context.Context, userID string, addedDevices, removedDevices, currentDevices map[string]bool) {
+func (s *Subscriptions) UserDevicesChanged(ctx context.Context, userID string, addedDevices, removedDevices, currentDevices map[string]bool) {
 	log.Debugf("subscriptions.UserDevicesChanged %v: added: %+v removed: %+v current: %+v\n", userID, addedDevices, removedDevices, currentDevices)
 
 	init := s.popInitSubscriptions(userID)
@@ -143,7 +143,7 @@ func (s *subscriptions) UserDevicesChanged(ctx context.Context, userID string, a
 	}
 }
 
-func (s *subscriptions) Get(id string) Subscriber {
+func (s *Subscriptions) Get(id string) Subscriber {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 	if sub, ok := s.allSubscriptions[id]; ok {
@@ -152,7 +152,7 @@ func (s *subscriptions) Get(id string) Subscriber {
 	return nil
 }
 
-func (s *subscriptions) Pop(id string) Subscriber {
+func (s *Subscriptions) Pop(id string) Subscriber {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	if sub, ok := s.allSubscriptions[id]; ok {
@@ -191,7 +191,7 @@ func (s *subscriptions) Pop(id string) Subscriber {
 	return nil
 }
 
-func (s *subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, releaseFromUserDevManager bool) error {
+func (s *Subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, releaseFromUserDevManager bool) error {
 	sub := s.Pop(id)
 	if sub == nil {
 		return fmt.Errorf("cannot close subscription %v: not found", id)
@@ -208,11 +208,11 @@ func (s *subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, 
 	return nil
 }
 
-func (s *subscriptions) Close(id string, reason error) error {
+func (s *Subscriptions) Close(id string, reason error) error {
 	return s.closeWithReleaseUserDevicesMfg(id, reason, true)
 }
 
-func (s *subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devicesSubscription) error {
+func (s *Subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devicesSubscription) error {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	_, ok := s.allSubscriptions[sub.ID()]
@@ -235,7 +235,7 @@ func (s *subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devi
 	return nil
 }
 
-func (s *subscriptions) InsertDeviceSubscription(ctx context.Context, sub *deviceSubscription) error {
+func (s *Subscriptions) InsertDeviceSubscription(ctx context.Context, sub *deviceSubscription) error {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	_, ok := s.allSubscriptions[sub.ID()]
@@ -264,7 +264,7 @@ func (s *subscriptions) InsertDeviceSubscription(ctx context.Context, sub *devic
 	return nil
 }
 
-func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *resourceSubscription) error {
+func (s *Subscriptions) InsertResourceSubscription(ctx context.Context, sub *resourceSubscription) error {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	_, ok := s.allSubscriptions[sub.ID()]
@@ -298,7 +298,7 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 	return nil
 }
 
-func (s *subscriptions) OnResourceLinksPublished(ctx context.Context, deviceID string, links ResourceLinks) error {
+func (s *Subscriptions) OnResourceLinksPublished(ctx context.Context, deviceID string, links ResourceLinks) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -319,7 +319,7 @@ func (s *subscriptions) OnResourceLinksPublished(ctx context.Context, deviceID s
 	return nil
 }
 
-func (s *subscriptions) OnResourceLinksUnpublished(ctx context.Context, deviceID string, links ResourceLinks) error {
+func (s *Subscriptions) OnResourceLinksUnpublished(ctx context.Context, deviceID string, links ResourceLinks) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -340,7 +340,7 @@ func (s *subscriptions) OnResourceLinksUnpublished(ctx context.Context, deviceID
 	return nil
 }
 
-func (s *subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
+func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -361,7 +361,7 @@ func (s *subscriptions) OnResourceUpdatePending(ctx context.Context, updatePendi
 	return nil
 }
 
-func (s *subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
+func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -382,7 +382,7 @@ func (s *subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_
 	return nil
 }
 
-func (s *subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
+func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -403,7 +403,7 @@ func (s *subscriptions) OnResourceRetrievePending(ctx context.Context, retrieveP
 	return nil
 }
 
-func (s *subscriptions) OnResourceDeletePending(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error {
+func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -424,7 +424,7 @@ func (s *subscriptions) OnResourceDeletePending(ctx context.Context, deletePendi
 	return nil
 }
 
-func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
+func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -445,7 +445,7 @@ func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Ev
 	return nil
 }
 
-func (s *subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_ResourceDeleted, version uint64) error {
+func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_ResourceDeleted, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -466,7 +466,7 @@ func (s *subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_
 	return nil
 }
 
-func (s *subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion) error {
+func (s *Subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -488,7 +488,7 @@ func (s *subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion)
 	return nil
 }
 
-func (s *subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion) error {
+func (s *Subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -509,7 +509,7 @@ func (s *subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion
 	return nil
 }
 
-func (s *subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {
+func (s *Subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -537,7 +537,7 @@ func (s *subscriptions) OnResourceContentChanged(ctx context.Context, resourceCh
 	return nil
 }
 
-func (s *subscriptions) CancelResourceSubscriptions(ctx context.Context, deviceID, href string, err error) {
+func (s *Subscriptions) CancelResourceSubscriptions(ctx context.Context, deviceID, href string, err error) {
 	subsIDs := make([]string, 0, 4)
 	func() {
 		s.rwlock.RLock()
@@ -577,7 +577,7 @@ func isDeviceOnline(content *commands.Content) (bool, error) {
 	return cloudStatus.IsOnline(), nil
 }
 
-func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
+func (s *Subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
 	sub := NewDevicesSubscription(subscriptionID, userID, token, send, resourceProjection, req)
 	err := s.InsertDevicesSubscription(ctx, sub)
 	if err != nil {
@@ -592,7 +592,7 @@ func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID str
 	return nil
 }
 
-func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
+func (s *Subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
 	sub := NewDeviceSubscription(subscriptionID, userID, token, send, resourceProjection, req)
 	err := s.InsertDeviceSubscription(ctx, sub)
 	if err != nil {
@@ -607,7 +607,7 @@ func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID stri
 	return nil
 }
 
-func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
+func (s *Subscriptions) SubscribeForResourceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
 	sub := NewResourceSubscription(subscriptionID, userID, token, send, resourceProjection, req)
 	err := s.InsertResourceSubscription(ctx, sub)
 	if err != nil {
@@ -622,7 +622,7 @@ func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID st
 	return nil
 }
 
-func (s *subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscriptionID string) error {
+func (s *Subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscriptionID string) error {
 	_, ok := localSubscriptions.Load(subscriptionID)
 	if !ok {
 		return fmt.Errorf("cannot cancel subscription %v: not found", subscriptionID)
@@ -631,7 +631,7 @@ func (s *subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscri
 	return s.Close(subscriptionID, nil)
 }
 
-func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
+func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
 	userID, err := kitNetGrpc.UserIDFromMD(srv.Context())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)

@@ -108,7 +108,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 			return
 		}
 		client := c.(*Client)
-		authCtx, err := client.loadAuthorizationContext()
+		authCtx, err := client.GetAuthorizationContext()
 		if err != nil {
 			client.Close()
 			log.Debugf("device %v token has ben expired", authCtx.GetDeviceID())
@@ -254,7 +254,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 func getDeviceID(client *Client) string {
 	deviceID := "unknown"
 	if client != nil {
-		authCtx, _ := client.loadAuthorizationContext()
+		authCtx, _ := client.GetAuthorizationContext()
 		deviceID = authCtx.GetDeviceID()
 		if deviceID == "" {
 			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
@@ -448,7 +448,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
-		authCtx, _ := client.loadAuthorizationContext()
+		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)

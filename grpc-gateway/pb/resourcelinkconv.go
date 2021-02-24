@@ -133,7 +133,7 @@ func RAResourcesToProto(resources map[string]*commands.Resource) []*ResourceLink
 	return resourceLinks
 }
 
-func SchemaEndpointsToProto(ra []schema.Endpoint) []*commands.EndpointInformation {
+func SchemaEndpointsToRAEndpointInformations(ra []schema.Endpoint) []*commands.EndpointInformation {
 	if ra == nil {
 		return nil
 	}
@@ -147,7 +147,7 @@ func SchemaEndpointsToProto(ra []schema.Endpoint) []*commands.EndpointInformatio
 	return r
 }
 
-func SchemaPolicyToProto(ra *schema.Policy) *commands.Policies {
+func SchemaPolicyToRAPolicies(ra *schema.Policy) *commands.Policies {
 	if ra == nil {
 		return nil
 	}
@@ -166,8 +166,31 @@ func SchemaResourceLinkToRAResource(link schema.ResourceLink, ttl int32) *comman
 		Title:                 link.Title,
 		SupportedContentTypes: link.SupportedContentTypes,
 		TimeToLive:            ttl,
-		Policies:              SchemaPolicyToProto(link.Policy),
-		EndpointInformations:  SchemaEndpointsToProto(link.Endpoints),
+		Policies:              SchemaPolicyToRAPolicies(link.Policy),
+		EndpointInformations:  SchemaEndpointsToRAEndpointInformations(link.Endpoints),
+	}
+}
+
+func SchemaEndpointsToProto(ra []schema.Endpoint) []*EndpointInformation {
+	if ra == nil {
+		return nil
+	}
+	r := make([]*EndpointInformation, 0, len(ra))
+	for _, e := range ra {
+		r = append(r, &EndpointInformation{
+			Endpoint: e.URI,
+			Priority: int64(e.Priority),
+		})
+	}
+	return r
+}
+
+func SchemaPolicyToProto(ra *schema.Policy) *Policies {
+	if ra == nil {
+		return nil
+	}
+	return &Policies{
+		BitFlags: int32(ra.BitMask),
 	}
 }
 
@@ -177,4 +200,18 @@ func SchemaResourceLinksToRAResources(links schema.ResourceLinks, ttl int32) []*
 		resources = append(resources, SchemaResourceLinkToRAResource(link, ttl))
 	}
 	return resources
+}
+
+func SchemaResourceLinkToProto(ra schema.ResourceLink) ResourceLink {
+	return ResourceLink{
+		Anchor:                ra.Anchor,
+		DeviceId:              ra.DeviceID,
+		EndpointInformations:  SchemaEndpointsToProto(ra.Endpoints),
+		Href:                  ra.Href,
+		Interfaces:            ra.Interfaces,
+		Policies:              SchemaPolicyToProto(ra.Policy),
+		Types:                 ra.ResourceTypes,
+		SupportedContentTypes: ra.SupportedContentTypes,
+		Title:                 ra.Title,
+	}
 }

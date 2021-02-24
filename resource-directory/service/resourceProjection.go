@@ -23,7 +23,7 @@ type resourceProjection struct {
 	onResourceUnpublishedVersion uint64
 	onResourceChangedVersion     uint64
 
-	subscriptions                 *subscriptions
+	subscriptions                 *Subscriptions
 	updateNotificationContainer   *notification.UpdateNotificationContainer
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
 	deleteNotificationContainer   *notification.DeleteNotificationContainer
@@ -32,7 +32,7 @@ type resourceProjection struct {
 	resourceDeletePendings        []events.ResourceDeletePending
 }
 
-func NewResourceProjection(subscriptions *subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer) eventstore.Model {
+func NewResourceProjection(subscriptions *Subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer) eventstore.Model {
 	return &resourceProjection{
 		subscriptions:                 subscriptions,
 		updateNotificationContainer:   updateNotificationContainer,

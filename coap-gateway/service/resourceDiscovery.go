@@ -104,7 +104,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 		log.Debugf("resourceDirectoryFind takes %v", time.Since(t))
 	}()
 
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle resource discovery: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return

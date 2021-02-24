@@ -27,7 +27,7 @@ func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
 		log.Debugf("clientObserveHandler takes %v", time.Since(t))
 	}()
 
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle observe resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
