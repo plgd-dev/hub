@@ -21,7 +21,7 @@ import (
 )
 
 func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, error) {
-	oauth := provider.NewAuth0Provider(config.Device, tlsConfig)
+	oauth := provider.NewPlgdProvider(config.Device, tlsConfig)
 	persistence, err := mongodb.NewStore(context.Background(), config.MongoDB, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func MakeConfig(t *testing.T) service.Config {
 	require.NoError(t, err)
 	authCfg.Addr = testCfg.AUTH_HOST
 	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
-	authCfg.Device.Provider = "auth0"
+	authCfg.Device.Provider = "plgd"
 	authCfg.Device.OAuth2.ClientID = oauthService.ClientTest
 	authCfg.Device.OAuth2.Endpoint.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
 	authCfg.Device.OAuth2.Endpoint.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
