@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -30,13 +29,14 @@ func generateAccessToken(clientID string, lifeTime time.Duration, host string, k
 	token := jwt.New()
 	now := time.Now()
 	expires := now.Add(lifeTime)
+
 	token.Set(jwt.SubjectKey, deviceUserID)
-	token.Set(jwt.AudienceKey, clientID)
+	token.Set(jwt.AudienceKey, host+"/")
 	token.Set(jwt.IssuedAtKey, now)
 	token.Set(jwt.ExpirationKey, expires)
 	token.Set(`scope`, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"})
 	token.Set(uri.ClientIDKey, clientID)
-	token.Set(jwt.IssuerKey, "https://"+host+"/")
+	token.Set(jwt.IssuerKey, host+"/")
 	buf, err := json.Encode(token)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to encode token: %s", err)
@@ -58,15 +58,6 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	token := jwt.New()
 	now := time.Now()
 	expires := now.Add(lifeTime)
-
-	u, err := url.Parse(host)
-	if err != nil {
-		return "", fmt.Errorf("cannot parse host(%v): %w", host, err)
-	}
-	port := u.Port()
-	if port == "" {
-		host = host + ":443"
-	}
 
 	token.Set(jwt.SubjectKey, deviceUserID)
 	token.Set(jwt.AudienceKey, clientID)
@@ -135,14 +126,15 @@ func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Re
 	})
 }
 
+func (requestHandler *RequestHandler) getDomain() string {
+	return "https://" + requestHandler.config.Domain
+}
+
 func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.Request) {
+
 	tokenReq := tokenRequest{
-		host:      "https://" + r.Host,
+		host:      requestHandler.getDomain(),
 		tokenType: AccessTokenType_REFERENCE,
-	}
-	origin := r.Header.Get("Origin")
-	if origin != "" {
-		tokenReq.host = origin
 	}
 
 	if strings.Contains(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
