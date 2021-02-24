@@ -39,25 +39,6 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 	responseMode := r.URL.Query().Get(uri.ResponseMode)
 	state := r.URL.Query().Get(uri.StateKey)
 	switch responseMode {
-	case "query":
-		u := r.URL.Query().Get(uri.RedirectURIKey)
-		if len(u) > 0 {
-			u, err := url.Parse(string(u))
-			if err != nil {
-				writeError(w, err, http.StatusBadRequest)
-				return
-			}
-			q, err := url.ParseQuery(u.RawQuery)
-			if err != nil {
-				writeError(w, err, http.StatusBadRequest)
-				return
-			}
-			q.Add("state", string(state))
-			q.Add("code", code)
-			u.RawQuery = q.Encode()
-			http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
-			return
-		}
 	case "web_message":
 		v := map[string]string{
 			"code":  code,
@@ -88,6 +69,24 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(contentTypeHeaderKey, "text/html;charset=UTF-8")
 		w.Write([]byte(body))
+		return
+	}
+	u := r.URL.Query().Get(uri.RedirectURIKey)
+	if len(u) > 0 {
+		u, err := url.Parse(string(u))
+		if err != nil {
+			writeError(w, err, http.StatusBadRequest)
+			return
+		}
+		q, err := url.ParseQuery(u.RawQuery)
+		if err != nil {
+			writeError(w, err, http.StatusBadRequest)
+			return
+		}
+		q.Add("state", string(state))
+		q.Add("code", code)
+		u.RawQuery = q.Encode()
+		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
 		return
 	}
 
