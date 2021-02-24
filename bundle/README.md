@@ -24,7 +24,6 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 | ENV variable | Type | Description | Default |
 | --------- | ----------- | ------- | ------- |
 | `FQDN` | string | public FQDN for bundle | `"localhost"` |
-| `INITIALIZE` | bool | initialze certificates, keys, nginx configuration | `true` |
 | `NGINX_PORT` | uint16 | nginx https port for localhost | `"443"` |
 | `COAP_GATEWAY_UNSECURE_PORT` | uint16 | exposed public port for coap-tcp  | `"5683"` |
 | `COAP_GATEWAY_UNSECURE_ADDRESS` | string | coap-tcp listen address | `"0.0.0.0:5683"` |

@@ -82,7 +82,6 @@ COPY nginx /nginx
 
 # global
 ENV FQDN="localhost"
-ENV INITIALIZE=true
 
 # coap-gateway
 ENV COAP_GATEWAY_UNSECURE_PORT=5683
