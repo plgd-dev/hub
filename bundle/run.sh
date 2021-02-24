@@ -80,27 +80,25 @@ fi
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
 export COAP_GATEWAY_FQDN=$FQDN
 
-if [ "$INITIALIZE" = "true" ]; then
-  mkdir -p $CA_POOL_DIR
-  mkdir -p $INTERNAL_CERT_DIR_PATH
-  mkdir -p $EXTERNAL_CERT_DIR_PATH
-  fqdnSAN="--cert.san.domain=$FQDN"
-  if ip route get $FQDN 2>/dev/null >/dev/null; then
-    fqdnSAN="--cert.san.ip=$FQDN"
-  fi
-  echo "generating CA cert"
-  certificate-generator --cmd.generateRootCA --outCert=$CA_POOL_CERT_PATH --outKey=$CA_POOL_CERT_KEY_PATH --cert.subject.cn="Root CA"
-  echo "generating GRPC internal cert"
-  certificate-generator --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
-  echo "generating COAP-GW cert"
-  certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
-  echo "generating NGINX cert"
-  certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
-
-  mkdir -p ${OAUTH_KEYS_PATH}
-  openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
-	openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
+mkdir -p $CA_POOL_DIR
+mkdir -p $INTERNAL_CERT_DIR_PATH
+mkdir -p $EXTERNAL_CERT_DIR_PATH
+fqdnSAN="--cert.san.domain=$FQDN"
+if ip route get $FQDN 2>/dev/null >/dev/null; then
+  fqdnSAN="--cert.san.ip=$FQDN"
 fi
+echo "generating CA cert"
+certificate-generator --cmd.generateRootCA --outCert=$CA_POOL_CERT_PATH --outKey=$CA_POOL_CERT_KEY_PATH --cert.subject.cn="Root CA"
+echo "generating GRPC internal cert"
+certificate-generator --cmd.generateCertificate --outCert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+echo "generating COAP-GW cert"
+certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+echo "generating NGINX cert"
+certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+
+mkdir -p ${OAUTH_KEYS_PATH}
+openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
+openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
 
 mkdir -p $MONGO_PATH
 mkdir -p $CERTIFICATES_PATH
