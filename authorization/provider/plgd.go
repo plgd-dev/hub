@@ -11,10 +11,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// NewAuth0Provider creates OAuth client
-func NewAuth0Provider(config Config, tls *tls.Config) *Auth0Provider {
+// NewPlgdProvider creates OAuth client
+func NewPlgdProvider(config Config, tls *tls.Config) *PlgdProvider {
 	oauth2 := config.OAuth2.ToOAuth2()
-	return &Auth0Provider{
+	return &PlgdProvider{
 		Config: config,
 		OAuth2: &oauth2,
 		NewHTTPClient: func() *http.Client {
@@ -28,8 +28,8 @@ func NewAuth0Provider(config Config, tls *tls.Config) *Auth0Provider {
 	}
 }
 
-// Auth0Provider configuration with new http client
-type Auth0Provider struct {
+// PlgdProvider configuration with new http client
+type PlgdProvider struct {
 	Config        Config
 	OAuth2        *oauth2.Config
 	NewHTTPClient func() *http.Client
@@ -37,17 +37,17 @@ type Auth0Provider struct {
 }
 
 // GetProviderName returns unique name of the provider
-func (p *Auth0Provider) GetProviderName() string {
+func (p *PlgdProvider) GetProviderName() string {
 	return p.Config.Provider
 }
 
 // AuthCodeURL returns URL for redirecting to the authentication web page
-func (p *Auth0Provider) AuthCodeURL(csrfToken string) string {
+func (p *PlgdProvider) AuthCodeURL(csrfToken string) string {
 	return p.Config.OAuth2.AuthCodeURL(csrfToken)
 }
 
 // LogoutURL to logout the user
-func (p *Auth0Provider) LogoutURL(returnTo string) string {
+func (p *PlgdProvider) LogoutURL(returnTo string) string {
 	URL, err := url.Parse(p.OAuth2.Endpoint.AuthURL + "/v2/logout") // todo parse root path
 	if err != nil {
 		panic("invalid OAuthEndpoint configured")
@@ -62,7 +62,7 @@ func (p *Auth0Provider) LogoutURL(returnTo string) string {
 }
 
 // Exchange Auth Code for Access Token via OAuth
-func (p *Auth0Provider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
+func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
 	if p.GetProviderName() != authorizationProvider {
 		return nil, fmt.Errorf("unsupported authorization provider(%v), only (%v) is supported", authorizationProvider, p.GetProviderName())
 	}
@@ -101,7 +101,7 @@ func (p *Auth0Provider) Exchange(ctx context.Context, authorizationProvider, aut
 }
 
 // Refresh gets new Access Token via OAuth.
-func (p *Auth0Provider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
+func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
 	restoredToken := &oauth2.Token{
 		RefreshToken: refreshToken,
 	}

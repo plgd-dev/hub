@@ -118,7 +118,7 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 	signUpReq := service.CoapSignUpRequest{
 		DeviceID:              deviceID,
 		AuthorizationCode:     code,
-		AuthorizationProvider: "auth0",
+		AuthorizationProvider: "plgd",
 	}
 	inputCbor, err := cbor.Encode(signUpReq)
 	require.NoError(t, err)

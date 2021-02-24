@@ -77,7 +77,7 @@ func TestPublishUnpublish(t *testing.T) {
 	resp, err := authClient.SignUp(ctx, &pbAS.SignUpRequest{
 		DeviceId:              deviceId,
 		AuthorizationCode:     code,
-		AuthorizationProvider: "auth0",
+		AuthorizationProvider: "plgd",
 	})
 	require.NoError(t, err)
 

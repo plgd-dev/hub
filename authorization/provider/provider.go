@@ -25,8 +25,8 @@ func New(config Config, tls *tls.Config) Provider {
 	switch config.Provider {
 	case "github":
 		return NewGitHubProvider(config)
-	case "auth0":
-		return NewAuth0Provider(config, tls)
+	case "plgd":
+		return NewPlgdProvider(config, tls)
 	default:
 		return NewGenericProvider(config)
 	}
