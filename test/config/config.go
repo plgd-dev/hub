@@ -4,8 +4,8 @@ import (
 	"time"
 
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	"github.com/plgd-dev/cloud/oauth-server/service"
-	"github.com/plgd-dev/cloud/oauth-server/uri"
+	"github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 )
 
 const AUTH_HOST = "localhost:20000"

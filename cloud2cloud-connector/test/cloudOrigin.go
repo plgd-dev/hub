@@ -8,9 +8,9 @@ import (
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
-	"github.com/plgd-dev/cloud/oauth-server/uri"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 )
 
 const AUTH_HOST = "localhost:30000"

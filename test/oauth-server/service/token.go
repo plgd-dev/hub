@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/plgd-dev/cloud/oauth-server/uri"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/codec/json"
 )
 
@@ -57,12 +58,26 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	token := jwt.New()
 	now := time.Now()
 	expires := now.Add(lifeTime)
+
+	u, err := url.Parse(host)
+	if err != nil {
+		return "", fmt.Errorf("cannot parse host(%v): %w", host, err)
+	}
+	port := u.Port()
+	if port == "" {
+		host = host + ":443"
+	}
+
 	token.Set(jwt.SubjectKey, deviceUserID)
 	token.Set(jwt.AudienceKey, clientID)
 	token.Set(jwt.IssuedAtKey, now)
 	token.Set(jwt.ExpirationKey, expires)
 	token.Set(jwt.IssuerKey, host+"/")
 	token.Set(uri.NonceKey, nonce)
+	token.Set("nickname", "test")
+	token.Set("name", "test@test.com")
+	token.Set("picture", "https://s.gravatar.com/avatar/319673928161fae8216e9a2225cff4b6?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png")
+	//,\"updated_at\":\"2021-02-24T08:13:30.677Z\",\"email\":\"dnaik@infinera.com\",\"email_verified\":true,
 	buf, err := json.Encode(token)
 	if err != nil {
 		return "", fmt.Errorf("failed to encode token: %s", err)

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/plgd-dev/cloud/oauth-server/uri"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 )
 
 type authorizedSession struct {

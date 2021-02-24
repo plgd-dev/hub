@@ -63,6 +63,9 @@ func (p *Auth0Provider) LogoutURL(returnTo string) string {
 
 // Exchange Auth Code for Access Token via OAuth
 func (p *Auth0Provider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
+	if p.GetProviderName() != authorizationProvider {
+		return nil, fmt.Errorf("unsupported authorization provider(%v), only (%v) is supported", authorizationProvider, p.GetProviderName())
+	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.NewHTTPClient())
 
 	token, err := p.OAuth2.Exchange(ctx, authorizationCode)

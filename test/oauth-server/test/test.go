@@ -16,9 +16,9 @@ import (
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/plgd-dev/cloud/oauth-server/service"
-	"github.com/plgd-dev/cloud/oauth-server/uri"
 	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 )
 

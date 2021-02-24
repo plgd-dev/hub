@@ -24,10 +24,10 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	c2cGwUri "github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )

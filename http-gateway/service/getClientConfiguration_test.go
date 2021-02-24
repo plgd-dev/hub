@@ -8,9 +8,9 @@ import (
 
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"

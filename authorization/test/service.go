@@ -13,10 +13,10 @@ import (
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/authorization/service"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
-	"github.com/plgd-dev/cloud/oauth-server/uri"
 	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/security/certManager"
 )
 

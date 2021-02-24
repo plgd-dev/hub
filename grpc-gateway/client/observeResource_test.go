@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
