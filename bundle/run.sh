@@ -4,6 +4,22 @@ set -e
 # Configure services
 export PATH="/usr/local/bin:$PATH"
 
+export CERTIFICATES_PATH="/data/certs"
+export OAUTH_KEYS_PATH="/data/oauth/keys"
+export LOGS_PATH="/data/log"
+export MONGO_PATH="/data/db"
+export NGINX_PATH="/data/nginx"
+
+
+export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
+export OAUTH_SERVER_ADDRESS="localhost:${OAUTH_SERVER_PORT}"
+export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
+export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
+export AUTHORIZATION_ADDRESS="localhost:${AUTHORIZATION_PORT}"
+export AUTHORIZATION_HTTP_ADDRESS="localhost:${AUTHORIZATION_HTTP_PORT}"
+export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
+export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
+
 export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
 export GRPC_INTERNAL_CERT_KEY_NAME="endpoint.key"
@@ -53,12 +69,7 @@ export SERVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
 export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 export JWKS_URL="https://$OAUTH_SERVER_ADDRESS/.well-known/jwks.json"
 
-export OAUTH_SERVER_PORT=`echo ${OAUTH_SERVER_ADDRESS} | rev | cut -d':' -f 1 | rev`
-export HTTP_GATEWAY_PORT=`echo ${HTTP_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
-export GRPC_GATEWAY_PORT=`echo ${GRPC_GATEWAY_ADDRESS} | rev | cut -d':' -f 1 | rev`
-export CERTIFICATE_AUTHORITY_PORT=`echo ${CERTIFICATE_AUTHORITY_ADDRESS} | rev | cut -d':' -f 1 | rev`
-
-export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_HTTPS_PORT}
+export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
 export FQDN_OAUTH_ENDPOINT_TOKEN_URL="https://${FQDN_NGINX_HTTPS}/oauth/token?client_id=test&audience=test"
 export FQDN_OAUTH_ENDPOINT_CODE_URL="https://${FQDN_NGINX_HTTPS}/authorize?client_id=test"
 
@@ -88,11 +99,12 @@ if [ "$INITIALIZE" = "true" ]; then
 
   mkdir -p ${NGINX_PATH}
   cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_NGINX_HTTPS_PORT/$NGINX_HTTPS_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_NGINX_PORT/$NGINX_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_OAUTH_SERVER_PORT/$OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_AUTHORIZATION_HTTP_PORT/$AUTHORIZATION_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 mkdir -p $MONGO_PATH
@@ -170,10 +182,10 @@ HTTP_ADDRESS=${AUTHORIZATION_HTTP_ADDRESS} \
 DEVICE_PROVIDER=auth0 \
 DEVICE_PROVIDER_TYPE=test \
 DEVICE_OAUTH_CLIENT_ID=test \
-DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${OAUTH_SERVER_ADDRESS}/authorize \
-DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token \
+DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_NGINX_HTTPS}/authorize \
+DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_NGINX_HTTPS}/oauth/token \
 SDK_OAUTH_CLIENT_ID=test \
-SDK_OAUTH_ENDPOINT_AUTH_URL=https://${OAUTH_SERVER_ADDRESS}/authorize \
+SDK_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_NGINX_HTTPS}/oauth/token \
 SDK_OAUTH_AUDIENCE=${FQDN_NGINX_HTTPS} \
 authorization >$LOGS_PATH/authorization.log 2>&1 &
 status=$?
@@ -421,6 +433,8 @@ while true; do
   echo "Try to reconnect to nginx(${FQDN_NGINX_HTTPS}) $i"
   sleep 1
 done
+
+echo "Open browser at https://${FQDN_NGINX_HTTPS}"
 
 # Naive check runs checks once a minute to see if either of the processes exited.
 # This illustrates part of the heavy lifting you need to do if you want to run

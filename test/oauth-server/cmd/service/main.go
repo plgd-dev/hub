@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/plgd-dev/cloud/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
 )

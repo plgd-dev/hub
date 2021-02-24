@@ -4,9 +4,8 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 )
 
@@ -26,7 +25,7 @@ func TestSignUpPostHandler(t *testing.T) {
 	tbl := []testEl{
 		{"BadRequest0", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid DeviceId`, nil}},
 		{"BadRequest1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}},
-		{"Changed0", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + oauthService.ClientTest + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: "1"}, nil}},
+		{"Changed0", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + "auth0" + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: "1"}, nil}},
 	}
 
 	co := testCoapDial(t, testCfg.GW_HOST)

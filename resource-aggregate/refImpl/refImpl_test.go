@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 

@@ -12,7 +12,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 

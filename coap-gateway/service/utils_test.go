@@ -29,11 +29,10 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/service"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	test "github.com/plgd-dev/cloud/test"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -119,7 +118,7 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 	signUpReq := service.CoapSignUpRequest{
 		DeviceID:              deviceID,
 		AuthorizationCode:     code,
-		AuthorizationProvider: oauthService.ClientTest,
+		AuthorizationProvider: "auth0",
 	}
 	inputCbor, err := cbor.Encode(signUpReq)
 	require.NoError(t, err)

@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/plgd-dev/cloud/oauth-server/service"
-	"github.com/plgd-dev/cloud/oauth-server/test"
-	"github.com/plgd-dev/cloud/oauth-server/uri"
+	"github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/stretchr/testify/require"
 )

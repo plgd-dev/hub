@@ -13,7 +13,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/oauth-server/uri"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/log"
 
 	router "github.com/gorilla/mux"

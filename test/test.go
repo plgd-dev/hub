@@ -47,8 +47,8 @@ import (
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
-	oauthService "github.com/plgd-dev/cloud/oauth-server/test"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
 var (

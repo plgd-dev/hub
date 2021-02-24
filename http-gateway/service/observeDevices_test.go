@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	oauthTest "github.com/plgd-dev/cloud/oauth-server/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 
 	"github.com/gorilla/websocket"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
