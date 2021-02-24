@@ -100,20 +100,19 @@ if [ "$INITIALIZE" = "true" ]; then
   mkdir -p ${OAUTH_KEYS_PATH}
   openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
 	openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
-
-  mkdir -p ${NGINX_PATH}
-  cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_NGINX_PORT/$NGINX_PORT/g" ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_OAUTH_SERVER_PORT/$OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_AUTHORIZATION_HTTP_PORT/$AUTHORIZATION_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 mkdir -p $MONGO_PATH
 mkdir -p $CERTIFICATES_PATH
 mkdir -p $LOGS_PATH
+mkdir -p ${NGINX_PATH}
+cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_NGINX_PORT/$NGINX_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_OAUTH_SERVER_PORT/$OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_AUTHORIZATION_HTTP_PORT/$AUTHORIZATION_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
 
 # nats
 echo "starting nats-server"
