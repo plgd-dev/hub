@@ -102,16 +102,11 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 
 	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, userID, deviceID string) (bool, error) {
-		devices, err := userDevicesManager.GetUserDevices(ctx, userID)
-		if err != nil {
-			return false, err
+		ok := userDevicesManager.IsUserDevice(userID, deviceID)
+		if ok {
+			return ok, nil
 		}
-		for _, id := range devices {
-			if id == deviceID {
-				return true, nil
-			}
-		}
-		devices, err = userDevicesManager.UpdateUserDevices(ctx, userID)
+		devices, err := userDevicesManager.UpdateUserDevices(ctx, userID)
 		if err != nil {
 			return false, err
 		}
