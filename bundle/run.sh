@@ -166,7 +166,6 @@ IDTokenPrivateKeyPath: ${OAUTH_ID_TOKEN_KEY_PATH}
 AccessTokenKeyPrivateKeyPath: ${OAUTH_ACCESS_TOKEN_KEY_PATH}
 Domain: ${DOMAIN}
 EOF
-ADDRESS=${HTTP_GATEWAY_ADDRESS} \
 oauth-server --config=/data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
 status=$?
 oauth_server_pid=$!
@@ -176,6 +175,16 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/oauth-server.log
   exit $status
 fi
+
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${OAUTH_SERVER_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to oauth-server(${OAUTH_SERVER_ADDRESS}) $i"
+  sleep 1
+done
     
 # authorization
 echo "starting authorization"
@@ -184,8 +193,8 @@ HTTP_ADDRESS=${AUTHORIZATION_HTTP_ADDRESS} \
 DEVICE_PROVIDER=plgd \
 DEVICE_PROVIDER_TYPE=test \
 DEVICE_OAUTH_CLIENT_ID=test \
-DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_NGINX_HTTPS}/authorize \
-DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${FQDN_NGINX_HTTPS}/oauth/token \
+DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${OAUTH_SERVER_ADDRESS}/authorize \
+DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token \
 SDK_OAUTH_CLIENT_ID=test \
 SDK_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_NGINX_HTTPS}/oauth/token \
 SDK_OAUTH_AUDIENCE=${FQDN_NGINX_HTTPS} \
