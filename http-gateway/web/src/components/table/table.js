@@ -6,12 +6,17 @@ import classNames from 'classnames'
 import { Pagination } from './pagination'
 import { compareIgnoreCase } from './utils'
 
+const defaultPropGetter = () => ({})
+
 export const Table = ({
+  className,
   columns,
   data,
   defaultSortBy,
   defaultPageSize,
   autoFillEmptyRows,
+  getRowProps = defaultPropGetter,
+  paginationProps,
 }) => {
   const {
     getTableProps,
@@ -53,7 +58,7 @@ export const Table = ({
 
   return (
     <>
-      <div className="plgd-table">
+      <div className={classNames('plgd-table', className)}>
         <BTable responsive striped {...getTableProps()}>
           <thead>
             {headerGroups.map(headerGroup => (
@@ -91,7 +96,7 @@ export const Table = ({
             {page.map(row => {
               prepareRow(row)
               return (
-                <tr {...row.getRowProps()}>
+                <tr {...row.getRowProps(getRowProps(row))}>
                   {row.cells.map(cell => {
                     return (
                       <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
@@ -119,6 +124,7 @@ export const Table = ({
         <div className="table-bottom-controls">
           <div />
           <Pagination
+            {...paginationProps}
             canPreviousPage={canPreviousPage}
             canNextPage={canNextPage}
             pageOptions={pageOptions}
@@ -168,10 +174,14 @@ Table.propTypes = {
   ),
   defaultPageSize: PropTypes.number,
   autoFillEmptyRows: PropTypes.bool, // Fill empty rows to match the pageSize (to keep the table always the same size)
+  className: PropTypes.string,
+  paginationProps: PropTypes.object,
 }
 
 Table.defaultProps = {
   defaultSortBy: [],
   defaultPageSize: 10,
   autoFillEmptyRows: false,
+  className: null,
+  paginationProps: {},
 }

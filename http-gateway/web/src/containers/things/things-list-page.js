@@ -8,6 +8,7 @@ import { messages as menuT } from '@/components/menu/menu-i18n'
 
 import { useThingsList } from './hooks'
 import { ThingsList } from './_things-list'
+import { ThingsListHeader } from './_things-list-header'
 
 export const ThingsListPage = () => {
   const { formatMessage: _ } = useIntl()
@@ -35,7 +36,7 @@ export const ThingsListPage = () => {
         },
       ]}
       loading={loading}
-      header={<div />}
+      header={<ThingsListHeader />}
     >
       <ThingsList data={data} />
     </Layout>

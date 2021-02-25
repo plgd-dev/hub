@@ -43,6 +43,7 @@ export const useApi = (url, options = {}) => {
 
   return {
     ...state,
+    updateData: updatedData => setState({ ...state, data: updatedData }),
     refresh: () => setRefreshIndex(refreshIndex + 1),
   }
 }

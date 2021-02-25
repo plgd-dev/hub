@@ -2,6 +2,8 @@ import PropTypes from 'prop-types'
 
 import { thingsStatuses } from './constants'
 
+const { ONLINE, OFFLINE, REGISTERED, UNREGISTERED } = thingsStatuses
+
 export const thingResourceShape = PropTypes.shape({
   di: PropTypes.string,
   href: PropTypes.string,
@@ -15,6 +17,6 @@ export const thingShape = PropTypes.shape({
     di: PropTypes.string,
     n: PropTypes.string,
   }),
-  status: PropTypes.oneOf([thingsStatuses.ONLINE, thingsStatuses.OFFLINE]),
+  status: PropTypes.oneOf([ONLINE, OFFLINE, REGISTERED, UNREGISTERED]),
   links: PropTypes.arrayOf(thingResourceShape),
 })

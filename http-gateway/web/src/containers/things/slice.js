@@ -3,7 +3,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
-  activeNotifications: ['things.status'],
+  activeNotifications: [],
 }
 
 const { reducer, actions } = createSlice({
@@ -21,14 +21,31 @@ const { reducer, actions } = createSlice({
         1
       )
     },
+    toggleActiveNotification(state, { payload }) {
+      if (!state.activeNotifications.includes(payload)) {
+        state.activeNotifications.push(payload)
+      } else {
+        state.activeNotifications.splice(
+          state.activeNotifications.findIndex(
+            notification => notification === payload
+          ),
+          1
+        )
+      }
+    },
   },
 })
 
 // Actions
-export const { addActiveNotification, deleteActiveNotification } = actions
+export const {
+  addActiveNotification,
+  deleteActiveNotification,
+  toggleActiveNotification,
+} = actions
 
 // Reducer
 export default reducer
 
 // Selectors
-export const selectActiveNotifications = state => state.things.activeNotifications
+export const selectActiveNotifications = state =>
+  state.things.activeNotifications

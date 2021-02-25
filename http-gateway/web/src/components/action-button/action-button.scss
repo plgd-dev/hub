@@ -30,7 +30,9 @@
     }
 
     &:hover {
-      background-color: $secondary_20;
+      &:not([disabled]) {
+        background-color: $secondary_20;
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import { ToastContainer as Toastr, toast } from 'react-toastify'
 import classNames from 'classnames'
 import { useIntl } from 'react-intl'
 
+import { isBrowserTabActive } from '@/common/utils'
 import { toastTypes } from './constants'
 import { translateToastString } from './utils'
 
@@ -67,25 +68,27 @@ ToastComponent.defaultProps = {
  * @param {*} type [success, error, warning, info]
  */
 export const showToast = (message, options = {}, type = ERROR) => {
-  const toastMessage = message?.message || message
-  const toastTitle = message?.title || null
+  if (isBrowserTabActive()) {
+    const toastMessage = message?.message || message
+    const toastTitle = message?.title || null
 
-  const renderToast = (
-    <ToastComponent message={toastMessage} title={toastTitle} type={type} />
-  )
+    const renderToast = (
+      <ToastComponent message={toastMessage} title={toastTitle} type={type} />
+    )
 
-  switch (type) {
-    case SUCCESS:
-      toast.success(renderToast, options)
-      break
-    case WARNING:
-      toast.warning(renderToast, options)
-      break
-    case INFO:
-      toast.info(renderToast, options)
-      break
-    default:
-      toast.error(renderToast, options)
+    switch (type) {
+      case SUCCESS:
+        toast.success(renderToast, options)
+        break
+      case WARNING:
+        toast.warning(renderToast, options)
+        break
+      case INFO:
+        toast.info(renderToast, options)
+        break
+      default:
+        toast.error(renderToast, options)
+    }
   }
 }
 

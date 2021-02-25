@@ -76,3 +76,7 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 .no-wrap-text {
   white-space: nowrap;
 }
+
+.grayed-out {
+  opacity: 0.4;
+}

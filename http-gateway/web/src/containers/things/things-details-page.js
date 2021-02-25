@@ -49,7 +49,11 @@ export const ThingsDetailsPage = () => {
     )
   }
 
-  const isOnline = thingsStatuses.ONLINE === data?.status
+  const deviceStatus = data?.status
+  const isOnline = thingsStatuses.ONLINE === deviceStatus
+  const greyedOutClassName = classNames({
+    'grayed-out': thingsStatuses.UNREGISTERED === deviceStatus,
+  })
   const deviceName = data?.device?.n
   const breadcrumbs = [
     {
@@ -211,14 +215,24 @@ export const ThingsDetailsPage = () => {
       breadcrumbs={breadcrumbs}
       loading={loading || (!resourceModalData && loadingResource)}
     >
-      <h2 className={classNames({ shimmering: loading })}>{deviceName}</h2>
+      <h2
+        className={classNames(
+          {
+            shimmering: loading,
+          },
+          greyedOutClassName
+        )}
+      >
+        {deviceName}
+      </h2>
       <ThingsDetails data={data} loading={loading} />
 
-      <h2>{_(t.resources)}</h2>
+      <h2 className={classNames(greyedOutClassName)}>{_(t.resources)}</h2>
       <ThingsResourcesList
         data={data?.links}
         onUpdate={openUpdateModal}
         onCreate={openCreateModal}
+        deviceStatus={deviceStatus}
       />
 
       <ThingsResourcesModal

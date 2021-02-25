@@ -152,4 +152,8 @@ export const messages = defineMessages({
     id: 'things.thingStatusChange',
     defaultMessage: 'Thing status change',
   },
+  notifications: {
+    id: 'things.notifications',
+    defaultMessage: 'Notifications',
+  },
 })

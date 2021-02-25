@@ -67,31 +67,15 @@ export const handleFetchResourceErrors = (error, _) =>
   })
 
 // Updates the device data with an object of { deviceId, status } which came from the WS events.
-export const updateThingsDataWithStatuses = (data, updatedStatusData) => {
+export const updateThingsDataStatus = (data, { deviceId, status }) => {
   return data?.map(d => {
-    const statusData = updatedStatusData.find(
-      updatedStatus => updatedStatus.deviceId === d.device.di
-    )
-    return statusData
-      ? {
-          ...d,
-          status: statusData.status, // Update the status of the device based on the WS message
-        }
-      : d
-  })
-}
+    if (d.device.di === deviceId) {
+      return {
+        ...d,
+        status,
+      }
+    }
 
-// Updates the provided list of device statuses [{ deviceId, status }] based on the newDeviceStatus
-// If the item already exists, it updates it.
-// If the item does not exists, it creates it.
-export const updateThingsStatusList = (list, newDeviceStatus) => {
-  return list.findIndex(
-    device => device.deviceId === newDeviceStatus.deviceId
-  ) !== -1
-    ? list.map(device => {
-        return device.deviceId === newDeviceStatus.deviceId
-          ? newDeviceStatus
-          : device
-      })
-    : [...list, newDeviceStatus]
+    return d
+  })
 }
