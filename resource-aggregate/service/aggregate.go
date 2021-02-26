@@ -19,7 +19,6 @@ type LogPublishErrFunc func(err error)
 
 type aggregate struct {
 	ag         *cqrsAggregate.Aggregate
-	resourceID string
 	eventstore EventStore
 }
 
@@ -236,7 +235,11 @@ func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events
 }
 
 func (a *aggregate) DeviceID() string {
-	return a.ag.DeviceID()
+	return a.ag.GroupID()
+}
+
+func (a *aggregate) ResourceID() string {
+	return a.ag.AggregateID()
 }
 
 // HandlePublishResource handles a command PublishResourceLinks

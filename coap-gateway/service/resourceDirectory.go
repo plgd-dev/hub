@@ -78,10 +78,10 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	}
 
 	w = fixTTL(w)
-	for _, link := range w.Links {
-		link.DeviceID = w.DeviceID
-		link.Href = fixHref(link.Href)
-		link.InstanceID = getInstanceID(link.Href)
+	for i, link := range w.Links {
+		w.Links[i].DeviceID = w.DeviceID
+		w.Links[i].Href = fixHref(link.Href)
+		w.Links[i].InstanceID = getInstanceID(link.Href)
 	}
 
 	publishedResources, err := client.publishResourceLinks(req.Context, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber)

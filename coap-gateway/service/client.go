@@ -709,7 +709,7 @@ func (client *Client) publishResourceLinks(ctx context.Context, links schema.Res
 
 	resp, err := client.server.raClient.PublishResourceLinks(ctx, &request)
 	if err != nil {
-		return nil, fmt.Errorf("error occured during resource links publish for device %v %w", deviceID, err)
+		return nil, fmt.Errorf("error occured during resource links publish %w", err)
 	}
 
 	return resp.GetPublishedResources(), nil

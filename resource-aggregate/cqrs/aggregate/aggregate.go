@@ -242,6 +242,10 @@ func (a *Aggregate) HandleCommand(ctx context.Context, cmd Command) ([]eventstor
 	}
 }
 
-func (a *Aggregate) DeviceID() string {
+func (a *Aggregate) GroupID() string {
 	return a.groupID
+}
+
+func (a *Aggregate) AggregateID() string {
+	return a.aggregateID
 }

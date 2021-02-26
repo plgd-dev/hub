@@ -98,7 +98,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot publish resource links: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for publish resource links command: %v", err)
 	}
@@ -143,7 +143,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot unpublish resource links: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for unpublish resource links command: %v", err)
 	}
@@ -186,7 +186,7 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *comm
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify resource content changed: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for notify content changed command: %v", err)
 	}
@@ -215,7 +215,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update resource content: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for update resource content command: %v", err)
 	}
@@ -244,7 +244,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *comm
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify resource content update processed: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource content update processed command: %v", err)
 	}
@@ -273,7 +273,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource content: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for retrieve resource content command: %v", err)
 	}
@@ -302,7 +302,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *co
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify resource content retrieve processed: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource content retrieve processed command: %v", err)
 	}
@@ -331,7 +331,7 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for delete resource command: %v", err)
 	}
@@ -361,7 +361,7 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *comm
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify resource delete processed: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource delete processed: %v", err)
 	}
@@ -390,7 +390,7 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for create resource command: %v", err)
 	}
@@ -420,7 +420,7 @@ func (r RequestHandler) ConfirmResourceCreate(ctx context.Context, request *comm
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot notify resource create processed: %v", err))
 	}
 
-	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.resourceID, events)
+	err = publishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish events for notify resource create processed: %v", err)
 	}

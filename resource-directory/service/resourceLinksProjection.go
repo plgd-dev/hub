@@ -23,6 +23,7 @@ type resourceLinksProjection struct {
 
 func NewResourceLinksProjection(subscriptions *Subscriptions) eventstore.Model {
 	return &resourceLinksProjection{
+		resources:     make(map[string]*commands.Resource),
 		subscriptions: subscriptions,
 	}
 }
@@ -92,17 +93,17 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 			}
 			onResourcePublished = true
 		case (&events.ResourceLinksUnpublished{}).EventType():
-			var s events.ResourceLinksPublished
+			var s events.ResourceLinksUnpublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
 
 			rlp.deviceID = s.GetDeviceId()
-			if len(rlp.resources) == len(s.GetResources()) {
+			if len(rlp.resources) == len(s.GetHrefs()) {
 				rlp.resources = make(map[string]*commands.Resource)
 			} else {
-				for _, res := range s.GetResources() {
-					delete(rlp.resources, res.GetHref())
+				for _, href := range s.GetHrefs() {
+					delete(rlp.resources, href)
 				}
 			}
 			onResourceUnpublished = true
