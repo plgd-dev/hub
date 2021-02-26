@@ -101,7 +101,7 @@ class _WSManager {
    */
   removeAllByPartialNameFromWsClient = partialName => {
     Object.keys(this.ws)
-      .filter(key => key.indexOf(partialName) !== -1)
+      .filter(key => key.includes(partialName))
       .forEach(key => this.removeWsClient(key))
   }
 

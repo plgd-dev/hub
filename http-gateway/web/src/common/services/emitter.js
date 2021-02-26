@@ -41,7 +41,9 @@ class _Emitter {
       }
 
       if (typeof this.events[partialNameSpace] === 'object') {
-        this.events[partialNameSpace].forEach(listener => listener.apply(this, args))
+        this.events[partialNameSpace].forEach(listener =>
+          listener.apply(this, args)
+        )
       }
     })
   }

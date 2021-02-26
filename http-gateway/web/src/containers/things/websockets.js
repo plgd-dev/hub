@@ -28,10 +28,7 @@ export const deviceStatusListener = async message => {
           const {
             data: { device: { n: deviceName } = {} } = {},
           } = await getThingApi(deviceId)
-          const toastMessage =
-            status === thingsStatuses.ONLINE
-              ? t.thingWentOnline
-              : t.thingWentOffline
+          const toastMessage = status === thingsStatuses.ONLINE ? t.thingWentOnline : t.thingWentOffline
           showInfoToast(
             {
               title: t.thingStatusChange,
