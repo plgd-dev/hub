@@ -102,7 +102,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 				assert.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = publishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.resourceID, events)
+				err = publishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
 				assert.NoError(t, err)
 			}
 		}
@@ -123,7 +123,7 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nat
 		assert.Equal(t, expStatusCode, s.Code())
 	} else {
 		require.NoError(t, err)
-		err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+		err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 		assert.NoError(t, err)
 	}
 }
@@ -218,7 +218,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -274,7 +274,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	assert.Equal(t, 3, len(unpublishedResourceLinks))
 	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -328,7 +328,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	pc = testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID4, resourceID4})
