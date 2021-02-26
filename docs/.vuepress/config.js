@@ -33,6 +33,7 @@ module.exports = {
           {
             title: 'Deployment',
             children: [
+              'deployment/bundle',
               'deployment/authorization-server',
               'deployment/resource-aggregate',
               'deployment/resource-directory',
