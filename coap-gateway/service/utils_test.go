@@ -176,7 +176,6 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 					{
 						DeviceID:      CertIdentity,
 						Href:          TestAResourceHref,
-						ID:            TestAResourceId,
 						ResourceTypes: []string{TestAResourceType},
 						Type:          []string{message.TextPlain.String()},
 					},
@@ -191,7 +190,6 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 					{
 						DeviceID:      CertIdentity,
 						Href:          TestBResourceHref,
-						ID:            TestBResourceId,
 						ResourceTypes: []string{TestBResourceType},
 						Type:          []string{message.TextPlain.String()},
 					},

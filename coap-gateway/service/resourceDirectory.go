@@ -62,18 +62,18 @@ func validatePublish(w wkRd) error {
 func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot load authorization context for device %v %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot load authorization context for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 	}
 
 	var w wkRd
 	err = cbor.ReadFrom(req.Body, &w)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot read publish request body received from device %v %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot read publish request body received from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
 	if err := validatePublish(w); err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("invalid publish request received from device %v %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("invalid publish request received from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
@@ -86,7 +86,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 
 	publishedResources, err := client.publishResourceLinks(req.Context, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to publish resources for device %v %w", w.DeviceID, err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err), coapCodes.BadRequest, req.Token)
 	}
 
 	for _, resource := range publishedResources {
@@ -99,12 +99,12 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	accept := coap.GetAccept(req.Options)
 	encode, err := coap.GetEncoder(accept)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to get encoder for accepted type %v requested by device %v %w", accept, authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to get encoder for accepted type %v requested by device %v: %w", accept, authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 	out, err := encode(w)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to encode publish response for device %v %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to encode publish response for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
 	}
 
@@ -140,17 +140,17 @@ func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs [
 func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot load authorization context for device %v %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot load authorization context for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 	}
 
 	queries, err := req.Options.Queries()
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot query string from unpublish request from device %v %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot query string from unpublish request from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	deviceID, inss, err := parseUnpublishQueryString(queries)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("unable to parse unpublish request query string from device %v %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to parse unpublish request query string from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
 		return
 	}
 
