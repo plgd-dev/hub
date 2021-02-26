@@ -271,6 +271,12 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid userID: %v", err)
 	}
+
+	// only NotifyResourceChangedRequest can have version 0
+	if _, ok := cmd.(*commands.NotifyResourceChangedRequest); !ok && newVersion == 0 {
+		return nil, status.Errorf(codes.NotFound, errInvalidVersion)
+	}
+
 	switch req := cmd.(type) {
 	case *commands.NotifyResourceChangedRequest:
 		if req.CommandMetadata == nil {
@@ -297,9 +303,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return nil, nil
 	case *commands.UpdateResourceRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
@@ -324,9 +327,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceUpdateRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.CommandMetadata == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
@@ -345,9 +345,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.RetrieveResourceRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
@@ -367,9 +364,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceRetrieveRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
@@ -388,9 +382,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.DeleteResourceRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
@@ -409,9 +400,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceDeleteRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
@@ -430,9 +418,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.CreateResourceRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
@@ -455,9 +440,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceCreateRequest:
-		if newVersion == 0 {
-			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
-		}
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
