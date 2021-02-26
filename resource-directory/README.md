@@ -1,1 +1,1 @@
-../docs/guide/architecture/3-resource-directory.md
+../docs/guide/deployment/resource-directory.md
