@@ -301,8 +301,8 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
-			rp.content = s.LatestResourceChange
 			rp.resourceId = s.ResourceId
+			rp.content = s.LatestResourceChange
 			rp.onResourcePublishedVersion = eu.Version()
 			rp.onResourceUnpublishedVersion = eu.Version()
 			rp.onResourceChangedVersion = eu.Version()
@@ -312,6 +312,7 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
+			rp.resourceId = s.ResourceId
 			rp.content = &s
 			rp.onResourceChangedVersion = eu.Version()
 			onResourceContentChanged = true
@@ -321,12 +322,14 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 				return err
 			}
 			rp.resourceUpdatePendings = append(rp.resourceUpdatePendings, s)
+			rp.resourceId = s.ResourceId
 			onResourceUpdatePending = true
 		case (&events.ResourceUpdated{}).EventType():
 			var s events.ResourceUpdated
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
+			rp.resourceId = s.ResourceId
 			tmp := make([]events.ResourceUpdatePending, 0, 16)
 			var found bool
 			for _, cu := range rp.resourceUpdatePendings {
@@ -346,6 +349,7 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
+			rp.resourceId = s.ResourceId
 			rp.resourceRetrievePendings = append(rp.resourceRetrievePendings, s)
 			onResourceRetrievePending = true
 		case (&events.ResourceDeletePending{}).EventType():
@@ -353,6 +357,7 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
+			rp.resourceId = s.ResourceId
 			rp.resourceDeletePendings = append(rp.resourceDeletePendings, s)
 			onResourceDeletePending = true
 		case (&events.ResourceRetrieved{}).EventType():
@@ -360,6 +365,7 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
+			rp.resourceId = s.ResourceId
 			tmp := make([]events.ResourceRetrievePending, 0, 16)
 			var found bool
 			for _, cu := range rp.resourceRetrievePendings {
@@ -380,6 +386,7 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			if err := eu.Unmarshal(&s); err != nil {
 				return err
 			}
+			rp.resourceId = s.ResourceId
 			tmp := make([]events.ResourceDeletePending, 0, 16)
 			var found bool
 			for _, cu := range rp.resourceDeletePendings {
