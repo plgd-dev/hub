@@ -63,6 +63,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot load authorization context for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		return
 	}
 
 	var w wkRd
@@ -87,6 +88,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	publishedResources, err := client.publishResourceLinks(req.Context, w.Links, w.DeviceID, int32(w.TimeToLive), client.remoteAddrString(), req.SequenceNumber)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err), coapCodes.BadRequest, req.Token)
+		return
 	}
 
 	for _, resource := range publishedResources {
@@ -141,6 +143,7 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot load authorization context for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)
+		return
 	}
 
 	queries, err := req.Options.Queries()
