@@ -189,7 +189,7 @@ func (rp *resourceProjection) sendEventResourceDeleted(ctx context.Context, reso
 }
 
 func (rp *resourceProjection) onResourceChangedLocked(ctx context.Context, do func(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error) error {
-	log.Debugf("onResourceChangedLocked %v%v %v", rp.resourceId, rp.onResourceChangedVersion)
+	log.Debugf("onResourceChangedLocked %v %v", rp.resourceId, rp.onResourceChangedVersion)
 	return do(ctx, pb.Event_ResourceChanged{
 		ResourceId: &commands.ResourceId{
 			DeviceId: rp.resourceId.GetDeviceId(),
