@@ -1,18 +1,28 @@
 import { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
+import classNames from 'classnames'
 
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
 import { ActionButton } from '@/components/action-button'
 
-import { RESOURCES_DEFAULT_PAGE_SIZE } from './constants'
+import { RESOURCES_DEFAULT_PAGE_SIZE, thingsStatuses } from './constants'
 import { canCreateResource } from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
-export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
+const { ONLINE, OFFLINE, REGISTERED, UNREGISTERED } = thingsStatuses
+
+export const ThingsResourcesList = ({
+  data,
+  onUpdate,
+  onCreate,
+  deviceStatus,
+}) => {
   const { formatMessage: _ } = useIntl()
+  const isUnregistered = deviceStatus === UNREGISTERED
+  const greyedOutClassName = classNames({ 'grayed-out': isUnregistered })
 
   const columns = useMemo(
     () => [
@@ -23,6 +33,9 @@ export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
           const {
             original: { di, href },
           } = row
+          if (isUnregistered) {
+            return <span>{value}</span>
+          }
           return (
             <span className="link" onClick={() => onUpdate({ di, href })}>
               {value}
@@ -53,6 +66,7 @@ export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
 
           return (
             <ActionButton
+              disabled={isUnregistered}
               menuProps={{ align: 'right' }}
               items={[
                 {
@@ -80,7 +94,7 @@ export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
         },
       },
     ],
-    [onUpdate, onCreate] //eslint-disable-line
+    [onUpdate, onCreate, isUnregistered] //eslint-disable-line
   )
 
   return (
@@ -95,6 +109,11 @@ export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
       ]}
       defaultPageSize={RESOURCES_DEFAULT_PAGE_SIZE}
       autoFillEmptyRows
+      className={greyedOutClassName}
+      paginationProps={{
+        className: greyedOutClassName,
+        disabled: isUnregistered,
+      }}
     />
   )
 }
@@ -102,8 +121,10 @@ export const ThingsResourcesList = ({ data, onUpdate, onCreate }) => {
 ThingsResourcesList.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
   onUpdate: PropTypes.func.isRequired,
+  deviceStatus: PropTypes.oneOf([ONLINE, OFFLINE, REGISTERED, UNREGISTERED]),
 }
 
 ThingsResourcesList.defaultProps = {
   data: null,
+  deviceStatus: null,
 }

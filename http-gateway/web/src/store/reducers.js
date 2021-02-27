@@ -1,7 +1,7 @@
 import { combineReducers } from 'redux'
 import { enableBatching } from 'redux-batched-actions'
 
-import thingsReducer from '@/components/things/slice'
+import thingsReducer from '@/containers/things/slice'
 
 /**
  * @description

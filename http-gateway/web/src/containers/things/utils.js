@@ -65,3 +65,17 @@ export const handleFetchResourceErrors = (error, _) =>
     title: _(t.resourceRetrieveError),
     message: getApiErrorMessage(error),
   })
+
+// Updates the device data with an object of { deviceId, status } which came from the WS events.
+export const updateThingsDataStatus = (data, { deviceId, status }) => {
+  return data?.map(d => {
+    if (d.device.di === deviceId) {
+      return {
+        ...d,
+        status,
+      }
+    }
+
+    return d
+  })
+}

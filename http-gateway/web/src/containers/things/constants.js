@@ -1,10 +1,13 @@
 export const thingsStatuses = {
   ONLINE: 'online',
   OFFLINE: 'offline',
+  REGISTERED: 'registered',
+  UNREGISTERED: 'unregistered',
 }
 
 export const thingsApiEndpoints = {
   THINGS: '/api/v1/devices',
+  THINGS_WS: '/api/v1/ws/devices',
 }
 
 export const RESOURCES_DEFAULT_PAGE_SIZE = 5
@@ -35,3 +38,9 @@ export const defaultNewResource = {
     bm: 3,
   },
 }
+
+export const THINGS_WS_KEY = 'things'
+export const STATUS_WS_KEY = 'status'
+export const RESOURCE_WS_KEY = 'resource'
+
+export const THINGS_STATUS_WS_KEY = `${THINGS_WS_KEY}.${STATUS_WS_KEY}`

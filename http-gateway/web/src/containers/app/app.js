@@ -17,6 +17,7 @@ import { useLocalStorage } from '@/common/hooks'
 import { Routes } from '@/routes'
 import { history } from '@/store/history'
 import { security } from '@/common/services/security'
+import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
 import { messages as t } from './app-i18n'
 import './app.scss'
@@ -77,18 +78,19 @@ const App = ({ config }) => {
   return (
     <AppContext.Provider value={{ ...config, collapsed }}>
       <Router history={history}>
+        <InitServices />
         <Helmet
           defaultTitle={appConfig.appName}
           titleTemplate={`%s | ${appConfig.appName}`}
         />
         <Container fluid id="app" className={classNames({ collapsed })}>
+          <StatusBar />
           <LeftPanel>
             <Menu
               collapsed={collapsed}
               toggleCollapsed={() => setCollapsed(!collapsed)}
             />
           </LeftPanel>
-          <StatusBar />
           <div id="content">
             <Routes />
             <Footer />

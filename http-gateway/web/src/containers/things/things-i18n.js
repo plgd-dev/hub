@@ -136,4 +136,24 @@ export const messages = defineMessages({
     defaultMessage: 'Resource retrieve failed',
     description: 'Title of the toast message on resource retrieve error.',
   },
+  thingWentOnline: {
+    id: 'things.thingWentOnline',
+    defaultMessage: 'Thing "{name}" went online.',
+  },
+  thingWentOffline: {
+    id: 'things.thingWentOffline',
+    defaultMessage: 'Thing "{name}" went offline.',
+  },
+  thingWasUnregistered: {
+    id: 'things.thingWasUnregistered',
+    defaultMessage: 'Thing "{name}" was unregistered.',
+  },
+  thingStatusChange: {
+    id: 'things.thingStatusChange',
+    defaultMessage: 'Thing status change',
+  },
+  notifications: {
+    id: 'things.notifications',
+    defaultMessage: 'Notifications',
+  },
 })

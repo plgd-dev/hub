@@ -1,0 +1,60 @@
+@import '@/common/styles/colors.scss';
+
+$index: 28px;
+$mainVal: 16px;
+
+.switch-control {
+  padding-left: $index + 4px;
+
+  .custom-control-label {
+    padding-left: 10px;
+    padding-bottom: 0;
+  }
+
+  .custom-control-label::before {
+    height: $mainVal;
+    width: $index;
+    left: -$index;
+    top: 2px;
+    border-radius: $mainVal * 2;
+    box-shadow: none !important;
+    border-color: $secondary_40;
+  }
+
+  .custom-control-label::after {
+    width: $mainVal - 2px;
+    height: $mainVal - 2px;
+    top: 3px;
+    left: -$index + 1px;
+    border-radius: $mainVal - 2px;
+    background-color: $primary_100;
+  }
+
+  .custom-control-input:checked ~ .custom-control-label::after {
+    transform: translateX($mainVal - 4px);
+  }
+
+  .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: $primary_100;
+    border-color: $primary_100;
+  }
+
+  .custom-control-input:not(:disabled):active ~ .custom-control-label::before {
+    background-color: rgba($primary_100, 0.2);
+    border-color: $primary_100;
+  }
+
+  input {
+    &:not([disabled]) {
+      & ~ label {
+        cursor: pointer;
+      }
+
+      &:focus {
+        & ~ .custom-control-label::before {
+          border-color: $primary_100;
+        }
+      }
+    }
+  }
+}
