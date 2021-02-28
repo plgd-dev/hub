@@ -39,16 +39,16 @@ func (rlp *resourceLinksProjection) Clone() *resourceLinksProjection {
 	}
 }
 
-func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Context) error {
-	links := pb.RAResourcesToProto(rlp.resources)
+func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Context, publishedResources map[string]*commands.Resource) error {
+	links := pb.RAResourcesToProto(publishedResources)
 	return rlp.subscriptions.OnResourceLinksPublished(ctx, rlp.deviceID, ResourceLinks{
 		links:   links,
 		version: rlp.version,
 	})
 }
 
-func (rlp *resourceLinksProjection) onResourceUnpublishedLocked(ctx context.Context) error {
-	links := pb.RAResourcesToProto(rlp.resources)
+func (rlp *resourceLinksProjection) onResourceUnpublishedLocked(ctx context.Context, unpublishedResources map[string]*commands.Resource) error {
+	links := pb.RAResourcesToProto(unpublishedResources)
 	return rlp.subscriptions.OnResourceLinksUnpublished(ctx, rlp.deviceID, ResourceLinks{
 		links:   links,
 		version: rlp.version,
@@ -61,7 +61,8 @@ func (rlp *resourceLinksProjection) SnapshotEventType() string {
 }
 
 func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
-	var onResourcePublished, onResourceUnpublished bool
+	publishedResources := make(map[string]*commands.Resource)
+	unpublishedResources := make(map[string]*commands.Resource)
 	rlp.lock.Lock()
 	defer rlp.lock.Unlock()
 	var anyEventProcessed bool
@@ -74,39 +75,42 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 		rlp.version = eu.Version()
 		switch eu.EventType() {
 		case (&events.ResourceLinksSnapshotTaken{}).EventType():
-			var s events.ResourceLinksSnapshotTaken
-			if err := eu.Unmarshal(&s); err != nil {
+			var e events.ResourceLinksSnapshotTaken
+			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
 
-			rlp.deviceID = s.GetDeviceId()
-			rlp.resources = s.GetResources()
+			rlp.deviceID = e.GetDeviceId()
+			rlp.resources = e.GetResources()
 		case (&events.ResourceLinksPublished{}).EventType():
-			var s events.ResourceLinksPublished
-			if err := eu.Unmarshal(&s); err != nil {
+			var e events.ResourceLinksPublished
+			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
 
-			rlp.deviceID = s.GetDeviceId()
-			for _, res := range s.GetResources() {
+			rlp.deviceID = e.GetDeviceId()
+			for _, res := range e.GetResources() {
 				rlp.resources[res.GetHref()] = res
+				publishedResources[res.GetHref()] = res
+				delete(unpublishedResources, res.GetHref())
 			}
-			onResourcePublished = true
 		case (&events.ResourceLinksUnpublished{}).EventType():
-			var s events.ResourceLinksUnpublished
-			if err := eu.Unmarshal(&s); err != nil {
+			var e events.ResourceLinksUnpublished
+			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
 
-			rlp.deviceID = s.GetDeviceId()
-			if len(rlp.resources) == len(s.GetHrefs()) {
+			rlp.deviceID = e.GetDeviceId()
+			if len(rlp.resources) == len(e.GetHrefs()) {
 				rlp.resources = make(map[string]*commands.Resource)
+				publishedResources = make(map[string]*commands.Resource)
 			} else {
-				for _, href := range s.GetHrefs() {
+				for _, href := range e.GetHrefs() {
+					unpublishedResources[href] = rlp.resources[href]
 					delete(rlp.resources, href)
+					delete(publishedResources, href)
 				}
 			}
-			onResourceUnpublished = true
 		}
 	}
 
@@ -115,12 +119,13 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 		return nil
 	}
 
-	if onResourcePublished {
-		if err := rlp.onResourcePublishedLocked(ctx); err != nil {
+	if len(publishedResources) != 0 {
+		if err := rlp.onResourcePublishedLocked(ctx, publishedResources); err != nil {
 			log.Errorf("%v", err)
 		}
-	} else if onResourceUnpublished {
-		if err := rlp.onResourceUnpublishedLocked(ctx); err != nil {
+	}
+	if len(unpublishedResources) != 0 {
+		if err := rlp.onResourceUnpublishedLocked(ctx, unpublishedResources); err != nil {
 			log.Errorf("%v", err)
 		}
 	}

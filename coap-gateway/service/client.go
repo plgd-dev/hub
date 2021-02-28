@@ -436,7 +436,7 @@ func (client *Client) notifyContentChanged(deviceID string, href string, notific
 	if err != nil {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
-	request := coapconv.MakeNotifyResourceChangedRequest(commands.MakeResourceID(deviceID, href), authCtx.GetPbData(), client.remoteAddrString(), notification)
+	request := coapconv.MakeNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), authCtx.GetPbData(), client.remoteAddrString(), notification)
 	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
@@ -456,7 +456,7 @@ func (client *Client) sendErrorConfirmResourceUpdate(deviceID, href, userID, cor
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceUpdateRequest(commands.MakeResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceUpdateRequest(commands.NewResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource update: %v", err)
@@ -536,7 +536,7 @@ func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, c
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceRetrieveRequest(commands.MakeResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceRetrieveRequest(commands.NewResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
 	if err != nil {
 		log.Errorf("cannot send error confirm resource retrieve: %v", err)
@@ -619,7 +619,7 @@ func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, cor
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceDeleteRequest(commands.MakeResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
+	request := coapconv.MakeConfirmResourceDeleteRequest(commands.NewResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceDelete(ctx, &request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource delete: %v", err)

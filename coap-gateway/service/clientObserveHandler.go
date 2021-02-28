@@ -129,10 +129,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		},
 	}
 
-	sub, err := grpcClient.NewResourceSubscription(req.Context, commands.ResourceId{
-		DeviceId: deviceID,
-		Href:     href,
-	}, &h, &h, client.server.rdClient)
+	sub, err := grpcClient.NewResourceSubscription(req.Context, commands.NewResourceID(deviceID, href), &h, &h, client.server.rdClient)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return

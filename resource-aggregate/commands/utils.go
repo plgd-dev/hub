@@ -11,6 +11,9 @@ const StatusHref string = "/plgd/s"
 
 // ToUUID converts resource href and device id to unique resource ID
 func (r *ResourceId) ToUUID() string {
+	if len(r.Href) == 0 {
+		return ""
+	}
 	return uuid.NewV5(uuid.NamespaceURL, r.DeviceId+r.Href).String()
 }
 
@@ -32,7 +35,7 @@ func MakeStatusResourceUUID(deviceID string) string {
 	return uuid.NewV5(uuid.NamespaceURL, deviceID+StatusHref).String()
 }
 
-func MakeResourceID(deviceID, href string) *ResourceId {
+func NewResourceID(deviceID, href string) *ResourceId {
 	return &ResourceId{DeviceId: deviceID, Href: href}
 }
 

@@ -245,6 +245,6 @@ func (s *testGrpcGateway_RetrieveResourcesValuesServer) Send(d *pb.ResourceValue
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceValue)
 	}
-	s.got[d.GetResourceId().ToUUID()] = d
+	s.got[d.GetResourceId().GetHref()] = d
 	return nil
 }

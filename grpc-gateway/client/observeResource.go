@@ -29,10 +29,7 @@ func (c *Client) ObserveResource(
 		return "", err
 	}
 
-	sub, err := c.NewResourceSubscription(ctx, commands.ResourceId{
-		DeviceId: deviceID,
-		Href:     href,
-	}, &observationHandler{
+	sub, err := c.NewResourceSubscription(ctx, commands.NewResourceID(deviceID, href), &observationHandler{
 		codec: cfg.codec,
 		obs:   handler,
 		removeSubscription: func() {

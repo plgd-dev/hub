@@ -9,15 +9,15 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
-func toResourceValue(m *resourceProjection, resource *commands.Resource) pb.ResourceValue {
+func toResourceValue(resource *Resource) pb.ResourceValue {
 	return pb.ResourceValue{
 		ResourceId: &commands.ResourceId{
-			Href:     m.resourceId.GetHref(),
-			DeviceId: m.resourceId.GetDeviceId(),
+			Href:     resource.Resource.GetHref(),
+			DeviceId: resource.Resource.GetDeviceId(),
 		},
-		Content: pb.RAContent2Content(m.content.GetContent()),
-		Types:   resource.GetResourceTypes(),
-		Status:  pb.RAStatus2Status(m.content.GetStatus()),
+		Content: pb.RAContent2Content(resource.Projection.content.GetContent()),
+		Types:   resource.Resource.GetResourceTypes(),
+		Status:  pb.RAStatus2Status(resource.Projection.content.GetStatus()),
 	}
 }
 
@@ -34,45 +34,41 @@ func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShad
 }
 
 func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
-	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
-	if len(deviceIDs) == 0 {
-		return status.Errorf(codes.NotFound, "device ids filter doesn't match any devices")
-	}
-
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
 
-	// validate access to resource
-	resourceIDsFilter := make([]*commands.ResourceId, 0, 64)
+	resourceIDsFilter := make([]*commands.ResourceId, 0, len(req.GetResourceIdsFilter())+len(req.GetDeviceIdsFilter()))
 	for _, res := range req.GetResourceIdsFilter() {
-		if len(filterDevices(rd.userDeviceIds, []string{res.GetDeviceId()})) > 0 {
+		if rd.userDeviceIds.HasOneOf(res.GetDeviceId()) {
 			resourceIDsFilter = append(resourceIDsFilter, res)
 		}
 	}
-	if len(resourceIDsFilter) == 0 && len(req.GetResourceIdsFilter()) > 0 && len(req.GetDeviceIdsFilter()) == 0 {
-		return status.Errorf(codes.NotFound, "resource ids filter doesn't match any resources")
+	for _, deviceID := range req.GetDeviceIdsFilter() {
+		if rd.userDeviceIds.HasOneOf(deviceID) {
+			resourceIDsFilter = append(resourceIDsFilter, commands.NewResourceID(deviceID, ""))
+		}
 	}
-	if len(req.GetResourceIdsFilter()) > 0 && len(req.GetDeviceIdsFilter()) == 0 {
-		deviceIDs = strings.MakeSet()
+	if len(resourceIDsFilter) == 0 {
+		if len(req.GetResourceIdsFilter()) > 0 || len(req.GetDeviceIdsFilter()) > 0 {
+			return status.Errorf(codes.NotFound, "resource ids filter doesn't match any resources")
+		}
+		resourceIDsFilter = make([]*commands.ResourceId, 0, len(rd.userDeviceIds))
+		for userDeviceID := range rd.userDeviceIds {
+			resourceIDsFilter = append(resourceIDsFilter, commands.NewResourceID(userDeviceID, ""))
+		}
 	}
 
-	resourceProjections, err := rd.projection.GetResourceProjections(srv.Context(), resourceIDsFilter, typeFilter)
+	resources, err := rd.projection.GetResources(srv.Context(), resourceIDsFilter, typeFilter)
 	if err != nil {
-		return status.Errorf(codes.Internal, "cannot retrieve resources projections: %v", err)
+		return status.Errorf(codes.Internal, "cannot retrieve resources: %v", err)
 	}
-	if len(resourceProjections) == 0 {
+	if len(resources) == 0 {
 		return status.Errorf(codes.NotFound, "not found")
 	}
 
-	resourceLinks, err := rd.projection.GetResourceLinks(srv.Context(), deviceIDs, typeFilter)
-	if err != nil {
-		return status.Errorf(codes.Internal, "cannot retrieve resources links: %v", err)
-	}
-
-	for _, resources := range resourceProjections {
-		for _, resourceProjection := range resources {
-			resource := resourceLinks[resourceProjection.resourceId.GetDeviceId()][resourceProjection.resourceId.GetHref()]
-			val := toResourceValue(resourceProjection, resource)
+	for _, deviceResources := range resources {
+		for _, resource := range deviceResources {
+			val := toResourceValue(resource)
 			err = srv.Send(&val)
 			if err != nil {
 				return status.Errorf(codes.Canceled, "cannot retrieve resources projections: %v", err)

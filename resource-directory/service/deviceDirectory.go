@@ -89,23 +89,23 @@ func (d Device) ToProto() *pb.Device {
 	return r
 }
 
-func updateDevice(dev *Device, resource *resourceProjection, resourceLink *commands.Resource) error {
+func updateDevice(dev *Device, resource *Resource) error {
 	cloudResourceTypes := make(strings.Set)
 	cloudResourceTypes.Add(deviceStatus.ResourceTypes...)
 	switch {
-	case resource.resourceId.GetHref() == "/oic/d":
+	case resource.Resource.GetHref() == "/oic/d":
 		var devContent schema.Device
-		err := decodeContent(resource.content.GetContent(), &devContent)
+		err := decodeContent(resource.Projection.content.GetContent(), &devContent)
 		if err != nil {
 			return err
 		}
 		dev.ID = devContent.ID
 		dev.Resource = &devContent
-		dev.Resource.ResourceTypes = resourceLink.GetResourceTypes()
-		dev.Resource.Interfaces = resourceLink.GetInterfaces()
-	case cloudResourceTypes.HasOneOf(resourceLink.GetResourceTypes()...):
+		dev.Resource.ResourceTypes = resource.Resource.GetResourceTypes()
+		dev.Resource.Interfaces = resource.Resource.GetInterfaces()
+	case cloudResourceTypes.HasOneOf(resource.Resource.GetResourceTypes()...):
 		var cloudStatus deviceStatus.Status
-		err := decodeContent(resource.content.GetContent(), &cloudStatus)
+		err := decodeContent(resource.Projection.content.GetContent(), &cloudStatus)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func updateDevice(dev *Device, resource *resourceProjection, resourceLink *comma
 	return nil
 }
 
-func filterDevicesByUserFilters(resourceProjections map[string]map[string]*resourceProjection, resourceLinks map[string]map[string]*commands.Resource, req *pb.GetDevicesRequest) ([]Device, error) {
+func filterDevicesByUserFilters(resourceProjections map[string]map[string]*Resource, req *pb.GetDevicesRequest) ([]Device, error) {
 	devices := make([]Device, 0, len(resourceProjections))
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
@@ -123,7 +123,7 @@ func filterDevicesByUserFilters(resourceProjections map[string]map[string]*resou
 		var device Device
 		var err error
 		for _, resource := range resources {
-			err = updateDevice(&device, resource, resourceLinks[resource.resourceId.GetDeviceId()][resource.resourceId.GetHref()])
+			err = updateDevice(&device, resource)
 			if err != nil {
 				break
 			}
@@ -175,20 +175,15 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 
 	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {
-		resourceIdsFilter = append(resourceIdsFilter, commands.MakeResourceID(deviceID, "/oic/d"), commands.MakeResourceID(deviceID, commands.StatusHref))
+		resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
-	resourceProjections, err := dd.projection.GetResourceProjections(srv.Context(), resourceIdsFilter, nil)
+	resources, err := dd.projection.GetResources(srv.Context(), resourceIdsFilter, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
 	}
 
-	resourceLinks, err := dd.projection.GetResourceLinks(srv.Context(), deviceIDs, nil)
-	if err != nil {
-		return status.Errorf(codes.Internal, "cannot get resource links by device ids: %v", err)
-	}
-
-	devices, err := filterDevicesByUserFilters(resourceProjections, resourceLinks, req)
+	devices, err := filterDevicesByUserFilters(resources, req)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot filter devices by status: %v", err)
 	}

@@ -31,6 +31,11 @@ type Projection struct {
 	cache *cache.Cache
 }
 
+type Resource struct {
+	Projection *resourceProjection
+	Resource   *commands.Resource
+}
+
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, newModelFunc eventstore.FactoryModelFunc, expiration time.Duration) (*Projection, error) {
 	projection, err := projectionRA.NewProjection(ctx, name, store, subscriber, newModelFunc)
 	if err != nil {
@@ -68,12 +73,12 @@ func (p *Projection) getModels(ctx context.Context, resourceID *commands.Resourc
 func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeFilter strings.Set) (map[string]map[string]*commands.Resource, error) {
 	devicesResourceLinks := make(map[string]map[string]*commands.Resource)
 	for deviceID := range deviceIDFilter {
-		models, err := p.getModels(ctx, commands.MakeResourceID(deviceID, commands.ResourceLinksHref))
+		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.ResourceLinksHref))
 		if err != nil {
 			return nil, err
 		}
 		if len(models) != 1 {
-			return nil, fmt.Errorf("resource links for device %v are not available", deviceID)
+			return nil, nil
 		}
 		resourceLinks := models[0].(*resourceLinksProjection).Clone()
 		devicesResourceLinks[resourceLinks.deviceID] = resourceLinks.resources
@@ -82,7 +87,7 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 	return devicesResourceLinks, nil
 }
 
-func (p *Projection) GetResourceProjections(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*resourceProjection, error) {
+func (p *Projection) GetResources(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
 	resourceLinks := make(map[string]map[string]*commands.Resource)
 	models := make([]eventstore.Model, 0, 32)
 	for _, rid := range resourceIDFilter {
@@ -102,7 +107,7 @@ func (p *Projection) GetResourceProjections(ctx context.Context, resourceIDFilte
 		models = append(models, m...)
 	}
 
-	clonedProjection := make(map[string]map[string]*resourceProjection)
+	resources := make(map[string]map[string]*Resource)
 	for _, m := range models {
 		if m.SnapshotEventType() == events.NewResourceLinksSnapshotTaken().SnapshotEventType() {
 			continue
@@ -116,13 +121,13 @@ func (p *Projection) GetResourceProjections(ctx context.Context, resourceIDFilte
 			continue
 		}
 
-		resources, ok := clonedProjection[rp.resourceId.GetDeviceId()]
+		deviceHrefs, ok := resources[rp.resourceId.GetDeviceId()]
 		if !ok {
-			resources = make(map[string]*resourceProjection)
-			clonedProjection[rp.resourceId.GetDeviceId()] = resources
+			deviceHrefs = make(map[string]*Resource)
+			resources[rp.resourceId.GetDeviceId()] = deviceHrefs
 		}
-		resources[rp.resourceId.GetHref()] = rp
+		deviceHrefs[rp.resourceId.GetHref()] = &Resource{Projection: rp, Resource: resourceLinks[rp.resourceId.GetDeviceId()][rp.resourceId.GetHref()]}
 	}
 
-	return clonedProjection, nil
+	return resources, nil
 }

@@ -23,7 +23,7 @@ func (c *Client) DeleteResource(
 		cfg = o.applyOnDelete(cfg)
 	}
 
-	r := pb.DeleteResourceRequest{ResourceId: commands.MakeResourceID(deviceID, href)}
+	r := pb.DeleteResourceRequest{ResourceId: commands.NewResourceID(deviceID, href)}
 
 	resp, err := c.gateway.DeleteResource(ctx, &r)
 	if err != nil {

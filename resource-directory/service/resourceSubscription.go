@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/kit/strings"
 )
 
 type resourceSubscription struct {
@@ -35,6 +36,17 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	}
 	log.Debugf("subscriptions.SubscribeForResourceEvent.resourceProjection.Register, created=%v", created)
 
+	deviceIDFilter := make(strings.Set)
+	deviceIDFilter.Add(s.ResourceID().GetDeviceId())
+	resLinks, err := s.resourceProjection.GetResourceLinks(ctx, deviceIDFilter, nil)
+	if err != nil {
+		return fmt.Errorf("links not available for device %v", s.ResourceID().GetDeviceId())
+	}
+
+	if _, present := resLinks[s.ResourceID().GetDeviceId()][s.ResourceID().GetHref()]; !present {
+		return fmt.Errorf("not found")
+	}
+
 	models := s.resourceProjection.Models(s.ResourceID())
 	if len(models) == 0 {
 		err = s.resourceProjection.ForceUpdate(ctx, s.ResourceID())
@@ -45,7 +57,7 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 	}
 
 	if len(models) == 0 {
-		return fmt.Errorf("cannot load resource models %v: %w", s.ResourceID(), err)
+		return nil
 	}
 	res := models[0].(*resourceProjection).Clone()
 	if res.content == nil {

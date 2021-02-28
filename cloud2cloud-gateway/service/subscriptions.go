@@ -128,10 +128,7 @@ func (s *SubscriptionData) createResourceSubscription(ctx context.Context, emitE
 	default:
 		return nil, fmt.Errorf("createResourceSubscription: unsupported subscription eventypes %+v", s.data.EventTypes)
 	}
-	return client.NewResourceSubscription(ctx, commands.ResourceId{
-		DeviceId: s.data.DeviceID,
-		Href:     s.data.Href,
-	}, closeEventHandler, eventHandler, s.gwClient)
+	return client.NewResourceSubscription(ctx, commands.NewResourceID(s.data.DeviceID, s.data.Href), closeEventHandler, eventHandler, s.gwClient)
 }
 
 func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {

@@ -31,7 +31,7 @@ func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, sr
 
 	resourceLinks, err := rd.projection.GetResourceLinks(srv.Context(), deviceIDs, typeFilter)
 	if err != nil {
-		return status.Errorf(codes.Internal, "cannot get resource links by device ids: %v", err)
+		return status.Errorf(codes.Internal, "cannot get resource links %v", err)
 	}
 	if len(resourceLinks) == 0 {
 		return status.Errorf(codes.NotFound, "not found")
@@ -42,7 +42,7 @@ func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, sr
 			resourceLink := pb.RAResourceToProto(resource)
 			err = srv.Send(resourceLink)
 			if err != nil {
-				return status.Errorf(codes.Canceled, "cannot send resource link: %v", err)
+				return status.Errorf(codes.Canceled, "cannot send resource link %v", err)
 			}
 		}
 	}
