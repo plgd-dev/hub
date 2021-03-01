@@ -6,7 +6,7 @@ FROM node:12 AS build-web
 COPY web /web
 RUN cd /web && npm install && npm run build
 
-FROM alpine:3.12 as service
+FROM alpine:3.13 as service
 RUN apk add --no-cache ca-certificates
 COPY --from=build /go/bin/service /usr/local/bin/service
 COPY --from=build-web /web/build /usr/local/var/www
