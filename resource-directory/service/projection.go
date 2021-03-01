@@ -94,24 +94,112 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 	return devicesResourceLinks, nil
 }
 
+func normalizeResourceIDs(resourceIDFilter []*commands.ResourceId) []*commands.ResourceId {
+	if len(resourceIDFilter) == 0 {
+		return nil
+	}
+	resourceIDs := make(map[string]map[string]bool)
+	for _, resourceID := range resourceIDFilter {
+		v, ok := resourceIDs[resourceID.GetDeviceId()]
+		if !ok {
+			v = make(map[string]bool)
+			resourceIDs[resourceID.GetDeviceId()] = v
+			if resourceID.GetHref() != "" {
+				v[resourceID.GetHref()] = true
+			}
+			continue
+		}
+		if len(v) == 0 {
+			continue
+		}
+		if resourceID.GetHref() == "" {
+			resourceIDs[resourceID.GetDeviceId()] = make(map[string]bool)
+		} else {
+			v[resourceID.GetHref()] = true
+		}
+	}
+	resourceIDFilter = make([]*commands.ResourceId, 0, len(resourceIDFilter))
+	for deviceID, hrefs := range resourceIDs {
+		if len(hrefs) == 0 {
+			resourceIDFilter = append(resourceIDFilter, &commands.ResourceId{DeviceId: deviceID})
+			continue
+		}
+		for href := range hrefs {
+			resourceIDFilter = append(resourceIDFilter, &commands.ResourceId{DeviceId: deviceID, Href: href})
+		}
+	}
+	return resourceIDFilter
+}
+
+func (p *Projection) GetResourcesDetails(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
+	unusedResourceLinks, resources, err := p.getResources(ctx, resourceIDFilter, typeFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	for deviceID, links := range unusedResourceLinks {
+		for href, link := range links {
+			deviceHrefs, ok := resources[deviceID]
+			if !ok {
+				deviceHrefs = make(map[string]*Resource)
+				resources[deviceID] = deviceHrefs
+			}
+			deviceHrefs[href] = &Resource{Resource: link}
+		}
+	}
+
+	return resources, nil
+}
+
 func (p *Projection) GetResources(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
+	_, resources, err := p.getResources(ctx, resourceIDFilter, typeFilter)
+	return resources, err
+}
+
+func (p *Projection) getResources(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*commands.Resource, map[string]map[string]*Resource, error) {
+	resourceIDFilter = normalizeResourceIDs(resourceIDFilter)
 	resourceLinks := make(map[string]map[string]*commands.Resource)
+
 	models := make([]eventstore.Model, 0, 32)
 	for _, rid := range resourceIDFilter {
 		// build resource links map of all devices which are requested
 		if _, present := resourceLinks[rid.GetDeviceId()]; !present {
 			rl, err := p.GetResourceLinks(ctx, strings.Set{rid.GetDeviceId(): {}}, nil)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			resourceLinks[rid.GetDeviceId()] = rl[rid.GetDeviceId()]
 		}
-
 		m, err := p.getModels(ctx, rid)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		models = append(models, m...)
+	}
+
+	unusedResourceLinks := make(map[string]map[string]*commands.Resource)
+	for _, rid := range resourceIDFilter {
+		links, ok := unusedResourceLinks[rid.GetDeviceId()]
+		if !ok {
+			links = make(map[string]*commands.Resource)
+			unusedResourceLinks[rid.GetDeviceId()] = links
+		}
+		if rid.GetHref() == "" {
+			for href, link := range resourceLinks[rid.GetDeviceId()] {
+				if !hasMatchingType(link.ResourceTypes, typeFilter) {
+					continue
+				}
+				links[href] = link
+			}
+			continue
+		}
+		link, ok := resourceLinks[rid.GetDeviceId()][rid.GetHref()]
+		if ok {
+			if !hasMatchingType(link.ResourceTypes, typeFilter) {
+				continue
+			}
+			links[rid.GetHref()] = link
+		}
 	}
 
 	resources := make(map[string]map[string]*Resource)
@@ -134,7 +222,8 @@ func (p *Projection) GetResources(ctx context.Context, resourceIDFilter []*comma
 			resources[rp.resourceId.GetDeviceId()] = deviceHrefs
 		}
 		deviceHrefs[rp.resourceId.GetHref()] = &Resource{Projection: rp, Resource: resourceLinks[rp.resourceId.GetDeviceId()][rp.resourceId.GetHref()]}
+		delete(unusedResourceLinks[rp.resourceId.GetDeviceId()], rp.resourceId.GetHref())
 	}
 
-	return resources, nil
+	return unusedResourceLinks, resources, nil
 }

@@ -10,14 +10,21 @@ import (
 )
 
 func toResourceValue(resource *Resource) pb.ResourceValue {
+	status := pb.Status_UNAVAILABLE
+	var content *pb.Content
+	if resource.Projection != nil {
+		status = pb.RAStatus2Status(resource.Projection.content.GetStatus())
+		content = pb.RAContent2Content(resource.Projection.content.GetContent())
+	}
+
 	return pb.ResourceValue{
 		ResourceId: &commands.ResourceId{
 			Href:     resource.Resource.GetHref(),
 			DeviceId: resource.Resource.GetDeviceId(),
 		},
-		Content: pb.RAContent2Content(resource.Projection.content.GetContent()),
+		Content: content,
 		Types:   resource.Resource.GetResourceTypes(),
-		Status:  pb.RAStatus2Status(resource.Projection.content.GetStatus()),
+		Status:  status,
 	}
 }
 
@@ -58,7 +65,7 @@ func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValue
 		}
 	}
 
-	resources, err := rd.projection.GetResources(srv.Context(), resourceIDsFilter, typeFilter)
+	resources, err := rd.projection.GetResourcesDetails(srv.Context(), resourceIDsFilter, typeFilter)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot retrieve resources: %v", err)
 	}

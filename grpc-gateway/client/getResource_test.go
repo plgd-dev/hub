@@ -203,5 +203,5 @@ func TestClient_GetResourceUnavaliable(t *testing.T) {
 	err := c.GetResource(ctx, deviceID, "/oc/con", &v)
 	s, ok := status.FromError(err)
 	require.True(t, ok)
-	require.Equal(t, codes.Unavailable, s.Code())
+	require.Equal(t, codes.Unavailable.String(), s.Code().String())
 }
