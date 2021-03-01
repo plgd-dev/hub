@@ -81,7 +81,14 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 			return nil, nil
 		}
 		resourceLinks := models[0].(*resourceLinksProjection).Clone()
-		devicesResourceLinks[resourceLinks.deviceID] = resourceLinks.resources
+		resources := make(map[string]*commands.Resource)
+		for key, resource := range resourceLinks.resources {
+			if !hasMatchingType(resource.ResourceTypes, typeFilter) {
+				continue
+			}
+			resources[key] = resource
+		}
+		devicesResourceLinks[resourceLinks.deviceID] = resources
 	}
 
 	return devicesResourceLinks, nil
