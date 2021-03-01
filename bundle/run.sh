@@ -57,7 +57,8 @@ export MONGODB_URL="mongodb://$MONGODB_HOST"
 export MONGODB_URI="mongodb://$MONGODB_HOST"
 export MONGO_URI="mongodb://$MONGODB_HOST"
 
-export NATS_URL="nats://localhost:$NATS_PORT"
+export NATS_HOST="localhost:$NATS_PORT"
+export NATS_URL="nats://${NATS_HOST}"
 
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
 export OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token
@@ -142,7 +143,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${MONGODB_HOST} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${MONGODB_HOST} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to mongodb(${MONGODB_HOST}) $i"
@@ -179,7 +180,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${OAUTH_SERVER_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${OAUTH_SERVER_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to oauth-server(${OAUTH_SERVER_ADDRESS}) $i"
@@ -211,7 +212,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${AUTHORIZATION_HTTP_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${AUTHORIZATION_HTTP_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to authorization service(${AUTHORIZATION_HTTP_ADDRESS}) $i"
@@ -235,7 +236,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${RESOURCE_AGGREGATE_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${RESOURCE_AGGREGATE_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to resource-aggregate(${RESOURCE_AGGREGATE_ADDRESS}) $i"
@@ -267,7 +268,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${RESOURCE_DIRECTORY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${RESOURCE_DIRECTORY_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to resource-directory(${RESOURCE_DIRECTORY_ADDRESS}) $i"
@@ -334,7 +335,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${GRPC_GATEWAY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${GRPC_GATEWAY_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to grpc-gateway(${GRPC_GATEWAY_ADDRESS}) $i"
@@ -391,7 +392,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${HTTP_GATEWAY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${HTTP_GATEWAY_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to http-gateway(${HTTP_GATEWAY_ADDRESS}) $i"
@@ -417,7 +418,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${CERTIFICATE_AUTHORITY_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${CERTIFICATE_AUTHORITY_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to certificate-authority(${CERTIFICATE_AUTHORITY_ADDRESS}) $i"
