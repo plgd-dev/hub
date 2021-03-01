@@ -24,6 +24,7 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 | ENV variable | Type | Description | Default |
 | --------- | ----------- | ------- | ------- |
 | `FQDN` | string | public FQDN for bundle | `"localhost"` |
+| `NGINX_PORT` | uint16 | nginx https port for localhost | `"443"` |
 | `COAP_GATEWAY_UNSECURE_PORT` | uint16 | exposed public port for coap-tcp  | `"5683"` |
 | `COAP_GATEWAY_UNSECURE_ADDRESS` | string | coap-tcp listen address | `"0.0.0.0:5683"` |
 | `COAP_GATEWAY_PORT` | uint16 | exposed public port for coaps-tcp  | `"5684"` |
@@ -34,22 +35,29 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 | `COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS` | bool | ignore tcp control signal message from peer | `"false"`|
 | `COAP_GATEWAY_LOG_MESSAGES` | bool | log received/send messages | false |
 | `COAP_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying coap clients certificates | `true` |
-| `GRPC_GATEWAY_ADDRESS`| string | secure grpc-tcp listen address | `"0.0.0.0:9084"` |
-| `GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying grpc clients certificates | `true` |
-| `HTTP_GATEWAY_ADDRESS`| string | secure grpc-tcp listen address | `"0.0.0.0:9086"` |
-| `HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS`| bool | disable verifying http clients certificates | `true` |
-| `RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES` | uin16 | maximum number of queries MongoDB client can execute in parallel | `8` |
-| `INITIALIZE_CERITIFICATES` | bool | initialze certificates | `true` |
-| `CERITIFICATES_PATH` | string | path to directory | `"/data/certs"` |
-| `MONGO_PATH` | string | path to directory | `"/data/db"` |
-| `MONGO_PORT` | uint16 | mongo listen port  | `"10000"` |
-| `NATS_PORT` | uint16 | nats listen port  | `"10001"` |
-| `LOGS_PATH` | string | path to directory | `"/data/log"` |
+| `GRPC_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9084"` |
+| `HTTP_GATEWAY_PORT`| uint16 | secure grpc-tcp listen port for localhost | `"9086"` |
+| `CERTIFICATE_AUTHORITY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9087"` |
+| `OAUTH_SERVER_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9088"` |
+| `RESOURCE_AGGREGATE_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9083"` |
+| `RESOURCE_DIRECTORY_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9082"` |
+| `AUTHORIZATION_PORT` | uint16 | secure grpc-tcp listen port for localhost | `"9081"` |
+| `AUTHORIZATION_HTTP_PORT` | uint16 | secure https listen port for localhost | `"9085"` |
+| `MONGO_PORT` | uint16 | mongo listen port for localhost | `"10000"` |
+| `NATS_PORT` | uint16 | nats listen port for localhost | `"10001"` |
 
 ## Run
+All datas, confgurations and logs are stored under /data directory at the container.
 ```bash
-docker run -d --network=host --name=cloud -t plgd/bundle:vnext
+mkdir -p `pwd`/data
+docker run -d --network=host -v `pwd`/data:/data --name=cloud -t plgd/bundle:vnext
 ```
+
+## Access via HTTPS/GRPC
+All http-gateway, oauth-server, grpc-gateway, certificate-authority endpoints are accessible through nginx.
+- HTTP - UI: `https://{FQDN}:{NGINX_PORT}` eg: `https://localhost:8443`
+- HTTP - API: `https://{FQDN}:{NGINX_PORT}/api/v1/...` eg: `https://localhost:8443/api/v1/devices`
+- GRPC: `{FQDN}:{NGINX_PORT}` eg: `localhost:8443`
 
 ## Device Onboarding
 The onboarding values which should be set to the [coapcloudconf](https://github.com/openconnectivityfoundation/cloud-services/blob/c2c/swagger2.0/oic.r.coapcloudconf.swagger.json) device resource are:
@@ -103,7 +111,7 @@ make CLOUD=1 SECURE=0 cloud_server cloud_client
 - Cloud CA must be set as TRUST CA with subject COAP_GATEWAY_CLOUD_ID in device.
 - Cloud CA in PEM:
   ```bash
-  docker exec -it cloud cat CERITIFICATES_PATH/root_ca.crt
+  docker exec -it cloud cat CERTIFICATES_PATH/root_ca.crt
   ```
 - ACL for Cloud (Subject: COAP_GATEWAY_CLOUD_ID) must be set with full access to all published resources in device.
 

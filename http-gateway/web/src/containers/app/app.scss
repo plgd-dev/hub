@@ -17,6 +17,8 @@
 @import '@/components/select/select.scss';
 @import '@/components/editor/editor.scss';
 @import '@/components/toast/toast.scss';
+@import '@/components/switch/switch.scss';
+@import '@/components/action-button/action-button.scss';
 
 #app {
   padding: 0;
@@ -52,7 +54,7 @@
 }
 
 .client-error-message {
-  background-color: $red_50;
-  border: 1px solid $red_100;
-  color: $red_100;
+  background-color: $error_50;
+  border: 1px solid $error_100;
+  color: $error_100;
 }

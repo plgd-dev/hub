@@ -1,16 +1,28 @@
 import { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
+import classNames from 'classnames'
 
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
+import { ActionButton } from '@/components/action-button'
 
-import { RESOURCES_DEFAULT_PAGE_SIZE } from './constants'
+import { RESOURCES_DEFAULT_PAGE_SIZE, thingsStatuses } from './constants'
+import { canCreateResource } from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
-export const ThingsResourcesList = ({ data, onClick }) => {
+const { ONLINE, OFFLINE, REGISTERED, UNREGISTERED } = thingsStatuses
+
+export const ThingsResourcesList = ({
+  data,
+  onUpdate,
+  onCreate,
+  deviceStatus,
+}) => {
   const { formatMessage: _ } = useIntl()
+  const isUnregistered = deviceStatus === UNREGISTERED
+  const greyedOutClassName = classNames({ 'grayed-out': isUnregistered })
 
   const columns = useMemo(
     () => [
@@ -21,8 +33,11 @@ export const ThingsResourcesList = ({ data, onClick }) => {
           const {
             original: { di, href },
           } = row
+          if (isUnregistered) {
+            return <span>{value}</span>
+          }
           return (
-            <span className="link" onClick={() => onClick({ di, href })}>
+            <span className="link" onClick={() => onUpdate({ di, href })}>
               {value}
             </span>
           )
@@ -40,8 +55,46 @@ export const ThingsResourcesList = ({ data, onClick }) => {
           )
         },
       },
+      {
+        Header: _(t.actions),
+        accessor: 'actions',
+        disableSortBy: true,
+        Cell: ({ row }) => {
+          const {
+            original: { di, href, if: interfaces },
+          } = row
+
+          return (
+            <ActionButton
+              disabled={isUnregistered}
+              menuProps={{ align: 'right' }}
+              items={[
+                {
+                  onClick: () => onCreate(href),
+                  label: _(t.create),
+                  icon: 'fa-plus',
+                  hidden: !canCreateResource(interfaces) || true, // temporary disabled
+                },
+                {
+                  onClick: () => onUpdate({ di, href }),
+                  label: _(t.update),
+                  icon: 'fa-pen',
+                },
+                {
+                  onClick: () => console.log('helo'),
+                  label: _(t.delete),
+                  icon: 'fa-trash-alt',
+                  hidden: true,
+                },
+              ]}
+            >
+              <i className="fas fa-ellipsis-h" />
+            </ActionButton>
+          )
+        },
+      },
     ],
-    [onClick] //eslint-disable-line
+    [onUpdate, onCreate, isUnregistered] //eslint-disable-line
   )
 
   return (
@@ -56,15 +109,22 @@ export const ThingsResourcesList = ({ data, onClick }) => {
       ]}
       defaultPageSize={RESOURCES_DEFAULT_PAGE_SIZE}
       autoFillEmptyRows
+      className={greyedOutClassName}
+      paginationProps={{
+        className: greyedOutClassName,
+        disabled: isUnregistered,
+      }}
     />
   )
 }
 
 ThingsResourcesList.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
-  onClick: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  deviceStatus: PropTypes.oneOf([ONLINE, OFFLINE, REGISTERED, UNREGISTERED]),
 }
 
 ThingsResourcesList.defaultProps = {
   data: null,
+  deviceStatus: null,
 }

@@ -8,11 +8,11 @@ import (
 
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +30,7 @@ func (a *testApplication) GetRootCertificateAuthorities() ([]*x509.Certificate, 
 func NewTestDeviceSimulator(deviceID, deviceName string) client.DeviceDetails {
 	return client.DeviceDetails{
 		ID: deviceID,
-		Device: pb.Device{
+		Device: &pb.Device{
 			Id:         deviceID,
 			Name:       deviceName,
 			Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
@@ -42,6 +42,11 @@ func NewTestDeviceSimulator(deviceID, deviceName string) client.DeviceDetails {
 }
 
 func TestClient_GetDevice(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
+
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		token    string
@@ -56,7 +61,7 @@ func TestClient_GetDevice(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 			},
 			want: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
@@ -64,19 +69,14 @@ func TestClient_GetDevice(t *testing.T) {
 		{
 			name: "not-found",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: "not-found",
 			},
 			wantErr: true,
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())

@@ -20,7 +20,7 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
@@ -49,7 +49,7 @@ func runDevicePulling(ctx context.Context,
 	config Config,
 	s *Store,
 	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
+	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
 	triggerTask func(Task),
@@ -99,7 +99,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	raClient := pbRA.NewResourceAggregateClient(raConn)
+	raClient := raService.NewResourceAggregateClient(raConn)
 
 	authConn, err := grpc.Dial(config.AuthServerAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),

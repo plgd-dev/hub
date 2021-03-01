@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/cloud/test"
@@ -13,10 +12,17 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_DeleteResource(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
+
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		token    string
@@ -34,7 +40,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "/ligh/1 - method not allowd",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/ligh/1",
 			},
@@ -44,7 +50,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "/ligh/1 - permission denied",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oic/d",
 			},
@@ -54,7 +60,7 @@ func TestClient_DeleteResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 			},
@@ -62,12 +68,8 @@ func TestClient_DeleteResource(t *testing.T) {
 			wantErrCode: codes.NotFound,
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
 
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())

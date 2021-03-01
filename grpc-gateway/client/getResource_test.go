@@ -9,15 +9,19 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_GetResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
 	type args struct {
 		token    string
 		deviceID string
@@ -33,7 +37,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oc/con",
 			},
@@ -44,7 +48,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid with skip shadow",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oc/con",
 				opts:     []client.GetOption{client.WithSkipShadow()},
@@ -56,7 +60,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid with interface",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oc/con",
 				opts:     []client.GetOption{client.WithInterface("oic.if.baseline")},
@@ -71,7 +75,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "valid with interface and skip shadow",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oc/con",
 				opts:     []client.GetOption{client.WithSkipShadow(), client.WithInterface("oic.if.baseline")},
@@ -86,7 +90,7 @@ func TestClient_GetResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    authTest.UserToken,
+				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 			},
@@ -94,12 +98,7 @@ func TestClient_GetResource(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
@@ -125,13 +124,12 @@ func TestClient_GetResource(t *testing.T) {
 
 func TestClient_GetResourceUnavaliable(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-
 	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())

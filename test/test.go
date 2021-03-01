@@ -48,6 +48,8 @@ import (
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
 var (
@@ -171,6 +173,7 @@ func ClearDB(ctx context.Context, t *testing.T) {
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	ClearDB(ctx, t)
+	oauthShutdown := oauthService.SetUp(t)
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
@@ -187,6 +190,7 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 		rdShutdown()
 		raShutdown()
 		authShutdown()
+		oauthShutdown()
 	}
 }
 
@@ -235,7 +239,8 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 	setAccessForCloud(ctx, t, client, deviceID)
 
-	err = client.OnboardDevice(ctx, deviceID, "test", "coaps+tcp://"+gwHost, "authCode", "sid")
+	code := oauthTest.GetDeviceAuthorizationCode(t)
+	err = client.OnboardDevice(ctx, deviceID, "plgd", "coaps+tcp://"+gwHost, code, "sid")
 	require.NoError(t, err)
 
 	if len(expectedResources) > 0 {

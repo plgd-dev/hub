@@ -9,10 +9,11 @@ export const StatusBar = memo(() => {
   return (
     <>
       <div id="status-bar-shadow" className="status-bar" />
-      <div id="status-bar" className="status-bar">
+      <header id="status-bar" className="status-bar">
+        {/* Insert custom components here. */}
         <LanguageSwitcher />
         <UserWidget />
-      </div>
+      </header>
     </>
   )
 })

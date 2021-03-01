@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-target-blank */
 import { memo } from 'react'
 import { useIntl } from 'react-intl'
 
@@ -9,13 +10,21 @@ export const Footer = memo(() => {
 
   return (
     <footer id="footer">
-      <a href="/" target="_blank">
+      <a
+        href="https://github.com/plgd-dev/cloud/raw/master/http-gateway/swagger.yaml"
+        target="_blank"
+        rel="noopener"
+      >
         {_(t.API)}
       </a>
-      <a href="/" target="_blank">
+      <a href="https://plgd.dev/guide" target="_blank" rel="noopener">
         {_(t.docs)}
       </a>
-      <a href="/" target="_blank">
+      <a
+        href="https://github.com/plgd-dev/cloud"
+        target="_blank"
+        rel="noopener"
+      >
         {_(t.contribute)}
       </a>
     </footer>

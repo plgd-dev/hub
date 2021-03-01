@@ -30,6 +30,7 @@ func MakeConfig(t *testing.T, withoutTLS ...bool) refImpl.Config {
 	gwCfg.Service.FQDN = "coap-gateway-" + t.Name()
 	gwCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	gwCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	gwCfg.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 	gwCfg.Service.HeartBeat = time.Millisecond * 300
 
 	gwCfg.Listen.File.TLSCertFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")

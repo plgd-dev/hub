@@ -156,12 +156,12 @@ func (c *Client) GetAccessTokenURL(ctx context.Context) (string, error) {
 }
 
 // GetDevicesViaCallback returns devices. JWT token must be stored in context for grpc call.
-func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(pb.Device)) error {
+func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(*pb.Device)) error {
 	it := c.GetDevicesIterator(ctx, deviceIDs, resourceTypes...)
 	defer it.Close()
 
 	for {
-		var v pb.Device
+		var v *pb.Device
 		if !it.Next(&v) {
 			break
 		}

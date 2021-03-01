@@ -30,14 +30,13 @@ func (c Config) String() string {
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
-func (c Config) CheckForDefaults() Config {
-	c.Service = c.Service.CheckForDefaults()
-	return c
+func (c *Config) SetDefaults() {
+	c.Service.SetDefaults()
 }
 
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config Config) (*RefImpl, error) {
-	config = config.CheckForDefaults()
+	config.SetDefaults()
 	log.Setup(config.Log)
 	log.Info(config.String())
 

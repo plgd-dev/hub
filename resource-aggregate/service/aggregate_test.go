@@ -369,7 +369,6 @@ func testMakeUnpublishResourceRequest(deviceID string, hrefs []string) *commands
 }
 
 func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64) *commands.NotifyResourceChangedRequest {
-
 	r := commands.NotifyResourceChangedRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -736,6 +735,11 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
+
 			gotEvents, err := ag.UpdateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -819,6 +823,10 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceUpdate(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -899,6 +907,10 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.RetrieveResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -980,6 +992,10 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceRetrieve(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1068,6 +1084,10 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.DeleteResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1150,6 +1170,10 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceDelete(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1231,6 +1255,10 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.CreateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1313,6 +1341,10 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceCreate(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)

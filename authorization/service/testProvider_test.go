@@ -1,4 +1,4 @@
-package provider
+package service
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
+	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/lestrrat-go/jwx/jwa"
@@ -50,8 +51,8 @@ func init() {
 	UserToken = token.AccessToken
 }
 
-func generateToken(isService bool) (*Token, error) {
-	t := Token{
+func generateToken(isService bool) (*provider.Token, error) {
+	t := provider.Token{
 		RefreshToken: "refresh-token",
 		Expiry:       time.Now().Add(time.Hour * 24 * 365),
 		UserID:       DeviceUserID,
@@ -99,8 +100,8 @@ func (p *TestProvider) GetProviderName() string {
 }
 
 // Exchange Auth Code for Access Token via OAuth.
-func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
-	return &Token{
+func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*provider.Token, error) {
+	return &provider.Token{
 		UserID:       DeviceUserID,
 		AccessToken:  DeviceAccessToken,
 		Expiry:       time.Now().Add(DeviceExpiresIn),
@@ -109,8 +110,8 @@ func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, auth
 }
 
 // Refresh gets new Access Token via OAuth.
-func (p *TestProvider) Refresh(ctx context.Context, refreshToken string) (*Token, error) {
-	return &Token{
+func (p *TestProvider) Refresh(ctx context.Context, refreshToken string) (*provider.Token, error) {
+	return &provider.Token{
 		UserID:       DeviceUserID,
 		AccessToken:  DeviceAccessToken,
 		Expiry:       time.Now().Add(DeviceExpiresIn),
@@ -121,12 +122,6 @@ func (p *TestProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 // AuthCodeURL returns URL for redirecting.
 func (p *TestProvider) AuthCodeURL(csrfToken string) string {
 	return "redirect-url"
-}
-
-func setErrorResponse(r *fasthttp.Response, code int, body string) {
-	r.Header.SetContentType("text/plain; charset=utf-8")
-	r.SetStatusCode(code)
-	r.SetBodyString(body)
 }
 
 func (p *TestProvider) HandleAuthorizationCode(ctx *fasthttp.RequestCtx) {

@@ -1,0 +1,77 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
+.dropdown.action-button {
+  display: inline-block;
+
+  .dropdown-toggle {
+    &.btn {
+      outline: 0;
+      box-shadow: none;
+      display: flex;
+
+      &.btn-empty {
+        color: $primary_100;
+        padding: 0 10px;
+        min-width: 0;
+      }
+
+      span {
+        width: 4px;
+        height: 4px;
+        background-color: $primary_100;
+        margin: 0 2px;
+        border-radius: 4px;
+      }
+
+      &:after {
+        display: none;
+      }
+    }
+
+    &:hover {
+      &:not([disabled]) {
+        background-color: $secondary_20;
+      }
+    }
+  }
+
+  .dropdown-menu {
+    padding: 0;
+    min-width: 0;
+    background-color: $light_100;
+    border: 0;
+    border-radius: 2px;
+    box-shadow: 0px 10px 40px $shadow_100;
+
+    .dropdown-item {
+      line-height: 1;
+      padding: 5px 20px;
+      height: $input_height;
+      display: flex;
+      align-items: center;
+      font-size: $font_size;
+      color: $primary_100;
+      border-bottom: 1px solid $secondary_20;
+
+      &:hover {
+        background-color: $secondary_20;
+      }
+
+      &:active {
+        background-color: $primary_100;
+        color: $white;
+      }
+
+      i.fas {
+        width: 14px;
+        margin-right: 8px;
+        text-align: center;
+      }
+
+      &:last-child {
+        border: 0;
+      }
+    }
+  }
+}

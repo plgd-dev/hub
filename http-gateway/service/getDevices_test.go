@@ -8,13 +8,13 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"context"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -25,9 +25,10 @@ func TestGetDevices(t *testing.T) {
 	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -48,7 +49,7 @@ func TestGetDevices(t *testing.T) {
 }
 
 func getDevices(t *testing.T, response interface{}) {
-	req := test.NewRequest(http.MethodGet, uri.Devices, nil).AuthToken(authTest.UserToken).Build()
+	req := test.NewRequest(http.MethodGet, uri.Devices, nil).AuthToken(oauthTest.GetServiceToken(t)).Build()
 	req.Header.Set("Request-Timeout", "1")
 
 	res := test.HTTPDo(t, req)

@@ -11,13 +11,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/cbor"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
@@ -38,10 +39,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/2",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -51,10 +49,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/oic/d",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -64,10 +59,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/unknown",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,
@@ -76,10 +68,10 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
 	tearDown := setUp(ctx, t, deviceID, events)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(c2cConnectorTest.RESOURCE_DIRECTORY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

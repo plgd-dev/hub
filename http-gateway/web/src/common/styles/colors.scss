@@ -1,24 +1,28 @@
-$blue_100: #255897;
-$blue_200: #1B4B85;
+// Primary
+$primary_100: #255897;
+$primary_200: #1b4b85;
 
-$white_100: #fff;
+// Secondary
+$secondary_20: #e9ecef;
+$secondary_25: #dde1e6;
+$secondary_40: #868e96;
 
-$black_20: #E9ECEF;
-$black_25: #dde1e6;
-$black_40: #868E96;
+// Light background
+$light_100: #fff;
+$light_200: #f6f7f9;
 
-$orange_100: #EAB927;
+// Shadow color
+$shadow_100: #e9ecef;
 
-$green_50: #D4EDDA;
-$green_75: #33DE5A;
-$green_100: #155724;
+// Warning / intermediate status
+$warning_100: #eab927;
 
-$red_50: #F8D7DA;
-$red_75: #F33C4D;
-$red_100: #721C24;
+// Success / positive status
+$success_50: #d4edda;
+$success_75: #33de5a;
+$success_100: #155724;
 
-$text_primary: $blue_100;
-$text_primary_active: $blue_200;
-$text_desc: $black_40;
-$box_bg_color: $black_20;
-$default_border_color: $black_20;
+// Error / negative status
+$error_50: #f8d7da;
+$error_75: #f33c4d;
+$error_100: #721c24;

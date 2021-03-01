@@ -9,9 +9,9 @@ import (
 
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 
 	"github.com/gorilla/websocket"
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
@@ -29,9 +29,10 @@ func TestDeviceResourcesObservation(t *testing.T) {
 	//set up
 	ctx, cancel := context.WithTimeout(context.Background(), 2*test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 

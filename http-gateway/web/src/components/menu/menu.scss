@@ -1,12 +1,17 @@
 @import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
 
 #menu {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 140px);
+
   .menu-item {
     display: flex;
     width: 100%;
     height: 40px;
     border-radius: 2px;
-    color: $white_100;
+    color: $light_100;
     text-decoration: none;
     align-items: center;
     box-sizing: border-box;
@@ -15,19 +20,19 @@
 
     &.active,
     &:hover {
-      background: $text_primary_active;
+      background: $primary_200;
     }
 
     i {
-      font-size: 12px;
+      font-size: $font_size_small;
     }
 
     span.icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 14px;
-      height: 14px;
+      width: $font_size_small + 2;
+      height: $font_size_small + 2;
     }
 
     span.title {

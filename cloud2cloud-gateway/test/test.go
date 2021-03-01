@@ -4,9 +4,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,6 +21,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	cfg.Listen.File.DisableVerifyClientCertificate = true
 	cfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	cfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	cfg.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 	return cfg
 }
 

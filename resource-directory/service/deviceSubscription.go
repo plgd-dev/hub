@@ -216,18 +216,14 @@ func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) err
 	models := s.resourceProjection.Models(commands.NewResourceID(s.DeviceID(), commands.ResourceLinksHref))
 	if len(models) != 1 {
 		return nil
-		// return fmt.Errorf("resource links resource not available")
 	}
 
-	if _, ok := models[0].(*resourceLinksProjection); !ok {
+	rlp, ok := models[0].(*resourceLinksProjection)
+	if !ok {
 		return fmt.Errorf("unexpected event type")
 	}
-	c := models[0].(*resourceLinksProjection).Clone()
-	links := ResourceLinks{
-		links:   pb.RAResourcesToProto(c.resources),
-		version: c.version,
-	}
-	err := s.NotifyOfPublishedResourceLinks(ctx, links)
+
+	err := rlp.InitialNotifyOfPublishedResourceLinks(ctx, s)
 	if err != nil {
 		return fmt.Errorf("cannot send resource published: %w", err)
 	}

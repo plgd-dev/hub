@@ -31,12 +31,27 @@ func NewResourceLinksProjection(subscriptions *Subscriptions) eventstore.Model {
 func (rlp *resourceLinksProjection) Clone() *resourceLinksProjection {
 	rlp.lock.Lock()
 	defer rlp.lock.Unlock()
+	resources := make(map[string]*commands.Resource)
+	for href, resource := range rlp.resources {
+		resources[href] = resource
+	}
 
 	return &resourceLinksProjection{
 		deviceID:  rlp.deviceID,
-		resources: rlp.resources,
+		resources: resources,
 		version:   rlp.version,
 	}
+}
+
+func (rlp *resourceLinksProjection) InitialNotifyOfPublishedResourceLinks(ctx context.Context, subscription *deviceSubscription) error {
+	rlp.lock.Lock()
+	defer rlp.lock.Unlock()
+
+	links := pb.RAResourcesToProto(rlp.resources)
+	return subscription.NotifyOfPublishedResourceLinks(ctx, ResourceLinks{
+		links:   links,
+		version: rlp.version,
+	})
 }
 
 func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Context, publishedResources map[string]*commands.Resource) error {

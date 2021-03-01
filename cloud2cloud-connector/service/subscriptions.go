@@ -12,7 +12,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -44,7 +44,7 @@ type Subscription struct {
 type SubscriptionManager struct {
 	eventsURL           string
 	store               *Store
-	raClient            pbRA.ResourceAggregateClient
+	raClient            raService.ResourceAggregateClient
 	asClient            pbAS.AuthorizationServiceClient
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
@@ -56,7 +56,7 @@ type SubscriptionManager struct {
 func NewSubscriptionManager(
 	EventsURL string,
 	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
+	raClient raService.ResourceAggregateClient,
 	store *Store,
 	devicesSubscription *DevicesSubscription,
 	oauthCallback string,

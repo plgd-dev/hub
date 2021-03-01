@@ -10,17 +10,18 @@ table {
   font-family: 'Mulish', sans-serif;
   font-size: $font_size;
   font-weight: 400;
-  color: $text_desc;
+  color: $secondary_40;
 }
 
 a,
 .link {
-  color: $text_primary;
+  color: $primary_100;
   text-decoration: none;
   cursor: pointer;
 
   &:hover {
     text-decoration: underline;
+    color: $primary_100;
   }
 }
 
@@ -37,7 +38,7 @@ h5,
 h6,
 .h6 {
   position: relative;
-  color: $text_primary;
+  color: $primary_100;
 }
 
 h2,
@@ -74,4 +75,8 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 
 .no-wrap-text {
   white-space: nowrap;
+}
+
+.grayed-out {
+  opacity: 0.4;
 }

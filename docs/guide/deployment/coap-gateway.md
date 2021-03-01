@@ -99,3 +99,5 @@ Follow [OCF Device To Cloud Services Specification](https://openconnectivity.org
 | `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
 | `-` | `LISTEN_WITHOUT_TLS` | bool | `listen without TLS` | `false` |
 | `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
+| `-` | `DEVICESTATUSEXPIRATION_ENABLED` | bool | `enable refreshing device online status in short time than sign token expires` | `false` |
+| `-` | `DEVICESTATUSEXPIRATION_EXPIRESIN` | string | `defines interval to refresh device online status` | `24h` |

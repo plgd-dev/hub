@@ -13,12 +13,15 @@ import (
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/authorization/service"
+	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/security/certManager"
 )
 
 func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, error) {
-	oauth := provider.NewTestProvider()
+	oauth := provider.NewPlgdProvider(config.Device, tlsConfig)
 	persistence, err := mongodb.NewStore(context.Background(), config.MongoDB, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, err
@@ -38,7 +41,13 @@ func MakeConfig(t *testing.T) service.Config {
 	require.NoError(t, err)
 	authCfg.Addr = testCfg.AUTH_HOST
 	authCfg.HTTPAddr = testCfg.AUTH_HTTP_HOST
-	authCfg.Device.Provider = "test"
+	authCfg.Device.Provider = "plgd"
+	authCfg.Device.OAuth2.ClientID = oauthService.ClientTest
+	authCfg.Device.OAuth2.Endpoint.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
+	authCfg.Device.OAuth2.Endpoint.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	authCfg.SDK.ClientID = oauthService.ClientTest
+	authCfg.SDK.Endpoint.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	authCfg.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
 	return authCfg
 }
 
