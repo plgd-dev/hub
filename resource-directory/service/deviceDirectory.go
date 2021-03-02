@@ -115,11 +115,11 @@ func updateDevice(dev *Device, resource *Resource) error {
 	return nil
 }
 
-func filterDevicesByUserFilters(resourceProjections map[string]map[string]*Resource, req *pb.GetDevicesRequest) ([]Device, error) {
-	devices := make([]Device, 0, len(resourceProjections))
+func filterDevicesByUserFilters(resources map[string]map[string]*Resource, req *pb.GetDevicesRequest) ([]Device, error) {
+	devices := make([]Device, 0, len(resources))
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
-	for deviceID, resources := range resourceProjections {
+	for deviceID, resources := range resources {
 		var device Device
 		var err error
 		for _, resource := range resources {
@@ -178,7 +178,7 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 		resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
-	resources, err := dd.projection.GetResources(srv.Context(), resourceIdsFilter, nil)
+	resources, err := dd.projection.GetResourcesWithLinks(srv.Context(), resourceIdsFilter, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
 	}

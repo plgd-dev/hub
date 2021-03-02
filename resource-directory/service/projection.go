@@ -31,11 +31,6 @@ type Projection struct {
 	cache *cache.Cache
 }
 
-type Resource struct {
-	*resourceProjection
-	Resource *commands.Resource
-}
-
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, newModelFunc eventstore.FactoryModelFunc, expiration time.Duration) (*Projection, error) {
 	projection, err := projectionRA.NewProjection(ctx, name, store, subscriber, newModelFunc)
 	if err != nil {
@@ -81,13 +76,19 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 			return nil, nil
 		}
 		resourceLinks := models[0].(*resourceLinksProjection).Clone()
-		devicesResourceLinks[resourceLinks.deviceID] = resourceLinks.resources
+		devicesResourceLinks[resourceLinks.deviceID] = make(map[string]*commands.Resource)
+		for href, resource := range resourceLinks.resources {
+			if !hasMatchingType(resource.ResourceTypes, typeFilter) {
+				continue
+			}
+			devicesResourceLinks[resourceLinks.deviceID][href] = resource
+		}
 	}
 
 	return devicesResourceLinks, nil
 }
 
-func (p *Projection) GetResources(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
+func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
 	// group resource ID filter
 	resourceIDMapFilter := make(map[string]map[string]bool)
 	for _, resourceID := range resourceIDFilter {
@@ -148,7 +149,7 @@ func (p *Projection) GetResources(ctx context.Context, resourceIDFilter []*comma
 		if _, present := resources[rp.resourceID.GetDeviceId()][rp.resourceID.GetHref()]; !present {
 			continue
 		}
-		resources[rp.resourceID.GetDeviceId()][rp.resourceID.GetHref()].resourceProjection = rp
+		resources[rp.resourceID.GetDeviceId()][rp.resourceID.GetHref()].projection = rp
 	}
 
 	return resources, nil

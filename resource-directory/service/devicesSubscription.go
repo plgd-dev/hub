@@ -204,7 +204,7 @@ func (s *devicesSubscription) initNotifyOfOnlineDevice(ctx context.Context, devi
 			continue
 		}
 		res := models[0].(*resourceProjection).Clone()
-		online, err := isDeviceOnline(res.GetContent())
+		online, err := isDeviceOnline(res.content.GetContent())
 		if err != nil {
 			log.Errorf("cannot determine device cloud status: %v", err)
 			continue
@@ -234,7 +234,7 @@ func (s *devicesSubscription) initNotifyOfOfflineDevice(ctx context.Context, dev
 			continue
 		}
 		res := models[0].(*resourceProjection).Clone()
-		online, err := isDeviceOnline(res.GetContent())
+		online, err := isDeviceOnline(res.content.GetContent())
 		if err != nil {
 			log.Errorf("cannot determine device cloud status: %v", err)
 			continue

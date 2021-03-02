@@ -60,20 +60,6 @@ func (rp *resourceProjection) Clone() *resourceProjection {
 	return rp.cloneLocked()
 }
 
-func (rp *resourceProjection) GetContent() *commands.Content {
-	if rp == nil {
-		return nil
-	}
-	return rp.content.GetContent()
-}
-
-func (rp *resourceProjection) GetStatus() commands.Status {
-	if rp == nil {
-		return commands.Status_UNAVAILABLE
-	}
-	return rp.content.GetStatus()
-}
-
 func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error) error {
 	if len(rp.resourceUpdatePendings) == 0 {
 		return nil
@@ -207,14 +193,14 @@ func (rp *resourceProjection) onResourceChangedLocked(ctx context.Context, do fu
 			DeviceId: rp.resourceID.GetDeviceId(),
 			Href:     rp.resourceID.GetHref(),
 		},
-		Content: pb.RAContent2Content(rp.GetContent()),
-		Status:  pb.RAStatus2Status(rp.GetStatus()),
+		Content: pb.RAContent2Content(rp.content.GetContent()),
+		Status:  pb.RAStatus2Status(rp.content.GetStatus()),
 	}, rp.onResourceChangedVersion)
 }
 
 func (rp *resourceProjection) onCloudStatusChangedLocked(ctx context.Context) error {
 	log.Debugf("onCloudStatusChangedLocked %v", rp.resourceID)
-	online, err := isDeviceOnline(rp.GetContent())
+	online, err := isDeviceOnline(rp.content.GetContent())
 	if err != nil {
 		return err
 	}

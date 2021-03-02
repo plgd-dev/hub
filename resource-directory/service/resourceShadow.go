@@ -58,7 +58,7 @@ func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValue
 		}
 	}
 
-	resources, err := rd.projection.GetResources(srv.Context(), resourceIDsFilter, typeFilter)
+	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIDsFilter, typeFilter)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot retrieve resources: %v", err)
 	}
