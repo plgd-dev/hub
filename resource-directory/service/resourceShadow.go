@@ -15,9 +15,9 @@ func toResourceValue(resource *Resource) pb.ResourceValue {
 			Href:     resource.Resource.GetHref(),
 			DeviceId: resource.Resource.GetDeviceId(),
 		},
-		Content: pb.RAContent2Content(resource.Projection.content.GetContent()),
+		Content: pb.RAContent2Content(resource.GetContent()),
 		Types:   resource.Resource.GetResourceTypes(),
-		Status:  pb.RAStatus2Status(resource.Projection.content.GetStatus()),
+		Status:  pb.RAStatus2Status(resource.GetStatus()),
 	}
 }
 

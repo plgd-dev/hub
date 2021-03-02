@@ -32,8 +32,8 @@ type Projection struct {
 }
 
 type Resource struct {
-	Projection *resourceProjection
-	Resource   *commands.Resource
+	*resourceProjection
+	Resource *commands.Resource
 }
 
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, newModelFunc eventstore.FactoryModelFunc, expiration time.Duration) (*Projection, error) {
@@ -88,45 +88,67 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 }
 
 func (p *Projection) GetResources(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {
-	resourceLinks := make(map[string]map[string]*commands.Resource)
-	models := make([]eventstore.Model, 0, 32)
-	for _, rid := range resourceIDFilter {
-		// build resource links map of all devices which are requested
-		if _, present := resourceLinks[rid.GetDeviceId()]; !present {
-			rl, err := p.GetResourceLinks(ctx, strings.Set{rid.GetDeviceId(): {}}, nil)
-			if err != nil {
-				return nil, err
+	// group resource ID filter
+	resourceIDMapFilter := make(map[string]map[string]bool)
+	for _, resourceID := range resourceIDFilter {
+		if resourceID.GetHref() == "" {
+			resourceIDMapFilter[resourceID.GetDeviceId()] = nil
+		} else {
+			hrefs, present := resourceIDMapFilter[resourceID.GetDeviceId()]
+			if present && hrefs == nil {
+				continue
 			}
-			resourceLinks[rid.GetDeviceId()] = rl[rid.GetDeviceId()]
+			if !present {
+				resourceIDMapFilter[resourceID.GetDeviceId()] = make(map[string]bool)
+			}
+			resourceIDMapFilter[resourceID.GetDeviceId()][resourceID.GetHref()] = true
+		}
+	}
+
+	resources := make(map[string]map[string]*Resource)
+	models := make([]eventstore.Model, 0, len(resourceIDMapFilter))
+	for deviceID, hrefs := range resourceIDMapFilter {
+		// build resource links map of all devices which are requested
+		rl, err := p.GetResourceLinks(ctx, strings.Set{deviceID: {}}, nil)
+		if err != nil {
+			return nil, err
 		}
 
-		m, err := p.getModels(ctx, rid)
+		resources[deviceID] = make(map[string]*Resource)
+		if hrefs == nil {
+			// case when client requests all device resources
+			for _, resource := range rl[deviceID] {
+				if hasMatchingType(resource.ResourceTypes, typeFilter) {
+					resources[deviceID][resource.GetHref()] = &Resource{Resource: resource}
+				}
+			}
+		} else {
+			// case when client requests specific device resource
+			for href := range hrefs {
+				if resource, present := rl[deviceID][href]; present {
+					if hasMatchingType(resource.ResourceTypes, typeFilter) {
+						resources[deviceID][href] = &Resource{Resource: resource}
+					}
+				}
+			}
+		}
+
+		m, err := p.getModels(ctx, commands.NewResourceID(deviceID, ""))
 		if err != nil {
 			return nil, err
 		}
 		models = append(models, m...)
 	}
 
-	resources := make(map[string]map[string]*Resource)
 	for _, m := range models {
 		if m.SnapshotEventType() == events.NewResourceLinksSnapshotTaken().SnapshotEventType() {
 			continue
 		}
 		rp := m.(*resourceProjection).Clone()
-		if _, present := resourceLinks[rp.resourceId.GetDeviceId()][rp.resourceId.GetHref()]; !present {
+		if _, present := resources[rp.resourceID.GetDeviceId()][rp.resourceID.GetHref()]; !present {
 			continue
 		}
-
-		if !hasMatchingType(resourceLinks[rp.resourceId.GetDeviceId()][rp.resourceId.GetHref()].ResourceTypes, typeFilter) {
-			continue
-		}
-
-		deviceHrefs, ok := resources[rp.resourceId.GetDeviceId()]
-		if !ok {
-			deviceHrefs = make(map[string]*Resource)
-			resources[rp.resourceId.GetDeviceId()] = deviceHrefs
-		}
-		deviceHrefs[rp.resourceId.GetHref()] = &Resource{Projection: rp, Resource: resourceLinks[rp.resourceId.GetDeviceId()][rp.resourceId.GetHref()]}
+		resources[rp.resourceID.GetDeviceId()][rp.resourceID.GetHref()].resourceProjection = rp
 	}
 
 	return resources, nil

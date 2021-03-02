@@ -95,7 +95,7 @@ func updateDevice(dev *Device, resource *Resource) error {
 	switch {
 	case resource.Resource.GetHref() == "/oic/d":
 		var devContent schema.Device
-		err := decodeContent(resource.Projection.content.GetContent(), &devContent)
+		err := decodeContent(resource.GetContent(), &devContent)
 		if err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ func updateDevice(dev *Device, resource *Resource) error {
 		dev.Resource.Interfaces = resource.Resource.GetInterfaces()
 	case cloudResourceTypes.HasOneOf(resource.Resource.GetResourceTypes()...):
 		var cloudStatus deviceStatus.Status
-		err := decodeContent(resource.Projection.content.GetContent(), &cloudStatus)
+		err := decodeContent(resource.GetContent(), &cloudStatus)
 		if err != nil {
 			return err
 		}

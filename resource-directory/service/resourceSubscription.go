@@ -60,14 +60,14 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 		return nil
 	}
 	res := models[0].(*resourceProjection).Clone()
-	if res.content == nil {
+	if res.GetContent() == nil {
 		return nil
 	}
 
 	for _, f := range s.resourceEvent.FilterEvents {
 		switch f {
 		case pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED:
-			if res.content.GetStatus() == commands.Status_UNKNOWN {
+			if res.GetStatus() == commands.Status_UNKNOWN {
 				continue
 			}
 			err := res.onResourceChangedLocked(ctx, s.NotifyOfContentChangedResource)

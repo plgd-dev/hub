@@ -246,7 +246,7 @@ func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context)
 	}
 
 	for _, model := range models[s.DeviceID()] {
-		err := model.Projection.onResourceUpdatePendingLocked(ctx, s.NotifyOfUpdatePendingResource)
+		err := model.onResourceUpdatePendingLocked(ctx, s.NotifyOfUpdatePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource update pending: %w", err)
 		}
@@ -261,7 +261,7 @@ func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Contex
 	}
 
 	for _, model := range models[s.DeviceID()] {
-		err := model.Projection.onResourceRetrievePendingLocked(ctx, s.NotifyOfRetrievePendingResource)
+		err := model.onResourceRetrievePendingLocked(ctx, s.NotifyOfRetrievePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource retrieve pending: %w", err)
 		}
@@ -276,7 +276,7 @@ func (s *deviceSubscription) initSendResourcesDeletePending(ctx context.Context)
 	}
 
 	for _, model := range models[s.DeviceID()] {
-		err := model.Projection.onResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
+		err := model.onResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource delete pending: %w", err)
 		}
