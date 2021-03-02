@@ -161,11 +161,11 @@ func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceT
 	defer it.Close()
 
 	for {
-		var v *pb.Device
+		var v pb.Device
 		if !it.Next(&v) {
 			break
 		}
-		callback(v)
+		callback(&v)
 	}
 	return it.Err
 }

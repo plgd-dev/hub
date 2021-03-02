@@ -45,7 +45,7 @@ func TestClient_GetDevices(t *testing.T) {
 				token: oauthTest.GetServiceToken(t),
 			},
 			want: map[string]client.DeviceDetails{
-				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
+				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName, false),
 			},
 		},
 		{

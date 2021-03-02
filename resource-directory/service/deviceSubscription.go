@@ -7,11 +7,13 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
+	"go.uber.org/atomic"
 )
 
 type deviceSubscription struct {
 	*subscription
-	deviceEvent *pb.SubscribeForEvents_DeviceEventFilter
+	deviceEvent                  *pb.SubscribeForEvents_DeviceEventFilter
+	isInitializedResourcePublish atomic.Bool
 }
 
 func NewDeviceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, deviceEvent *pb.SubscribeForEvents_DeviceEventFilter) *deviceSubscription {
@@ -30,6 +32,7 @@ func (s *deviceSubscription) DeviceID() string {
 type ResourceLinks struct {
 	links   []*pb.ResourceLink
 	version uint64
+	isInit  bool
 }
 
 func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
@@ -40,6 +43,12 @@ func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context,
 		}
 	}
 	if !found {
+		return nil
+	}
+	if links.isInit {
+		s.isInitializedResourcePublish.Store(true)
+	}
+	if !s.isInitializedResourcePublish.Load() {
 		return nil
 	}
 	if len(links.links) == 0 || s.FilterByVersion(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version) {

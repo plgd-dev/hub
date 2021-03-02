@@ -48,7 +48,7 @@ func TestPublishUnpublish(t *testing.T) {
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
