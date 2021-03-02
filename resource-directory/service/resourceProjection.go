@@ -15,13 +15,11 @@ import (
 )
 
 type resourceProjection struct {
-	lock                         sync.Mutex
-	resourceId                   *commands.ResourceId
-	content                      *events.ResourceChanged
-	version                      uint64
-	onResourcePublishedVersion   uint64
-	onResourceUnpublishedVersion uint64
-	onResourceChangedVersion     uint64
+	lock                     sync.Mutex
+	resourceId               *commands.ResourceId
+	content                  *events.ResourceChanged
+	version                  uint64
+	onResourceChangedVersion uint64
 
 	subscriptions                 *Subscriptions
 	updateNotificationContainer   *notification.UpdateNotificationContainer
@@ -303,8 +301,6 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			}
 			rp.resourceId = s.ResourceId
 			rp.content = s.LatestResourceChange
-			rp.onResourcePublishedVersion = eu.Version()
-			rp.onResourceUnpublishedVersion = eu.Version()
 			rp.onResourceChangedVersion = eu.Version()
 			onResourceContentChanged = true
 		case (&events.ResourceChanged{}).EventType():
