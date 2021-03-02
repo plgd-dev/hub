@@ -115,12 +115,14 @@ func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter
 			return nil, err
 		}
 
+		anyDeviceResourceFound := false
 		resources[deviceID] = make(map[string]*Resource)
 		if hrefs == nil {
 			// case when client requests all device resources
 			for _, resource := range rl[deviceID] {
 				if hasMatchingType(resource.ResourceTypes, typeFilter) {
 					resources[deviceID][resource.GetHref()] = &Resource{Resource: resource}
+					anyDeviceResourceFound = true
 				}
 			}
 		} else {
@@ -129,16 +131,21 @@ func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter
 				if resource, present := rl[deviceID][href]; present {
 					if hasMatchingType(resource.ResourceTypes, typeFilter) {
 						resources[deviceID][href] = &Resource{Resource: resource}
+						anyDeviceResourceFound = true
 					}
 				}
 			}
 		}
 
-		m, err := p.getModels(ctx, commands.NewResourceID(deviceID, ""))
-		if err != nil {
-			return nil, err
+		if anyDeviceResourceFound {
+			m, err := p.getModels(ctx, commands.NewResourceID(deviceID, ""))
+			if err != nil {
+				return nil, err
+			}
+			models = append(models, m...)
+		} else {
+			delete(resources, deviceID)
 		}
-		models = append(models, m...)
 	}
 
 	for _, m := range models {

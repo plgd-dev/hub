@@ -156,7 +156,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 		_, err := s.raClient.UnpublishResourceLinks(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &commands.UnpublishResourceLinksRequest{
 			AuthorizationContext: &commands.AuthorizationContext{
-				DeviceId: link.DeviceID,
+				DeviceId: link.GetDeviceID(),
 			},
 			DeviceId: link.GetDeviceID(),
 			Hrefs:    []string{href},
