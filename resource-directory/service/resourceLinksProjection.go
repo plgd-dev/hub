@@ -51,6 +51,7 @@ func (rlp *resourceLinksProjection) InitialNotifyOfPublishedResourceLinks(ctx co
 	return subscription.NotifyOfPublishedResourceLinks(ctx, ResourceLinks{
 		links:   links,
 		version: rlp.version,
+		isInit:  true,
 	})
 }
 
