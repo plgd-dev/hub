@@ -96,6 +96,7 @@ func TestProjection(t *testing.T) {
 	ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, "test")
 
 	store, err := mongodb.NewEventStore(
+		ctx,
 		mongodb.Config{
 			URI: "mongodb://localhost:27017",
 		},

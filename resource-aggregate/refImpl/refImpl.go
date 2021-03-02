@@ -47,7 +47,7 @@ func Init(config Config) (*RefImpl, error) {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 	tlsConfig := clientCertManager.GetClientTLSConfig()
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(context.Background(), config.MongoDB, nil, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}

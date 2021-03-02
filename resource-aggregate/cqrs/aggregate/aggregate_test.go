@@ -119,7 +119,7 @@ func (eh *mockEventHandler) SnapshotEventType() string {
 	return s.SnapshotEventType()
 }
 
-func testNewEventstore(t *testing.T) *mongodb.EventStore {
+func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 	var config certManager.Config
 	err := envconfig.Process("DIAL", &config)
 	assert.NoError(t, err)
@@ -130,6 +130,7 @@ func testNewEventstore(t *testing.T) *mongodb.EventStore {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
 	store, err := mongodb.NewEventStore(
+		ctx,
 		mongodb.Config{
 			URI: "mongodb://localhost:27017",
 		},
@@ -143,8 +144,8 @@ func testNewEventstore(t *testing.T) *mongodb.EventStore {
 }
 
 func TestAggregate(t *testing.T) {
-	store := testNewEventstore(t)
 	ctx := context.Background()
+	store := testNewEventstore(ctx, t)
 	defer store.Close(ctx)
 	defer func() {
 		err := store.Clear(ctx)

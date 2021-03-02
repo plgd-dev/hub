@@ -72,10 +72,7 @@ type EventStore struct {
 }
 
 //NewEventStore create a event store from configuration
-func NewEventStore(config Config, goroutinePoolGo GoroutinePoolGoFunc, opts ...Option) (*EventStore, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
+func NewEventStore(ctx context.Context, config Config, goroutinePoolGo GoroutinePoolGoFunc, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = utils.Marshal
 	config.unmarshalerFunc = utils.Unmarshal
 	for _, o := range opts {

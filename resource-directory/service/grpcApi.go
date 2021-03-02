@@ -107,7 +107,8 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 
-	resourceEventStore, err := mongodb.NewEventStore(config.MongoDB, pool.Submit, mongodb.WithTLS(clientTLS))
+	ctx := context.Background()
+	resourceEventStore, err := mongodb.NewEventStore(ctx, config.MongoDB, pool.Submit, mongodb.WithTLS(clientTLS))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}
@@ -116,8 +117,6 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 	if err != nil {
 		return nil, fmt.Errorf("cannot create resource nats subscriber %w", err)
 	}
-
-	ctx := context.Background()
 
 	subscriptions := NewSubscriptions()
 	userDevicesManager := clientAS.NewUserDevicesManager(subscriptions.UserDevicesChanged, authServiceClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving devices: %v", err) })

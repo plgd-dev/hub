@@ -107,7 +107,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -221,7 +221,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -301,7 +301,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -390,7 +390,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -471,7 +471,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -552,7 +552,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -633,7 +633,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -714,7 +714,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -795,7 +795,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -876,7 +876,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -957,7 +957,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)

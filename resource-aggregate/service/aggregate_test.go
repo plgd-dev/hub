@@ -81,7 +81,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -147,7 +147,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -202,7 +202,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -252,7 +252,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 
 	defer func() {
@@ -311,7 +311,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -631,7 +631,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
 
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -723,7 +723,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
 
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -809,7 +809,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -895,7 +895,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -980,7 +980,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -1072,7 +1072,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -1158,7 +1158,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -1243,7 +1243,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -1329,7 +1329,7 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
