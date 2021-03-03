@@ -25,7 +25,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
@@ -61,7 +61,7 @@ type Server struct {
 	MaxMessageSize                  int
 	LogMessages                     bool
 
-	raClient pbRA.ResourceAggregateClient
+	raClient service.ResourceAggregateClient
 	asClient pbAS.AuthorizationServiceClient
 	rdClient pbGRPC.GrpcGatewayClient
 
@@ -107,7 +107,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 			return
 		}
 		client := c.(*Client)
-		authCtx, err := client.loadAuthorizationContext()
+		authCtx, err := client.GetAuthorizationContext()
 		if err != nil {
 			client.Close()
 			log.Debugf("device %v token has ben expired", authCtx.GetDeviceID())
@@ -128,7 +128,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	raClient := pbRA.NewResourceAggregateClient(raConn)
+	raClient := service.NewResourceAggregateClient(raConn)
 
 	asConn, err := grpc.Dial(
 		config.AuthServerAddr,
@@ -254,7 +254,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 func getDeviceID(client *Client) string {
 	deviceID := "unknown"
 	if client != nil {
-		authCtx, _ := client.loadAuthorizationContext()
+		authCtx, _ := client.GetAuthorizationContext()
 		deviceID = authCtx.GetDeviceID()
 		if deviceID == "" {
 			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
@@ -448,7 +448,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
-		authCtx, _ := client.loadAuthorizationContext()
+		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)

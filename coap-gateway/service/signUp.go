@@ -146,7 +146,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 			userID = uid
 		}
 	}
-	authCurrentCtx, _ := client.loadAuthorizationContext()
+	authCurrentCtx, _ := client.GetAuthorizationContext()
 	if userID == "" {
 		userID = authCurrentCtx.GetUserID()
 	}

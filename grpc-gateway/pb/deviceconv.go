@@ -21,7 +21,7 @@ func (s LocalizedStrings) ToSchema() []schema.LocalizedString {
 	return l
 }
 
-func (d Device) ToSchema() schema.Device {
+func (d *Device) ToSchema() schema.Device {
 	return schema.Device{
 		ID:                    d.GetId(),
 		ResourceTypes:         d.GetTypes(),

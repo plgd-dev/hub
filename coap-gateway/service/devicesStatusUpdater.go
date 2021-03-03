@@ -7,7 +7,7 @@ import (
 	"time"
 
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
@@ -62,7 +62,7 @@ func (u *devicesStatusUpdater) Remove(c *Client) {
 }
 
 func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil time.Time) (time.Time, error) {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -75,7 +75,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 		validUntil = authCtx.Expire
 	}
 
-	return validUntil, deviceStatus.SetOnline(ctx, client.server.raClient, authCtx.GetDeviceID(), validUntil, &pbCQRS.CommandMetadata{
+	return validUntil, deviceStatus.SetOnline(ctx, client.server.raClient, authCtx.GetDeviceID(), validUntil, &commands.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
 	}, authCtx.GetPbData())

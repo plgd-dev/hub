@@ -2,10 +2,9 @@ syntax = "proto3";
 
 package ocf.cloud.resourceaggregate.pb;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/commands;commands";
 
 message AuthorizationContext {
     string device_id = 1;
@@ -14,6 +13,17 @@ message AuthorizationContext {
 message CommandMetadata {
     string connection_id = 1;
     uint64 sequence = 2;
+}
+
+message AuditContext {
+    string user_id = 1;
+    string device_id = 2;
+    string correlation_id = 3;
+}
+
+message ResourceId {
+    string device_id = 1;
+    string href = 2;
 }
 
 //******************************************************************************************************************************************************
@@ -44,28 +54,32 @@ message CommandMetadata {
 // └──────────┘          └───────┘             └──────────────────┘          └─────────┘
 //******************************************************************************************************************************************************
 
-// https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml#L65
-message PublishResourceRequest {
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L35
+message PublishResourceLinksRequest {
     AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    Resource resource = 3; // Resource publish is atomic - PublishResource command per link from list. The CoAP-Gateway is responsible for the transaction.
-    int32 time_to_live = 4;
-    CommandMetadata command_metadata = 5;
+    repeated Resource resources = 2;
+    string device_id = 3;
+    CommandMetadata command_metadata = 4;
 }
 
-message PublishResourceResponse {
+message PublishResourceLinksResponse {
     AuditContext audit_context = 1;
+    repeated Resource published_resources = 2;
+    string device_id = 3;
 }
 
-// https://github.com/openconnectivityfoundation/core/blob/master/oic.wk.rd.raml #Specification CR needed
-message UnpublishResourceRequest {
+// https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
+message UnpublishResourceLinksRequest {
     AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2; // spec 1.3 - uuidV5(device_id+href), otherwise uuidV5(href)
-    CommandMetadata command_metadata = 3;
+    repeated string hrefs = 2;
+    string device_id = 3;
+    CommandMetadata command_metadata = 4;
 }
 
-message UnpublishResourceResponse {
+message UnpublishResourceLinksResponse {
     AuditContext audit_context = 1;
+    repeated string unpublished_hrefs = 2;
+    string device_id = 3;
 }
 
 //******************************************************************************************************************************************************
@@ -242,44 +256,53 @@ message ConfirmResourceRetrieveResponse {
     AuditContext audit_context = 1;
 }
 
-//*******************************************************************************************************************************************************
-// "Delete Resource"                                               
-                                                                                                                    
-// ┌──────────┐            ┌───────┐                   ┌──────────────────┐          ┌─────────┐          ┌──────┐
-// │OCF Server│            │Gateway│                   │Resource Aggregate│          │Event Bus│          │Client│
-// └──────────┘            └───┬───┘                   └────────┬─────────┘          └─────────┘          └──────┘
-//      │                      │                                ┌┴┐          DeleteResourceRequest           ┌┴┐  
-//      │                      │                                │ │ <────────────────────────────────────────│ │  
-//      │                      │                                │ │                       │                  │ │  
-//      │                      │                                │ │          DeleteResourceResponse          │ │  
-//      │                      │                                │ │ ────────────────────────────────────────>│ │  
-//      │                      │                                └┬┘                       │                  │ │  
-//      │                      │                                │  ResourceDeletePending  │                  │ │  
-//      │                      │                                │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │ │  
-//      │                      │                                │                         │                  │ │  
-//      │                     ┌┴┐                  ResourceDeletePending                  │                  │ │  
-//      │                     │ │ <─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                   │ │  
-//      │                     │ │                               │                         │                  │ │  
-//     ┌┴┐[DELETE] '/light/1' │ │                               │                         │                  │ │  
-//     │ │ <───────────────── │ │                               │                         │                  │ │  
-//     └┬┘                    │ │                               │                         │                  │ │  
-//      │         OK          │ │                               │                         │                  │ │  
-//      │ ───────────────────>│ │                               │                         │                  │ │  
-//      │                     │ │                               │                         │                  │ │  
-//      │                     │ │ ConfirmResourceDeleteRequest  ┌┴┐                       │                  │ │  
-//      │                     │ │ ─────────────────────────────>│ │                       │                  │ │  
-//      │                     └┬┘                               │ │                       │                  │ │  
-//      │                      │ConfirmResourceDeleteResponse   │ │                       │                  │ │  
-//      │                      │<────────────────────────────── │ │                       │                  │ │  
-//      │                      │                                └┬┘                       │                  │ │  
-//      │                      │                                │     ResourceDeleted     │                  │ │  
-//      │                      │                                │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │ │  
-//      │                      │                                │                         │                  └┬┘  
-//      │                      │                                │                         │  ResourceDeleted │    
-//      │                      │                                │                         │  ─ ─ ─ ─ ─ ─ ─ ─ >    
-// ┌──────────┐            ┌───┴───┐                   ┌────────┴─────────┐          ┌─────────┐          ┌──────┐
-// │OCF Server│            │Gateway│                   │Resource Aggregate│          │Event Bus│          │Client│
-// └──────────┘            └───────┘                   └──────────────────┘          └─────────┘          └──────┘
+/*******************************************************************************************************************************************************
+Delete Resource                                                      
+                                                                                                                           
+┌──────────┐             ┌───────┐                    ┌──────────────────┐          ┌─────────┐          ┌──────┐     
+│OCF Server│             │Gateway│                    │Resource Aggregate│          │Event Bus│          │Client│     
+└──────────┘             └───┬───┘                    └────────┬─────────┘          └─────────┘          └──────┘     
+     │                       │                                ┌┴┐          DeleteResourceRequest           ┌┴┐        
+     │                       │                                │ │ <────────────────────────────────────────│ │        
+     │                       │                                │ │                        │                 │ │        
+     │                       │                                │ │          DeleteResourceResponse          │ │        
+     │                       │                                │ │ ────────────────────────────────────────>│ │        
+     │                       │                                └┬┘                        │                 │ │        
+     │                       │                                 │  ResourceDeletePending  │                 │ │        
+     │                       │                                 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │        
+     │                       │                                 │                         │                 │ │        
+     │                      ┌┴┐                  ResourceDeletePending                   │                 │ │        
+     │                      │ │ <─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │                 │ │        
+     │                      │ │                                │                         │                 │ │        
+    ┌┴┐ [DELETE] '/light/1' │ │                                │                         │                 │ │        
+    │ │ <───────────────────│ │                                │                         │                 │ │        
+    └┬┘                     │ │                                │                         │                 │ │        
+     │          OK          │ │                                │                         │                 │ │        
+     │ ────────────────────>│ │                                │                         │                 │ │        
+     │                      │ │                                │                         │                 │ │        
+     │                      │ │ ConfirmResourceDeleteRequest  ┌┴┐                        │                 │ │        
+     │                      │ │ ─────────────────────────────>│ │                        │                 │ │        
+     │                      └┬┘                               │ │                        │                 │ │        
+     │                       │ ConfirmResourceDeleteResponse  │ │                        │                 │ │        
+     │                       │ <──────────────────────────────│ │                        │                 │ │        
+     │                       │                                └┬┘                        │                 │ │        
+     │                       │                                 │     ResourceDeleted     │                 │ │        
+     │                       │                                 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │        
+     │                       │                                 │                         │                 └┬┘        
+     │                       │                                 │                         │ ResourceDeleted  │         
+     │                       │                                 │                         │ ─ ─ ─ ─ ─ ─ ─ ─ >│         
+     │                       │                                 │                         │                  │         
+     │                       │                                 │                         │                  │         
+     │                       │            ╔════════════════════╧══════╗                  │                  │         
+═════╪═══════════════════════╪════════════╣ Unpublish resource links  ╠══════════════════╪══════════════════╪═════════
+     │                       │            ╚════════════════════╤══════╝                  │                  │         
+     │                       │                                 │                         │                  │         
+     │ [UNPUBLISH] '/light/1'│                                 │                         │                  │         
+     │ ──────────────────────>                                 │                         │                  │         
+┌──────────┐             ┌───┴───┐                    ┌────────┴─────────┐          ┌─────────┐          ┌──────┐     
+│OCF Server│             │Gateway│                    │Resource Aggregate│          │Event Bus│          │Client│     
+└──────────┘             └───────┘                    └──────────────────┘          └─────────┘          └──────┘     
+******************************************************************************************************************************************************/
 
 message DeleteResourceRequest {
     AuthorizationContext authorization_context = 1;
@@ -305,8 +328,76 @@ message ConfirmResourceDeleteResponse {
     AuditContext audit_context = 100;
 }
 
-message ResourceId {
-    string device_id = 1;
-    string href = 2;
+/*******************************************************************************************************************************************************
+                                                     Create Resource                                                     
+                                                                                                                         
+     ┌──────────┐           ┌───────┐                    ┌──────────────────┐          ┌─────────┐          ┌──────┐     
+     │OCF Server│           │Gateway│                    │Resource Aggregate│          │Event Bus│          │Client│     
+     └──────────┘           └───┬───┘                    └────────┬─────────┘          └─────────┘          └──────┘     
+          │                     │                                ┌┴┐          CreateResourceRequest           ┌┴┐        
+          │                     │                                │ │ <────────────────────────────────────────│ │        
+          │                     │                                │ │                        │                 │ │        
+          │                     │                                │ │          CreateResourceResponse          │ │        
+          │                     │                                │ │ ────────────────────────────────────────>│ │        
+          │                     │                                └┬┘                        │                 │ │        
+          │                     │                                 │  ResourceCreatePending  │                 │ │        
+          │                     │                                 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │        
+          │                     │                                 │                         │                 │ │        
+          │                    ┌┴┐                  ResourceCreatePending                   │                 │ │        
+          │                    │ │ <─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │                 │ │        
+          │                    │ │                                │                         │                 │ │        
+         ┌┴┐ [CREATE] '/light' │ │                                │                         │                 │ │        
+         │ │ <─────────────────│ │                                │                         │                 │ │        
+         └┬┘                   │ │                                │                         │                 │ │        
+          │         OK         │ │                                │                         │                 │ │        
+          │ ──────────────────>│ │                                │                         │                 │ │        
+          │                    │ │                                │                         │                 │ │        
+          │                    │ │ ConfirmResourceCreateRequest  ┌┴┐                        │                 │ │        
+          │                    │ │ ─────────────────────────────>│ │                        │                 │ │        
+          │                    └┬┘                               │ │                        │                 │ │        
+          │                     │ ConfirmResourceCreateResponse  │ │                        │                 │ │        
+          │                     │ <──────────────────────────────│ │                        │                 │ │        
+          │                     │                                └┬┘                        │                 │ │        
+          │                     │                                 │     ResourceCreated     │                 │ │        
+          │                     │                                 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │        
+          │                     │                                 │                         │                 └┬┘        
+          │                     │                                 │                         │ ResourceCreated  │         
+          │                     │                                 │                         │ ─ ─ ─ ─ ─ ─ ─ ─ >│         
+          │                     │                                 │                         │                  │         
+          │                     │                                 │                         │                  │         
+          │                     │              ╔══════════════════╧══════╗                  │                  │         
+══════════╪═════════════════════╪══════════════╣ Publish resource links  ╠══════════════════╪══════════════════╪═════════
+          │                     │              ╚══════════════════╤══════╝                  │                  │         
+          │                     │                                 │                         │                  │         
+          │ [PUBLISH] '/light/1'│                                 │                         │                  │         
+          │ ────────────────────>                                 │                         │                  │         
+     ┌──────────┐           ┌───┴───┐                    ┌────────┴─────────┐          ┌─────────┐          ┌──────┐     
+     │OCF Server│           │Gateway│                    │Resource Aggregate│          │Event Bus│          │Client│     
+     └──────────┘           └───────┘                    └──────────────────┘          └─────────┘          └──────┘     
+******************************************************************************************************************************************************/
+
+message CreateResourceRequest {
+    AuthorizationContext authorization_context = 1;
+    ResourceId resource_id = 2;
+    string correlation_id = 3;
+    Content content = 4;
+    CommandMetadata command_metadata = 100;
 }
-  
+
+message CreateResourceResponse {
+    AuditContext audit_context = 1;
+}
+
+message ConfirmResourceCreateRequest {
+    AuthorizationContext authorization_context = 1;
+    ResourceId resource_id = 2;
+    string correlation_id = 3;
+    Status status = 4;
+    Content content = 5;
+    CommandMetadata command_metadata = 100;
+}
+
+message ConfirmResourceCreateResponse {
+    AuditContext audit_context = 100;
+}
+

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/sdk/schema"
 )
@@ -24,7 +24,7 @@ func fixResourceLink(r schema.ResourceLink) schema.ResourceLink {
 func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error {
 	toSend := make([]schema.ResourceLink, 0, 32)
 	for _, l := range val.GetLinks() {
-		if l.GetHref() == status.Href {
+		if l.GetHref() == commands.StatusHref {
 			continue
 		}
 		toSend = append(toSend, fixResourceLink(l.ToSchema()))
@@ -45,7 +45,7 @@ func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, 
 func (h *deviceSubsciptionHandler) HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error {
 	toSend := make([]schema.ResourceLink, 0, 32)
 	for _, l := range val.GetLinks() {
-		if l.GetHref() == status.Href {
+		if l.GetHref() == commands.StatusHref {
 			continue
 		}
 		toSend = append(toSend, fixResourceLink(l.ToSchema()))

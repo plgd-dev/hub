@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func sortDevices(s map[string]client.DeviceDetails) map[string]client.DeviceDetails {
+func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDetails {
 	for key, x := range s {
 		x.Resources = test.SortResources(x.Resources)
 		x.Device.ProtocolIndependentId = ""
@@ -45,7 +45,7 @@ func TestClient_GetDevices(t *testing.T) {
 				token: oauthTest.GetServiceToken(t),
 			},
 			want: map[string]client.DeviceDetails{
-				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
+				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName, false),
 			},
 		},
 		{

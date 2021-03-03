@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 type subscription struct {
@@ -49,7 +49,7 @@ func (s *subscription) Token() string {
 }
 
 func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version uint64) bool {
-	resourceID := utils.MakeResourceId(deviceID, href+"."+typeEvent)
+	resourceID := (&commands.ResourceId{DeviceId: deviceID, Href: href + "." + typeEvent}).ToUUID()
 
 	s.eventVersionsLock.Lock()
 	defer s.eventVersionsLock.Unlock()

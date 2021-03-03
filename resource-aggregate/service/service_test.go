@@ -15,10 +15,10 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authService "github.com/plgd-dev/cloud/authorization/test"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -48,7 +48,7 @@ func TestPublishUnpublish(t *testing.T) {
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
@@ -69,7 +69,7 @@ func TestPublishUnpublish(t *testing.T) {
 
 	raConn, err := grpc.Dial(config.Service.Addr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)))
 	require.NoError(t, err)
-	raClient := pb.NewResourceAggregateClient(raConn)
+	raClient := service.NewResourceAggregateClient(raConn)
 
 	deviceId := "dev0"
 	href := "/oic/p"
@@ -82,24 +82,20 @@ func TestPublishUnpublish(t *testing.T) {
 	require.NoError(t, err)
 
 	pubReq := testMakePublishResourceRequest(deviceId, href, resp.UserId, resp.AccessToken)
-	_, err = raClient.PublishResource(ctx, pubReq)
+	_, err = raClient.PublishResourceLinks(ctx, pubReq)
 	require.NoError(t, err)
 
 	unpubReq := testMakeUnpublishResourceRequest(deviceId, href, resp.UserId, resp.AccessToken)
-	_, err = raClient.UnpublishResource(ctx, unpubReq)
+	_, err = raClient.UnpublishResourceLinks(ctx, unpubReq)
 	require.NoError(t, err)
 }
 
-func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) *pb.PublishResourceRequest {
-	r := &pb.PublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceId,
-			Href:     href,
-		},
-		Resource:             testNewResource(href, deviceId, utils.MakeResourceId(deviceId, href)),
+func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) *commands.PublishResourceLinksRequest {
+	r := &commands.PublishResourceLinksRequest{
+		Resources:            []*commands.Resource{testNewResource(href, deviceId)},
+		DeviceId:             deviceId,
 		AuthorizationContext: testNewAuthorizationContext(deviceId, userId, accesstoken),
-		TimeToLive:           1,
-		CommandMetadata: &pb.CommandMetadata{
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -107,14 +103,12 @@ func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) 
 	return r
 }
 
-func testMakeUnpublishResourceRequest(deviceId, href, userId, accesstoken string) *pb.UnpublishResourceRequest {
-	r := &pb.UnpublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceId,
-			Href:     href,
-		},
+func testMakeUnpublishResourceRequest(deviceId, href, userId, accesstoken string) *commands.UnpublishResourceLinksRequest {
+	r := &commands.UnpublishResourceLinksRequest{
+		Hrefs:                []string{href},
+		DeviceId:             deviceId,
 		AuthorizationContext: testNewAuthorizationContext(deviceId, userId, accesstoken),
-		CommandMetadata: &pb.CommandMetadata{
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -122,22 +116,21 @@ func testMakeUnpublishResourceRequest(deviceId, href, userId, accesstoken string
 	return r
 }
 
-func testNewAuthorizationContext(deviceId, userId, accessToken string) *pb.AuthorizationContext {
-	ac := pb.AuthorizationContext{
+func testNewAuthorizationContext(deviceId, userId, accessToken string) *commands.AuthorizationContext {
+	ac := commands.AuthorizationContext{
 		DeviceId: deviceId,
 	}
 	return &ac
 }
 
-func testNewResource(href string, deviceId string, resourceId string) *pb.Resource {
-	return &pb.Resource{
-		Id:            resourceId,
+func testNewResource(href string, deviceId string) *commands.Resource {
+	return &commands.Resource{
 		Href:          href,
 		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
 		Interfaces:    []string{"oic.if.baseline"},
 		DeviceId:      deviceId,
 		Anchor:        "ocf://" + deviceId + "/oic/p",
-		Policies: &pb.Policies{
+		Policies: &commands.Policies{
 			BitFlags: 1,
 		},
 		Title: "device",

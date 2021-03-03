@@ -306,7 +306,7 @@ func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventSto
 
 	t.Log("test projection all")
 	model := NewMockEventHandler()
-	p := eventstore.NewProjection(store, func(context.Context) (eventstore.Model, error) { return model, nil }, nil)
+	p := eventstore.NewProjection(store, func(context.Context, string, string) (eventstore.Model, error) { return model, nil }, nil)
 
 	err = p.Project(ctx, []eventstore.SnapshotQuery{{GroupID: aggregateID1Path.GroupID}, {GroupID: aggregateID2Path.GroupID}, {GroupID: aggregateID3Path.GroupID}})
 	require.NoError(t, err)
@@ -322,7 +322,7 @@ func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventSto
 
 	t.Log("test projection group")
 	model1 := NewMockEventHandler()
-	p = eventstore.NewProjection(store, func(context.Context) (eventstore.Model, error) { return model1, nil }, nil)
+	p = eventstore.NewProjection(store, func(context.Context, string, string) (eventstore.Model, error) { return model1, nil }, nil)
 
 	err = p.Project(ctx, []eventstore.SnapshotQuery{eventstore.SnapshotQuery{GroupID: aggregateID1Path.GroupID}})
 	require.NoError(t, err)
@@ -335,7 +335,7 @@ func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventSto
 
 	t.Log("test projection aggregate")
 	model2 := NewMockEventHandler()
-	p = eventstore.NewProjection(store, func(context.Context) (eventstore.Model, error) { return model2, nil }, nil)
+	p = eventstore.NewProjection(store, func(context.Context, string, string) (eventstore.Model, error) { return model2, nil }, nil)
 
 	err = p.Project(ctx, []eventstore.SnapshotQuery{
 		eventstore.SnapshotQuery{

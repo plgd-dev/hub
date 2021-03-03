@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -38,10 +39,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/2",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -51,10 +49,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/oic/d",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -64,10 +59,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/unknown",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,

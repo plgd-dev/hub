@@ -72,10 +72,7 @@ type EventStore struct {
 }
 
 //NewEventStore create a event store from configuration
-func NewEventStore(config Config, goroutinePoolGo GoroutinePoolGoFunc, opts ...Option) (*EventStore, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
+func NewEventStore(ctx context.Context, config Config, goroutinePoolGo GoroutinePoolGoFunc, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = utils.Marshal
 	config.unmarshalerFunc = utils.Unmarshal
 	for _, o := range opts {
@@ -417,7 +414,12 @@ func (l *loader) QueryHandlePool(ctx context.Context, iter *queryIterator) error
 	var errors []error
 	var errorsLock sync.Mutex
 
-	for iter.Next(ctx, &query) {
+	var numQueries int
+	for {
+		if !iter.Next(ctx, &query) {
+			break
+		}
+		numQueries++
 		queries = append(queries, query)
 		if len(queries) >= l.store.batchSize {
 			wg.Add(1)
@@ -657,7 +659,7 @@ func (s *EventStore) SaveSnapshotQuery(ctx context.Context, groupID, aggregateID
 		return false, err
 	}
 
-	if _, err = col.UpdateOne(ctx,
+	res, err := col.UpdateOne(ctx,
 		bson.M{
 			idKey: sbSnap[idKey].(string),
 			dataKey: bson.M{
@@ -667,12 +669,16 @@ func (s *EventStore) SaveSnapshotQuery(ctx context.Context, groupID, aggregateID
 		bson.M{
 			"$set": sbSnap,
 		},
-	); err != nil {
+	)
+	if err != nil {
 		if err == mongo.ErrNilDocument || IsDup(err) {
 			// someone update store newer snapshot
 			return true, nil
 		}
 		return false, fmt.Errorf("cannot save snapshot query: %w", err)
+	}
+	if res.ModifiedCount != 1 {
+		return false, fmt.Errorf("cannot update snapshot query")
 	}
 	return false, nil
 }

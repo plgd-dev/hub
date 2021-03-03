@@ -13,14 +13,14 @@ type Model interface {
 }
 
 // FactoryModelFunc creates user model.
-type FactoryModelFunc func(ctx context.Context) (Model, error)
+type FactoryModelFunc func(ctx context.Context, groupID, aggregateID string) (Model, error)
 
 // LogDebugfFunc log debug messages
 type LogDebugfFunc func(fmt string, args ...interface{})
 
 type aggregateModel struct {
-	groupId     string
-	aggregateId string
+	groupID     string
+	aggregateID string
 	model       Model
 	version     uint64
 	hasSnapshot bool
@@ -37,7 +37,7 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 	am.lock.Lock()
 	defer am.lock.Unlock()
 
-	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupId %v: AggregateId %v: Version %v, hasSnapshot %v", am.groupId, am.aggregateId, am.version, am.hasSnapshot)
+	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupId %v: AggregateId %v: Version %v, hasSnapshot %v", am.groupID, am.aggregateID, am.version, am.hasSnapshot)
 
 	switch {
 	case e.Version() == 0 || am.SnapshotEventType() == e.EventType():
@@ -103,7 +103,7 @@ func (i *iterator) Rewind(ctx context.Context) {
 		if !ok {
 			break
 		}
-		if e.GroupID() != i.model.groupId || e.AggregateID() != i.model.aggregateId {
+		if e.GroupID() != i.model.groupID || e.AggregateID() != i.model.aggregateID {
 			i.nextEventToProcess = e
 			return
 		}
@@ -116,7 +116,7 @@ func (i *iterator) RewindIgnore(ctx context.Context) (EventUnmarshaler, bool) {
 		if !ok {
 			break
 		}
-		if e.GroupID() != i.model.groupId || e.AggregateID() != i.model.aggregateId {
+		if e.GroupID() != i.model.groupID || e.AggregateID() != i.model.aggregateID {
 			i.nextEventToProcess = e
 			return nil, false
 		}
@@ -156,25 +156,25 @@ func (i *iterator) Err() error {
 	return i.iter.Err()
 }
 
-func (p *Projection) getModel(ctx context.Context, groupId, aggregateId string) (*aggregateModel, error) {
+func (p *Projection) getModel(ctx context.Context, groupID, aggregateID string) (*aggregateModel, error) {
 	var ok bool
 	var mapApm map[string]*aggregateModel
 	var apm *aggregateModel
 
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	if mapApm, ok = p.aggregateModels[groupId]; !ok {
+	if mapApm, ok = p.aggregateModels[groupID]; !ok {
 		mapApm = make(map[string]*aggregateModel)
-		p.aggregateModels[groupId] = mapApm
+		p.aggregateModels[groupID] = mapApm
 	}
-	if apm, ok = mapApm[aggregateId]; !ok {
-		model, err := p.factoryModel(ctx)
+	if apm, ok = mapApm[aggregateID]; !ok {
+		model, err := p.factoryModel(ctx, groupID, aggregateID)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create model: %w", err)
 		}
-		p.LogDebugfFunc("projection.Projection.getModel: GroupId %v: AggregateId %v: new model", groupId, aggregateId)
-		apm = &aggregateModel{groupId: groupId, aggregateId: aggregateId, model: model, LogDebugfFunc: p.LogDebugfFunc}
-		mapApm[aggregateId] = apm
+		p.LogDebugfFunc("projection.Projection.getModel: GroupId %v: AggregateId %v: new model", groupID, aggregateID)
+		apm = &aggregateModel{groupID: groupID, aggregateID: aggregateID, model: model, LogDebugfFunc: p.LogDebugfFunc}
+		mapApm[aggregateID] = apm
 	}
 	return apm, nil
 }
@@ -271,14 +271,14 @@ func (p *Projection) Forget(queries []SnapshotQuery) (err error) {
 	return nil
 }
 
-func makeModelId(groupId, aggregateId string) string {
-	return groupId + "." + aggregateId
+func makeModelID(groupID, aggregateID string) string {
+	return groupID + "." + aggregateID
 }
 
 func (p *Projection) allModels(models map[string]Model) map[string]Model {
-	for groupId, group := range p.aggregateModels {
-		for aggrId, apm := range group {
-			models[makeModelId(groupId, aggrId)] = apm.model
+	for groupID, group := range p.aggregateModels {
+		for aggregateID, apm := range group {
+			models[makeModelID(groupID, aggregateID)] = apm.model
 		}
 	}
 	return models
@@ -299,13 +299,13 @@ func (p *Projection) models(queries []SnapshotQuery) map[string]Model {
 		case query.GroupID != "" && query.AggregateID == "":
 			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
 				for aggrID, apm := range aggregates {
-					models[makeModelId(query.GroupID, aggrID)] = apm.model
+					models[makeModelID(query.GroupID, aggrID)] = apm.model
 				}
 			}
 		default:
 			if aggregates, ok := p.aggregateModels[query.GroupID]; ok {
 				if apm, ok := aggregates[query.AggregateID]; ok {
-					models[makeModelId(query.GroupID, query.AggregateID)] = apm.model
+					models[makeModelID(query.GroupID, query.AggregateID)] = apm.model
 				}
 			}
 		}

@@ -38,6 +38,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	coapgwService "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/sdk/local/core"
@@ -109,7 +110,7 @@ func init() {
 
 	TestDevsimBackendResources = []schema.ResourceLink{
 		{
-			Href:          status.Href,
+			Href:          commands.StatusHref,
 			ResourceTypes: status.ResourceTypes,
 			Interfaces:    status.Interfaces,
 			Policy: &schema.Policy{
@@ -390,7 +391,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			Token: "testToken",
 			FilterBy: &pb.SubscribeForEvents_ResourceEvent{
 				ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: e.GetResourceChanged().GetResourceId().GetDeviceId(),
 						Href:     e.GetResourceChanged().GetResourceId().GetHref(),
 					},
@@ -591,7 +592,7 @@ func ResourceLinkToResourceChangedEvent(deviceID string, l schema.ResourceLink) 
 	return &pb.Event{
 		Type: &pb.Event_ResourceChanged_{
 			ResourceChanged: &pb.Event_ResourceChanged{
-				ResourceId: &pb.ResourceId{
+				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     l.Href,
 				},

@@ -13,19 +13,18 @@ import (
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/sdk/schema"
 
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
-func toEndpoint(s *pbRA.EndpointInformation) schema.Endpoint {
+func toEndpoint(s *commands.EndpointInformation) schema.Endpoint {
 	return schema.Endpoint{
 		URI:      s.GetEndpoint(),
 		Priority: uint64(s.GetPriority()),
 	}
 }
 
-func toEndpoints(s []*pbRA.EndpointInformation) []schema.Endpoint {
+func toEndpoints(s []*commands.EndpointInformation) []schema.Endpoint {
 	r := make([]schema.Endpoint, 0, 16)
 	for _, v := range s {
 		r = append(r, toEndpoint(v))
@@ -33,7 +32,7 @@ func toEndpoints(s []*pbRA.EndpointInformation) []schema.Endpoint {
 	return r
 }
 
-func toPolicy(s *pbRA.Policies) *schema.Policy {
+func toPolicy(s *commands.Policies) *schema.Policy {
 	return &schema.Policy{
 		BitMask: schema.BitMask(s.GetBitFlags()),
 	}
@@ -48,7 +47,7 @@ func getHref(deviceID, href string) string {
 	return "/" + deviceID + href
 }
 
-func makeResourceLink(resource *pbRA.Resource) schema.ResourceLink {
+func makeResourceLink(resource *commands.Resource) schema.ResourceLink {
 	r := pbGRPC.RAResourceToProto(resource).ToSchema()
 	r.Href = getHref(resource.GetDeviceId(), resource.GetHref())
 	r.ID = ""
@@ -74,7 +73,7 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter 
 		if err != nil {
 			return nil, fmt.Errorf("cannot get resource links: %w", err)
 		}
-		if resourceLink.GetHref() == status.Href {
+		if resourceLink.GetHref() == commands.StatusHref {
 			continue
 		}
 		_, ok := resourceLinks[resourceLink.GetDeviceId()]
@@ -126,7 +125,7 @@ func unmarshalContent(c *pbGRPC.Content) (interface{}, error) {
 	return m, nil
 }
 
-func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceIdsFilter []*pbGRPC.ResourceId, deviceIdsFilter []string) (map[string][]Representation, error) {
+func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceIdsFilter []*commands.ResourceId, deviceIdsFilter []string) (map[string][]Representation, error) {
 
 	client, err := rh.rdClient.RetrieveResourcesValues(ctx, &pbGRPC.RetrieveResourcesValuesRequest{
 		DeviceIdsFilter:   deviceIdsFilter,
@@ -147,7 +146,7 @@ func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceI
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
 		}
-		if content.GetResourceId().GetHref() == status.Href {
+		if content.GetResourceId().GetHref() == commands.StatusHref {
 			continue
 		}
 		rep, err := unmarshalContent(content.GetContent())

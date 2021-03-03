@@ -21,7 +21,6 @@ func TestHttpCode2CoapCode(t *testing.T) {
 		//2xx
 		{"fasthttp.StatusOK", fasthttp.StatusOK, coapCodes.POST, coapCodes.Changed},
 		{"fasthttp.StatusOK", fasthttp.StatusOK, coapCodes.GET, coapCodes.Content},
-		{"fasthttp.StatusOK", fasthttp.StatusOK, coapCodes.PUT, coapCodes.Created},
 		{"fasthttp.StatusOK", fasthttp.StatusOK, coapCodes.DELETE, coapCodes.Deleted},
 
 		{"fasthttp.StatusCreated", fasthttp.StatusCreated, coapCodes.Empty, coapCodes.Created},

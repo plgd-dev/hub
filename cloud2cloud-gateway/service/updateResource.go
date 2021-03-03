@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
@@ -35,6 +36,8 @@ func statusToHttpStatus(status pbGRPC.Status) int {
 		return http.StatusInternalServerError
 	case pbGRPC.Status_METHOD_NOT_ALLOWED:
 		return http.StatusMethodNotAllowed
+	case pbGRPC.Status_CREATED:
+		return http.StatusCreated
 	}
 	return http.StatusInternalServerError
 }
@@ -91,7 +94,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 	}
 
 	resp, err := rh.rdClient.UpdateResourcesValues(kitNetGrpc.CtxWithUserID(r.Context(), userID), &pbGRPC.UpdateResourceValuesRequest{
-		ResourceId: &pbGRPC.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},

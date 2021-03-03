@@ -152,9 +152,9 @@ func handleRetry(ctx context.Context, retryFunc RetryFunc) error {
 
 func newAggrModel(ctx context.Context, groupID, aggregateID string, store eventstore.EventStore, logDebugfFunc eventstore.LogDebugfFunc, model AggregateModel) (*aggrModel, error) {
 	amodel := &aggrModel{model: model}
-	ep := eventstore.NewProjection(store, func(ctx context.Context) (eventstore.Model, error) { return amodel, nil }, logDebugfFunc)
+	ep := eventstore.NewProjection(store, func(ctx context.Context, groupID, aggregateID string) (eventstore.Model, error) { return amodel, nil }, logDebugfFunc)
 	err := ep.Project(ctx, []eventstore.SnapshotQuery{
-		eventstore.SnapshotQuery{
+		{
 			GroupID:           groupID,
 			AggregateID:       aggregateID,
 			SnapshotEventType: model.SnapshotEventType(),
@@ -240,4 +240,12 @@ func (a *Aggregate) HandleCommand(ctx context.Context, cmd Command) ([]eventstor
 		}
 		return events, nil
 	}
+}
+
+func (a *Aggregate) GroupID() string {
+	return a.groupID
+}
+
+func (a *Aggregate) AggregateID() string {
+	return a.aggregateID
 }

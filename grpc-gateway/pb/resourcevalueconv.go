@@ -2,34 +2,29 @@ package pb
 
 import (
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"google.golang.org/grpc/codes"
 )
 
-func RAStatus2Status(s pbRA.Status) Status {
-	switch s {
-	case pbRA.Status_OK:
-		return Status_OK
-	case pbRA.Status_BAD_REQUEST:
-		return Status_BAD_REQUEST
-	case pbRA.Status_UNAUTHORIZED:
-		return Status_UNAUTHORIZED
-	case pbRA.Status_FORBIDDEN:
-		return Status_FORBIDDEN
-	case pbRA.Status_NOT_FOUND:
-		return Status_NOT_FOUND
-	case pbRA.Status_UNAVAILABLE:
-		return Status_UNAVAILABLE
-	case pbRA.Status_NOT_IMPLEMENTED:
-		return Status_NOT_IMPLEMENTED
-	case pbRA.Status_ACCEPTED:
-		return Status_ACCEPTED
-	case pbRA.Status_ERROR:
-		return Status_ERROR
-	case pbRA.Status_METHOD_NOT_ALLOWED:
-		return Status_METHOD_NOT_ALLOWED
+var rastatus2status = map[commands.Status]Status{
+	commands.Status_OK:                 Status_OK,
+	commands.Status_BAD_REQUEST:        Status_BAD_REQUEST,
+	commands.Status_UNAUTHORIZED:       Status_UNAUTHORIZED,
+	commands.Status_FORBIDDEN:          Status_FORBIDDEN,
+	commands.Status_NOT_FOUND:          Status_NOT_FOUND,
+	commands.Status_UNAVAILABLE:        Status_UNAVAILABLE,
+	commands.Status_NOT_IMPLEMENTED:    Status_NOT_IMPLEMENTED,
+	commands.Status_ACCEPTED:           Status_ACCEPTED,
+	commands.Status_ERROR:              Status_ERROR,
+	commands.Status_METHOD_NOT_ALLOWED: Status_METHOD_NOT_ALLOWED,
+	commands.Status_CREATED:            Status_CREATED,
+}
+
+func RAStatus2Status(s commands.Status) Status {
+	v, ok := rastatus2status[s]
+	if ok {
+		return v
 	}
 	return Status_UNKNOWN
 }
@@ -45,6 +40,7 @@ var status2grpcCode = map[Status]codes.Code{
 	Status_ACCEPTED:           extCodes.Accepted,
 	Status_ERROR:              codes.Internal,
 	Status_METHOD_NOT_ALLOWED: extCodes.MethodNotAllowed,
+	Status_CREATED:            extCodes.Created,
 }
 
 func (s Status) ToGrpcCode() codes.Code {
@@ -55,11 +51,7 @@ func (s Status) ToGrpcCode() codes.Code {
 	return codes.Unknown
 }
 
-func (r *ResourceId) ID() string {
-	return utils.MakeResourceId(r.GetDeviceId(), r.GetHref())
-}
-
-func RAContent2Content(s *pbRA.Content) *Content {
+func RAContent2Content(s *commands.Content) *Content {
 	if s == nil {
 		return nil
 	}

@@ -44,8 +44,11 @@ func TestGetDevices(t *testing.T) {
 
 	var response []interface{}
 	getDevices(t, &response)
+
 	require.Len(t, response, 1)
-	require.Equal(t, test.GetDeviceRepresentation(deviceID, cloudTest.TestDeviceName), test.CleanUpDeviceRepresentation(response[0]))
+	exp := test.GetDeviceRepresentation(deviceID, cloudTest.TestDeviceName)
+	delete(exp.(map[interface{}]interface{}), "links")
+	require.Equal(t, exp, test.CleanUpDeviceRepresentation(response[0]))
 }
 
 func getDevices(t *testing.T, response interface{}) {

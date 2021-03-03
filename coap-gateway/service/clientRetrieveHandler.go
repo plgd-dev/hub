@@ -8,6 +8,7 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -39,7 +40,7 @@ func getResourceInterface(msg *mux.Message) string {
 }
 
 func clientRetrieveHandler(req *mux.Message, client *Client) {
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle retrieve resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
@@ -82,7 +83,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 
 func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
 	retrieveResourcesValuesClient, err := client.server.rdClient.RetrieveResourcesValues(ctx, &pbGRPC.RetrieveResourcesValuesRequest{
-		ResourceIdsFilter: []*pbGRPC.ResourceId{
+		ResourceIdsFilter: []*commands.ResourceId{
 			{
 				DeviceId: deviceID,
 				Href:     href,
@@ -110,7 +111,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 
 func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href, resourceInterface, userID string) (*pbGRPC.Content, coapCodes.Code, error) {
 	processed, err := client.server.rdClient.RetrieveResourceFromDevice(kitNetGrpc.CtxWithUserID(req.Context, userID), &pbGRPC.RetrieveResourceFromDeviceRequest{
-		ResourceId: &pbGRPC.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},

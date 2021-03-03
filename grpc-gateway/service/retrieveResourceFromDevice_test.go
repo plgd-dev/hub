@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -35,7 +36,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/2",
 					},
@@ -48,7 +49,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/oic/d",
 					},
@@ -61,7 +62,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/unknown",
 					},

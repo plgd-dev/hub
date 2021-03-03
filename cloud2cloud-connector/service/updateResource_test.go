@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -35,10 +36,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "valid",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/1",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -57,10 +55,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/1",
-					},
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -79,10 +74,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/1",
-					},
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -100,10 +92,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "update RO-resource",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/oic/d",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -118,10 +107,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/unknown",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,

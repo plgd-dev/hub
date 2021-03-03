@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -40,10 +41,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/1",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -62,10 +60,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/1",
-					},
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -84,10 +79,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/1",
-					},
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -105,10 +97,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "update RO-resource",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/oic/d",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -123,10 +112,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceValuesRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/unknown",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,
@@ -181,10 +167,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/2",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -194,10 +177,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/oic/d",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -207,10 +187,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &pb.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/unknown",
-					},
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,
@@ -235,17 +212,19 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
-				var d map[string]interface{}
-				err := cbor.Decode(got.GetContent().GetData(), &d)
-				require.NoError(t, err)
-				delete(d, "piid")
-				assert.Equal(t, tt.want, d)
+			for i := 0; i < 17; i++ {
+				got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
+				if tt.wantErr {
+					require.Error(t, err)
+				} else {
+					require.NoError(t, err)
+					assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
+					var d map[string]interface{}
+					err := cbor.Decode(got.GetContent().GetData(), &d)
+					require.NoError(t, err)
+					delete(d, "piid")
+					assert.Equal(t, tt.want, d)
+				}
 			}
 		})
 	}
@@ -535,10 +514,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "testToken",
 		FilterBy: &pb.SubscribeForEvents_ResourceEvent{
 			ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
-				ResourceId: &pb.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/light/2",
-				},
+				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				FilterEvents: []pb.SubscribeForEvents_ResourceEventFilter_Event{
 					pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED,
 				},
@@ -569,10 +545,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: subContentChangedID,
 		Type: &pb.Event_ResourceChanged_{
 			ResourceChanged: &pb.Event_ResourceChanged{
-				ResourceId: &pb.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/light/2",
-				},
+				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				Content: &pb.Content{
 					ContentType: message.AppOcfCbor.String(),
 					Data:        []byte("\277estate\364epower\000dnameeLight\377"),
@@ -614,10 +587,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subUpdatedID := ev.SubscriptionId
 
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceID,
-			Href:     "/light/2",
-		},
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -642,10 +612,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdatePending_{
 					ResourceUpdatePending: &pb.Event_ResourceUpdatePending{
-						ResourceId: &pb.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/2",
-						},
+						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
 							Data: func() []byte {
@@ -669,10 +636,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdated_{
 					ResourceUpdated: &pb.Event_ResourceUpdated{
-						ResourceId: &pb.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/2",
-						},
+						ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
 						Status:        pb.Status_OK,
 						CorrelationId: updCorrelationID,
 					},
@@ -685,10 +649,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subContentChangedID,
 				Type: &pb.Event_ResourceChanged_{
 					ResourceChanged: &pb.Event_ResourceChanged{
-						ResourceId: &pb.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/2",
-						},
+						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
 							Data:        []byte("\277estate\364epower\030cdnameeLight\377"),
@@ -702,10 +663,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		}
 	}
 	_, err = c.UpdateResourcesValues(ctx, &pb.UpdateResourceValuesRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceID,
-			Href:     "/light/2",
-		},
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -727,10 +685,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdatePending_{
 					ResourceUpdatePending: &pb.Event_ResourceUpdatePending{
-						ResourceId: &pb.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/2",
-						},
+						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
 							Data: func() []byte {
@@ -754,10 +709,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subUpdatedID,
 				Type: &pb.Event_ResourceUpdated_{
 					ResourceUpdated: &pb.Event_ResourceUpdated{
-						ResourceId: &pb.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/2",
-						},
+						ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
 						Status:        pb.Status_OK,
 						CorrelationId: updCorrelationID,
 					},
@@ -770,10 +722,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				SubscriptionId: subContentChangedID,
 				Type: &pb.Event_ResourceChanged_{
 					ResourceChanged: &pb.Event_ResourceChanged{
-						ResourceId: &pb.ResourceId{
-							DeviceId: deviceID,
-							Href:     "/light/2",
-						},
+						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 						Content: &pb.Content{
 							ContentType: message.AppOcfCbor.String(),
 							Data:        []byte("\277estate\364epower\000dnameeLight\377"),
@@ -817,10 +766,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subReceivedID := ev.SubscriptionId
 
 	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceID,
-			Href:     "/light/2",
-		},
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 	})
 	ev, err = client.Recv()
 	require.NoError(t, err)
@@ -828,10 +774,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrievePending_{
 			ResourceRetrievePending: &pb.Event_ResourceRetrievePending{
-				ResourceId: &pb.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/light/2",
-				},
+				ResourceId:    commands.NewResourceID(deviceID, "/light/2"),
 				CorrelationId: ev.GetResourceRetrievePending().GetCorrelationId(),
 			},
 		},
@@ -846,10 +789,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrieved_{
 			ResourceRetrieved: &pb.Event_ResourceRetrieved{
-				ResourceId: &pb.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/light/2",
-				},
+				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				Content: &pb.Content{
 					ContentType: message.AppOcfCbor.String(),
 					Data:        []byte("\277estate\364epower\000dnameeLight\377"),

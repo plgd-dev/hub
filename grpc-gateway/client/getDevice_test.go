@@ -27,17 +27,22 @@ func (a *testApplication) GetRootCertificateAuthorities() ([]*x509.Certificate, 
 	return a.cas, nil
 }
 
-func NewTestDeviceSimulator(deviceID, deviceName string) client.DeviceDetails {
+func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) client.DeviceDetails {
+	var resources []*pb.ResourceLink
+	if withResources {
+		resources = test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks()))
+	}
+
 	return client.DeviceDetails{
 		ID: deviceID,
-		Device: pb.Device{
+		Device: &pb.Device{
 			Id:         deviceID,
 			Name:       deviceName,
 			Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
 			IsOnline:   true,
 			Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 		},
-		Resources: test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks())),
+		Resources: resources,
 	}
 }
 
@@ -64,7 +69,7 @@ func TestClient_GetDevice(t *testing.T) {
 				token:    oauthTest.GetServiceToken(t),
 				deviceID: deviceID,
 			},
-			want: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
+			want: NewTestDeviceSimulator(deviceID, test.TestDeviceName, true),
 		},
 		{
 			name: "not-found",

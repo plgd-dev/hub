@@ -4,11 +4,11 @@ package ocf.cloud.resourceaggregate.pb;
 
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/service;service";
 
 service ResourceAggregate {
-  rpc PublishResource (PublishResourceRequest) returns (PublishResourceResponse) {}
-  rpc UnpublishResource (UnpublishResourceRequest) returns (UnpublishResourceResponse) {}
+  rpc PublishResourceLinks (PublishResourceLinksRequest) returns (PublishResourceLinksResponse) {}
+  rpc UnpublishResourceLinks (UnpublishResourceLinksRequest) returns (UnpublishResourceLinksResponse) {}
   rpc NotifyResourceChanged (NotifyResourceChangedRequest) returns (NotifyResourceChangedResponse){}
   rpc UpdateResource (UpdateResourceRequest) returns (UpdateResourceResponse) {}
   rpc ConfirmResourceUpdate (ConfirmResourceUpdateRequest) returns (ConfirmResourceUpdateResponse) {}
@@ -16,4 +16,6 @@ service ResourceAggregate {
   rpc ConfirmResourceRetrieve (ConfirmResourceRetrieveRequest) returns (ConfirmResourceRetrieveResponse) {}
   rpc DeleteResource (DeleteResourceRequest) returns (DeleteResourceResponse) {}
   rpc ConfirmResourceDelete (ConfirmResourceDeleteRequest) returns (ConfirmResourceDeleteResponse) {}
+  rpc CreateResource (CreateResourceRequest) returns (CreateResourceResponse) {}
+  rpc ConfirmResourceCreate (ConfirmResourceCreateRequest) returns (ConfirmResourceCreateResponse) {}
 }

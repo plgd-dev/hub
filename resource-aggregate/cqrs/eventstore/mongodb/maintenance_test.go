@@ -56,6 +56,7 @@ func TestMaintenance(t *testing.T) {
 	tlsConfig := dialCertManager.GetClientTLSConfig()
 
 	store, err := NewEventStore(
+		ctx,
 		Config{
 			URI: "mongodb://localhost:27017",
 		},
