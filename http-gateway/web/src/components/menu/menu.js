@@ -12,31 +12,38 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
 
   return (
     <nav id="menu">
-      <MenuItem
-        to="/"
-        exact
-        icon="fa-chart-bar"
-        tooltip={collapsed && _(t.dashboard)}
-      >
-        {_(t.dashboard)}
-      </MenuItem>
-      <MenuItem to="/things" icon="fa-list" tooltip={collapsed && _(t.things)}>
-        {_(t.things)}
-      </MenuItem>
-      <MenuItem
-        to="/notifications"
-        icon="fa-bell"
-        tooltip={collapsed && _(t.notifications)}
-      >
-        {_(t.notifications)}
-      </MenuItem>
-      <MenuItem
-        to="/configuration"
-        icon="fa-cogs"
-        tooltip={collapsed && _(t.configuration)}
-      >
-        {_(t.configuration)}
-      </MenuItem>
+      <div className="items">
+        <MenuItem
+          to="/"
+          exact
+          icon="fa-chart-bar"
+          tooltip={collapsed && _(t.dashboard)}
+        >
+          {_(t.dashboard)}
+        </MenuItem>
+        <MenuItem
+          to="/things"
+          icon="fa-list"
+          tooltip={collapsed && _(t.things)}
+        >
+          {_(t.things)}
+        </MenuItem>
+        <MenuItem
+          to="/notifications"
+          icon="fa-bell"
+          tooltip={collapsed && _(t.notifications)}
+        >
+          {_(t.notifications)}
+        </MenuItem>
+        <MenuItem
+          to="/configuration"
+          icon="fa-cogs"
+          tooltip={collapsed && _(t.configuration)}
+        >
+          {_(t.configuration)}
+        </MenuItem>
+      </div>
+      {/* Collapse menu item */}
       <MenuItem
         className="collapse-menu-item"
         icon={classNames({

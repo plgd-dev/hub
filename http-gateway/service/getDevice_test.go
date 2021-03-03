@@ -13,12 +13,12 @@ import (
 
 	"context"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
@@ -28,9 +28,10 @@ func TestGetDevice(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -53,9 +54,10 @@ func TestGetDeviceNotExist(t *testing.T) {
 	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -70,7 +72,7 @@ func TestGetDeviceNotExist(t *testing.T) {
 	defer webTearDown()
 
 	getReq := test.NewRequest("GET", uri.Device, strings.NewReader("")).
-		DeviceId("notExist").AuthToken(authTest.UserToken).Build()
+		DeviceId("notExist").AuthToken(oauthTest.GetServiceToken(t)).Build()
 	res := test.HTTPDo(t, getReq)
 	defer res.Body.Close()
 	var response interface{}
@@ -84,7 +86,7 @@ func TestGetDeviceNotExist(t *testing.T) {
 }
 
 func getDevice(t *testing.T, deviceID string, response interface{}) {
-	req := test.NewRequest(http.MethodGet, uri.Device, nil).DeviceId(deviceID).AuthToken(authTest.UserToken).Build()
+	req := test.NewRequest(http.MethodGet, uri.Device, nil).DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
 	req.Header.Set("Request-Timeout", "1")
 
 	res := test.HTTPDo(t, req)

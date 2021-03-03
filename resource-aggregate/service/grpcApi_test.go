@@ -18,7 +18,7 @@ import (
 
 func TestRequestHandler_PublishResource(t *testing.T) {
 	deviceID := "dev0"
-	href := "res0"
+	href := "/res0"
 	user0 := "user0"
 	type args struct {
 		request *commands.PublishResourceLinksRequest
@@ -39,6 +39,8 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 					UserId:   user0,
 					DeviceId: deviceID,
 				},
+				PublishedResources: []*commands.Resource{testNewResource(href, deviceID)},
+				DeviceId:           deviceID,
 			},
 		},
 		{
@@ -51,13 +53,36 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 					UserId:   user0,
 					DeviceId: deviceID,
 				},
+				PublishedResources: []*commands.Resource{},
+				DeviceId:           deviceID,
 			},
 		},
 		{
+			name: "invalid href",
+			args: args{
+				request: testMakePublishResourceRequest(deviceID, []string{"hrefwithoutslash"}),
+			},
+			wantError: true,
+		},
+		{
+			name: "empty href",
+			args: args{
+				request: testMakePublishResourceRequest(deviceID, []string{""}),
+			},
+			wantError: true,
+		},
+		{
+			name: "root href",
+			args: args{
+				request: testMakePublishResourceRequest(deviceID, []string{"/"}),
+			},
+			wantError: true,
+		},
+		{
+			name: "empty",
 			args: args{
 				request: &commands.PublishResourceLinksRequest{},
 			},
-			name:      "invalid",
 			wantError: true,
 		},
 	}
@@ -82,7 +107,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -109,7 +134,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 
 func TestRequestHandler_UnpublishResource(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	href := "/res0"
 	user0 := "user0"
 
 	type args struct {
@@ -125,7 +150,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				request: testMakeUnpublishResourceRequest(deviceID, []string{resID}),
+				request: testMakeUnpublishResourceRequest(deviceID, []string{href}),
 				userID:  user0,
 			},
 			want: &commands.UnpublishResourceLinksResponse{
@@ -133,18 +158,41 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 					UserId:   user0,
 					DeviceId: deviceID,
 				},
+				UnpublishedHrefs: []string{href},
+				DeviceId:         deviceID,
 			},
 		},
 		{
 			name: "unauthorized",
 			args: args{
-				request: testMakeUnpublishResourceRequest(deviceID, []string{resID}),
+				request: testMakeUnpublishResourceRequest(deviceID, []string{href}),
 				userID:  testUnauthorizedUser,
 			},
 			wantError: true,
 		},
 		{
-			name: "invalid",
+			name: "invalid href",
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceID, []string{"hrefwithoutslash"}),
+			},
+			wantError: true,
+		},
+		{
+			name: "empty href",
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceID, []string{""}),
+			},
+			wantError: true,
+		},
+		{
+			name: "root href",
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceID, []string{"/"}),
+			},
+			wantError: true,
+		},
+		{
+			name: "empty",
 			args: args{
 				request: &commands.UnpublishResourceLinksRequest{},
 			},
@@ -173,7 +221,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -182,7 +230,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
-	pubReq := testMakePublishResourceRequest(deviceID, []string{resID})
+	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
 	assert.NoError(t, err)
 
@@ -202,7 +250,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 
 func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 
 	type args struct {
@@ -253,7 +301,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -277,7 +325,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 
 func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -342,7 +390,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -352,6 +400,10 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.UpdateResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -366,7 +418,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 
 func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -419,7 +471,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -429,6 +481,10 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.ConfirmResourceUpdate(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -443,7 +499,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 
 func TestRequestHandler_RetrieveResource(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -496,7 +552,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -506,6 +562,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.RetrieveResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -520,7 +580,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 
 func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -573,7 +633,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -583,6 +643,10 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.ConfirmResourceRetrieve(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -597,7 +661,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 
 func TestRequestHandler_DeleteResource(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -650,7 +714,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -660,6 +724,10 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.DeleteResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -674,7 +742,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 
 func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -717,6 +785,12 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -727,7 +801,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -737,6 +811,10 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.ConfirmResourceDelete(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -751,7 +829,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 
 func TestRequestHandler_CreateResource(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -804,7 +882,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -814,6 +892,10 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.CreateResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -828,7 +910,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 
 func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	deviceID := "dev0"
-	resID := "res0"
+	resID := "/res0"
 	user0 := "user0"
 	correlationID := "123"
 
@@ -881,7 +963,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -891,6 +973,10 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.ConfirmResourceCreate(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)

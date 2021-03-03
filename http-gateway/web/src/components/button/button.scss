@@ -17,15 +17,15 @@
 
   // Primary button
   &.btn-primary {
-    color: $white_100;
-    background-color: $blue_100;
+    color: $light_100;
+    background-color: $primary_100;
 
     &.btn-primary:not(:disabled):not(.disabled):hover,
     &.btn-primary:not(:disabled):not(.disabled).hover,
     &.btn-primary:not(:disabled):not(.disabled):active,
     &.btn-primary:not(:disabled):not(.disabled).active,
     &.btn-primary.dropdown-toggle {
-      background-color: $blue_200;
+      background-color: $primary_200;
       box-shadow: none;
     }
 
@@ -37,17 +37,17 @@
 
   // Secondary button
   &.btn-secondary {
-    color: $blue_100;
-    background-color: $black_20;
+    color: $primary_100;
+    background-color: $secondary_20;
 
     &.btn-secondary:not(:disabled):not(.disabled):hover,
     &.btn-secondary:not(:disabled):not(.disabled).hover,
     &.btn-secondary:not(:disabled):not(.disabled):active,
     &.btn-secondary:not(:disabled):not(.disabled).active,
     &.btn-secondary.dropdown-toggle {
-      background-color: $black_25;
+      background-color: $secondary_25;
       box-shadow: none;
-      color: $blue_100;
+      color: $primary_100;
     }
 
     &:focus,

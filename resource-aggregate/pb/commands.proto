@@ -64,6 +64,8 @@ message PublishResourceLinksRequest {
 
 message PublishResourceLinksResponse {
     AuditContext audit_context = 1;
+    repeated Resource published_resources = 2;
+    string device_id = 3;
 }
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
@@ -76,6 +78,8 @@ message UnpublishResourceLinksRequest {
 
 message UnpublishResourceLinksResponse {
     AuditContext audit_context = 1;
+    repeated string unpublished_hrefs = 2;
+    string device_id = 3;
 }
 
 //******************************************************************************************************************************************************

@@ -20,7 +20,7 @@
       align-items: flex-start;
       justify-content: space-between;
       min-height: 34px;
-      border-bottom: 1px solid $default_border_color;
+      border-bottom: 1px solid $secondary_20;
       box-sizing: border-box;
       padding: 6px 0;
     }
@@ -40,18 +40,18 @@
     .required {
       display: inline-block;
       margin-left: 2px;
-      color: $blue_100;
+      color: $primary_100;
     }
 
     &.has-error {
       .required {
-        color: $red_100;
+        color: $error_100;
       }
     }
   }
 
   .label-error-message {
-    color: $red_100;
+    color: $error_100;
     margin-top: 5px;
     font-size: $font_size_small;
   }

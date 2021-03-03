@@ -45,7 +45,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.HrefKey] = "/" + strings.Join(paths[1:], "/")
+		rm.Vars[uri.HrefKey] = strings.Split("/"+strings.Join(paths[1:], "/"), "?")[0]
 		return true
 	}
 	return false
@@ -58,7 +58,7 @@ func wsResourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.HrefKey] = "/" + strings.Join(paths[1:], "/")
+		rm.Vars[uri.HrefKey] = strings.Split("/"+strings.Join(paths[1:], "/"), "?")[0]
 		return true
 	}
 	return false
@@ -126,8 +126,9 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 			c := httptest.NewRecorder()
 			fs.ServeHTTP(c, r)
 			if c.Code == http.StatusNotFound {
-				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-				return
+				c = httptest.NewRecorder()
+				r.URL.Path = "/"
+				fs.ServeHTTP(c, r)
 			}
 			for k, v := range c.HeaderMap {
 				w.Header().Set(k, strings.Join(v, ""))

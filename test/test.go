@@ -38,6 +38,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	coapgwService "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/sdk/local/core"
@@ -47,6 +48,8 @@ import (
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
 var (
@@ -107,7 +110,7 @@ func init() {
 
 	TestDevsimBackendResources = []schema.ResourceLink{
 		{
-			Href:          status.Href,
+			Href:          commands.StatusHref,
 			ResourceTypes: status.ResourceTypes,
 			Interfaces:    status.Interfaces,
 			Policy: &schema.Policy{
@@ -170,6 +173,7 @@ func ClearDB(ctx context.Context, t *testing.T) {
 
 func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	ClearDB(ctx, t)
+	oauthShutdown := oauthService.SetUp(t)
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
@@ -186,6 +190,7 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 		rdShutdown()
 		raShutdown()
 		authShutdown()
+		oauthShutdown()
 	}
 }
 
@@ -234,7 +239,8 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 	setAccessForCloud(ctx, t, client, deviceID)
 
-	err = client.OnboardDevice(ctx, deviceID, "test", "coaps+tcp://"+gwHost, "authCode", "sid")
+	code := oauthTest.GetDeviceAuthorizationCode(t)
+	err = client.OnboardDevice(ctx, deviceID, "plgd", "coaps+tcp://"+gwHost, code, "sid")
 	require.NoError(t, err)
 
 	if len(expectedResources) > 0 {
@@ -385,7 +391,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			Token: "testToken",
 			FilterBy: &pb.SubscribeForEvents_ResourceEvent{
 				ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: e.GetResourceChanged().GetResourceId().GetDeviceId(),
 						Href:     e.GetResourceChanged().GetResourceId().GetHref(),
 					},
@@ -586,7 +592,7 @@ func ResourceLinkToResourceChangedEvent(deviceID string, l schema.ResourceLink) 
 	return &pb.Event{
 		Type: &pb.Event_ResourceChanged_{
 			ResourceChanged: &pb.Event_ResourceChanged{
-				ResourceId: &pb.ResourceId{
+				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     l.Href,
 				},

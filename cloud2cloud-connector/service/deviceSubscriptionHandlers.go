@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitSync "github.com/plgd-dev/kit/sync"
@@ -43,11 +43,11 @@ type DevicesSubscription struct {
 	ctx               context.Context
 	data              *kitSync.Map // //[deviceID]*deviceSubscription
 	rdClient          pb.GrpcGatewayClient
-	raClient          pbRA.ResourceAggregateClient
+	raClient          raService.ResourceAggregateClient
 	reconnectInterval time.Duration
 }
 
-func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient pbRA.ResourceAggregateClient, reconnectInterval time.Duration) *DevicesSubscription {
+func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, reconnectInterval time.Duration) *DevicesSubscription {
 	return &DevicesSubscription{
 		data:              kitSync.NewMap(),
 		rdClient:          rdClient,

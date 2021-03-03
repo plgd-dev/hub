@@ -17,7 +17,7 @@ func Publish(ctx context.Context, client service.ResourceAggregateClient, device
 		DeviceId:             deviceID,
 		Resources: []*commands.Resource{
 			{
-				Href:          Href,
+				Href:          commands.StatusHref,
 				ResourceTypes: ResourceTypes,
 				Interfaces:    Interfaces,
 				DeviceId:      deviceID,
@@ -45,7 +45,7 @@ func update(ctx context.Context, client service.ResourceAggregateClient, deviceI
 	request := commands.NotifyResourceChangedRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
-			Href:     Href,
+			Href:     commands.StatusHref,
 		},
 		Content: &commands.Content{
 			ContentType:       message.AppOcfCbor.String(),

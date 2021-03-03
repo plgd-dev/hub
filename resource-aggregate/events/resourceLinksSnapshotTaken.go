@@ -51,7 +51,7 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 }
 
 func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
-	unpublished := []string{}
+	var unpublished []string
 	if len(upub.GetHrefs()) == 0 {
 		unpublished = make([]string, 0, len(e.GetResources()))
 		for href := range e.GetResources() {
@@ -129,13 +129,13 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
+		ac := commands.NewAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 
 		rlp := ResourceLinksPublished{
 			Resources:     req.GetResources(),
 			DeviceId:      req.GetDeviceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 		}
 		err := e.HandleEventResourceLinksPublished(ctx, &rlp)
 		if err != nil {
@@ -151,12 +151,12 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.MakeAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
+		ac := commands.NewAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
 		rlu := ResourceLinksUnpublished{
 			Hrefs:         req.GetHrefs(),
 			DeviceId:      req.GetDeviceId(),
-			AuditContext:  &ac,
-			EventMetadata: &em,
+			AuditContext:  ac,
+			EventMetadata: em,
 		}
 		unpublished, err := e.HandleEventResourceLinksUnpublished(ctx, &rlu)
 		if err != nil {
@@ -173,7 +173,18 @@ func (e *ResourceLinksSnapshotTaken) SnapshotEventType() string { return e.Event
 
 func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
 	e.EventMetadata.Version = version
-	return e, true
+
+	// we need to return as new event because `e` is a pointer,
+	// otherwise ResourceLinksSnapshotTaken.Handle override version/resource of snapshot which will be fired to eventbus
+	resources := make(map[string]*commands.Resource)
+	for key, resource := range e.GetResources() {
+		resources[key] = resource
+	}
+	return &ResourceLinksSnapshotTaken{
+		DeviceId:      e.GetDeviceId(),
+		EventMetadata: e.GetEventMetadata(),
+		Resources:     resources,
+	}, true
 }
 
 func NewResourceLinksSnapshotTaken() *ResourceLinksSnapshotTaken {

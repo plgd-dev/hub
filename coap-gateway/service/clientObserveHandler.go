@@ -12,6 +12,7 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -26,7 +27,7 @@ func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
 		log.Debugf("clientObserveHandler takes %v", time.Since(t))
 	}()
 
-	authCtx, err := client.loadAuthorizationContext()
+	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle observe resource: %w", authCtx.GetDeviceID(), err), coapCodes.Unauthorized, req.Token)
 		return
@@ -128,10 +129,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		},
 	}
 
-	sub, err := grpcClient.NewResourceSubscription(req.Context, pbGRPC.ResourceId{
-		DeviceId: deviceID,
-		Href:     href,
-	}, &h, &h, client.server.rdClient)
+	sub, err := grpcClient.NewResourceSubscription(req.Context, commands.NewResourceID(deviceID, href), &h, &h, client.server.rdClient)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return

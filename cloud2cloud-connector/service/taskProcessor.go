@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitSync "github.com/plgd-dev/kit/sync"
 	"golang.org/x/sync/semaphore"
@@ -35,12 +35,12 @@ type TaskProcessor struct {
 	wg            *sync.WaitGroup
 	poolGets      *semaphore.Weighted
 	timeout       time.Duration
-	raClient      pbRA.ResourceAggregateClient
+	raClient      raService.ResourceAggregateClient
 	pulledDevices *kitSync.Map //[userid+deviceID]
 	delay         time.Duration
 }
 
-func NewTaskProcessor(raClient pbRA.ResourceAggregateClient, maxParallelGets int64, cacheSize int, timeout, delay time.Duration) *TaskProcessor {
+func NewTaskProcessor(raClient raService.ResourceAggregateClient, maxParallelGets int64, cacheSize int, timeout, delay time.Duration) *TaskProcessor {
 	return &TaskProcessor{
 		pulledDevices: kitSync.NewMap(),
 		tasksChan:     make(chan Task, cacheSize),

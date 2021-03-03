@@ -19,7 +19,6 @@ type LogPublishErrFunc func(err error)
 
 type aggregate struct {
 	ag         *cqrsAggregate.Aggregate
-	resourceID string
 	eventstore EventStore
 }
 
@@ -49,8 +48,11 @@ func validatePublish(request *commands.PublishResourceLinksRequest) error {
 		return status.Errorf(codes.InvalidArgument, "empty publish is not accepted")
 	}
 	for _, res := range request.Resources {
-		if res.Href == "" {
+		if len(res.Href) <= 1 || res.Href[:1] != "/" {
 			return status.Errorf(codes.InvalidArgument, "invalid resource href")
+		}
+		if res.DeviceId == "" {
+			return status.Errorf(codes.InvalidArgument, "invalid device id")
 		}
 	}
 	if request.DeviceId == "" {
@@ -233,7 +235,11 @@ func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events
 }
 
 func (a *aggregate) DeviceID() string {
-	return a.ag.DeviceID()
+	return a.ag.GroupID()
+}
+
+func (a *aggregate) ResourceID() string {
+	return a.ag.AggregateID()
 }
 
 // HandlePublishResource handles a command PublishResourceLinks

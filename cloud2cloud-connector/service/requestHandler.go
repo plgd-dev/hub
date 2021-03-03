@@ -18,7 +18,7 @@ import (
 	router "github.com/gorilla/mux"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
 const cloudIDKey = "CloudId"
@@ -35,7 +35,7 @@ type RequestHandler struct {
 	store         *Store
 
 	asClient pbAS.AuthorizationServiceClient
-	raClient pbRA.ResourceAggregateClient
+	raClient raService.ResourceAggregateClient
 
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
@@ -54,7 +54,7 @@ func NewRequestHandler(
 	oauthCallback string,
 	subManager *SubscriptionManager,
 	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
+	raClient raService.ResourceAggregateClient,
 	store *Store,
 	triggerTask func(Task),
 ) *RequestHandler {

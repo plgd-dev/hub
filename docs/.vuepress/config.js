@@ -40,6 +40,14 @@ module.exports = {
               'deployment/cloud2cloud-connector',
               'deployment/cloud2cloud-gateway',
             ]
+          },
+          {
+            title: 'Developing with plgd',
+            sidebarDepth: 1,
+            children: [
+              'developing/resources',
+              'developing/dashboard'
+            ]
           }
         ]
       }

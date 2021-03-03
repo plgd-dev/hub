@@ -17,6 +17,8 @@ import { useLocalStorage } from '@/common/hooks'
 import { Routes } from '@/routes'
 import { history } from '@/store/history'
 import { security } from '@/common/services/security'
+import { InitServices } from '@/common/services/init-services'
+import appConfig from '@/config'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
@@ -36,6 +38,7 @@ const App = ({ config }) => {
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
   security.setDefaultAudience(config.audience)
+  security.setHttpGatewayAddress(config.httpGatewayAddress)
 
   // Render an error box with an auth error
   if (error) {
@@ -75,18 +78,19 @@ const App = ({ config }) => {
   return (
     <AppContext.Provider value={{ ...config, collapsed }}>
       <Router history={history}>
+        <InitServices />
         <Helmet
-          defaultTitle={_(t.defaultTitle)}
-          titleTemplate={`%s | ${_(t.defaultTitle)}`}
+          defaultTitle={appConfig.appName}
+          titleTemplate={`%s | ${appConfig.appName}`}
         />
         <Container fluid id="app" className={classNames({ collapsed })}>
+          <StatusBar />
           <LeftPanel>
             <Menu
               collapsed={collapsed}
               toggleCollapsed={() => setCollapsed(!collapsed)}
             />
           </LeftPanel>
-          <StatusBar />
           <div id="content">
             <Routes />
             <Footer />

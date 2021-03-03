@@ -5,12 +5,15 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
+	"go.uber.org/atomic"
 )
 
 type deviceSubscription struct {
 	*subscription
-	deviceEvent *pb.SubscribeForEvents_DeviceEventFilter
+	deviceEvent                  *pb.SubscribeForEvents_DeviceEventFilter
+	isInitializedResourcePublish atomic.Bool
 }
 
 func NewDeviceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, deviceEvent *pb.SubscribeForEvents_DeviceEventFilter) *deviceSubscription {
@@ -26,12 +29,13 @@ func (s *deviceSubscription) DeviceID() string {
 	return s.deviceEvent.GetDeviceId()
 }
 
-type ResourceLink struct {
-	link    pb.ResourceLink
+type ResourceLinks struct {
+	links   []*pb.ResourceLink
 	version uint64
+	isInit  bool
 }
 
-func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, links []ResourceLink) error {
+func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED {
@@ -41,15 +45,13 @@ func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link
 	if !found {
 		return nil
 	}
-	toSend := make([]*pb.ResourceLink, 0, 32)
-	for _, l := range links {
-		if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
-			continue
-		}
-		link := l.link
-		toSend = append(toSend, &link)
+	if links.isInit {
+		s.isInitializedResourcePublish.Store(true)
 	}
-	if len(toSend) == 0 && len(links) > 0 {
+	if !s.isInitializedResourcePublish.Load() {
+		return nil
+	}
+	if len(links.links) == 0 || s.FilterByVersion(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -57,13 +59,13 @@ func (s *deviceSubscription) NotifyOfPublishedResource(ctx context.Context, link
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourcePublished_{
 			ResourcePublished: &pb.Event_ResourcePublished{
-				Links: toSend,
+				Links: links.links,
 			},
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, links []ResourceLink) error {
+func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED {
@@ -73,15 +75,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 	if !found {
 		return nil
 	}
-	toSend := make([]*pb.ResourceLink, 0, 32)
-	for _, l := range links {
-		if s.FilterByVersion(l.link.GetDeviceId(), l.link.GetHref(), "res", l.version) {
-			continue
-		}
-		link := l.link
-		toSend = append(toSend, &link)
-	}
-	if len(toSend) == 0 && len(links) > 0 {
+	if len(links.links) == 0 || s.FilterByVersion(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -89,7 +83,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResource(ctx context.Context, li
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUnpublished_{
 			ResourceUnpublished: &pb.Event_ResourceUnpublished{
-				Links: toSend,
+				Links: links.links,
 			},
 		},
 	})
@@ -228,16 +222,17 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 }
 
 func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
-	toSend := make([]ResourceLink, 0, 32)
-	for _, model := range models {
-		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, model)
-		if !ok {
-			continue
-		}
-		toSend = append(toSend, link)
+	models := s.resourceProjection.Models(commands.NewResourceID(s.DeviceID(), commands.ResourceLinksHref))
+	if len(models) != 1 {
+		return nil
 	}
-	err := s.NotifyOfPublishedResource(ctx, toSend)
+
+	rlp, ok := models[0].(*resourceLinksProjection)
+	if !ok {
+		return fmt.Errorf("unexpected event type")
+	}
+
+	err := rlp.InitialNotifyOfPublishedResourceLinks(ctx, s)
 	if err != nil {
 		return fmt.Errorf("cannot send resource published: %w", err)
 	}
@@ -246,16 +241,7 @@ func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) err
 }
 
 func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
-	toSend := make([]ResourceLink, 0, 32)
-	for _, model := range models {
-		link, ok := makeLinkRepresentation(pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED, model)
-		if !ok {
-			continue
-		}
-		toSend = append(toSend, link)
-	}
-	err := s.NotifyOfUnpublishedResource(ctx, toSend)
+	err := s.NotifyOfUnpublishedResourceLinks(ctx, ResourceLinks{})
 	if err != nil {
 		return fmt.Errorf("cannot send resource published: %w", err)
 	}
@@ -263,10 +249,13 @@ func (s *deviceSubscription) initSendResourcesUnpublished(ctx context.Context) e
 }
 
 func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
-	for _, model := range models {
-		c := model.(*resourceCtx).Clone()
-		err := c.onResourceUpdatePendingLocked(ctx, s.NotifyOfUpdatePendingResource)
+	resources, err := s.resourceProjection.GetResourcesWithLinks(ctx, []*commands.ResourceId{commands.NewResourceID(s.DeviceID(), "")}, nil)
+	if err != nil {
+		return fmt.Errorf("cannot send resource update pending: %w", err)
+	}
+
+	for _, resource := range resources[s.DeviceID()] {
+		err := resource.OnResourceUpdatePendingLocked(ctx, s.NotifyOfUpdatePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource update pending: %w", err)
 		}
@@ -275,24 +264,30 @@ func (s *deviceSubscription) initSendResourcesUpdatePending(ctx context.Context)
 }
 
 func (s *deviceSubscription) initSendResourcesRetrievePending(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
-	for _, model := range models {
-		c := model.(*resourceCtx).Clone()
-		err := c.onResourceRetrievePendingLocked(ctx, s.NotifyOfRetrievePendingResource)
+	resources, err := s.resourceProjection.GetResourcesWithLinks(ctx, []*commands.ResourceId{commands.NewResourceID(s.DeviceID(), "")}, nil)
+	if err != nil {
+		return fmt.Errorf("cannot send resource update pending: %w", err)
+	}
+
+	for _, resource := range resources[s.DeviceID()] {
+		err := resource.OnResourceRetrievePendingLocked(ctx, s.NotifyOfRetrievePendingResource)
 		if err != nil {
-			return fmt.Errorf("cannot send resource update pending: %w", err)
+			return fmt.Errorf("cannot send resource retrieve pending: %w", err)
 		}
 	}
 	return nil
 }
 
 func (s *deviceSubscription) initSendResourcesDeletePending(ctx context.Context) error {
-	models := s.resourceProjection.Models(s.DeviceID(), "")
-	for _, model := range models {
-		c := model.(*resourceCtx).Clone()
-		err := c.onResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
+	resources, err := s.resourceProjection.GetResourcesWithLinks(ctx, []*commands.ResourceId{commands.NewResourceID(s.DeviceID(), "")}, nil)
+	if err != nil {
+		return fmt.Errorf("cannot send resource update pending: %w", err)
+	}
+
+	for _, resource := range resources[s.DeviceID()] {
+		err := resource.OnResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
 		if err != nil {
-			return fmt.Errorf("cannot send resource update pending: %w", err)
+			return fmt.Errorf("cannot send resource delete pending: %w", err)
 		}
 	}
 	return nil

@@ -18,7 +18,6 @@ import (
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/coap"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/sdk/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -57,7 +56,8 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 			log.Errorf("signIn: cannot receive link for the device %v: %v", deviceID, err)
 			return
 		}
-		client.observeResource(ctx, m.GetDeviceId(), m.GetHref(), m.GetPolicies().GetBitFlags()&int32(schema.Observable) == int32(schema.Observable), true)
+		resource := m.ToRAProto()
+		client.observeResource(ctx, resource.GetResourceID(), resource.IsObservable(), true)
 	}
 }
 
@@ -121,10 +121,8 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &commands.CommandMetadata{
-		Sequence:     client.coapConn.Sequence(),
-		ConnectionId: client.remoteAddrString(),
-	}, authCtx.GetPbData())
+	oldAuthCtx := client.SetAuthorizationContext(&authCtx)
+	err = client.server.devicesStatusUpdater.Add(client)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
@@ -132,7 +130,6 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	oldAuthCtx := client.replaceAuthorizationContext(&authCtx)
 	newDevice := false
 
 	switch {
@@ -170,7 +167,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
 	// fix for iotivity-classic
-	authCurrentCtx, _ := client.loadAuthorizationContext()
+	authCurrentCtx, _ := client.GetAuthorizationContext()
 	userID := signOut.UserID
 	deviceID := signOut.DeviceID
 	if userID == "" {

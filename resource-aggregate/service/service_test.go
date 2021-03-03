@@ -14,22 +14,25 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func TestPublishUnpublish(t *testing.T) {
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), authProvider.UserToken)
-
 	var config refImpl.Config
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
+
+	oauthShutdown := oauthTest.SetUp(t)
+	defer oauthShutdown()
+
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetServiceToken(t))
 
 	authShutdown := authService.SetUp(t)
 	defer authShutdown()
@@ -45,7 +48,7 @@ func TestPublishUnpublish(t *testing.T) {
 	require.NoError(t, err)
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 
-	eventstore, err := mongodb.NewEventStore(config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, config.MongoDB, nil, mongodb.WithTLS(dialTLSConfig))
 	require.NoError(t, err)
 	defer eventstore.Clear(ctx)
 
@@ -70,10 +73,11 @@ func TestPublishUnpublish(t *testing.T) {
 
 	deviceId := "dev0"
 	href := "/oic/p"
+	code := oauthTest.GetDeviceAuthorizationCode(t)
 	resp, err := authClient.SignUp(ctx, &pbAS.SignUpRequest{
 		DeviceId:              deviceId,
-		AuthorizationCode:     "authcode",
-		AuthorizationProvider: authProvider.NewTestProvider().GetProviderName(),
+		AuthorizationCode:     code,
+		AuthorizationProvider: "plgd",
 	})
 	require.NoError(t, err)
 

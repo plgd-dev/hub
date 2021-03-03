@@ -3,27 +3,23 @@ package refImpl_test
 import (
 	"testing"
 
-	authConfig "github.com/plgd-dev/cloud/authorization/service"
-	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/cloud/resource-directory/refImpl"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/resource-directory/refImpl"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInit(t *testing.T) {
-	var authCfg authConfig.Config
-	err := envconfig.Process("", &authCfg)
-	require.NoError(t, err)
-	authCfg.Addr = "localhost:12345"
-	authCfg.HTTPAddr = "localhost:12346"
-	authCfg.Device.Provider = "test"
-	authShutdown := authService.New(t, authCfg)
+	authShutdown := oauthTest.New(t, oauthTest.MakeConfig(t))
 	defer authShutdown()
 
 	var config refImpl.Config
-	err = envconfig.Process("", &config)
+	err := envconfig.Process("", &config)
 	require.NoError(t, err)
-	config.Service.OAuth.Endpoint.TokenURL = "https://" + authCfg.HTTPAddr + "/api/authz/token"
+	config.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	config.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 
 	got, err := refImpl.Init(config)
 	require.NoError(t, err)

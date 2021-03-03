@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types'
 import BPagination from 'react-bootstrap/Pagination'
 import { useIntl } from 'react-intl'
+import classNames from 'classnames'
 
 import { PaginationItems } from './pagination-items'
 import { messages as t } from './table-i18n'
@@ -9,6 +10,8 @@ export const Pagination = props => {
   const { formatMessage: _ } = useIntl()
 
   const {
+    className,
+    disabled,
     canPreviousPage,
     canNextPage,
     pageCount,
@@ -18,7 +21,10 @@ export const Pagination = props => {
     pageIndex,
   } = props
   return (
-    <BPagination className="plgd-pagination">
+    <BPagination
+      className={classNames('plgd-pagination', className)}
+      disabled={disabled}
+    >
       {/* <BPagination.First onClick={() => gotoPage(0)} disabled={!canPreviousPage} /> */}
       <BPagination.Prev
         className="step"
@@ -30,7 +36,7 @@ export const Pagination = props => {
       <PaginationItems
         activePage={pageIndex + 1}
         pageCount={pageCount}
-        maxButtons={5}
+        maxButtons={10}
         onItemClick={gotoPage}
       />
       <BPagination.Next
@@ -46,9 +52,10 @@ export const Pagination = props => {
 }
 
 Pagination.propTypes = {
+  className: PropTypes.string,
+  disabled: PropTypes.bool,
   canPreviousPage: PropTypes.bool.isRequired,
   canNextPage: PropTypes.bool.isRequired,
-  pageOptions: PropTypes.arrayOf(PropTypes.number).isRequired,
   pageCount: PropTypes.number.isRequired,
   gotoPage: PropTypes.func.isRequired,
   nextPage: PropTypes.func.isRequired,
@@ -60,5 +67,7 @@ Pagination.propTypes = {
 }
 
 Pagination.defaultProps = {
+  className: null,
+  disabled: false,
   pageSizes: [10, 20, 30, 40, 50],
 }

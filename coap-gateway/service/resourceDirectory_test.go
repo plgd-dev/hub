@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	oauthTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -34,12 +33,12 @@ type TestWkRD struct {
 
 var tblResourceDirectory = []testEl{
 	{"BadRequest0", input{coapCodes.POST, `{ "di":"` + CertIdentity + `" }`, nil}, output{coapCodes.BadRequest, `empty links`, nil}},
-	{"BadRequest1", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":"abc" }`, nil}, output{coapCodes.BadRequest, `cannot publish resource: cbor: cannot unmarshal`, nil}},
-	{"BadRequest2", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ "abc" ]}`, nil}, output{coapCodes.BadRequest, `cannot publish resource: cbor: cannot unmarshal`, nil}},
+	{"BadRequest1", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":"abc" }`, nil}, output{coapCodes.BadRequest, `cbor: cannot unmarshal`, nil}},
+	{"BadRequest2", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ "abc" ]}`, nil}, output{coapCodes.BadRequest, `cbor: cannot unmarshal`, nil}},
 	{"BadRequest3", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ {} ]}`, nil}, output{coapCodes.BadRequest, `invalid TimeToLive`, nil}},
 	{"BadRequest4", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "href":"" } ]}`, nil}, output{coapCodes.BadRequest, `invalid TimeToLive`, nil}},
-	{"BadRequest5", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `empty links`, nil}},
-	{"BadRequest6", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `empty links`, nil}},
+	{"BadRequest5", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}},
+	{"BadRequest6", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}},
 	{"Changed0", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "ttl":12345}`, nil},
 		output{coapCodes.Changed, TestWkRD{
 			DeviceID:         CertIdentity,
@@ -49,7 +48,6 @@ var tblResourceDirectory = []testEl{
 				{
 					DeviceID: CertIdentity,
 					Href:     TestAResourceHref,
-					ID:       TestAResourceId,
 				},
 			},
 		}, nil}},
@@ -63,7 +61,6 @@ var tblResourceDirectory = []testEl{
 				{
 					DeviceID: CertIdentity,
 					Href:     "/b",
-					ID:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
 				},
 			},
 		}, nil}},
@@ -76,12 +73,10 @@ var tblResourceDirectory = []testEl{
 				{
 					DeviceID: CertIdentity,
 					Href:     "/b",
-					ID:       "1f36abb2-c5f8-556e-bf74-3b34ed66a2b4",
 				},
 				{
 					DeviceID: CertIdentity,
 					Href:     "/c",
-					ID:       "41529a9c-b80f-5487-82da-da4a476402ae",
 				},
 			},
 		}, nil}},
@@ -97,14 +92,7 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
-	t.Run(signUpEl.name, func(t *testing.T) {
-		testPostHandler(t, uri.SignUp, signUpEl, co)
-	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
-	t.Run(signInEl.name, func(t *testing.T) {
-		testPostHandler(t, uri.SignIn, signInEl, co)
-	})
+	testSignUpIn(t, CertIdentity, co)
 
 	for _, test := range tblResourceDirectory {
 		tf := func(t *testing.T) {
@@ -116,12 +104,13 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 
 func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	//set counter 0, when other test run with this that it can be modified
+
 	deletetblResourceDirectory := []testEl{
-		{"NotExist1", input{coapCodes.DELETE, ``, []string{"di=c", "ins=5"}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},                 // Non-existent device ID.
-		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `cannot parse queries: deviceID not found`, nil}},                                         // Device ID empty.
-		{"NotExist3", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity, "ins=999"}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}}, // Instance ID non-existent.
-		{"Exist1", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.Deleted, nil, nil}},                                                                         // If instanceIDs empty, all instances for a given device ID should be unpublished.
-		{"NotExist4", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.BadRequest, `cannot found resources for the DELETE request parameters`, nil}},
+		{"NotExist1", input{coapCodes.DELETE, ``, []string{"di=c", "ins=5"}}, output{coapCodes.BadRequest, `cannot find observed resources using query`, nil}},                 // Non-existent device ID.
+		{"NotExist2", input{coapCodes.DELETE, ``, []string{"ins=4"}}, output{coapCodes.BadRequest, `not found`, nil}},                                                          // Device ID empty.
+		{"NotExist3", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity, "ins=999"}}, output{coapCodes.BadRequest, `cannot find observed resources using query`, nil}}, // Instance ID non-existent.
+		{"Exist1", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.Deleted, nil, nil}},                                                           // If instanceIDs empty, all instances for a given device ID should be unpublished.
+		{"NotExist4", input{coapCodes.DELETE, ``, []string{`di=` + CertIdentity}}, output{coapCodes.BadRequest, `cannot find observed resources using query`, nil}},
 	}
 
 	shutdown := setUp(t)
@@ -133,14 +122,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
-	t.Run(signUpEl.name, func(t *testing.T) {
-		testPostHandler(t, uri.SignUp, signUpEl, co)
-	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
-	t.Run(signInEl.name, func(t *testing.T) {
-		testPostHandler(t, uri.SignIn, signInEl, co)
-	})
+	testSignUpIn(t, CertIdentity, co)
 
 	// Publish resources first!
 	for _, test := range tblResourceDirectory {
@@ -188,14 +170,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	}
 	defer co.Close()
 
-	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
-	t.Run(signUpEl.name, func(t *testing.T) {
-		testPostHandler(t, uri.SignUp, signUpEl, co)
-	})
-	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
-	t.Run(signInEl.name, func(t *testing.T) {
-		testPostHandler(t, uri.SignIn, signInEl, co)
-	})
+	testSignUpIn(t, CertIdentity, co)
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {

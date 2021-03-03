@@ -6,11 +6,11 @@ import (
 	"os"
 	"testing"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
@@ -19,11 +19,12 @@ import (
 func TestGetClientConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	os.Setenv("SERVICE_CLIENT_CONFIGURATION_CLOUDURL", "coaps+tcp://"+config.GW_HOST)
 	defer os.Unsetenv("SERVICE_CLIENT_CONFIGURATION_CLOUDURL")
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	webTearDown := test.SetUp(t)
 	defer webTearDown()

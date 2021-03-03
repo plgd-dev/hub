@@ -2,6 +2,7 @@ import PropTypes from 'prop-types'
 import { useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Link } from 'react-router-dom'
+import classNames from 'classnames'
 
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
@@ -9,6 +10,8 @@ import { Table } from '@/components/table'
 import { thingsStatuses, THINGS_DEFAULT_PAGE_SIZE } from './constants'
 import { thingShape } from './shapes'
 import { messages as t } from './things-i18n'
+
+const { ONLINE, UNREGISTERED } = thingsStatuses
 
 export const ThingsList = ({ data }) => {
   const { formatMessage: _ } = useIntl()
@@ -18,9 +21,12 @@ export const ThingsList = ({ data }) => {
       {
         Header: _(t.name),
         accessor: 'device.n',
-        Cell: ({ value, row }) => (
-          <Link to={`/things/${row.original?.device?.di}`}>{value}</Link>
-        ),
+        Cell: ({ value, row }) => {
+          if (row.original?.status === UNREGISTERED) {
+            return <span>{value}</span>
+          }
+          return <Link to={`/things/${row.original?.device?.di}`}>{value}</Link>
+        },
         style: { width: '33%' },
       },
       {
@@ -35,7 +41,7 @@ export const ThingsList = ({ data }) => {
         accessor: 'status',
         style: { width: '120px' },
         Cell: ({ value }) => {
-          const isOnline = thingsStatuses.ONLINE === value
+          const isOnline = ONLINE === value
           return (
             <Badge className={isOnline ? 'green' : 'red'}>
               {isOnline ? _(t.online) : _(t.offline)}
@@ -59,6 +65,11 @@ export const ThingsList = ({ data }) => {
       ]}
       autoFillEmptyRows
       defaultPageSize={THINGS_DEFAULT_PAGE_SIZE}
+      getRowProps={row => ({
+        className: classNames({
+          'grayed-out': row.original?.status === UNREGISTERED,
+        }),
+      })}
     />
   )
 }

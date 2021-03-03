@@ -38,11 +38,12 @@ export const useApi = (url, options = {}) => {
         }
       })()
     },
-    [refreshIndex] // eslint-disable-line
+    [url, refreshIndex] // eslint-disable-line
   )
 
   return {
     ...state,
+    updateData: updatedData => setState({ ...state, data: updatedData }),
     refresh: () => setRefreshIndex(refreshIndex + 1),
   }
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 )
 
@@ -149,10 +149,10 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
 	var errors []error
 	for _, device := range devices {
-		authCtx := pbCQRS.AuthorizationContext{
+		authCtx := commands.AuthorizationContext{
 			DeviceId: device.ID,
 		}
-		cmdMetadata := pbCQRS.CommandMetadata{
+		cmdMetadata := commands.CommandMetadata{
 			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 			Sequence:     header.SequenceNumber,
 		}
@@ -177,10 +177,10 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
 	var errors []error
 	for _, device := range devices {
-		authCtx := pbCQRS.AuthorizationContext{
+		authCtx := commands.AuthorizationContext{
 			DeviceId: device.ID,
 		}
-		cmdMetadata := pbCQRS.CommandMetadata{
+		cmdMetadata := commands.CommandMetadata{
 			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 			Sequence:     header.SequenceNumber,
 		}

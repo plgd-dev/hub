@@ -6,14 +6,13 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/authorization/provider"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRefreshToken(t *testing.T) {
-	s, shutdown := newTestServiceWithProviders(t, provider.NewTestProvider(), provider.NewTestProvider())
+	s, shutdown := newTestServiceWithProviders(t, NewTestProvider(), NewTestProvider())
 	defer shutdown()
 	defer s.cleanUp()
 	r, err := s.service.RefreshToken(context.Background(), newRefreshInRequest())
@@ -25,7 +24,7 @@ func TestRefreshToken(t *testing.T) {
 }
 
 func TestUnauthorizedRefreshToken(t *testing.T) {
-	s, shutdown := newTestServiceWithProviders(t, provider.NewTestProvider(), provider.NewTestProvider())
+	s, shutdown := newTestServiceWithProviders(t, NewTestProvider(), NewTestProvider())
 	defer shutdown()
 	defer s.cleanUp()
 	s.service.deviceProvider = &providerT{t: nil, err: errors.New("unauthorized")}

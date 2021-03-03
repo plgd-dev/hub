@@ -8,12 +8,12 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
@@ -26,8 +26,8 @@ import (
 )
 
 func TestResourceDirectory_GetResourceLinks(t *testing.T) {
-	linkToPtr := func(l pb.ResourceLink) *pb.ResourceLink {
-		return &l
+	linkToPtr := func(l *pb.ResourceLink) *pb.ResourceLink {
+		return l
 	}
 	type args struct {
 		request pb.GetResourceLinksRequest
@@ -47,8 +47,8 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 				},
 			},
 			want: map[string]*pb.ResourceLink{
-				utils.MakeResourceID(Resource1.DeviceId, Resource1.Href): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
-				utils.MakeResourceID(Resource3.DeviceId, Resource3.Href): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
+				Resource1.ToUUID(): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
+				Resource3.ToUUID(): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
 			},
 		},
 	}
@@ -74,7 +74,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
 	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
 
-	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), time.Second)
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), time.Second)
 	require.NoError(t, err)
 
 	rd := service.New(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
@@ -95,28 +95,28 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	}
 }
 
-func newResourceContent(deviceID, href string, resourceTypesp []string, content pbRA.Content) ResourceContent {
+func newResourceContent(deviceID, href string, resourceTypesp []string, content commands.Content) ResourceContent {
 	return ResourceContent{
-		Resource: pbRA.Resource{Id: utils.MakeResourceID(deviceID, href), Href: href, DeviceId: deviceID, ResourceTypes: resourceTypesp},
+		Resource: commands.Resource{Href: href, DeviceId: deviceID, ResourceTypes: resourceTypesp},
 		Content:  content,
 	}
 }
 
-var Resource0 = newResourceContent("0", "a", []string{"t0"}, pbRA.Content{Data: []byte("0.a")})
-var Resource1 = newResourceContent("1", "b", []string{"t1", "t2"}, pbRA.Content{Data: []byte("1.b")})
-var Resource2 = newResourceContent("2", "c", []string{"t1"}, pbRA.Content{Data: []byte("2.c")})
-var Resource3 = newResourceContent("1", "d", []string{"t3", "t8"}, pbRA.Content{Data: []byte("1.d")})
+var Resource0 = newResourceContent("0", "a", []string{"t0"}, commands.Content{Data: []byte("0.a")})
+var Resource1 = newResourceContent("1", "b", []string{"t1", "t2"}, commands.Content{Data: []byte("1.b")})
+var Resource2 = newResourceContent("2", "c", []string{"t1"}, commands.Content{Data: []byte("2.c")})
+var Resource3 = newResourceContent("1", "d", []string{"t3", "t8"}, commands.Content{Data: []byte("1.d")})
 
 func testCreateEventstore() *mockEventStore.MockEventStore {
 	store := mockEventStore.NewMockEventStore()
-	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourcePublishedEvent(Resource0.Resource, utils.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource0.DeviceId, Resource0.Id, mockEvents.MakeResourceChangedEvent(Resource0.Id, Resource0.DeviceId, Resource0.Content, utils.MakeEventMeta("a", 0, 1)))
-	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourcePublishedEvent(Resource1.Resource, utils.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource1.DeviceId, Resource1.Id, mockEvents.MakeResourceChangedEvent(Resource1.Id, Resource1.DeviceId, Resource1.Content, utils.MakeEventMeta("a", 0, 1)))
-	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourcePublishedEvent(Resource2.Resource, utils.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource2.DeviceId, Resource2.Id, mockEvents.MakeResourceChangedEvent(Resource2.Id, Resource2.DeviceId, Resource2.Content, utils.MakeEventMeta("a", 0, 1)))
-	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourcePublishedEvent(Resource3.Resource, utils.MakeEventMeta("a", 0, 0)))
-	store.Append(Resource3.DeviceId, Resource3.Id, mockEvents.MakeResourceChangedEvent(Resource3.Id, Resource3.DeviceId, Resource3.Content, utils.MakeEventMeta("a", 0, 1)))
+	store.Append(Resource0.DeviceId, commands.MakeLinksResourceUUID(Resource0.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&Resource0.Resource}, Resource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource1.DeviceId, commands.MakeLinksResourceUUID(Resource1.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&Resource1.Resource}, Resource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource2.DeviceId, commands.MakeLinksResourceUUID(Resource2.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&Resource2.Resource}, Resource2.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource3.DeviceId, commands.MakeLinksResourceUUID(Resource3.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&Resource3.Resource}, Resource3.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource0.DeviceId, Resource0.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource0.Resource.GetResourceID(), &Resource0.Content, events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource1.DeviceId, Resource1.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource1.Resource.GetResourceID(), &Resource1.Content, events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource2.DeviceId, Resource2.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource2.Resource.GetResourceID(), &Resource2.Content, events.MakeEventMeta("a", 0, 0)))
+	store.Append(Resource3.DeviceId, Resource3.ToUUID(), mockEvents.MakeResourceChangedEvent(Resource3.Resource.GetResourceID(), &Resource3.Content, events.MakeEventMeta("a", 0, 0)))
 	return store
 }
 
@@ -133,6 +133,6 @@ func (s *testGrpcGateway_GetResourceLinksServer) Send(d *pb.ResourceLink) error 
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceLink)
 	}
-	s.got[utils.MakeResourceID(d.DeviceId, d.Href)] = d
+	s.got[(&commands.ResourceId{DeviceId: d.DeviceId, Href: d.Href}).ToUUID()] = d
 	return nil
 }

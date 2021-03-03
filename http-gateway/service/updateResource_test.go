@@ -10,12 +10,12 @@ import (
 
 	"github.com/plgd-dev/kit/codec/json"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -26,9 +26,10 @@ func TestUpdateResource(t *testing.T) {
 	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -60,7 +61,7 @@ func UpdateResource(t *testing.T, deviceID, uri string, request interface{}, res
 	require.NoError(t, err)
 
 	getReq := test.NewRequest("PUT", uri, bytes.NewReader(reqData)).
-		DeviceId(deviceID).AuthToken(authTest.UserToken).Build()
+		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
 	res := test.HTTPDo(t, getReq)
 	defer res.Body.Close()
 
@@ -79,9 +80,10 @@ func TestUpdateResourceInvalidAttribute(t *testing.T) {
 	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -102,7 +104,7 @@ func TestUpdateResourceInvalidAttribute(t *testing.T) {
 	require.NoError(t, err)
 
 	getReq := test.NewRequest("PUT", uri.Device+"/light/1", bytes.NewReader(reqData)).
-		DeviceId(deviceID).AuthToken(authTest.UserToken).Build()
+		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
 	res := test.HTTPDo(t, getReq)
 	defer res.Body.Close()
 	var response interface{}

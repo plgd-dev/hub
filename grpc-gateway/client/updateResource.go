@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 // UpdateResource updates content in OCF-CBOR format.
@@ -28,7 +29,7 @@ func (c *Client) UpdateResource(
 		return err
 	}
 	r := pb.UpdateResourceValuesRequest{
-		ResourceId: &pb.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},

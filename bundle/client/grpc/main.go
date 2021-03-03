@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"flag"
@@ -15,10 +16,12 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/net/http/transport"
 )
 
 func toJSON(v interface{}) string {
@@ -66,10 +69,50 @@ func decodePayload(resp *pbGW.Content) {
 	*/
 }
 
+func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
+	reqBody := map[string]string{
+		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
+		uri.ClientIDKey: service.ClientTest,
+		uri.AudienceKey: "test",
+	}
+	d, err := json.Encode(reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	request, err := http.NewRequest(http.MethodPost, "https://"+authAddr+"/oauth/token", bytes.NewReader(d))
+	if err != nil {
+		return "", err
+	}
+	c := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tls,
+		},
+	}
+	res, err := c.Do(request)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("returns statu code %v", res.StatusCode)
+	}
+	var body map[string]string
+	err = json.ReadFrom(res.Body, &body)
+	if err != nil {
+		return "", err
+	}
+	token := body["access_token"]
+	if token == "" {
+		return "", fmt.Errorf("token not found in body")
+	}
+	return token, nil
+}
+
 func main() {
-	addr := flag.String("addr", "localhost:9084", "address")
+	addr := flag.String("addr", "localhost:443", "address")
 	accesstoken := flag.String("accesstoken", "", "accesstoken")
-	authAddr := flag.String("authaddr", "localhost:9085", "authorization serivce address")
+	authAddr := flag.String("authaddr", "localhost:443", "authorization serivce address")
 	deviceID := flag.String("deviceid", "", "deviceID")
 	href := flag.String("href", "", "href")
 	get := flag.Bool("get", true, "get resources(default) filtered by deviceid and href")
@@ -85,26 +128,12 @@ func main() {
 	tlsCfg := tls.Config{
 		InsecureSkipVerify: true,
 	}
+	var err error
 	if *accesstoken == "" {
-		t := transport.NewDefaultTransport()
-		t.TLSClientConfig = &tlsCfg
-		c := http.Client{
-			Transport: t,
-		}
-		resp, err := c.Get("https://" + *authAddr + "/api/authz/token")
+		*accesstoken, err = getServiceToken(*authAddr, &tlsCfg)
 		if err != nil {
 			log.Fatalf("cannot get access token: %v", err)
 		}
-		defer resp.Body.Close()
-		type at struct {
-			AccessToken string `json:"access_token"`
-		}
-		var a at
-		err = json.ReadFrom(resp.Body, &a)
-		if err != nil {
-			log.Fatalf("cannot read access token: %v", err)
-		}
-		*accesstoken = a.AccessToken
 	}
 
 	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
@@ -118,7 +147,7 @@ func main() {
 	switch {
 	case *delete:
 		resp, err := ocfGW.DeleteResource(ctx, &pbGW.DeleteResourceRequest{
-			ResourceId: &pbGW.ResourceId{
+			ResourceId: &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,
 			},
@@ -137,7 +166,7 @@ func main() {
 			log.Fatalf("cannot read data for update value: %v", err)
 		}
 		resp, err := ocfGW.UpdateResourcesValues(ctx, &pbGW.UpdateResourceValuesRequest{
-			ResourceId: &pbGW.ResourceId{
+			ResourceId: &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,
 			},
@@ -189,9 +218,9 @@ func main() {
 		if *deviceID != "" {
 			deviceIdsFilter = append(deviceIdsFilter, *deviceID)
 		}
-		var resourceIdsFilter []*pbGW.ResourceId
+		var resourceIdsFilter []*commands.ResourceId
 		if *href != "" {
-			resourceIdsFilter = append(resourceIdsFilter, &pbGW.ResourceId{
+			resourceIdsFilter = append(resourceIdsFilter, &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,
 			})

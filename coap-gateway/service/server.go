@@ -69,20 +69,19 @@ type Server struct {
 	oauthMgr              *manager.Manager
 	expirationClientCache *cache.Cache
 
-	coapServer      *tcp.Server
-	listener        tcp.Listener
-	authInterceptor kitNetCoap.Interceptor
-	asConn          *grpc.ClientConn
-	rdConn          *grpc.ClientConn
-	raConn          *grpc.ClientConn
-	ctx             context.Context
-	cancel          context.CancelFunc
-
-	taskQueue *queue.Queue
+	coapServer              *tcp.Server
+	listener                tcp.Listener
+	authInterceptor         kitNetCoap.Interceptor
+	asConn                  *grpc.ClientConn
+	rdConn                  *grpc.ClientConn
+	raConn                  *grpc.ClientConn
+	ctx                     context.Context
+	cancel                  context.CancelFunc
+	taskQueue               *queue.Queue
+	userDeviceSubscriptions *kitSync.Map
+	devicesStatusUpdater    *devicesStatusUpdater
 
 	sigs chan os.Signal
-
-	userDeviceSubscriptions *kitSync.Map
 }
 
 type DialCertManager = interface {
@@ -108,7 +107,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 			return
 		}
 		client := c.(*Client)
-		authCtx, err := client.loadAuthorizationContext()
+		authCtx, err := client.GetAuthorizationContext()
 		if err != nil {
 			client.Close()
 			log.Debugf("device %v token has ben expired", authCtx.GetDeviceID())
@@ -235,6 +234,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		oicPingCache:          oicPingCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
+		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.DeviceStatusExpiration),
 
 		sigs: make(chan os.Signal, 1),
 
@@ -254,7 +254,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 func getDeviceID(client *Client) string {
 	deviceID := "unknown"
 	if client != nil {
-		authCtx, _ := client.loadAuthorizationContext()
+		authCtx, _ := client.GetAuthorizationContext()
 		deviceID = authCtx.GetDeviceID()
 		if deviceID == "" {
 			deviceID = fmt.Sprintf("unknown(%v)", client.remoteAddrString())
@@ -448,7 +448,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 		if !ok {
 			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
 		}
-		authCtx, _ := client.loadAuthorizationContext()
+		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)

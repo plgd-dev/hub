@@ -81,7 +81,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	assert.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -92,7 +92,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 
-			ag, err := NewAggregate(&commands.ResourceId{DeviceId: tt.args.request.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
 			events, err := ag.PublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
@@ -102,7 +102,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 				assert.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = publishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.resourceID, events)
+				err = publishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
 				assert.NoError(t, err)
 			}
 		}
@@ -113,7 +113,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: pc.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.PublishResourceLinks(ctx, pc)
 	if hasErr {
@@ -123,14 +123,14 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nat
 		assert.Equal(t, expStatusCode, s.Code())
 	} else {
 		require.NoError(t, err)
-		err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+		err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 		assert.NoError(t, err)
 	}
 }
 
 func TestAggregateDuplicitPublishResource(t *testing.T) {
 	deviceID := "dupDeviceId"
-	resourceID := "dupResourceId"
+	resourceID := "/dupResourceId"
 	userID := "dupResourceId"
 	var cmconfig certManager.Config
 	err := envconfig.Process("DIAL", &cmconfig)
@@ -147,14 +147,14 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc1 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 
@@ -162,14 +162,14 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag2, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 	events, err = ag2.PublishResourceLinks(ctx, pc2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag3, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag3, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc3 := testMakePublishResourceRequest(deviceID, []string{resourceID, resourceID, resourceID})
 	events, err = ag3.PublishResourceLinks(ctx, pc3)
@@ -202,7 +202,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -213,12 +213,12 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: pc.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -252,7 +252,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 
 	defer func() {
@@ -264,14 +264,17 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: pc.GetDeviceId(), Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-	assert.Equal(t, []string{resourceID1, resourceID2, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+	unpublishedResourceLinks := (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs
+	assert.Equal(t, 3, len(unpublishedResourceLinks))
+	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
+
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -308,7 +311,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -317,7 +320,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4}, codes.OK, false)
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: commands.ResourceLinksHref}, 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID3})
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
@@ -325,7 +328,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	pc = testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID4, resourceID4})
@@ -366,7 +369,6 @@ func testMakeUnpublishResourceRequest(deviceID string, hrefs []string) *commands
 }
 
 func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64) *commands.NotifyResourceChangedRequest {
-
 	r := commands.NotifyResourceChangedRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -629,7 +631,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
 
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -638,7 +640,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -721,18 +723,23 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
 
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
+
 			gotEvents, err := ag.UpdateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -802,20 +809,24 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceUpdate(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -884,18 +895,22 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.RetrieveResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -965,18 +980,22 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceRetrieve(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1053,18 +1072,22 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.DeleteResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1135,18 +1158,22 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceDelete(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1216,18 +1243,22 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.CreateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -1298,18 +1329,22 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 	var jsmCfg mongodb.Config
 	err = envconfig.Process("", &jsmCfg)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&commands.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceCreate(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)

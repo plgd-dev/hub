@@ -1,25 +1,24 @@
 package refImpl
 
 import (
-	"os"
 	"testing"
 
-	testAS "github.com/plgd-dev/cloud/authorization/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/kelseyhightower/envconfig"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInit(t *testing.T) {
-	asShutdown := testAS.SetUp(t)
-	defer asShutdown()
+	authShutdown := oauthTest.New(t, oauthTest.MakeConfig(t))
+	defer authShutdown()
 
 	var config Config
-	os.Setenv("OAUTH_CALLBACK", "OAUTH_CALLBACK")
-	os.Setenv("EVENTS_URL", "EVENTS_URL")
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
+	config.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	config.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 
 	got, err := Init(config)
 	require.NoError(t, err)

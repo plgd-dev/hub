@@ -1,7 +1,7 @@
 {
-  "domain": "",
-  "clientID": "",
-  "audience": "",
-  "scope": "",
-  "httpGatewayAddress": ""
+  "domain": "localhost:20008",
+  "clientID": "ui",
+  "audience": "localhost:20008",
+  "scope": "openid offline_access",
+  "httpGatewayAddress": "localhost:20008"
 }

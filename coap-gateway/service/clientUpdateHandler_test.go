@@ -48,7 +48,7 @@ func Test_clientUpdateHandler(t *testing.T) {
 			args: args{
 				href:          uri.ResourceRoute + "/" + CertIdentity + "/notFound",
 				contentFormat: message.TextPlain,
-				payload:       []byte{},
+				payload:       []byte("data"),
 			},
 			wantsCode: coapCodes.NotFound,
 		},

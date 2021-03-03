@@ -44,7 +44,7 @@ type Device struct {
 
 type RetrieveDeviceWithLinksResponse struct {
 	Device
-	Links []schema.ResourceLink `json:"links"`
+	Links []schema.ResourceLink `json:"links,omitempty"`
 }
 
 func toResourceLinks(s []*pb.ResourceLink) []schema.ResourceLink {
@@ -55,7 +55,7 @@ func toResourceLinks(s []*pb.ResourceLink) []schema.ResourceLink {
 	return r
 }
 
-func mapToDevice(d client.DeviceDetails) RetrieveDeviceWithLinksResponse {
+func mapToDevice(d *client.DeviceDetails) RetrieveDeviceWithLinksResponse {
 	return RetrieveDeviceWithLinksResponse{
 		Device: Device{
 			Device: d.Device.ToSchema(),

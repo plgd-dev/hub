@@ -50,7 +50,7 @@ func ping(req *mux.Message, client *Client) {
 	defer func() {
 		log.Debugf("resourcePing takes %v", time.Since(t))
 	}()
-	authCtx, _ := client.loadAuthorizationContext()
+	authCtx, _ := client.GetAuthorizationContext()
 	deviceID := authCtx.GetDeviceID()
 	if deviceID == "" {
 		deviceID = "unknown"
@@ -79,7 +79,7 @@ func pingOnEvicted(key string, v interface{}) {
 		case <-client.coapConn.Context().Done():
 		default:
 			client.Close()
-			authCtx, _ := client.loadAuthorizationContext()
+			authCtx, _ := client.GetAuthorizationContext()
 			deviceID := authCtx.GetDeviceID()
 			if deviceID == "" {
 				deviceID = "unknown"

@@ -4,10 +4,11 @@ $table_header_height: 40px;
 $table_row_height: 60px;
 
 .plgd-table {
-  box-shadow: -10px 0px 40px $black_20;
+  box-shadow: -10px 0px 40px $shadow_100;
+  position: relative;
 
   table.table {
-    color: $text_desc;
+    color: $secondary_40;
     margin-bottom: 0;
     line-height: 1;
 
@@ -21,7 +22,7 @@ $table_row_height: 60px;
     }
 
     thead {
-      background-color: $black_20;
+      background-color: $secondary_20;
 
       th {
         height: $table_header_height;
@@ -41,11 +42,11 @@ $table_row_height: 60px;
               align-items: center;
               justify-content: center;
               font-size: 10px;
-              color: $blue_100;
+              color: $primary_100;
             }
     
             &.asc i.icon-asc, &.desc i.icon-desc {
-              color: $orange_100;
+              color: $warning_100;
             }
           }
         }
@@ -65,11 +66,11 @@ $table_row_height: 60px;
     &.table-striped {
       tbody {
         tr:nth-of-type(odd) {
-          background-color: $white_100;
+          background-color: $light_100;
         }
 
         tr:nth-of-type(even) {
-          background-color: rgba($black_20, 0.4);
+          background-color: rgba($secondary_20, 0.4);
         }
       }
     }

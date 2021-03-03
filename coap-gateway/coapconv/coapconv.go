@@ -231,7 +231,7 @@ func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.
 	}
 
 	return &pbGRPC.UpdateResourceValuesRequest{
-		ResourceId: &pbGRPC.ResourceId{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},

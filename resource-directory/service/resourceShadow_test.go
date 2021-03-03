@@ -9,8 +9,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test"
@@ -50,7 +50,7 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			name: "filter by resource Id",
 			args: args{
 				req: &pb.RetrieveResourcesValuesRequest{
-					ResourceIdsFilter: []*pb.ResourceId{
+					ResourceIdsFilter: []*commands.ResourceId{
 						{
 							DeviceId: Resource1.DeviceId,
 							Href:     Resource1.Href,
@@ -62,16 +62,16 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pb.ResourceValue{
-				Resource1.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource1.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource1.DeviceId,
 						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
-				Resource2.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource2.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource2.DeviceId,
 						Href:     Resource2.Href,
 					},
@@ -89,16 +89,16 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pb.ResourceValue{
-				Resource1.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource1.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource1.DeviceId,
 						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
-				Resource3.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource3.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource3.DeviceId,
 						Href:     Resource3.Href,
 					},
@@ -116,16 +116,16 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pb.ResourceValue{
-				Resource1.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource1.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource1.DeviceId,
 						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
-				Resource2.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource2.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource2.DeviceId,
 						Href:     Resource2.Href,
 					},
@@ -144,8 +144,8 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				},
 			},
 			want: map[string]*pb.ResourceValue{
-				Resource1.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource1.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource1.DeviceId,
 						Href:     Resource1.Href,
 					},
@@ -161,24 +161,24 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 				req: &pb.RetrieveResourcesValuesRequest{},
 			},
 			want: map[string]*pb.ResourceValue{
-				Resource1.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource1.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource1.DeviceId,
 						Href:     Resource1.Href,
 					},
 					Content: pb.RAContent2Content(&Resource1.Content),
 					Types:   Resource1.ResourceTypes,
 				},
-				Resource2.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource2.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource2.DeviceId,
 						Href:     Resource2.Href,
 					},
 					Content: pb.RAContent2Content(&Resource2.Content),
 					Types:   Resource2.ResourceTypes,
 				},
-				Resource3.Id: {
-					ResourceId: &pb.ResourceId{
+				Resource3.Href: {
+					ResourceId: &commands.ResourceId{
 						DeviceId: Resource3.DeviceId,
 						Href:     Resource3.Href,
 					},
@@ -210,7 +210,7 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
 	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
 
-	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewResourceCtx(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), time.Second)
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), time.Second)
 	require.NoError(t, err)
 
 	rd := service.NewResourceShadow(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
@@ -245,6 +245,6 @@ func (s *testGrpcGateway_RetrieveResourcesValuesServer) Send(d *pb.ResourceValue
 	if s.got == nil {
 		s.got = make(map[string]*pb.ResourceValue)
 	}
-	s.got[utils.MakeResourceID(d.GetResourceId().GetDeviceId(), d.GetResourceId().GetHref())] = d
+	s.got[d.GetResourceId().GetHref()] = d
 	return nil
 }

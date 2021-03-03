@@ -9,9 +9,7 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
@@ -100,36 +98,31 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 	for _, link := range links {
 		deviceID := d.subscription.DeviceID
 		link.DeviceID = deviceID
-		endpoints := make([]*pbRA.EndpointInformation, 0, 4)
+		endpoints := make([]*commands.EndpointInformation, 0, 4)
 		for _, endpoint := range link.GetEndpoints() {
-			endpoints = append(endpoints, &pbRA.EndpointInformation{
+			endpoints = append(endpoints, &commands.EndpointInformation{
 				Endpoint: endpoint.URI,
 				Priority: int64(endpoint.Priority),
 			})
 		}
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-		resourceID := utils.MakeResourceID(link.DeviceID, href)
-		_, err := s.raClient.PublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.PublishResourceRequest{
-			AuthorizationContext: &pbCQRS.AuthorizationContext{
+		_, err := s.raClient.PublishResourceLinks(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &commands.PublishResourceLinksRequest{
+			DeviceId: link.DeviceID,
+			AuthorizationContext: &commands.AuthorizationContext{
 				DeviceId: link.DeviceID,
 			},
-			ResourceId: &pbRA.ResourceId{
-				DeviceId: link.DeviceID,
-				Href:     href,
-			},
-			Resource: &pbRA.Resource{
-				Id:                    resourceID,
+			Resources: []*commands.Resource{&commands.Resource{
 				Href:                  href,
 				ResourceTypes:         link.ResourceTypes,
 				Interfaces:            link.Interfaces,
 				DeviceId:              link.DeviceID,
 				Anchor:                link.Anchor,
-				Policies:              &pbRA.Policies{BitFlags: int32(link.Policy.BitMask)},
+				Policies:              &commands.Policies{BitFlags: int32(link.Policy.BitMask)},
 				Title:                 link.Title,
 				SupportedContentTypes: link.SupportedContentTypes,
 				EndpointInformations:  endpoints,
-			},
-			CommandMetadata: &pbCQRS.CommandMetadata{
+			}},
+			CommandMetadata: &commands.CommandMetadata{
 				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,
 			},
@@ -161,15 +154,13 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-		_, err := s.raClient.UnpublishResource(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &pbRA.UnpublishResourceRequest{
-			AuthorizationContext: &pbCQRS.AuthorizationContext{
-				DeviceId: link.DeviceID,
-			},
-			ResourceId: &pbRA.ResourceId{
+		_, err := s.raClient.UnpublishResourceLinks(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &commands.UnpublishResourceLinksRequest{
+			AuthorizationContext: &commands.AuthorizationContext{
 				DeviceId: link.GetDeviceID(),
-				Href:     href,
 			},
-			CommandMetadata: &pbCQRS.CommandMetadata{
+			DeviceId: link.GetDeviceID(),
+			Hrefs:    []string{href},
+			CommandMetadata: &commands.CommandMetadata{
 				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 				Sequence:     header.SequenceNumber,
 			},

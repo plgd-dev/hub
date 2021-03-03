@@ -81,7 +81,7 @@ var d5res2 = commands.Resource{
 func makeEventMeta(connectionID string, sequence, version uint64) *events.EventMetadata {
 	e := events.MakeEventMeta(connectionID, sequence, version)
 	e.TimestampMs = 12345
-	return &e
+	return e
 }
 
 func prepareResourceLinksEventstore(t *testing.T) *mockEventStore.MockEventStore {
@@ -121,21 +121,21 @@ func prepareResourceStateEventstore(t *testing.T) *mockEventStore.MockEventStore
 	eventstore := mockEventStore.NewMockEventStore()
 	resourceChangedEventMetadata := makeEventMeta("", 0, 0)
 
-	d1r1 := &commands.ResourceId{DeviceId: d1res1.DeviceId, Href: d1res1.Href}
+	d1r1 := commands.NewResourceID(d1res1.DeviceId, d1res1.Href)
 	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r1, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0)))
 	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 0, 1)))
 	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 0, 2)))
 	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdated(d1r1, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 0, 3)))
 	eventstore.Append(d1res1.DeviceId, d1r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r1, &commands.Content{}, makeEventMeta("a", 0, 4)))
 
-	d1r2 := &commands.ResourceId{DeviceId: d1res2.DeviceId, Href: d1res2.Href}
+	d1r2 := commands.NewResourceID(d1res2.DeviceId, d1res2.Href)
 	eventstore.Append(d1res2.DeviceId, d1r2.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r2, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0)))
 
-	d1r3 := &commands.ResourceId{DeviceId: d1res3.DeviceId, Href: d1res3.Href}
+	d1r3 := commands.NewResourceID(d1res3.DeviceId, d1res3.Href)
 	eventstore.Append(d1res3.DeviceId, d1r3.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r3, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0)))
 	eventstore.Append(d1res3.DeviceId, d1r3.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r3, &commands.Content{}, makeEventMeta("a", 0, 1)))
 
-	d1r4 := &commands.ResourceId{DeviceId: d1res4.DeviceId, Href: d1res4.Href}
+	d1r4 := commands.NewResourceID(d1res4.DeviceId, d1res4.Href)
 	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r4, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0)))
 	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 0, 1)))
 	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 0, 2)))
@@ -143,12 +143,12 @@ func prepareResourceStateEventstore(t *testing.T) *mockEventStore.MockEventStore
 	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d1r4, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 4)))
 	eventstore.Append(d1res4.DeviceId, d1r4.ToUUID(), mockEvents.MakeResourceUpdatePending(d1r4, &commands.Content{}, makeEventMeta("a", 0, 5)))
 
-	d2r1 := &commands.ResourceId{DeviceId: d2res1.DeviceId, Href: d2res1.Href}
+	d2r1 := commands.NewResourceID(d2res1.DeviceId, d2res1.Href)
 	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d2r1, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0)))
 	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceUpdatePending(d2r1, &commands.Content{}, makeEventMeta("a", 0, 1)))
 	eventstore.Append(d2res1.DeviceId, d2r1.ToUUID(), mockEvents.MakeResourceUpdated(d2r1, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 0, 2)))
 
-	d2r2 := &commands.ResourceId{DeviceId: d2res2.DeviceId, Href: d2res2.Href}
+	d2r2 := commands.NewResourceID(d2res2.DeviceId, d2res2.Href)
 	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceStateSnapshotTaken(d2r2, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0, 0)))
 	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceUpdatePending(d2r2, &commands.Content{}, makeEventMeta("a", 0, 1)))
 	eventstore.Append(d2res2.DeviceId, d2r2.ToUUID(), mockEvents.MakeResourceUpdated(d2r2, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 0, 2)))
@@ -196,7 +196,7 @@ func TestResourceProjection_Register(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context) (cqrsEventStore.Model, error) {
+		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
@@ -263,7 +263,7 @@ func TestResourceProjection_Unregister(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context) (cqrsEventStore.Model, error) {
+		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
@@ -397,7 +397,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context) (cqrsEventStore.Model, error) {
+		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
@@ -407,7 +407,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err = p.Register(ctx, tt.args.deviceID)
 			assert.NoError(t, err)
-			got := p.Models(tt.args.deviceID, commands.MakeLinksResourceUUID(tt.args.deviceID))
+			got := p.Models(commands.NewResourceID(tt.args.deviceID, commands.ResourceLinksHref))
 
 			mapWant := make(map[string]*events.ResourceLinksSnapshotTaken)
 			for _, r := range tt.want {
@@ -427,8 +427,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 
 func TestResourceStateProjection_Models(t *testing.T) {
 	type args struct {
-		deviceID   string
-		resourceID string
+		resourceID *commands.ResourceId
 	}
 	tests := []struct {
 		name string
@@ -438,12 +437,11 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev1r1",
 			args: args{
-				deviceID:   d1res1.DeviceId,
-				resourceID: (&commands.ResourceId{DeviceId: d1res1.DeviceId, Href: d1res1.Href}).ToUUID(),
+				resourceID: commands.NewResourceID(d1res1.DeviceId, d1res1.Href),
 			},
 			want: []eventstore.Model{
 				&events.ResourceStateSnapshotTaken{
-					ResourceId: &commands.ResourceId{DeviceId: d1res1.DeviceId, Href: d1res1.Href},
+					ResourceId: commands.NewResourceID(d1res1.DeviceId, d1res1.Href),
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
@@ -462,12 +460,11 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev1r2",
 			args: args{
-				deviceID:   d1res2.DeviceId,
-				resourceID: (&commands.ResourceId{DeviceId: d1res2.DeviceId, Href: d1res2.Href}).ToUUID(),
+				resourceID: commands.NewResourceID(d1res2.DeviceId, d1res2.Href),
 			},
 			want: []eventstore.Model{
 				&events.ResourceStateSnapshotTaken{
-					ResourceId: &commands.ResourceId{DeviceId: d1res2.DeviceId, Href: d1res2.Href},
+					ResourceId: commands.NewResourceID(d1res2.DeviceId, d1res2.Href),
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
@@ -486,12 +483,11 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev1r3",
 			args: args{
-				deviceID:   d1res3.DeviceId,
-				resourceID: (&commands.ResourceId{DeviceId: d1res3.DeviceId, Href: d1res3.Href}).ToUUID(),
+				resourceID: commands.NewResourceID(d1res3.DeviceId, d1res3.Href),
 			},
 			want: []eventstore.Model{
 				&events.ResourceStateSnapshotTaken{
-					ResourceId: &commands.ResourceId{DeviceId: d1res3.DeviceId, Href: d1res3.Href},
+					ResourceId: commands.NewResourceID(d1res3.DeviceId, d1res3.Href),
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
@@ -510,12 +506,11 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev1r4",
 			args: args{
-				deviceID:   d1res4.DeviceId,
-				resourceID: (&commands.ResourceId{DeviceId: d1res4.DeviceId, Href: d1res4.Href}).ToUUID(),
+				resourceID: commands.NewResourceID(d1res4.DeviceId, d1res4.Href),
 			},
 			want: []eventstore.Model{
 				&events.ResourceStateSnapshotTaken{
-					ResourceId: &commands.ResourceId{DeviceId: d1res4.DeviceId, Href: d1res4.Href},
+					ResourceId: commands.NewResourceID(d1res4.DeviceId, d1res4.Href),
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
@@ -534,12 +529,11 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev2r1",
 			args: args{
-				deviceID:   d2res1.DeviceId,
-				resourceID: (&commands.ResourceId{DeviceId: d2res1.DeviceId, Href: d2res1.Href}).ToUUID(),
+				resourceID: commands.NewResourceID(d2res1.DeviceId, d2res1.Href),
 			},
 			want: []eventstore.Model{
 				&events.ResourceStateSnapshotTaken{
-					ResourceId: &commands.ResourceId{DeviceId: d2res1.DeviceId, Href: d2res1.Href},
+					ResourceId: commands.NewResourceID(d2res1.DeviceId, d2res1.Href),
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
@@ -558,14 +552,13 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		{
 			name: "valid dev2r2",
 			args: args{
-				deviceID:   d2res2.DeviceId,
-				resourceID: (&commands.ResourceId{DeviceId: d2res2.DeviceId, Href: d2res2.Href}).ToUUID(),
+				resourceID: commands.NewResourceID(d2res2.DeviceId, d2res2.Href),
 			},
 			want: []eventstore.Model{
 				&events.ResourceStateSnapshotTaken{
-					ResourceId: &commands.ResourceId{DeviceId: d2res2.DeviceId, Href: d2res2.Href},
+					ResourceId: commands.NewResourceID(d2res2.DeviceId, d2res2.Href),
 					LatestResourceChange: &events.ResourceChanged{
-						ResourceId:   &commands.ResourceId{DeviceId: d2res2.DeviceId, Href: d2res2.Href},
+						ResourceId:   commands.NewResourceID(d2res2.DeviceId, d2res2.Href),
 						Content:      &commands.Content{},
 						AuditContext: &commands.AuditContext{UserId: "userId", DeviceId: "dev2"},
 						EventMetadata: &events.EventMetadata{
@@ -592,7 +585,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context) (cqrsEventStore.Model, error) {
+		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
 			return events.NewResourceStateSnapshotTaken(), nil
 		},
 	)
@@ -600,9 +593,9 @@ func TestResourceStateProjection_Models(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err = p.Register(ctx, tt.args.deviceID)
+			_, err = p.Register(ctx, tt.args.resourceID.GetDeviceId())
 			assert.NoError(t, err)
-			got := p.Models(tt.args.deviceID, tt.args.resourceID)
+			got := p.Models(tt.args.resourceID)
 
 			mapWant := make(map[string]*events.ResourceStateSnapshotTaken)
 			for _, r := range tt.want {
@@ -622,8 +615,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 
 func TestResourceProjection_ForceUpdate(t *testing.T) {
 	type args struct {
-		deviceID   string
-		resourceID string
+		resourceID *commands.ResourceId
 	}
 	tests := []struct {
 		name    string
@@ -633,13 +625,13 @@ func TestResourceProjection_ForceUpdate(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				deviceID: d1res1.DeviceId,
+				resourceID: commands.NewResourceID(d1res1.DeviceId, d1res1.Href),
 			},
 		},
 		{
 			name: "error",
 			args: args{
-				deviceID: "error",
+				resourceID: &commands.ResourceId{},
 			},
 			wantErr: true,
 		},
@@ -652,7 +644,7 @@ func TestResourceProjection_ForceUpdate(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context) (cqrsEventStore.Model, error) {
+		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
 			return events.NewResourceStateSnapshotTaken(), nil
 		},
 	)
@@ -661,7 +653,7 @@ func TestResourceProjection_ForceUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := p.ForceUpdate(ctx, tt.args.deviceID, tt.args.resourceID)
+			err := p.ForceUpdate(ctx, tt.args.resourceID)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

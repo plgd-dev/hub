@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 
-func sortDevices(s map[string]client.DeviceDetails) map[string]client.DeviceDetails {
+func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDetails {
 	for key, x := range s {
 		x.Resources = test.SortResources(x.Resources)
 		x.Device.ProtocolIndependentId = ""
@@ -24,6 +24,10 @@ func sortDevices(s map[string]client.DeviceDetails) map[string]client.DeviceDeta
 }
 
 func TestClient_GetDevices(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
+	defer cancel()
+	tearDown := test.SetUp(ctx, t)
+	defer tearDown()
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		token string
@@ -38,28 +42,23 @@ func TestClient_GetDevices(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				token: authTest.UserToken,
+				token: oauthTest.GetServiceToken(t),
 			},
 			want: map[string]client.DeviceDetails{
-				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName),
+				deviceID: NewTestDeviceSimulator(deviceID, test.TestDeviceName, false),
 			},
 		},
 		{
 			name: "not-found",
 			args: args{
-				token: authTest.UserToken,
+				token: oauthTest.GetServiceToken(t),
 				opts:  []client.GetDevicesOption{client.WithResourceTypes("not-found")},
 			},
 			wantErr: true,
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TestTimeout)
-	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
