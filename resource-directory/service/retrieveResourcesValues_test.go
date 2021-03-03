@@ -24,9 +24,24 @@ func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.Resourc
 	for idx := range want {
 		dataWant := want[idx].GetContent().GetData()
 		datagot := got[idx].GetContent().GetData()
-		want[idx].Content.Data = nil
-		got[idx].Content.Data = nil
-		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
+		w1 := &pb.ResourceValue{
+			ResourceId: want[idx].GetResourceId(),
+			Types:      want[idx].GetTypes(),
+			Content: &pb.Content{
+				ContentType: want[idx].GetContent().GetContentType(),
+			},
+			Status: want[idx].GetStatus(),
+		}
+		w2 := &pb.ResourceValue{
+			ResourceId: got[idx].GetResourceId(),
+			Types:      got[idx].GetTypes(),
+			Content: &pb.Content{
+				ContentType: got[idx].GetContent().GetContentType(),
+			},
+			Status: got[idx].GetStatus(),
+		}
+		w2.Content.Data = nil
+		test.CheckProtobufs(t, w1, w2, test.RequireToCheckFunc(require.Equal))
 		w := test.DecodeCbor(t, dataWant)
 		g := test.DecodeCbor(t, datagot)
 		require.Equal(t, w, g)

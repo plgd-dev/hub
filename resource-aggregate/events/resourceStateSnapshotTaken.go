@@ -200,8 +200,30 @@ func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := e.HandleEventResourceDeleted(ctx, &s); err != nil {
 				return err
 			}
+		case (&ResourceDeletePending{}).EventType():
+			var s ResourceDeletePending
+			if err := eu.Unmarshal(&s); err != nil {
+				return status.Errorf(codes.Internal, "%v", err)
+			}
+			if err := e.HandleEventResourceDeletePending(ctx, &s); err != nil {
+				return err
+			}
 		case (&ResourceRetrieved{}).EventType():
+			var s ResourceRetrieved
+			if err := eu.Unmarshal(&s); err != nil {
+				return status.Errorf(codes.Internal, "%v", err)
+			}
+			if err := e.HandleEventResourceRetrieved(ctx, &s); err != nil {
+				return err
+			}
 		case (&ResourceRetrievePending{}).EventType():
+			var s ResourceRetrievePending
+			if err := eu.Unmarshal(&s); err != nil {
+				return status.Errorf(codes.Internal, "%v", err)
+			}
+			if err := e.HandleEventResourceRetrievePending(ctx, &s); err != nil {
+				return err
+			}
 		}
 	}
 	return iter.Err()
@@ -469,11 +491,16 @@ func (e *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 		return nil, false
 	}
 	e.EventMetadata.Version = version
-	return e, true
+	// we need to return as new event because `e` is a pointer,
+	// otherwise ResourceStateSnapshotTaken.Handle override version of snapshot which will be fired to eventbus
+	return &ResourceStateSnapshotTaken{
+		ResourceId:           e.GetResourceId(),
+		LatestResourceChange: e.GetLatestResourceChange(),
+		EventMetadata:        e.GetEventMetadata(),
+	}, true
 }
 
 func NewResourceStateSnapshotTaken() *ResourceStateSnapshotTaken {
-
 	return &ResourceStateSnapshotTaken{
 		EventMetadata: &EventMetadata{},
 	}

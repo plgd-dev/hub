@@ -173,7 +173,18 @@ func (e *ResourceLinksSnapshotTaken) SnapshotEventType() string { return e.Event
 
 func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
 	e.EventMetadata.Version = version
-	return e, true
+
+	// we need to return as new event because `e` is a pointer,
+	// otherwise ResourceLinksSnapshotTaken.Handle override version/resource of snapshot which will be fired to eventbus
+	resources := make(map[string]*commands.Resource)
+	for key, resource := range e.GetResources() {
+		resources[key] = resource
+	}
+	return &ResourceLinksSnapshotTaken{
+		DeviceId:      e.GetDeviceId(),
+		EventMetadata: e.GetEventMetadata(),
+		Resources:     resources,
+	}, true
 }
 
 func NewResourceLinksSnapshotTaken() *ResourceLinksSnapshotTaken {

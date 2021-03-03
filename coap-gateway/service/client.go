@@ -172,16 +172,18 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
 		return
 	}
-	defer pool.ReleaseMessage(resp)
-	err = client.notifyContentChanged(deviceID, href, resp)
-	if err != nil {
-		// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
-		client.Close()
-	}
-	if resp.Code() == coapCodes.NotFound {
-		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href})
-	}
+	client.server.taskQueue.Submit(func() {
+		defer pool.ReleaseMessage(resp)
+		err = client.notifyContentChanged(deviceID, href, resp)
+		if err != nil {
+			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
+			log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
+			client.Close()
+		}
+		if resp.Code() == coapCodes.NotFound {
+			client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href})
+		}
+	})
 }
 
 func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, isObservable bool, obsRes *observedResource) {
@@ -190,15 +192,19 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 	}
 	if isObservable {
 		obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
-			err := client.notifyContentChanged(deviceID, obsRes.href, req)
-			if err != nil {
-				// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-				log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
-				client.Close()
-			}
-			if req.Code() == coapCodes.NotFound {
-				client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
-			}
+			req.Hijack()
+			client.server.taskQueue.Submit(func() {
+				err := client.notifyContentChanged(deviceID, obsRes.href, req)
+				defer pool.ReleaseMessage(req)
+				if err != nil {
+					// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
+					log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
+					client.Close()
+				}
+				if req.Code() == coapCodes.NotFound {
+					client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
+				}
+			})
 		})
 		if err != nil {
 			log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)

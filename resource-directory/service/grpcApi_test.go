@@ -212,17 +212,19 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
-				var d map[string]interface{}
-				err := cbor.Decode(got.GetContent().GetData(), &d)
-				require.NoError(t, err)
-				delete(d, "piid")
-				assert.Equal(t, tt.want, d)
+			for i := 0; i < 17; i++ {
+				got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
+				if tt.wantErr {
+					require.Error(t, err)
+				} else {
+					require.NoError(t, err)
+					assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
+					var d map[string]interface{}
+					err := cbor.Decode(got.GetContent().GetData(), &d)
+					require.NoError(t, err)
+					delete(d, "piid")
+					assert.Equal(t, tt.want, d)
+				}
 			}
 		})
 	}

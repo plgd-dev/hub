@@ -277,6 +277,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *co
 	if err != nil {
 		log.Errorf("cannot publish resource content retrieve confirmation events: %v", err)
 	}
+
 	auditContext := commands.NewAuditContext(request.GetAuthorizationContext().GetDeviceId(), userID, request.GetCorrelationId())
 	return &commands.ConfirmResourceRetrieveResponse{
 		AuditContext: auditContext,
