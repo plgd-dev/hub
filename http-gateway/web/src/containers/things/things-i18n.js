@@ -103,6 +103,11 @@ export const messages = defineMessages({
     defaultMessage:
       'The resource was updated successfully, changes will be applied once the device is online.',
   },
+  resourceWasDeletedOffline: {
+    id: 'things.resourceWasUpdatedOffline',
+    defaultMessage:
+      'Deleting of the resource was scheduled, but it will be executed once the device is online.',
+  },
   resourceWasCreated: {
     id: 'things.resourceWasCreated',
     defaultMessage: 'The resource was created successfully.',
@@ -203,6 +208,7 @@ export const messages = defineMessages({
   },
   resourceUpdatedDesc: {
     id: 'things.resourceUpdatedDesc',
-    defaultMessage: 'Resource {href} on a thing called {deviceName} was updated.',
+    defaultMessage:
+      'Resource {href} on a thing called {deviceName} was updated.',
   },
 })

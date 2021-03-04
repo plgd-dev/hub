@@ -239,14 +239,6 @@ export const ThingsDetailsPage = () => {
     try {
       await deleteThingsResourceApi({ deviceId: id, href: deleteResourceHref })
 
-      // DeadlineExceeded - shoule we handle this error?
-
-      // await new Promise(resolve =>
-      //   setTimeout(() => {
-      //     resolve()
-      //   }, 3000)
-      // )
-
       if (isMounted.current) {
         showSuccessToast({
           title: _(t.resourceDeleteSuccess),
@@ -258,7 +250,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleDeleteResourceErrors(error, _)
+        handleDeleteResourceErrors(error, isOnline, _)
         setLoadingResource(false)
         closeDeleteModal()
       }

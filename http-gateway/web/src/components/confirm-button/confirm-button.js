@@ -4,8 +4,6 @@ import PropTypes from 'prop-types'
 import { ConfirmModal } from '@/components/confirm-modal'
 import { Button } from '@/components/button'
 
-const NOOP = () => {}
-
 export const ConfirmButton = ({
   onConfirm,
   children,
@@ -44,7 +42,7 @@ export const ConfirmButton = ({
       <ConfirmModal
         {...modalProps}
         show={show}
-        onClose={!loading ? close : NOOP}
+        onClose={close}
         title={title}
         body={body}
         loading={loading}

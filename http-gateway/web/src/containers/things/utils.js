@@ -73,11 +73,22 @@ export const handleFetchResourceErrors = (error, _) =>
   })
 
 // Handle the errors occured during resource fetch
-export const handleDeleteResourceErrors = (error, _) =>
-  showErrorToast({
-    title: _(t.resourceDeleteError),
-    message: getApiErrorMessage(error),
-  })
+export const handleDeleteResourceErrors = (error, isOnline, _) => {
+  const errorMessage = getApiErrorMessage(error)
+
+  if (!isOnline && errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
+    // Resource update went through, but it will be applied once the device comes online
+    showWarningToast({
+      title: _(t.resourceDeleteSuccess),
+      message: _(t.resourceWasDeletedOffline),
+    })
+  } else {
+    showErrorToast({
+      title: _(t.resourceDeleteError),
+      message: errorMessage,
+    })
+  }
+}
 
 // Updates the device data with an object of { deviceId, status } which came from the WS events.
 export const updateThingsDataStatus = (data, { deviceId, status }) => {
