@@ -1,6 +1,12 @@
 import { getApiErrorMessage } from '@/common/utils'
 import { showErrorToast, showWarningToast } from '@/components/toast'
-import { knownInterfaces, errorCodes } from './constants'
+import {
+  knownInterfaces,
+  errorCodes,
+  THINGS_WS_KEY,
+  THINGS_RESOURCE_REGISTRATION_WS_KEY,
+  THINGS_RESOURCE_UPDATE_WS_KEY,
+} from './constants'
 import { messages as t } from './things-i18n'
 
 // Returns the extension for resources API for the selected interface
@@ -66,6 +72,13 @@ export const handleFetchResourceErrors = (error, _) =>
     message: getApiErrorMessage(error),
   })
 
+// Handle the errors occured during resource fetch
+export const handleDeleteResourceErrors = (error, _) =>
+  showErrorToast({
+    title: _(t.resourceDeleteError),
+    message: getApiErrorMessage(error),
+  })
+
 // Updates the device data with an object of { deviceId, status } which came from the WS events.
 export const updateThingsDataStatus = (data, { deviceId, status }) => {
   return data?.map(d => {
@@ -79,3 +92,15 @@ export const updateThingsDataStatus = (data, { deviceId, status }) => {
     return d
   })
 }
+
+// Redux and event key for the notification state of a single device
+export const getThingNotificationKey = deviceId =>
+  `${THINGS_WS_KEY}.${deviceId}`
+
+// Redux and event key for the notification state for a registration or unregistration of a resource
+export const getResourceRegistrationNotificationKey = deviceId =>
+  `${THINGS_RESOURCE_REGISTRATION_WS_KEY}.${deviceId}`
+
+// Redux and event key for the notification state for an update of a single resource
+export const getResourceUpdateNotificationKey = (deviceId, href) =>
+  `${THINGS_RESOURCE_UPDATE_WS_KEY}.${deviceId}.${href}`

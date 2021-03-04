@@ -49,3 +49,6 @@ export default reducer
 // Selectors
 export const selectActiveNotifications = state =>
   state.things.activeNotifications
+
+export const isNotificationActive = key => state =>
+  state.things.activeNotifications?.includes?.(key) || false

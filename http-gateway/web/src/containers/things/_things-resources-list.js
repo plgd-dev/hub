@@ -18,9 +18,12 @@ export const ThingsResourcesList = ({
   data,
   onUpdate,
   onCreate,
+  onDelete,
   deviceStatus,
+  loading,
 }) => {
   const { formatMessage: _ } = useIntl()
+
   const isUnregistered = deviceStatus === UNREGISTERED
   const greyedOutClassName = classNames({ 'grayed-out': isUnregistered })
 
@@ -63,11 +66,12 @@ export const ThingsResourcesList = ({
           const {
             original: { di, href, if: interfaces },
           } = row
-
           return (
             <ActionButton
-              disabled={isUnregistered}
-              menuProps={{ align: 'right' }}
+              disabled={isUnregistered || loading}
+              menuProps={{
+                align: 'right',
+              }}
               items={[
                 {
                   onClick: () => onCreate(href),
@@ -78,13 +82,12 @@ export const ThingsResourcesList = ({
                 {
                   onClick: () => onUpdate({ di, href }),
                   label: _(t.update),
-                  icon: 'fa-pen',
+                  icon: 'fa-edit',
                 },
                 {
-                  onClick: () => console.log('helo'),
+                  onClick: () => onDelete(href),
                   label: _(t.delete),
                   icon: 'fa-trash-alt',
-                  hidden: true,
                 },
               ]}
             >
@@ -94,7 +97,7 @@ export const ThingsResourcesList = ({
         },
       },
     ],
-    [onUpdate, onCreate, isUnregistered] //eslint-disable-line
+    [onUpdate, onCreate, onDelete, isUnregistered, loading] //eslint-disable-line
   )
 
   return (
@@ -120,7 +123,10 @@ export const ThingsResourcesList = ({
 
 ThingsResourcesList.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
+  onCreate: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
   deviceStatus: PropTypes.oneOf([ONLINE, OFFLINE, REGISTERED, UNREGISTERED]),
 }
 

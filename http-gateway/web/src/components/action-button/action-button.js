@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import PropTypes from 'prop-types'
 import BDropdown from 'react-bootstrap/Dropdown'
 
@@ -5,7 +6,7 @@ import { dropdownTypes } from './constants'
 
 const { PRIMARY, SECONDARY, EMPTY } = dropdownTypes
 
-export const ActionButton = ({ children, type, menuProps, items, ...rest }) => {
+export const ActionButton = memo(({ children, type, menuProps, items, ...rest }) => {
   return (
     <BDropdown className="action-button">
       <BDropdown.Toggle variant={type} {...rest}>
@@ -29,8 +30,16 @@ export const ActionButton = ({ children, type, menuProps, items, ...rest }) => {
         }}
       >
         {items.filter(item => !item.hidden).map(item => {
+          if (item.component) {
+            return item.component
+          }
+
           return (
-            <BDropdown.Item key={item.id || item.label} onClick={item.onClick}>
+            <BDropdown.Item
+              className="btn btn-secondary"
+              key={item.id || item.label}
+              onClick={item.onClick}
+            >
               {item.icon && <i className={`fas ${item.icon}`} />}
               {item.label}
             </BDropdown.Item>
@@ -39,17 +48,18 @@ export const ActionButton = ({ children, type, menuProps, items, ...rest }) => {
       </BDropdown.Menu>
     </BDropdown>
   )
-}
+})
 
 ActionButton.propTypes = {
   children: PropTypes.node.isRequired,
   type: PropTypes.oneOf([PRIMARY, SECONDARY, EMPTY]),
   items: PropTypes.arrayOf(
     PropTypes.shape({
-      onClick: PropTypes.func.isRequired,
-      label: PropTypes.string.isRequired,
+      onClick: PropTypes.func,
+      label: PropTypes.string,
       id: PropTypes.string,
       hidden: PropTypes.bool,
+      component: PropTypes.node,
     })
   ).isRequired,
   menuProps: PropTypes.shape({

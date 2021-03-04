@@ -18,7 +18,8 @@ export const ToastContainer = () => {
       pauseOnFocusLoss={false}
       limit={5}
       newestOnTop
-      autoClose={8000}
+      autoClose={5000}
+      hideProgressBar
     />
   )
 }

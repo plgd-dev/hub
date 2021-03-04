@@ -24,7 +24,7 @@ export const getThingApi = deviceId =>
   )
 
 /**
- * Get things resources Rest Api endpoint
+ * Get things RESOURCES Rest Api endpoint
  * @param {*} params { deviceId, href - resource href, currentInterface - interface }
  * @param {*} data
  */
@@ -40,7 +40,7 @@ export const getThingsResourcesApi = ({
   )
 
 /**
- * Update things resource Rest Api endpoint
+ * Update things RESOURCE Rest Api endpoint
  * @param {*} params { deviceId, href - resource href, currentInterface - interface }
  * @param {*} data
  */
@@ -57,7 +57,7 @@ export const updateThingsResourceApi = (
 }
 
 /**
- * Create things resource Rest Api endpoint
+ * Create things RESOURCE Rest Api endpoint
  * @param {*} params { deviceId, href - resource href, currentInterface - interface }
  * @param {*} data
  */
@@ -70,5 +70,19 @@ export const createThingsResourceApi = (
       thingsApiEndpoints.THINGS
     }/${deviceId}${href}${interfaceGetParam(currentInterface)}`,
     { method: 'POST', body: data }
+  )
+}
+
+/**
+ * Delete things RESOURCE Rest Api endpoint
+ * @param {*} params { deviceId, href - resource href, currentInterface - interface }
+ * @param {*} data
+ */
+export const deleteThingsResourceApi = ({ deviceId, href }) => {
+  return fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      thingsApiEndpoints.THINGS
+    }/${deviceId}${href}`,
+    { method: 'DELETE' }
   )
 }
