@@ -15,13 +15,13 @@ func (c *Client) CreateResource(
 	href string,
 	request interface{},
 	response interface{},
-	opts ...UpdateOption,
+	opts ...CreateOption,
 ) error {
-	cfg := updateOptions{
+	cfg := createOptions{
 		codec: GeneralMessageCodec{},
 	}
 	for _, o := range opts {
-		cfg = o.applyOnUpdate(cfg)
+		cfg = o.applyOnCreate(cfg)
 	}
 
 	data, err := cfg.codec.Encode(request)
