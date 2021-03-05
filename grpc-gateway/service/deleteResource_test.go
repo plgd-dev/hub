@@ -55,7 +55,6 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			wantErr:     true,
 			wantErrCode: codes.NotFound,
 		},
-
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
@@ -68,7 +67,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)

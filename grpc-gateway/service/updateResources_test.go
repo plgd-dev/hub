@@ -21,18 +21,18 @@ import (
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.UpdateResourceValuesRequest
+		req pb.UpdateResourceRequest
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *pb.UpdateResourceValuesResponse
+		want    *pb.UpdateResourceResponse
 		wantErr bool
 	}{
 		{
 			name: "valid",
 			args: args{
-				req: pb.UpdateResourceValuesRequest{
+				req: pb.UpdateResourceRequest{
 					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
@@ -45,7 +45,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceValuesResponse{
+			want: &pb.UpdateResourceResponse{
 				Content: &pb.Content{},
 				Status:  pb.Status_OK,
 			},
@@ -53,7 +53,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "valid with interface",
 			args: args{
-				req: pb.UpdateResourceValuesRequest{
+				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
@@ -67,7 +67,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceValuesResponse{
+			want: &pb.UpdateResourceResponse{
 				Content: &pb.Content{},
 				Status:  pb.Status_OK,
 			},
@@ -75,7 +75,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "revert update",
 			args: args{
-				req: pb.UpdateResourceValuesRequest{
+				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
@@ -89,7 +89,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceValuesResponse{
+			want: &pb.UpdateResourceResponse{
 				Content: &pb.Content{},
 				Status:  pb.Status_OK,
 			},
@@ -97,7 +97,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "update RO-resource",
 			args: args{
-				req: pb.UpdateResourceValuesRequest{
+				req: pb.UpdateResourceRequest{
 					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/oic/d",
@@ -115,7 +115,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.UpdateResourceValuesRequest{
+				req: pb.UpdateResourceRequest{
 					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/unknown",
@@ -144,7 +144,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.UpdateResourcesValues(ctx, &tt.args.req)
+			got, err := c.UpdateResource(ctx, &tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

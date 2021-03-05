@@ -89,7 +89,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Contex
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
+func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending *pb.Event_ResourceUpdatePending, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING {
@@ -106,12 +106,12 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdatePending_{
-			ResourceUpdatePending: &updatePending,
+			ResourceUpdatePending: updatePending,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
+func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, updated *pb.Event_ResourceUpdated, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED {
@@ -128,12 +128,12 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdated_{
-			ResourceUpdated: &updated,
+			ResourceUpdated: updated,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
+func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context, retrievePending *pb.Event_ResourceRetrievePending, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING {
@@ -150,12 +150,12 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrievePending_{
-			ResourceRetrievePending: &retrievePending,
+			ResourceRetrievePending: retrievePending,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
+func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retrieved *pb.Event_ResourceRetrieved, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED {
@@ -172,12 +172,12 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrieved_{
-			ResourceRetrieved: &retrieved,
+			ResourceRetrieved: retrieved,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error {
+func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, deletePending *pb.Event_ResourceDeletePending, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING {
@@ -194,12 +194,12 @@ func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, 
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeletePending_{
-			ResourceDeletePending: &deletePending,
+			ResourceDeletePending: deletePending,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, deleted pb.Event_ResourceDeleted, version uint64) error {
+func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, deleted *pb.Event_ResourceDeleted, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETED {
@@ -216,7 +216,51 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeleted_{
-			ResourceDeleted: &deleted,
+			ResourceDeleted: deleted,
+		},
+	})
+}
+
+func (s *deviceSubscription) NotifyOfCreatePendingResource(ctx context.Context, createPending *pb.Event_ResourceCreatePending, version uint64) error {
+	var found bool
+	for _, f := range s.deviceEvent.GetFilterEvents() {
+		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING {
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	if s.FilterByVersion(createPending.GetResourceId().GetDeviceId(), createPending.GetResourceId().GetHref(), "res", version) {
+		return nil
+	}
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
+		SubscriptionId: s.ID(),
+		Type: &pb.Event_ResourceCreatePending_{
+			ResourceCreatePending: createPending,
+		},
+	})
+}
+
+func (s *deviceSubscription) NotifyOfCreatedResource(ctx context.Context, created *pb.Event_ResourceCreated, version uint64) error {
+	var found bool
+	for _, f := range s.deviceEvent.GetFilterEvents() {
+		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATED {
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	if s.FilterByVersion(created.GetResourceId().GetDeviceId(), created.GetResourceId().GetHref(), "res", version) {
+		return nil
+	}
+	return s.Send(&pb.Event{
+		Token:          s.Token(),
+		SubscriptionId: s.ID(),
+		Type: &pb.Event_ResourceCreated_{
+			ResourceCreated: created,
 		},
 	})
 }
@@ -288,6 +332,21 @@ func (s *deviceSubscription) initSendResourcesDeletePending(ctx context.Context)
 		err := resource.OnResourceDeletePendingLocked(ctx, s.NotifyOfDeletePendingResource)
 		if err != nil {
 			return fmt.Errorf("cannot send resource delete pending: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *deviceSubscription) initSendResourcesCreatePending(ctx context.Context) error {
+	resources, err := s.resourceProjection.GetResourcesWithLinks(ctx, []*commands.ResourceId{commands.NewResourceID(s.DeviceID(), "")}, nil)
+	if err != nil {
+		return fmt.Errorf("cannot send resource update pending: %w", err)
+	}
+
+	for _, resource := range resources[s.DeviceID()] {
+		err := resource.OnResourceCreatePendingLocked(ctx, s.NotifyOfCreatePendingResource)
+		if err != nil {
+			return fmt.Errorf("cannot send resource update pending: %w", err)
 		}
 	}
 	return nil

@@ -1478,7 +1478,7 @@ func (x *CreateResourceRequest) GetCorrelationId() string {
 	if x != nil {
 		return x.CorrelationId
 	}
-	return nil
+	return ""
 }
 
 func (x *CreateResourceRequest) GetContent() *Content {

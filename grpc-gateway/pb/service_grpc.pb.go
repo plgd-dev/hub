@@ -11,7 +11,6 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // GrpcGatewayClient is the client API for GrpcGateway service.
@@ -26,7 +25,7 @@ type GrpcGatewayClient interface {
 	// Retrieve resources values from resource shadow
 	RetrieveResourcesValues(ctx context.Context, in *RetrieveResourcesValuesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesValuesClient, error)
 	// Update resource values
-	UpdateResourcesValues(ctx context.Context, in *UpdateResourceValuesRequest, opts ...grpc.CallOption) (*UpdateResourceValuesResponse, error)
+	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error)
 	// Subscribe to events
 	SubscribeForEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeForEventsClient, error)
 	// Get client configuration
@@ -46,7 +45,7 @@ func NewGrpcGatewayClient(cc grpc.ClientConnInterface) GrpcGatewayClient {
 }
 
 func (c *grpcGatewayClient) GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +77,7 @@ func (x *grpcGatewayGetDevicesClient) Recv() (*Device, error) {
 }
 
 func (c *grpcGatewayClient) GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +118,7 @@ func (c *grpcGatewayClient) RetrieveResourceFromDevice(ctx context.Context, in *
 }
 
 func (c *grpcGatewayClient) RetrieveResourcesValues(ctx context.Context, in *RetrieveResourcesValuesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesValuesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourcesValues", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourcesValues", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,9 +149,9 @@ func (x *grpcGatewayRetrieveResourcesValuesClient) Recv() (*ResourceValue, error
 	return m, nil
 }
 
-func (c *grpcGatewayClient) UpdateResourcesValues(ctx context.Context, in *UpdateResourceValuesRequest, opts ...grpc.CallOption) (*UpdateResourceValuesResponse, error) {
-	out := new(UpdateResourceValuesResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResourcesValues", in, out, opts...)
+func (c *grpcGatewayClient) UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error) {
+	out := new(UpdateResourceResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResource", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +159,7 @@ func (c *grpcGatewayClient) UpdateResourcesValues(ctx context.Context, in *Updat
 }
 
 func (c *grpcGatewayClient) SubscribeForEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeForEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeForEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeForEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +228,7 @@ type GrpcGatewayServer interface {
 	// Retrieve resources values from resource shadow
 	RetrieveResourcesValues(*RetrieveResourcesValuesRequest, GrpcGateway_RetrieveResourcesValuesServer) error
 	// Update resource values
-	UpdateResourcesValues(context.Context, *UpdateResourceValuesRequest) (*UpdateResourceValuesResponse, error)
+	UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error)
 	// Subscribe to events
 	SubscribeForEvents(GrpcGateway_SubscribeForEventsServer) error
 	// Get client configuration
@@ -257,8 +256,8 @@ func (UnimplementedGrpcGatewayServer) RetrieveResourceFromDevice(context.Context
 func (UnimplementedGrpcGatewayServer) RetrieveResourcesValues(*RetrieveResourcesValuesRequest, GrpcGateway_RetrieveResourcesValuesServer) error {
 	return status.Errorf(codes.Unimplemented, "method RetrieveResourcesValues not implemented")
 }
-func (UnimplementedGrpcGatewayServer) UpdateResourcesValues(context.Context, *UpdateResourceValuesRequest) (*UpdateResourceValuesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateResourcesValues not implemented")
+func (UnimplementedGrpcGatewayServer) UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateResource not implemented")
 }
 func (UnimplementedGrpcGatewayServer) SubscribeForEvents(GrpcGateway_SubscribeForEventsServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeForEvents not implemented")
@@ -282,7 +281,7 @@ type UnsafeGrpcGatewayServer interface {
 }
 
 func RegisterGrpcGatewayServer(s grpc.ServiceRegistrar, srv GrpcGatewayServer) {
-	s.RegisterService(&GrpcGateway_ServiceDesc, srv)
+	s.RegisterService(&_GrpcGateway_serviceDesc, srv)
 }
 
 func _GrpcGateway_GetDevices_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -366,20 +365,20 @@ func (x *grpcGatewayRetrieveResourcesValuesServer) Send(m *ResourceValue) error 
 	return x.ServerStream.SendMsg(m)
 }
 
-func _GrpcGateway_UpdateResourcesValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateResourceValuesRequest)
+func _GrpcGateway_UpdateResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateResourceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcGatewayServer).UpdateResourcesValues(ctx, in)
+		return srv.(GrpcGatewayServer).UpdateResource(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResourcesValues",
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResource",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcGatewayServer).UpdateResourcesValues(ctx, req.(*UpdateResourceValuesRequest))
+		return srv.(GrpcGatewayServer).UpdateResource(ctx, req.(*UpdateResourceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -464,10 +463,7 @@ func _GrpcGateway_CreateResource_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-// GrpcGateway_ServiceDesc is the grpc.ServiceDesc for GrpcGateway service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
+var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.grpcgateway.pb.GrpcGateway",
 	HandlerType: (*GrpcGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
@@ -476,8 +472,8 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GrpcGateway_RetrieveResourceFromDevice_Handler,
 		},
 		{
-			MethodName: "UpdateResourcesValues",
-			Handler:    _GrpcGateway_UpdateResourcesValues_Handler,
+			MethodName: "UpdateResource",
+			Handler:    _GrpcGateway_UpdateResource_Handler,
 		},
 		{
 			MethodName: "GetClientConfiguration",

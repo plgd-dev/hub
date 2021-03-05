@@ -112,7 +112,7 @@ func TestUpdateResourceInvalidAttribute(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
 	exp := map[interface{}]interface{}{
-		"err": "cannot update resource: cannot update resource /" + deviceID + "//light/1: rpc error: code = InvalidArgument desc = response from device",
+		"err": "cannot update resource: rpc error: code = InvalidArgument desc = response from device",
 	}
 	require.Equal(t, exp, response)
 }

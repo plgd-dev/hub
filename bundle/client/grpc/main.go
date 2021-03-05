@@ -165,7 +165,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("cannot read data for update value: %v", err)
 		}
-		resp, err := ocfGW.UpdateResourcesValues(ctx, &pbGW.UpdateResourceValuesRequest{
+		resp, err := ocfGW.UpdateResource(ctx, &pbGW.UpdateResourceRequest{
 			ResourceId: &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,

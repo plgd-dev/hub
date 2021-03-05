@@ -785,12 +785,6 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	var config Config
 	err = envconfig.Process("", &config)
 	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(jsmCfg, nil, mongodb.WithTLS(tlsConfig))
-	require.NoError(t, err)
-	defer func() {
-		err := eventstore.Clear(ctx)
-		assert.NoError(t, err)
-	}()
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)

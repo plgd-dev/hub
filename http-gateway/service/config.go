@@ -3,6 +3,7 @@ package service
 import (
 	"time"
 
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/security/certManager"
 )
@@ -30,10 +31,13 @@ type Config struct {
 	Dial                     certManager.Config
 	JwksURL                  string
 	ResourceDirectoryAddr    string
+	ResourceAggregateAddr    string
+	Nats                     nats.Config
 	CertificateAuthorityAddr string
 	WebSocketReadLimit       int64
 	WebSocketReadTimeout     time.Duration
 	UI                       UIConfig
+	GoRoutinePoolSize        int
 }
 
 func (c Config) checkForDefaults() Config {

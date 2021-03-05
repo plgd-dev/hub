@@ -22,7 +22,7 @@
         "TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY": "${workspaceFolder}/.tmp/privKeys/idTokenKey.pem",
         "TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY": "${workspaceFolder}/.tmp/privKeys/accessTokenKey.pem",
         // "GOMAXPROCS": 1,
-        // "GOFLAGS":"-mod=vendor",
+        "GOFLAGS":"-mod=vendor",
         // "GRPC_VERBOSITY":"DEBUG",
         // "GRPC_GO_LOG_VERBOSITY_LEVEL":99,
         // "GRPC_GO_LOG_SEVERITY_LEVEL":"info",

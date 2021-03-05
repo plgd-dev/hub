@@ -532,7 +532,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 		} else if ct := ev.GetResourceCreatePending(); ct != nil {
 			err = h.HandleResourceCreatePending(s.client.Context(), ct)
-			if err != nil {
+			if err == nil {
 				continue
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
@@ -541,7 +541,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 		} else if ct := ev.GetResourceCreated(); ct != nil {
 			err = h.HandleResourceCreated(s.client.Context(), ct)
-			if err != nil {
+			if err == nil {
 				continue
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())

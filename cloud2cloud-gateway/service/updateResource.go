@@ -42,7 +42,7 @@ func statusToHttpStatus(status pbGRPC.Status) int {
 	return http.StatusInternalServerError
 }
 
-func sendResponse(w http.ResponseWriter, processed *pbGRPC.UpdateResourceValuesResponse) (int, error) {
+func sendResponse(w http.ResponseWriter, processed *pbGRPC.UpdateResourceResponse) (int, error) {
 	statusCode := statusToHttpStatus(processed.GetStatus())
 	if processed.Content != nil {
 		content, err := unmarshalContent(processed.GetContent())
@@ -93,7 +93,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 		return http.StatusBadRequest, fmt.Errorf("cannot read body: %w", err)
 	}
 
-	resp, err := rh.rdClient.UpdateResourcesValues(kitNetGrpc.CtxWithUserID(r.Context(), userID), &pbGRPC.UpdateResourceValuesRequest{
+	resp, err := rh.rdClient.UpdateResource(kitNetGrpc.CtxWithUserID(r.Context(), userID), &pbGRPC.UpdateResourceRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,

@@ -57,18 +57,18 @@ func eventContentToContent(s commands.Status, c *commands.Content) (*pb.Content,
 	return content, nil
 }
 
-func toResponse(processed events.ResourceUpdated) (*pb.UpdateResourceValuesResponse, error) {
+func toResponse(processed *events.ResourceUpdated) (*pb.UpdateResourceResponse, error) {
 	content, err := eventContentToContent(processed.GetStatus(), processed.GetContent())
 	if err != nil {
 		return nil, err
 	}
-	return &pb.UpdateResourceValuesResponse{
+	return &pb.UpdateResourceResponse{
 		Content: content,
 		Status:  pb.RAStatus2Status(processed.GetStatus()),
 	}, nil
 }
 
-func (r *RequestHandler) waitForUpdateContentResponse(ctx context.Context, deviceID, resourceID string, notify <-chan events.ResourceUpdated, onTimeout func(ctx context.Context, destDeviceId, resourceID string, notify <-chan events.ResourceUpdated) (*pb.UpdateResourceValuesResponse, error)) (*pb.UpdateResourceValuesResponse, error) {
+func (r *RequestHandler) waitForUpdateContentResponse(ctx context.Context, deviceID, resourceID string, notify <-chan *events.ResourceUpdated, onTimeout func(ctx context.Context, destDeviceId, resourceID string, notify <-chan *events.ResourceUpdated) (*pb.UpdateResourceResponse, error)) (*pb.UpdateResourceResponse, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, r.timeoutForRequests)
 	defer cancel()
 	select {
@@ -79,7 +79,7 @@ func (r *RequestHandler) waitForUpdateContentResponse(ctx context.Context, devic
 	}
 }
 
-func (r *RequestHandler) UpdateResourcesValues(ctx context.Context, req *pb.UpdateResourceValuesRequest) (*pb.UpdateResourceValuesResponse, error) {
+func (r *RequestHandler) UpdateResourcesValues(ctx context.Context, req *pb.UpdateResourceRequest) (*pb.UpdateResourceResponse, error) {
 	accessToken, err := kitNetGrpc.TokenFromMD(ctx)
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot update resource: %v", err))

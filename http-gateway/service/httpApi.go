@@ -8,33 +8,38 @@ import (
 	"net/http/httputil"
 	"strings"
 
-	"github.com/google/uuid"
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
 
+	"github.com/google/uuid"
 	router "github.com/gorilla/mux"
 )
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	client   *client.Client
-	caClient pbCA.CertificateAuthorityClient
-	config   *Config
-	manager  *ObservationManager
+	client             *client.Client
+	caClient           pbCA.CertificateAuthorityClient
+	config             *Config
+	manager            *ObservationManager
+	raClient           raService.ResourceAggregateClient
+	resourceSubscriber eventbus.Subscriber
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager) *RequestHandler {
+func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager, raClient raService.ResourceAggregateClient, resourceSubscriber eventbus.Subscriber) *RequestHandler {
 	return &RequestHandler{
-		client:   client,
-		config:   config,
-		manager:  manager,
-		caClient: caClient,
+		client:             client,
+		config:             config,
+		manager:            manager,
+		caClient:           caClient,
+		raClient:           raClient,
+		resourceSubscriber: resourceSubscriber,
 	}
 }
 
@@ -112,6 +117,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodPut).HandlerFunc(requestHandler.updateResource)
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.getResource)
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodDelete).HandlerFunc(requestHandler.deleteResource)
+	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodPost).HandlerFunc(requestHandler.createResource)
 
 	// ws
 	r.PathPrefix(uri.WsStartDeviceResourceObservation).MatcherFunc(wsResourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.startResourceObservation)

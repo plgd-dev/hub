@@ -217,7 +217,7 @@ func MakeNotifyResourceChangedRequest(resourceID *commands.ResourceId, authCtx *
 	}
 }
 
-func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.UpdateResourceValuesRequest {
+func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.UpdateResourceRequest {
 	content := MakeContent(req.Options, req.Body)
 	var resourceInterface string
 	qs, err := req.Options.Queries()
@@ -230,7 +230,7 @@ func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.
 		}
 	}
 
-	return &pbGRPC.UpdateResourceValuesRequest{
+	return &pbGRPC.UpdateResourceRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,

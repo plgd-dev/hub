@@ -8,8 +8,8 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
-// UpdateResource updates content in OCF-CBOR format.
-func (c *Client) UpdateResource(
+// CreateResource creates resource.
+func (c *Client) CreateResource(
 	ctx context.Context,
 	deviceID string,
 	href string,
@@ -28,21 +28,20 @@ func (c *Client) UpdateResource(
 	if err != nil {
 		return err
 	}
-	r := pb.UpdateResourceRequest{
+	r := pb.CreateResourceRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		ResourceInterface: cfg.resourceInterface,
 		Content: &pb.Content{
 			Data:        data,
 			ContentType: cfg.codec.ContentFormat().String(),
 		},
 	}
 
-	resp, err := c.gateway.UpdateResource(ctx, &r)
+	resp, err := c.gateway.CreateResource(ctx, &r)
 	if err != nil {
-		return fmt.Errorf("cannot update resource /%v/%v: %w", deviceID, href, err)
+		return fmt.Errorf("cannot create resource /%v/%v: %w", deviceID, href, err)
 	}
 
 	return DecodeContentWithCodec(cfg.codec, resp.GetContent().GetContentType(), resp.GetContent().GetData(), response)
