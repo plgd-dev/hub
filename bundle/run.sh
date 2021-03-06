@@ -12,7 +12,7 @@ export NGINX_PATH="/data/nginx"
 
 
 export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
-export OAUTH_SERVER_ADDRESS="localhost:${OAUTH_SERVER_PORT}"
+export MOCKED_OAUTH_SERVER_ADDRESS="localhost:${MOCKED_OAUTH_SERVER_PORT}"
 export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
 export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
 export AUTHORIZATION_ADDRESS="localhost:${AUTHORIZATION_PORT}"
@@ -40,6 +40,7 @@ export DIAL_FILE_CA_POOL="$CA_POOL_CERT_PATH"
 export DIAL_FILE_CERT_DIR_PATH="$INTERNAL_CERT_DIR_PATH"
 export DIAL_FILE_CERT_NAME="$GRPC_INTERNAL_CERT_NAME"
 export DIAL_FILE_CERT_KEY_NAME="$GRPC_INTERNAL_CERT_KEY_NAME"
+export DIAL_FILE_USE_SYSTEM_CERTIFICATION_POOL="true"
 
 #LISTEN CERTS
 export LISTEN_TYPE="file"
@@ -52,30 +53,79 @@ export LISTEN_FILE_CERT_KEY_NAME="$GRPC_INTERNAL_CERT_KEY_NAME"
 export OAUTH_ID_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/id-token.pem
 export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
 
+#ENDPOINTS
 export MONGODB_HOST="localhost:$MONGO_PORT"
 export MONGODB_URL="mongodb://$MONGODB_HOST"
 export MONGODB_URI="mongodb://$MONGODB_HOST"
 export MONGO_URI="mongodb://$MONGODB_HOST"
-
 export NATS_HOST="localhost:$NATS_PORT"
 export NATS_URL="nats://${NATS_HOST}"
-
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
-export OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token
-export OAUTH_CLIENT_ID=test
-export OAUTH_ENDPOINT_CODE_URL=https://${OAUTH_SERVER_ADDRESS}/authorize
-export OAUTH_AUDIENCE=test
-export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
-export SERVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
-export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
-export JWKS_URL="https://$OAUTH_SERVER_ADDRESS/.well-known/jwks.json"
-
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
-export FQDN_OAUTH_ENDPOINT_TOKEN_URL="https://${FQDN_NGINX_HTTPS}/oauth/token?client_id=test&audience=test"
-export FQDN_OAUTH_ENDPOINT_CODE_URL="https://${FQDN_NGINX_HTTPS}/authorize?client_id=test"
 export DOMAIN=${FQDN_NGINX_HTTPS}
 if [ "$NGINX_PORT" = "443" ]; then
   export DOMAIN=${FQDN}
+fi
+
+#OAUTH SERVER
+if [ -z "${OAUTH_AUDIENCE}" ]
+then
+export OAUTH_AUDIENCE=test
+export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
+export SDK_OAUTH_AUDIENCE=${FQDN}:${NGINX_PORT}
+else
+export OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
+export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
+export SDK_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
+fi
+
+if [ -z "${OAUTH_ENDPOINT_AUTH_URL}" ]
+then
+export DEVICE_OAUTH_ENDPOINT_AUTH_URL="https://localhost:${MOCKED_OAUTH_SERVER_PORT}/authorize"
+export OAUTH_ENDPOINT_CODE_URL="https://localhost:${MOCKED_OAUTH_SERVER_PORT}/authorize"
+export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL="https://${FQDN}:${NGINX_PORT}/authorize?client_id=test"
+else
+export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
+export SDK_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
+export DEVICE_OAUTH_ENDPOINT_AUTH_URL=${OAUTH_ENDPOINT_AUTH_URL}
+export OAUTH_ENDPOINT_CODE_URL=${OAUTH_ENDPOINT_AUTH_URL}
+export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=https://${FQDN}:${NGINX_PORT}/api/authz/code
+fi
+
+if [ -z "${OAUTH_ENDPOINT_TOKEN_URL}" ]
+then
+export DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/oauth/token
+export SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL="https://${FQDN}:${NGINX_PORT}/oauth/token?client_id=test&audience=test"
+export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/oauth/token
+export SDK_OAUTH_ENDPOINT_AUTH_URL="https://${FQDN}:${NGINX_PORT}/oauth/token"
+else
+export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
+export SDK_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
+export DEVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
+export SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=https://${FQDN}:${NGINX_PORT}/api/authz/token
+export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
+export SDK_OAUTH_ENDPOINT_AUTH_URL=${OAUTH_ENDPOINT_AUTH_URL}
+fi
+
+if [ -z "${OAUTH_ENDPOINT}" ]
+then
+export OAUTH_ENDPOINT=${FQDN_NGINX_HTTPS}
+fi
+
+if [ -z "${JWKS_URL}" ]
+then
+export JWKS_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/.well-known/jwks.json
+fi
+
+if [ -z "${OAUTH_CLIENT_ID}" ]
+then
+export DEVICE_OAUTH_CLIENT_ID=test
+export SDK_OAUTH_CLIENT_ID=test
+export OAUTH_CLIENT_ID=test
+else
+export DEVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+export SDK_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+export OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
 fi
 
 export COAP_GATEWAY_UNSECURE_FQDN=$FQDN
@@ -109,7 +159,7 @@ cp /nginx/nginx.conf.template ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_NGINX_PORT/$NGINX_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_HTTP_GATEWAY_PORT/$HTTP_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
-sed -i "s/REPLACE_OAUTH_SERVER_PORT/$OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_MOCKED_OAUTH_SERVER_PORT/$MOCKED_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_AUTHORIZATION_HTTP_PORT/$AUTHORIZATION_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
 
@@ -153,7 +203,7 @@ done
 # oauth-server
 echo "starting oauth-server"
 cat > /data/oauth-server.yaml << EOF
-Address: ${OAUTH_SERVER_ADDRESS}
+Address: ${MOCKED_OAUTH_SERVER_ADDRESS}
 Listen:
   Type: file
   File:
@@ -180,10 +230,10 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${OAUTH_SERVER_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${MOCKED_OAUTH_SERVER_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
-  echo "Try to reconnect to oauth-server(${OAUTH_SERVER_ADDRESS}) $i"
+  echo "Try to reconnect to oauth-server(${MOCKED_OAUTH_SERVER_ADDRESS}) $i"
   sleep 1
 done
     
@@ -191,14 +241,6 @@ done
 echo "starting authorization"
 ADDRESS=${AUTHORIZATION_ADDRESS} \
 HTTP_ADDRESS=${AUTHORIZATION_HTTP_ADDRESS} \
-DEVICE_PROVIDER=plgd \
-DEVICE_PROVIDER_TYPE=test \
-DEVICE_OAUTH_CLIENT_ID=test \
-DEVICE_OAUTH_ENDPOINT_AUTH_URL=https://${OAUTH_SERVER_ADDRESS}/authorize \
-DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://${OAUTH_SERVER_ADDRESS}/oauth/token \
-SDK_OAUTH_CLIENT_ID=test \
-SDK_OAUTH_ENDPOINT_AUTH_URL=https://${FQDN_NGINX_HTTPS}/oauth/token \
-SDK_OAUTH_AUDIENCE=${FQDN_NGINX_HTTPS} \
 authorization >$LOGS_PATH/authorization.log 2>&1 &
 status=$?
 authorization_pid=$!
@@ -247,13 +289,9 @@ done
 echo "starting resource-directory"
 ADDRESS=${RESOURCE_DIRECTORY_ADDRESS} \
 SERVICE_CLIENT_CONFIGURATION_CLOUD_CA_POOL=${CA_POOL_CERT_PATH} \
-SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=${FQDN_OAUTH_ENDPOINT_TOKEN_URL} \
-SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${FQDN_OAUTH_ENDPOINT_CODE_URL} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDID=${COAP_GATEWAY_CLOUD_ID} \
 SERVICE_CLIENT_CONFIGURATION_CLOUDURL="coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}" \
 SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${FQDN_NGINX_HTTPS} \
-SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="plgd" \
-SERVICE_CLIENT_CONFIGURATION_JWTCLAIMOWNERID="sub" \
 resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
 status=$?
 resource_directory_pid=$!
@@ -371,9 +409,9 @@ CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
 UI:
   enabled: true
   oauthClient:
-    domain: ${DOMAIN}
+    domain: ${OAUTH_ENDPOINT}
     clientID: ${OAUTH_CLIENT_ID}
-    audience: https://${FQDN_NGINX_HTTPS}/
+    audience: ${OAUTH_AUDIENCE}
     scope: "openid offline_access"
     httpGatewayAddress: https://${FQDN_NGINX_HTTPS}
 EOF
