@@ -92,7 +92,7 @@ export const messages = defineMessages({
   deleteResourceMessage: {
     id: 'things.deleteResourceMessage',
     defaultMessage:
-      'Are you sure you want to delete this Resource? This action cannot be undone.',
+      'Are you sure you want to delete this resource? This action cannot be undone.',
   },
   resourceWasUpdated: {
     id: 'things.resourceWasUpdated',
@@ -104,9 +104,9 @@ export const messages = defineMessages({
       'The resource was updated successfully, changes will be applied once the device is online.',
   },
   resourceWasDeletedOffline: {
-    id: 'things.resourceWasUpdatedOffline',
+    id: 'things.resourceWasDeletedOffline',
     defaultMessage:
-      'Deleting of the resource was scheduled, but it will be executed once the device is online.',
+      'Deleting of the resource was scheduled, it will be deleted once the device is online.',
   },
   resourceWasCreated: {
     id: 'things.resourceWasCreated',
@@ -155,7 +155,7 @@ export const messages = defineMessages({
   resourceWasDeleted: {
     id: 'things.resourceWasDeleted',
     defaultMessage:
-      'Resource delete was successfully scheduled. Keep the notifications turned on to see if the resource was deleted.',
+      'The resource delete was successfully scheduled. you will be notified when the resource was deleted.',
   },
   resourceDeleteError: {
     id: 'things.resourceDeleteError',

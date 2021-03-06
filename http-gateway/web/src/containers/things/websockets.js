@@ -84,12 +84,12 @@ export const deviceResourceRegistrationListener = deviceId => message => {
     getThingNotificationKey(deviceId)
   )(store.getState())
 
-  const data = JSON.parse(message.data)
+  const parsedMessageData = JSON.parse(message.data)
   const {
     resource,
     resource: { href },
     event,
-  } = data
+  } = parsedMessageData
   const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(
     deviceId
   )
@@ -97,7 +97,7 @@ export const deviceResourceRegistrationListener = deviceId => message => {
   // Emit an event: things.resource.registration.{deviceId}.{href}.{event}
   Emitter.emit(
     `${resourceRegistrationObservationWSKey}.${resource.href}.${event}`,
-    data
+    parsedMessageData
   )
 
   if (notificationsEnabled) {
@@ -133,10 +133,10 @@ export const deviceResourceUpdateListener = (
   const eventKey = getResourceUpdateNotificationKey(deviceId, href)
   const notificationsEnabled = isNotificationActive(eventKey)(store.getState())
 
-  const data = JSON.parse(message.data)
+  const parsedMessageData = JSON.parse(message.data)
 
   // Emit an event: things.resource.update.{deviceId}.{href}
-  Emitter.emit(`${eventKey}`, data)
+  Emitter.emit(`${eventKey}`, parsedMessageData)
 
   if (notificationsEnabled) {
     setTimeout(async () => {

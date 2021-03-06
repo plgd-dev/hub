@@ -14,7 +14,6 @@ export const ConfirmModal = ({
   title,
   body,
   loading,
-  closeOnConfirm,
   show,
   onClose,
   ...rest
@@ -56,8 +55,10 @@ export const ConfirmModal = ({
 
 ConfirmModal.propTypes = {
   onConfirm: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
   title: PropTypes.node.isRequired,
   body: PropTypes.node.isRequired,
+  show: PropTypes.bool,
   confirmButtonText: PropTypes.string,
   cancelButtonText: PropTypes.string,
   loading: PropTypes.bool,
@@ -66,5 +67,6 @@ ConfirmModal.propTypes = {
 ConfirmModal.defaultProps = {
   confirmButtonText: null,
   cancelButtonText: null,
+  show: false,
   loading: false,
 }

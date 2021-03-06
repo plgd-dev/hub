@@ -62,6 +62,7 @@ ConfirmButton.propTypes = {
   cancelButtonText: PropTypes.string,
   closeOnConfirm: PropTypes.bool,
   loading: PropTypes.bool,
+  modalProps: PropTypes.object,
 }
 
 ConfirmButton.defaultProps = {
@@ -69,4 +70,5 @@ ConfirmButton.defaultProps = {
   cancelButtonText: null,
   closeOnConfirm: true,
   loading: false,
+  modalProps: {},
 }
