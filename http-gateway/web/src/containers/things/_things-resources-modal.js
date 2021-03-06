@@ -9,6 +9,7 @@ import { Badge } from '@/components/badge'
 import { Label } from '@/components/label'
 import { Modal } from '@/components/modal'
 
+import { ThingsResourcesModalNotifications } from './_things-resources-modal-notifications'
 import { resourceModalTypes } from './constants'
 import { messages as t } from './things-i18n'
 
@@ -23,6 +24,7 @@ export const ThingsResourcesModal = ({
   retrieving,
   fetchResource,
   isDeviceOnline,
+  isUnregistered,
   loading,
   updateResource,
   createResource,
@@ -103,6 +105,17 @@ export const ThingsResourcesModal = ({
               '-'}
           </div>
         </Label>
+
+        {data &&
+          isUpdateModal && (
+            <Label title="" inline>
+              <ThingsResourcesModalNotifications
+                deviceId={deviceId}
+                href={data?.href}
+                isUnregistered={isUnregistered}
+              />
+            </Label>
+          )}
 
         {isUpdateModal && (
           <Label title={_(t.interfaces)} inline>
@@ -201,6 +214,7 @@ ThingsResourcesModal.propTypes = {
   updateResource: PropTypes.func.isRequired,
   createResource: PropTypes.func.isRequired,
   isDeviceOnline: PropTypes.bool.isRequired,
+  isUnregistered: PropTypes.bool.isRequired,
   type: PropTypes.oneOf([CREATE_RESOURCE, UPDATE_RESOURCE]),
 }
 

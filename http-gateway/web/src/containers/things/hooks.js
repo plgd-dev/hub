@@ -2,8 +2,15 @@ import { useApi } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
 import { useEmitter } from '@/common/hooks'
 
-import { thingsApiEndpoints, THINGS_STATUS_WS_KEY } from './constants'
-import { updateThingsDataStatus } from './utils'
+import {
+  thingsApiEndpoints,
+  THINGS_STATUS_WS_KEY,
+  resourceEventTypes,
+} from './constants'
+import {
+  updateThingsDataStatus,
+  getResourceRegistrationNotificationKey,
+} from './utils'
 
 export const useThingsList = () => {
   const { httpGatewayAddress } = useAppConfig()
@@ -38,6 +45,29 @@ export const useThingDetails = deviceId => {
       updateData({ ...data, status })
     }
   })
+
+  // Update the resources (links) when a WS event is emitted
+  useEmitter(
+    getResourceRegistrationNotificationKey(deviceId),
+    ({ event, ...wsResource }) => {
+      if (data) {
+        let updatedLinks = data.links
+
+        if (event === resourceEventTypes.ADDED) {
+          updatedLinks = updatedLinks.concat(wsResource)
+        } else {
+          updatedLinks = data.links.filter(
+            link => link.href !== wsResource.href
+          )
+        }
+
+        updateData({
+          ...data,
+          links: updatedLinks,
+        })
+      }
+    }
+  )
 
   return { data, updateData, ...rest }
 }

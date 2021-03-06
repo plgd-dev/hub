@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
 import classNames from 'classnames'
 
+import { ConfirmModal } from '@/components/confirm-modal'
 import { Layout } from '@/components/layout'
 import { NotFoundPage } from '@/containers/not-found-page'
 import { useIsMounted } from '@/common/hooks'
@@ -10,6 +11,7 @@ import { messages as menuT } from '@/components/menu/menu-i18n'
 import { showSuccessToast } from '@/components/toast'
 
 import { ThingsDetails } from './_things-details'
+import { ThingsDetailsHeader } from './_things-details-header'
 import { ThingsResourcesList } from './_things-resources-list'
 import { ThingsResourcesModal } from './_things-resources-modal'
 import {
@@ -22,23 +24,36 @@ import {
   handleCreateResourceErrors,
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
+  handleDeleteResourceErrors,
 } from './utils'
 import {
   getThingsResourcesApi,
   updateThingsResourceApi,
   createThingsResourceApi,
+  deleteThingsResourceApi,
 } from './rest'
 import { useThingDetails } from './hooks'
 import { messages as t } from './things-i18n'
 
 export const ThingsDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { id } = useParams()
+  const { id, href } = useParams()
   const [resourceModalData, setResourceModalData] = useState(null)
   const [loadingResource, setLoadingResource] = useState(false)
   const [savingResource, setSavingResource] = useState(false)
+  const [deleteResourceHref, setDeleteResourceHref] = useState()
   const isMounted = useIsMounted()
   const { data, loading, error } = useThingDetails(id)
+
+  // Open the resource modal when href is present
+  useEffect(
+    () => {
+      if (href) {
+        openUpdateModal({ href: `/${href}` })
+      }
+    },
+    [href] // eslint-disable-line
+  )
 
   if (error) {
     return (
@@ -51,8 +66,9 @@ export const ThingsDetailsPage = () => {
 
   const deviceStatus = data?.status
   const isOnline = thingsStatuses.ONLINE === deviceStatus
+  const isUnregistered = thingsStatuses.UNREGISTERED === deviceStatus
   const greyedOutClassName = classNames({
-    'grayed-out': thingsStatuses.UNREGISTERED === deviceStatus,
+    'grayed-out': isUnregistered,
   })
   const deviceName = data?.device?.n
   const breadcrumbs = [
@@ -104,7 +120,7 @@ export const ThingsDetailsPage = () => {
     } catch (error) {
       if (error && isMounted.current) {
         setLoadingResource(false)
-        handleFetchResourceErrors(error)
+        handleFetchResourceErrors(error, _)
       }
     }
   }
@@ -146,9 +162,17 @@ export const ThingsDetailsPage = () => {
     } catch (error) {
       if (error && isMounted.current) {
         setLoadingResource(false)
-        handleFetchResourceErrors(error)
+        handleFetchResourceErrors(error, _)
       }
     }
+  }
+
+  const openDeleteModal = href => {
+    setDeleteResourceHref(href)
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteResourceHref(null)
   }
 
   // Updates the resource through rest API
@@ -209,11 +233,41 @@ export const ThingsDetailsPage = () => {
     }
   }
 
+  const deleteResource = async () => {
+    setLoadingResource(true)
+
+    try {
+      await deleteThingsResourceApi({ deviceId: id, href: deleteResourceHref })
+
+      if (isMounted.current) {
+        showSuccessToast({
+          title: _(t.resourceDeleteSuccess),
+          message: _(t.resourceWasDeleted),
+        })
+
+        setLoadingResource(false)
+        closeDeleteModal()
+      }
+    } catch (error) {
+      if (error && isMounted.current) {
+        handleDeleteResourceErrors(error, isOnline, _)
+        setLoadingResource(false)
+        closeDeleteModal()
+      }
+    }
+  }
+
   return (
     <Layout
       title={`${deviceName ? deviceName + ' | ' : ''}${_(menuT.things)}`}
       breadcrumbs={breadcrumbs}
       loading={loading || (!resourceModalData && loadingResource)}
+      header={
+        <ThingsDetailsHeader
+          deviceId={data?.device?.di}
+          isUnregistered={isUnregistered}
+        />
+      }
     >
       <h2
         className={classNames(
@@ -232,7 +286,9 @@ export const ThingsDetailsPage = () => {
         data={data?.links}
         onUpdate={openUpdateModal}
         onCreate={openCreateModal}
+        onDelete={openDeleteModal}
         deviceStatus={deviceStatus}
+        loading={loadingResource}
       />
 
       <ThingsResourcesModal
@@ -244,8 +300,26 @@ export const ThingsDetailsPage = () => {
         retrieving={loadingResource}
         loading={savingResource}
         isDeviceOnline={isOnline}
+        isUnregistered={isUnregistered}
         deviceId={id}
       />
+
+      <ConfirmModal
+        onConfirm={deleteResource}
+        show={!!deleteResourceHref}
+        title={
+          <>
+            <i className="fas fa-trash-alt" />
+            {`${_(t.delete)} ${deleteResourceHref}`}
+          </>
+        }
+        body={_(t.deleteResourceMessage)}
+        confirmButtonText={_(t.delete)}
+        loading={loadingResource}
+        onClose={closeDeleteModal}
+      >
+        {_(t.delete)}
+      </ConfirmModal>
     </Layout>
   )
 }

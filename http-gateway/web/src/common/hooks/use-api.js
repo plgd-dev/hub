@@ -16,6 +16,9 @@ export const useApi = (url, options = {}) => {
     () => {
       ;(async () => {
         try {
+          // Set loading to true
+          setState({ ...state, loading: true })
+
           const { data } = await fetchApi(url, options)
 
           if (isMounted.current) {

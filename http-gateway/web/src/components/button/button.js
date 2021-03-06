@@ -64,6 +64,7 @@ export const Button = ({
 
 Button.propTypes = {
   variant: PropTypes.oneOf([PRIMARY, SECONDARY]),
+  icon: PropTypes.string,
   iconPosition: PropTypes.oneOf([ICON_LEFT, ICON_RIGHT]),
   onClick: PropTypes.func,
   loading: PropTypes.bool,
@@ -72,6 +73,7 @@ Button.propTypes = {
 
 Button.defaultProps = {
   variant: SECONDARY,
+  icon: null,
   iconPosition: ICON_LEFT,
   onClick: null,
   loading: false,

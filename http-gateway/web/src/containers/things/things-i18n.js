@@ -89,6 +89,11 @@ export const messages = defineMessages({
     id: 'things.actions',
     defaultMessage: 'Actions',
   },
+  deleteResourceMessage: {
+    id: 'things.deleteResourceMessage',
+    defaultMessage:
+      'Are you sure you want to delete this resource? This action cannot be undone.',
+  },
   resourceWasUpdated: {
     id: 'things.resourceWasUpdated',
     defaultMessage: 'The resource was updated successfully.',
@@ -97,6 +102,11 @@ export const messages = defineMessages({
     id: 'things.resourceWasUpdatedOffline',
     defaultMessage:
       'The resource was updated successfully, changes will be applied once the device is online.',
+  },
+  resourceWasDeletedOffline: {
+    id: 'things.resourceWasDeletedOffline',
+    defaultMessage:
+      'Deleting of the resource was scheduled, it will be deleted once the device is online.',
   },
   resourceWasCreated: {
     id: 'things.resourceWasCreated',
@@ -118,7 +128,7 @@ export const messages = defineMessages({
   },
   resourceUpdateError: {
     id: 'things.resourceUpdateError',
-    defaultMessage: 'Resource update failed',
+    defaultMessage: 'Failed to update a resource',
     description: 'Title of the toast message on resource update error.',
   },
   resourceCreateSuccess: {
@@ -128,13 +138,29 @@ export const messages = defineMessages({
   },
   resourceCreateError: {
     id: 'things.resourceCreateError',
-    defaultMessage: 'Resource create failed',
+    defaultMessage: 'Failed to create a resource',
     description: 'Title of the toast message on resource create error.',
   },
   resourceRetrieveError: {
     id: 'things.resourceRetrieveError',
-    defaultMessage: 'Resource retrieve failed',
+    defaultMessage: 'Failed to retrieve a resource',
     description: 'Title of the toast message on resource retrieve error.',
+  },
+  resourceDeleteSuccess: {
+    id: 'things.resourceDeleteSuccess',
+    defaultMessage: 'Resource delete scheduled',
+    description:
+      'Title of the toast message on delete resource schedule success.',
+  },
+  resourceWasDeleted: {
+    id: 'things.resourceWasDeleted',
+    defaultMessage:
+      'The resource delete was successfully scheduled. you will be notified when the resource was deleted.',
+  },
+  resourceDeleteError: {
+    id: 'things.resourceDeleteError',
+    defaultMessage: 'Failed to delete a resource',
+    description: 'Title of the toast message on resource delete error.',
   },
   thingWentOnline: {
     id: 'things.thingWentOnline',
@@ -155,5 +181,34 @@ export const messages = defineMessages({
   notifications: {
     id: 'things.notifications',
     defaultMessage: 'Notifications',
+  },
+  refresh: {
+    id: 'things.refresh',
+    defaultMessage: 'Refresh',
+  },
+  newResource: {
+    id: 'things.newResource',
+    defaultMessage: 'New Resource',
+  },
+  resourceDeleted: {
+    id: 'things.resourceDeleted',
+    defaultMessage: 'Resource Deleted',
+  },
+  resourceWithHrefWasDeleted: {
+    id: 'things.resourceWithHrefWasDeleted',
+    defaultMessage: 'Resource {href} was deleted from thing {deviceId}.',
+  },
+  resourceAdded: {
+    id: 'things.resourceAdded',
+    defaultMessage: 'New resource {href} was added to the thing {deviceId}.',
+  },
+  resourceUpdated: {
+    id: 'things.resourceUpdated',
+    defaultMessage: 'Resource Updated',
+  },
+  resourceUpdatedDesc: {
+    id: 'things.resourceUpdatedDesc',
+    defaultMessage:
+      'Resource {href} on a thing called {deviceName} was updated.',
   },
 })

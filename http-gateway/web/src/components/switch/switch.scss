@@ -57,4 +57,30 @@ $mainVal: 16px;
       }
     }
   }
+
+  .custom-control-input {
+    &[disabled] {
+      &:not(:checked) {
+        & ~ .custom-control-label::before {
+          background-color: $secondary_20;
+          border-color: $secondary_20;
+        }
+
+        & ~ .custom-control-label::after {
+          background-color: rgba($primary_100, 0.5);
+        }
+      }
+
+      &:checked {
+        & ~ .custom-control-label::before {
+          background-color: rgba($primary_100, 0.5);
+          border-color: transparent;
+        }
+
+        & ~ .custom-control-label::after {
+          background-color: rgba($light_100, 0.8);
+        }
+      }
+    }
+  }
 }

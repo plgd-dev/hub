@@ -30,10 +30,16 @@ export const ActionButton = ({ children, type, menuProps, items, ...rest }) => {
       >
         {items.filter(item => !item.hidden).map(item => {
           return (
-            <BDropdown.Item key={item.id || item.label} onClick={item.onClick}>
-              {item.icon && <i className={`fas ${item.icon}`} />}
-              {item.label}
-            </BDropdown.Item>
+            item.component || (
+              <BDropdown.Item
+                className="btn btn-secondary"
+                key={item.id || item.label}
+                onClick={item.onClick}
+              >
+                {item.icon && <i className={`fas ${item.icon}`} />}
+                {item.label}
+              </BDropdown.Item>
+            )
           )
         })}
       </BDropdown.Menu>
@@ -46,10 +52,11 @@ ActionButton.propTypes = {
   type: PropTypes.oneOf([PRIMARY, SECONDARY, EMPTY]),
   items: PropTypes.arrayOf(
     PropTypes.shape({
-      onClick: PropTypes.func.isRequired,
-      label: PropTypes.string.isRequired,
+      onClick: PropTypes.func,
+      label: PropTypes.string,
       id: PropTypes.string,
       hidden: PropTypes.bool,
+      component: PropTypes.node,
     })
   ).isRequired,
   menuProps: PropTypes.shape({
