@@ -21,12 +21,6 @@ module.exports = {
       sidebar: {
         '/guide/': [
           {
-            title: 'Introduction',
-            path: '/guide',
-            children: ['.'],
-            collapsable: false
-          },
-          {
             title: 'Getting Started',
             children: [
               'getting-started/1-deploy',
