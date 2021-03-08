@@ -24,7 +24,7 @@ http {
     ssl_certificate_key /data/certs/external/endpoint.key;
     proxy_ssl_name localhost;
     location ~ ^(/authorize|/oauth/token|/.well-known/jwks.json|/v2/logout|/authorize/userinfo) {
-      set $upstream_oauth_server https://127.0.0.1:REPLACE_OAUTH_SERVER_PORT;
+      set $upstream_oauth_server https://127.0.0.1:REPLACE_MOCKED_OAUTH_SERVER_PORT;
       proxy_pass                     $upstream_oauth_server;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;
       proxy_ssl_certificate_key       /data/certs/internal/endpoint.key;
