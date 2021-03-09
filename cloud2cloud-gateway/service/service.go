@@ -76,6 +76,7 @@ func New(
 	raConn, err := grpc.Dial(
 		config.ResourceAggregateAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
 		log.Fatalf("cannot connect to resource aggregate: %v", err)
