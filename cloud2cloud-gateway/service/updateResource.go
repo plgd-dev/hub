@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
@@ -80,6 +83,10 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 	if err != nil {
 		return http.StatusUnauthorized, fmt.Errorf("cannot get access token: %w", err)
 	}
+	correlationUUID, err := uuid.NewV4()
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("cannot create correlationID: %w", err)
+	}
 
 	contentType := r.Header.Get(events.ContentTypeKey)
 
@@ -93,16 +100,25 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 		return http.StatusBadRequest, fmt.Errorf("cannot read body: %w", err)
 	}
 
-	resp, err := rh.rdClient.UpdateResource(kitNetGrpc.CtxWithUserID(r.Context(), userID), &pbGRPC.UpdateResourceRequest{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
+	updateCommand := &commands.UpdateResourceRequest{
+		ResourceId:    commands.NewResourceID(deviceID, href),
+		CorrelationId: correlationUUID.String(),
+		Content: &commands.Content{
+			Data:              buffer.Bytes(),
+			ContentType:       contentType,
+			CoapContentFormat: -1,
 		},
-		Content: &pbGRPC.Content{
-			ContentType: contentType,
-			Data:        buffer.Bytes(),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: r.RemoteAddr,
 		},
-	})
+	}
+
+	operator := operations.New(rh.resourceSubscriber, rh.raClient)
+	updatedEvent, err := operator.UpdateResource(kitNetGrpc.CtxWithUserID(r.Context(), userID), updateCommand)
+	if err != nil {
+		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
+	}
+	resp, err := pb.RAResourceUpdatedEventToResponse(updatedEvent)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
 	}

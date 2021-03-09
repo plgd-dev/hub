@@ -6,10 +6,6 @@ import "github.com/plgd-dev/cloud/resource-aggregate/pb/resources.proto";
 
 option go_package = "github.com/plgd-dev/cloud/resource-aggregate/commands;commands";
 
-message AuthorizationContext {
-    string device_id = 1;
-}
-
 message CommandMetadata {
     string connection_id = 1;
     uint64 sequence = 2;
@@ -17,8 +13,7 @@ message CommandMetadata {
 
 message AuditContext {
     string user_id = 1;
-    string device_id = 2;
-    string correlation_id = 3;
+    string correlation_id = 2;
 }
 
 message ResourceId {
@@ -56,30 +51,28 @@ message ResourceId {
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L35
 message PublishResourceLinksRequest {
-    AuthorizationContext authorization_context = 1;
-    repeated Resource resources = 2;
-    string device_id = 3;
-    CommandMetadata command_metadata = 4;
+    repeated Resource resources = 1;
+    string device_id = 2;
+    CommandMetadata command_metadata = 100;
 }
 
 message PublishResourceLinksResponse {
-    AuditContext audit_context = 1;
-    repeated Resource published_resources = 2;
-    string device_id = 3;
+    repeated Resource published_resources = 1;
+    string device_id = 2;
+    AuditContext audit_context = 100;
 }
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
 message UnpublishResourceLinksRequest {
-    AuthorizationContext authorization_context = 1;
-    repeated string hrefs = 2;
-    string device_id = 3;
-    CommandMetadata command_metadata = 4;
+    repeated string hrefs = 1;
+    string device_id = 2;
+    CommandMetadata command_metadata = 100;
 }
 
 message UnpublishResourceLinksResponse {
-    AuditContext audit_context = 1;
-    repeated string unpublished_hrefs = 2;
-    string device_id = 3;
+    repeated string unpublished_hrefs = 1;
+    string device_id = 2;
+    AuditContext audit_context = 100;
 }
 
 //******************************************************************************************************************************************************
@@ -106,15 +99,14 @@ message UnpublishResourceLinksResponse {
 //******************************************************************************************************************************************************
 
 message NotifyResourceChangedRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    Content content = 3;
-    CommandMetadata command_metadata = 4;
-    Status status = 5;
+    ResourceId resource_id = 1;
+    Content content = 2;
+    CommandMetadata command_metadata = 3;
+    Status status = 4;
 }
 
 message NotifyResourceChangedResponse {
-    AuditContext audit_context = 1;
+    AuditContext audit_context = 100;
 }
 
 //*******************************************************************************************************************************************************
@@ -165,12 +157,11 @@ message NotifyResourceChangedResponse {
 // └──────────┘                           └───────┘                    └──────────────────┘          └─────────┘          └──────┘     
 //*******************************************************************************************************************************************************
 
-message UpdateResourceRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
-    Content content = 4;
-    string resource_interface = 5;
+message UpdateResourceRequest { 
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    Content content = 3;
+    string resource_interface = 4;
     CommandMetadata command_metadata = 100;
 }
 
@@ -179,16 +170,15 @@ message UpdateResourceResponse {
 }
 
 message ConfirmResourceUpdateRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
-    Status status = 4;
-    Content content = 5;
-    CommandMetadata command_metadata = 6;
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    Status status = 3;
+    Content content = 4;
+    CommandMetadata command_metadata = 100;
 }
 
 message ConfirmResourceUpdateResponse {
-    AuditContext audit_context = 1;
+    AuditContext audit_context = 100;
 }
 
 //*******************************************************************************************************************************************************
@@ -231,29 +221,27 @@ message ConfirmResourceUpdateResponse {
 // └──────────┘            └───────┘                     └──────────────────┘           └─────────┘           └──────┘
 //*******************************************************************************************************************************************************
 
-message RetrieveResourceRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
-    string resource_interface = 4;
-    CommandMetadata command_metadata = 5;
+message RetrieveResourceRequest {   
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    string resource_interface = 3;
+    CommandMetadata command_metadata = 100;
 }
 
 message RetrieveResourceResponse {
-    AuditContext audit_context = 1;
+    AuditContext audit_context = 100;
 }
 
-message ConfirmResourceRetrieveRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
-    Status status = 4;
-    Content content = 5;
-    CommandMetadata command_metadata = 6;
+message ConfirmResourceRetrieveRequest {  
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    Status status = 3;
+    Content content = 4;
+    CommandMetadata command_metadata = 100;
 }
 
 message ConfirmResourceRetrieveResponse {
-    AuditContext audit_context = 1;
+    AuditContext audit_context = 100;
 }
 
 /*******************************************************************************************************************************************************
@@ -305,22 +293,20 @@ Delete Resource
 ******************************************************************************************************************************************************/
 
 message DeleteResourceRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
     CommandMetadata command_metadata = 100;
 }
 
 message DeleteResourceResponse {
-    AuditContext audit_context = 1;
+    AuditContext audit_context = 100;
 }
 
 message ConfirmResourceDeleteRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
-    Status status = 4;
-    Content content = 5;
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    Status status = 3;
+    Content content = 4;
     CommandMetadata command_metadata = 100;
 }
 
@@ -377,23 +363,21 @@ message ConfirmResourceDeleteResponse {
 ******************************************************************************************************************************************************/
 
 message CreateResourceRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
-    Content content = 4;
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    Content content = 3;
     CommandMetadata command_metadata = 100;
 }
 
 message CreateResourceResponse {
-    AuditContext audit_context = 1;
+    AuditContext audit_context = 100;
 }
 
 message ConfirmResourceCreateRequest {
-    AuthorizationContext authorization_context = 1;
-    ResourceId resource_id = 2;
-    string correlation_id = 3;
-    Status status = 4;
-    Content content = 5;
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    Status status = 3;
+    Content content = 4;
     CommandMetadata command_metadata = 100;
 }
 

@@ -92,9 +92,8 @@ func TestPublishUnpublish(t *testing.T) {
 
 func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) *commands.PublishResourceLinksRequest {
 	r := &commands.PublishResourceLinksRequest{
-		Resources:            []*commands.Resource{testNewResource(href, deviceId)},
-		DeviceId:             deviceId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId, accesstoken),
+		Resources: []*commands.Resource{testNewResource(href, deviceId)},
+		DeviceId:  deviceId,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -105,22 +104,14 @@ func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) 
 
 func testMakeUnpublishResourceRequest(deviceId, href, userId, accesstoken string) *commands.UnpublishResourceLinksRequest {
 	r := &commands.UnpublishResourceLinksRequest{
-		Hrefs:                []string{href},
-		DeviceId:             deviceId,
-		AuthorizationContext: testNewAuthorizationContext(deviceId, userId, accesstoken),
+		Hrefs:    []string{href},
+		DeviceId: deviceId,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
 	}
 	return r
-}
-
-func testNewAuthorizationContext(deviceId, userId, accessToken string) *commands.AuthorizationContext {
-	ac := commands.AuthorizationContext{
-		DeviceId: deviceId,
-	}
-	return &ac
 }
 
 func testNewResource(href string, deviceId string) *commands.Resource {

@@ -18,7 +18,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
@@ -32,9 +31,8 @@ import (
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
-	authServiceClient       pbAS.AuthorizationServiceClient
-	resourceAggregateClient raService.ResourceAggregateClient
-	fqdn                    string
+	authServiceClient pbAS.AuthorizationServiceClient
+	fqdn              string
 
 	resourceProjection            *Projection
 	subscriptions                 *Subscriptions
@@ -96,12 +94,6 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 	}
 	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	raConn, err := grpc.Dial(svc.ResourceAggregateAddr, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)))
-	if err != nil {
-		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
-	}
-	resourceAggregateClient := raService.NewResourceAggregateClient(raConn)
-
 	pool, err := ants.NewPool(config.GoRoutinePoolSize)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
@@ -140,14 +132,12 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		resourceEventStore.Close(context.Background())
 		userDevicesManager.Close()
 		pool.Release()
-		raConn.Close()
 		asConn.Close()
 		oauthMgr.Close()
 	}
 
 	h := NewRequestHandler(
 		authServiceClient,
-		resourceAggregateClient,
 		resourceProjection,
 		subscriptions,
 		updateNotificationContainer,
@@ -166,7 +156,6 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
 	authServiceClient pbAS.AuthorizationServiceClient,
-	resourceAggregateClient raService.ResourceAggregateClient,
 	resourceProjection *Projection,
 	subscriptions *Subscriptions,
 	updateNotificationContainer *notification.UpdateNotificationContainer,
@@ -182,7 +171,6 @@ func NewRequestHandler(
 		authServiceClient:             authServiceClient,
 		resourceProjection:            resourceProjection,
 		subscriptions:                 subscriptions,
-		resourceAggregateClient:       resourceAggregateClient,
 		updateNotificationContainer:   updateNotificationContainer,
 		retrieveNotificationContainer: retrieveNotificationContainer,
 		deleteNotificationContainer:   deleteNotificationContainer,

@@ -13,6 +13,8 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 
@@ -34,9 +36,11 @@ type ListDevicesOfUserFunc func(ctx context.Context, correlationID, userID, acce
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	rdClient  pbGRPC.GrpcGatewayClient
-	subMgr    *SubscriptionManager
-	emitEvent emitEventFunc
+	rdClient           pbGRPC.GrpcGatewayClient
+	raClient           raService.ResourceAggregateClient
+	resourceSubscriber eventbus.Subscriber
+	subMgr             *SubscriptionManager
+	emitEvent          emitEventFunc
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -49,13 +53,17 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 //NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
 	rdClient pbGRPC.GrpcGatewayClient,
+	raClient raService.ResourceAggregateClient,
+	resourceSubscriber eventbus.Subscriber,
 	subMgr *SubscriptionManager,
 	emitEvent emitEventFunc,
 ) *RequestHandler {
 	return &RequestHandler{
-		rdClient:  rdClient,
-		subMgr:    subMgr,
-		emitEvent: emitEvent,
+		rdClient:           rdClient,
+		raClient:           raClient,
+		resourceSubscriber: resourceSubscriber,
+		subMgr:             subMgr,
+		emitEvent:          emitEvent,
 	}
 }
 

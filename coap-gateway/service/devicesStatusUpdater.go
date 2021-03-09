@@ -78,7 +78,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 	return validUntil, deviceStatus.SetOnline(ctx, client.server.raClient, authCtx.GetDeviceID(), validUntil, &commands.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
-	}, authCtx.GetPbData())
+	})
 }
 
 func (u *devicesStatusUpdater) getDevicesToUpdate(now time.Time) []*deviceExpires {

@@ -129,7 +129,7 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
+		ac := commands.NewAuditContext(userID, "")
 
 		rlp := ResourceLinksPublished{
 			Resources:     req.GetResources(),
@@ -151,7 +151,7 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(req.GetAuthorizationContext().GetDeviceId(), userID, "")
+		ac := commands.NewAuditContext(userID, "")
 		rlu := ResourceLinksUnpublished{
 			Hrefs:         req.GetHrefs(),
 			DeviceId:      req.GetDeviceId(),

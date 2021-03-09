@@ -165,31 +165,29 @@ func NewCommandMetadata(sequenceNumber uint64, connectionID string) *commands.Co
 	}
 }
 
-func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) *commands.ConfirmResourceRetrieveRequest {
+func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceRetrieveRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceRetrieveRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              content,
-		CommandMetadata:      metadata,
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 
-func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) *commands.ConfirmResourceUpdateRequest {
+func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceUpdateRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceUpdateRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              content,
-		CommandMetadata:      metadata,
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 
@@ -203,36 +201,31 @@ func NewDeleteResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 		ResourceId:      resourceID,
 		CorrelationId:   correlationUUID.String(),
 		CommandMetadata: metadata,
-		AuthorizationContext: &commands.AuthorizationContext{
-			DeviceId: resourceID.GetDeviceId(),
-		},
 	}, nil
 }
 
-func NewConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) *commands.ConfirmResourceDeleteRequest {
+func NewConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceDeleteRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceDeleteRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              content,
-		CommandMetadata:      metadata,
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 
-func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) *commands.NotifyResourceChangedRequest {
+func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connectionID string, req *pool.Message) *commands.NotifyResourceChangedRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.NotifyResourceChangedRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		Content:              content,
-		CommandMetadata:      metadata,
-		Status:               CoapCodeToStatus(req.Code()),
+		ResourceId:      resourceID,
+		Content:         content,
+		CommandMetadata: metadata,
+		Status:          CoapCodeToStatus(req.Code()),
 	}
 }
 
@@ -264,9 +257,6 @@ func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   metadata,
 		CorrelationId:     correlationUUID.String(),
-		AuthorizationContext: &commands.AuthorizationContext{
-			DeviceId: resourceID.GetDeviceId(),
-		},
 	}, nil
 }
 
@@ -291,9 +281,6 @@ func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Messag
 		CorrelationId:     correlationUUID.String(),
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   metadata,
-		AuthorizationContext: &commands.AuthorizationContext{
-			DeviceId: resourceID.GetDeviceId(),
-		},
 	}, nil
 }
 
@@ -307,9 +294,6 @@ func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
 
 	return &commands.CreateResourceRequest{
-		AuthorizationContext: &commands.AuthorizationContext{
-			DeviceId: resourceID.GetDeviceId(),
-		},
 		ResourceId:      resourceID,
 		CorrelationId:   correlationUUID.String(),
 		Content:         content,
@@ -317,17 +301,16 @@ func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 	}, nil
 }
 
-func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) *commands.ConfirmResourceCreateRequest {
+func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceCreateRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
 	return &commands.ConfirmResourceCreateRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              content,
-		CommandMetadata:      metadata,
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 

@@ -149,19 +149,16 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
 	var errors []error
 	for _, device := range devices {
-		authCtx := commands.AuthorizationContext{
-			DeviceId: device.ID,
-		}
 		cmdMetadata := commands.CommandMetadata{
 			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 			Sequence:     header.SequenceNumber,
 		}
-		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata, &authCtx)
+		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
-		err = status.SetOnline(ctx, s.raClient, device.ID, time.Time{}, &cmdMetadata, &authCtx)
+		err = status.SetOnline(ctx, s.raClient, device.ID, time.Time{}, &cmdMetadata)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to online: %w", device.ID, err))
 		}
@@ -177,19 +174,16 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
 	var errors []error
 	for _, device := range devices {
-		authCtx := commands.AuthorizationContext{
-			DeviceId: device.ID,
-		}
 		cmdMetadata := commands.CommandMetadata{
 			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
 			Sequence:     header.SequenceNumber,
 		}
-		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata, &authCtx)
+		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
-		err = status.SetOffline(ctx, s.raClient, device.ID, &cmdMetadata, &authCtx)
+		err = status.SetOffline(ctx, s.raClient, device.ID, &cmdMetadata)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %w", device.ID, err))
 		}

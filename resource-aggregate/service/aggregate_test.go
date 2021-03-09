@@ -344,9 +344,8 @@ func testMakePublishResourceRequest(deviceID string, href []string) *commands.Pu
 		resources = append(resources, testNewResource(h, deviceID))
 	}
 	r := commands.PublishResourceLinksRequest{
-		Resources:            resources,
-		DeviceId:             deviceID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		Resources: resources,
+		DeviceId:  deviceID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -357,9 +356,8 @@ func testMakePublishResourceRequest(deviceID string, href []string) *commands.Pu
 
 func testMakeUnpublishResourceRequest(deviceID string, hrefs []string) *commands.UnpublishResourceLinksRequest {
 	r := commands.UnpublishResourceLinksRequest{
-		Hrefs:                hrefs,
-		DeviceId:             deviceID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		Hrefs:    hrefs,
+		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -374,7 +372,6 @@ func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64) 
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
@@ -392,9 +389,8 @@ func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlatio
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		ResourceInterface:    resourceInterface,
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		ResourceInterface: resourceInterface,
+		CorrelationId:     correlationID,
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
@@ -412,8 +408,7 @@ func testMakeRetrieveResourceRequest(deviceID, href string, correlationID string
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CorrelationId: correlationID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -428,8 +423,7 @@ func testMakeDeleteResourceRequest(deviceID, href string, correlationID string) 
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CorrelationId: correlationID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -447,8 +441,7 @@ func testMakeCreateResourceRequest(deviceID, href string, correlationID string) 
 		Content: &commands.Content{
 			Data: []byte("create hello world"),
 		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CorrelationId: correlationID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -463,8 +456,7 @@ func testMakeConfirmResourceCreateRequest(deviceID, href, correlationID string) 
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CorrelationId: correlationID,
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
@@ -483,8 +475,7 @@ func testMakeConfirmResourceUpdateRequest(deviceID, href, correlationID string) 
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CorrelationId: correlationID,
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
@@ -503,8 +494,7 @@ func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationID string
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CorrelationId: correlationID,
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
@@ -523,8 +513,7 @@ func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) 
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationID,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
+		CorrelationId: correlationID,
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
@@ -535,13 +524,6 @@ func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) 
 		},
 	}
 	return &r
-}
-
-func testNewAuthorizationContext(deviceID string) *commands.AuthorizationContext {
-	ac := commands.AuthorizationContext{
-		DeviceId: deviceID,
-	}
-	return &ac
 }
 
 func testNewResource(href string, deviceID string) *commands.Resource {
@@ -578,8 +560,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.NotifyResourceChangedRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -680,8 +661,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.UpdateResourceRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -775,8 +755,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.ConfirmResourceUpdateRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -862,8 +841,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.RetrieveResourceRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -946,8 +924,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.ConfirmResourceRetrieveRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -1039,8 +1016,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.DeleteResourceRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -1123,9 +1099,8 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.ConfirmResourceDeleteRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
-					Status:               commands.Status_OK,
+					ResourceId: &commands.ResourceId{},
+					Status:     commands.Status_OK,
 				},
 			},
 			wantEvents:     false,
@@ -1210,8 +1185,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.CreateResourceRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -1294,9 +1268,8 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 			name: "invalid",
 			args: args{
 				&commands.ConfirmResourceCreateRequest{
-					ResourceId:           &commands.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
-					Status:               commands.Status_OK,
+					ResourceId: &commands.ResourceId{},
+					Status:     commands.Status_OK,
 				},
 			},
 			wantEvents:     false,

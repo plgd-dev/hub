@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	grpcService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 
@@ -19,6 +20,7 @@ const RESOURCE_AGGREGATE_HOST = "localhost:30003"
 const RESOURCE_DIRECTORY_HOST = "localhost:30004"
 const C2C_CONNECTOR_HOST = "localhost:30006"
 const OAUTH_HOST = "localhost:30007"
+const GRPC_GATEWAY_HOST = "localhost:30008"
 const OAUTH_MANAGER_CLIENT_ID = oauthService.ClientTest
 const OAUTH_MANAGER_AUDIENCE = "localhost"
 
@@ -61,9 +63,16 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
 	rdCfg.Service.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
 	rdCfg.Service.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
-	rdCfg.Service.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
-	rdCfg.Listen.File.DisableVerifyClientCertificate = true
 	rdShutdown := rdService.New(t, rdCfg)
+
+	grpcCfg := grpcService.MakeConfig(t)
+	grpcCfg.Addr = GRPC_GATEWAY_HOST
+	grpcCfg.JwksURL = JWKS_URL
+	grpcCfg.Nats.URL = cloudConnectorNatsURL
+	grpcCfg.Listen.File.DisableVerifyClientCertificate = true
+	grpcCfg.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
+	grpcCfg.ResourceDirectoryAddr = RESOURCE_DIRECTORY_HOST
+	grpcShutdown := grpcService.New(t, grpcCfg)
 
 	c2cConnectorCfg := MakeConfig(t)
 	c2cConnectorCfg.StoreMongoDB.DatabaseName = cloudConnectorDB
@@ -81,6 +90,7 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 
 	return func() {
 		c2cConnectorShutdown()
+		grpcShutdown()
 		rdShutdown()
 		raShutdown()
 		authShutdown()

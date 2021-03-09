@@ -31,12 +31,12 @@ type Config struct {
 	Dial                     certManager.Config
 	JwksURL                  string
 	ResourceDirectoryAddr    string
-	ResourceAggregateAddr    string
-	Nats                     nats.Config
 	CertificateAuthorityAddr string
 	WebSocketReadLimit       int64
 	WebSocketReadTimeout     time.Duration
 	UI                       UIConfig
+	ResourceAggregateAddr    string
+	Nats                     nats.Config
 	GoRoutinePoolSize        int
 }
 

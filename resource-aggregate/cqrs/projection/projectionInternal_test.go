@@ -129,24 +129,21 @@ func TestProjection(t *testing.T) {
 	}
 
 	commandPub1 := commands.NotifyResourceChangedRequest{
-		ResourceId:           &res1,
-		Content:              &commands.Content{Data: []byte("asd")},
-		AuthorizationContext: &commands.AuthorizationContext{},
-		CommandMetadata:      &commands.CommandMetadata{},
+		ResourceId:      &res1,
+		Content:         &commands.Content{Data: []byte("asd")},
+		CommandMetadata: &commands.CommandMetadata{},
 	}
 
 	commandPub2 := commands.NotifyResourceChangedRequest{
-		ResourceId:           &res2,
-		Content:              &commands.Content{Data: []byte("asd")},
-		AuthorizationContext: &commands.AuthorizationContext{},
-		CommandMetadata:      &commands.CommandMetadata{},
+		ResourceId:      &res2,
+		Content:         &commands.Content{Data: []byte("asd")},
+		CommandMetadata: &commands.CommandMetadata{},
 	}
 
 	commandPub3 := commands.NotifyResourceChangedRequest{
-		ResourceId:           &res3,
-		Content:              &commands.Content{Data: []byte("asd")},
-		AuthorizationContext: &commands.AuthorizationContext{},
-		CommandMetadata:      &commands.CommandMetadata{},
+		ResourceId:      &res3,
+		Content:         &commands.Content{Data: []byte("asd")},
+		CommandMetadata: &commands.CommandMetadata{},
 	}
 
 	a1, err := aggregate.NewAggregate(res1.DeviceId, res1.ToUUID(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {

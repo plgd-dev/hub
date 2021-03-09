@@ -22,9 +22,6 @@ func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggre
 	}
 
 	_, err := raClient.NotifyResourceChanged(kitNetGrpc.CtxWithUserID(ctx, userID), &commands.NotifyResourceChangedRequest{
-		AuthorizationContext: &commands.AuthorizationContext{
-			DeviceId: deviceID,
-		},
 		ResourceId:      commands.NewResourceID(deviceID, kitHttp.CanonicalHref(href)),
 		CommandMetadata: &cmdMetadata,
 		Content: &commands.Content{
