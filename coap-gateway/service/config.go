@@ -3,6 +3,7 @@ package service
 import (
 	"time"
 
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/kit/security/oauth/manager"
 	"github.com/plgd-dev/kit/sync/task/queue"
 )
@@ -41,6 +42,7 @@ type Config struct {
 	LogMessages                     bool           `envconfig:"LOG_MESSAGES" default:"false"`
 	DeviceStatusExpiration          DeviceStatusExpirationConfig
 	TaskQueue                       queue.Config
+	Nats                            nats.Config
 }
 
 func (c *Config) SetDefaults() {

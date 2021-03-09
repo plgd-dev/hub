@@ -4,12 +4,24 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"google.golang.org/grpc/status"
 )
+
+func clientPostHandler(req *mux.Message, client *Client) {
+	resourceInterface := getResourceInterface(req)
+	if resourceInterface == coapconv.OCFCreateInterface {
+		clientCreateHandler(req, client)
+		return
+	}
+	clientUpdateHandler(req, client)
+}
 
 func clientUpdateHandler(req *mux.Message, client *Client) {
 	authCtx, err := client.GetAuthorizationContext()
@@ -41,10 +53,20 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 }
 
 func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
-	request := coapconv.MakeUpdateResourceRequest(deviceID, href, req)
-	resp, err := client.server.rdClient.UpdateResource(req.Context, request)
+	updateCommand, err := coapconv.NewUpdateResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
 		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), err
 	}
+
+	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
+	updatedEvent, err := operator.UpdateResource(req.Context, updateCommand)
+	if err != nil {
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), err
+	}
+	resp, err := pb.RAResourceUpdatedEventToResponse(updatedEvent)
+	if err != nil {
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), err
+	}
+
 	return resp.GetContent(), coapconv.StatusToCoapCode(resp.Status, coapCodes.POST), nil
 }

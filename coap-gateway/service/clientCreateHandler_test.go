@@ -6,15 +6,17 @@ import (
 	"io"
 	"testing"
 
+	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_clientCreateHandler(t *testing.T) {
+func Test_clientUpdateHandler(t *testing.T) {
 	shutdown := setUp(t, true)
 	defer shutdown()
 
@@ -59,7 +61,7 @@ func Test_clientCreateHandler(t *testing.T) {
 				contentFormat: message.TextPlain,
 				payload:       []byte("data"),
 			},
-			wantsCode: coapCodes.Changed,
+			wantsCode: coapCodes.Created,
 		},
 	}
 
@@ -73,7 +75,10 @@ func Test_clientCreateHandler(t *testing.T) {
 			if len(tt.args.payload) > 0 {
 				body = bytes.NewReader(tt.args.payload)
 			}
-			resp, err := co.Post(ctx, tt.args.href, tt.args.contentFormat, body)
+			req, err := tcp.NewPostRequest(ctx, tt.args.href, tt.args.contentFormat, body)
+			require.NoError(t, err)
+			req.SetOptionString(message.URIQuery, "if="+coapconv.OCFCreateInterface)
+			resp, err := co.Do(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 		})

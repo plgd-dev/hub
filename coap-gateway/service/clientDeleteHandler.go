@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -44,14 +45,32 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 }
 
 func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*pbGRPC.Content, coapCodes.Code, error) {
-	processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, userID), &pbGRPC.DeleteResourceRequest{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-	})
+	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
 		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
 	}
-	return processed.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapCodes.DELETE), nil
+
+	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
+	deletedCommand, err := operator.DeleteResource(req.Context, deleteCommand)
+	if err != nil {
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
+	}
+	resp, err := pb.RAResourceDeletedEventToResponse(deletedCommand)
+	if err != nil {
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
+	}
+
+	return resp.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapCodes.DELETE), nil
+	/*
+		processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, userID), &pbGRPC.DeleteResourceRequest{
+			ResourceId: &commands.ResourceId{
+				DeviceId: deviceID,
+				Href:     href,
+			},
+		})
+		if err != nil {
+			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
+		}
+		return processed.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapCodes.DELETE), nil
+	*/
 }
