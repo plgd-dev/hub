@@ -13,7 +13,7 @@ class _WSManager {
     this.isInitialized = false
 
     // Default time for delaying the onMessage event listener (used to wait out the initial messages from the WS).
-    this.defaultDelayMessageTimeMs = 3000
+    this.defaultDelayMessageTimeMs = 2300
 
     // Time needed to reconnect to the Websocket after it was disconnected (cause of server or network failure).
     this.reconnectTimeMs = 2000

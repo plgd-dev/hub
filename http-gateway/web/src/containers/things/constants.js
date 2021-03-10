@@ -24,6 +24,11 @@ export const resourceModalTypes = {
   CREATE_RESOURCE: 'create',
 }
 
+export const resourceEventTypes = {
+  ADDED: 'added',
+  REMOVED: 'removed',
+}
+
 export const knownInterfaces = {
   OIC_IF_A: 'oic.if.a',
   OIC_IF_BASELINE: 'oic.if.baseline',
@@ -39,8 +44,14 @@ export const defaultNewResource = {
   },
 }
 
+// Websocket keys
 export const THINGS_WS_KEY = 'things'
 export const STATUS_WS_KEY = 'status'
 export const RESOURCE_WS_KEY = 'resource'
-
 export const THINGS_STATUS_WS_KEY = `${THINGS_WS_KEY}.${STATUS_WS_KEY}`
+export const THINGS_RESOURCE_REGISTRATION_WS_KEY = `${THINGS_WS_KEY}.${RESOURCE_WS_KEY}.registration`
+export const THINGS_RESOURCE_UPDATE_WS_KEY = `${THINGS_WS_KEY}.${RESOURCE_WS_KEY}.update`
+
+// Emitter Event keys
+export const THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY =
+  'things-registered-unregistered-count'

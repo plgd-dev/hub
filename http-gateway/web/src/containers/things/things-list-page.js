@@ -12,7 +12,7 @@ import { ThingsListHeader } from './_things-list-header'
 
 export const ThingsListPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { data, loading, error } = useThingsList()
+  const { data, loading, error, refresh } = useThingsList()
 
   useEffect(
     () => {
@@ -36,7 +36,7 @@ export const ThingsListPage = () => {
         },
       ]}
       loading={loading}
-      header={<ThingsListHeader />}
+      header={<ThingsListHeader loading={loading} refresh={refresh} />}
     >
       <ThingsList data={data} />
     </Layout>

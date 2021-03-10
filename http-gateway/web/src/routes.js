@@ -15,7 +15,7 @@ export const Routes = () => {
       <Route path="/things" exact>
         <ThingsListPage />
       </Route>
-      <Route path="/things/:id">
+      <Route path={['/things/:id', '/things/:id/:href*']} exact>
         <ThingsDetailsPage />
       </Route>
       <Route path="/notifications">

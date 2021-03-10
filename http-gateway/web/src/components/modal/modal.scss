@@ -32,13 +32,17 @@ $padding: 25px;
     box-shadow: 0px 10px 40px $shadow_100;
     border: 0;
     border-radius: 0;
-    min-height: 200px;
+    min-height: 180px;
 
     .modal-header {
       border: 0;
       border-radius: 0;
       padding: $padding;
       padding-bottom: $padding - 5px;
+
+      i.fas {
+        margin-right: 12px;
+      }
 
       .close {
         position: absolute;
