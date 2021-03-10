@@ -1,7 +1,7 @@
 {
-  "domain": "localhost:20008",
-  "clientID": "ui",
-  "audience": "localhost:20008",
-  "scope": "openid offline_access",
-  "httpGatewayAddress": "localhost:20008"
+  "domain": "auth.plgd.cloud",
+  "clientID": "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS",
+  "audience": "https://try.plgd.cloud",
+  "scope": "",
+  "httpGatewayAddress": "https://api.try.plgd.cloud"
 }

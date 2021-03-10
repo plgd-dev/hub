@@ -3,6 +3,7 @@ import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
 import classNames from 'classnames'
 
+import { history } from '@/store'
 import { ConfirmModal } from '@/components/confirm-modal'
 import { Layout } from '@/components/layout'
 import { NotFoundPage } from '@/containers/not-found-page'
@@ -48,11 +49,11 @@ export const ThingsDetailsPage = () => {
   // Open the resource modal when href is present
   useEffect(
     () => {
-      if (href) {
+      if (href && !loading) {
         openUpdateModal({ href: `/${href}` })
       }
     },
-    [href] // eslint-disable-line
+    [href, loading] // eslint-disable-line
   )
 
   if (error) {
@@ -257,6 +258,16 @@ export const ThingsDetailsPage = () => {
     }
   }
 
+  // Handler which cleans up the resource modal data and updates the URL
+  const handleCloseUpdateModal = () => {
+    setResourceModalData(null)
+
+    if (href) {
+      // Remove the href from the URL when the update modal is closed
+      history.replace(window.location.pathname.replace(`/${href}`, ''))
+    }
+  }
+
   return (
     <Layout
       title={`${deviceName ? deviceName + ' | ' : ''}${_(menuT.things)}`}
@@ -265,6 +276,7 @@ export const ThingsDetailsPage = () => {
       header={
         <ThingsDetailsHeader
           deviceId={data?.device?.di}
+          deviceName={deviceName}
           isUnregistered={isUnregistered}
         />
       }
@@ -293,7 +305,7 @@ export const ThingsDetailsPage = () => {
 
       <ThingsResourcesModal
         {...resourceModalData}
-        onClose={() => setResourceModalData(null)}
+        onClose={handleCloseUpdateModal}
         fetchResource={openUpdateModal}
         updateResource={updateResource}
         createResource={createResource}
@@ -302,6 +314,7 @@ export const ThingsDetailsPage = () => {
         isDeviceOnline={isOnline}
         isUnregistered={isUnregistered}
         deviceId={id}
+        deviceName={deviceName}
       />
 
       <ConfirmModal
