@@ -7,6 +7,6 @@ export const playRandomFartSound = () => {
   const random = Math.floor(Math.random() * sounds.length)
   const sound = new Audio(sounds[random])
 
-  sound.load()
-  sound.play()
+  sound?.load?.()
+  sound?.play?.()
 }
