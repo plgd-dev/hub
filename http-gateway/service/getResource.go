@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
-	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/gorilla/mux"
 )
@@ -52,21 +51,14 @@ func (requestHandler *RequestHandler) getResourceFromDevice(w http.ResponseWrite
 		return
 	}
 
-	var body interface{}
-	if err := json.ReadFrom(r.Body, &body); err != nil {
-		writeError(w, fmt.Errorf("invalid json body: %w", err))
-		return
-	}
-
 	vars := mux.Vars(r)
-	interfaceQueryString := r.URL.Query().Get(uri.InterfaceQueryKey)
 	ctx := requestHandler.makeCtx(r)
 
 	retrieveCommand := &commands.RetrieveResourceRequest{
 		ResourceId:    commands.NewResourceID(vars[uri.DeviceIDKey], vars[uri.HrefKey]),
 		CorrelationId: correlationUUID.String(),
 
-		ResourceInterface: interfaceQueryString,
+		ResourceInterface: resourceInterface,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: r.RemoteAddr,
 		},
