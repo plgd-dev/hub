@@ -42,7 +42,10 @@ export const ThingsListHeader = ({ loading, refresh }) => {
         className="m-r-30"
         icon="fa-sync"
       >
-        {`${_(t.refresh)} (${numberOfChanges})`}
+        {`${_(t.refresh)}`}
+        <span className="m-l-5 yellow-circle">{`${
+          numberOfChanges > 9 ? '9+' : numberOfChanges
+        }`}</span>
       </Button>
       <Switch
         id="status-notifications"
