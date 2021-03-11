@@ -112,7 +112,7 @@ func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 func main() {
 	addr := flag.String("addr", "localhost:443", "address")
 	accesstoken := flag.String("accesstoken", "", "accesstoken")
-	authAddr := flag.String("authaddr", "localhost:443", "authorization servoce address")
+	authAddr := flag.String("authaddr", "localhost:443", "authorization service address")
 	deviceID := flag.String("deviceid", "", "deviceID")
 	href := flag.String("href", "", "href")
 	get := flag.Bool("get", true, "get resources(default) filtered by deviceid and href")

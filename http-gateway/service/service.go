@@ -106,9 +106,9 @@ func New(cfg Config) (*Server, error) {
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(cfg.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	resourceSubscriber, err := nats.NewSubscriber(cfg.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
 	if err != nil {
-		return nil, fmt.Errorf("cannot create resource nats subscriber %w", err)
+		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
 
 	var caConn *grpc.ClientConn

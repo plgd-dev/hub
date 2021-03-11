@@ -88,9 +88,9 @@ func New(
 		log.Fatalf("cannot create goroutine pool: %v", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
 	if err != nil {
-		log.Fatalf("cannot create resource nats subscriber %v", err)
+		log.Fatalf("cannot create eventbus subscriber: %v", err)
 	}
 
 	emitEvent := createEmitEventFunc(dialTLSConfig, config.EmitEventTimeout)

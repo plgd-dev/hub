@@ -63,8 +63,10 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 			return
 		}
 	} else {
-		content, code, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
+		code = coapCodes.Content
+		content, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
 		if err != nil {
+			code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation)
 			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 			return
 		}
@@ -110,21 +112,21 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
+func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, error) {
 	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
+		return nil, err
 	}
 
 	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
 	retrievedEvent, err := operator.RetrieveResource(req.Context, retrieveCommand)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
+		return nil, err
 	}
 	resp, err := pb.RAResourceRetrievedEventToResponse(retrievedEvent)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
+		return nil, err
 	}
 
-	return resp.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapconv.Retrieve_Operation), nil
+	return resp.GetContent(), nil
 }

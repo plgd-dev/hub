@@ -26,8 +26,10 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	content, code, err := clientCreateDeviceHandler(req, client, deviceID, href)
+	code := coapCodes.Created
+	content, err := clientCreateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
+		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Create_Operation)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
@@ -43,21 +45,21 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 	client.sendResponse(code, req.Token, mediaType, content.Data)
 }
 
-func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
+func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, error) {
 	createCommand, err := coapconv.NewCreateResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Create_Operation), err
+		return nil, err
 	}
 
 	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
 	createdEvent, err := operator.CreateResource(req.Context, createCommand)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Create_Operation), err
+		return nil, err
 	}
 	resp, err := pb.RAResourceCreatedEventToResponse(createdEvent)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Create_Operation), err
+		return nil, err
 	}
 
-	return resp.GetContent(), coapconv.StatusToCoapCode(resp.Status, coapconv.Create_Operation), nil
+	return resp.GetContent(), nil
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
-// CreateResource creates resource.
+// CreateResource requests creation of a new resource on a collection resource on a device.
 func (c *Client) CreateResource(
 	ctx context.Context,
 	deviceID string,
@@ -29,10 +29,7 @@ func (c *Client) CreateResource(
 		return err
 	}
 	r := pb.CreateResourceRequest{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
+		ResourceId: commands.NewResourceID(deviceID, href),
 		Content: &pb.Content{
 			Data:        data,
 			ContentType: cfg.codec.ContentFormat().String(),

@@ -102,9 +102,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot job queue %v", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, func(v func()) error { return p.Submit(v) }, func(err error) { log.Errorf("coap-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, func(v func()) error { return p.Submit(v) }, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
 	if err != nil {
-		log.Fatalf("cannot create resource nats subscriber %v", err)
+		log.Fatalf("cannot create eventbus subscriber: %v", err)
 	}
 
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)

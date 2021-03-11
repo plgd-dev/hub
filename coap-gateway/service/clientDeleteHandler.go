@@ -26,8 +26,10 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	content, code, err := clientDeleteResourceHandler(req, client, deviceID, href, authCtx.GetUserID())
+	code := coapCodes.Deleted
+	content, err := clientDeleteResourceHandler(req, client, deviceID, href, authCtx.GetUserID())
 	if err != nil {
+		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
@@ -44,21 +46,16 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 	client.sendResponse(code, req.Token, mediaType, content.Data)
 }
 
-func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*pbGRPC.Content, coapCodes.Code, error) {
+func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*pbGRPC.Content, error) {
 	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation), err
+		return nil, err
 	}
-
 	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
 	deletedCommand, err := operator.DeleteResource(req.Context, deleteCommand)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation), err
+		return nil, err
 	}
 	resp, err := pb.RAResourceDeletedEventToResponse(deletedCommand)
-	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation), err
-	}
-
-	return resp.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapconv.Delete_Operation), nil
+	return resp.GetContent(), nil
 }

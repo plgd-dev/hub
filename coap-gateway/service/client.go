@@ -24,6 +24,8 @@ import (
 	"github.com/plgd-dev/sdk/schema"
 )
 
+const OCFBaselineInterface = "oic.if.baseline"
+
 type observedResource struct {
 	href string
 
@@ -162,7 +164,7 @@ func (client *Client) observeResource(ctx context.Context, resourceID *commands.
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
 	resp, err := client.coapConn.Get(ctx, href, message.Option{
 		ID:    message.URIQuery,
-		Value: []byte("if=" + coapconv.OCFBaselineInterface),
+		Value: []byte("if=" + OCFBaselineInterface),
 	})
 	if err != nil {
 		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
@@ -203,7 +205,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 			})
 		}, message.Option{
 			ID:    message.URIQuery,
-			Value: []byte("if=" + coapconv.OCFBaselineInterface),
+			Value: []byte("if=" + OCFBaselineInterface),
 		})
 		if err != nil {
 			log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)

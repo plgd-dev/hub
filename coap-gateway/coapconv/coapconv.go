@@ -20,6 +20,8 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 )
 
+const OCFCreateInterface = "oic.if.create"
+
 func StatusToCoapCode(status pbGRPC.Status, operation Operation) codes.Code {
 	switch status {
 	case pbGRPC.Status_OK:
@@ -313,9 +315,6 @@ func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlatio
 		CommandMetadata: metadata,
 	}
 }
-
-const OCFCreateInterface = "oic.if.create"
-const OCFBaselineInterface = "oic.if.baseline"
 
 func NewCoapResourceCreateRequest(ctx context.Context, event *pb.Event_ResourceCreatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())

@@ -105,9 +105,9 @@ func NewRequestHandlerFromConfig(config HandlerConfig, clientTLS *tls.Config) (*
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("grpc-gateway: error occurs during receiving event: %v", err) }, nats.WithTLS(clientTLS))
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(clientTLS))
 	if err != nil {
-		return nil, fmt.Errorf("cannot create resource nats subscriber %w", err)
+		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
 
 	subscriptions := NewSubscriptions()
