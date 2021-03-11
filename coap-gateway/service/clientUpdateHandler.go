@@ -55,18 +55,18 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
 	updateCommand, err := coapconv.NewUpdateResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation), err
 	}
 
 	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
 	updatedEvent, err := operator.UpdateResource(req.Context, updateCommand)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation), err
 	}
 	resp, err := pb.RAResourceUpdatedEventToResponse(updatedEvent)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation), err
 	}
 
-	return resp.GetContent(), coapconv.StatusToCoapCode(resp.Status, coapCodes.POST), nil
+	return resp.GetContent(), coapconv.StatusToCoapCode(resp.Status, coapconv.Update_Operation), nil
 }

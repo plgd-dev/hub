@@ -20,17 +20,17 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 )
 
-func StatusToCoapCode(status pbGRPC.Status, cmdCode codes.Code) codes.Code {
+func StatusToCoapCode(status pbGRPC.Status, operation Operation) codes.Code {
 	switch status {
 	case pbGRPC.Status_OK:
-		switch cmdCode {
-		case codes.POST:
+		switch operation {
+		case Update_Operation:
 			return codes.Changed
-		case codes.GET:
+		case Retrieve_Operation:
 			return codes.Content
-		case codes.DELETE:
+		case Delete_Operation:
 			return codes.Deleted
-		case codes.PUT:
+		case Create_Operation:
 			return codes.Created
 		}
 	case pbGRPC.Status_CREATED:

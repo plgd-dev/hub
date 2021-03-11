@@ -5,17 +5,24 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func GrpcCode2CoapCode(statusCode codes.Code, method coapCodes.Code) coapCodes.Code {
+type Operation uint8
+
+const Create_Operation Operation = 1
+const Retrieve_Operation Operation = 2
+const Update_Operation Operation = 3
+const Delete_Operation Operation = 4
+
+func GrpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Code {
 	switch statusCode {
 	case codes.OK:
-		switch method {
-		case coapCodes.POST:
+		switch operation {
+		case Update_Operation:
 			return coapCodes.Changed
-		case coapCodes.GET:
+		case Retrieve_Operation:
 			return coapCodes.Content
-		case coapCodes.PUT:
+		case Create_Operation:
 			return coapCodes.Created
-		case coapCodes.DELETE:
+		case Delete_Operation:
 			return coapCodes.Deleted
 		}
 	case codes.Canceled:

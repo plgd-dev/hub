@@ -92,7 +92,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 		},
 	})
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
 	}
 	defer retrieveResourcesValuesClient.CloseSend()
 	for {
@@ -101,7 +101,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 			break
 		}
 		if err != nil {
-			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
+			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
 		}
 		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetHref() == href && resourceValue.Content != nil {
 			return resourceValue.Content, coapCodes.Content, nil
@@ -113,18 +113,18 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
 	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
 	}
 
 	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
 	retrievedEvent, err := operator.RetrieveResource(req.Context, retrieveCommand)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
 	}
 	resp, err := pb.RAResourceRetrievedEventToResponse(retrievedEvent)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
 	}
 
-	return resp.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapCodes.GET), nil
+	return resp.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapconv.Retrieve_Operation), nil
 }

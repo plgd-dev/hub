@@ -47,30 +47,18 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*pbGRPC.Content, coapCodes.Code, error) {
 	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation), err
 	}
 
 	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
 	deletedCommand, err := operator.DeleteResource(req.Context, deleteCommand)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation), err
 	}
 	resp, err := pb.RAResourceDeletedEventToResponse(deletedCommand)
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation), err
 	}
 
-	return resp.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapCodes.DELETE), nil
-	/*
-		processed, err := client.server.rdClient.DeleteResource(kitNetGrpc.CtxWithUserID(req.Context, userID), &pbGRPC.DeleteResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: deviceID,
-				Href:     href,
-			},
-		})
-		if err != nil {
-			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), err
-		}
-		return processed.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapCodes.DELETE), nil
-	*/
+	return resp.GetContent(), coapconv.StatusToCoapCode(pbGRPC.Status_OK, coapconv.Delete_Operation), nil
 }

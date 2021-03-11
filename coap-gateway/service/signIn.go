@@ -69,7 +69,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		AccessToken: signIn.AccessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation), req.Token)
 		return
 	}
 
@@ -179,7 +179,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		AccessToken: signOut.AccessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation), req.Token)
 		client.Close()
 		return
 	}
