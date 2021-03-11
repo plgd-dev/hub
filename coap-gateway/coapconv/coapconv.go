@@ -315,6 +315,7 @@ func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlatio
 }
 
 const OCFCreateInterface = "oic.if.create"
+const OCFBaselineInterface = "oic.if.baseline"
 
 func NewCoapResourceCreateRequest(ctx context.Context, event *pb.Event_ResourceCreatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())

@@ -160,7 +160,10 @@ func (client *Client) observeResource(ctx context.Context, resourceID *commands.
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
-	resp, err := client.coapConn.Get(ctx, href)
+	resp, err := client.coapConn.Get(ctx, href, message.Option{
+		ID:    message.URIQuery,
+		Value: []byte("if=" + coapconv.OCFBaselineInterface),
+	})
 	if err != nil {
 		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
 		return
@@ -198,6 +201,9 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 					client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
 				}
 			})
+		}, message.Option{
+			ID:    message.URIQuery,
+			Value: []byte("if=" + coapconv.OCFBaselineInterface),
 		})
 		if err != nil {
 			log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
