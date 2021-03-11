@@ -42,7 +42,9 @@ func TestClient_GetResource(t *testing.T) {
 				href:     "/oc/con",
 			},
 			want: map[interface{}]interface{}{
-				"n": test.TestDeviceName,
+				"n":  test.TestDeviceName,
+				"if": []interface{}{"oic.if.rw", "oic.if.baseline"},
+				"rt": []interface{}{"oic.wk.con"},
 			},
 		},
 		{

@@ -35,7 +35,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	wantContentType := message.AppJSON.String()
 	wantContent := true
 	wantEventType := events.EventType_ResourceChanged
-	wantEventContent := map[interface{}]interface{}(map[interface{}]interface{}{"name": "Light", "power": uint64(0), "state": false})
+	wantEventContent := map[interface{}]interface{}{"if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "name": "Light", "power": uint64(0), "rt": []interface{}{"core.light"}, "state": false}
 	eventType := events.EventType_ResourceChanged
 	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1/subscriptions"
 	accept := message.AppJSON.String()

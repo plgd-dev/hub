@@ -43,7 +43,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"name": "Light", "power": uint64(0), "state": false},
+			want:            map[string]interface{}{"name": "Light", "power": uint64(0), "state": false, "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "rt": []interface{}{"core.light"}},
 		},
 		{
 			name: "valid /oic/d",
@@ -53,7 +53,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName},
+			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName, "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}},
 		},
 		{
 			name: "invalid Href",

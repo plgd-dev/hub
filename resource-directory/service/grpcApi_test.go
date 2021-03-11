@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"sync"
 	"testing"
 	"time"
@@ -548,7 +549,11 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				Content: &pb.Content{
 					ContentType: message.AppOcfCbor.String(),
-					Data:        []byte("\277estate\364epower\000dnameeLight\377"),
+					Data: func() []byte {
+						ret, err := base64.StdEncoding.DecodeString("v2JydJ9qY29yZS5saWdodP9iaWafaW9pYy5pZi5yd29vaWMuaWYuYmFzZWxpbmX/ZXN0YXRl9GVwb3dlcgBkbmFtZWVMaWdodP8=")
+						require.NoError(t, err)
+						return ret
+					}(),
 				},
 				Status: pb.Status_OK,
 			},
