@@ -61,6 +61,7 @@ export const deviceStatusListener = async message => {
               onClick: () => {
                 history.push(`/things/${deviceId}`)
               },
+              isNotification: true,
             }
           )
         }
@@ -78,58 +79,68 @@ export const deviceStatusListener = async message => {
   }, notificationsEnabled ? DEFAULT_NOTIFICATION_DELAY : 0)
 }
 
-export const deviceResourceRegistrationListener = deviceId => message => {
+export const deviceResourceRegistrationListener = ({
+  deviceId,
+  deviceName,
+}) => message => {
   // Things notifications must be enabled to see a toast message
   const notificationsEnabled = isNotificationActive(
     getThingNotificationKey(deviceId)
   )(store.getState())
 
   const parsedMessageData = JSON.parse(message.data)
-  const {
-    resource,
-    resource: { href },
-    event,
-  } = parsedMessageData
+  const { resources, event } = parsedMessageData
   const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(
     deviceId
   )
 
-  // Emit an event: things.resource.registration.{deviceId}.{href}.{event}
-  Emitter.emit(
-    `${resourceRegistrationObservationWSKey}.${resource.href}.${event}`,
-    parsedMessageData
-  )
+  resources.forEach(resource => {
+    const { href } = resource
 
-  if (notificationsEnabled) {
-    const isNew = event === resourceEventTypes.ADDED
-    const toastTitle = isNew ? t.newResource : t.resourceDeleted
-    const toastMessage = isNew ? t.resourceAdded : t.resourceWithHrefWasDeleted
-    const onClickAction = () => {
-      if (isNew) {
-        // redirect to resource and open resource modal
-        history.push(`/things/${deviceId}${href}`)
-      } else {
-        // redirect to device
-        history.push(`/things/${deviceId}`)
+    // Emit an event: things.resource.registration.{deviceId}.{href}.{event}
+    Emitter.emit(`${resourceRegistrationObservationWSKey}.${href}.${event}`, {
+      event,
+      resource,
+    })
+
+    if (notificationsEnabled) {
+      const isNew = event === resourceEventTypes.ADDED
+      const toastTitle = isNew ? t.newResource : t.resourceDeleted
+      const toastMessage = isNew
+        ? t.resourceAdded
+        : t.resourceWithHrefWasDeleted
+      const onClickAction = () => {
+        if (isNew) {
+          // redirect to resource and open resource modal
+          history.push(`/things/${deviceId}${href}`)
+        } else {
+          // redirect to device
+          history.push(`/things/${deviceId}`)
+        }
       }
+      // Show toast
+      showInfoToast(
+        {
+          title: toastTitle,
+          message: {
+            message: toastMessage,
+            params: { href, deviceName, deviceId },
+          },
+        },
+        {
+          onClick: onClickAction,
+          isNotification: true,
+        }
+      )
     }
-    // Show toast
-    showInfoToast(
-      {
-        title: toastTitle,
-        message: { message: toastMessage, params: { href, deviceId } },
-      },
-      {
-        onClick: onClickAction,
-      }
-    )
-  }
+  })
 }
 
-export const deviceResourceUpdateListener = (
+export const deviceResourceUpdateListener = ({
   deviceId,
-  href
-) => async message => {
+  href,
+  deviceName,
+}) => message => {
   const eventKey = getResourceUpdateNotificationKey(deviceId, href)
   const notificationsEnabled = isNotificationActive(eventKey)(store.getState())
 
@@ -139,26 +150,22 @@ export const deviceResourceUpdateListener = (
   Emitter.emit(`${eventKey}`, parsedMessageData)
 
   if (notificationsEnabled) {
-    setTimeout(async () => {
-      const {
-        data: { device: { n: deviceName } = {} } = {},
-      } = await getThingApi(deviceId)
-      // Show toast
-      showInfoToast(
-        {
-          title: t.resourceUpdated,
-          message: {
-            message: t.resourceUpdatedDesc,
-            params: { href, deviceName },
-          },
+    // Show toast
+    showInfoToast(
+      {
+        title: t.resourceUpdated,
+        message: {
+          message: t.resourceUpdatedDesc,
+          params: { href, deviceName },
         },
-        {
-          onClick: () => {
-            history.push(`/things/${deviceId}${href}`)
-          },
-        }
-      )
-    }, DEFAULT_NOTIFICATION_DELAY)
+      },
+      {
+        onClick: () => {
+          history.push(`/things/${deviceId}${href}`)
+        },
+        isNotification: true,
+      }
+    )
   }
 }
 

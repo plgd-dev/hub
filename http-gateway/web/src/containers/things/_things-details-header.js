@@ -15,7 +15,11 @@ import { isNotificationActive, toggleActiveNotification } from './slice'
 import { deviceResourceRegistrationListener } from './websockets'
 import { messages as t } from './things-i18n'
 
-export const ThingsDetailsHeader = ({ deviceId, isUnregistered }) => {
+export const ThingsDetailsHeader = ({
+  deviceId,
+  deviceName,
+  isUnregistered,
+}) => {
   const { formatMessage: _ } = useIntl()
   const dispatch = useDispatch()
   const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(
@@ -34,7 +38,10 @@ export const ThingsDetailsHeader = ({ deviceId, isUnregistered }) => {
         WSManager.addWsClient({
           name: resourceRegistrationObservationWSKey,
           api: `${thingsApiEndpoints.THINGS_WS}/${deviceId}`,
-          listener: deviceResourceRegistrationListener(deviceId),
+          listener: deviceResourceRegistrationListener({
+            deviceId,
+            deviceName,
+          }),
         })
       }
 
@@ -45,7 +52,7 @@ export const ThingsDetailsHeader = ({ deviceId, isUnregistered }) => {
         }
       }
     },
-    [deviceId, resourceRegistrationObservationWSKey]
+    [deviceId, deviceName, resourceRegistrationObservationWSKey]
   )
 
   useEffect(
@@ -65,16 +72,27 @@ export const ThingsDetailsHeader = ({ deviceId, isUnregistered }) => {
       id="status-notifications"
       label={_(t.notifications)}
       checked={notificationsEnabled.current}
-      onChange={() => dispatch(toggleActiveNotification(thingNotificationKey))}
+      onChange={e => {
+        if (e.target.checked) {
+          // Request browser notifications
+          // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
+          // so we must call it to make sure the user has received a notification request)
+          Notification.requestPermission()
+        }
+
+        dispatch(toggleActiveNotification(thingNotificationKey))
+      }}
     />
   )
 }
 
 ThingsDetailsHeader.propTypes = {
   deviceId: PropTypes.string,
+  deviceName: PropTypes.string,
   isUnregistered: PropTypes.bool.isRequired,
 }
 
 ThingsDetailsHeader.defaultProps = {
   deviceId: null,
+  deviceName: null,
 }

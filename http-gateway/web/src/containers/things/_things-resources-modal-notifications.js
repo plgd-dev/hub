@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { useSelector, useDispatch } from 'react-redux'
 import PropTypes from 'prop-types'
@@ -13,6 +13,7 @@ import { messages as t } from './things-i18n'
 
 export const ThingsResourcesModalNotifications = ({
   deviceId,
+  deviceName,
   href,
   isUnregistered,
 }) => {
@@ -22,8 +23,7 @@ export const ThingsResourcesModalNotifications = ({
     deviceId,
     href
   )
-  const notificationsEnabled = useRef(false)
-  notificationsEnabled.current = useSelector(
+  const notificationsEnabled = useSelector(
     isNotificationActive(resourceUpdateObservationWSKey)
   )
 
@@ -37,16 +37,21 @@ export const ThingsResourcesModalNotifications = ({
     [isUnregistered, resourceUpdateObservationWSKey]
   )
 
-  const toggleNotifications = () => {
-    if (notificationsEnabled.current) {
-      WSManager.removeWsClient(resourceUpdateObservationWSKey)
-    } else {
+  const toggleNotifications = e => {
+    if (e.target.checked) {
+      // Request browser notifications
+      // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
+      // so we must call it to make sure the user has received a notification request)
+      Notification.requestPermission()
+
       // Register the WS
       WSManager.addWsClient({
         name: resourceUpdateObservationWSKey,
         api: `${thingsApiEndpoints.THINGS_WS}/${deviceId}${href}`,
-        listener: deviceResourceUpdateListener(deviceId, href),
+        listener: deviceResourceUpdateListener({ deviceId, href, deviceName }),
       })
+    } else {
+      WSManager.removeWsClient(resourceUpdateObservationWSKey)
     }
 
     dispatch(toggleActiveNotification(resourceUpdateObservationWSKey))
@@ -57,7 +62,7 @@ export const ThingsResourcesModalNotifications = ({
       disabled={isUnregistered}
       id="resource-update-notifications"
       label={_(t.notifications)}
-      checked={notificationsEnabled.current}
+      checked={notificationsEnabled}
       onChange={toggleNotifications}
     />
   )
@@ -65,9 +70,11 @@ export const ThingsResourcesModalNotifications = ({
 
 ThingsResourcesModalNotifications.propTypes = {
   deviceId: PropTypes.string,
+  deviceName: PropTypes.string,
   isUnregistered: PropTypes.bool.isRequired,
 }
 
 ThingsResourcesModalNotifications.defaultProps = {
   deviceId: null,
+  deviceName: null,
 }

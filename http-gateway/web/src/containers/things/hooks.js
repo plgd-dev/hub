@@ -1,3 +1,5 @@
+import debounce from 'lodash/debounce'
+
 import { useApi } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
 import { useEmitter } from '@/common/hooks'
@@ -40,21 +42,24 @@ export const useThingDetails = deviceId => {
   )
 
   // Update the status when a WS event is emitted
-  useEmitter(`${THINGS_STATUS_WS_KEY}.${deviceId}`, ({ status }) => {
-    if (data) {
-      updateData({ ...data, status })
-    }
-  })
+  useEmitter(
+    `${THINGS_STATUS_WS_KEY}.${deviceId}`,
+    debounce(({ status }) => {
+      if (data) {
+        updateData({ ...data, status })
+      }
+    }, 300)
+  )
 
   // Update the resources (links) when a WS event is emitted
   useEmitter(
     getResourceRegistrationNotificationKey(deviceId),
     ({ event, ...wsResource }) => {
       if (data) {
-        let updatedLinks = data.links
+        let updatedLinks = []
 
         if (event === resourceEventTypes.ADDED) {
-          updatedLinks = updatedLinks.concat(wsResource)
+          updatedLinks = data.links.concat(wsResource)
         } else {
           updatedLinks = data.links.filter(
             link => link.href !== wsResource.href

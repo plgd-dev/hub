@@ -19,6 +19,7 @@ const { CREATE_RESOURCE, UPDATE_RESOURCE } = resourceModalTypes
 export const ThingsResourcesModal = ({
   data,
   deviceId,
+  deviceName,
   resourceData,
   onClose,
   retrieving,
@@ -111,6 +112,7 @@ export const ThingsResourcesModal = ({
             <Label title="" inline>
               <ThingsResourcesModalNotifications
                 deviceId={deviceId}
+                deviceName={deviceName}
                 href={data?.href}
                 isUnregistered={isUnregistered}
               />
@@ -207,6 +209,7 @@ ThingsResourcesModal.propTypes = {
     interfaces: PropTypes.arrayOf(PropTypes.string),
   }),
   deviceId: PropTypes.string,
+  deviceName: PropTypes.string,
   resourceData: PropTypes.object,
   retrieving: PropTypes.bool.isRequired,
   fetchResource: PropTypes.func.isRequired,
@@ -222,6 +225,7 @@ ThingsResourcesModal.defaultProps = {
   onClose: NOOP,
   data: null,
   deviceId: null,
+  deviceName: null,
   resourceData: null,
   type: UPDATE_RESOURCE,
 }

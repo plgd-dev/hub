@@ -1,14 +1,30 @@
+import { useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { ToastContainer as Toastr, toast } from 'react-toastify'
 import classNames from 'classnames'
 import { useIntl } from 'react-intl'
 
-import { isBrowserTabActive } from '@/common/utils'
-import { toastTypes } from './constants'
+import { Emitter } from '@/common/services/emitter'
+import { isBrowserTabActive, playRandomFartSound } from '@/common/utils'
+import {
+  toastTypes,
+  browserNotificationPermissions,
+  TOAST_HIDE_TIME,
+  MAX_NUMBER_OF_VISIBLE_TOASTS,
+  MAX_NUMBER_OF_ALL_TOASTS,
+  MAX_NUMBER_OF_BROWSER_NOTIFICATIONS,
+  BROWSER_NOTIFICATIONS_EVENT_KEY,
+  BROWSER_NOTIFICATION_HIDE_TIME,
+} from './constants'
 import { translateToastString } from './utils'
 
 const { ERROR, SUCCESS, WARNING, INFO } = toastTypes
 
+// Global counters
+let dispatchedToasts = 0
+let dispatchedBrowserNotifications = 0
+
+// Container responsible for processing and dispatching the toast notifications
 export const ToastContainer = () => {
   return (
     <Toastr
@@ -16,14 +32,15 @@ export const ToastContainer = () => {
         <i onClick={closeToast} className="fas fa-times close-toast" />
       )}
       pauseOnFocusLoss={false}
-      limit={5}
+      limit={MAX_NUMBER_OF_VISIBLE_TOASTS}
       newestOnTop
-      autoClose={5000}
+      autoClose={TOAST_HIDE_TIME}
       hideProgressBar
     />
   )
 }
 
+// Single toast component
 const ToastComponent = props => {
   const { formatMessage: _ } = useIntl()
   const { message, title, type } = props
@@ -62,6 +79,71 @@ ToastComponent.defaultProps = {
   type: ERROR,
 }
 
+// Container responsible for processing and dispatching the browser notifications
+export const BrowserNotificationsContainer = () => {
+  const { formatMessage: _, locale } = useIntl()
+
+  const decrementCounter = () => {
+    if (dispatchedBrowserNotifications > 0) {
+      dispatchedBrowserNotifications--
+    }
+  }
+
+  const showBrowserNotification = (params, options) => {
+    const { message, title } = params
+
+    const toastMessage = translateToastString(message, _)
+    const toastTitle = translateToastString(title, _)
+
+    if (
+      dispatchedBrowserNotifications < MAX_NUMBER_OF_BROWSER_NOTIFICATIONS &&
+      window.Notification &&
+      Notification.permission === browserNotificationPermissions.GRANTED
+    ) {
+      dispatchedBrowserNotifications++
+
+      const notification = new Notification(toastTitle, {
+        body: toastMessage,
+        icon: '/favicon.png',
+        badge: '/favicon.png',
+        lang: locale,
+        silent: true,
+      })
+
+      // After aproximately 5 seonds the notification disappears, so lets decrement the counter.
+      const decrementTimer = setTimeout(() => {
+        decrementCounter()
+      }, BROWSER_NOTIFICATION_HIDE_TIME)
+
+      notification.onclick = () => {
+        window.focus()
+        decrementCounter()
+        clearTimeout(decrementTimer)
+
+        if (options?.onClick) {
+          options.onClick()
+        }
+      }
+
+      // Play fart sound :)
+      playRandomFartSound()
+    }
+  }
+
+  useEffect(() => {
+    // Request browser notifications
+    Notification.requestPermission()
+
+    Emitter.on(BROWSER_NOTIFICATIONS_EVENT_KEY, showBrowserNotification)
+
+    return () => {
+      Emitter.off(BROWSER_NOTIFICATIONS_EVENT_KEY, showBrowserNotification)
+    }
+  }, []) // eslint-disable-line
+
+  return null
+}
+
 /**
  *
  * @param {*} message Can be a simple string/component, or an object of { message, title }
@@ -69,27 +151,52 @@ ToastComponent.defaultProps = {
  * @param {*} type [success, error, warning, info]
  */
 export const showToast = (message, options = {}, type = ERROR) => {
-  if (isBrowserTabActive()) {
-    const toastMessage = message?.message || message
-    const toastTitle = message?.title || null
+  const toastMessage = message?.message || message
+  const toastTitle = message?.title || null
+
+  if (isBrowserTabActive() && dispatchedToasts < MAX_NUMBER_OF_ALL_TOASTS) {
+    dispatchedToasts++
 
     const renderToast = (
       <ToastComponent message={toastMessage} title={toastTitle} type={type} />
     )
 
+    const onToastClose = props => {
+      if (dispatchedToasts > 0) {
+        dispatchedToasts--
+      }
+
+      if (options?.onClose) {
+        options.onClose(props)
+      }
+    }
+
+    const toastOptions = { ...options, onClose: onToastClose }
+
     switch (type) {
       case SUCCESS:
-        toast.success(renderToast, options)
+        toast.success(renderToast, toastOptions)
         break
       case WARNING:
-        toast.warning(renderToast, options)
+        toast.warning(renderToast, toastOptions)
         break
       case INFO:
-        toast.info(renderToast, options)
+        toast.info(renderToast, toastOptions)
         break
       default:
-        toast.error(renderToast, options)
+        toast.error(renderToast, toastOptions)
     }
+  } else if (options?.isNotification) {
+    // If it is a notification, try to push it to the browser if borwser notifications are enabled
+    // - Emit a an event to be processed in the BrowserNotificationsContainer
+    Emitter.emit(
+      BROWSER_NOTIFICATIONS_EVENT_KEY,
+      {
+        message: toastMessage,
+        title: toastTitle,
+      },
+      options
+    )
   }
 }
 

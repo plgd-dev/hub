@@ -1,6 +1,8 @@
 @import '@/common/styles/colors.scss';
 @import '@/common/styles/sizes.scss';
 
+$circle_size: 17px;
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -66,5 +68,20 @@
     width: 14px;
     height: 14px;
     text-align: center;
+  }
+
+  .yellow-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 3px;
+    box-sizing: border-box;
+    width: $circle_size;
+    height: $circle_size;
+    border-radius: 100%;
+    color: $light_100;
+    font-size: 9px;
+    text-align: center;
+    background-color: $warning_100;
   }
 }

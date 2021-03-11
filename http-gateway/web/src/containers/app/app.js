@@ -7,7 +7,10 @@ import Container from 'react-bootstrap/Container'
 import { Helmet } from 'react-helmet'
 import { useIntl } from 'react-intl'
 
-import { ToastContainer } from '@/components/toast'
+import {
+  ToastContainer,
+  BrowserNotificationsContainer,
+} from '@/components/toast'
 import { PageLoader } from '@/components/page-loader'
 import { LeftPanel } from '@/components/left-panel'
 import { Menu } from '@/components/menu'
@@ -97,6 +100,7 @@ const App = ({ config }) => {
           </div>
         </Container>
         <ToastContainer />
+        <BrowserNotificationsContainer />
       </Router>
     </AppContext.Provider>
   )
