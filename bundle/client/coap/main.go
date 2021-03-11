@@ -141,7 +141,7 @@ func main() {
 	observe := flag.Bool("observe", false, "observe resource")
 	update := flag.Bool("update", false, "update resource, content is expected in stdin")
 	delete := flag.Bool("delete", false, "delete resource")
-	create := flag.Bool("update", false, "create resource, content is expected in stdin")
+	create := flag.Bool("create", false, "create resource, content is expected in stdin")
 
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
@@ -182,7 +182,7 @@ func main() {
 		authreq := authReq{
 			Accesstoken:  *authCode,
 			DeviceID:     *di,
-			AuthProvider: "test",
+			AuthProvider: "plgd",
 		}
 		authresp := signUp(co, authreq)
 		*accesstoken = authresp.Accesstoken
