@@ -19,7 +19,6 @@ import {
   thingsStatuses,
   defaultNewResource,
   resourceModalTypes,
-  knownInterfaces,
 } from './constants'
 import {
   handleCreateResourceErrors,
@@ -141,7 +140,6 @@ export const ThingsDetailsPage = () => {
       } = await getThingsResourcesApi({
         deviceId: id,
         href,
-        currentInterface: knownInterfaces.OIC_IF_BASELINE,
       })
 
       if (isMounted.current) {

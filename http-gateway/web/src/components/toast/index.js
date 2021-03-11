@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { ToastContainer as Toastr, toast } from 'react-toastify'
 import classNames from 'classnames'
 import { useIntl } from 'react-intl'
-import { detect } from 'detect-browser'
 
 import { Emitter } from '@/common/services/emitter'
 import { isBrowserTabActive, playRandomFartSound } from '@/common/utils'
@@ -96,9 +95,6 @@ export const BrowserNotificationsContainer = () => {
     const toastMessage = translateToastString(message, _)
     const toastTitle = translateToastString(title, _)
 
-    // If the browser is chrome, edge or opera, make the notification silent, se we use custom sounds
-    const isSilent = ['chrome', 'edge', 'opera'].includes(detect()?.name)
-
     if (
       dispatchedBrowserNotifications < MAX_NUMBER_OF_BROWSER_NOTIFICATIONS &&
       window.Notification &&
@@ -111,7 +107,7 @@ export const BrowserNotificationsContainer = () => {
         icon: '/favicon.png',
         badge: '/favicon.png',
         lang: locale,
-        silent: isSilent,
+        silent: true,
       })
 
       // After aproximately 5 seonds the notification disappears, so lets decrement the counter.
@@ -129,10 +125,8 @@ export const BrowserNotificationsContainer = () => {
         }
       }
 
-      if (isSilent) {
-        // Play fart sound :) when using a browser, which support silent notifications
-        playRandomFartSound()
-      }
+      // Play fart sound :)
+      playRandomFartSound()
     }
   }
 
