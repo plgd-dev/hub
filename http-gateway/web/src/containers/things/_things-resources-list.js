@@ -77,7 +77,7 @@ export const ThingsResourcesList = ({
                   onClick: () => onCreate(href),
                   label: _(t.create),
                   icon: 'fa-plus',
-                  hidden: !canCreateResource(interfaces) || true, // temporary disabled
+                  hidden: !canCreateResource(interfaces),
                 },
                 {
                   onClick: () => onUpdate({ di, href }),
