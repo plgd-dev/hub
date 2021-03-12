@@ -1,4 +1,5 @@
 # Working with Resources
+
 ## Creating Resources
 
 ### Description
@@ -17,14 +18,20 @@ oc_resource_bind_resource_type(col, "oic.wk.col");
 For precise description of arguments of given functions please refer to the iotivity-lite documentation.
 
 #### Determine which resource types can populate the collection
+
 ```C
 oc_collection_add_supported_rt(col, "oic.r.switch.binary");
 ```
 
+Supported resource types are visible through `oic.if.baseline` interface in a property `rts` of the collection.
+
 #### Enable create operation on the collection resource
+
 ```C
 oc_resource_bind_resource_interface(col, OC_IF_CREATE);
 ```
+
+Supporting creating resource is visible through `oic.if.baseline` interface in a property `if` of the collection. The property must contains `oic.if.create` interface.
 
 #### Define constructor and destructor
 ```C
@@ -59,6 +66,8 @@ new_switch_instance(const char* href, oc_string_array_t *types,
       cswitch->resource->properties = bm;
       oc_resource_set_default_interface(cswitch->resource, OC_IF_A);
       oc_resource_set_request_handler(cswitch->resource, OC_GET, get_cswitch,
+                                      cswitch);
+      oc_resource_set_request_handler(cswitch->resource, OC_DELETE, delete_cswitch,
                                       cswitch);
       oc_resource_set_request_handler(cswitch->resource, OC_POST, post_cswitch,
                                       cswitch);
@@ -181,4 +190,63 @@ Output:
     ]
 },
 ...
+```
+
+## Deleting Resources
+
+### Description
+
+Device with collection resource allows to delete dynamically created resource. To delete resource you need to set delete handler during creating resource.
+
+### Guide
+
+To develop your own device you can examine the example in [cloud_server](https://github.com/iotivity/iotivity-lite/blob/master/apps/cloud_server.c). Lets examine the example to identify the necessary steps that allow a device to delete dynamically created resource at a collection.
+
+#### Set delete handler at constructor
+
+```C
+// delete handler of switch
+static void
+delete_cswitch(oc_request_t *request, oc_interface_mask_t iface_mask,
+            void *user_data)
+{
+  OC_DBG("%s", __func__);
+  (void)request;
+  (void)iface_mask;
+  oc_switch_t *cswitch = (oc_switch_t *)user_data;
+
+  // cleanup resource data
+  ...
+
+  // we cannot delete resource immediately via oc_delete_resource because
+  // it is used during invocation delete handler. So we plan deleting via oc_resource_delayed_delete call.
+  oc_resource_delayed_delete(cswitch->resource);
+}
+```
+
+```C
+static oc_resource_t*
+new_switch_instance(const char* href, oc_string_array_t *types,
+                    oc_resource_properties_t bm, oc_interface_mask_t iface_mask,
+                    size_t device)
+{
+  ...
+      oc_resource_set_request_handler(cswitch->resource, OC_GET, get_cswitch,
+                                      cswitch);
+
+      // set delete handler to the created resource
+      oc_resource_set_request_handler(cswitch->resource, OC_DELETE, delete_cswitch,
+                                      cswitch);
+      oc_resource_set_request_handler(cswitch->resource, OC_POST, post_cswitch,
+                                      cswitch);
+  ...
+}
+```
+
+#### Using go grpc client
+
+Delete a created binary switch resource from the collection.
+
+```bash
+./grpc -delete -deviceid 2b9ed3ed-ddf3-4c9c-4d21-9ec1f6ba6b03 -href /4rLN4BlwJmFmbbMJblChB2kyT2zJEP
 ```
