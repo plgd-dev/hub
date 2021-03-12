@@ -54,15 +54,15 @@ export const useThingDetails = deviceId => {
   // Update the resources (links) when a WS event is emitted
   useEmitter(
     getResourceRegistrationNotificationKey(deviceId),
-    ({ event, ...wsResource }) => {
+    ({ event, resource }) => {
       if (data) {
         let updatedLinks = []
 
         if (event === resourceEventTypes.ADDED) {
-          updatedLinks = data.links.concat(wsResource)
+          updatedLinks = data.links.concat(resource)
         } else {
           updatedLinks = data.links.filter(
-            link => link.href !== wsResource.href
+            link => link.href !== resource.href
           )
         }
 
