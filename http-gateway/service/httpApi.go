@@ -11,8 +11,7 @@ import (
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
@@ -23,23 +22,21 @@ import (
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	client             *client.Client
-	caClient           pbCA.CertificateAuthorityClient
-	config             *Config
-	manager            *ObservationManager
-	raClient           raService.ResourceAggregateClient
-	resourceSubscriber eventbus.Subscriber
+	client   *client.Client
+	caClient pbCA.CertificateAuthorityClient
+	config   *Config
+	manager  *ObservationManager
+	raClient *raClient.Client
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager, raClient raService.ResourceAggregateClient, resourceSubscriber eventbus.Subscriber) *RequestHandler {
+func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager, raClient *raClient.Client) *RequestHandler {
 	return &RequestHandler{
-		client:             client,
-		config:             config,
-		manager:            manager,
-		caClient:           caClient,
-		raClient:           raClient,
-		resourceSubscriber: resourceSubscriber,
+		client:   client,
+		config:   config,
+		manager:  manager,
+		caClient: caClient,
+		raClient: raClient,
 	}
 }
 

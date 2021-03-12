@@ -26,13 +26,13 @@ func StatusToCoapCode(status pbGRPC.Status, operation Operation) codes.Code {
 	switch status {
 	case pbGRPC.Status_OK:
 		switch operation {
-		case Update_Operation:
+		case Update:
 			return codes.Changed
-		case Retrieve_Operation:
+		case Retrieve:
 			return codes.Content
-		case Delete_Operation:
+		case Delete:
 			return codes.Deleted
-		case Create_Operation:
+		case Create:
 			return codes.Created
 		}
 	case pbGRPC.Status_CREATED:

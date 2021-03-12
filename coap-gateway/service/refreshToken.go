@@ -58,7 +58,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		RefreshToken: refreshToken.RefreshToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token for %v: %w", refreshToken.DeviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token for %v: %w", refreshToken.DeviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), req.Token)
 		return
 	}
 

@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -66,7 +65,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 		code = coapCodes.Content
 		content, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
 		if err != nil {
-			code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation)
+			code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve)
 			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 			return
 		}
@@ -94,7 +93,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 		},
 	})
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
+		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), err
 	}
 	defer retrieveResourcesValuesClient.CloseSend()
 	for {
@@ -103,7 +102,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 			break
 		}
 		if err != nil {
-			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve_Operation), err
+			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), err
 		}
 		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetHref() == href && resourceValue.Content != nil {
 			return resourceValue.Content, coapCodes.Content, nil
@@ -118,8 +117,7 @@ func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID,
 		return nil, err
 	}
 
-	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
-	retrievedEvent, err := operator.RetrieveResource(req.Context, retrieveCommand)
+	retrievedEvent, err := client.server.raClient.SyncRetrieveResource(req.Context, retrieveCommand)
 	if err != nil {
 		return nil, err
 	}

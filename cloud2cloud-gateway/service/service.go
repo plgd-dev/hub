@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 )
@@ -73,16 +73,6 @@ func New(
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	raConn, err := grpc.Dial(
-		config.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
-		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
-	)
-	if err != nil {
-		log.Fatalf("cannot connect to resource aggregate: %v", err)
-	}
-	raClient := raService.NewResourceAggregateClient(raConn)
-
 	pool, err := ants.NewPool(config.GoRoutinePoolSize)
 	if err != nil {
 		log.Fatalf("cannot create goroutine pool: %v", err)
@@ -92,6 +82,15 @@ func New(
 	if err != nil {
 		log.Fatalf("cannot create eventbus subscriber: %v", err)
 	}
+	raConn, err := grpc.Dial(
+		config.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
+	if err != nil {
+		log.Fatalf("cannot connect to resource aggregate: %v", err)
+	}
+	raClient := raClient.New(raConn, resourceSubscriber)
 
 	emitEvent := createEmitEventFunc(dialTLSConfig, config.EmitEventTimeout)
 
@@ -108,7 +107,7 @@ func New(
 		subMgr.Run()
 	}()
 
-	requestHandler := NewRequestHandler(rdClient, raClient, resourceSubscriber, subMgr, emitEvent)
+	requestHandler := NewRequestHandler(rdClient, raClient, subMgr, emitEvent)
 
 	server := Server{
 		server:  NewHTTP(requestHandler, authInterceptor),

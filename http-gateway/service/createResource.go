@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
@@ -52,8 +51,7 @@ func (requestHandler *RequestHandler) createResource(w http.ResponseWriter, r *h
 		},
 	}
 
-	operator := operations.New(requestHandler.resourceSubscriber, requestHandler.raClient)
-	createdEvent, err := operator.CreateResource(ctx, createCommand)
+	createdEvent, err := requestHandler.raClient.SyncCreateResource(ctx, createCommand)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot create resource: %w", err))
 		return

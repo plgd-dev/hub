@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 
 	"github.com/gorilla/mux"
 )
@@ -64,8 +63,7 @@ func (requestHandler *RequestHandler) getResourceFromDevice(w http.ResponseWrite
 		},
 	}
 
-	operator := operations.New(requestHandler.resourceSubscriber, requestHandler.raClient)
-	retrievedEvent, err := operator.RetrieveResource(ctx, retrieveCommand)
+	retrievedEvent, err := requestHandler.raClient.SyncRetrieveResource(ctx, retrieveCommand)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot retrieve resource: %w", err))
 		return

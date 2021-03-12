@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -55,8 +54,7 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 		},
 	}
 
-	operator := operations.New(requestHandler.resourceSubscriber, requestHandler.raClient)
-	updatedEvent, err := operator.UpdateResource(ctx, updateCommand)
+	updatedEvent, err := requestHandler.raClient.SyncUpdateResource(ctx, updateCommand)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot update resource: %w", err))
 		return

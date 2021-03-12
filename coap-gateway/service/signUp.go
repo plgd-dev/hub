@@ -66,7 +66,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		AuthorizationProvider: signUp.AuthorizationProvider,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation), r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), r.Token)
 		return
 	}
 
@@ -165,7 +165,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		AccessToken: accessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete), req.Token)
 		return
 	}
 	client.CleanUp()

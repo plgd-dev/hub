@@ -10,9 +10,8 @@ import (
 
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
@@ -26,8 +25,7 @@ type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
 	resourceDirectoryClient pb.GrpcGatewayClient
 
-	resourceAggregateClient raService.ResourceAggregateClient
-	subscriber              eventbus.Subscriber
+	resourceAggregateClient *raClient.Client
 	closeFunc               func()
 }
 
@@ -56,15 +54,6 @@ func NewRequestHandlerFromConfig(config Config, clientTLS *tls.Config) (*Request
 	}
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
 
-	raConn, err := grpc.Dial(
-		config.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
-	}
-	resourceAggregateClient := raService.NewResourceAggregateClient(raConn)
-
 	pool, err := ants.NewPool(config.GoRoutinePoolSize)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
@@ -75,6 +64,15 @@ func NewRequestHandlerFromConfig(config Config, clientTLS *tls.Config) (*Request
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
 
+	raConn, err := grpc.Dial(
+		config.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+	}
+	resourceAggregateClient := raClient.New(raConn, resourceSubscriber)
+
 	closeFunc := func() {
 		raConn.Close()
 		rdConn.Close()
@@ -84,7 +82,6 @@ func NewRequestHandlerFromConfig(config Config, clientTLS *tls.Config) (*Request
 	h := NewRequestHandler(
 		resourceDirectoryClient,
 		resourceAggregateClient,
-		resourceSubscriber,
 		closeFunc,
 	)
 	return h, nil
@@ -93,14 +90,12 @@ func NewRequestHandlerFromConfig(config Config, clientTLS *tls.Config) (*Request
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
 	resourceDirectoryClient pb.GrpcGatewayClient,
-	resourceAggregateClient raService.ResourceAggregateClient,
-	subscriber eventbus.Subscriber,
+	resourceAggregateClient *raClient.Client,
 	closeFunc func(),
 ) *RequestHandler {
 	return &RequestHandler{
 		resourceDirectoryClient: resourceDirectoryClient,
 		resourceAggregateClient: resourceAggregateClient,
-		subscriber:              subscriber,
 		closeFunc:               closeFunc,
 	}
 }

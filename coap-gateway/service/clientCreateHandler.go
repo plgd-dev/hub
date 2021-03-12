@@ -7,7 +7,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -29,7 +28,7 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 	code := coapCodes.Created
 	content, err := clientCreateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
-		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Create_Operation)
+		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Create)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
@@ -51,8 +50,7 @@ func clientCreateDeviceHandler(req *mux.Message, client *Client, deviceID, href 
 		return nil, err
 	}
 
-	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
-	createdEvent, err := operator.CreateResource(req.Context, createCommand)
+	createdEvent, err := client.server.raClient.SyncCreateResource(req.Context, createCommand)
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -14,8 +13,7 @@ func (r *RequestHandler) UpdateResource(ctx context.Context, req *pb.UpdateResou
 	if err != nil {
 		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update resource: %v", err)
 	}
-	operator := operations.New(r.subscriber, r.resourceAggregateClient)
-	updatedEvent, err := operator.UpdateResource(ctx, updateCommand)
+	updatedEvent, err := r.resourceAggregateClient.SyncUpdateResource(ctx, updateCommand)
 	if err != nil {
 		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update resource: %v", err)
 	}

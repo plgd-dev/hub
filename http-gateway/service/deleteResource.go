@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 
 	"github.com/gorilla/mux"
 )
@@ -32,8 +31,7 @@ func (requestHandler *RequestHandler) deleteResource(w http.ResponseWriter, r *h
 		},
 	}
 
-	operator := operations.New(requestHandler.resourceSubscriber, requestHandler.raClient)
-	deletedEvent, err := operator.DeleteResource(ctx, deleteCommand)
+	deletedEvent, err := requestHandler.raClient.SyncDeleteResource(ctx, deleteCommand)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot delete resource: %w", err))
 		return

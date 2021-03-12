@@ -7,7 +7,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -29,7 +28,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 	code := coapCodes.Deleted
 	content, err := clientDeleteResourceHandler(req, client, deviceID, href, authCtx.GetUserID())
 	if err != nil {
-		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete_Operation)
+		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot delete resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
@@ -51,8 +50,8 @@ func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, hre
 	if err != nil {
 		return nil, err
 	}
-	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
-	deletedCommand, err := operator.DeleteResource(req.Context, deleteCommand)
+
+	deletedCommand, err := client.server.raClient.SyncDeleteResource(req.Context, deleteCommand)
 	if err != nil {
 		return nil, err
 	}

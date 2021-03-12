@@ -7,22 +7,22 @@ import (
 
 type Operation uint8
 
-const Create_Operation Operation = 1
-const Retrieve_Operation Operation = 2
-const Update_Operation Operation = 3
-const Delete_Operation Operation = 4
+const Create Operation = 1
+const Retrieve Operation = 2
+const Update Operation = 3
+const Delete Operation = 4
 
 func GrpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Code {
 	switch statusCode {
 	case codes.OK:
 		switch operation {
-		case Update_Operation:
+		case Update:
 			return coapCodes.Changed
-		case Retrieve_Operation:
+		case Retrieve:
 			return coapCodes.Content
-		case Create_Operation:
+		case Create:
 			return coapCodes.Created
-		case Delete_Operation:
+		case Delete:
 			return coapCodes.Deleted
 		}
 	case codes.Canceled:

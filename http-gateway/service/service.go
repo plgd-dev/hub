@@ -16,9 +16,9 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/kit/security/certManager"
@@ -92,15 +92,6 @@ func New(cfg Config) (*Server, error) {
 		return nil, fmt.Errorf("cannot initialize new client: %v", err)
 	}
 
-	raConn, err := grpc.Dial(
-		cfg.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
-	}
-	resourceAggregateClient := raService.NewResourceAggregateClient(raConn)
-
 	pool, err := ants.NewPool(cfg.GoRoutinePoolSize)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
@@ -110,6 +101,15 @@ func New(cfg Config) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
+
+	raConn, err := grpc.Dial(
+		cfg.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+	}
+	resourceAggregateClient := raClient.New(raConn, resourceSubscriber)
 
 	var caConn *grpc.ClientConn
 	var caClient pbCA.CertificateAuthorityClient
@@ -146,7 +146,7 @@ func New(cfg Config) (*Server, error) {
 		})
 	}
 	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, whiteList...)
-	requestHandler := NewRequestHandler(client, caClient, &cfg, manager, resourceAggregateClient, resourceSubscriber)
+	requestHandler := NewRequestHandler(client, caClient, &cfg, manager, resourceAggregateClient)
 
 	server := Server{
 		server:             NewHTTP(requestHandler, auth),

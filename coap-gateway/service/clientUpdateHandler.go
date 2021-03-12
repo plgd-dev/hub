@@ -7,7 +7,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -39,7 +38,7 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 	code := coapCodes.Changed
 	content, err := clientUpdateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
-		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update_Operation)
+		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
@@ -61,8 +60,7 @@ func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href 
 		return nil, err
 	}
 
-	operator := operations.New(client.server.resourceSubscriber, client.server.raClient)
-	updatedEvent, err := operator.UpdateResource(req.Context, updateCommand)
+	updatedEvent, err := client.server.raClient.SyncUpdateResource(req.Context, updateCommand)
 	if err != nil {
 		return nil, err
 	}

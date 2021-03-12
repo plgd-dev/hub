@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/operations"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
@@ -113,8 +112,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 		},
 	}
 
-	operator := operations.New(rh.resourceSubscriber, rh.raClient)
-	updatedEvent, err := operator.UpdateResource(kitNetGrpc.CtxWithUserID(r.Context(), userID), updateCommand)
+	updatedEvent, err := rh.raClient.SyncUpdateResource(kitNetGrpc.CtxWithUserID(r.Context(), userID), updateCommand)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
 	}
