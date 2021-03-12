@@ -378,18 +378,20 @@ components:
     DeviceResourcesObservation:
       type: object
       properties:
-        resource:
-          $ref: '#/components/schemas/Resource'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
         event:
           $ref: '#/components/schemas/DeviceResourceObservationEventType'
       example:
-        resource:
-          types:
-            - "oic.wk.p"
-          interfaces:
-            - "oic.if.baseline"
-            - "oic.if.r"
-          href: "/oic/p"
+        resources:
+          - types:
+              - "oic.wk.p"
+            interfaces:
+              - "oic.if.baseline"
+              - "oic.if.r"
+            href: "/oic/p"
         event: added
     Resource:
       type: object

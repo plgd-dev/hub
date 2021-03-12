@@ -42,15 +42,25 @@ export const ThingsListHeader = ({ loading, refresh }) => {
         className="m-r-30"
         icon="fa-sync"
       >
-        {`${_(t.refresh)} (${numberOfChanges})`}
+        {`${_(t.refresh)}`}
+        <span className="m-l-5 yellow-circle">{`${
+          numberOfChanges > 9 ? '9+' : numberOfChanges
+        }`}</span>
       </Button>
       <Switch
         id="status-notifications"
         label={_(t.notifications)}
         checked={enabled}
-        onChange={() =>
+        onChange={e => {
+          if (e.target.checked) {
+            // Request browser notifications
+            // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
+            // so we must call it to make sure the user has received a notification request)
+            Notification.requestPermission()
+          }
+
           dispatch(toggleActiveNotification(THINGS_STATUS_WS_KEY))
-        }
+        }}
       />
     </div>
   )

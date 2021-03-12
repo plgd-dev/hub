@@ -26,11 +26,11 @@
     animation-iteration-count: infinite;
     animation-name: placeHolderShimmer;
     animation-timing-function: linear;
-    background: $secondary_20;
+    background: $light_150;
     background: linear-gradient(
       to right,
       $light_200 8%,
-      $secondary_20 18%,
+      $light_150 18%,
       $light_200 33%
     );
     background-size: 300% 100%;

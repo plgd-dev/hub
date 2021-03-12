@@ -82,7 +82,7 @@ export const ThingsResourcesList = ({
                 {
                   onClick: () => onUpdate({ di, href }),
                   label: _(t.update),
-                  icon: 'fa-edit',
+                  icon: 'fa-pen',
                 },
                 {
                   onClick: () => onDelete(href),
