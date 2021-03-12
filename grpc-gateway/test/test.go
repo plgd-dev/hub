@@ -15,7 +15,9 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	err := envconfig.Process("", &grpcCfg)
 	require.NoError(t, err)
 	grpcCfg.Addr = testCfg.GRPC_HOST
-	grpcCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	grpcCfg.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	grpcCfg.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
+
 	grpcCfg.JwksURL = testCfg.JWKS_URL
 	grpcCfg.Listen.File.DisableVerifyClientCertificate = true
 	return grpcCfg

@@ -25,7 +25,9 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/service"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
@@ -61,7 +63,7 @@ type Server struct {
 	MaxMessageSize                  int
 	LogMessages                     bool
 
-	raClient service.ResourceAggregateClient
+	raClient *raClient.Client
 	asClient pbAS.AuthorizationServiceClient
 	rdClient pbGRPC.GrpcGatewayClient
 
@@ -80,6 +82,7 @@ type Server struct {
 	taskQueue               *queue.Queue
 	userDeviceSubscriptions *kitSync.Map
 	devicesStatusUpdater    *devicesStatusUpdater
+	resourceSubscriber      eventbus.Subscriber
 
 	sigs chan os.Signal
 }
@@ -98,6 +101,12 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot job queue %v", err)
 	}
+
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, func(v func()) error { return p.Submit(v) }, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	if err != nil {
+		log.Fatalf("cannot create eventbus subscriber: %v", err)
+	}
+
 	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
 	oicPingCache.OnEvicted(pingOnEvicted)
 
@@ -128,7 +137,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	raClient := service.NewResourceAggregateClient(raConn)
+	raClient := raClient.New(raConn, resourceSubscriber)
 
 	asConn, err := grpc.Dial(
 		config.AuthServerAddr,
@@ -238,7 +247,8 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 		sigs: make(chan os.Signal, 1),
 
-		taskQueue: p,
+		taskQueue:          p,
+		resourceSubscriber: resourceSubscriber,
 
 		ctx:    ctx,
 		cancel: cancel,

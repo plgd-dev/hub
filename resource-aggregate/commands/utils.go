@@ -43,10 +43,9 @@ func (r *Resource) IsObservable() bool {
 	return r.GetPolicies() != nil && r.GetPolicies().GetBitFlags()&2 != 0
 }
 
-func NewAuditContext(deviceID, userID, correlationId string) *AuditContext {
+func NewAuditContext(userID, correlationId string) *AuditContext {
 	return &AuditContext{
 		UserId:        userID,
-		DeviceId:      deviceID,
 		CorrelationId: correlationId,
 	}
 }

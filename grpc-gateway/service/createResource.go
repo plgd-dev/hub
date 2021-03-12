@@ -9,9 +9,14 @@ import (
 )
 
 func (r *RequestHandler) CreateResource(ctx context.Context, req *pb.CreateResourceRequest) (*pb.CreateResourceResponse, error) {
-	ret, err := r.resourceDirectoryClient.CreateResource(ctx, req)
+	createCommand, err := req.ToRACommand(ctx)
 	if err != nil {
-		return ret, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err)
+		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err)
 	}
-	return ret, err
+
+	createdEvent, err := r.resourceAggregateClient.SyncCreateResource(ctx, createCommand)
+	if err != nil {
+		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err)
+	}
+	return pb.RAResourceCreatedEventToResponse(createdEvent)
 }

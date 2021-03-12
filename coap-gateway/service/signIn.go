@@ -69,7 +69,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		AccessToken: signIn.AccessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), req.Token)
 		return
 	}
 
@@ -94,9 +94,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	authCtx := authorizationContext{
-		pbData: &commands.AuthorizationContext{
-			DeviceId: signIn.DeviceID,
-		},
+		DeviceID:    signIn.DeviceID,
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
 		Expire:      expired,
@@ -111,8 +109,6 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &commands.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
-	}, &commands.AuthorizationContext{
-		DeviceId: signIn.DeviceID,
 	})
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
@@ -183,7 +179,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		AccessToken: signOut.AccessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), req.Token)
 		client.Close()
 		return
 	}
@@ -201,7 +197,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.GetDeviceID(), &commands.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),
-		}, oldAuthCtx.GetPbData())
+		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)

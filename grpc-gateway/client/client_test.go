@@ -108,7 +108,7 @@ func (h *gatewayHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValues
 	return nil
 }
 
-func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceValuesRequest) (*pb.UpdateResourceValuesResponse, error) {
+func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceRequest) (*pb.UpdateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 

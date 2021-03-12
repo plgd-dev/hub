@@ -52,9 +52,11 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
+				"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
+				"rt":    []interface{}{"core.light"},
 			},
 		},
 		{
@@ -66,9 +68,11 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppOcfCbor.String(),
 			want: map[interface{}]interface{}{
+				"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
+				"rt":    []interface{}{"core.light"},
 			},
 		},
 		{

@@ -13,8 +13,7 @@ func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID st
 		Resources: resources,
 		DeviceId:  deviceID,
 		AuditContext: &commands.AuditContext{
-			UserId:   "userId",
-			DeviceId: deviceID,
+			UserId: "userId",
 		},
 		EventMetadata: eventMetadata,
 	}
@@ -38,8 +37,7 @@ func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMet
 		Hrefs:    hrefs,
 		DeviceId: deviceID,
 		AuditContext: &commands.AuditContext{
-			UserId:   "userId",
-			DeviceId: deviceID,
+			UserId: "userId",
 		},
 		EventMetadata: eventMetadata,
 	}
@@ -84,8 +82,7 @@ func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *command
 		ResourceId: resourceId,
 		Content:    content,
 		AuditContext: &commands.AuditContext{
-			UserId:   "userId",
-			DeviceId: resourceId.GetDeviceId(),
+			UserId: "userId",
 		},
 		EventMetadata: eventMetadata,
 	}
@@ -110,8 +107,7 @@ func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status
 		Content:    content,
 		Status:     status,
 		AuditContext: &commands.AuditContext{
-			UserId:   "userId",
-			DeviceId: resourceId.GetDeviceId(),
+			UserId: "userId",
 		},
 		EventMetadata: eventMetadata,
 	}
@@ -134,8 +130,7 @@ func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands
 	e := events.ResourceChanged{
 		ResourceId: resourceId,
 		AuditContext: &commands.AuditContext{
-			UserId:   "userId",
-			DeviceId: resourceId.GetDeviceId(),
+			UserId: "userId",
 		},
 		Content:       content,
 		EventMetadata: eventMetadata,
@@ -160,8 +155,7 @@ func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterf
 		ResourceId:        resourceId,
 		ResourceInterface: resourceInterface,
 		AuditContext: &commands.AuditContext{
-			UserId:   "userId",
-			DeviceId: resourceId.GetDeviceId(),
+			UserId: "userId",
 		},
 		EventMetadata: eventMetadata,
 	}
@@ -186,8 +180,7 @@ func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Stat
 		Content:    content,
 		Status:     status,
 		AuditContext: &commands.AuditContext{
-			UserId:   "userId",
-			DeviceId: resourceId.GetDeviceId(),
+			UserId: "userId",
 		},
 		EventMetadata: &eventMetadata,
 	}

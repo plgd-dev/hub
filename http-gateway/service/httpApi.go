@@ -8,15 +8,15 @@ import (
 	"net/http/httputil"
 	"strings"
 
-	"github.com/google/uuid"
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/kit/log"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
 
+	"github.com/google/uuid"
 	router "github.com/gorilla/mux"
 )
 
@@ -26,15 +26,17 @@ type RequestHandler struct {
 	caClient pbCA.CertificateAuthorityClient
 	config   *Config
 	manager  *ObservationManager
+	raClient *raClient.Client
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager) *RequestHandler {
+func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager, raClient *raClient.Client) *RequestHandler {
 	return &RequestHandler{
 		client:   client,
 		config:   config,
 		manager:  manager,
 		caClient: caClient,
+		raClient: raClient,
 	}
 }
 
@@ -112,6 +114,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodPut).HandlerFunc(requestHandler.updateResource)
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.getResource)
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodDelete).HandlerFunc(requestHandler.deleteResource)
+	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodPost).HandlerFunc(requestHandler.createResource)
 
 	// ws
 	r.PathPrefix(uri.WsStartDeviceResourceObservation).MatcherFunc(wsResourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.startResourceObservation)

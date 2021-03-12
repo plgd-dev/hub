@@ -24,6 +24,8 @@ import (
 	"github.com/plgd-dev/sdk/schema"
 )
 
+const OCFBaselineInterface = "oic.if.baseline"
+
 type observedResource struct {
 	href string
 
@@ -46,7 +48,7 @@ func (r *observedResource) PopObservation() *tcp.Observation {
 }
 
 type authorizationContext struct {
-	pbData      *commands.AuthorizationContext
+	DeviceID    string
 	AccessToken string
 	UserID      string
 	Expire      time.Time
@@ -61,16 +63,9 @@ func (a *authorizationContext) GetUserID() string {
 
 func (a *authorizationContext) GetDeviceID() string {
 	if a != nil {
-		return a.pbData.GetDeviceId()
+		return a.DeviceID
 	}
 	return ""
-}
-
-func (a *authorizationContext) GetPbData() *commands.AuthorizationContext {
-	if a != nil {
-		return a.pbData
-	}
-	return nil
 }
 
 func (a *authorizationContext) IsValid() error {
@@ -167,7 +162,10 @@ func (client *Client) observeResource(ctx context.Context, resourceID *commands.
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
-	resp, err := client.coapConn.Get(ctx, href)
+	resp, err := client.coapConn.Get(ctx, href, message.Option{
+		ID:    message.URIQuery,
+		Value: []byte("if=" + OCFBaselineInterface),
+	})
 	if err != nil {
 		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
 		return
@@ -205,6 +203,9 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 					client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
 				}
 			})
+		}, message.Option{
+			ID:    message.URIQuery,
+			Value: []byte("if=" + OCFBaselineInterface),
 		})
 		if err != nil {
 			log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
@@ -410,7 +411,7 @@ func (client *Client) OnClose() {
 		err = status.SetOffline(kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), oldAuthCtx.GetUserID()), client.server.raClient, oldAuthCtx.GetDeviceID(), &commands.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),
-		}, oldAuthCtx.GetPbData())
+		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)
@@ -443,15 +444,15 @@ func (client *Client) notifyContentChanged(deviceID string, href string, notific
 	if err != nil {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
-	request := coapconv.MakeNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), authCtx.GetPbData(), client.remoteAddrString(), notification)
-	_, err = client.server.raClient.NotifyResourceChanged(ctx, &request)
+	request := coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), client.remoteAddrString(), notification)
+	_, err = client.server.raClient.NotifyResourceChanged(ctx, request)
 	if err != nil {
 		return fmt.Errorf("cannot notify resource /%v%v content changed: %w", deviceID, href, err)
 	}
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceUpdate(deviceID, href, userID, correlationID string, authCtx *commands.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceUpdate(deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource update: %v", err)
@@ -463,8 +464,8 @@ func (client *Client) sendErrorConfirmResourceUpdate(deviceID, href, userID, cor
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceUpdateRequest(commands.NewResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, &request)
+	request := coapconv.NewConfirmResourceUpdateRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource update: %v", err)
 	}
@@ -474,7 +475,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -487,8 +488,8 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceUpdateRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, &request)
+		request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), msg)
+		_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, request)
 		if err != nil {
 			return err
 		}
@@ -499,7 +500,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	defer cancel()
 	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -508,7 +509,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -523,8 +524,8 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceUpdateRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, &request)
+	request := coapconv.NewConfirmResourceUpdateRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceUpdate(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}
@@ -532,7 +533,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, correlationID string, authCtx *commands.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource retrieve: %v", err)
@@ -543,8 +544,8 @@ func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, c
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceRetrieveRequest(commands.NewResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, &request)
+	request := coapconv.NewConfirmResourceRetrieveRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, request)
 	if err != nil {
 		log.Errorf("cannot send error confirm resource retrieve: %v", err)
 	}
@@ -554,7 +555,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -569,8 +570,8 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, &request)
+		request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), msg)
+		_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, request)
 		if err != nil {
 			return err
 		}
@@ -581,7 +582,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	defer cancel()
 	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -590,7 +591,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -605,8 +606,8 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, &request)
+	request := coapconv.NewConfirmResourceRetrieveRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceRetrieve(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}
@@ -614,7 +615,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 	return nil
 }
 
-func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, correlationID string, authCtx *commands.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource delete: %v", err)
@@ -626,8 +627,8 @@ func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, cor
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceDeleteRequest(commands.NewResourceID(deviceID, href), correlationID, authCtx, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceDelete(ctx, &request)
+	request := coapconv.NewConfirmResourceDeleteRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceDelete(ctx, request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource delete: %v", err)
 	}
@@ -637,7 +638,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
+		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -652,8 +653,8 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceDeleteRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, &request)
+		request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), msg)
+		_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, request)
 		if err != nil {
 			return err
 		}
@@ -664,7 +665,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 	defer cancel()
 	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
+		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -673,7 +674,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -688,8 +689,8 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceDeleteRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, &request)
+	request := coapconv.NewConfirmResourceDeleteRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceDelete(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}
@@ -698,16 +699,10 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 }
 
 func (client *Client) publishResourceLinks(ctx context.Context, links schema.ResourceLinks, deviceID string, ttl int32, connectionID string, sequence uint64) ([]*commands.Resource, error) {
-	authCtx, err := client.GetAuthorizationContext()
-	if err != nil {
-		return nil, fmt.Errorf("cannot load authorization context for device %w", err)
-	}
-
 	resources := pbGRPC.SchemaResourceLinksToRAResources(links, ttl)
 	request := commands.PublishResourceLinksRequest{
-		AuthorizationContext: authCtx.GetPbData(),
-		Resources:            resources,
-		DeviceId:             deviceID,
+		Resources: resources,
+		DeviceId:  deviceID,
 		CommandMetadata: &commands.CommandMetadata{
 			Sequence:     sequence,
 			ConnectionId: connectionID,
@@ -744,9 +739,6 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 	}
 
 	resp, err := client.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
-		AuthorizationContext: &commands.AuthorizationContext{
-			DeviceId: authCtx.GetDeviceID(),
-		},
 		Hrefs:    hrefs,
 		DeviceId: authCtx.GetDeviceID(),
 		CommandMetadata: &commands.CommandMetadata{
@@ -763,7 +755,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 	client.cancelResourcesObservations(ctx, resp.UnpublishedHrefs)
 }
 
-func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.ResourceId, userID, correlationID string, authCtx *commands.AuthorizationContext, code codes.Code, errToSend error) {
+func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.ResourceId, userID, correlationID string, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource create: %v", err)
@@ -775,8 +767,8 @@ func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.Resour
 	resp.SetContentFormat(message.TextPlain)
 	resp.SetBody(bytes.NewReader([]byte(errToSend.Error())))
 	resp.SetCode(code)
-	request := coapconv.MakeConfirmResourceCreateRequest(resourceID, correlationID, authCtx, client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceCreate(ctx, &request)
+	request := coapconv.NewConfirmResourceCreateRequest(resourceID, correlationID, client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceCreate(ctx, request)
 	if err != nil {
 		log.Errorf("cannot send error via confirm resource create: %v", err)
 	}
@@ -786,7 +778,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
-		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.Forbidden, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), codes.Forbidden, err)
 		client.Close()
 		return err
 	}
@@ -801,8 +793,8 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 		if err != nil {
 			return err
 		}
-		request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), msg)
-		_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, &request)
+		request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), msg)
+		_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, request)
 		if err != nil {
 			return err
 		}
@@ -813,7 +805,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	defer cancel()
 	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, event)
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.BadRequest, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), codes.BadRequest, err)
 		return err
 	}
 	defer pool.ReleaseMessage(req)
@@ -822,7 +814,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 
 	resp, err := client.coapConn.Do(req)
 	if err != nil {
-		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), authCtx.GetPbData(), codes.ServiceUnavailable, err)
+		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetCorrelationId(), codes.ServiceUnavailable, err)
 		return err
 	}
 	defer pool.ReleaseMessage(resp)
@@ -837,8 +829,8 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 	if err != nil {
 		return err
 	}
-	request := coapconv.MakeConfirmResourceCreateRequest(event.GetResourceId(), event.GetCorrelationId(), authCtx.GetPbData(), client.remoteAddrString(), resp)
-	_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, &request)
+	request := coapconv.NewConfirmResourceCreateRequest(event.GetResourceId(), event.GetCorrelationId(), client.remoteAddrString(), resp)
+	_, err = client.server.raClient.ConfirmResourceCreate(sendConfirmCtx, request)
 	if err != nil {
 		return err
 	}

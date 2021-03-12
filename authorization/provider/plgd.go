@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -14,15 +15,22 @@ import (
 // NewPlgdProvider creates OAuth client
 func NewPlgdProvider(config Config, tls *tls.Config) *PlgdProvider {
 	oauth2 := config.OAuth2.ToOAuth2()
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 100
+	t.MaxConnsPerHost = 100
+	t.MaxIdleConnsPerHost = 100
+	t.IdleConnTimeout = time.Second * 30
+	t.TLSClientConfig = tls
+
+	httpClient := &http.Client{
+		Transport: t,
+		Timeout:   10 * time.Minute,
+	}
 	return &PlgdProvider{
 		Config: config,
 		OAuth2: &oauth2,
 		NewHTTPClient: func() *http.Client {
-			return &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: tls,
-				},
-			}
+			return httpClient
 		},
 		TLS: tls,
 	}

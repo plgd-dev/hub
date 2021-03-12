@@ -560,7 +560,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 					LatestResourceChange: &events.ResourceChanged{
 						ResourceId:   commands.NewResourceID(d2res2.DeviceId, d2res2.Href),
 						Content:      &commands.Content{},
-						AuditContext: &commands.AuditContext{UserId: "userId", DeviceId: "dev2"},
+						AuditContext: &commands.AuditContext{UserId: "userId"},
 						EventMetadata: &events.EventMetadata{
 							Version:      3,
 							TimestampMs:  12345,

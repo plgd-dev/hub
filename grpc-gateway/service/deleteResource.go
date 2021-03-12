@@ -9,9 +9,13 @@ import (
 )
 
 func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
-	ret, err := r.resourceDirectoryClient.DeleteResource(ctx, req)
+	deleteCommand, err := req.ToRACommand(ctx)
 	if err != nil {
-		return ret, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err)
+		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err)
 	}
-	return ret, err
+	deletedEvent, err := r.resourceAggregateClient.SyncDeleteResource(ctx, deleteCommand)
+	if err != nil {
+		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err)
+	}
+	return pb.RAResourceDeletedEventToResponse(deletedEvent)
 }

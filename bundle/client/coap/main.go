@@ -13,6 +13,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/plgd-dev/kit/net"
@@ -137,8 +139,9 @@ func main() {
 	discover := flag.Bool("discover", true, "discover resources in cloud")
 	discoverRt := flag.String("rt", "", "resource type")
 	observe := flag.Bool("observe", false, "observe resource")
-	update := flag.Bool("update", false, "update resource, content is expceted in stdin")
+	update := flag.Bool("update", false, "update resource, content is expected in stdin")
 	delete := flag.Bool("delete", false, "delete resource")
+	create := flag.Bool("create", false, "create resource, content is expected in stdin")
 
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
@@ -179,7 +182,7 @@ func main() {
 		authreq := authReq{
 			Accesstoken:  *authCode,
 			DeviceID:     *di,
-			AuthProvider: "test",
+			AuthProvider: "plgd",
 		}
 		authresp := signUp(co, authreq)
 		*accesstoken = authresp.Accesstoken
@@ -208,6 +211,19 @@ func main() {
 		b := bytes.NewBuffer(make([]byte, 0, 124))
 		b.ReadFrom(os.Stdin)
 		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), bytes.NewReader(b.Bytes()))
+		if err != nil {
+			log.Fatalf("cannot update resource: %v", err)
+		}
+		decodePayload(resp)
+	case *create:
+		b := bytes.NewBuffer(make([]byte, 0, 124))
+		b.ReadFrom(os.Stdin)
+		req, err := tcp.NewPostRequest(context.Background(), *href, message.MediaType(*contentFormat), os.Stdin)
+		if err != nil {
+			log.Fatalf("cannot create resource: %v", err)
+		}
+		req.SetOptionString(message.URIQuery, "if="+coapconv.OCFCreateInterface)
+		resp, err := co.Do(req)
 		if err != nil {
 			log.Fatalf("cannot update resource: %v", err)
 		}

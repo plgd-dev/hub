@@ -11,10 +11,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/panjf2000/ants/v2"
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/kit/security/certManager"
@@ -26,13 +30,15 @@ func logError(err error) { log.Error(err) }
 
 //Server handle HTTP request
 type Server struct {
-	server            *http.Server
-	cfg               *Config
-	requestHandler    *RequestHandler
-	ln                net.Listener
-	listenCertManager certManager.CertManager
-	rdConn            *grpc.ClientConn
-	caConn            *grpc.ClientConn
+	server             *http.Server
+	cfg                *Config
+	requestHandler     *RequestHandler
+	ln                 net.Listener
+	listenCertManager  certManager.CertManager
+	rdConn             *grpc.ClientConn
+	caConn             *grpc.ClientConn
+	raConn             *grpc.ClientConn
+	resourceSubscriber eventbus.Subscriber
 }
 
 func buildWhiteList(uidirectory string, whiteList *[]kitNetHttp.RequestMatcher) filepath.WalkFunc {
@@ -78,16 +84,35 @@ func New(cfg Config) (*Server, error) {
 		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
 	client, err := client.NewClient("http://localhost", resourceDirectoryClient)
 	if err != nil {
 		return nil, fmt.Errorf("cannot initialize new client: %v", err)
 	}
+
+	pool, err := ants.NewPool(cfg.GoRoutinePoolSize)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
+	}
+
+	resourceSubscriber, err := nats.NewSubscriber(cfg.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	if err != nil {
+		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
+	}
+
+	raConn, err := grpc.Dial(
+		cfg.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+	}
+	resourceAggregateClient := raClient.New(raConn, resourceSubscriber)
+
 	var caConn *grpc.ClientConn
 	var caClient pbCA.CertificateAuthorityClient
-
 	if cfg.CertificateAuthorityAddr != "" {
 		caConn, err = grpc.Dial(
 			cfg.CertificateAuthorityAddr,
@@ -121,16 +146,18 @@ func New(cfg Config) (*Server, error) {
 		})
 	}
 	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, whiteList...)
-	requestHandler := NewRequestHandler(client, caClient, &cfg, manager)
+	requestHandler := NewRequestHandler(client, caClient, &cfg, manager, resourceAggregateClient)
 
 	server := Server{
-		server:            NewHTTP(requestHandler, auth),
-		cfg:               &cfg,
-		requestHandler:    requestHandler,
-		ln:                ln,
-		listenCertManager: listenCertManager,
-		rdConn:            rdConn,
-		caConn:            caConn,
+		server:             NewHTTP(requestHandler, auth),
+		cfg:                &cfg,
+		requestHandler:     requestHandler,
+		ln:                 ln,
+		listenCertManager:  listenCertManager,
+		rdConn:             rdConn,
+		caConn:             caConn,
+		raConn:             raConn,
+		resourceSubscriber: resourceSubscriber,
 	}
 
 	return &server, nil
@@ -150,6 +177,7 @@ func (s *Server) Shutdown() error {
 		}
 	}
 	s.rdConn.Close()
+	s.raConn.Close()
 	if s.caConn != nil {
 		s.caConn.Close()
 	}

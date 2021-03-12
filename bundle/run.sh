@@ -60,6 +60,8 @@ export MONGODB_URI="mongodb://$MONGODB_HOST"
 export MONGO_URI="mongodb://$MONGODB_HOST"
 export NATS_HOST="localhost:$NATS_PORT"
 export NATS_URL="nats://${NATS_HOST}"
+export SERVICE_NATS_URL=${NATS_URL}
+
 export AUTH_SERVER_ADDRESS=${AUTHORIZATION_ADDRESS}
 export FQDN_NGINX_HTTPS=${FQDN}:${NGINX_PORT}
 export DOMAIN=${FQDN_NGINX_HTTPS}
@@ -405,6 +407,9 @@ Dial:
     UseSystemCertPool: false
 JwksURL: ${JWKS_URL}
 ResourceDirectoryAddr: ${RESOURCE_DIRECTORY_ADDRESS}
+ResourceAggregateAddr: ${RESOURCE_AGGREGATE_ADDRESS}
+Nats:
+  URL: ${NATS_URL}
 CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
 UI:
   enabled: true

@@ -43,7 +43,7 @@ func TestGetResource(t *testing.T) {
 
 	var response map[string]interface{}
 	getResource(t, deviceID, uri.Device+"/light/1", &response)
-	require.Equal(t, map[string]interface{}{"name": "Light", "power": uint64(0), "state": false}, response)
+	require.Equal(t, map[string]interface{}{"if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "name": "Light", "power": uint64(0), "rt": []interface{}{"core.light"}, "state": false}, response)
 }
 
 func TestGetResourceNotExist(t *testing.T) {

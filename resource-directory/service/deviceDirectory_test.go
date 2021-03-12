@@ -132,8 +132,9 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 	updateNotificationContainer := notification.NewUpdateNotificationContainer()
 	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
 	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
+	createNotificationContainer := notification.NewCreateNotificationContainer()
 
-	resourceProjection, err := service.NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), time.Second)
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateResourceDeviceEventstores(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer), time.Second)
 	require.NoError(t, err)
 
 	rd := service.NewDeviceDirectory(resourceProjection, []string{

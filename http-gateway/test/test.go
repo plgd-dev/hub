@@ -33,7 +33,9 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Address = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
 	cfg.Listen.File.DisableVerifyClientCertificate = true
 	cfg.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	cfg.JwksURL = testCfg.JWKS_URL
+	cfg.GoRoutinePoolSize = 16
 	return cfg
 }
 

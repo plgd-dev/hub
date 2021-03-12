@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -19,16 +20,20 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 )
 
-func StatusToCoapCode(status pbGRPC.Status, cmdCode codes.Code) codes.Code {
+const OCFCreateInterface = "oic.if.create"
+
+func StatusToCoapCode(status pbGRPC.Status, operation Operation) codes.Code {
 	switch status {
 	case pbGRPC.Status_OK:
-		switch cmdCode {
-		case codes.POST:
+		switch operation {
+		case Update:
 			return codes.Changed
-		case codes.GET:
+		case Retrieve:
 			return codes.Content
-		case codes.DELETE:
+		case Delete:
 			return codes.Deleted
+		case Create:
+			return codes.Created
 		}
 	case pbGRPC.Status_CREATED:
 		return codes.Created
@@ -136,7 +141,7 @@ func NewCoapResourceDeleteRequest(ctx context.Context, event *pb.Event_ResourceD
 	return req, nil
 }
 
-func MakeContent(opts message.Options, body io.Reader) commands.Content {
+func NewContent(opts message.Options, body io.Reader) *commands.Content {
 	contentTypeString := ""
 	coapContentFormat := int32(-1)
 	mt, err := opts.ContentFormat()
@@ -148,77 +153,92 @@ func MakeContent(opts message.Options, body io.Reader) commands.Content {
 	if body != nil {
 		data, _ = ioutil.ReadAll(body)
 	}
-	return commands.Content{
+	return &commands.Content{
 		ContentType:       contentTypeString,
 		CoapContentFormat: coapContentFormat,
 		Data:              data,
 	}
 }
 
-func MakeCommandMetadata(sequenceNumber uint64, connectionID string) commands.CommandMetadata {
-	return commands.CommandMetadata{
+func NewCommandMetadata(sequenceNumber uint64, connectionID string) *commands.CommandMetadata {
+	return &commands.CommandMetadata{
 		Sequence:     sequenceNumber,
 		ConnectionId: connectionID,
 	}
 }
 
-func MakeConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceRetrieveRequest {
-	content := MakeContent(req.Options(), req.Body())
-	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
+func NewConfirmResourceRetrieveRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceRetrieveRequest {
+	content := NewContent(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
-	return commands.ConfirmResourceRetrieveRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              &content,
-		CommandMetadata:      &metadata,
+	return &commands.ConfirmResourceRetrieveRequest{
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 
-func MakeConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceUpdateRequest {
-	content := MakeContent(req.Options(), req.Body())
-	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
+func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceUpdateRequest {
+	content := NewContent(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
-	return commands.ConfirmResourceUpdateRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              &content,
-		CommandMetadata:      &metadata,
+	return &commands.ConfirmResourceUpdateRequest{
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 
-func MakeConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceDeleteRequest {
-	content := MakeContent(req.Options(), req.Body())
-	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
+func NewDeleteResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.DeleteResourceRequest, error) {
+	correlationUUID, err := uuid.NewV4()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create correlationID: %w", err)
+	}
+	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
+	return &commands.DeleteResourceRequest{
+		ResourceId:      resourceID,
+		CorrelationId:   correlationUUID.String(),
+		CommandMetadata: metadata,
+	}, nil
+}
 
-	return commands.ConfirmResourceDeleteRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              &content,
-		CommandMetadata:      &metadata,
+func NewConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceDeleteRequest {
+	content := NewContent(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
+
+	return &commands.ConfirmResourceDeleteRequest{
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 
-func MakeNotifyResourceChangedRequest(resourceID *commands.ResourceId, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.NotifyResourceChangedRequest {
-	content := MakeContent(req.Options(), req.Body())
-	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
+func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connectionID string, req *pool.Message) *commands.NotifyResourceChangedRequest {
+	content := NewContent(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
 
-	return commands.NotifyResourceChangedRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		Content:              &content,
-		CommandMetadata:      &metadata,
-		Status:               CoapCodeToStatus(req.Code()),
+	return &commands.NotifyResourceChangedRequest{
+		ResourceId:      resourceID,
+		Content:         content,
+		CommandMetadata: metadata,
+		Status:          CoapCodeToStatus(req.Code()),
 	}
 }
 
-func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.UpdateResourceValuesRequest {
-	content := MakeContent(req.Options, req.Body)
+func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.UpdateResourceRequest, error) {
+	correlationUUID, err := uuid.NewV4()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create correlationID: %w", err)
+	}
+
+	content := NewContent(req.Options, req.Body)
+	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
 	var resourceInterface string
 	qs, err := req.Options.Queries()
 	if err == nil {
@@ -230,42 +250,69 @@ func MakeUpdateResourceRequest(deviceID, href string, req *mux.Message) *pbGRPC.
 		}
 	}
 
-	return &pbGRPC.UpdateResourceValuesRequest{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Content: &pbGRPC.Content{
+	return &commands.UpdateResourceRequest{
+		ResourceId: resourceID,
+		Content: &commands.Content{
 			Data:        content.Data,
 			ContentType: content.ContentType,
 		},
 		ResourceInterface: resourceInterface,
-	}
+		CommandMetadata:   metadata,
+		CorrelationId:     correlationUUID.String(),
+	}, nil
 }
 
-func MakeRetrieveResourceRequest(resourceID *commands.ResourceId, resourceInterface, correlationId string, authCtx commands.AuthorizationContext, connectionID string, req *mux.Message) commands.RetrieveResourceRequest {
-	metadata := MakeCommandMetadata(req.SequenceNumber, connectionID)
-
-	return commands.RetrieveResourceRequest{
-		AuthorizationContext: &authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		ResourceInterface:    resourceInterface,
-		CommandMetadata:      &metadata,
+func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.RetrieveResourceRequest, error) {
+	correlationUUID, err := uuid.NewV4()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create correlationID: %w", err)
 	}
+	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
+	var resourceInterface string
+	qs, err := req.Options.Queries()
+	if err == nil {
+		for _, q := range qs {
+			if strings.HasPrefix(q, "if=") {
+				resourceInterface = strings.TrimPrefix(q, "if=")
+				break
+			}
+		}
+	}
+	return &commands.RetrieveResourceRequest{
+		ResourceId:        resourceID,
+		CorrelationId:     correlationUUID.String(),
+		ResourceInterface: resourceInterface,
+		CommandMetadata:   metadata,
+	}, nil
 }
 
-func MakeConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlationId string, authCtx *commands.AuthorizationContext, connectionID string, req *pool.Message) commands.ConfirmResourceCreateRequest {
-	content := MakeContent(req.Options(), req.Body())
-	metadata := MakeCommandMetadata(req.Sequence(), connectionID)
+func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.CreateResourceRequest, error) {
+	correlationUUID, err := uuid.NewV4()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create correlationID: %w", err)
+	}
 
-	return commands.ConfirmResourceCreateRequest{
-		AuthorizationContext: authCtx,
-		ResourceId:           resourceID,
-		CorrelationId:        correlationId,
-		Status:               CoapCodeToStatus(req.Code()),
-		Content:              &content,
-		CommandMetadata:      &metadata,
+	content := NewContent(req.Options, req.Body)
+	metadata := NewCommandMetadata(req.SequenceNumber, connectionID)
+
+	return &commands.CreateResourceRequest{
+		ResourceId:      resourceID,
+		CorrelationId:   correlationUUID.String(),
+		Content:         content,
+		CommandMetadata: metadata,
+	}, nil
+}
+
+func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlationId string, connectionID string, req *pool.Message) *commands.ConfirmResourceCreateRequest {
+	content := NewContent(req.Options(), req.Body())
+	metadata := NewCommandMetadata(req.Sequence(), connectionID)
+
+	return &commands.ConfirmResourceCreateRequest{
+		ResourceId:      resourceID,
+		CorrelationId:   correlationId,
+		Status:          CoapCodeToStatus(req.Code()),
+		Content:         content,
+		CommandMetadata: metadata,
 	}
 }
 
@@ -282,7 +329,7 @@ func NewCoapResourceCreateRequest(ctx context.Context, event *pb.Event_ResourceC
 	if err != nil {
 		return nil, err
 	}
-	req.AddOptionString(message.URIQuery, "if=oic.if.create")
+	req.AddOptionString(message.URIQuery, "if="+OCFCreateInterface)
 
 	return req, nil
 }

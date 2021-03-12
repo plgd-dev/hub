@@ -10,7 +10,8 @@ import (
 func resourceRouteHandler(req *mux.Message, client *Client) {
 	switch req.Code {
 	case coapCodes.POST:
-		clientUpdateHandler(req, client)
+		//handles resource updates and creation
+		clientPostHandler(req, client)
 	case coapCodes.DELETE:
 		clientDeleteHandler(req, client)
 	case coapCodes.GET:

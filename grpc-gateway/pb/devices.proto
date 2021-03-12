@@ -30,6 +30,7 @@ message RetrieveResourceFromDeviceRequest {
 
 message RetrieveResourceFromDeviceResponse {
   Content content = 1;
+  Status status = 2;
 }
 
 // RetrieveResourcesValuesRequest get values from resource-shadow
@@ -46,13 +47,13 @@ message ResourceValue {
   Status status = 4;
 }
 
-message UpdateResourceValuesRequest {
+message UpdateResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
   string resource_interface = 3;
 }
 
-message UpdateResourceValuesResponse {
+message UpdateResourceResponse {
   Content content = 1;
   Status status = 2;
 }

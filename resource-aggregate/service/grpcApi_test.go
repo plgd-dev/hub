@@ -36,8 +36,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 			},
 			want: &commands.PublishResourceLinksResponse{
 				AuditContext: &commands.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceID,
+					UserId: user0,
 				},
 				PublishedResources: []*commands.Resource{testNewResource(href, deviceID)},
 				DeviceId:           deviceID,
@@ -50,8 +49,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 			},
 			want: &commands.PublishResourceLinksResponse{
 				AuditContext: &commands.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceID,
+					UserId: user0,
 				},
 				PublishedResources: []*commands.Resource{},
 				DeviceId:           deviceID,
@@ -155,8 +153,7 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 			},
 			want: &commands.UnpublishResourceLinksResponse{
 				AuditContext: &commands.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceID,
+					UserId: user0,
 				},
 				UnpublishedHrefs: []string{href},
 				DeviceId:         deviceID,
@@ -267,8 +264,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 			args: args{request: testMakeNotifyResourceChangedRequest(deviceID, resID, 2)},
 			want: &commands.NotifyResourceChangedResponse{
 				AuditContext: &commands.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceID,
+					UserId: user0,
 				},
 			},
 		},
@@ -344,7 +340,6 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 			want: &commands.UpdateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -355,7 +350,6 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 			want: &commands.UpdateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -437,7 +431,6 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 			want: &commands.ConfirmResourceUpdateResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -518,7 +511,6 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			want: &commands.RetrieveResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -599,7 +591,6 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 			want: &commands.ConfirmResourceRetrieveResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -680,7 +671,6 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			want: &commands.DeleteResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -761,7 +751,6 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 			want: &commands.ConfirmResourceDeleteResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -842,7 +831,6 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			want: &commands.CreateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},
@@ -923,7 +911,6 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 			want: &commands.ConfirmResourceCreateResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceID,
 					CorrelationId: correlationID,
 				},
 			},

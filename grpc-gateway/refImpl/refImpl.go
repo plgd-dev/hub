@@ -26,8 +26,8 @@ type Config struct {
 	JwksURL string             `envconfig:"JWKS_URL"`
 	Listen  certManager.Config `envconfig:"LISTEN"`
 	Dial    certManager.Config `envconfig:"DIAL"`
-	kitNetGrpc.Config
-	service.HandlerConfig
+	Addr    string             `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
+	service.Config
 }
 
 //String return string representation of Config
@@ -85,7 +85,7 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 		dialCertManager.Close()
 	})
 
-	if err := service.AddHandler(server, config.HandlerConfig, dialCertManager.GetClientTLSConfig()); err != nil {
+	if err := service.AddHandler(server, config.Config, dialCertManager.GetClientTLSConfig()); err != nil {
 		return nil, err
 	}
 

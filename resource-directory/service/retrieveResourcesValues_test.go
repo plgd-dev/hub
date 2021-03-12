@@ -84,6 +84,8 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 							"state": false,
 							"power": uint64(0),
 							"name":  "Light",
+							"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
+							"rt":    []interface{}{"core.light"},
 						}),
 					},
 					Status: pb.Status_OK,

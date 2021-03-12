@@ -7,14 +7,17 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security/oauth/manager"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 )
@@ -26,6 +29,7 @@ type Server struct {
 	handler *RequestHandler
 	ln      net.Listener
 	rdConn  *grpc.ClientConn
+	raConn  *grpc.ClientConn
 	cancel  context.CancelFunc
 	doneWg  *sync.WaitGroup
 }
@@ -68,6 +72,26 @@ func New(
 		log.Fatalf("cannot create server: %v", err)
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
+
+	pool, err := ants.NewPool(config.GoRoutinePoolSize)
+	if err != nil {
+		log.Fatalf("cannot create goroutine pool: %v", err)
+	}
+
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	if err != nil {
+		log.Fatalf("cannot create eventbus subscriber: %v", err)
+	}
+	raConn, err := grpc.Dial(
+		config.ResourceAggregateAddr,
+		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
+	if err != nil {
+		log.Fatalf("cannot connect to resource aggregate: %v", err)
+	}
+	raClient := raClient.New(raConn, resourceSubscriber)
+
 	emitEvent := createEmitEventFunc(dialTLSConfig, config.EmitEventTimeout)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -83,7 +107,7 @@ func New(
 		subMgr.Run()
 	}()
 
-	requestHandler := NewRequestHandler(rdClient, subMgr, emitEvent)
+	requestHandler := NewRequestHandler(rdClient, raClient, subMgr, emitEvent)
 
 	server := Server{
 		server:  NewHTTP(requestHandler, authInterceptor),
@@ -91,6 +115,7 @@ func New(
 		handler: requestHandler,
 		ln:      ln,
 		rdConn:  rdConn,
+		raConn:  raConn,
 		cancel:  cancel,
 		doneWg:  &wg,
 	}
@@ -103,6 +128,7 @@ func (s *Server) Serve() error {
 	defer func() {
 		s.doneWg.Wait()
 		s.rdConn.Close()
+		s.raConn.Close()
 	}()
 	return s.server.Serve(s.ln)
 }

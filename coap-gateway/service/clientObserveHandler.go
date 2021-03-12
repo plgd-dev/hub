@@ -92,7 +92,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 			break
 		}
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.GET), req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), req.Token)
 			return
 		}
 		if userDev.DeviceId == deviceID {
@@ -112,7 +112,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		onChange: func(ctx context.Context, resourceChanged *pb.Event_ResourceChanged) error {
 			if resourceChanged.GetStatus() != pbGRPC.Status_OK {
 				client.cancelResourceSubscription(token, false)
-				client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %v", authCtx.GetDeviceID(), deviceID, href, resourceChanged.GetStatus()), coapconv.StatusToCoapCode(resourceChanged.GetStatus(), coapCodes.GET), req.Token)
+				client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %v", authCtx.GetDeviceID(), deviceID, href, resourceChanged.GetStatus()), coapconv.StatusToCoapCode(resourceChanged.GetStatus(), coapconv.Retrieve), req.Token)
 				return nil
 			}
 			SendResourceContentToObserver(client, resourceChanged, seqNum, req.Token)

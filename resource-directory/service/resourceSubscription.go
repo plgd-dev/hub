@@ -83,7 +83,7 @@ func (s *resourceSubscription) ResourceID() *commands.ResourceId {
 	return s.resourceEvent.GetResourceId()
 }
 
-func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {
+func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Context, resourceChanged *pb.Event_ResourceChanged, version uint64) error {
 	deviceID := resourceChanged.GetResourceId().GetDeviceId()
 	href := resourceChanged.GetResourceId().GetHref()
 	if s.FilterByVersion(deviceID, href, "res", version) {
@@ -102,7 +102,7 @@ func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Contex
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceChanged_{
-			ResourceChanged: &resourceChanged,
+			ResourceChanged: resourceChanged,
 		},
 	})
 }

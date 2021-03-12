@@ -91,9 +91,6 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 	}
 
 	_, err := s.raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
-		AuthorizationContext: &commands.AuthorizationContext{
-			DeviceId: subscriptionData.subscription.DeviceID,
-		},
 		ResourceId: commands.NewResourceID(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: subscriptionData.linkedAccount.ID + "." + subscriptionData.subscription.ID,

@@ -28,11 +28,8 @@ func (c *Client) UpdateResource(
 	if err != nil {
 		return err
 	}
-	r := pb.UpdateResourceValuesRequest{
-		ResourceId: &commands.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
+	r := pb.UpdateResourceRequest{
+		ResourceId:        commands.NewResourceID(deviceID, href),
 		ResourceInterface: cfg.resourceInterface,
 		Content: &pb.Content{
 			Data:        data,
@@ -40,7 +37,7 @@ func (c *Client) UpdateResource(
 		},
 	}
 
-	resp, err := c.gateway.UpdateResourcesValues(ctx, &r)
+	resp, err := c.gateway.UpdateResource(ctx, &r)
 	if err != nil {
 		return fmt.Errorf("cannot update resource /%v/%v: %w", deviceID, href, err)
 	}

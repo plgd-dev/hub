@@ -340,7 +340,7 @@ func (s *Subscriptions) OnResourceLinksUnpublished(ctx context.Context, deviceID
 	return nil
 }
 
-func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
+func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending *pb.Event_ResourceUpdatePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -361,7 +361,7 @@ func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePendi
 	return nil
 }
 
-func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
+func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated *pb.Event_ResourceUpdated, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -382,7 +382,7 @@ func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_
 	return nil
 }
 
-func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
+func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending *pb.Event_ResourceRetrievePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -403,7 +403,7 @@ func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrieveP
 	return nil
 }
 
-func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error {
+func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePending *pb.Event_ResourceDeletePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -424,7 +424,28 @@ func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePendi
 	return nil
 }
 
-func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
+func (s *Subscriptions) OnResourceCreatePending(ctx context.Context, createPending *pb.Event_ResourceCreatePending, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, createPending.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[createPending.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfCreatePendingResource(ctx, createPending, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource create pending event: %v", errors)
+	}
+	return nil
+}
+
+func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved *pb.Event_ResourceRetrieved, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -445,7 +466,7 @@ func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Ev
 	return nil
 }
 
-func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_ResourceDeleted, version uint64) error {
+func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted *pb.Event_ResourceDeleted, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -462,6 +483,27 @@ func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("cannot send resource deleted event: %v", errors)
+	}
+	return nil
+}
+
+func (s *Subscriptions) OnResourceCreated(ctx context.Context, created *pb.Event_ResourceCreated, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for userID, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(userID, created.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[created.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfCreatedResource(ctx, created, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource created event: %v", errors)
 	}
 	return nil
 }
@@ -509,7 +551,7 @@ func (s *Subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion
 	return nil
 }
 
-func (s *Subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {
+func (s *Subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged *pb.Event_ResourceChanged, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 

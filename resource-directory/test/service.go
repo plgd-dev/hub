@@ -18,7 +18,6 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	rdCfg.Addr = testCfg.RESOURCE_DIRECTORY_HOST
 	rdCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	rdCfg.Service.FQDN = "resource-directory-" + t.Name()
-	rdCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 	rdCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	rdCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 	rdCfg.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE

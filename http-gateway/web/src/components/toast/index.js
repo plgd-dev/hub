@@ -131,9 +131,6 @@ export const BrowserNotificationsContainer = () => {
   }
 
   useEffect(() => {
-    // Request browser notifications
-    Notification.requestPermission()
-
     Emitter.on(BROWSER_NOTIFICATIONS_EVENT_KEY, showBrowserNotification)
 
     return () => {

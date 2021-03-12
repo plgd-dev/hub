@@ -108,9 +108,6 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 		_, err := s.raClient.PublishResourceLinks(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &commands.PublishResourceLinksRequest{
 			DeviceId: link.DeviceID,
-			AuthorizationContext: &commands.AuthorizationContext{
-				DeviceId: link.DeviceID,
-			},
 			Resources: []*commands.Resource{&commands.Resource{
 				Href:                  href,
 				ResourceTypes:         link.ResourceTypes,
@@ -155,9 +152,6 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 		link.DeviceID = d.subscription.DeviceID
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 		_, err := s.raClient.UnpublishResourceLinks(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &commands.UnpublishResourceLinksRequest{
-			AuthorizationContext: &commands.AuthorizationContext{
-				DeviceId: link.GetDeviceID(),
-			},
 			DeviceId: link.GetDeviceID(),
 			Hrefs:    []string{href},
 			CommandMetadata: &commands.CommandMetadata{

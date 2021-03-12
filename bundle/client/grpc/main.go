@@ -112,14 +112,15 @@ func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 func main() {
 	addr := flag.String("addr", "localhost:443", "address")
 	accesstoken := flag.String("accesstoken", "", "accesstoken")
-	authAddr := flag.String("authaddr", "localhost:443", "authorization serivce address")
+	authAddr := flag.String("authaddr", "localhost:443", "authorization service address")
 	deviceID := flag.String("deviceid", "", "deviceID")
 	href := flag.String("href", "", "href")
 	get := flag.Bool("get", true, "get resources(default) filtered by deviceid and href")
 	getDevices := flag.Bool("getdevices", false, "get devices")
 	//observe := flag.Bool("observe", false, "observe resource")
-	update := flag.Bool("update", false, "update resource, content is expceted in stdin")
+	update := flag.Bool("update", false, "update resource, content is expected in stdin")
 	delete := flag.Bool("delete", false, "delete resource")
+	create := flag.Bool("create", false, "create resource, content is expected in stdin")
 
 	contentFormat := flag.Int("contentFormat", int(message.AppJSON), "contentFormat for update resource")
 
@@ -163,9 +164,9 @@ func main() {
 	case *update:
 		data, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
-			log.Fatalf("cannot read data for update value: %v", err)
+			log.Fatalf("cannot read data for update resource: %v", err)
 		}
-		resp, err := ocfGW.UpdateResourcesValues(ctx, &pbGW.UpdateResourceValuesRequest{
+		resp, err := ocfGW.UpdateResource(ctx, &pbGW.UpdateResourceRequest{
 			ResourceId: &commands.ResourceId{
 				DeviceId: *deviceID,
 				Href:     *href,
@@ -183,6 +184,30 @@ func main() {
 			log.Fatalf("cannot encode resp to json: %v", err)
 		}
 		fmt.Println(string(d))
+	case *create:
+		data, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatalf("cannot read data for create resource: %v", err)
+		}
+		resp, err := ocfGW.CreateResource(ctx, &pbGW.CreateResourceRequest{
+			ResourceId: &commands.ResourceId{
+				DeviceId: *deviceID,
+				Href:     *href,
+			},
+			Content: &pbGW.Content{
+				ContentType: message.MediaType(*contentFormat).String(),
+				Data:        data,
+			},
+		})
+		if err != nil {
+			log.Fatalf("cannot create resource: %v", err)
+		}
+		d, err := json.Encode(resp)
+		if err != nil {
+			log.Fatalf("cannot encode resp to json: %v", err)
+		}
+		fmt.Println(string(d))
+
 	/*
 		case *observe:
 			log.Fatalf("not implemented")

@@ -11,7 +11,6 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // AuthorizationServiceClient is the client API for AuthorizationService service.
@@ -82,7 +81,7 @@ func (c *authorizationServiceClient) RefreshToken(ctx context.Context, in *Refre
 }
 
 func (c *authorizationServiceClient) GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &AuthorizationService_ServiceDesc.Streams[0], "/ocf.cloud.auth.pb.AuthorizationService/GetUserDevices", opts...)
+	stream, err := c.cc.NewStream(ctx, &_AuthorizationService_serviceDesc.Streams[0], "/ocf.cloud.auth.pb.AuthorizationService/GetUserDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +183,7 @@ type UnsafeAuthorizationServiceServer interface {
 }
 
 func RegisterAuthorizationServiceServer(s grpc.ServiceRegistrar, srv AuthorizationServiceServer) {
-	s.RegisterService(&AuthorizationService_ServiceDesc, srv)
+	s.RegisterService(&_AuthorizationService_serviceDesc, srv)
 }
 
 func _AuthorizationService_SignUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -334,10 +333,7 @@ func _AuthorizationService_RemoveDevice_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-// AuthorizationService_ServiceDesc is the grpc.ServiceDesc for AuthorizationService service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
+var _AuthorizationService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.auth.pb.AuthorizationService",
 	HandlerType: (*AuthorizationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{

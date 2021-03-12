@@ -164,8 +164,6 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 				err = status.Publish(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
-				}, &commands.AuthorizationContext{
-					DeviceId: deviceID,
 				})
 
 				if err != nil {
@@ -179,15 +177,11 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 				err = status.SetOnline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, time.Time{}, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
-				}, &commands.AuthorizationContext{
-					DeviceId: deviceID,
 				})
 			} else {
 				err = status.SetOffline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
-				}, &commands.AuthorizationContext{
-					DeviceId: deviceID,
 				})
 			}
 			if err != nil {

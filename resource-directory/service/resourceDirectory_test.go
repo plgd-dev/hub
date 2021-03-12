@@ -73,8 +73,9 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	updateNotificationContainer := notification.NewUpdateNotificationContainer()
 	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
 	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
+	createNotificationContainer := notification.NewCreateNotificationContainer()
 
-	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer), time.Second)
+	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer), time.Second)
 	require.NoError(t, err)
 
 	rd := service.New(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
