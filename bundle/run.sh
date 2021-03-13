@@ -111,7 +111,7 @@ fi
 
 if [ -z "${OAUTH_ENDPOINT}" ]
 then
-  export OAUTH_ENDPOINT=${FQDN_NGINX_HTTPS}
+  export OAUTH_ENDPOINT=${DOMAIN}
 fi
 
 if [ -z "${JWKS_URL}" ]
