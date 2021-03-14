@@ -219,8 +219,8 @@ delete_cswitch(oc_request_t *request, oc_interface_mask_t iface_mask,
   ...
 
   // we cannot delete resource immediately via oc_delete_resource because
-  // it is used during invocation delete handler. So we plan deleting via oc_resource_delayed_delete call.
-  oc_resource_delayed_delete(cswitch->resource);
+  // it is used during invocation delete handler. So we plan deleting via oc_delayed_delete_resource call.
+  oc_delayed_delete_resource(cswitch->resource);
 }
 ```
 
