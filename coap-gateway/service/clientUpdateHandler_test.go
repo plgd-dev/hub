@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_clientCreateHandler(t *testing.T) {
+func Test_clientUpdateHandler(t *testing.T) {
 	shutdown := setUp(t, true)
 	defer shutdown()
 
