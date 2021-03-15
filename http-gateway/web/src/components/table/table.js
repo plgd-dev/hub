@@ -51,6 +51,7 @@ export const Table = ({
           )
         },
       },
+      autoResetPage: false,
     },
     useSortBy,
     usePagination
@@ -120,7 +121,7 @@ export const Table = ({
         </BTable>
       </div>
 
-      {page.length > 0 && (
+      {pageCount > 0 && (
         <div className="table-bottom-controls">
           <div />
           <Pagination
@@ -135,6 +136,7 @@ export const Table = ({
             setPageSize={setPageSize}
             pageIndex={pageIndex}
             pageSize={pageSize}
+            pageLength={page.length}
           />
         </div>
       )}

@@ -20,9 +20,11 @@ import { translateToastString } from './utils'
 
 const { ERROR, SUCCESS, WARNING, INFO } = toastTypes
 
-// Global counters
+// Globals
 let dispatchedToasts = 0
 let dispatchedBrowserNotifications = 0
+let notification = null
+let decrementTimer = null
 
 // Container responsible for processing and dispatching the toast notifications
 export const ToastContainer = () => {
@@ -97,12 +99,18 @@ export const BrowserNotificationsContainer = () => {
 
     if (
       dispatchedBrowserNotifications < MAX_NUMBER_OF_BROWSER_NOTIFICATIONS &&
-      window.Notification &&
-      Notification.permission === browserNotificationPermissions.GRANTED
+      Notification?.permission === browserNotificationPermissions.GRANTED
     ) {
       dispatchedBrowserNotifications++
 
-      const notification = new Notification(toastTitle, {
+      // Close the previous notification when showing a new one
+      if (notification?.close) {
+        decrementCounter()
+        clearTimeout(decrementTimer)
+        notification.close()
+      }
+
+      notification = new Notification(toastTitle, {
         body: toastMessage,
         icon: '/favicon.png',
         badge: '/favicon.png',
@@ -111,7 +119,7 @@ export const BrowserNotificationsContainer = () => {
       })
 
       // After aproximately 5 seonds the notification disappears, so lets decrement the counter.
-      const decrementTimer = setTimeout(() => {
+      decrementTimer = setTimeout(() => {
         decrementCounter()
       }, BROWSER_NOTIFICATION_HIDE_TIME)
 
