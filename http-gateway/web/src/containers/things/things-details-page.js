@@ -193,6 +193,7 @@ export const ThingsDetailsPage = () => {
           message: _(t.resourceWasUpdated),
         })
 
+        handleCloseUpdateModal()
         setSavingResource(false)
       }
     } catch (error) {
@@ -222,6 +223,7 @@ export const ThingsDetailsPage = () => {
           message: _(t.resourceWasCreated),
         })
 
+        setResourceModalData(null) // close modal
         setSavingResource(false)
       }
     } catch (error) {

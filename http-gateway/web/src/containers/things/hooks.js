@@ -61,9 +61,7 @@ export const useThingDetails = deviceId => {
         if (event === resourceEventTypes.ADDED) {
           updatedLinks = data.links.concat(resource)
         } else {
-          updatedLinks = data.links.filter(
-            link => link.href !== resource.href
-          )
+          updatedLinks = data.links.filter(link => link.href !== resource.href)
         }
 
         updateData({

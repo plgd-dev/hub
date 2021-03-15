@@ -42,7 +42,7 @@ export const ThingsResourcesModalNotifications = ({
       // Request browser notifications
       // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
       // so we must call it to make sure the user has received a notification request)
-      Notification.requestPermission()
+      Notification?.requestPermission?.()
 
       // Register the WS
       WSManager.addWsClient({
