@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
@@ -16,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_clientUpdateHandler(t *testing.T) {
+func Test_clientCreateHandler(t *testing.T) {
 	shutdown := setUp(t, true)
 	defer shutdown()
 
@@ -66,6 +67,7 @@ func Test_clientUpdateHandler(t *testing.T) {
 	}
 
 	testPrepareDevice(t, co)
+	time.Sleep(time.Second) // for publish content of device resources
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
