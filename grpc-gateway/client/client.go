@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"net/url"
 	"sync"
 	"time"
 
@@ -30,37 +29,18 @@ type subscription = interface {
 
 type Config struct {
 	GatewayAddress string
-	AccessTokenURL string
-}
-
-func validateURL(URL string) error {
-	if URL == "" {
-		return fmt.Errorf("empty url")
-	}
-	_, err := url.Parse(URL)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // NewClient constructs a new client client. For every call there is expected jwt token for grpc stored in context.
-func NewClient(accessTokenURL string, client pb.GrpcGatewayClient) (*Client, error) {
-	err := validateURL(accessTokenURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid AccessTokenURL: %w", err)
+func New(client pb.GrpcGatewayClient) *Client {
+	return &Client{
+		gateway:       client,
+		subscriptions: make(map[string]subscription),
 	}
-
-	cl := Client{
-		gateway:        client,
-		subscriptions:  make(map[string]subscription),
-		accessTokenURL: accessTokenURL,
-	}
-	return &cl, nil
 }
 
-// NewClientFromConfig constructs a new client client. For every call there is expected jwt token for grpc stored in context.
-func NewClientFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
+// NewFromConfig constructs a new client client. For every call there is expected jwt token for grpc stored in context.
+func NewFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 	if cfg == nil || cfg.GatewayAddress == "" {
 		return nil, fmt.Errorf("missing client client config")
 	}
@@ -77,11 +57,8 @@ func NewClientFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 
 	ocfGW := pb.NewGrpcGatewayClient(conn)
 
-	client, err := NewClient(cfg.AccessTokenURL, ocfGW)
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
+	client := New(ocfGW)
+
 	client.conn = conn
 
 	return client, nil
@@ -91,8 +68,6 @@ func NewClientFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 type Client struct {
 	gateway pb.GrpcGatewayClient
 	conn    *grpc.ClientConn
-
-	accessTokenURL string
 
 	subscriptionsLock sync.Mutex
 	subscriptions     map[string]subscription
@@ -149,10 +124,6 @@ func (c *Client) Close(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (c *Client) GetAccessTokenURL(ctx context.Context) (string, error) {
-	return c.accessTokenURL, nil
 }
 
 // GetDevicesViaCallback returns devices. JWT token must be stored in context for grpc call.

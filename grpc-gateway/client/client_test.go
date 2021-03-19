@@ -28,7 +28,6 @@ const (
 
 var ClientTestCfg = client.Config{
 	GatewayAddress: testCfg.GRPC_HOST,
-	AccessTokenURL: testCfg.AUTH_HOST,
 }
 
 func NewTestClient(t *testing.T) *client.Client {
@@ -39,7 +38,7 @@ func NewTestClient(t *testing.T) *client.Client {
 	tlsCfg := tls.Config{
 		RootCAs: rootCAs,
 	}
-	c, err := client.NewClientFromConfig(&ClientTestCfg, &tlsCfg)
+	c, err := client.NewFromConfig(&ClientTestCfg, &tlsCfg)
 	require.NoError(t, err)
 	return c
 }
