@@ -1,5 +1,6 @@
 import { getApiErrorMessage } from '@/common/utils'
 import { showErrorToast, showWarningToast } from '@/components/toast'
+import { compareIgnoreCase } from '@/components/table/utils'
 import {
   knownInterfaces,
   errorCodes,
@@ -103,6 +104,55 @@ export const updateThingsDataStatus = (data, { deviceId, status }) => {
     return d
   })
 }
+
+/** Tree Structure utilities **/
+const deDensisfy = objectToDeDensify => {
+  const { href, ...rest } = objectToDeDensify
+
+  const keys = Object.keys(rest)
+  return keys.map(thisKey => {
+    const value = objectToDeDensify[thisKey]
+    if (value.subRows) {
+      value.subRows = deDensisfy(value.subRows)
+    }
+    return value
+  })
+}
+
+const addItem = (objToAddTo, item, position) => {
+  const { href, ...rest } = item
+  const parts = href.split('/')
+  const isLast = position === parts.length - 1
+  position = position + 1
+
+  if (isLast) {
+    const key = `/${parts.slice(1, position).join('/')}`
+    objToAddTo[key] = { ...objToAddTo[key], ...rest, href: key }
+  } else {
+    const key = `/${parts.slice(1, position).join('/')}/`
+    objToAddTo[key] = {
+      ...objToAddTo[key],
+      href: key,
+      subRows: { ...(objToAddTo[key]?.subRows || {}) },
+    }
+    addItem(objToAddTo[key].subRows, item, position)
+  }
+}
+
+export const createNestedResourceData = data => {
+  let firstSwipe = {}
+  if (data) {
+    data.forEach(item => {
+      addItem(firstSwipe, item, 1)
+    })
+  }
+  const output = deDensisfy(firstSwipe)
+
+  return output.sort((a, b) => {
+    return compareIgnoreCase(a.href, b.href)
+  })
+}
+/** End **/
 
 // Redux and event key for the notification state of a single device
 export const getThingNotificationKey = deviceId =>

@@ -3,7 +3,15 @@ import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import { NavLink } from 'react-router-dom'
 
-export const MenuItem = ({ children, tooltip, onClick, className, icon, to, ...rest }) => {
+export const MenuItem = ({
+  children,
+  tooltip,
+  onClick,
+  className,
+  icon,
+  to,
+  ...rest
+}) => {
   const menuItemClassName = classNames('menu-item', className)
 
   const renderMenuItemContent = () => {
@@ -37,7 +45,14 @@ export const MenuItem = ({ children, tooltip, onClick, className, icon, to, ...r
     return (
       <OverlayTrigger
         placement="right"
-        overlay={tooltip && <Tooltip id={`menu-item-tooltip-${tooltip.replace(/\s/g, '-')}`}>{tooltip}</Tooltip>}
+        overlay={
+          <Tooltip
+            id={`menu-item-tooltip-${tooltip.replace(/\s/g, '-')}`}
+            className="plgd-tooltip"
+          >
+            {tooltip}
+          </Tooltip>
+        }
       >
         {renderMenuItem()}
       </OverlayTrigger>

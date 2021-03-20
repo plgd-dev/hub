@@ -3,17 +3,20 @@ import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
+import { TreeExpander } from '@/components/tree-expander'
+import { TreeTable } from '@/components/table'
 import { Badge } from '@/components/badge'
-import { Table } from '@/components/table'
 import { ActionButton } from '@/components/action-button'
 
-import { RESOURCES_DEFAULT_PAGE_SIZE, thingsStatuses } from './constants'
-import { canCreateResource } from './utils'
+import { thingsStatuses } from './constants'
+import { canCreateResource, createNestedResourceData } from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
-export const ThingsResourcesList = ({
-  data,
+const DEPTH_SIZE = 15
+
+export const ThingsResourcesTree = ({
+  data: rawData,
   onUpdate,
   onCreate,
   onDelete,
@@ -24,6 +27,7 @@ export const ThingsResourcesList = ({
 
   const isUnregistered = deviceStatus === thingsStatuses.UNREGISTERED
   const greyedOutClassName = classNames({ 'grayed-out': isUnregistered })
+  const data = useMemo(() => createNestedResourceData(rawData), [rawData])
 
   const columns = useMemo(
     () => [
@@ -37,9 +41,36 @@ export const ThingsResourcesList = ({
           if (isUnregistered) {
             return <span>{value}</span>
           }
+
+          if (row.canExpand) {
+            return (
+              <span
+                {...row.getToggleRowExpandedProps({
+                  style: {
+                    paddingLeft: `${row.depth * DEPTH_SIZE}px`,
+                  },
+                  className: 'tree-expander-container',
+                  title: null,
+                })}
+              >
+                <TreeExpander expanded={!!row.isExpanded} />
+                {value}
+              </span>
+            )
+          }
+
           return (
-            <span className="link" onClick={() => onUpdate({ di, href })}>
+            <span
+              className="link tree-expander-container"
+              onClick={() => onUpdate({ di, href })}
+              style={{
+                paddingLeft: `${
+                  row.depth === 0 ? 0 : (row.depth + 1) * DEPTH_SIZE
+                }px`,
+              }}
+            >
               {value}
+              <i className="fas fa-pen m-l-10" />
             </span>
           )
         },
@@ -48,7 +79,11 @@ export const ThingsResourcesList = ({
       {
         Header: _(t.types),
         accessor: 'rt',
-        Cell: ({ value }) => {
+        Cell: ({ value, row }) => {
+          if (row.canExpand) {
+            return null
+          }
+
           return (
             <div className="badges-box-horizontal">
               {value?.map?.(type => <Badge key={type}>{type}</Badge>)}
@@ -61,6 +96,10 @@ export const ThingsResourcesList = ({
         accessor: 'actions',
         disableSortBy: true,
         Cell: ({ row }) => {
+          if (row.canExpand) {
+            return null
+          }
+
           const {
             original: { di, href, if: interfaces },
           } = row
@@ -99,27 +138,15 @@ export const ThingsResourcesList = ({
   )
 
   return (
-    <Table
+    <TreeTable
       columns={columns}
       data={data || []}
-      defaultSortBy={[
-        {
-          id: 'href',
-          desc: false,
-        },
-      ]}
-      defaultPageSize={RESOURCES_DEFAULT_PAGE_SIZE}
-      autoFillEmptyRows
       className={greyedOutClassName}
-      paginationProps={{
-        className: greyedOutClassName,
-        disabled: isUnregistered,
-      }}
     />
   )
 }
 
-ThingsResourcesList.propTypes = {
+ThingsResourcesTree.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
   onCreate: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
@@ -128,7 +155,7 @@ ThingsResourcesList.propTypes = {
   deviceStatus: PropTypes.oneOf(Object.values(thingsStatuses)),
 }
 
-ThingsResourcesList.defaultProps = {
+ThingsResourcesTree.defaultProps = {
   data: null,
   deviceStatus: null,
 }

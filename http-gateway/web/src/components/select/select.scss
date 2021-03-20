@@ -41,7 +41,7 @@ div.select__menu {
 
   .select__option {
     cursor: pointer;
-    
+
     &.select__option--is-focused {
       background-color: $secondary_20;
       color: $primary_100;
@@ -50,5 +50,19 @@ div.select__menu {
       background-color: $primary_100;
       color: $white;
     }
+  }
+}
+
+.select--is-disabled {
+  div.select__control {
+    .select__indicators {
+      .select__indicator {
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .select__single-value {
+    opacity: 0.5;
   }
 }

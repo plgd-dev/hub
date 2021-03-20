@@ -12,8 +12,8 @@ import { messages as menuT } from '@/components/menu/menu-i18n'
 import { showSuccessToast } from '@/components/toast'
 
 import { ThingsDetails } from './_things-details'
+import { ThingsResources } from './_things-resources'
 import { ThingsDetailsHeader } from './_things-details-header'
-import { ThingsResourcesList } from './_things-resources-list'
 import { ThingsResourcesModal } from './_things-resources-modal'
 import {
   thingsStatuses,
@@ -293,8 +293,7 @@ export const ThingsDetailsPage = () => {
       </h2>
       <ThingsDetails data={data} loading={loading} />
 
-      <h2 className={classNames(greyedOutClassName)}>{_(t.resources)}</h2>
-      <ThingsResourcesList
+      <ThingsResources
         data={data?.links}
         onUpdate={openUpdateModal}
         onCreate={openCreateModal}

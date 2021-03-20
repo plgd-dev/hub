@@ -80,3 +80,38 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 .grayed-out {
   opacity: 0.4;
 }
+
+.plgd-tooltip.tooltip {
+  &.show {
+    opacity: 1;
+  }
+
+  .tooltip-inner {
+    background-color: $secondary_20;
+    color: $secondary_40;
+    border-radius: 0;
+    font-size: 14px;
+    padding: 10px;
+    line-height: 1.1;
+  }
+
+  &.bs-tooltip-auto[x-placement^='bottom'] .arrow::before,
+  &.bs-tooltip-bottom .arrow::before {
+    border-bottom-color: $secondary_20;
+  }
+
+  &.bs-tooltip-auto[x-placement^='top'] .arrow::before,
+  &.bs-tooltip-top .arrow::before {
+    border-top-color: $secondary_20;
+  }
+
+  &.bs-tooltip-auto[x-placement^='left'] .arrow::before,
+  &.bs-tooltip-left .arrow::before {
+    border-left-color: $secondary_20;
+  }
+
+  &.bs-tooltip-auto[x-placement^='right'] .arrow::before,
+  &.bs-tooltip-right .arrow::before {
+    border-right-color: $secondary_20;
+  }
+}
