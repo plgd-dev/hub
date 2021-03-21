@@ -2,8 +2,8 @@
 
 .tree-expander {
   position: relative;
-  width: 18px;
-  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
   border: 1px solid $secondary_25;
   color: $primary_100;
   box-sizing: border-box;
@@ -15,6 +15,7 @@
   margin-right: 8px;
   transition: all 0.2s ease 0s;
   z-index: 1;
+  cursor: pointer;
 
   &.expanded {
     color: $light_100;
@@ -25,15 +26,24 @@
 
 .tree-expander-container {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   color: $primary_100;
+}
 
-  .tail {
+.reveal-icon-on-hover {
+  position: relative;
+  padding-right: 25px;
+
+  & + i.fas {
     position: absolute;
-    z-index: 0;
-    border: 1px solid $secondary_25;
-    border-top: 0;
-    border-right: 0;
+    right: 0;
+    display: none;
+  }
+
+  &:hover {
+    & + i.fas {
+      display: inline-block;
+    }
   }
 }

@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types'
 import classNames from 'classnames'
 
-export const TreeExpander = ({ expanded }) => {
+export const TreeExpander = ({ expanded, ...rest }) => {
   return (
-    <div className={classNames('tree-expander', { expanded })}>
+    <div {...rest} className={classNames('tree-expander', { expanded })}>
       <i
         className={classNames('fas', {
           'fa-chevron-down': expanded,

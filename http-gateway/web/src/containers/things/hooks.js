@@ -59,7 +59,20 @@ export const useThingDetails = deviceId => {
         let updatedLinks = []
 
         if (event === resourceEventTypes.ADDED) {
-          updatedLinks = data.links.concat(resource)
+          const linkExists =
+            data.links.findIndex(link => link.href === resource.href) !== -1
+          if (linkExists) {
+            // Already exists, update
+            updatedLinks = data.links.map(link => {
+              if (link.href === resource.href) {
+                return resource
+              }
+
+              return link
+            })
+          } else {
+            updatedLinks = data.links.concat(resource)
+          }
         } else {
           updatedLinks = data.links.filter(link => link.href !== resource.href)
         }

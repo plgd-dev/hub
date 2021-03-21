@@ -8,12 +8,14 @@ import { TreeTable } from '@/components/table'
 import { Badge } from '@/components/badge'
 import { ActionButton } from '@/components/action-button'
 
-import { thingsStatuses } from './constants'
-import { canCreateResource, createNestedResourceData } from './utils'
+import { thingsStatuses, RESOURCE_TREE_DEPTH_SIZE } from './constants'
+import {
+  canCreateResource,
+  createNestedResourceData,
+  getLastPartOfAResourceHref,
+} from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
-
-const DEPTH_SIZE = 15
 
 export const ThingsResourcesTree = ({
   data: rawData,
@@ -38,49 +40,61 @@ export const ThingsResourcesTree = ({
           const {
             original: { di, href },
           } = row
+          const lastValue = getLastPartOfAResourceHref(value)
+          const onLinkClick = di
+            ? () => onUpdate({ di, href: href.replace(/\/$/, '') })
+            : null
+
           if (isUnregistered) {
-            return <span>{value}</span>
+            return <span>{lastValue}</span>
           }
 
           if (row.canExpand) {
             return (
-              <span
-                {...row.getToggleRowExpandedProps({
-                  style: {
-                    paddingLeft: `${row.depth * DEPTH_SIZE}px`,
-                  },
-                  className: 'tree-expander-container',
-                  title: null,
-                })}
-              >
-                <TreeExpander expanded={!!row.isExpanded} />
-                {value}
-              </span>
+              <div className="tree-expander-container">
+                <TreeExpander
+                  {...row.getToggleRowExpandedProps({ title: null })}
+                  expanded={!!row.isExpanded}
+                  style={{
+                    marginLeft: `${row.depth * RESOURCE_TREE_DEPTH_SIZE}px`,
+                  }}
+                />
+                <span
+                  className={di ? 'link reveal-icon-on-hover' : ''}
+                  onClick={onLinkClick}
+                >
+                  {`/${lastValue}/`}
+                </span>
+                {di && <i className="fas fa-pen" />}
+              </div>
             )
           }
 
           return (
-            <span
-              className="link tree-expander-container"
-              onClick={() => onUpdate({ di, href })}
+            <div
+              className="tree-expander-container"
               style={{
-                paddingLeft: `${
-                  row.depth === 0 ? 0 : (row.depth + 1) * DEPTH_SIZE
+                marginLeft: `${
+                  row.depth === 0
+                    ? 0
+                    : (row.depth + 1) * RESOURCE_TREE_DEPTH_SIZE
                 }px`,
               }}
             >
-              {value}
-              <i className="fas fa-pen m-l-10" />
-            </span>
+              <span className="link reveal-icon-on-hover" onClick={onLinkClick}>
+                {`/${lastValue}`}
+              </span>
+              <i className="fas fa-pen" />
+            </div>
           )
         },
-        style: { width: '50%' },
+        style: { width: '100%' },
       },
       {
         Header: _(t.types),
         accessor: 'rt',
         Cell: ({ value, row }) => {
-          if (row.canExpand) {
+          if (!row.original.di) {
             return null
           }
 
@@ -96,13 +110,14 @@ export const ThingsResourcesTree = ({
         accessor: 'actions',
         disableSortBy: true,
         Cell: ({ row }) => {
-          if (row.canExpand) {
+          if (!row.original.di) {
             return null
           }
 
           const {
             original: { di, href, if: interfaces },
           } = row
+          const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
           return (
             <ActionButton
               disabled={isUnregistered || loading}
@@ -111,18 +126,18 @@ export const ThingsResourcesTree = ({
               }}
               items={[
                 {
-                  onClick: () => onCreate(href),
+                  onClick: () => onCreate(cleanHref),
                   label: _(t.create),
                   icon: 'fa-plus',
                   hidden: !canCreateResource(interfaces),
                 },
                 {
-                  onClick: () => onUpdate({ di, href }),
+                  onClick: () => onUpdate({ di, href: cleanHref }),
                   label: _(t.update),
                   icon: 'fa-pen',
                 },
                 {
-                  onClick: () => onDelete(href),
+                  onClick: () => onDelete(cleanHref),
                   label: _(t.delete),
                   icon: 'fa-trash-alt',
                 },

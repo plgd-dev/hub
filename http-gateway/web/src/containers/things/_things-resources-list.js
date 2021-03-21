@@ -38,12 +38,18 @@ export const ThingsResourcesList = ({
             return <span>{value}</span>
           }
           return (
-            <span className="link" onClick={() => onUpdate({ di, href })}>
-              {value}
-            </span>
+            <div className="tree-expander-container">
+              <span
+                className="link reveal-icon-on-hover"
+                onClick={() => onUpdate({ di, href })}
+              >
+                {value}
+              </span>
+              <i className="fas fa-pen" />
+            </div>
           )
         },
-        style: { width: '50%' },
+        style: { width: '100%' },
       },
       {
         Header: _(t.types),

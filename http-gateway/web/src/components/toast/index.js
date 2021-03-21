@@ -5,7 +5,11 @@ import classNames from 'classnames'
 import { useIntl } from 'react-intl'
 
 import { Emitter } from '@/common/services/emitter'
-import { isBrowserTabActive, playRandomFartSound } from '@/common/utils'
+import {
+  isBrowserTabActive,
+  playRandomFartSound,
+  loadAllFartSounds,
+} from '@/common/utils'
 import {
   toastTypes,
   browserNotificationPermissions,
@@ -138,11 +142,18 @@ export const BrowserNotificationsContainer = () => {
     }
   }
 
+  const loadSounds = () => {
+    loadAllFartSounds()
+    document.removeEventListener('click', loadSounds)
+  }
+
   useEffect(() => {
     Emitter.on(BROWSER_NOTIFICATIONS_EVENT_KEY, showBrowserNotification)
+    document.addEventListener('click', loadSounds)
 
     return () => {
       Emitter.off(BROWSER_NOTIFICATIONS_EVENT_KEY, showBrowserNotification)
+      document.removeEventListener('click', loadSounds)
     }
   }, []) // eslint-disable-line
 

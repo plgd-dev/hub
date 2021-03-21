@@ -106,6 +106,9 @@ export const updateThingsDataStatus = (data, { deviceId, status }) => {
 }
 
 /** Tree Structure utilities **/
+// Shout out to @oskarbauer for creating this script :)
+
+// A recursive function which "densify" the subRows 
 const deDensisfy = objectToDeDensify => {
   const { href, ...rest } = objectToDeDensify
 
@@ -119,27 +122,31 @@ const deDensisfy = objectToDeDensify => {
   })
 }
 
+// A recursive function for creating a tree structure from the href attribute
 const addItem = (objToAddTo, item, position) => {
   const { href, ...rest } = item
   const parts = href.split('/')
   const isLast = position === parts.length - 1
   position = position + 1
+  const key = `/${parts.slice(1, position).join('/')}/`
 
   if (isLast) {
-    const key = `/${parts.slice(1, position).join('/')}`
     objToAddTo[key] = { ...objToAddTo[key], ...rest, href: key }
   } else {
-    const key = `/${parts.slice(1, position).join('/')}/`
-    objToAddTo[key] = {
-      ...objToAddTo[key],
-      href: key,
-      subRows: { ...(objToAddTo[key]?.subRows || {}) },
+    const extendedKey = `${key}`
+    objToAddTo[extendedKey] = {
+      ...objToAddTo[extendedKey],
+      ...(key === href ? rest : {}),
+      href: extendedKey,
+      subRows: { ...(objToAddTo[extendedKey]?.subRows || {}) }, // subRows is the next level in the tree structure
     }
-    addItem(objToAddTo[key].subRows, item, position)
+    // Go deeper with recursion
+    addItem(objToAddTo[extendedKey].subRows, item, position)
   }
 }
 
 export const createNestedResourceData = data => {
+  // Always construct the objects from scratch
   let firstSwipe = {}
   if (data) {
     data.forEach(item => {
@@ -153,6 +160,15 @@ export const createNestedResourceData = data => {
   })
 }
 /** End **/
+
+// Returns the last section of a resource href, no matter if it ends with a trailing slash or not
+export const getLastPartOfAResourceHref = href => {
+  if (!href) {
+    return ''
+  }
+  const values = href.split('/').filter(t => t)
+  return values[values.length - 1]
+}
 
 // Redux and event key for the notification state of a single device
 export const getThingNotificationKey = deviceId =>
