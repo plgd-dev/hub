@@ -133,15 +133,14 @@ const addItem = (objToAddTo, item, position) => {
   if (isLast) {
     objToAddTo[key] = { ...objToAddTo[key], ...rest, href: key }
   } else {
-    const extendedKey = `${key}`
-    objToAddTo[extendedKey] = {
-      ...objToAddTo[extendedKey],
+    objToAddTo[key] = {
+      ...objToAddTo[key],
       ...(key === href ? rest : {}),
-      href: extendedKey,
-      subRows: { ...(objToAddTo[extendedKey]?.subRows || {}) }, // subRows is the next level in the tree structure
+      href: key,
+      subRows: { ...(objToAddTo[key]?.subRows || {}) }, // subRows is the next level in the tree structure
     }
     // Go deeper with recursion
-    addItem(objToAddTo[extendedKey].subRows, item, position)
+    addItem(objToAddTo[key].subRows, item, position)
   }
 }
 
