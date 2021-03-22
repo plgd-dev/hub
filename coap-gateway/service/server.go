@@ -228,6 +228,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		MaxMessageSize:                  config.MaxMessageSize,
 		LogMessages:                     config.LogMessages,
 		KeepaliveOnInactivity:           onInactivity,
+		KeepaliveTimeoutConnection:      config.KeepaliveTimeoutConnection,
 
 		IsTLSListener: isTLSListener,
 		raClient:      raClient,

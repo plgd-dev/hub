@@ -87,10 +87,7 @@ func New(cfg Config) (*Server, error) {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
-	client, err := client.NewClient("http://localhost", resourceDirectoryClient)
-	if err != nil {
-		return nil, fmt.Errorf("cannot initialize new client: %v", err)
-	}
+	client := client.New(resourceDirectoryClient)
 
 	pool, err := ants.NewPool(cfg.GoRoutinePoolSize)
 	if err != nil {

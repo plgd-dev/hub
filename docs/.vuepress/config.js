@@ -52,7 +52,8 @@ module.exports = {
             sidebarDepth: 1,
             children: [
               'developing/resources',
-              'developing/dashboard'
+              'developing/dashboard',
+              'developing/grpc-client'
             ]
           }
         ]
