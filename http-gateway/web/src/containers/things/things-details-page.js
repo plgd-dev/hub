@@ -14,6 +14,7 @@ import { showSuccessToast } from '@/components/toast'
 import { ThingsDetails } from './_things-details'
 import { ThingsResources } from './_things-resources'
 import { ThingsDetailsHeader } from './_things-details-header'
+import { ThingsDetailsTitle } from './_things-details-title'
 import { ThingsResourcesModal } from './_things-resources-modal'
 import {
   thingsStatuses,
@@ -43,7 +44,7 @@ export const ThingsDetailsPage = () => {
   const [savingResource, setSavingResource] = useState(false)
   const [deleteResourceHref, setDeleteResourceHref] = useState()
   const isMounted = useIsMounted()
-  const { data, loading, error } = useThingDetails(id)
+  const { data, updateData, loading, error } = useThingDetails(id)
 
   // Open the resource modal when href is present
   useEffect(
@@ -281,16 +282,18 @@ export const ThingsDetailsPage = () => {
         />
       }
     >
-      <h2
+      <ThingsDetailsTitle
         className={classNames(
           {
             shimmering: loading,
           },
           greyedOutClassName
         )}
+        updateData={updateData}
+        loading={loading}
       >
         {deviceName}
-      </h2>
+      </ThingsDetailsTitle>
       <ThingsDetails data={data} loading={loading} />
 
       <ThingsResources
