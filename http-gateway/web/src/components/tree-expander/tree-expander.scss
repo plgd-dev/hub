@@ -34,16 +34,18 @@
 .reveal-icon-on-hover {
   position: relative;
   padding-right: 25px;
+  z-index: 1;
 
   & + i.fas {
     position: absolute;
     right: 0;
-    display: none;
+    opacity: 0;
+    z-index: 0;
   }
 
   &:hover {
     & + i.fas {
-      display: inline-block;
+      opacity: 1;
     }
   }
 }
