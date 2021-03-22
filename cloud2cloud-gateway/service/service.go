@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"google.golang.org/grpc"
