@@ -13,9 +13,9 @@ import (
 
 	connectorStore "github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/kit/log"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"

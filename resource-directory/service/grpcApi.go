@@ -21,7 +21,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/kit/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"

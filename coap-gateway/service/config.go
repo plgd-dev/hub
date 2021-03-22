@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	"github.com/plgd-dev/kit/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 )
 
 // Config for application.
