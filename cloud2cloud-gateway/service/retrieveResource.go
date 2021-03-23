@@ -47,7 +47,7 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 }
 
 func (rh *RequestHandler) RetrieveResource(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := retrieveWithCallback(w, r, rh.RetrieveResourceWithContentQuery)
+	statusCode, err := rh.retrieveWithCallback(w, r, rh.RetrieveResourceWithContentQuery)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource: %w", err), statusCode, w)
 	}

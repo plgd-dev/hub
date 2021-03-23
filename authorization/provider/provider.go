@@ -16,8 +16,9 @@ type Provider = interface {
 
 // Config general configuration
 type Config struct {
-	Provider string       `envconfig:"PROVIDER" env:"PROVIDER" default:"generic"` // value which comes from the device during the sign-up ("apn")
-	OAuth2   oauth.Config `envconfig:"OAUTH" env:"OAUTH"`
+	Provider   string       `envconfig:"PROVIDER" env:"PROVIDER" default:"generic"` // value which comes from the device during the sign-up ("apn")
+	OwnerClaim string       `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
+	OAuth2     oauth.Config `envconfig:"OAUTH" env:"OAUTH"`
 }
 
 // New creates GitHub OAuth client

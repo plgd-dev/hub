@@ -19,7 +19,7 @@ func publishResource(ctx context.Context, raClient raService.ResourceAggregateCl
 		})
 	}
 	href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-	_, err := raClient.PublishResourceLinks(kitNetGrpc.CtxWithUserID(ctx, userID), &commands.PublishResourceLinksRequest{
+	_, err := raClient.PublishResourceLinks(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.PublishResourceLinksRequest{
 		DeviceId: link.DeviceID,
 		Resources: []*commands.Resource{&commands.Resource{
 			Href:                  href,

@@ -37,7 +37,7 @@ func checkReq(tx persistence.PersistenceTx, request request) (expiresInSeconds i
 	if d.AccessToken != request.GetAccessToken() {
 		return -1, status.Errorf(codes.Unauthenticated, "bad AccessToken")
 	}
-	if d.UserID != request.GetUserId() {
+	if d.Owner != request.GetUserId() {
 		return -1, status.Errorf(codes.Unauthenticated, "bad UserId")
 	}
 	expiresIn, ok := ExpiresIn(d.Expiry)

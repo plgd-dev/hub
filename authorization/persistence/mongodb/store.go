@@ -16,12 +16,12 @@ import (
 const userDevicesCName = "userdevices"
 
 var userDeviceQueryIndex = bson.D{
-	{userIDKey, 1},
+	{ownerKey, 1},
 	{deviceIDKey, 1},
 }
 
 var userDevicesQueryIndex = bson.D{
-	{userIDKey, 1},
+	{ownerKey, 1},
 }
 
 // Store implements an Store for MongoDB.

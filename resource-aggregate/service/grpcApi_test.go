@@ -90,7 +90,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -228,12 +228,12 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
-	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
+	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), pubReq)
 	assert.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.UnpublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
+			response, err := requestHandler.UnpublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -282,7 +282,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -369,7 +369,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -449,7 +449,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -529,7 +529,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -609,7 +609,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -689,7 +689,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -769,7 +769,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -849,7 +849,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)
@@ -929,7 +929,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	var config Config
 	err = envconfig.Process("", &config)

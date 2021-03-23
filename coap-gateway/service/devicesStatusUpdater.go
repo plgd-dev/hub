@@ -70,7 +70,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 	if err != nil {
 		return time.Time{}, fmt.Errorf("cannot get service token: %w", err)
 	}
-	ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(client.Context(), serviceToken.AccessToken), authCtx.GetUserID())
+	ctx := kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(client.Context(), serviceToken.AccessToken), authCtx.GetUserID())
 	if !u.cfg.Enabled || authCtx.Expire.Before(validUntil) {
 		validUntil = authCtx.Expire
 	}

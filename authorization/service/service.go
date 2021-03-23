@@ -47,6 +47,7 @@ type Service struct {
 	sdkProvider    Provider
 	persistence    Persistence
 	csrfTokens     *cache.Cache
+	ownerClaim     string
 }
 
 // Server is an HTTP server for the Service.
@@ -59,12 +60,13 @@ type Server struct {
 	listener          net.Listener
 }
 
-func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *Service {
+func newService(deviceProvider, sdkProvider Provider, persistence Persistence, ownerClaim string) *Service {
 	return &Service{
 		deviceProvider: deviceProvider,
 		sdkProvider:    sdkProvider,
 		persistence:    persistence,
 		csrfTokens:     cache.New(5*time.Minute, 10*time.Minute),
+		ownerClaim:     ownerClaim,
 	}
 }
 
@@ -81,7 +83,7 @@ func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provid
 		return nil, fmt.Errorf("listening failed: %w", err)
 	}
 
-	service := newService(deviceProvider, sdkProvider, persistence)
+	service := newService(deviceProvider, sdkProvider, persistence, cfg.Device.OwnerClaim)
 	listenTLSConfig := serverCertManager.GetServerTLSConfig()
 	server, err := kitNetGrpc.NewServer(cfg.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
 	if err != nil {

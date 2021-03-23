@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/plgd-dev/kit/net/grpc"
 )
 
-func parseAuth(auth string) (token, sub string, err error) {
+func parseAuth(ownerClaim, auth string) (token, owner string, err error) {
 	if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
 		rawToken := auth[7:]
-		sub, err = parseSubFromJwtToken(rawToken)
+		owner, err = grpc.ParseOwnerFromJwtToken(ownerClaim, rawToken)
 		if err != nil {
 			err = fmt.Errorf("cannot parse bearer: %w", err)
 			return
@@ -19,30 +19,4 @@ func parseAuth(auth string) (token, sub string, err error) {
 		return
 	}
 	return "", "", fmt.Errorf("cannot parse bearer: prefix 'Bearer ' not found")
-}
-
-type claims struct {
-	Subject string `json:"sub,omitempty"`
-}
-
-func (c *claims) Valid() error {
-	return nil
-}
-
-func parseSubFromJwtToken(rawJwtToken string) (string, error) {
-	parser := &jwt.Parser{
-		SkipClaimsValidation: true,
-	}
-
-	var claims claims
-	_, _, err := parser.ParseUnverified(rawJwtToken, &claims)
-	if err != nil {
-		return "", fmt.Errorf("cannot get sub from jwt token: %w", err)
-	}
-
-	if claims.Subject != "" {
-		return claims.Subject, nil
-	}
-
-	return "", fmt.Errorf("cannot get sub from jwt token: not found")
 }

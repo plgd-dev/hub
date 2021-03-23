@@ -21,6 +21,7 @@ type Config struct {
 	EmitEventTimeout      time.Duration  `envconfig:"EMIT_EVENT_TIMEOUT" default:"5s"`
 	ResourceAggregateAddr string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
 	GoRoutinePoolSize     int            `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
+	OwnerClaim            string         `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
 	Nats                  nats.Config
 }
 

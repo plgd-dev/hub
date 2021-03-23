@@ -105,7 +105,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		client.Close()
 		return
 	}
-	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
+	req.Context = kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
 	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &commands.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
@@ -139,7 +139,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 	if newDevice {
 		h := NewDeviceSubscriptionHandlers(client, signIn.DeviceID)
-		ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(client.server.ctx, serviceToken.AccessToken), signIn.UserID)
+		ctx := kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(client.server.ctx, serviceToken.AccessToken), signIn.UserID)
 		cancelSubscription, err := client.server.subscribeToDevice(ctx, signIn.UserID, signIn.DeviceID, h)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
@@ -193,7 +193,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		}
 		ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
-		req.Context = kitNetGrpc.CtxWithUserID(ctx, oldAuthCtx.GetUserID())
+		req.Context = kitNetGrpc.CtxWithOwner(ctx, oldAuthCtx.GetUserID())
 		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.GetDeviceID(), &commands.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),

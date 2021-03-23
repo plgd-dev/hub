@@ -8,11 +8,11 @@ import (
 )
 
 func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) error {
-	userID, err := kitNetGrpc.UserIDFromMD(srv.Context())
+	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
 	if err != nil {
 		return logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot get devices: %v", err))
 	}
-	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), userID)
+	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), owner)
 	if err != nil {
 		return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
 	}

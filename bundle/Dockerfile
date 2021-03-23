@@ -60,8 +60,7 @@ RUN cd /web && npm install && npm run build
 
 FROM ubuntu:20.04 as service
 RUN apt update
-RUN apt update
-RUN apt install -y wget gnupg iproute2 systemctl openssl nginx
+RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
@@ -114,8 +113,8 @@ ENV DEVICE_PROVIDER_TYPE=plgd
 ENV DEVICE_OAUTH_SCOPES=profile,openid,offline_access
 ENV SDK_OAUTH_RESPONSE_MODE=form_post
 ENV SDK_OAUTH_SCOPES=openid
+ENV OWNER_CLAIM="sub"
 ENV SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="plgd"
-ENV SERVICE_CLIENT_CONFIGURATION_JWTCLAIMOWNERID="sub"
 ENV SERVICE_OAUTH_CLIENT_ID=test
 
 ENTRYPOINT ["/usr/local/bin/run.sh"]

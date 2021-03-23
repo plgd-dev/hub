@@ -107,7 +107,7 @@ func New(
 		subMgr.Run()
 	}()
 
-	requestHandler := NewRequestHandler(rdClient, raClient, subMgr, emitEvent)
+	requestHandler := NewRequestHandler(rdClient, raClient, subMgr, emitEvent, config.OwnerClaim)
 
 	server := Server{
 		server:  NewHTTP(requestHandler, authInterceptor),

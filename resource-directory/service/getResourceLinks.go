@@ -8,11 +8,11 @@ import (
 )
 
 func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	userID, err := kitNetGrpc.UserIDFromMD(srv.Context())
+	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
 	if err != nil {
 		return logAndReturnError(kitNetGrpc.ForwardErrorf(codes.NotFound, "cannot get resource links: %v", err))
 	}
-	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), userID)
+	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), owner)
 	if err != nil {
 		return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
 	}

@@ -23,7 +23,7 @@ func TestSignUp(t *testing.T) {
 	assert.Equal(o.t.AccessToken, r.AccessToken)
 	assert.Equal(o.t.RefreshToken, r.RefreshToken)
 	assert.True(3595 < r.ExpiresIn && r.ExpiresIn <= 3600)
-	assert.Equal(o.t.UserID, r.UserId)
+	assert.Equal(o.t.Owner, r.UserId)
 	_, ok := retrieveDevice(t, s.service.persistence, testDeviceID, r.UserId)
 	assert.True(ok)
 }
@@ -64,7 +64,7 @@ func TestPermanentToken(t *testing.T) {
 	assert.Equal(o.t.AccessToken, r.AccessToken)
 	assert.Equal(o.t.RefreshToken, r.RefreshToken)
 	assert.Equal(int64(-1), r.ExpiresIn)
-	assert.Equal(o.t.UserID, r.UserId)
+	assert.Equal(o.t.Owner, r.UserId)
 }
 
 type providerT struct {
@@ -93,7 +93,7 @@ func newTestProvider() *providerT {
 		AccessToken:  "test access token",
 		RefreshToken: "test refresh token",
 		Expiry:       time.Now().Add(3600 * time.Second),
-		UserID:       "test user id",
+		Owner:        "test user id",
 	}
 	return &providerT{t: &t, err: nil}
 }

@@ -132,7 +132,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize, config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger, config.ResubscribeInterval)
-	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
+	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger, config.OwnerClaim)
 
 	var wg sync.WaitGroup
 	if !config.PullDevicesDisabled {

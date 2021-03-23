@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 )
 
 type LinkedCloudHandler struct {
@@ -61,7 +61,7 @@ func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, li
 }
 
 func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
-	_, userID, err := ParseAuth(r.Header.Get("Authorization"))
+	_, userID, err := ParseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusUnauthorized, fmt.Errorf("cannot get usedID from Authorization header: %w", err)
 	}

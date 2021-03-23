@@ -232,7 +232,7 @@ func (rh *RequestHandler) RetrieveDeviceWithContentQuery(ctx context.Context, w 
 }
 
 func (rh *RequestHandler) RetrieveDevice(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := retrieveWithCallback(w, r, rh.RetrieveDeviceWithContentQuery)
+	statusCode, err := rh.retrieveWithCallback(w, r, rh.RetrieveDeviceWithContentQuery)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve device: %w", err), statusCode, w)
 	}

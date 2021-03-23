@@ -8,10 +8,10 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 
+	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
-	"github.com/gofrs/uuid"
 
 	"github.com/gorilla/mux"
 )
@@ -63,7 +63,7 @@ func (rh *RequestHandler) subscribeToResource(w http.ResponseWriter, r *http.Req
 	deviceID := routeVars[deviceIDKey]
 	href := routeVars[HrefKey]
 
-	_, userID, err := parseAuth(r.Header.Get("Authorization"))
+	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}

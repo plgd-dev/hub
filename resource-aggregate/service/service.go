@@ -60,7 +60,7 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 	dialTLSConfig := clientCertManager.GetClientTLSConfig()
 	listenTLSConfig := serverCertManager.GetServerTLSConfig()
 
-	auth := NewAuth(config.JwksURL, dialTLSConfig)
+	auth := NewAuth(config.JwksURL, config.OwnerClaim, dialTLSConfig)
 
 	streamInterceptors := []grpc.StreamServerInterceptor{}
 	if logger.Core().Enabled(zapcore.DebugLevel) {
@@ -100,12 +100,12 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 	authClient := pbAS.NewAuthorizationServiceClient(asConn)
 
 	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
-	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, userID, deviceID string) (bool, error) {
-		ok := userDevicesManager.IsUserDevice(userID, deviceID)
+	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner, deviceID string) (bool, error) {
+		ok := userDevicesManager.IsUserDevice(owner, deviceID)
 		if ok {
 			return ok, nil
 		}
-		devices, err := userDevicesManager.UpdateUserDevices(ctx, userID)
+		devices, err := userDevicesManager.UpdateUserDevices(ctx, owner)
 		if err != nil {
 			return false, err
 		}
@@ -164,7 +164,7 @@ func (s *Server) Shutdown() {
 	s.sigs <- syscall.SIGTERM
 }
 
-func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
+func NewAuth(jwksUrl, ownerClaim string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
 	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
@@ -174,17 +174,17 @@ func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
 			log.Errorf("auth interceptor: %v", err)
 			return ctx, err
 		}
-		userID, err := kitNetGrpc.UserIDFromMD(ctx)
+		owner, err := kitNetGrpc.OwnerFromMD(ctx)
 		if err != nil {
-			userID, err = kitNetGrpc.UserIDFromTokenMD(ctx)
+			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
 			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, userID)
+				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
 			}
 		}
 		if err != nil {
-			log.Errorf("auth cannot get userID: %v", err)
+			log.Errorf("auth cannot get owner: %v", err)
 			return ctx, err
 		}
-		return kitNetGrpc.CtxWithUserID(ctx, userID), nil
+		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
 	})
 }

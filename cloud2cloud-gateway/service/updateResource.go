@@ -78,7 +78,7 @@ func sendResponse(w http.ResponseWriter, processed *pbGRPC.UpdateResourceRespons
 }
 
 func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.Request) (int, error) {
-	_, userID, err := parseAuth(r.Header.Get("Authorization"))
+	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusUnauthorized, fmt.Errorf("cannot get access token: %w", err)
 	}
@@ -112,7 +112,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 		},
 	}
 
-	updatedEvent, err := rh.raClient.SyncUpdateResource(kitNetGrpc.CtxWithUserID(r.Context(), userID), updateCommand)
+	updatedEvent, err := rh.raClient.SyncUpdateResource(kitNetGrpc.CtxWithOwner(r.Context(), userID), updateCommand)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
 	}

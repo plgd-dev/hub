@@ -38,14 +38,14 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot sign up: %v", err.Error()))
 	}
 	if ok {
-		if dev.UserID != token.UserID {
+		if dev.Owner != token.Owner {
 			return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: devices is owned by another user"))
 		}
 	}
 
 	d := persistence.AuthorizedDevice{
 		DeviceID:     request.DeviceId,
-		UserID:       token.UserID,
+		Owner:        token.Owner,
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
@@ -62,7 +62,7 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 
 	return &pb.SignUpResponse{
 		AccessToken:  token.AccessToken,
-		UserId:       token.UserID,
+		UserId:       token.Owner,
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    expiresIn,
 		RedirectUri:  "",

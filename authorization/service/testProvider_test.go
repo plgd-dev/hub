@@ -55,11 +55,11 @@ func generateToken(isService bool) (*provider.Token, error) {
 	t := provider.Token{
 		RefreshToken: "refresh-token",
 		Expiry:       time.Now().Add(time.Hour * 24 * 365),
-		UserID:       DeviceUserID,
+		Owner:        DeviceUserID,
 	}
 	token := jwt.New()
 	if !isService {
-		token.Set(jwt.SubjectKey, t.UserID)
+		token.Set(jwt.SubjectKey, t.Owner)
 	}
 	token.Set(jwt.AudienceKey, []string{"https://127.0.0.1", "https://localhost"})
 	token.Set(jwt.IssuedAtKey, time.Now().Unix())
@@ -102,7 +102,7 @@ func (p *TestProvider) GetProviderName() string {
 // Exchange Auth Code for Access Token via OAuth.
 func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*provider.Token, error) {
 	return &provider.Token{
-		UserID:       DeviceUserID,
+		Owner:        DeviceUserID,
 		AccessToken:  DeviceAccessToken,
 		Expiry:       time.Now().Add(DeviceExpiresIn),
 		RefreshToken: "refresh-token",
@@ -112,7 +112,7 @@ func (p *TestProvider) Exchange(ctx context.Context, authorizationProvider, auth
 // Refresh gets new Access Token via OAuth.
 func (p *TestProvider) Refresh(ctx context.Context, refreshToken string) (*provider.Token, error) {
 	return &provider.Token{
-		UserID:       DeviceUserID,
+		Owner:        DeviceUserID,
 		AccessToken:  DeviceAccessToken,
 		Expiry:       time.Now().Add(DeviceExpiresIn),
 		RefreshToken: "refresh-token",

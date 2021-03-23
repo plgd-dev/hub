@@ -94,16 +94,18 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 		return nil, err
 	}
 
-	userID, ok := profile["sub"].(string)
+	fmt.Printf("UserInfo: %+v\n", profile)
+
+	userID, ok := profile[p.Config.OwnerClaim].(string)
 	if !ok {
-		return nil, fmt.Errorf("cannot determine UserID")
+		return nil, fmt.Errorf("cannot determine owner claim %v", p.Config.OwnerClaim)
 	}
 
 	t := Token{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		UserID:       userID,
+		Owner:        userID,
 	}
 	return &t, nil
 }
@@ -133,13 +135,15 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 		return nil, err
 	}
 
-	userID, _ := profile["sub"].(string)
-	// if it is not determined, request userId will used.
+	userID, ok := profile[p.Config.OwnerClaim].(string)
+	if !ok {
+		return nil, fmt.Errorf("cannot determine owner claim %v", p.Config.OwnerClaim)
+	}
 
 	return &Token{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		UserID:       userID,
+		Owner:        userID,
 	}, nil
 }

@@ -35,10 +35,11 @@ type ListDevicesOfUserFunc func(ctx context.Context, correlationID, userID, acce
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
-	rdClient  pbGRPC.GrpcGatewayClient
-	raClient  *raClient.Client
-	subMgr    *SubscriptionManager
-	emitEvent emitEventFunc
+	rdClient   pbGRPC.GrpcGatewayClient
+	raClient   *raClient.Client
+	subMgr     *SubscriptionManager
+	emitEvent  emitEventFunc
+	ownerClaim string
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -54,12 +55,14 @@ func NewRequestHandler(
 	raClient *raClient.Client,
 	subMgr *SubscriptionManager,
 	emitEvent emitEventFunc,
+	ownerClaim string,
 ) *RequestHandler {
 	return &RequestHandler{
-		rdClient:  rdClient,
-		raClient:  raClient,
-		subMgr:    subMgr,
-		emitEvent: emitEvent,
+		rdClient:   rdClient,
+		raClient:   raClient,
+		subMgr:     subMgr,
+		emitEvent:  emitEvent,
+		ownerClaim: ownerClaim,
 	}
 }
 

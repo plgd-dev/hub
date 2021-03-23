@@ -78,7 +78,7 @@ func (s *Server) cleanUp() {
 func newTestDevice() *persistence.AuthorizedDevice {
 	return &persistence.AuthorizedDevice{
 		DeviceID:     testDeviceID,
-		UserID:       testUserID,
+		Owner:        testUserID,
 		AccessToken:  testAccessToken,
 		RefreshToken: "testRefreshToken",
 		Expiry:       time.Now().Add(time.Hour),

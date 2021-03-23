@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/sdk/schema"
-	"github.com/gorilla/mux"
 )
 
 type Status string
@@ -145,17 +145,8 @@ func (rh *RequestHandler) RetrieveDevicesWithContentQuery(ctx context.Context, w
 
 type callbackFunc func(ctx context.Context, w http.ResponseWriter, routeVars map[string]string, contentQuery string, encoder responseWriterEncoderFunc) (int, error)
 
-func getAccessToken(r *http.Request) (string, error) {
-	token, _, err := parseAuth(r.Header.Get("Authorization"))
-	if err != nil {
-		return "", fmt.Errorf("cannot retrieve: %w", err)
-	}
-
-	return token, nil
-}
-
-func retrieveWithCallback(w http.ResponseWriter, r *http.Request, callback callbackFunc) (int, error) {
-	_, userID, err := parseAuth(r.Header.Get("Authorization"))
+func (rh *RequestHandler) retrieveWithCallback(w http.ResponseWriter, r *http.Request, callback callbackFunc) (int, error) {
+	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusUnauthorized, err
 	}
@@ -165,11 +156,11 @@ func retrieveWithCallback(w http.ResponseWriter, r *http.Request, callback callb
 		return http.StatusBadRequest, fmt.Errorf("cannot retrieve: %w", err)
 	}
 
-	return callback(kitNetGrpc.CtxWithUserID(r.Context(), userID), w, mux.Vars(r), getContentQueryValue(r.URL), encoder)
+	return callback(kitNetGrpc.CtxWithOwner(r.Context(), userID), w, mux.Vars(r), getContentQueryValue(r.URL), encoder)
 }
 
 func (rh *RequestHandler) RetrieveDevices(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := retrieveWithCallback(w, r, rh.RetrieveDevicesWithContentQuery)
+	statusCode, err := rh.retrieveWithCallback(w, r, rh.RetrieveDevicesWithContentQuery)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve all devices: %w", err), statusCode, w)
 	}
