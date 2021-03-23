@@ -7,8 +7,8 @@ import { useIntl } from 'react-intl'
 import { Emitter } from '@/common/services/emitter'
 import {
   isBrowserTabActive,
-  playRandomFartSound,
-  loadAllFartSounds,
+  playFartSound,
+  loadFartSound,
 } from '@/common/utils'
 import {
   toastTypes,
@@ -138,12 +138,12 @@ export const BrowserNotificationsContainer = () => {
       }
 
       // Play fart sound :)
-      playRandomFartSound()
+      playFartSound()
     }
   }
 
   const loadSounds = () => {
-    loadAllFartSounds()
+    loadFartSound()
     document.removeEventListener('click', loadSounds)
   }
 

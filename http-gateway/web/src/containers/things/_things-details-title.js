@@ -54,7 +54,7 @@ export const ThingsDetailsTitle = ({
       setSaving(true)
 
       try {
-        await updateThingsResourceApi(
+        const { data } = await updateThingsResourceApi(
           { deviceId, href },
           {
             n: inputTitle,
@@ -63,7 +63,7 @@ export const ThingsDetailsTitle = ({
 
         if (isMounted.current) {
           cancel()
-          updateDeviceName(inputTitle)
+          updateDeviceName(data?.n || inputTitle)
         }
       } catch (error) {
         if (error && isMounted.current) {
@@ -128,7 +128,7 @@ export const ThingsDetailsTitle = ({
       })}
       onClick={canUpdate ? onEditClick : null}
     >
-      <span className={canUpdate ? 'link reveal-icon-on-hover' : null}>
+      <span className={canUpdate ? 'link reveal-icon-on-hover icon-visible' : null}>
         {deviceName}
       </span>
       {canUpdate && <i className="fas fa-pen" />}
