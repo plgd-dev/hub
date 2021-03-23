@@ -5,10 +5,8 @@ import classNames from 'classnames'
 
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
-import { ActionButton } from '@/components/action-button'
-
+import { ThingsResourcesActionButton } from './_things-resources-action-button'
 import { RESOURCES_DEFAULT_PAGE_SIZE, thingsStatuses } from './constants'
-import { canCreateResource } from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
@@ -71,32 +69,15 @@ export const ThingsResourcesList = ({
             original: { di, href, if: interfaces },
           } = row
           return (
-            <ActionButton
+            <ThingsResourcesActionButton
               disabled={isUnregistered || loading}
-              menuProps={{
-                align: 'right',
-              }}
-              items={[
-                {
-                  onClick: () => onCreate(href),
-                  label: _(t.create),
-                  icon: 'fa-plus',
-                  hidden: !canCreateResource(interfaces),
-                },
-                {
-                  onClick: () => onUpdate({ di, href }),
-                  label: _(t.update),
-                  icon: 'fa-pen',
-                },
-                {
-                  onClick: () => onDelete(href),
-                  label: _(t.delete),
-                  icon: 'fa-trash-alt',
-                },
-              ]}
-            >
-              <i className="fas fa-ellipsis-h" />
-            </ActionButton>
+              href={href}
+              di={di}
+              interfaces={interfaces}
+              onCreate={onCreate}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
           )
         },
       },

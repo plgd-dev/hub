@@ -9,6 +9,10 @@ div.select__control {
   border-radius: 2px;
   min-height: $input_height;
 
+  &:hover {
+    border-color: $secondary_40;
+  }
+
   &.select__control--is-focused {
     border-color: $primary_100;
     box-shadow: none;

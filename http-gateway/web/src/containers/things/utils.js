@@ -3,6 +3,7 @@ import { showErrorToast, showWarningToast } from '@/components/toast'
 import { compareIgnoreCase } from '@/components/table/utils'
 import {
   knownInterfaces,
+  knownResourceTypes,
   errorCodes,
   THINGS_WS_KEY,
   THINGS_RESOURCE_REGISTRATION_WS_KEY,
@@ -17,6 +18,15 @@ export const interfaceGetParam = currentInterface =>
 // Return true if a resource contains the oic.if.create interface, meaning a new resource can be created from this resource
 export const canCreateResource = interfaces =>
   interfaces.includes(knownInterfaces.OIC_IF_CREATE)
+
+// Returns true if a device has a resource oic.wk.con which holds the device name property
+export const canChangeDeviceName = links =>
+  links.findIndex(link => link.rt.includes(knownResourceTypes.OIC_WK_CON)) !==
+  -1
+
+// Returns the href for the resource which can do a device name change
+export const getDeviceChangeResourceHref = links =>
+  links.find(link => link.rt.includes(knownResourceTypes.OIC_WK_CON))?.href
 
 // Handle the errors occured during resource update
 export const handleUpdateResourceErrors = (error, isOnline, _) => {
@@ -108,7 +118,7 @@ export const updateThingsDataStatus = (data, { deviceId, status }) => {
 /** Tree Structure utilities **/
 // Shout out to @oskarbauer for creating this script :)
 
-// A recursive function which "densify" the subRows 
+// A recursive function which "densify" the subRows
 const deDensisfy = objectToDeDensify => {
   const { href, ...rest } = objectToDeDensify
 

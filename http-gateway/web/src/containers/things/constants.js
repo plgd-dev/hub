@@ -37,6 +37,10 @@ export const knownInterfaces = {
   OIC_IF_CREATE: 'oic.if.create',
 }
 
+export const knownResourceTypes = {
+  OIC_WK_CON: 'oic.wk.con', // contains device name
+}
+
 export const defaultNewResource = {
   rt: [],
   if: [knownInterfaces.OIC_IF_A, knownInterfaces.OIC_IF_BASELINE],
@@ -45,6 +49,8 @@ export const defaultNewResource = {
     bm: 3,
   },
 }
+
+export const NO_DEVICE_NAME = '<no-name>'
 
 // Websocket keys
 export const THINGS_WS_KEY = 'things'

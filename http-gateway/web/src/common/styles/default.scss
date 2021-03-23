@@ -115,3 +115,9 @@ $sides: (top, bottom, left, right); // Leave this variable alone
     border-right-color: $secondary_20;
   }
 }
+
+h2.title-with-icon {
+  i.fas {
+    font-size: 14px;
+  }
+}

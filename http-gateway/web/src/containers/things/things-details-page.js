@@ -20,6 +20,7 @@ import {
   thingsStatuses,
   defaultNewResource,
   resourceModalTypes,
+  NO_DEVICE_NAME,
 } from './constants'
 import {
   handleCreateResourceErrors,
@@ -71,7 +72,7 @@ export const ThingsDetailsPage = () => {
   const greyedOutClassName = classNames({
     'grayed-out': isUnregistered,
   })
-  const deviceName = data?.device?.n
+  const deviceName = data?.device?.n || NO_DEVICE_NAME
   const breadcrumbs = [
     {
       to: '/',
@@ -269,6 +270,17 @@ export const ThingsDetailsPage = () => {
     }
   }
 
+  // Update the device name in the data object
+  const updateDeviceNameInData = name => {
+    updateData({
+      ...data,
+      device: {
+        ...data.device,
+        n: name,
+      },
+    })
+  }
+
   return (
     <Layout
       title={`${deviceName ? deviceName + ' | ' : ''}${_(menuT.things)}`}
@@ -289,11 +301,13 @@ export const ThingsDetailsPage = () => {
           },
           greyedOutClassName
         )}
-        updateData={updateData}
+        updateDeviceName={updateDeviceNameInData}
         loading={loading}
-      >
-        {deviceName}
-      </ThingsDetailsTitle>
+        isOnline={isOnline}
+        deviceName={deviceName}
+        deviceId={id}
+        links={data?.links}
+      />
       <ThingsDetails data={data} loading={loading} />
 
       <ThingsResources

@@ -6,14 +6,9 @@ import classNames from 'classnames'
 import { TreeExpander } from '@/components/tree-expander'
 import { TreeTable } from '@/components/table'
 import { Badge } from '@/components/badge'
-import { ActionButton } from '@/components/action-button'
-
+import { ThingsResourcesActionButton } from './_things-resources-action-button'
 import { thingsStatuses, RESOURCE_TREE_DEPTH_SIZE } from './constants'
-import {
-  canCreateResource,
-  createNestedResourceData,
-  getLastPartOfAResourceHref,
-} from './utils'
+import { createNestedResourceData, getLastPartOfAResourceHref } from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
@@ -119,32 +114,15 @@ export const ThingsResourcesTree = ({
           } = row
           const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
           return (
-            <ActionButton
+            <ThingsResourcesActionButton
               disabled={isUnregistered || loading}
-              menuProps={{
-                align: 'right',
-              }}
-              items={[
-                {
-                  onClick: () => onCreate(cleanHref),
-                  label: _(t.create),
-                  icon: 'fa-plus',
-                  hidden: !canCreateResource(interfaces),
-                },
-                {
-                  onClick: () => onUpdate({ di, href: cleanHref }),
-                  label: _(t.update),
-                  icon: 'fa-pen',
-                },
-                {
-                  onClick: () => onDelete(cleanHref),
-                  label: _(t.delete),
-                  icon: 'fa-trash-alt',
-                },
-              ]}
-            >
-              <i className="fas fa-ellipsis-h" />
-            </ActionButton>
+              href={cleanHref}
+              di={di}
+              interfaces={interfaces}
+              onCreate={onCreate}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
           )
         },
       },

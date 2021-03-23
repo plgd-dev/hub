@@ -217,4 +217,20 @@ export const messages = defineMessages({
     id: 'things.treeView',
     defaultMessage: 'Tree view',
   },
+  save: {
+    id: 'things.save',
+    defaultMessage: 'Save',
+  },
+  saving: {
+    id: 'things.saving',
+    defaultMessage: 'Saving',
+  },
+  enterThingName: {
+    id: 'things.enterThingName',
+    defaultMessage: 'Enter thing name',
+  },
+  thingNameChangeFailed: {
+    id: 'things.thingNameChangeFailed',
+    defaultMessage: 'Thing name change failed',
+  },
 })
