@@ -30,6 +30,7 @@ type Config struct {
 	ReconnectInterval     time.Duration       `envconfig:"RECONNECT_INTERVAL" default:"10s"`
 	ResubscribeInterval   time.Duration       `envconfig:"RESUBSCRIBE_INTERVAL" default:"10s"`
 	JwksURL               string              `envconfig:"JWKS_URL"`
+	OwnerClaim            string              `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
 	OAuth                 manager.Config      `envconfig:"OAUTH"`
 }
 

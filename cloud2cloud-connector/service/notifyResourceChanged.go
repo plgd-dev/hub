@@ -21,7 +21,7 @@ func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggre
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err := raClient.NotifyResourceChanged(kitNetGrpc.CtxWithUserID(ctx, userID), &commands.NotifyResourceChangedRequest{
+	_, err := raClient.NotifyResourceChanged(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.NotifyResourceChangedRequest{
 		ResourceId:      commands.NewResourceID(deviceID, kitHttp.CanonicalHref(href)),
 		CommandMetadata: &cmdMetadata,
 		Content: &commands.Content{

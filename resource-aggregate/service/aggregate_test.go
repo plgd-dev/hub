@@ -94,7 +94,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 
 			ag, err := NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			events, err := ag.PublishResourceLinks(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
+			events, err := ag.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -138,7 +138,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
 
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
@@ -187,7 +187,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -237,7 +237,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -296,7 +296,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -601,7 +601,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -694,7 +694,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -779,7 +779,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -864,7 +864,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -948,7 +948,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -1039,7 +1039,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -1124,7 +1124,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -1208,7 +1208,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)
@@ -1293,7 +1293,7 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 	dialCertManager, err := certManager.NewCertManager(cmconfig)
 	require.NoError(t, err)
 	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	var natsCfg nats.Config
 	err = envconfig.Process("", &natsCfg)

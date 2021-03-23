@@ -13,7 +13,7 @@ import (
 
 const (
 	deviceIDKey     = "_id"
-	userIDKey       = "userid"
+	ownerKey        = "owner"
 	accessTokenKey  = "accesstoken"
 	refreshTokenKey = "refreshtoken"
 	expiryKey       = "expiry"
@@ -50,7 +50,7 @@ func (p *PersistenceTx) Retrieve(deviceID, userID string) (_ *persistence.Author
 	}
 
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
-	iter, err := col.Find(p.ctx, bson.M{deviceIDKey: deviceID, userIDKey: userID}, &options.FindOptions{
+	iter, err := col.Find(p.ctx, bson.M{deviceIDKey: deviceID, ownerKey: userID}, &options.FindOptions{
 		Hint: userDeviceQueryIndex,
 	})
 
@@ -110,16 +110,38 @@ func (p *PersistenceTx) RetrieveByDevice(deviceID string) (_ *persistence.Author
 	return &d, ok, nil
 }
 
-// RetrieveAll retrieves all user's authorized devices.
-func (p *PersistenceTx) RetrieveAll(userID string) persistence.Iterator {
+// RetrieveAll retrieves all owner's authorized devices.
+func (p *PersistenceTx) RetrieveByOwner(owner string) persistence.Iterator {
 	if p.err != nil {
 		return &iterator{err: p.err}
 	}
 
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
-	iter, err := col.Find(p.ctx, bson.M{userIDKey: userID}, &options.FindOptions{
+	iter, err := col.Find(p.ctx, bson.M{ownerKey: owner}, &options.FindOptions{
 		Hint: userDevicesQueryIndex,
 	})
+
+	if err == mongo.ErrNilDocument {
+		return &iterator{}
+	}
+	if err != nil {
+		return &iterator{err: fmt.Errorf("cannot load all devices subscription: %w", err)}
+	}
+
+	return &iterator{
+		iter: iter,
+		ctx:  p.ctx,
+	}
+}
+
+// RetrieveAll retrieves all user's authorized devices.
+func (p *PersistenceTx) RetrieveAll() persistence.Iterator {
+	if p.err != nil {
+		return &iterator{err: p.err}
+	}
+
+	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
+	iter, err := col.Find(p.ctx, bson.M{})
 
 	if err == mongo.ErrNilDocument {
 		return &iterator{}
@@ -156,7 +178,7 @@ func (i *iterator) Next(s *persistence.AuthorizedDevice) bool {
 		return false
 	}
 	s.DeviceID = sub[deviceIDKey].(string)
-	s.UserID = sub[userIDKey].(string)
+	s.Owner = sub[ownerKey].(string)
 	s.AccessToken = sub[accessTokenKey].(string)
 	s.Expiry = time.Unix(sub[expiryKey].(int64), 0)
 	s.RefreshToken = sub[refreshTokenKey].(string)
@@ -180,7 +202,7 @@ func (i *iterator) Close() {
 func makeRecord(d *persistence.AuthorizedDevice) bson.M {
 	return bson.M{
 		deviceIDKey:     d.DeviceID,
-		userIDKey:       d.UserID,
+		ownerKey:        d.Owner,
 		accessTokenKey:  d.AccessToken,
 		refreshTokenKey: d.RefreshToken,
 		expiryKey:       d.Expiry.Unix(),
@@ -216,7 +238,7 @@ func (p *PersistenceTx) Delete(deviceID, userID string) error {
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
 	res, err := col.DeleteOne(p.ctx, bson.M{
 		deviceIDKey: deviceID,
-		userIDKey:   userID,
+		ownerKey:    userID,
 	})
 	if err != nil {
 		return err

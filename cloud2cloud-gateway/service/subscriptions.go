@@ -165,7 +165,7 @@ func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc,
 		emitEvent: emitEvent,
 	}
 
-	ctx = kitNetGrpc.CtxWithUserID(ctx, s.Data().UserID)
+	ctx = kitNetGrpc.CtxWithOwner(ctx, s.Data().UserID)
 	var err error
 	var sub Subscription
 	switch s.data.Type {

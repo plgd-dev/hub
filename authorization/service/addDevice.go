@@ -7,25 +7,28 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
+	"github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+const serviceOwner = "*"
 
 // AddDevice adds a device to user. It is used by cloud2cloud connector.
 func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (*pb.AddDeviceResponse, error) {
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	userID := request.UserId
+	owner := request.UserId
 	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 	if err != nil {
-		uid, err := parseSubFromJwtToken(token)
-		if err == nil {
-			userID = uid
+		uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
+		if err == nil && uid != serviceOwner {
+			owner = uid
 		}
 	}
 
-	if userID == "" {
+	if owner == "" {
 		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: invalid UserId"))
 	}
 
@@ -40,7 +43,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot add device: %v", err.Error()))
 	}
 	if ok {
-		if dev.UserID == userID {
+		if dev.Owner == owner {
 			return &pb.AddDeviceResponse{}, nil
 		}
 		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot add device: devices is owned by another user '%+v'", dev))
@@ -48,7 +51,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 
 	d := persistence.AuthorizedDevice{
 		DeviceID:     request.DeviceId,
-		UserID:       userID,
+		Owner:        owner,
 		AccessToken:  "",
 		RefreshToken: "",
 		Expiry:       time.Time{},

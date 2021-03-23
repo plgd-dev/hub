@@ -33,6 +33,7 @@ type provisionCacheData struct {
 type RequestHandler struct {
 	oauthCallback string
 	store         *Store
+	ownerClaim    string
 
 	asClient pbAS.AuthorizationServiceClient
 	raClient raService.ResourceAggregateClient
@@ -57,6 +58,7 @@ func NewRequestHandler(
 	raClient raService.ResourceAggregateClient,
 	store *Store,
 	triggerTask func(Task),
+	ownerClaim string,
 ) *RequestHandler {
 	return &RequestHandler{
 		oauthCallback:  oauthCallback,
@@ -66,6 +68,7 @@ func NewRequestHandler(
 		store:          store,
 		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
 		triggerTask:    triggerTask,
+		ownerClaim:     ownerClaim,
 	}
 }
 

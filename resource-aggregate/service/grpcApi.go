@@ -17,7 +17,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
-type isUserDeviceFunc = func(ctx context.Context, userID, deviceID string) (bool, error)
+type isUserDeviceFunc = func(ctx context.Context, owner, deviceID string) (bool, error)
 
 //RequestHandler for handling incoming request
 type RequestHandler struct {
@@ -28,8 +28,8 @@ type RequestHandler struct {
 	isUserDeviceFunc isUserDeviceFunc
 }
 
-func userDevicesChanged(ctx context.Context, userID string, addedDevices, removedDevices, currentDevices map[string]bool) {
-	log.Debugf("userDevicesChanged %v: added: %+v removed: %+v current: %+v\n", userID, addedDevices, removedDevices, currentDevices)
+func userDevicesChanged(ctx context.Context, owner string, addedDevices, removedDevices, currentDevices map[string]bool) {
+	log.Debugf("userDevicesChanged %v: added: %+v removed: %+v current: %+v\n", owner, addedDevices, removedDevices, currentDevices)
 }
 
 //NewRequestHandler factory for new RequestHandler
@@ -62,22 +62,22 @@ func logAndReturnError(err error) error {
 }
 
 func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID string) (string, error) {
-	userID, err := grpc.UserIDFromMD(ctx)
+	owner, err := grpc.OwnerFromMD(ctx)
 	if err != nil {
-		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid userID: %v", err)
+		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}
-	ok, err := r.isUserDeviceFunc(ctx, userID, deviceID)
+	ok, err := r.isUserDeviceFunc(ctx, owner, deviceID)
 	if err != nil {
 		return "", kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate : %v", err)
 	}
 	if ok {
-		return userID, nil
+		return owner, nil
 	}
 	return "", kitNetGrpc.ForwardErrorf(codes.PermissionDenied, "access denied")
 }
 
 func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *commands.PublishResourceLinksRequest) (*commands.PublishResourceLinksResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -97,7 +97,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 	if err != nil {
 		log.Errorf("cannot publish resource links published events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, "")
+	auditContext := commands.NewAuditContext(owner, "")
 	return newPublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext), nil
 }
 
@@ -118,7 +118,7 @@ func newPublishResourceLinksResponse(events []eventstore.Event, deviceID string,
 }
 
 func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *commands.UnpublishResourceLinksRequest) (*commands.UnpublishResourceLinksResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -138,7 +138,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 	if err != nil {
 		log.Errorf("cannot publish resource links unpublished events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, "")
+	auditContext := commands.NewAuditContext(owner, "")
 	return newUnpublishResourceLinksResponse(events, aggregate.DeviceID(), auditContext), nil
 }
 
@@ -159,7 +159,7 @@ func newUnpublishResourceLinksResponse(events []eventstore.Event, deviceID strin
 }
 
 func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest) (*commands.NotifyResourceChangedResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -177,14 +177,14 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *comm
 	if err != nil {
 		log.Errorf("cannot publish resource content changed notification events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, "")
+	auditContext := commands.NewAuditContext(owner, "")
 	return &commands.NotifyResourceChangedResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.UpdateResourceRequest) (*commands.UpdateResourceResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -202,14 +202,14 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 	if err != nil {
 		log.Errorf("cannot publish resource content update events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.UpdateResourceResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *commands.ConfirmResourceUpdateRequest) (*commands.ConfirmResourceUpdateResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -227,14 +227,14 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *comm
 	if err != nil {
 		log.Errorf("cannot publish resource content update confirmation events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceUpdateResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.RetrieveResourceRequest) (*commands.RetrieveResourceResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -252,14 +252,14 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.
 	if err != nil {
 		log.Errorf("cannot publish resource content retrieve events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.RetrieveResourceResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *commands.ConfirmResourceRetrieveRequest) (*commands.ConfirmResourceRetrieveResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -278,14 +278,14 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *co
 		log.Errorf("cannot publish resource content retrieve confirmation events: %v", err)
 	}
 
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceRetrieveResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.DeleteResourceRequest) (*commands.DeleteResourceResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -303,14 +303,14 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 	if err != nil {
 		log.Errorf("cannot publish delete resource events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.DeleteResourceResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *commands.ConfirmResourceDeleteRequest) (*commands.ConfirmResourceDeleteResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -329,14 +329,14 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *comm
 	if err != nil {
 		log.Errorf("cannot publish resource delete confirmation events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceDeleteResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) CreateResource(ctx context.Context, request *commands.CreateResourceRequest) (*commands.CreateResourceResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -354,14 +354,14 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 	if err != nil {
 		log.Errorf("cannot publish resource create events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.CreateResourceResponse{
 		AuditContext: auditContext,
 	}, nil
 }
 
 func (r RequestHandler) ConfirmResourceCreate(ctx context.Context, request *commands.ConfirmResourceCreateRequest) (*commands.ConfirmResourceCreateResponse, error) {
-	userID, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
+	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
@@ -380,7 +380,7 @@ func (r RequestHandler) ConfirmResourceCreate(ctx context.Context, request *comm
 	if err != nil {
 		log.Errorf("cannot publish resource create confirmation events: %v", err)
 	}
-	auditContext := commands.NewAuditContext(userID, request.GetCorrelationId())
+	auditContext := commands.NewAuditContext(owner, request.GetCorrelationId())
 	return &commands.ConfirmResourceCreateResponse{
 		AuditContext: auditContext,
 	}, nil

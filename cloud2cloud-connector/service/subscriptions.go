@@ -171,7 +171,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	if header.EventSignature != calcEventSignature {
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v(%+v != %+v, %s): not match", header.ID, subData.subscription, header, body)
 	}
-	ctx = kitNetGrpc.CtxWithUserID(ctx, subData.linkedAccount.UserID)
+	ctx = kitNetGrpc.CtxWithOwner(ctx, subData.linkedAccount.UserID)
 	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot refresh token: %w", err)

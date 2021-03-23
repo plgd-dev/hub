@@ -23,10 +23,11 @@ import (
 )
 
 type Config struct {
-	Log     log.Config
-	JwksURL string             `envconfig:"JWKS_URL"`
-	Listen  certManager.Config `envconfig:"LISTEN"`
-	Dial    certManager.Config `envconfig:"DIAL"`
+	Log        log.Config
+	JwksURL    string             `envconfig:"JWKS_URL"`
+	Listen     certManager.Config `envconfig:"LISTEN"`
+	Dial       certManager.Config `envconfig:"DIAL"`
+	OwnerClaim string             `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
 	kitNetGrpc.Config
 	service.HandlerConfig
 }
@@ -54,7 +55,7 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 		return nil, fmt.Errorf("cannot create client cert manager %w", err)
 	}
 
-	auth := NewAuth(config.JwksURL, dialCertManager.GetClientTLSConfig())
+	auth := NewAuth(config.JwksURL, config.OwnerClaim, dialCertManager.GetClientTLSConfig())
 
 	var streamInterceptors []grpc.StreamServerInterceptor
 	if logger.Core().Enabled(zapcore.DebugLevel) {
@@ -95,7 +96,7 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	return server, nil
 }
 
-func makeAuthFunc(jwksUrl string, tls *tls.Config) func(ctx context.Context, method string) (context.Context, error) {
+func makeAuthFunc(jwksUrl, ownerClaim string, tls *tls.Config) func(ctx context.Context, method string) (context.Context, error) {
 	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
@@ -110,21 +111,21 @@ func makeAuthFunc(jwksUrl string, tls *tls.Config) func(ctx context.Context, met
 			log.Errorf("auth interceptor %v %v: %v", method, token, err)
 			return ctx, err
 		}
-		userID, err := kitNetGrpc.UserIDFromMD(ctx)
+		owner, err := kitNetGrpc.OwnerFromMD(ctx)
 		if err != nil {
-			userID, err = kitNetGrpc.UserIDFromTokenMD(ctx)
+			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
 			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, userID)
+				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
 			}
 		}
 		if err != nil {
-			log.Errorf("auth cannot get userID: %v", err)
+			log.Errorf("auth cannot get owner: %v", err)
 			return ctx, err
 		}
-		return kitNetGrpc.CtxWithUserID(ctx, userID), nil
+		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
 	}
 }
 
-func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(jwksUrl, tls))
+func NewAuth(jwksUrl, ownerClaim string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(jwksUrl, ownerClaim, tls))
 }

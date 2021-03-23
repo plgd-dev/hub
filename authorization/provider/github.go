@@ -69,7 +69,7 @@ func (p *GitHubProvider) Exchange(ctx context.Context, authorizationProvider, au
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		UserID:       strconv.FormatInt(user.GetID(), 10),
+		Owner:        strconv.FormatInt(user.GetID(), 10),
 	}
 	return &t, nil
 }

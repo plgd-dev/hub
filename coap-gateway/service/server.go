@@ -287,7 +287,7 @@ func (c *userDeviceSubscriptionChannel) getOrCreate(ctx context.Context, userID 
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if c.channel == nil {
-		sub, err := client.NewDeviceSubscriptions(kitNetGrpc.CtxWithUserID(ctx, userID), rdClient, func(err error) {
+		sub, err := client.NewDeviceSubscriptions(kitNetGrpc.CtxWithOwner(ctx, userID), rdClient, func(err error) {
 			log.Errorf("userDeviceSubscriptionChannel: %v", err)
 		})
 		if err == nil {
@@ -474,7 +474,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 			client.Close()
 			return
 		}
-		r.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.GetUserID())
+		r.Context = kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.GetUserID())
 		next.ServeCOAP(w, r)
 	})
 }
@@ -484,7 +484,7 @@ func (server *Server) ServiceRequestContext(userID string) (context.Context, err
 	if err != nil {
 		return nil, err
 	}
-	return kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID), nil
+	return kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID), nil
 }
 
 //setupCoapServer setup coap server

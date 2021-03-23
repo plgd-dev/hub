@@ -137,7 +137,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 		return err
 	}
 
-	ctx = kitNetGrpc.CtxWithUserID(ctx, userID)
+	ctx = kitNetGrpc.CtxWithOwner(ctx, userID)
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		registeredDevices, err := getUsersDevices(ctx, p.asClient)
 		if err != nil {
@@ -161,7 +161,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 					errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
 					continue
 				}
-				err = status.Publish(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
+				err = status.Publish(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
 				})
@@ -174,12 +174,12 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			}
 			delete(registeredDevices, deviceID)
 			if strings.ToLower(dev.Status) == "online" {
-				err = status.SetOnline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, time.Time{}, &commands.CommandMetadata{
+				err = status.SetOnline(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, time.Time{}, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
 				})
 			} else {
-				err = status.SetOffline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
+				err = status.SetOffline(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
 				})
@@ -261,7 +261,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 		return err
 	}
 
-	ctx = kitNetGrpc.CtxWithUserID(ctx, userID)
+	ctx = kitNetGrpc.CtxWithOwner(ctx, userID)
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		for _, link := range dev.Links {

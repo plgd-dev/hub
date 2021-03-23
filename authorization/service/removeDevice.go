@@ -6,6 +6,7 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -15,16 +16,16 @@ func (s *Service) RemoveDevice(ctx context.Context, request *pb.RemoveDeviceRequ
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	userID := request.UserId
+	owner := request.UserId
 	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 	if err != nil {
-		uid, err := parseSubFromJwtToken(token)
+		uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
 		if err == nil {
-			userID = uid
+			owner = uid
 		}
 	}
 
-	if userID == "" {
+	if owner == "" {
 		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot remove device: invalid UserId"))
 	}
 
@@ -34,7 +35,7 @@ func (s *Service) RemoveDevice(ctx context.Context, request *pb.RemoveDeviceRequ
 
 	// TODO validate jwt token -> only jwt token is supported
 
-	_, ok, err := tx.Retrieve(request.DeviceId, userID)
+	_, ok, err := tx.Retrieve(request.DeviceId, owner)
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot remove device: %v", err.Error()))
 	}
@@ -42,7 +43,7 @@ func (s *Service) RemoveDevice(ctx context.Context, request *pb.RemoveDeviceRequ
 		return nil, logAndReturnError(status.Errorf(codes.NotFound, "cannot remove device: not found"))
 	}
 
-	err = tx.Delete(request.DeviceId, userID)
+	err = tx.Delete(request.DeviceId, owner)
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.NotFound, "cannot remove device: not found"))
 	}

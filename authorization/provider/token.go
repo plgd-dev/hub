@@ -9,5 +9,5 @@ type Token struct {
 	AccessToken  string
 	RefreshToken string
 	Expiry       time.Time
-	UserID       string
+	Owner        string
 }

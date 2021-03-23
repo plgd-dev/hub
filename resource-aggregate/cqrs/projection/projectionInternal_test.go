@@ -93,7 +93,7 @@ func TestProjection(t *testing.T) {
 	defer pool.Release()
 
 	ctx := context.Background()
-	ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, "test")
+	ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, "test")
 
 	store, err := mongodb.NewEventStore(
 		ctx,

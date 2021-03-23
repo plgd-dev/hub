@@ -103,7 +103,7 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 			}
 		},
 	}
-	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithUserID(c.ctx, linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
+	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithOwner(c.ctx, linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
 	if err != nil {
 		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)
