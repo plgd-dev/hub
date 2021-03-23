@@ -162,8 +162,10 @@ export const createNestedResourceData = data => {
       addItem(firstSwipe, item, 1)
     })
   }
+  // Then take the object structure and output the tree scructure
   const output = deDensisfy(firstSwipe)
 
+  // Finally sort the output by href
   return output.sort((a, b) => {
     return compareIgnoreCase(a.href, b.href)
   })

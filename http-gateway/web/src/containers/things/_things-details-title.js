@@ -42,7 +42,7 @@ export const ThingsDetailsTitle = ({
     setEdit(false)
   }
 
-  const cancel = () => {
+  const cancelSave = () => {
     setSaving(false)
     setEdit(false)
   }
@@ -62,7 +62,7 @@ export const ThingsDetailsTitle = ({
         )
 
         if (isMounted.current) {
-          cancel()
+          cancelSave()
           updateDeviceName(data?.n || inputTitle)
         }
       } catch (error) {
@@ -74,7 +74,7 @@ export const ThingsDetailsTitle = ({
         }
       }
     } else {
-      cancel()
+      cancelSave()
     }
   }
 
@@ -84,7 +84,7 @@ export const ThingsDetailsTitle = ({
       onSave()
     } else if (e.keyCode === 27) {
       // Esc
-      cancel()
+      cancelSave()
     }
   }
 
