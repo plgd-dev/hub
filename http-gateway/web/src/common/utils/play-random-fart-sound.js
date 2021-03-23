@@ -1,12 +1,20 @@
-import fart1 from '@/assets/audio/fart1.mp3'
-import fart2 from '@/assets/audio/fart2.mp3'
-import fart3 from '@/assets/audio/fart3.mp3'
+import fart from '@/assets/audio/fart.mp3'
 
-export const playRandomFartSound = () => {
-  const sounds = [fart1, fart2, fart3]
-  const random = Math.floor(Math.random() * sounds.length)
-  const sound = new Audio(sounds[random])
+const sound = new Audio(fart)
 
-  sound?.load?.()
+// We need to pre-load the sounds and play them from a click handler
+// (this function is called on the first click on the page)
+// so that browsers which are blocking autoplay from script
+// will be able to play the notification sounds :)
+export const loadFartSound = () => {
+  sound.muted = true
+  sound.play()
+  sound.onended = () => {
+    sound.muted = false
+    sound.onended = () => {}
+  }
+}
+
+export const playFartSound = () => {
   sound?.play?.()
 }

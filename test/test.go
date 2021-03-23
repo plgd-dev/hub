@@ -67,7 +67,7 @@ func init() {
 			ResourceTypes: []string{"oic.wk.p"},
 			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
 			Policy: &schema.Policy{
-				BitMask: 1,
+				BitMask: 3,
 			},
 		},
 
@@ -76,7 +76,7 @@ func init() {
 			ResourceTypes: []string{"oic.d.cloudDevice", "oic.wk.d"},
 			Interfaces:    []string{"oic.if.r", "oic.if.baseline"},
 			Policy: &schema.Policy{
-				BitMask: 1,
+				BitMask: 3,
 			},
 		},
 

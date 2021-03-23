@@ -7,7 +7,11 @@ import classNames from 'classnames'
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
 
-import { thingsStatuses, THINGS_DEFAULT_PAGE_SIZE } from './constants'
+import {
+  thingsStatuses,
+  THINGS_DEFAULT_PAGE_SIZE,
+  NO_DEVICE_NAME,
+} from './constants'
 import { thingShape } from './shapes'
 import { messages as t } from './things-i18n'
 
@@ -22,10 +26,12 @@ export const ThingsList = ({ data }) => {
         Header: _(t.name),
         accessor: 'device.n',
         Cell: ({ value, row }) => {
+          const deviceName = value || NO_DEVICE_NAME
+
           if (row.original?.status === UNREGISTERED) {
-            return <span>{value}</span>
+            return <span>{deviceName}</span>
           }
-          return <Link to={`/things/${row.original?.device?.di}`}>{value}</Link>
+          return <Link to={`/things/${row.original?.device?.di}`}>{deviceName}</Link>
         },
         style: { width: '33%' },
       },

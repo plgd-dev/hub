@@ -34,7 +34,7 @@ $table_row_height: 60px;
           .sort-arrows {
             margin-left: 9px;
             display: inline-block;
-            
+
             i {
               display: flex;
               height: 5px;
@@ -44,8 +44,9 @@ $table_row_height: 60px;
               font-size: 10px;
               color: $primary_100;
             }
-    
-            &.asc i.icon-asc, &.desc i.icon-desc {
+
+            &.asc i.icon-asc,
+            &.desc i.icon-desc {
               color: $warning_100;
             }
           }
@@ -65,11 +66,11 @@ $table_row_height: 60px;
 
     &.table-striped {
       tbody {
-        tr:nth-of-type(odd) {
+        tr:nth-of-type(odd), tr.odd {
           background-color: $light_100;
         }
 
-        tr:nth-of-type(even) {
+        tr:nth-of-type(even), tr.even {
           background-color: rgba($secondary_20, 0.4);
         }
       }

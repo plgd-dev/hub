@@ -12,13 +12,15 @@ import { messages as menuT } from '@/components/menu/menu-i18n'
 import { showSuccessToast } from '@/components/toast'
 
 import { ThingsDetails } from './_things-details'
+import { ThingsResources } from './_things-resources'
 import { ThingsDetailsHeader } from './_things-details-header'
-import { ThingsResourcesList } from './_things-resources-list'
+import { ThingsDetailsTitle } from './_things-details-title'
 import { ThingsResourcesModal } from './_things-resources-modal'
 import {
   thingsStatuses,
   defaultNewResource,
   resourceModalTypes,
+  NO_DEVICE_NAME,
 } from './constants'
 import {
   handleCreateResourceErrors,
@@ -43,7 +45,7 @@ export const ThingsDetailsPage = () => {
   const [savingResource, setSavingResource] = useState(false)
   const [deleteResourceHref, setDeleteResourceHref] = useState()
   const isMounted = useIsMounted()
-  const { data, loading, error } = useThingDetails(id)
+  const { data, updateData, loading, error } = useThingDetails(id)
 
   // Open the resource modal when href is present
   useEffect(
@@ -70,7 +72,7 @@ export const ThingsDetailsPage = () => {
   const greyedOutClassName = classNames({
     'grayed-out': isUnregistered,
   })
-  const deviceName = data?.device?.n
+  const deviceName = data?.device?.n || NO_DEVICE_NAME
   const breadcrumbs = [
     {
       to: '/',
@@ -268,6 +270,17 @@ export const ThingsDetailsPage = () => {
     }
   }
 
+  // Update the device name in the data object
+  const updateDeviceNameInData = name => {
+    updateData({
+      ...data,
+      device: {
+        ...data.device,
+        n: name,
+      },
+    })
+  }
+
   return (
     <Layout
       title={`${deviceName ? deviceName + ' | ' : ''}${_(menuT.things)}`}
@@ -281,20 +294,23 @@ export const ThingsDetailsPage = () => {
         />
       }
     >
-      <h2
+      <ThingsDetailsTitle
         className={classNames(
           {
             shimmering: loading,
           },
           greyedOutClassName
         )}
-      >
-        {deviceName}
-      </h2>
+        updateDeviceName={updateDeviceNameInData}
+        loading={loading}
+        isOnline={isOnline}
+        deviceName={deviceName}
+        deviceId={id}
+        links={data?.links}
+      />
       <ThingsDetails data={data} loading={loading} />
 
-      <h2 className={classNames(greyedOutClassName)}>{_(t.resources)}</h2>
-      <ThingsResourcesList
+      <ThingsResources
         data={data?.links}
         onUpdate={openUpdateModal}
         onCreate={openCreateModal}

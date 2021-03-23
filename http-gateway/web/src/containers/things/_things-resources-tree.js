@@ -3,15 +3,17 @@ import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
+import { TreeExpander } from '@/components/tree-expander'
+import { TreeTable } from '@/components/table'
 import { Badge } from '@/components/badge'
-import { Table } from '@/components/table'
 import { ThingsResourcesActionButton } from './_things-resources-action-button'
-import { RESOURCES_DEFAULT_PAGE_SIZE, thingsStatuses } from './constants'
+import { thingsStatuses, RESOURCE_TREE_DEPTH_SIZE } from './constants'
+import { createNestedResourceData, getLastPartOfAResourceHref } from './utils'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
-export const ThingsResourcesList = ({
-  data,
+export const ThingsResourcesTree = ({
+  data: rawData,
   onUpdate,
   onCreate,
   onDelete,
@@ -22,6 +24,7 @@ export const ThingsResourcesList = ({
 
   const isUnregistered = deviceStatus === thingsStatuses.UNREGISTERED
   const greyedOutClassName = classNames({ 'grayed-out': isUnregistered })
+  const data = useMemo(() => createNestedResourceData(rawData), [rawData])
 
   const columns = useMemo(
     () => [
@@ -32,16 +35,49 @@ export const ThingsResourcesList = ({
           const {
             original: { di, href },
           } = row
+          const lastValue = getLastPartOfAResourceHref(value)
+          const onLinkClick = di
+            ? () => onUpdate({ di, href: href.replace(/\/$/, '') })
+            : null
+
           if (isUnregistered) {
-            return <span>{value}</span>
+            return <span>{lastValue}</span>
           }
+
+          if (row.canExpand) {
+            return (
+              <div className="tree-expander-container">
+                <TreeExpander
+                  {...row.getToggleRowExpandedProps({ title: null })}
+                  expanded={!!row.isExpanded}
+                  style={{
+                    marginLeft: `${row.depth * RESOURCE_TREE_DEPTH_SIZE}px`,
+                  }}
+                />
+                <span
+                  className={di ? 'link reveal-icon-on-hover' : ''}
+                  onClick={onLinkClick}
+                >
+                  {`/${lastValue}/`}
+                </span>
+                {di && <i className="fas fa-pen" />}
+              </div>
+            )
+          }
+
           return (
-            <div className="tree-expander-container">
-              <span
-                className="link reveal-icon-on-hover"
-                onClick={() => onUpdate({ di, href })}
-              >
-                {value}
+            <div
+              className="tree-expander-container"
+              style={{
+                marginLeft: `${
+                  row.depth === 0
+                    ? 0
+                    : (row.depth + 1) * RESOURCE_TREE_DEPTH_SIZE
+                }px`,
+              }}
+            >
+              <span className="link reveal-icon-on-hover" onClick={onLinkClick}>
+                {`/${lastValue}`}
               </span>
               <i className="fas fa-pen" />
             </div>
@@ -52,7 +88,11 @@ export const ThingsResourcesList = ({
       {
         Header: _(t.types),
         accessor: 'rt',
-        Cell: ({ value }) => {
+        Cell: ({ value, row }) => {
+          if (!row.original.di) {
+            return null
+          }
+
           return (
             <div className="badges-box-horizontal">
               {value?.map?.(type => <Badge key={type}>{type}</Badge>)}
@@ -65,13 +105,18 @@ export const ThingsResourcesList = ({
         accessor: 'actions',
         disableSortBy: true,
         Cell: ({ row }) => {
+          if (!row.original.di) {
+            return null
+          }
+
           const {
             original: { di, href, if: interfaces },
           } = row
+          const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
           return (
             <ThingsResourcesActionButton
               disabled={isUnregistered || loading}
-              href={href}
+              href={cleanHref}
               di={di}
               interfaces={interfaces}
               onCreate={onCreate}
@@ -86,27 +131,15 @@ export const ThingsResourcesList = ({
   )
 
   return (
-    <Table
+    <TreeTable
       columns={columns}
       data={data || []}
-      defaultSortBy={[
-        {
-          id: 'href',
-          desc: false,
-        },
-      ]}
-      defaultPageSize={RESOURCES_DEFAULT_PAGE_SIZE}
-      autoFillEmptyRows
       className={greyedOutClassName}
-      paginationProps={{
-        className: greyedOutClassName,
-        disabled: isUnregistered,
-      }}
     />
   )
 }
 
-ThingsResourcesList.propTypes = {
+ThingsResourcesTree.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
   onCreate: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
@@ -115,7 +148,7 @@ ThingsResourcesList.propTypes = {
   deviceStatus: PropTypes.oneOf(Object.values(thingsStatuses)),
 }
 
-ThingsResourcesList.defaultProps = {
+ThingsResourcesTree.defaultProps = {
   data: null,
   deviceStatus: null,
 }

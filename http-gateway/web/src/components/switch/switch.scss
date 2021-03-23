@@ -19,6 +19,7 @@ $mainVal: 16px;
     border-radius: $mainVal * 2;
     box-shadow: none !important;
     border-color: $secondary_40;
+    background-color: $secondary_40;
   }
 
   .custom-control-label::after {
@@ -27,7 +28,7 @@ $mainVal: 16px;
     top: 3px;
     left: -$index + 1px;
     border-radius: $mainVal - 2px;
-    background-color: $primary_100;
+    background-color: $light_100;
   }
 
   .custom-control-input:checked ~ .custom-control-label::after {
@@ -39,20 +40,26 @@ $mainVal: 16px;
     border-color: $primary_100;
   }
 
-  .custom-control-input:not(:disabled):active ~ .custom-control-label::before {
-    background-color: rgba($primary_100, 0.2);
-    border-color: $primary_100;
-  }
-
   input {
     &:not([disabled]) {
       & ~ label {
         cursor: pointer;
       }
 
-      &:focus {
-        & ~ .custom-control-label::before {
-          border-color: $primary_100;
+      &:focus,
+      &:active {
+        &:checked {
+          & ~ .custom-control-label::before {
+            border-color: $primary_100;
+            background-color: $primary_100;
+          }
+        }
+
+        &:not(:checked) {
+          & ~ .custom-control-label::before {
+            border-color: $secondary_40;
+            background-color: $secondary_40;
+          }
         }
       }
     }
@@ -62,24 +69,28 @@ $mainVal: 16px;
     &[disabled] {
       &:not(:checked) {
         & ~ .custom-control-label::before {
-          background-color: $secondary_20;
-          border-color: $secondary_20;
+          border-color: $secondary_40;
+          background-color: $secondary_40;
         }
 
         & ~ .custom-control-label::after {
-          background-color: rgba($primary_100, 0.5);
+          background-color: $light_100;
         }
       }
 
       &:checked {
         & ~ .custom-control-label::before {
-          background-color: rgba($primary_100, 0.5);
-          border-color: transparent;
+          border-color: $primary_100;
+          background-color: $primary_100;
         }
 
         & ~ .custom-control-label::after {
-          background-color: rgba($light_100, 0.8);
+          background-color: $light_100;
         }
+      }
+
+      & ~ .custom-control-label::before {
+        opacity: 0.5;
       }
     }
   }
