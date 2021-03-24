@@ -7,10 +7,10 @@ import (
 	"time"
 
 	client "github.com/plgd-dev/cloud/grpc-gateway/client"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 

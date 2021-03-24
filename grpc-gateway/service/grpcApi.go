@@ -10,10 +10,10 @@ import (
 
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

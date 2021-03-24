@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
@@ -17,9 +17,9 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 )
 
 //Server handle HTTP request

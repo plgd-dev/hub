@@ -12,11 +12,11 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
 const AuthorizationHeader string = "Authorization"

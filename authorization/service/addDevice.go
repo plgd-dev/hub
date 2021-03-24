@@ -7,7 +7,7 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
-	"github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

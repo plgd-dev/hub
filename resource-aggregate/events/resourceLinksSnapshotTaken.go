@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

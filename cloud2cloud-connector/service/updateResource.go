@@ -13,11 +13,11 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
 func makeHTTPEndpoint(url, deviceID, href string) string {

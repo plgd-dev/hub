@@ -121,6 +121,8 @@ clean:
 	sudo rm -rf ./.tmp/privateKeys || true
 
 proto/generate: $(SUBDIRS)
+	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pkg/net/grpc/stub.proto
+	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(shell pwd)/pkg/net/grpc/stub.proto
 push: cloud-build $(SUBDIRS) 
 
 $(SUBDIRS):

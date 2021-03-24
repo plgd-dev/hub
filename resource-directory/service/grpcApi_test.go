@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -22,7 +23,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 const TEST_TIMEOUT = time.Second * 30

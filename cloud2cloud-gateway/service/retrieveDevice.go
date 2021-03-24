@@ -6,11 +6,11 @@ import (
 	"io"
 	"net/http"
 
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/sdk/schema"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"

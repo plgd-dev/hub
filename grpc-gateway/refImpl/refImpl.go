@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/service"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/security/jwt"
 	"google.golang.org/grpc/credentials"
 )
 

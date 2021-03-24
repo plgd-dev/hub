@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/plgd-dev/kit/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	kitSync "github.com/plgd-dev/kit/sync"
 
 	"github.com/plgd-dev/kit/sync/task/queue"
@@ -25,6 +25,8 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetCoap "github.com/plgd-dev/cloud/pkg/net/coap"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
@@ -35,8 +37,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/kit/log"

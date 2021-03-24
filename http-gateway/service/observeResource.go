@@ -7,10 +7,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func (requestHandler *RequestHandler) startResourceObservation(w http.ResponseWriter, r *http.Request) {

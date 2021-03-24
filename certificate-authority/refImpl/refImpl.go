@@ -10,13 +10,13 @@ import (
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/kit/security/certManager"
-	"github.com/plgd-dev/kit/security/jwt"
 
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/certificate-authority/service"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

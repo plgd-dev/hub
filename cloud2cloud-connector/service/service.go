@@ -13,15 +13,15 @@ import (
 
 	connectorStore "github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 //Server handle HTTP request

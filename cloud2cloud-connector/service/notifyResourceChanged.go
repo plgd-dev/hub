@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
 func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID, href, userID string, contentType string, body []byte, cmdMetadata commands.CommandMetadata) error {

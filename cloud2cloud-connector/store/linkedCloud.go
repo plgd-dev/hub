@@ -8,7 +8,6 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/oauth"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/kit/net/http/transport"
 	"golang.org/x/oauth2"
 )
 
@@ -87,7 +86,7 @@ func (l LinkedCloud) GetHTTPClient() *http.Client {
 	for _, ca := range l.Endpoint.RootCAs {
 		pool.AppendCertsFromPEM([]byte(ca))
 	}
-	t := transport.NewDefaultTransport()
+	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.TLSClientConfig = &tls.Config{
 		RootCAs:            pool,
 		InsecureSkipVerify: l.Endpoint.InsecureSkipVerify,

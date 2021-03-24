@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc"
 
 	"github.com/stretchr/testify/assert"

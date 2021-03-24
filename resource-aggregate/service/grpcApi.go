@@ -6,6 +6,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
@@ -13,8 +15,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/net/grpc"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 type isUserDeviceFunc = func(ctx context.Context, owner, deviceID string) (bool, error)

@@ -9,10 +9,10 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
 func (s *SubscriptionManager) SubscribeToDevice(ctx context.Context, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
