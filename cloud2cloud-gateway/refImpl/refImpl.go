@@ -9,8 +9,8 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/service"
 	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/kit/security/certManager"
 )
 

@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 )
 
 func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID commands.ResourceId, encoder responseWriterEncoderFunc) (int, error) {

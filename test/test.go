@@ -18,11 +18,10 @@ import (
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/net/http/transport"
 	"github.com/plgd-dev/kit/security/certManager"
 	"go.uber.org/atomic"
 
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/security"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -700,7 +699,7 @@ func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Requ
 }
 
 func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
-	trans := transport.NewDefaultTransport()
+	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}

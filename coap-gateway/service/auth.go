@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	kitNetCoap "github.com/plgd-dev/cloud/pkg/net/coap"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 )
 
 func NewAuthInterceptor() kitNetCoap.Interceptor {

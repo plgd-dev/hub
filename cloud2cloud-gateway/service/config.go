@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/security/oauth/manager"
 )
 
 //Config represent application configuration

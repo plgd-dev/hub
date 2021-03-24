@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/net/http/transport"
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/kelseyhightower/envconfig"
@@ -97,7 +96,7 @@ func (c *requestBuilder) Build() *http.Request {
 }
 
 func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response {
-	trans := transport.NewDefaultTransport()
+	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}

@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/kit/net/http/transport"
-
 	"github.com/jtacoma/uritemplates"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
@@ -120,7 +118,7 @@ func (c *requestBuilder) Build() *http.Request {
 }
 
 func HTTPDo(t *testing.T, req *http.Request) *http.Response {
-	trans := transport.NewDefaultTransport()
+	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}

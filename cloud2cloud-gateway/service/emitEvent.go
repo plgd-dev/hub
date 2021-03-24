@@ -15,14 +15,13 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/net/http/transport"
 )
 
 type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
 type emitEventFunc func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
 
 func createEmitEventFunc(tls *tls.Config, timeout time.Duration) emitEventFunc {
-	trans := transport.NewDefaultTransport()
+	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = tls
 	client := netHttp.Client{
 		Transport: trans,

@@ -12,8 +12,8 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 
 	router "github.com/gorilla/mux"
 

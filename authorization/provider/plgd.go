@@ -94,8 +94,6 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 		return nil, err
 	}
 
-	fmt.Printf("UserInfo: %+v\n", profile)
-
 	userID, ok := profile[p.Config.OwnerClaim].(string)
 	if !ok {
 		return nil, fmt.Errorf("cannot determine owner claim %v", p.Config.OwnerClaim)

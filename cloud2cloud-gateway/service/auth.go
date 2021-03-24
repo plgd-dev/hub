@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 )
 
 func parseAuth(ownerClaim, auth string) (token, owner string, err error) {

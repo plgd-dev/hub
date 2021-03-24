@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/kit/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 )
 
 type ClientCfg struct {

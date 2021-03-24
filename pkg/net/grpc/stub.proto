@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ocf.cloud.test.pb;
+
+option go_package = "github.com/plgd-dev/cloud/pkg/net/grpc";
+
+service StubService {
+  rpc TestCall(TestRequest) returns (TestResponse) {}
+  rpc TestStream(stream TestRequest) returns (stream TestResponse) {}
+}
+
+message TestRequest {
+    string test = 1;
+}
+
+message TestResponse {
+    string test = 1;
+}

@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	kit "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
-	kit "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/sdk/schema"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"

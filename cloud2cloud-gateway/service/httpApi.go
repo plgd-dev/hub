@@ -13,9 +13,9 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 
 	router "github.com/gorilla/mux"
 
