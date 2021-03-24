@@ -104,7 +104,7 @@ func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 				"href": "/" + deviceID + "/oic/d",
 				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
 				"p": map[interface{}]interface{}{
-					"bm": uint64(0x1), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
+					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
 				"rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"},
 			},
@@ -122,7 +122,7 @@ func getDeviceAllRepresentation(deviceID, deviceName string) interface{} {
 				"href": "/" + deviceID + "/oic/p",
 				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
 				"p": map[interface{}]interface{}{
-					"bm": uint64(0x1), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
+					"bm": uint64(0x3), "port": uint64(0x0), "sec": false, "x.org.iotivity.tcp": uint64(0x0), "x.org.iotivity.tls": uint64(0x0),
 				},
 				"rt": []interface{}{"oic.wk.p"},
 			},
