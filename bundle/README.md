@@ -25,6 +25,7 @@ Image can be configured via enviroment variables as argument `-e ENV=VALUE` of c
 | --------- | ----------- | ------- | ------- |
 | `FQDN` | string | public FQDN for bundle | `"localhost"` |
 | `NGINX_PORT` | uint16 | nginx https port for localhost | `"443"` |
+| `OWNER_CLAIM` | string | which claim will be used from JWT to determine ownership | `"sub"` |
 | `COAP_GATEWAY_UNSECURE_PORT` | uint16 | exposed public port for coap-tcp  | `"5683"` |
 | `COAP_GATEWAY_UNSECURE_ADDRESS` | string | coap-tcp listen address | `"0.0.0.0:5683"` |
 | `COAP_GATEWAY_PORT` | uint16 | exposed public port for coaps-tcp  | `"5684"` |
@@ -91,10 +92,10 @@ cd ./iotivity-lite/port/linux
 make CLOUD=1 SECURE=0 cloud_server cloud_client
 
 # Start unsecured device sample
-./cloud_server cloud_server test coap+tcp://127.0.0.1:5683 00000000-0000-0000-0000-000000000001 test
+./cloud_server cloud_server test coap+tcp://127.0.0.1:5683 00000000-0000-0000-0000-000000000001 plgd
 
 # Start unsecured client
-./cloud_client cloud_client test coap+tcp://127.0.0.1:5683 00000000-0000-0000-0000-000000000001 test
+./cloud_client cloud_client test coap+tcp://127.0.0.1:5683 00000000-0000-0000-0000-000000000001 plgd
 
 ```
 
@@ -139,9 +140,9 @@ make CLOUD=1 SECURE=1 PKI=1 onboarding_tool cloud_server cloud_client
 docker exec -it cloud cat /data/certs/root_ca.crt > pki_certs/cloudca.pem
 
 # Start secured device sample
-./cloud_server cloud_server test coaps+tcp://127.0.0.1:5684 00000000-0000-0000-0000-000000000001 test
+./cloud_server cloud_server test coaps+tcp://127.0.0.1:5684 00000000-0000-0000-0000-000000000001 plgd
 # Start secured client
-./cloud_client cloud_client test coaps+tcp://127.0.0.1:5684 00000000-0000-0000-0000-000000000001 test
+./cloud_client cloud_client test coaps+tcp://127.0.0.1:5684 00000000-0000-0000-0000-000000000001 plgd
 
 # Execute onboarding_tool and:
 # - Onboard and set ACLs to the device sample as described in https://github.com/iotivity/iotivity-lite#step-1-onboard-and-provision-the-server
