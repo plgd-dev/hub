@@ -108,7 +108,6 @@ func (u *devicesStatusUpdater) run() {
 					d.expires = expires
 				}
 			}
-			log.Debugf("update devices statuses to online takes: %v", time.Now().Sub(now))
 		}
 	}
 }

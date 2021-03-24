@@ -18,7 +18,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/json"
 	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/kit/net/http/transport"
 )
 
 func toJSON(v interface{}) string {
@@ -86,7 +85,7 @@ func main() {
 		InsecureSkipVerify: true,
 	}
 	if *accesstoken == "" {
-		t := transport.NewDefaultTransport()
+		t := http.DefaultTransport.(*http.Transport).Clone()
 		t.TLSClientConfig = &tlsCfg
 		c := http.Client{
 			Transport: t,
