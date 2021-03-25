@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/kit/net/grpc"
 )
 
 //Config represent application configuration

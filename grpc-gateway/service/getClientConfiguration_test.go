@@ -11,9 +11,9 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func TestRequestHandler_GetClientConfiguration(t *testing.T) {

@@ -11,11 +11,11 @@ import (
 
 	"github.com/ugorji/go/codec"
 
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/valyala/fasthttp"
 )
 

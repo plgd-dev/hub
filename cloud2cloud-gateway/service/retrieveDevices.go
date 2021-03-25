@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/sdk/schema"
-	"github.com/gorilla/mux"
 )
 
 type Status string

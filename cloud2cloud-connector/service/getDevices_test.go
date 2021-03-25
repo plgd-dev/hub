@@ -25,10 +25,10 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	c2cGwUri "github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/codec/json"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {

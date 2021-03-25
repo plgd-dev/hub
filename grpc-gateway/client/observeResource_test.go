@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	authTest "github.com/plgd-dev/cloud/authorization/provider"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -21,7 +21,7 @@ import (
 	"github.com/plgd-dev/kit/security/certManager"
 	"go.uber.org/atomic"
 
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/security"
 
 	"go.mongodb.org/mongo-driver/mongo/options"

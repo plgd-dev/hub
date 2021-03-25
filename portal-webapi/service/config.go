@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 )
 
 type httpProto string

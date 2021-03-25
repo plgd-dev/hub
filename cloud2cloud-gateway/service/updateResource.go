@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 )
 
 func statusToHttpStatus(status pbGRPC.Status) int {

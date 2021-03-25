@@ -9,10 +9,10 @@ import (
 	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/codec/json"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 

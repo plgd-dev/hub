@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/net/http"
 
 	"google.golang.org/grpc/codes"
