@@ -74,6 +74,7 @@ func (rs *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx conte
 		return status.Errorf(codes.FailedPrecondition, "resource is unpublished")
 	}
 	rs.mapForCalculatePendingRequestsCount[contentUpdatePending.AuditContext.CorrelationId] = true
+	rs.PendingRequestsCount = uint32(len(rs.mapForCalculatePendingRequestsCount))
 	return nil
 }
 
