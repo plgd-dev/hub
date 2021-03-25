@@ -20,8 +20,8 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 //Server handle HTTP request

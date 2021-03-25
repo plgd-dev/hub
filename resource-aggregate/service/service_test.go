@@ -16,12 +16,12 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	authProvider "github.com/plgd-dev/cloud/authorization/provider"
 	authService "github.com/plgd-dev/cloud/authorization/test"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func TestPublishUnpublish(t *testing.T) {

@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 

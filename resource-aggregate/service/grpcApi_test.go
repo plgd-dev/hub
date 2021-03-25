@@ -6,10 +6,10 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

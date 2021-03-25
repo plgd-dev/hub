@@ -20,6 +20,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -29,7 +30,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitNetCoap "github.com/plgd-dev/kit/net/coap"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/kit/log"

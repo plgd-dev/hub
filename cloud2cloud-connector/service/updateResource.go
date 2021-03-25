@@ -13,8 +13,8 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
 
 	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"

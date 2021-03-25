@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetHttp "github.com/plgd-dev/kit/net/http"
 )
 

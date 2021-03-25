@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 
 	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"

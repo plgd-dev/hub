@@ -8,8 +8,8 @@ import (
 	"time"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/sdk/schema"
 	"github.com/valyala/fasthttp"
 )

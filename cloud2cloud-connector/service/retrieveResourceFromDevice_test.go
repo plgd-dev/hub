@@ -16,10 +16,10 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	c2cConnectorTest "github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/codec/cbor"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Events) {

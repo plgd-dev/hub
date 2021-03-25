@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/sdk/schema"
 )
 

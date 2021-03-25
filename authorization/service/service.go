@@ -23,7 +23,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/authorization/provider"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 )
 
 // Provider defines interface for authentification against auth service

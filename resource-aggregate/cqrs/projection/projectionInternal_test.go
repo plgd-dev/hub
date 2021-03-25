@@ -18,9 +18,9 @@ import (
 	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 )
 

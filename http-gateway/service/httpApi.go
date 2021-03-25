@@ -12,8 +12,8 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitHttp "github.com/plgd-dev/kit/net/http"
 
 	router "github.com/gorilla/mux"

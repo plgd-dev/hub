@@ -7,13 +7,13 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/net/grpc"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 type isUserDeviceFunc = func(ctx context.Context, userID, deviceID string) (bool, error)
