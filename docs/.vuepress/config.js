@@ -53,6 +53,7 @@ module.exports = {
             children: [
               'developing/resources',
               'developing/dashboard',
+              'developing/authorization',
               'developing/grpc-client'
             ]
           }
