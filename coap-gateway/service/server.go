@@ -25,7 +25,6 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetCoap "github.com/plgd-dev/cloud/pkg/net/coap"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
@@ -73,7 +72,7 @@ type Server struct {
 
 	coapServer              *tcp.Server
 	listener                tcp.Listener
-	authInterceptor         kitNetCoap.Interceptor
+	authInterceptor         Interceptor
 	asConn                  *grpc.ClientConn
 	rdConn                  *grpc.ClientConn
 	raConn                  *grpc.ClientConn
