@@ -106,7 +106,7 @@ test: env
 		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
 		cloud-test \
-		go test -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
+		go test -timeout=45m -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
 
 build: cloud-build $(SUBDIRS)
 

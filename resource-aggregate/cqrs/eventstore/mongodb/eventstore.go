@@ -313,6 +313,7 @@ type iterator struct {
 	dataUnmarshaler UnmarshalerFunc
 	LogDebugfFunc   LogDebugfFunc
 	groupID         string
+	loaded          bool
 }
 
 func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
@@ -321,6 +322,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 	if !i.iter.Next(ctx) {
 		return nil, false
 	}
+	i.loaded = true
 
 	err := i.iter.Decode(&event)
 	if err != nil {
@@ -342,7 +344,11 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 }
 
 func (i *iterator) Err() error {
-	return i.iter.Err()
+	err := i.iter.Err()
+	if err == nil && !i.loaded {
+		err = fmt.Errorf("none event was loaded")
+	}
+	return err
 }
 
 func versionQueriesToMgoQuery(queries []eventstore.VersionQuery, op signOperator) (bson.M, error) {
@@ -414,12 +420,12 @@ func (l *loader) QueryHandlePool(ctx context.Context, iter *queryIterator) error
 	var errors []error
 	var errorsLock sync.Mutex
 
-	var numQueries int
+	var loaded bool
 	for {
 		if !iter.Next(ctx, &query) {
 			break
 		}
-		numQueries++
+		loaded = true
 		queries = append(queries, query)
 		if len(queries) >= l.store.batchSize {
 			wg.Add(1)
@@ -450,6 +456,9 @@ func (l *loader) QueryHandlePool(ctx context.Context, iter *queryIterator) error
 	wg.Wait()
 	if len(errors) > 0 {
 		return fmt.Errorf("loader cannot load events: %v", errors)
+	}
+	if !loaded {
+		return fmt.Errorf("none snapshot event was loaded")
 	}
 
 	if iter.Err() != nil {
