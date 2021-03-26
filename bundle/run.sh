@@ -218,7 +218,7 @@ Listen:
     DirPath: ${INTERNAL_CERT_DIR_PATH}
     TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
     DisableVerifyClientCertificate: false
-    UseSystemCertPool: false
+    UseSystemCertPool: true
 IDTokenPrivateKeyPath: ${OAUTH_ID_TOKEN_KEY_PATH}
 AccessTokenKeyPrivateKeyPath: ${OAUTH_ACCESS_TOKEN_KEY_PATH}
 Domain: ${DOMAIN}
