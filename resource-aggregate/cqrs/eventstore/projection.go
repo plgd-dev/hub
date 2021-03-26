@@ -97,15 +97,29 @@ type iterator struct {
 	reload             *VersionQuery
 }
 
-func (i *iterator) Rewind(ctx context.Context) {
+func (i *iterator) RewindToNextAggregateEvent(ctx context.Context) EventUnmarshaler {
+	for {
+		snapshot, nextAggregateEvent := i.RewindToSnapshot(ctx)
+		if nextAggregateEvent != nil {
+			return nextAggregateEvent
+		}
+		if snapshot == nil && nextAggregateEvent == nil {
+			return nil
+		}
+	}
+}
+
+func (i *iterator) RewindToSnapshot(ctx context.Context) (snapshot EventUnmarshaler, nextAggregateEvent EventUnmarshaler) {
 	for {
 		e, ok := i.iter.Next(ctx)
 		if !ok {
-			break
+			return nil, nil
+		}
+		if e.EventType() == i.model.SnapshotEventType() && e.GroupID() == i.model.groupId && e.AggregateID() == i.model.aggregateId {
+			return e, nil
 		}
 		if e.GroupID() != i.model.groupId || e.AggregateID() != i.model.aggregateId {
-			i.nextEventToProcess = e
-			return
+			return nil, e
 		}
 	}
 }
@@ -135,9 +149,19 @@ func (i *iterator) Next(ctx context.Context) (EventUnmarshaler, bool) {
 		ignore, reload := i.model.Update(tmp)
 		i.model.LogDebugfFunc("projection.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v, ignore %v reload %v", tmp.GroupID, tmp.AggregateID, tmp.Version, tmp.EventType, ignore, reload)
 		if reload {
-			i.reload = &VersionQuery{GroupID: tmp.GroupID(), AggregateID: tmp.AggregateID(), Version: i.model.version}
-			i.Rewind(ctx)
-			return nil, false
+			snapshot, nextAggregateEvent := i.RewindToSnapshot(ctx)
+			if snapshot == nil {
+				i.nextEventToProcess = nextAggregateEvent
+				i.reload = &VersionQuery{GroupID: tmp.GroupID(), AggregateID: tmp.AggregateID(), Version: i.model.version}
+				return nil, false
+			}
+			tmp = snapshot
+			ignore, reload = i.model.Update(tmp)
+			if reload {
+				i.nextEventToProcess = i.RewindToNextAggregateEvent(ctx)
+				i.reload = &VersionQuery{GroupID: tmp.GroupID(), AggregateID: tmp.AggregateID(), Version: i.model.version}
+				return nil, false
+			}
 		}
 		if ignore {
 			return i.RewindIgnore(ctx)
@@ -208,8 +232,8 @@ func (p *Projection) handle(ctx context.Context, iter Iter) (reloadQueries []Ver
 		if i.nextEventToProcess == nil {
 			_, ok := i.Next(ctx)
 			if ok {
-				//iterator need to mode to next
-				i.Rewind(ctx)
+				//iterator need to move to the next event
+				i.nextEventToProcess = i.RewindToNextAggregateEvent(ctx)
 			}
 		}
 
