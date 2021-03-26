@@ -2,46 +2,38 @@ package provider
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
-	"time"
 
+	"github.com/plgd-dev/cloud/pkg/net/http/client"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 )
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(config Config, tls *tls.Config) *PlgdProvider {
-	oauth2 := config.OAuth2.ToOAuth2()
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.MaxIdleConns = 100
-	t.MaxConnsPerHost = 100
-	t.MaxIdleConnsPerHost = 100
-	t.IdleConnTimeout = time.Second * 30
-	t.TLSClientConfig = tls
+func NewPlgdProvider(config Config, logger *zap.Logger, responseMode, accessType, responseType string) (*PlgdProvider, error) {
+	config.ResponseMode = responseMode
+	config.AccessType = accessType
+	config.ResponseType = responseType
+	httpClient, err := client.New(config.HTTP, logger)
+	if err != nil {
+		return nil, err
+	}
+	oauth2 := config.Config.ToOAuth2()
 
-	httpClient := &http.Client{
-		Transport: t,
-		Timeout:   10 * time.Minute,
-	}
 	return &PlgdProvider{
-		Config: config,
-		OAuth2: &oauth2,
-		NewHTTPClient: func() *http.Client {
-			return httpClient
-		},
-		TLS: tls,
-	}
+		Config:     config,
+		OAuth2:     &oauth2,
+		HTTPClient: httpClient,
+	}, nil
 }
 
 // PlgdProvider configuration with new http client
 type PlgdProvider struct {
-	Config        Config
-	OAuth2        *oauth2.Config
-	NewHTTPClient func() *http.Client
-	TLS           *tls.Config
+	Config     Config
+	OAuth2     *oauth2.Config
+	HTTPClient *client.Client
 }
 
 // GetProviderName returns unique name of the provider
@@ -51,7 +43,7 @@ func (p *PlgdProvider) GetProviderName() string {
 
 // AuthCodeURL returns URL for redirecting to the authentication web page
 func (p *PlgdProvider) AuthCodeURL(csrfToken string) string {
-	return p.Config.OAuth2.AuthCodeURL(csrfToken)
+	return p.Config.Config.AuthCodeURL(csrfToken)
 }
 
 // LogoutURL to logout the user
@@ -74,7 +66,7 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 	if p.GetProviderName() != authorizationProvider {
 		return nil, fmt.Errorf("unsupported authorization provider(%v), only (%v) is supported", authorizationProvider, p.GetProviderName())
 	}
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.NewHTTPClient())
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 
 	token, err := p.OAuth2.Exchange(ctx, authorizationCode)
 	if err != nil {
@@ -113,7 +105,7 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 	restoredToken := &oauth2.Token{
 		RefreshToken: refreshToken,
 	}
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.NewHTTPClient())
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 	tokenSource := p.OAuth2.TokenSource(ctx, restoredToken)
 	token, err := tokenSource.Token()
 	if err != nil {
@@ -144,4 +136,8 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 		Expiry:       token.Expiry,
 		Owner:        userID,
 	}, nil
+}
+
+func (p *PlgdProvider) Close() {
+	p.HTTPClient.Close()
 }

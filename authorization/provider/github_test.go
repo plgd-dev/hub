@@ -12,7 +12,10 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/plgd-dev/cloud/authorization/oauth"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 const providerName = "github"
@@ -21,7 +24,11 @@ func TestAuthCodeURL(t *testing.T) {
 	mux := http.NewServeMux()
 	server := httptest.NewServer(mux)
 	defer server.Close()
-	p := newGithubOAuth(server)
+
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+	p := newGithubOAuth(t, server, logger)
+	defer p.Close()
 
 	token := "randomToken"
 	url := p.AuthCodeURL(token)
@@ -35,7 +42,11 @@ func TestSignUpGitHubProvider(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	p := newGithubOAuth(server)
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+
+	p := newGithubOAuth(t, server, logger)
+	defer p.Close()
 	ctx := context.Background()
 	token, err := p.Exchange(ctx, providerName, "authCode")
 
@@ -55,7 +66,11 @@ func TestRefreshTokenGitHubProvider(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	p := newGithubOAuth(server)
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+
+	p := newGithubOAuth(t, server, logger)
+	defer p.Close()
 	ctx := context.Background()
 	n, err := p.Refresh(ctx, "refresh-token")
 
@@ -69,7 +84,11 @@ func TestOAuthExchangeFailure(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	p := newGithubOAuth(server)
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+
+	p := newGithubOAuth(t, server, logger)
+	defer p.Close()
 	ctx := context.Background()
 	token, err := p.Exchange(ctx, providerName, "authCode")
 
@@ -84,7 +103,11 @@ func TestGithubFailure(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	p := newGithubOAuth(server)
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+
+	p := newGithubOAuth(t, server, logger)
+	defer p.Close()
 	ctx := context.Background()
 	token, err := p.Exchange(ctx, providerName, "authCode")
 
@@ -93,21 +116,19 @@ func TestGithubFailure(t *testing.T) {
 	assert.Nil(token)
 }
 
-func newGithubOAuth(server *httptest.Server) Provider {
-	endpoint := oauth.Endpoint{
-		AuthURL:  server.URL + "/oauth/authorize",
-		TokenURL: server.URL + "/oauth/access_token",
-	}
+func newGithubOAuth(t *testing.T, server *httptest.Server, logger *zap.Logger) Provider {
 	Config := Config{
 		Provider: "github",
-		OAuth2: oauth.Config{
+		Config: oauth.Config{
 			ClientID:     "clientId",
 			ClientSecret: "clientSecret",
 			RedirectURL:  "",
-			Endpoint:     endpoint,
+			AuthURL:      server.URL + "/oauth/authorize",
+			TokenURL:     server.URL + "/oauth/access_token",
 		},
 	}
-	p := NewGitHubProvider(Config)
+	p, err := NewGitHubProvider(Config, logger, "", "", "")
+	require.NoError(t, err)
 	p.NewGithubClient = func(h *http.Client) *github.Client {
 		c := github.NewClient(h)
 		baseURL, _ := url.Parse(server.URL + "/github/api/")

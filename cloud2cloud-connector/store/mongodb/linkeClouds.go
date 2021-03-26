@@ -24,10 +24,10 @@ func validateLinkedCloud(sub store.LinkedCloud) error {
 	if sub.OAuth.ClientSecret == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid ClientSecret")
 	}
-	if sub.OAuth.Endpoint.AuthURL == "" {
+	if sub.OAuth.AuthURL == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid AuthUrl")
 	}
-	if sub.OAuth.Endpoint.TokenURL == "" {
+	if sub.OAuth.TokenURL == "" {
 		return fmt.Errorf("cannot save linked cloud: invalid TokenUrl")
 	}
 	return nil

@@ -30,22 +30,22 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 	return oauth2.AuthStyleAutoDetect
 }
 
-type Endpoint struct {
-	AuthURL   string    `json:"AuthUrl" envconfig:"AUTH_URL" env:"AUTH_URL"`
-	TokenURL  string    `json:"TokenUrl" envconfig:"TOKEN_URL" env:"TOKEN_URL"`
-	AuthStyle AuthStyle `envconfig:"AUTH_STYLE" env:"AUTH_STYLE"`
+type Config struct {
+	ClientID     string    `yaml:"clientID" json:"clientID"`
+	ClientSecret string    `yaml:"clientSecret" json:"clientSecret"`
+	Scopes       []string  `yaml:"scopes" json:"scopes"`
+	AuthURL      string    `yaml:"authorizationURL" json:"authorizationURL"`
+	TokenURL     string    `yaml:"tokenURL" json:"tokenURL"`
+	AuthStyle    AuthStyle `yaml:"authStyle" json:"authStyle"`
+	Audience     string    `yaml:"audience" json:"audience"`
+	RedirectURL  string    `yaml:"redirectURL" json:"redirectURL"`
+	AccessType   string    `yaml:"accessType" json:"accessType"`
+	ResponseType string    `yaml:"responseType" json:"responseType"`
+	ResponseMode string    `yaml:"responseMode" json:"responseMode"`
 }
 
-type Config struct {
-	ClientID     string   `json:"ClientId" envconfig:"CLIENT_ID" env:"CLIENT_ID"`
-	ClientSecret string   `json:"ClientSecret" envconfig:"CLIENT_SECRET" env:"CLIENT_SECRET"`
-	Scopes       []string `json:"Scopes" envconfig:"SCOPES" env:"SCOPES"`
-	Endpoint     Endpoint `json:"Endpoint" envconfig:"ENDPOINT" env:"ENDPOINT"`
-	Audience     string   `json:"Audience" envconfig:"AUDIENCE" env:"AUDIENCE"`
-	RedirectURL  string   `json:"RedirectUrl" envconfig:"REDIRECT_URL" env:"REDIRECT_URL"`
-	AccessType   string   `json:"AccessType" envconfig:"ACCESS_TYPE" env:"ACCESS_TYPE"`
-	ResponseType string   `json:"ResponseType" envconfig:"RESPONSE_TYPE" env:"RESPONSE_TYPE"`
-	ResponseMode string   `json:"ResponseMode" envconfig:"RESPONSE_MODE" env:"RESPONSE_MODE"`
+func (c *Config) Validate() error {
+	return nil
 }
 
 func (c Config) ToOAuth2() oauth2.Config {
@@ -55,9 +55,9 @@ func (c Config) ToOAuth2() oauth2.Config {
 		RedirectURL:  c.RedirectURL,
 		Scopes:       c.Scopes,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:   c.Endpoint.AuthURL,
-			TokenURL:  c.Endpoint.TokenURL,
-			AuthStyle: c.Endpoint.AuthStyle.ToOAuth2(),
+			AuthURL:   c.AuthURL,
+			TokenURL:  c.TokenURL,
+			AuthStyle: c.AuthStyle.ToOAuth2(),
 		},
 	}
 }

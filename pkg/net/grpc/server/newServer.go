@@ -1,4 +1,4 @@
-package grpc
+package server
 
 import (
 	"fmt"
@@ -12,11 +12,6 @@ type Server struct {
 	*grpc.Server
 	listener  net.Listener
 	closeFunc []func()
-}
-
-// Config holds service's settings.
-type Config struct {
-	Addr string `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
 }
 
 // NewServer instantiates a gRPC server.

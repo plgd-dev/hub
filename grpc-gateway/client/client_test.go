@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	kit "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -43,8 +43,8 @@ func NewTestClient(t *testing.T) *client.Client {
 	return c
 }
 
-func NewGateway(addr string) (*kit.Server, error) {
-	s, err := kit.NewServer(addr)
+func NewGateway(addr string) (*server.Server, error) {
+	s, err := server.NewServer(addr)
 	if err != nil {
 		return nil, err
 	}

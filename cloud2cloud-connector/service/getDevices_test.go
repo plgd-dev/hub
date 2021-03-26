@@ -64,10 +64,8 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 			Audience:     testCfg.C2C_GW_HOST,
 			ClientSecret: "testClientSecret",
 			//Scopes:       []string{"testScopes"},
-			Endpoint: oauth.Endpoint{
-				AuthURL:  testCfg.OAUTH_MANAGER_ENDPOINT_AUTHURL,
-				TokenURL: testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL,
-			},
+			AuthURL:  testCfg.OAUTH_MANAGER_ENDPOINT_AUTHURL,
+			TokenURL: testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL,
 		},
 		SupportedSubscriptionsEvents: supportedEvents,
 	}

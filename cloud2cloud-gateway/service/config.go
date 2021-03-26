@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 )
 
 //Config represent application configuration
 type Config struct {
-	grpc.Config
+	Addr                  string         `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
 	ResourceDirectoryAddr string         `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
 	FQDN                  string         `envconfig:"FQDN" default:"cloud2cloud.pluggedin.cloud"`
 	ReconnectInterval     time.Duration  `envconfig:"RECONNECT_INTERVAL" default:"10s"`

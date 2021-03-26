@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/kit/log"
@@ -28,7 +29,7 @@ type Config struct {
 	Listen     certManager.Config `envconfig:"LISTEN"`
 	Dial       certManager.Config `envconfig:"DIAL"`
 	OwnerClaim string             `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
-	kitNetGrpc.Config
+	Addr       string             `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
 	service.HandlerConfig
 }
 
@@ -38,7 +39,7 @@ func (c Config) String() string {
 	return fmt.Sprintf("config: \n%v\n", string(b))
 }
 
-func Init(config Config) (*kitNetGrpc.Server, error) {
+func Init(config Config) (*server.Server, error) {
 	logger, err := log.NewLogger(config.Log)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create logger %w", err)
@@ -72,7 +73,7 @@ func Init(config Config) (*kitNetGrpc.Server, error) {
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+	server, err := server.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),

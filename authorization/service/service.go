@@ -2,17 +2,14 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/plgd-dev/kit/security/certManager"
+	"go.uber.org/zap"
 
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/authorization/uri"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	"github.com/patrickmn/go-cache"
 
@@ -23,7 +20,8 @@ import (
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/authorization/provider"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
+	"github.com/plgd-dev/cloud/pkg/net/listener"
 )
 
 // Provider defines interface for authentification against auth service
@@ -52,15 +50,14 @@ type Service struct {
 
 // Server is an HTTP server for the Service.
 type Server struct {
-	service           *Service
-	grpcServer        *kitNetGrpc.Server
-	httpServer        *fasthttp.Server
-	cfg               Config
-	serverCertManager certManager.CertManager
-	listener          net.Listener
+	service    *Service
+	grpcServer *server.Server
+	httpServer *fasthttp.Server
+	cfg        Config
+	listener   net.Listener
 }
 
-func newService(deviceProvider, sdkProvider Provider, persistence Persistence, ownerClaim string) *Service {
+func NewService(deviceProvider, sdkProvider Provider, persistence Persistence, ownerClaim string) *Service {
 	return &Service{
 		deviceProvider: deviceProvider,
 		sdkProvider:    sdkProvider,
@@ -70,27 +67,26 @@ func newService(deviceProvider, sdkProvider Provider, persistence Persistence, o
 	}
 }
 
-// New creates the service's HTTP server.
-func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provider.Provider) (*Server, error) {
-	serverCertManager, err := certManager.NewCertManager(cfg.Listen)
+func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvider Provider, sdkProvider Provider) (*Server, error) {
+	grpcServer, err := server.New(cfg.Service.GRPC, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create server cert manager %w", err)
-	}
-	httpServerTLSConfig := serverCertManager.GetServerTLSConfig()
-	httpServerTLSConfig.ClientAuth = tls.NoClientCert
-	listener, err := tls.Listen("tcp", cfg.HTTPAddr, httpServerTLSConfig)
-	if err != nil {
-		return nil, fmt.Errorf("listening failed: %w", err)
+		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
 	}
 
-	service := newService(deviceProvider, sdkProvider, persistence, cfg.Device.OwnerClaim)
-	listenTLSConfig := serverCertManager.GetServerTLSConfig()
-	server, err := kitNetGrpc.NewServer(cfg.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)))
+	httpListener, err := listener.New(cfg.Service.HTTP, logger)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot create http listener: %w", err)
 	}
 
-	pb.RegisterAuthorizationServiceServer(server.Server, service)
+	persistence, err := mongodb.NewStore(ctx, cfg.Databases.MongoDB, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create connector to mongo: %w", err)
+	}
+	grpcServer.AddCloseFunc(func() { persistence.Close(ctx) })
+
+	service := NewService(deviceProvider, sdkProvider, persistence, cfg.Clients.Device.OwnerClaim)
+
+	pb.RegisterAuthorizationServiceServer(grpcServer.Server, service)
 
 	httpRouter := fasthttprouter.New()
 	httpRouter.GET(uri.AuthorizationCode, service.HandleAuthorizationCode)
@@ -106,7 +102,31 @@ func New(cfg Config, persistence Persistence, deviceProvider, sdkProvider provid
 		IdleTimeout: time.Second,
 	}
 
-	return &Server{service: service, grpcServer: server, httpServer: httpServer, cfg: cfg, serverCertManager: serverCertManager, listener: listener}, nil
+	return &Server{service: service, grpcServer: grpcServer, httpServer: httpServer, cfg: cfg, listener: httpListener}, nil
+}
+
+// New creates the service's HTTP server.
+func New(ctx context.Context, cfg Config, logger *zap.Logger) (*Server, error) {
+	deviceProvider, err := provider.New(cfg.Clients.Device, logger, "query", "offline", "code")
+	if err != nil {
+		return nil, fmt.Errorf("cannot create device provider: %w", err)
+	}
+	sdkProvider, err := provider.New(provider.Config{
+		Provider: "generic",
+		Config:   cfg.Clients.SDK.Config,
+		HTTP:     cfg.Clients.SDK.HTTP,
+	}, logger, "form_post", "online", "token")
+	if err != nil {
+		return nil, fmt.Errorf("cannot create sdk provider: %w", err)
+	}
+
+	s, err := NewServer(ctx, cfg, logger, deviceProvider, sdkProvider)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create server: %w", err)
+	}
+	s.grpcServer.AddCloseFunc(deviceProvider.Close)
+	s.grpcServer.AddCloseFunc(sdkProvider.Close)
+	return s, nil
 }
 
 // Serve starts the service's GRPC and HTTP server and blocks.
@@ -121,8 +141,6 @@ func (s *Server) Serve() error {
 
 // Shutdown ends serving
 func (s *Server) Shutdown() {
-	s.grpcServer.Stop()
+	s.grpcServer.Close()
 	s.httpServer.Shutdown()
-	s.listener.Close()
-	s.serverCertManager.Close()
 }

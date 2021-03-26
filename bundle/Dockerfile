@@ -62,6 +62,7 @@ FROM ubuntu:20.04 as service
 RUN apt update
 RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
@@ -71,6 +72,7 @@ COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
 COPY --from=build /go/bin/authorization /usr/local/bin/authorization
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/authorization/config.yaml /configs/authorization.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
@@ -109,9 +111,7 @@ ENV NATS_PORT=10001
 
 # OAuth
 ENV DEVICE_PROVIDER=plgd
-ENV DEVICE_PROVIDER_TYPE=plgd
 ENV DEVICE_OAUTH_SCOPES=profile,openid,offline_access
-ENV SDK_OAUTH_RESPONSE_MODE=form_post
 ENV SDK_OAUTH_SCOPES=openid
 ENV OWNER_CLAIM="sub"
 ENV SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="plgd"

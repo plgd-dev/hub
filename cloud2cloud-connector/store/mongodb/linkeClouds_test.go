@@ -6,9 +6,9 @@ import (
 
 	"github.com/plgd-dev/kit/security/certManager"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/authorization/oauth"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,10 +48,8 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 						ClientID:     "testClientID",
 						ClientSecret: "testClientSecret",
 						Scopes:       []string{"testScopes"},
-						Endpoint: oauth.Endpoint{
-							AuthURL:  "testAuthUrl",
-							TokenURL: "testTokenUrl",
-						},
+						AuthURL:      "testAuthUrl",
+						TokenURL:     "testTokenUrl",
 					},
 				},
 			},
@@ -70,10 +68,8 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 						ClientID:     "testClientID",
 						ClientSecret: "testClientSecret",
 						Scopes:       []string{"testScopes"},
-						Endpoint: oauth.Endpoint{
-							AuthURL:  "testAuthUrl",
-							TokenURL: "testTokenUrl",
-						},
+						AuthURL:      "testAuthUrl",
+						TokenURL:     "testTokenUrl",
 					},
 				},
 			},
@@ -101,10 +97,9 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			ClientID:     "testClientID",
 			ClientSecret: "testClientSecret",
 			Scopes:       []string{"testScopes"},
-			Endpoint: oauth.Endpoint{
-				AuthURL:  "testAuthUrl",
-				TokenURL: "testTokenUrl",
-			},
+
+			AuthURL:  "testAuthUrl",
+			TokenURL: "testTokenUrl",
 		},
 	})
 	require.NoError(err)
@@ -166,10 +161,8 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 			ClientID:     "testClientID",
 			ClientSecret: "testClientSecret",
 			Scopes:       []string{"testScopes"},
-			Endpoint: oauth.Endpoint{
-				AuthURL:  "testAuthUrl",
-				TokenURL: "testTokenUrl",
-			},
+			AuthURL:      "testAuthUrl",
+			TokenURL:     "testTokenUrl",
 		},
 	})
 	require.NoError(err)
@@ -213,10 +206,8 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 				ClientID:     "testClientID",
 				ClientSecret: "testClientSecret",
 				Scopes:       []string{"testScopes"},
-				Endpoint: oauth.Endpoint{
-					AuthURL:  "testAuthUrl",
-					TokenURL: "testTokenUrl",
-				},
+				AuthURL:      "testAuthUrl",
+				TokenURL:     "testTokenUrl",
 			},
 		},
 		{
@@ -229,10 +220,8 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 				ClientID:     "testClientID",
 				ClientSecret: "testClientSecret",
 				Scopes:       []string{"testScopes"},
-				Endpoint: oauth.Endpoint{
-					AuthURL:  "testAuthUrl",
-					TokenURL: "testTokenUrl",
-				},
+				AuthURL:      "testAuthUrl",
+				TokenURL:     "testTokenUrl",
 			},
 		},
 	}

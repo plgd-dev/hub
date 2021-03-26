@@ -11,6 +11,7 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/kit/log"
@@ -29,7 +30,7 @@ type RequestHandler struct {
 	closeFunc               func()
 }
 
-func AddHandler(svr *kitNetGrpc.Server, config Config, clientTLS *tls.Config) error {
+func AddHandler(svr *server.Server, config Config, clientTLS *tls.Config) error {
 	handler, err := NewRequestHandlerFromConfig(config, clientTLS)
 	if err != nil {
 		return err

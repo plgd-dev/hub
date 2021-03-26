@@ -9,7 +9,7 @@ import (
 
 	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security"
 	"google.golang.org/grpc"
@@ -56,7 +56,7 @@ type SignerConfig struct {
 	ValidDuration time.Duration    `envconfig:"VALID_DURATION" default:"87600h"`
 }
 
-func AddHandler(svr *kitNetGrpc.Server, cfg SignerConfig) error {
+func AddHandler(svr *server.Server, cfg SignerConfig) error {
 	handler, err := NewRequestHandlerFromConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("could not create plgd-dev/certificate-authority: %w", err)
