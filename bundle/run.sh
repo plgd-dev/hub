@@ -408,7 +408,7 @@ Dial:
     DirPath: ${INTERNAL_CERT_DIR_PATH}
     TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
     DisableVerifyClientCertificate: false
-    UseSystemCertPool: false
+    UseSystemCertPool: true
 JwksURL: ${JWKS_URL}
 ResourceDirectoryAddr: ${RESOURCE_DIRECTORY_ADDRESS}
 ResourceAggregateAddr: ${RESOURCE_AGGREGATE_ADDRESS}
