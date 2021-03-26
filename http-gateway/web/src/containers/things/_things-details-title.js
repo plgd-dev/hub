@@ -71,6 +71,7 @@ export const ThingsDetailsTitle = ({
             title: _(t.thingNameChangeFailed),
             message: getApiErrorMessage(error),
           })
+          cancelSave()
         }
       }
     } else {
@@ -128,7 +129,9 @@ export const ThingsDetailsTitle = ({
       })}
       onClick={canUpdate ? onEditClick : null}
     >
-      <span className={canUpdate ? 'link reveal-icon-on-hover icon-visible' : null}>
+      <span
+        className={canUpdate ? 'link reveal-icon-on-hover icon-visible' : null}
+      >
         {deviceName}
       </span>
       {canUpdate && <i className="fas fa-pen" />}
