@@ -1,28 +1,36 @@
 package test
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
-	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) refImpl.Config {
-	var raCfg refImpl.Config
-	err := envconfig.Process("", &raCfg)
+func MakeConfig(t *testing.T) service.Config {
+	var raCfg service.Config
+
+	raCfg.APIs.GRPC.Server = testCfg.MakeGrpcServerConfig(testCfg.RESOURCE_AGGREGATE_HOST)
+	raCfg.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry = 8
+	raCfg.APIs.GRPC.Capabilities.SnapshotThreshold = 16
+	raCfg.APIs.GRPC.Capabilities.UserDevicesManagerExpiration = time.Second
+	raCfg.APIs.GRPC.Capabilities.UserDevicesManagerTickFrequency = time.Millisecond * 500
+
+	raCfg.Clients.AuthServer = testCfg.MakeGrpcClientConfig(testCfg.AUTH_HOST)
+	raCfg.Clients.Eventbus.NATS = testCfg.MakeNATSConfig()
+	raCfg.Clients.Eventstore.MongoDB = testCfg.MakeEventsStoreMongoDBConfig()
+	raCfg.Clients.OAuthProvider.Jwks = testCfg.MakeJWKsConfig()
+	raCfg.Clients.OAuthProvider.OAuth = testCfg.MakeOAuthConfig()
+	raCfg.Clients.OAuthProvider.OwnerClaim = testCfg.OWNER_CLAIM
+
+	err := raCfg.Validate()
 	require.NoError(t, err)
-	raCfg.Service.Addr = testCfg.RESOURCE_AGGREGATE_HOST
-	raCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
-	raCfg.Service.JwksURL = testCfg.JWKS_URL
-	raCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	raCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	raCfg.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
-	raCfg.Service.UserDevicesManagerTickFrequency = time.Millisecond * 500
-	raCfg.Service.UserDevicesManagerExpiration = time.Millisecond * 500
+
 	return raCfg
 }
 
@@ -30,9 +38,12 @@ func SetUp(t *testing.T) (TearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
-func New(t *testing.T, cfg refImpl.Config) func() {
+func New(t *testing.T, cfg service.Config) func() {
+	ctx := context.Background()
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
 
-	s, err := refImpl.Init(cfg)
+	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup

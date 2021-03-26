@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"context"
@@ -6,17 +6,18 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/security/certManager"
 
 	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
+	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -65,34 +66,29 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
+	logger, err := log.NewLogger(cfg.Log)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
-	assert.NoError(t, err)
+	fmt.Printf("%v\n", cfg.String())
+
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
+	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
 	assert.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-
-			ag, err := NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
 			events, err := ag.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
@@ -102,7 +98,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 				assert.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = publishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
+				err = service.PublishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
 				assert.NoError(t, err)
 			}
 		}
@@ -110,10 +106,10 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
+func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore service.EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
-	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.PublishResourceLinks(ctx, pc)
 	if hasErr {
@@ -123,7 +119,7 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nat
 		assert.Equal(t, expStatusCode, s.Code())
 	} else {
 		require.NoError(t, err)
-		err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
+		err = service.PublishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 		assert.NoError(t, err)
 	}
 }
@@ -132,29 +128,25 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	deviceID := "dupDeviceId"
 	resourceID := "/dupResourceId"
 	userID := "dupResourceId"
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
 
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
 	defer pool.Release()
 
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	cfg := raTest.MakeConfig(t)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, pool.Submit)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc1 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 
@@ -162,14 +154,14 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag2, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 	events, err = ag2.PublishResourceLinks(ctx, pc2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag3, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag3, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc3 := testMakePublishResourceRequest(deviceID, []string{resourceID, resourceID, resourceID})
 	events, err = ag3.PublishResourceLinks(ctx, pc3)
@@ -181,44 +173,37 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	deviceID := "dev0"
 	resourceID := "/oic/p"
 	userID := "user0"
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-
-	assert.NoError(t, err)
 	pool, err := ants.NewPool(16)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer pool.Release()
 
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	cfg := raTest.MakeConfig(t)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, pool.Submit)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
-	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
+	err = service.PublishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -231,40 +216,31 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	resourceID2 := "/res2"
 	resourceID3 := "/res3"
 	userID := "user0"
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-
-	assert.NoError(t, err)
 	pool, err := ants.NewPool(16)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer pool.Release()
 
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	cfg := raTest.MakeConfig(t)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, pool.Submit)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
+	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3}, codes.OK, false)
 
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
 
-	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
@@ -274,7 +250,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	assert.Equal(t, 3, len(unpublishedResourceLinks))
 	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
+	err = service.PublishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
@@ -290,37 +266,29 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	resourceID3 := "/res3"
 	resourceID4 := "/res4"
 	userID := "user0"
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-
-	assert.NoError(t, err)
 	pool, err := ants.NewPool(16)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer pool.Release()
 
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	cfg := raTest.MakeConfig(t)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, pool.Submit)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4}, codes.OK, false)
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID3})
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
@@ -328,7 +296,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
-	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
+	err = service.PublishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
 	pc = testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID4, resourceID4})
@@ -595,33 +563,26 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 			wantErr:        false,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
 	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -688,29 +649,20 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -773,29 +725,20 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	assert.NoError(t, err)
@@ -858,29 +801,21 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 			wantErr:        false,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -942,29 +877,20 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1033,29 +959,21 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 			wantErr:        false,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1118,29 +1036,20 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1202,29 +1111,21 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 			wantErr:        false,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1287,29 +1188,20 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	cfg := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {

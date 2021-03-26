@@ -3,13 +3,16 @@ package manager
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"golang.org/x/oauth2/clientcredentials"
 
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/http/client"
 	"golang.org/x/oauth2"
 )
 
@@ -25,6 +28,8 @@ type Manager struct {
 	tokenErr          error
 	doneWg            sync.WaitGroup
 	done              chan struct{}
+
+	http *client.Client
 }
 
 // NewManagerFromConfiguration creates a new oauth manager which refreshing token.
@@ -36,11 +41,19 @@ func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, e
 	t.MaxIdleConnsPerHost = 1
 	t.IdleConnTimeout = time.Second * 30
 	t.TLSClientConfig = tlsCfg
-	httpClient := &http.Client{
+	m, err := new(cfg, &http.Client{
 		Transport: t,
 		Timeout:   config.RequestTimeout,
+	}, config.RequestTimeout, config.TickFrequency)
+	if err != nil {
+		return nil, err
 	}
-	token, startRefreshToken, err := getToken(cfg, httpClient, config.RequestTimeout)
+
+	return m, nil
+}
+
+func new(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout, tickFrequency time.Duration) (*Manager, error) {
+	token, startRefreshToken, err := getToken(cfg, httpClient, requestTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +62,9 @@ func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, e
 		config:            cfg,
 		token:             token,
 		startRefreshToken: startRefreshToken,
-		requestTimeout:    config.RequestTimeout,
+		requestTimeout:    requestTimeout,
 		httpClient:        httpClient,
-		tickFrequency:     config.TickFrequency,
+		tickFrequency:     tickFrequency,
 
 		done: make(chan struct{}),
 	}
@@ -60,6 +73,19 @@ func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, e
 	go mgr.watchToken()
 
 	return mgr, nil
+}
+
+func New(config ConfigV2, logger *zap.Logger) (*Manager, error) {
+	http, err := client.New(config.HTTP, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create http client: %w", err)
+	}
+	m, err := new(config.ToClientCrendtials(), http.HTTP(), config.HTTP.Timeout, config.TickFrequency)
+	if err != nil {
+		return nil, err
+	}
+	m.http = http
+	return m, nil
 }
 
 // GetToken returns token for clients
@@ -74,6 +100,9 @@ func (a *Manager) Close() {
 	if a.done != nil {
 		close(a.done)
 		a.doneWg.Wait()
+		if a.http != nil {
+			a.http.Close()
+		}
 	}
 }
 
@@ -100,8 +129,6 @@ func (a *Manager) refreshToken() {
 	token, startRefreshToken, err := getToken(a.config, a.httpClient, a.requestTimeout)
 	if err != nil {
 		log.Errorf("cannot refresh token: %v", err)
-	} else {
-
 	}
 	a.mutex.Lock()
 	defer a.mutex.Unlock()

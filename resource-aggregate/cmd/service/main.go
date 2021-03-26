@@ -1,22 +1,32 @@
 package main
 
 import (
-	"github.com/kelseyhightower/envconfig"
-	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
-	"github.com/plgd-dev/kit/log"
+	"context"
+
+	"github.com/plgd-dev/cloud/pkg/config"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
 func main() {
-	var config refImpl.Config
-	if err := envconfig.Process("", &config); err != nil {
-		log.Fatalf("cannot parse configuration: %v", err)
+	var cfg service.Config
+	cfg.Log.Debug = true
+	logger, err := log.NewLogger(cfg.Log)
+	if err != nil {
+		log.Fatalf("cannot create logger: %v", err)
 	}
-	if server, err := refImpl.Init(config); err != nil {
-		log.Fatalf("cannot init server: %v", err)
-	} else {
-		if err = server.Serve(); err != nil {
-			log.Fatalf("unexpected ends: %v", err)
-		}
-		server.Shutdown()
+	log.Set(logger)
+	log.Infof("config: %v", cfg.String())
+	err = config.LoadAndValidateConfig(&cfg)
+	if err != nil {
+		log.Fatalf("cannot load config: %v", err)
+	}
+	s, err := service.New(context.Background(), cfg, logger)
+	if err != nil {
+		log.Fatalf("cannot create service: %v", err)
+	}
+	err = s.Serve()
+	if err != nil {
+		log.Fatalf("cannot serve service: %v", err)
 	}
 }

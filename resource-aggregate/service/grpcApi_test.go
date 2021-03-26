@@ -1,16 +1,17 @@
-package service
+package service_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/resource-aggregate/service"
+	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
@@ -84,35 +85,24 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -197,35 +187,23 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	config := raTest.MakeConfig(t)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), pubReq)
@@ -276,35 +254,24 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.NotifyResourceChanged(ctx, tt.args.request)
@@ -363,35 +330,23 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		},
 	}
 
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -443,35 +398,24 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -523,35 +467,24 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -603,35 +536,24 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -683,35 +605,24 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -763,35 +674,24 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -843,35 +743,24 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -923,35 +812,24 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 			wantError: true,
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+
+	config := raTest.MakeConfig(t)
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
-
-	var config Config
-	err = envconfig.Process("", &config)
-	assert.NoError(t, err)
-
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	assert.NoError(t, err)
-	publisher, err := nats.NewPublisher(natsCfg, nats.WithTLS(tlsConfig))
-	assert.NoError(t, err)
-
-	var jsmCfg mongodb.Config
-	err = envconfig.Process("", &jsmCfg)
-	assert.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(ctx, jsmCfg, nil, mongodb.WithTLS(tlsConfig))
+	logger, err := log.NewLogger(config.Log)
+	require.NoError(t, err)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	require.NoError(t, err)
+	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	defer func() {
-		err := eventstore.Clear(ctx)
+		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+	defer publisher.Close()
 
-	requestHandler := NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {

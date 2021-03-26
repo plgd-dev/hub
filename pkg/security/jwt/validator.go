@@ -11,6 +11,10 @@ type Validator struct {
 	keys *KeyCache
 }
 
+func NewValidatorWithKeyCache(keyCache *KeyCache) *Validator {
+	return &Validator{keys: keyCache}
+}
+
 func NewValidator(jwksURL string, tls *tls.Config) *Validator {
 	return &Validator{keys: NewKeyCache(jwksURL, tls)}
 }

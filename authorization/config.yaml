@@ -2,14 +2,14 @@ log:
   debug: false
 apis:
   grpc:
-    address: "0.0.0.0:9000"
+    address: "0.0.0.0:9100"
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
   http:
-    address: "0.0.0.0:9001"
+    address: "0.0.0.0:9101"
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
@@ -57,7 +57,7 @@ clients:
   storage:
     mongoDB:
       uri: "mongodb://localhost:27017"
-      database: "usersDevices"
+      database: "ownersDevices"
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"

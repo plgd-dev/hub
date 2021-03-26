@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,16 +17,18 @@ import (
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
+	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/kit/log"
-	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 type EventStore interface {
@@ -34,8 +36,8 @@ type EventStore interface {
 	cqrsMaintenance.EventStore
 }
 
-//Server handle HTTP request
-type Server struct {
+//Service handle GRPC request
+type Service struct {
 	server             *server.Server
 	cfg                Config
 	handler            *RequestHandler
@@ -44,25 +46,41 @@ type Server struct {
 	userDevicesManager *clientAS.UserDevicesManager
 }
 
-type ClientCertManager = interface {
-	GetClientTLSConfig() *tls.Config
-}
+func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
+	}
+	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	if err != nil {
+		eventstore.Close(ctx)
+		return nil, fmt.Errorf("cannot create kafka publisher %w", err)
+	}
 
-type ServerCertManager = interface {
-	GetServerTLSConfig() *tls.Config
-}
+	service, err := NewService(config, logger, eventstore, publisher)
+	if err != nil {
+		eventstore.Close(ctx)
+		publisher.Close()
+		return nil, fmt.Errorf("cannot create kafka publisher %w", err)
+	}
+	service.AddCloseFunc(func() {
+		err := eventstore.Close(ctx)
+		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to mongodb: %w", err)
+		}
+	})
+	service.AddCloseFunc(publisher.Close)
 
-type NumParallelProcessedRequestLimiter struct {
-	w *semaphore.Weighted
+	return service, nil
 }
 
 // New creates new Server with provided store and publisher.
-func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager, serverCertManager ServerCertManager, eventStore EventStore, publisher cqrsEventBus.Publisher) *Server {
-	dialTLSConfig := clientCertManager.GetClientTLSConfig()
-	listenTLSConfig := serverCertManager.GetServerTLSConfig()
-
-	auth := NewAuth(config.JwksURL, config.OwnerClaim, dialTLSConfig)
-
+func NewService(config Config, logger *zap.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
+	validator, err := validator.New(config.Clients.OAuthProvider.Jwks, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create validator: %w", err)
+	}
+	auth := NewAuth(validator, config.Clients.OAuthProvider.OwnerClaim)
 	streamInterceptors := []grpc.StreamServerInterceptor{}
 	if logger.Core().Enabled(zapcore.DebugLevel) {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
@@ -76,31 +94,38 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 			grpc_zap.UnaryServerInterceptor(logger))
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
-
-	grpcServer, err := server.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			streamInterceptors...,
-		)),
+	grpcServer, err := server.New(config.APIs.GRPC.Server, logger, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+		streamInterceptors...,
+	)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			unaryInterceptors...,
-		)),
-	)
+		)))
 	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
+		validator.Close()
+		return nil, fmt.Errorf("cannot create grpc server: %w", err)
 	}
+	grpcServer.AddCloseFunc(validator.Close)
 
-	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	oauthMgr, err := manager.New(config.Clients.OAuthProvider.OAuth, logger)
 	if err != nil {
-		log.Fatalf("cannot create oauth manager: %v", err)
+		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
 	}
+	grpcServer.AddCloseFunc(oauthMgr.Close)
 
-	asConn, err := grpc.Dial(config.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	asConn, err := client.New(config.Clients.AuthServer, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
-		log.Fatalf("cannot connect to authorization server: %v", err)
+		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
 	}
-	authClient := pbAS.NewAuthorizationServiceClient(asConn)
+	grpcServer.AddCloseFunc(func() {
+		err := asConn.Close()
+		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to authorization server: %w", err)
+		}
+	})
 
-	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.UserDevicesManagerTickFrequency, config.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
+	authClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
+
+	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.APIs.GRPC.Capabilities.UserDevicesManagerTickFrequency, config.APIs.GRPC.Capabilities.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner, deviceID string) (bool, error) {
 		ok := userDevicesManager.IsUserDevice(owner, deviceID)
 		if ok {
@@ -117,25 +142,21 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 		}
 		return false, nil
 	})
+	grpcServer.AddCloseFunc(userDevicesManager.Close)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
-	server := Server{
-		server:             grpcServer,
-		cfg:                config,
-		handler:            requestHandler,
-		sigs:               make(chan os.Signal, 1),
-		authConn:           asConn,
-		userDevicesManager: userDevicesManager,
-	}
-
-	return &server
+	return &Service{
+		server:  grpcServer,
+		handler: requestHandler,
+		sigs:    make(chan os.Signal, 1),
+	}, nil
 }
 
-func (s *Server) serveWithHandlingSignal(serve func() error) error {
+func (s *Service) serveWithHandlingSignal(serve func() error) error {
 	var wg sync.WaitGroup
 	var err error
 	wg.Add(1)
-	go func(s *Server) {
+	go func(s *Service) {
 		defer wg.Done()
 		err = serve()
 	}(s)
@@ -147,26 +168,28 @@ func (s *Server) serveWithHandlingSignal(serve func() error) error {
 		syscall.SIGQUIT)
 	<-s.sigs
 
-	s.server.Stop()
+	s.server.Close()
 	wg.Wait()
-	s.userDevicesManager.Close()
-	s.authConn.Close()
 
 	return err
 }
 
 // Serve serve starts the service's HTTP server and blocks.
-func (s *Server) Serve() error {
+func (s *Service) Serve() error {
 	return s.serveWithHandlingSignal(s.server.Serve)
 }
 
 // Shutdown ends serving
-func (s *Server) Shutdown() {
+func (s *Service) Shutdown() {
 	s.sigs <- syscall.SIGTERM
 }
 
-func NewAuth(jwksUrl, ownerClaim string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
-	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
+func (s *Service) AddCloseFunc(f func()) {
+	s.server.AddCloseFunc(f)
+}
+
+func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
+	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {

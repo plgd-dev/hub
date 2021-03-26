@@ -1,0 +1,80 @@
+log:
+  debug: false
+apis:
+  grpc:
+    address: "0.0.0.0:9100"
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: true
+    capabilities:
+      snapshotThreshold: 16
+      occMaxRetry: 8
+      userMgmtTickFrequency: 15s
+      userMgmtExpiration: 1m
+clients:
+  eventBus:
+    nats:
+      url:
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  eventStore:
+    mongoDB:
+      uri:
+      database: eventStore
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+      batchSize: 16
+      maxPoolSize: 16
+      maxConnIdleTime: 4m0s
+  oauthProvider:
+    jwks:
+      url:
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+    oauth:
+      clientID:
+      clientSecret:
+      scopes: []
+      tokenURL:
+      audience:
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+      tickFrequency: 10s
+    ownerClaim: sub
+  authorizationServer:
+    address:
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      useSystemCAPool: false
+    keepAlive:
+      Time: 10s
+      Timeout: 20s
+      permitWithoutStream: true

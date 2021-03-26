@@ -47,10 +47,10 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 
 	raCfg := raService.MakeConfig(t)
 	//raCfg.mongodb.URL = cloudConnectormongodbURL
-	raCfg.MongoDB.DatabaseName = cloudConnectorDB
-	raCfg.Service.Addr = RESOURCE_AGGREGATE_HOST
-	raCfg.Service.AuthServerAddr = AUTH_HOST
-	raCfg.Nats.URL = cloudConnectorNatsURL
+	raCfg.Clients.Eventstore.MongoDB.Database = cloudConnectorDB
+	raCfg.APIs.GRPC.Server.Addr = RESOURCE_AGGREGATE_HOST
+	raCfg.Clients.AuthServer.Addr = AUTH_HOST
+	raCfg.Clients.Eventbus.NATS.URL = cloudConnectorNatsURL
 	raShutdown := raService.New(t, raCfg)
 
 	rdCfg := rdService.MakeConfig(t)

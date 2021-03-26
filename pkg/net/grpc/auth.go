@@ -49,9 +49,11 @@ func (f AuthInterceptors) Stream() grpc.StreamServerInterceptor {
 
 type ClaimsFunc = func(ctx context.Context, method string) Claims
 type Claims = interface{ Valid() error }
+type Validator interface {
+	ParseWithClaims(token string, claims extJwt.Claims) error
+}
 
-func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
-	validator := jwt.NewValidator(jwksURL, tls)
+func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
 	return func(ctx context.Context, method string) (context.Context, error) {
 		token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 		if err != nil {
@@ -63,6 +65,10 @@ func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor
 		}
 		return ctx, nil
 	}
+}
+
+func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
+	return ValidateJWTWithValidator(jwt.NewValidator(jwksURL, tls), claims)
 }
 
 // CtxWithToken stores token to ctx of request.

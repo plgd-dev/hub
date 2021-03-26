@@ -317,9 +317,42 @@ while true; do
 done
 
 # resource-aggregate
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-aggregate.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-aggregate.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggregate.yaml | sort | uniq)
+
+### setup cfgs from env
+cat /configs/resource-aggregate.yaml | yq e "\
+  .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.oauthProvider.jwks.url = \"${JWKS_URL}\" |
+  .clients.oauthProvider.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
+  .clients.oauthProvider.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.oauthProvider.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .clients.oauthProvider.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .clients.oauthProvider.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
+  .clients.authorizationServer.address = \"${AUTHORIZATION_ADDRESS}\"
+" - > /data/resource-aggregate.yaml
+
 echo "starting resource-aggregate"
-ADDRESS=${RESOURCE_AGGREGATE_ADDRESS} \
-resource-aggregate >$LOGS_PATH/resource-aggregate.log 2>&1 &
+resource-aggregate --config /data/resource-aggregate.yaml >$LOGS_PATH/resource-aggregate.log 2>&1 &
 status=$?
 resource_aggregate_pid=$!
 if [ $status -ne 0 ]; then
