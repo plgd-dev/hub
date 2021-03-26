@@ -26,40 +26,11 @@ After couple of seconds your plgd cloud will become available. The plgd dashboar
 ### Authorization
 The plgd cloud doesn't work without OAuth Server. To not require developers not interested in sharing bundle instance with other users, simple mocked OAuth Server is included in the bundle. Authentication to the plgd is therefore not required and test user is automatically logged in. Same applies also to device connections; in case you're using the bundle, devices connecting to the CoAP Gateway can use random/static onboarding code as it's not verified. Onboarding of devices is therefore much simpler.
 
-### Using external OAuth Server with bundle
-Even though the bundle start core plgd services as processes in a single container, a user has still a possibility to configure most of the services parameters. **For testing purposes**, the external OAuth Server (e.g. https://auth0.com) can be set up.
-To skip internal mocked OAuth Server and switch to your external one, configure following environment variables:
-```yaml
-    OAUTH_AUDIENCE: https://api.example.com
-    OAUTH_ENDPOINT_AUTH_URL: https://auth.example.com/authorize
-    OAUTH_ENDPOINT_TOKEN_URL: https://auth.example.com/oauth/token
-    OAUTH_ENDPOINT: auth.example.com
-    JWKS_URL: https://auth.example.com/.well-known/jwks.json
-    OAUTH_CLIENT_ID: ij12OJj2J23K8KJs
-    SERVICE_OAUTH_CLIENT_ID: 412dsFf53Sj6$
-    SERVICE_OAUTH_CLIENT_SECRET: 235Jgdf65jsd4Shls
-```
+::: warning
+Authorization Service which is part of the plgd is only for testing and development purposes. For the production, integration of the plgd device identity management API is required.
+:::
 
-#### How to congigure Auth0
-Assuming you have an account in the Auth0 OAuth as a service, you need to create 2 Applications and one API. Follow these steps to successfuly configure bundle to run against your Auth0 instance.
-1. Create new **API** in the APIs section
-    a. Use name of your choice
-    b. Set a unique API identifier (e.g. `https://api.example.com`)
-    c. After saving open details of newly created api and **Enable Offline Access**
-    d. Store the internal Auth0 API Id required for the step 2c 
-    e. Switch to **Permissions** tab and add `openid` scope to the list
-1. Create new **Regular Web Application** in the Application section
-    a. Make sure **Token Endpoint Authentication Method** is set to `None`
-    b. Add `https://{FQDN}:{NGINX_PORT}` and `https://{FQDN}:{NGINX_PORT}/api/authz/callback` to **Allowed Callback URLs**
-    c. Add `https://{FQDN}:{NGINX_PORT}` to **Allowed Web Origins**
-    d. Open **Advanced Settings**, switch to **OAuth** tab and paste here the API Id from the step 1d
-    e. Switch to **Grant Types** and make sure **only** `Implicit`, `Authorization Code` and `Refresh Token` grants are enabled
-1. Create new **Machine to Machine Application** in the Application section
-    a. Set **Token Endpoint Authentication Method** to `Post`
-    b. Add `https://{FQDN}:{NGINX_PORT}` to **Allowed Callback URLs**
-    c. Add `https://{FQDN}:{NGINX_PORT}` to **Allowed Web Origins**
-    d. Open **Advanced Settings**, switch to **OAuth** tab and paste here the API Id from the step 1d
-    e. Switch to **Grant Types** and make sure **only** `Client Credentials` grant is enabled
+Even for the development and testing, more complex scenarios are supported by the built-in authorization service. Read more in the [Developing with plgd](../developing/authorization.md).
 
 ### Troubleshooting
 - By default the plgd cloud bundle hosts the NGINX proxy on port `443`. This port might be already occupied by other process, e.g. Skype. Default port can be changed by environment variable `-e NGINX_PORT=8443`. Please be aware that the port needs to be exposed from the container -> `-p 443:443` needs to be changed to match a new port, e.g. `-p 8443:8443`.
