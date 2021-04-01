@@ -15,20 +15,15 @@ import (
 
 // Config provides defaults and enables configuring via env variables.
 type Config struct {
-	Log       log.Config         `yaml:"log" json:"log"`
-	Service   APIsConfig         `yaml:"apis" json:"apis"`
-	Clients   OAuthClientsConfig `yaml:"oauthClients" json:"oauthClients"`
-	Databases DatabasesConfig    `yaml:"databases" json:"databases"`
+	Log     log.Config    `yaml:"log" json:"log"`
+	Service APIsConfig    `yaml:"apis" json:"apis"`
+	Clients ClientsConfig `yaml:"clients" json:"clients"`
 }
 
 func (c *Config) Validate() error {
 	err := c.Clients.Validate()
 	if err != nil {
-		return fmt.Errorf("oauthClients.%w", err)
-	}
-	err = c.Databases.Validate()
-	if err != nil {
-		return fmt.Errorf("databases.%w", err)
+		return fmt.Errorf("clients.%w", err)
 	}
 	err = c.Service.Validate()
 	if err != nil {
@@ -50,6 +45,23 @@ func (c *APIsConfig) Validate() error {
 	err = c.HTTP.Validate()
 	if err != nil {
 		return fmt.Errorf("http.%w", err)
+	}
+	return nil
+}
+
+type ClientsConfig struct {
+	OAuthClients OAuthClientsConfig `yaml:"oauthClients" json:"oauthClients"`
+	Storage      StorageConfig      `yaml:"storage" json:"storage"`
+}
+
+func (c *ClientsConfig) Validate() error {
+	err := c.OAuthClients.Validate()
+	if err != nil {
+		return fmt.Errorf("oauthClients.%w", err)
+	}
+	err = c.Storage.Validate()
+	if err != nil {
+		return fmt.Errorf("storage.%w", err)
 	}
 	return nil
 }
@@ -88,11 +100,11 @@ func (c *SDKOAuthConfig) Validate() error {
 	return nil
 }
 
-type DatabasesConfig struct {
+type StorageConfig struct {
 	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
 }
 
-func (c *DatabasesConfig) Validate() error {
+func (c *StorageConfig) Validate() error {
 	err := c.MongoDB.Validate()
 	if err != nil {
 		return fmt.Errorf("mongoDB.%w", err)

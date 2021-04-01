@@ -15,50 +15,51 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
-oauthClients:
-  device:
-    provider: "plgd"
-    clientID: ""
-    clientSecret: ""
-    scopes: []
-    authorizationURL: ""
-    tokenURL: ""
-    redirectURL: "" 
-    http:
-      maxIdleConns: 16
-      maxConnsPerHost: 32
-      maxIdleConnsPerHost: 16
-      idleConnTimeout: 30s
-      timeout: 10s
+clients:
+  oauthClients:
+    device:
+      provider: "plgd"
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      authorizationURL: ""
+      tokenURL: ""
+      redirectURL: "" 
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+      ownerClaim: "sub"
+    client:
+      clientID: ""
+      scopes: []
+      authorizationURL: ""
+      audience: ""
+      redirectURL: ""
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+  storage:
+    mongoDB:
+      uri: "mongodb://localhost:27017"
+      database: "usersDevices"
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
+        certFile:  "/secrets/public/cert.crt"
         useSystemCAPool: false
-    ownerClaim: "sub"
-  client:
-    clientID: ""
-    scopes: []
-    authorizationURL: ""
-    audience: ""
-    redirectURL: ""
-    http:
-      maxIdleConns: 16
-      maxConnsPerHost: 32
-      maxIdleConnsPerHost: 16
-      idleConnTimeout: 30s
-      timeout: 10s
-      tls:
-        caPool: "/secrets/public/rootca.crt"
-        keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
-        useSystemCAPool: false
-databases:
-  mongoDB:
-    uri: "mongodb://localhost:27017"
-    database: "usersDevices"
-    tls:
-      caPool: "/secrets/public/rootca.crt"
-      keyFile: "/secrets/private/cert.key"
-      certFile:  "/secrets/public/cert.crt"
-      useSystemCAPool: false

@@ -24,25 +24,25 @@ func MakeConfig(t *testing.T) service.Config {
 	authCfg.Service.HTTP.TLS.KeyFile = config.KEY_FILE
 	authCfg.Service.HTTP.TLS.ClientCertificateRequired = false
 
-	authCfg.Clients.Device.Provider = "plgd"
-	authCfg.Clients.Device.OwnerClaim = "sub"
-	authCfg.Clients.Device.ClientID = oauthService.ClientTest
-	authCfg.Clients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
-	authCfg.Clients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
-	authCfg.Clients.Device.HTTP.TLS.CAPool = config.CA_POOL
-	authCfg.Clients.Device.HTTP.TLS.CertFile = config.CERT_FILE
-	authCfg.Clients.Device.HTTP.TLS.KeyFile = config.KEY_FILE
+	authCfg.Clients.OAuthClients.Device.Provider = "plgd"
+	authCfg.Clients.OAuthClients.Device.OwnerClaim = "sub"
+	authCfg.Clients.OAuthClients.Device.ClientID = oauthService.ClientTest
+	authCfg.Clients.OAuthClients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
+	authCfg.Clients.OAuthClients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	authCfg.Clients.OAuthClients.Device.HTTP.TLS.CAPool = config.CA_POOL
+	authCfg.Clients.OAuthClients.Device.HTTP.TLS.CertFile = config.CERT_FILE
+	authCfg.Clients.OAuthClients.Device.HTTP.TLS.KeyFile = config.KEY_FILE
 
-	authCfg.Clients.SDK.ClientID = oauthService.ClientTest
-	authCfg.Clients.SDK.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
-	authCfg.Clients.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
-	authCfg.Clients.SDK.HTTP.TLS.CAPool = config.CA_POOL
-	authCfg.Clients.SDK.HTTP.TLS.CertFile = config.CERT_FILE
-	authCfg.Clients.SDK.HTTP.TLS.KeyFile = config.KEY_FILE
+	authCfg.Clients.OAuthClients.SDK.ClientID = oauthService.ClientTest
+	authCfg.Clients.OAuthClients.SDK.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	authCfg.Clients.OAuthClients.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
+	authCfg.Clients.OAuthClients.SDK.HTTP.TLS.CAPool = config.CA_POOL
+	authCfg.Clients.OAuthClients.SDK.HTTP.TLS.CertFile = config.CERT_FILE
+	authCfg.Clients.OAuthClients.SDK.HTTP.TLS.KeyFile = config.KEY_FILE
 
-	authCfg.Databases.MongoDB.URI = config.MONGODB_URI
-	authCfg.Databases.MongoDB.TLS.CAPool = config.CA_POOL
-	authCfg.Databases.MongoDB.TLS.CertFile = config.CERT_FILE
-	authCfg.Databases.MongoDB.TLS.KeyFile = config.KEY_FILE
+	authCfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
+	authCfg.Clients.Storage.MongoDB.TLS.CAPool = config.CA_POOL
+	authCfg.Clients.Storage.MongoDB.TLS.CertFile = config.CERT_FILE
+	authCfg.Clients.Storage.MongoDB.TLS.KeyFile = config.KEY_FILE
 	return authCfg
 }

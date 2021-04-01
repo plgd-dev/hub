@@ -279,20 +279,20 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/authorization.
 cat /configs/authorization.yaml | yq e "\
   .apis.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
   .apis.http.address = \"${AUTHORIZATION_HTTP_ADDRESS}\" |
-  .databases.mongoDB.uri = \"${MONGODB_URI}\" |
-  .oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
-  .oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .oauthClients.device.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
-  .oauthClients.device.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
-  .oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
-  .oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
-  .oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
-  .oauthClients.device.ownerClaim = \"${OWNER_CLAIM}\" |
-  .oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
-  .oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
-  .oauthClients.client.redirectURL = \"${SDK_OAUTH_REDIRECT_URL}\" |
-  .oauthClients.client.audience = \"${SDK_OAUTH_AUDIENCE}\" |
-  .oauthClients.client.scopes=[ \"${SDK_OAUTH_SCOPES}\" ]
+  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
+  .clients.oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .clients.oauthClients.device.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.oauthClients.device.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .clients.oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .clients.oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .clients.oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .clients.oauthClients.device.ownerClaim = \"${OWNER_CLAIM}\" |
+  .clients.oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
+  .clients.oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .clients.oauthClients.client.redirectURL = \"${SDK_OAUTH_REDIRECT_URL}\" |
+  .clients.oauthClients.client.audience = \"${SDK_OAUTH_AUDIENCE}\" |
+  .clients.oauthClients.client.scopes=[ \"${SDK_OAUTH_SCOPES}\" ]
 " - > /data/authorization.yaml
 
 echo "starting authorization"

@@ -78,13 +78,13 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 		return nil, fmt.Errorf("cannot create http listener: %w", err)
 	}
 
-	persistence, err := mongodb.NewStore(ctx, cfg.Databases.MongoDB, logger)
+	persistence, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create connector to mongo: %w", err)
 	}
 	grpcServer.AddCloseFunc(func() { persistence.Close(ctx) })
 
-	service := NewService(deviceProvider, sdkProvider, persistence, cfg.Clients.Device.OwnerClaim)
+	service := NewService(deviceProvider, sdkProvider, persistence, cfg.Clients.OAuthClients.Device.OwnerClaim)
 
 	pb.RegisterAuthorizationServiceServer(grpcServer.Server, service)
 
@@ -107,14 +107,14 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 
 // New creates the service's HTTP server.
 func New(ctx context.Context, cfg Config, logger *zap.Logger) (*Server, error) {
-	deviceProvider, err := provider.New(cfg.Clients.Device, logger, "query", "offline", "code")
+	deviceProvider, err := provider.New(cfg.Clients.OAuthClients.Device, logger, "query", "offline", "code")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
 	sdkProvider, err := provider.New(provider.Config{
 		Provider: "generic",
-		Config:   cfg.Clients.SDK.Config,
-		HTTP:     cfg.Clients.SDK.HTTP,
+		Config:   cfg.Clients.OAuthClients.SDK.Config,
+		HTTP:     cfg.Clients.OAuthClients.SDK.HTTP,
 	}, logger, "form_post", "online", "token")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create sdk provider: %w", err)
