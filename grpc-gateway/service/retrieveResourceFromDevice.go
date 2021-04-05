@@ -4,14 +4,18 @@ import (
 	"context"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb.RetrieveResourceFromDeviceRequest) (*pb.RetrieveResourceFromDeviceResponse, error) {
-	ret, err := r.resourceDirectoryClient.RetrieveResourceFromDevice(ctx, req)
+	retrieveCommand, err := req.ToRACommand(ctx)
 	if err != nil {
-		return ret, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource from device: %v", err)
+		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource: %v", err)
 	}
-	return ret, err
+	retrievedEvent, err := r.resourceAggregateClient.SyncRetrieveResource(ctx, retrieveCommand)
+	if err != nil {
+		return nil, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource: %v", err)
+	}
+	return pb.RAResourceRetrievedEventToResponse(retrievedEvent)
 }

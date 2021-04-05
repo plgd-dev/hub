@@ -1,0 +1,87 @@
+@import '@/common/styles/colors.scss';
+@import '@/common/styles/sizes.scss';
+
+$circle_size: 17px;
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 40px;
+  border-radius: 2px;
+  line-height: 1;
+  font-size: $font_size;
+  outline: 0;
+  padding: 0 20px;
+  min-width: 100px;
+  border: 0;
+
+  // Primary button
+  &.btn-primary {
+    color: $light_100;
+    background-color: $primary_100;
+
+    &.btn-primary:not(:disabled):not(.disabled):hover,
+    &.btn-primary:not(:disabled):not(.disabled).hover,
+    &.btn-primary:not(:disabled):not(.disabled):active,
+    &.btn-primary:not(:disabled):not(.disabled).active,
+    &.btn-primary.dropdown-toggle {
+      background-color: $primary_200;
+      box-shadow: none;
+    }
+
+    &:focus,
+    &.focus {
+      box-shadow: none;
+    }
+  }
+
+  // Secondary button
+  &.btn-secondary {
+    color: $primary_100;
+    background-color: $secondary_20;
+
+    &.btn-secondary:not(:disabled):not(.disabled):hover,
+    &.btn-secondary:not(:disabled):not(.disabled).hover,
+    &.btn-secondary:not(:disabled):not(.disabled):active,
+    &.btn-secondary:not(:disabled):not(.disabled).active,
+    &.btn-secondary.dropdown-toggle {
+      background-color: $secondary_25;
+      box-shadow: none;
+      color: $primary_100;
+    }
+
+    &:focus,
+    &.focus {
+      box-shadow: none;
+    }
+  }
+
+  &.loading {
+    .fa-spinner {
+      animation: spin 0.9s linear infinite;
+    }
+  }
+
+  i.fas {
+    width: 14px;
+    height: 14px;
+    text-align: center;
+  }
+
+  .yellow-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 3px;
+    box-sizing: border-box;
+    width: $circle_size;
+    height: $circle_size;
+    border-radius: 100%;
+    color: $light_100;
+    font-size: 9px;
+    text-align: center;
+    background-color: $warning_100;
+  }
+}

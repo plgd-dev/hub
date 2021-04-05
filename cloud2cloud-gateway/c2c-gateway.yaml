@@ -5,16 +5,17 @@ apis:
     address: "0.0.0.0:9088"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/service.crt"
+      keyFile: "/data/certs/service.key"
       clientCertificateRequired: true
-    fqdn: "cloud2cloud.pluggedin.cloud"
+    fqdn: "cloud2cloud.ocf.cloud"
   capabilities:
     reconnectInterval: 10s
     emitEventTimeout: 5s
+    goRoutinePoolSize: 16
 database:
   mongoDB:
-    uri: "mongodb://172.17.0.1:27017"
+    uri: "mongodb://mongo:27017"
     database: "cloud2cloudGateway"
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -22,14 +23,22 @@ database:
       keyFile: "/data/certs/mongo.key"
       useSystemCAPool: false
 clients:
+  nats:
+    url: "nats://nats:4222"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
   oauthProvider:
-    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://oauth-server:9090/.well-known/jwks.json"
+    ownerClaim: "sub"
     oauth:
-      clientID: ""
+      clientID: "test"
       clientSecret: ""
       scopes: []
-      audience: ""
-      tokenURL: "https://172.17.0.1:9085/api/authz/token"
+      audience: "test"
+      tokenURL: "https://oauth-server:9090/oauth/token"
       timeout: 10s
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -37,7 +46,14 @@ clients:
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   resourceDirectory:
-    address: "172.17.0.1:9082"
+    address: "resource-directory:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceAggregate:
+    address: "resource-aggregate:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"

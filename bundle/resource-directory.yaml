@@ -34,43 +34,42 @@ clients:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
+  oauthProvider:
+    jwksUrl: "https://localhost:9090/.well-known/jwks.json"
+    ownerClaim: "sub"
+    oauth:
+      clientID: "test"
+      clientSecret: ""
+      scopes: []
+      audience: "test"
+      tokenURL : "https://localhost:9090/oauth/token"
+      timeout : 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
   authorizationServer:
     address: "localhost:9081"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   resourceAggregate:
     address: "localhost:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
-  oauthProvider:
-    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
-    oauth:
-      clientID: ""
-      clientSecret: ""
-      scopes: []
-      audience: ""
-      tokenURL : "https://localhost:9085/api/authz/token"
-      timeout : 10s
-    tls:
-      caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   clientConfiguration:
     cloudCAPool: "/data/certs/root_ca.crt"
-    cloudConfiguration:
-      accessTokenURL: "https://localhost:9085/api/authz/token"
-      authCodeURL: "https://localhost:9085/api/authz/code"
-      jwtClaimOwnerId: "sub"
-      signingServerAddress: "localhost:9087"
-      cloudID: "00000000-0000-0000-0000-000000000001"
-      cloudURL: "coaps+tcp://localhost:5684"
-      cloudAuthorizationProvider: "test"
-      cloudCertificateAuthorities: ""
+    accessTokenURL: "https://localhost:9090/oauth/token?client_id=test&audience=test"
+    authCodeURL: "https://localhost:9090/authorize?client_id=test"
+    jwtClaimOwnerId: "sub"
+    signingServerAddress: "localhost:9086" # connect to certificate-authority via http-gateway external address
+    cloudID: "00000000-0000-0000-0000-000000000001"
+    cloudURL: "coaps+tcp://localhost:5684"
+    cloudAuthorizationProvider: "plgd"

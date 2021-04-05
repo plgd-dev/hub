@@ -10,12 +10,12 @@ apis:
       clientCertificateRequired: true
 clients:
   oauthProvider:
-    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
+    jwksUrl: "https://localhost:9090/.well-known/jwks.json"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   signer:
     certificate: "/data/certs/root_ca.crt"
     privateKey: "/data/certs/root_ca.key"

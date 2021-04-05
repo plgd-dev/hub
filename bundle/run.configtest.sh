@@ -4,31 +4,53 @@ set -e
 # Configure services
 export PATH="/usr/local/bin:$PATH"
 
-# INTERNAL CERTS
-export INTERNAL_CERT_DIR_PATH="$CERITIFICATES_PATH"
-export INTERNAL_CERT_NAME="$INTERNAL_CERT_DIR_PATH/http.crt"
-export INTERNAL_KEY_NAME="$INTERNAL_CERT_DIR_PATH/http.key"
+export CERTIFICATES_PATH="/data/certs"
+export OAUTH_KEYS_PATH="/data/oauth/keys"
+export LOGS_PATH="/data/log"
+export MONGO_PATH="/data/db"
 
-# EXTERNAL CERTS
-export COAP_GATEWAY_CERT_DIR_PATH="$CERITIFICATES_PATH"
-export COAP_GATEWAY_CERT_NAME="$COAP_GATEWAY_CERT_DIR_PATH/coap.crt"
-export COAP_GATEWAY_KEY_NAME="$COAP_GATEWAY_CERT_DIR_PATH/coap.key"
-
-# MONGO CERTS
-export MONGO_CERT_DIR_PATH="$CERITIFICATES_PATH"
-export MONGO_CERT_NAME="$MONGO_CERT_DIR_PATH/mongo.crt"
-export MONGO_KEY_NAME="$MONGO_CERT_DIR_PATH/mongo.key"
-export MONGO_CERT_KEY_NAME="$MONGO_CERT_DIR_PATH/mongo.certkey"
+export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
+export MOCKED_OAUTH_SERVER_ADDRESS="localhost:${MOCKED_OAUTH_SERVER_PORT}"
+export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
+export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
+export AUTHORIZATION_ADDRESS="localhost:${AUTHORIZATION_PORT}"
+export AUTHORIZATION_HTTP_ADDRESS="localhost:${AUTHORIZATION_HTTP_PORT}"
+export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
+export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
 
 # ROOT CERTS
-export CA_POOL_DIR="$CERITIFICATES_PATH"
+export CA_POOL_DIR="$CERTIFICATES_PATH"
 export CA_POOL_NAME_PREFIX="root_ca"
 export CA_POOL_CERT_PATH="$CA_POOL_DIR/$CA_POOL_NAME_PREFIX.crt"
 export CA_POOL_KEY_PATH="$CA_POOL_DIR/$CA_POOL_NAME_PREFIX.key"
 
-mkdir -p $MONGO_PATH
-mkdir -p $CERITIFICATES_PATH
-mkdir -p $LOGS_PATH
+# INTERNAL CERTS
+export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH"
+export INTERNAL_CERT_NAME="$INTERNAL_CERT_DIR_PATH/http.crt"
+export INTERNAL_KEY_NAME="$INTERNAL_CERT_DIR_PATH/http.key"
+
+# EXTERNAL CERTS
+export COAP_GATEWAY_CERT_DIR_PATH="$CERTIFICATES_PATH"
+export COAP_GATEWAY_CERT_NAME="$COAP_GATEWAY_CERT_DIR_PATH/coap.crt"
+export COAP_GATEWAY_KEY_NAME="$COAP_GATEWAY_CERT_DIR_PATH/coap.key"
+
+# MONGO CERTS
+export MONGO_CERT_DIR_PATH="$CERTIFICATES_PATH"
+export MONGO_CERT_NAME="$MONGO_CERT_DIR_PATH/mongo.crt"
+export MONGO_KEY_NAME="$MONGO_CERT_DIR_PATH/mongo.key"
+export MONGO_CERT_KEY_NAME="$MONGO_CERT_DIR_PATH/mongo.certkey"
+
+#OAUTH-SEVER KEYS
+export OAUTH_ID_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/id-token.pem
+export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
+
+#ENDPOINTS
+export MONGODB_HOST="localhost:$MONGO_PORT"
+export NATS_HOST="localhost:$NATS_PORT"
+
+mkdir -p ${MONGO_PATH}
+mkdir -p ${CERTIFICATES_PATH}
+mkdir -p ${LOGS_PATH}
 
 if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
   fqdnSAN="--cert.san.domain=$FQDN"
@@ -42,6 +64,10 @@ if [ "$INITIALIZE_CERITIFICATES" = "true" ]; then
   echo "generating COAP-GW cert"
   certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$COAP_GATEWAY_CERT_NAME --outKey=$COAP_GATEWAY_KEY_NAME --cert.san.domain="localhost" --cert.san.ip="127.0.0.1" --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_KEY_PATH
 fi
+echo "mkdir OAUTH_KEYS_PATH=${OAUTH_KEYS_PATH}"
+mkdir -p ${OAUTH_KEYS_PATH}
+openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
+openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
 
 # nats
 echo "starting nats-server"
@@ -61,7 +87,7 @@ cp $INTERNAL_CERT_NAME $MONGO_CERT_NAME
 cp $INTERNAL_KEY_NAME $MONGO_KEY_NAME
 cat $MONGO_CERT_NAME > $MONGO_CERT_KEY_NAME
 cat $MONGO_KEY_NAME >> $MONGO_CERT_KEY_NAME
-mongod --dbpath $MONGO_PATH --sslMode requireSSL --sslCAFile $CA_POOL_CERT_PATH --sslPEMKeyFile $MONGO_CERT_KEY_NAME >$LOGS_PATH/mongod.log 2>&1 &
+mongod --setParameter maxNumActiveUserIndexBuilds=64 --port $MONGO_PORT --dbpath $MONGO_PATH --sslMode requireSSL --sslCAFile $CA_POOL_CERT_PATH --sslPEMKeyFile $MONGO_CERT_KEY_NAME >$LOGS_PATH/mongod.log 2>&1 &
 status=$?
 mongo_pid=$!
 if [ $status -ne 0 ]; then
@@ -75,13 +101,36 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${MONGODB_HOST} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${MONGODB_HOST} -cert ${MONGO_CERT_NAME} -key ${MONGO_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to mongodb(${MONGODB_HOST}) $i"
   sleep 1
 done
-    
+
+# oauth-server
+echo "starting oauth-server"
+oauth-server --config=/data/yaml/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
+status=$?
+oauth_server_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start oauth-server: $status"
+  sync
+  cat $LOGS_PATH/oauth-server.log
+  exit $status
+fi
+
+i=0
+
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${MOCKED_OAUTH_SERVER_ADDRESS} -cert ${INTERNAL_CERT_NAME} -key ${INTERNAL_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to oauth-server(${MOCKED_OAUTH_SERVER_ADDRESS}) $i"
+  sleep 1
+done
+
 # authorization
 echo "starting authorization"
 authorization --config=/data/yaml/authorization.yaml >$LOGS_PATH/authorization.log 2>&1 &
@@ -97,7 +146,7 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${AUTHORIZATION_HTTP_ADDRESS} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${AUTHORIZATION_HTTP_ADDRESS} -cert ${INTERNAL_CERT_NAME} -key ${INTERNAL_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
   echo "Try to reconnect to authorization service(${AUTHORIZATION_HTTP_ADDRESS}) $i"
@@ -116,6 +165,17 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# waiting for resource-aggregate. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${RESOURCE_AGGREGATE_ADDRESS} -cert ${INTERNAL_CERT_NAME} -key ${INTERNAL_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to resource-aggregate(${RESOURCE_AGGREGATE_ADDRESS}) $i"
+  sleep 1
+done
+
 # resource-directory
 echo "starting resource-directory"
 resource-directory --config=/data/yaml/resource-directory.yaml >$LOGS_PATH/resource-directory.log 2>&1 &
@@ -127,6 +187,17 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/resource-directory.log
   exit $status
 fi
+
+# waiting for resource-directory. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${RESOURCE_DIRECTORY_ADDRESS} -cert ${INTERNAL_CERT_NAME} -key ${INTERNAL_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to resource-directory(${RESOURCE_DIRECTORY_ADDRESS}) $i"
+  sleep 1
+done
 
 # coap-gateway-unsecure
 echo "starting coap-gateway-unsecure"
@@ -164,6 +235,18 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# waiting for grpc-gateway. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${GRPC_GATEWAY_ADDRESS} -cert ${INTERNAL_CERT_NAME} -key ${INTERNAL_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to grpc-gateway(${GRPC_GATEWAY_ADDRESS}) $i"
+  sleep 1
+done
+
+
 # http-gateway
 echo "starting http-gateway"
 http-gateway --config=/data/yaml/http-gateway.yaml >$LOGS_PATH/http-gateway.log 2>&1 &
@@ -176,6 +259,17 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
+# waiting for http-gateway. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${HTTP_GATEWAY_ADDRESS} -cert ${INTERNAL_CERT_NAME} -key ${INTERNAL_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to http-gateway(${HTTP_GATEWAY_ADDRESS}) $i"
+  sleep 1
+done
+
 # certificate-authority
 echo "starting certificate-authority"
 certificate-authority --config=/data/yaml/certificate-authority.yaml >$LOGS_PATH/certificate-authority.log 2>&1 &
@@ -187,6 +281,18 @@ if [ $status -ne 0 ]; then
   cat $LOGS_PATH/certificate-authority.log
   exit $status
 fi
+
+# waiting for grpc-gateway. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${CERTIFICATE_AUTHORITY_ADDRESS} -cert ${INTERNAL_CERT_NAME} -key ${INTERNAL_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to certificate-authority(${CERTIFICATE_AUTHORITY_ADDRESS}) $i"
+  sleep 1
+done
+
 
 # cloud2cloud-connector
 echo "starting cloud2cloud-connector"
@@ -202,11 +308,11 @@ fi
 
 # cloud2cloud-gateway
 echo "starting cloud2cloud-gateway"
-cloud2cloud-connector --config=/data/yaml/c2c-gateway.yaml >$LOGS_PATH/cloud2cloud-gateway.log 2>&1 &
+cloud2cloud-gateway --config=/data/yaml/c2c-gateway.yaml >$LOGS_PATH/cloud2cloud-gateway.log 2>&1 &
 status=$?
 cloud2cloud_gateway_pid=$!
 if [ $status -ne 0 ]; then
-  echo "Failed to start cloud2cloud-connector: $status"
+  echo "Failed to start cloud2cloud-gateway: $status"
   sync
   cat $LOGS_PATH/cloud2cloud-gateway.log
   exit $status
@@ -286,6 +392,13 @@ while sleep 10; do
     echo "certificate-authority has already exited."
     sync
     cat $LOGS_PATH/certificate-authority.log
+   exit 1
+  fi
+  ps aux |grep $oauth_server_pid |grep -q -v grep
+  if [ $? -ne 0 ]; then
+    echo "oauth-server has already exited."
+    sync
+    cat $LOGS_PATH/oauth-server.log
    exit 1
   fi
   ps aux |grep $cloud2cloud_connector_pid |grep -q -v grep

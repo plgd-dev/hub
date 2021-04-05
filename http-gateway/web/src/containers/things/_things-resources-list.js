@@ -1,31 +1,56 @@
 import { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
-import { Link } from 'react-router-dom'
+import classNames from 'classnames'
 
 import { Badge } from '@/components/badge'
 import { Table } from '@/components/table'
-
+import { ThingsResourcesActionButton } from './_things-resources-action-button'
+import { RESOURCES_DEFAULT_PAGE_SIZE, thingsStatuses } from './constants'
 import { thingResourceShape } from './shapes'
 import { messages as t } from './things-i18n'
 
-export const ThingsResourcesList = ({ data }) => {
+export const ThingsResourcesList = ({
+  data,
+  onUpdate,
+  onCreate,
+  onDelete,
+  deviceStatus,
+  loading,
+}) => {
   const { formatMessage: _ } = useIntl()
+
+  const isUnregistered = deviceStatus === thingsStatuses.UNREGISTERED
+  const greyedOutClassName = classNames({ 'grayed-out': isUnregistered })
 
   const columns = useMemo(
     () => [
       {
         Header: _(t.location),
         accessor: 'href',
-        Cell: ({ value, row }) => (
-          <Link to={`/things/${row.original?.di}${row.original?.href}`}>
-            {value}
-          </Link>
-        ),
-        style: { width: '50%' },
+        Cell: ({ value, row }) => {
+          const {
+            original: { di, href },
+          } = row
+          if (isUnregistered) {
+            return <span>{value}</span>
+          }
+          return (
+            <div className="tree-expander-container">
+              <span
+                className="link reveal-icon-on-hover"
+                onClick={() => onUpdate({ di, href })}
+              >
+                {value}
+              </span>
+              <i className="fas fa-pen" />
+            </div>
+          )
+        },
+        style: { width: '100%' },
       },
       {
-        Header: _(t.type),
+        Header: _(t.types),
         accessor: 'rt',
         Cell: ({ value }) => {
           return (
@@ -35,8 +60,29 @@ export const ThingsResourcesList = ({ data }) => {
           )
         },
       },
+      {
+        Header: _(t.actions),
+        accessor: 'actions',
+        disableSortBy: true,
+        Cell: ({ row }) => {
+          const {
+            original: { di, href, if: interfaces },
+          } = row
+          return (
+            <ThingsResourcesActionButton
+              disabled={isUnregistered || loading}
+              href={href}
+              di={di}
+              interfaces={interfaces}
+              onCreate={onCreate}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
+          )
+        },
+      },
     ],
-    [] //eslint-disable-line
+    [onUpdate, onCreate, onDelete, isUnregistered, loading] //eslint-disable-line
   )
 
   return (
@@ -49,16 +95,27 @@ export const ThingsResourcesList = ({ data }) => {
           desc: false,
         },
       ]}
-      defaultPageSize={5}
+      defaultPageSize={RESOURCES_DEFAULT_PAGE_SIZE}
       autoFillEmptyRows
+      className={greyedOutClassName}
+      paginationProps={{
+        className: greyedOutClassName,
+        disabled: isUnregistered,
+      }}
     />
   )
 }
 
 ThingsResourcesList.propTypes = {
   data: PropTypes.arrayOf(thingResourceShape),
+  onCreate: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
+  deviceStatus: PropTypes.oneOf(Object.values(thingsStatuses)),
 }
 
 ThingsResourcesList.defaultProps = {
   data: null,
+  deviceStatus: null,
 }

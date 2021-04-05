@@ -5,9 +5,12 @@ import classNames from 'classnames'
 import { Router } from 'react-router-dom'
 import Container from 'react-bootstrap/Container'
 import { Helmet } from 'react-helmet'
-import { ToastContainer } from 'react-toastify'
 import { useIntl } from 'react-intl'
 
+import {
+  ToastContainer,
+  BrowserNotificationsContainer,
+} from '@/components/toast'
 import { PageLoader } from '@/components/page-loader'
 import { LeftPanel } from '@/components/left-panel'
 import { Menu } from '@/components/menu'
@@ -16,15 +19,29 @@ import { Footer } from '@/components/footer'
 import { useLocalStorage } from '@/common/hooks'
 import { Routes } from '@/routes'
 import { history } from '@/store/history'
+import { security } from '@/common/services/security'
+import { InitServices } from '@/common/services/init-services'
+import appConfig from '@/config'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
 const AppContext = createContext()
 
 const App = ({ config }) => {
-  const { isLoading, isAuthenticated, error, loginWithRedirect } = useAuth0()
+  const {
+    isLoading,
+    isAuthenticated,
+    error,
+    loginWithRedirect,
+    getAccessTokenSilently,
+  } = useAuth0()
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
   const { formatMessage: _ } = useIntl()
+
+  // Set the getAccessTokenSilently method to the security singleton
+  security.setAccessTokenSilently(getAccessTokenSilently)
+  security.setDefaultAudience(config.audience)
+  security.setHttpGatewayAddress(config.httpGatewayAddress)
 
   // Render an error box with an auth error
   if (error) {
@@ -62,26 +79,28 @@ const App = ({ config }) => {
   }
 
   return (
-    <AppContext.Provider value={config}>
+    <AppContext.Provider value={{ ...config, collapsed }}>
       <Router history={history}>
+        <InitServices />
         <Helmet
-          defaultTitle={_(t.defaultTitle)}
-          titleTemplate={`%s | ${_(t.defaultTitle)}`}
+          defaultTitle={appConfig.appName}
+          titleTemplate={`%s | ${appConfig.appName}`}
         />
         <Container fluid id="app" className={classNames({ collapsed })}>
+          <StatusBar />
           <LeftPanel>
             <Menu
               collapsed={collapsed}
               toggleCollapsed={() => setCollapsed(!collapsed)}
             />
           </LeftPanel>
-          <StatusBar />
           <div id="content">
             <Routes />
             <Footer />
           </div>
         </Container>
         <ToastContainer />
+        <BrowserNotificationsContainer />
       </Router>
     </AppContext.Provider>
   )

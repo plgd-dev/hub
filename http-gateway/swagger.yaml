@@ -24,7 +24,6 @@ paths:
       tags:
         - Devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/typeFilter'
         - $ref: '#/components/parameters/statusFilter'
       summary: Get all devices
@@ -55,7 +54,6 @@ paths:
         - oauth2:
           - plgd.devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
       responses:
         200:
@@ -79,7 +77,6 @@ paths:
         - oauth2:
           - plgd.devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/resourcePath'
         - $ref: '#/components/parameters/interface'
@@ -112,7 +109,6 @@ paths:
         - oauth2:
           - plgd.devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/resourcePath'
         - $ref: '#/components/parameters/interface'
@@ -122,6 +118,38 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceRepresentationUpdate'
+        required: true
+      responses:
+        200:
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRepresentation'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
+    post:
+      tags:
+        - Devices
+      summary: Create a single resource under the collection
+      description: |
+        Invokes CREATE command within the resource aggregate, which transparently forwards the request to the device and waits for resource created event.
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/resourcePath'
+      requestBody:
+        description: Create request defined by OCF
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceRepresentationCreate'
         required: true
       responses:
         200:
@@ -175,7 +203,6 @@ paths:
         - oauth2:
           - plgd.devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
       responses:
         204:
@@ -197,7 +224,6 @@ paths:
         - oauth2:
           - plgd.devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
       responses:
         204:
@@ -220,7 +246,6 @@ paths:
         - oauth2:
           - plgd.devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/resourcePath'
       requestBody:
@@ -247,8 +272,6 @@ paths:
       security:
         - oauth2:
           - plgd.devices
-      parameters:
-        - $ref: '#/components/parameters/correlationId'
       requestBody:
         $ref: '#/components/requestBodies/authorizationContext'
       responses:
@@ -273,7 +296,6 @@ paths:
         - oauth2:
           - plgd.devices
       parameters:
-        - $ref: '#/components/parameters/correlationId'
         - $ref: '#/components/parameters/deviceId'
       requestBody:
         $ref: '#/components/requestBodies/authorizationContext'
@@ -356,18 +378,20 @@ components:
     DeviceResourcesObservation:
       type: object
       properties:
-        resource:
-          $ref: '#/components/schemas/Resource'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
         event:
           $ref: '#/components/schemas/DeviceResourceObservationEventType'
       example:
-        resource:
-          types:
-            - "oic.wk.p"
-          interfaces:
-            - "oic.if.baseline"
-            - "oic.if.r"
-          href: "/oic/p"
+        resources:
+          - types:
+              - "oic.wk.p"
+            interfaces:
+              - "oic.if.baseline"
+              - "oic.if.r"
+            href: "/oic/p"
         event: added
     Resource:
       type: object
@@ -388,14 +412,16 @@ components:
     DeviceStatusEvent:
       type: object
       properties:
-        deviceId:
-          type: string
-          format: uuid
-          description: Unique identifier of the device
+        deviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Unique identifiers of the devices
         status:
             $ref: '#/components/schemas/DeviceStatus'
       example:
-        deviceId: f1b0f779-57e9-4b76-9a9b-16ff0390f89b
+        deviceIds: ["f1b0f779-57e9-4b76-9a9b-16ff0390f89b"]
         status: online
     ResourceObservation:
       type: object
@@ -445,6 +471,15 @@ components:
       type: object
       example:
         n: Rename test device
+    ResourceRepresentationCreate:
+      type: object
+      example:
+        rt: [ "oic.r.switch.binary" ]
+        if: [ "oic.if.a", "oic.if.baseline" ]
+        rep:
+          value: false
+        p:
+          bm: 3
     DeviceResourceObservationEventType:
       type: string
       enum:
@@ -456,13 +491,6 @@ components:
       - online
       - offline
   parameters:
-    correlationId:
-      name: Correlation-ID
-      in: header
-      description: Cross request logging correlation id
-      schema:
-        type: string
-      example: 53080a4f-5e3e-4291-802f-3436238232d1
     deviceId:
       name: deviceId
       in: path

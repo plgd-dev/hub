@@ -130,14 +130,14 @@ First thing you need is an authorization code. In the `pluggedin.cloud Portal` g
 
 #### Unsecured device
 
-- `apn` : `auth0`
+- `apn` : `plgd`
 - `cis` : `coap+tcp://try.plgd.cloud:5683`
 - `sid` : `adebc667-1f2b-41e3-bf5c-6d6eabc68cc6`
 - `at` : `CODE_FROM_PORTAL`
 
 #### Secured device
 
-- `apn` : `auth0`
+- `apn` : `plgd`
 - `cis` : `coaps+tcp://try.plgd.cloud:5684`
 - `sid` : `adebc667-1f2b-41e3-bf5c-6d6eabc68cc6`
 - `at` : `CODE_FROM_PORTAL`

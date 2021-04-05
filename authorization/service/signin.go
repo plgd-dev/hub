@@ -5,7 +5,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -37,7 +37,7 @@ func checkReq(tx persistence.PersistenceTx, request request) (expiresInSeconds i
 	if d.AccessToken != request.GetAccessToken() {
 		return -1, status.Errorf(codes.Unauthenticated, "bad AccessToken")
 	}
-	if d.UserID != request.GetUserId() {
+	if d.Owner != request.GetUserId() {
 		return -1, status.Errorf(codes.Unauthenticated, "bad UserId")
 	}
 	expiresIn, ok := ExpiresIn(d.Expiry)

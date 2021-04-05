@@ -16,7 +16,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/kit/net/http/transport"
 	"github.com/stretchr/testify/require"
@@ -31,10 +31,12 @@ func MakeConfig(t *testing.T) service.Config {
 	err := config.Load(&cfg)
 	require.NoError(t, err)
 
-	cfg.Service.HttpConfig.HttpAddr = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
-	cfg.Service.HttpConfig.HttpTLSConfig.ClientCertificateRequired = false
-	cfg.Clients.RDConfig.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.Service.Http.Addr = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
+	cfg.Service.Http.TLSConfig.ClientCertificateRequired = false
+	cfg.Clients.ResourceDirectory.Addr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.Clients.ResourceAggregate.Addr = testCfg.RESOURCE_AGGREGATE_HOST
 	cfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
+	cfg.Clients.GoRoutinePoolSize = 16
 	return cfg
 }
 
@@ -119,7 +121,7 @@ func (c *requestBuilder) Build() *http.Request {
 }
 
 func HTTPDo(t *testing.T, req *http.Request) *http.Response {
-	trans := transport.NewDefaultTransport()
+	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
@@ -176,6 +178,6 @@ func CleanUpDeviceRepresentation(v interface{}) interface{} {
 
 func GetDeviceRepresentation(deviceID string, deviceName string) interface{} {
 	return CleanUpDeviceRepresentation(
-		map[interface{}]interface{}{"device": map[interface{}]interface{}{"di": deviceID, "dmn": []interface{}{}, "dmno": "", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "n": deviceName, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}}, "links": []interface{}{map[interface{}]interface{}{"di": deviceID, "href": "/light/1", "id": utils.MakeResourceId(deviceID, status.Href), "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"core.light"}}, map[interface{}]interface{}{"di": deviceID, "href": "/light/2", "id": "d72a96bd-449a-51f1-a7d3-71f4ccad8d00", "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"core.light"}}, map[interface{}]interface{}{"di": deviceID, "href": "/oc/con", "id": "b67202b3-6bd7-5f0b-ada0-83b7e985cef4", "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.wk.con"}}, map[interface{}]interface{}{"di": deviceID, "href": status.Href, "id": "585a9ced-1953-50d6-b4f2-4630c478e1bc", "if": []interface{}{"oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{status.ResourceType}, "title": status.Title}, map[interface{}]interface{}{"di": deviceID, "href": "/oic/d", "id": "7013279c-4f28-503f-9425-d76ae580c590", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(1), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}}, map[interface{}]interface{}{"di": deviceID, "href": "/oic/p", "id": "d6940aea-d1b5-53dd-a123-838b73b02d10", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(1), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.wk.p"}}}, "status": "online"},
+		map[interface{}]interface{}{"device": map[interface{}]interface{}{"di": deviceID, "dmn": []interface{}{}, "dmno": "", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "n": deviceName, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}}, "links": []interface{}{map[interface{}]interface{}{"di": deviceID, "href": "/light/1", "id": commands.MakeStatusResourceUUID(deviceID), "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"core.light"}}, map[interface{}]interface{}{"di": deviceID, "href": "/light/2", "id": "d72a96bd-449a-51f1-a7d3-71f4ccad8d00", "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"core.light"}}, map[interface{}]interface{}{"di": deviceID, "href": "/oc/con", "id": "b67202b3-6bd7-5f0b-ada0-83b7e985cef4", "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.wk.con"}}, map[interface{}]interface{}{"di": deviceID, "href": commands.StatusHref, "id": "585a9ced-1953-50d6-b4f2-4630c478e1bc", "if": []interface{}{"oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{status.ResourceType}, "title": status.Title}, map[interface{}]interface{}{"di": deviceID, "href": "/oic/d", "id": "7013279c-4f28-503f-9425-d76ae580c590", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}}, map[interface{}]interface{}{"di": deviceID, "href": "/oic/p", "id": "d6940aea-d1b5-53dd-a123-838b73b02d10", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.wk.p"}}}, "status": "online"},
 	)
 }

@@ -58,6 +58,10 @@ type updateOptions struct {
 	codec             kitNetCoap.Codec
 }
 
+type createOptions struct {
+	codec kitNetCoap.Codec
+}
+
 // UpdateOption option definition.
 type UpdateOption = interface {
 	applyOnUpdate(opts updateOptions) updateOptions
@@ -66,6 +70,11 @@ type UpdateOption = interface {
 // UpdateOption option definition.
 type GetDevicesOption = interface {
 	applyOnGetDevices(opts getDevicesOptions) getDevicesOptions
+}
+
+// CreateOption option definition.
+type CreateOption = interface {
+	applyOnCreate(opts createOptions) createOptions
 }
 
 func WithDeviceIDs(deviceIDs ...string) DeviceIDsOption {
@@ -129,6 +138,11 @@ func (r CodecOption) applyOnObserve(opts observeOptions) observeOptions {
 }
 
 func (r CodecOption) applyOnDelete(opts deleteOptions) deleteOptions {
+	opts.codec = r.codec
+	return opts
+}
+
+func (r CodecOption) applyOnCreate(opts createOptions) createOptions {
 	opts.codec = r.codec
 	return opts
 }

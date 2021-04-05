@@ -22,7 +22,7 @@ database:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/mongo.crt"
       keyFile: "/data/certs/mongo.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
     batchSize: 16
     maxPoolSize: 16
     maxConnIdleTime: 240s
@@ -33,25 +33,26 @@ clients:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
+  oauthProvider:
+    jwksUrl: "https://localhost:9090/.well-known/jwks.json"
+    ownerClaim: "sub"
+    oauth:
+      clientID: "test"
+      clientSecret: ""
+      scopes: []
+      audience: "test"
+      tokenURL : "https://localhost:9090/oauth/token"
+      timeout : 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
   authorizationServer:
     address: "localhost:9081"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
-  oauthProvider:
-    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
-    oauth:
-      clientID: ""
-      clientSecret: ""
-      scopes: []
-      audience: ""
-      tokenURL : "https://localhost:9085/api/authz/token"
-      timeout : 10s
-    tls:
-      caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true

@@ -12,7 +12,7 @@ import (
 
 // NewGenericProvider creates OAuth client
 func NewGenericProvider(config Config) *GenericProvider {
-	oauth2 := config.OAuth2.ToOAuth2()
+	oauth2 := config.OAuth.ToOAuth2()
 	return &GenericProvider{
 		Config:        config,
 		OAuth2:        &oauth2,
@@ -34,7 +34,7 @@ func (p *GenericProvider) GetProviderName() string {
 
 // AuthCodeURL returns URL for redirecting to the authentication web page
 func (p *GenericProvider) AuthCodeURL(csrfToken string) string {
-	return p.Config.OAuth2.AuthCodeURL(csrfToken)
+	return p.Config.OAuth.AuthCodeURL(csrfToken)
 }
 
 // LogoutURL to logout the user
@@ -77,16 +77,16 @@ func (p *GenericProvider) Exchange(ctx context.Context, authorizationProvider, a
 		return nil, err
 	}
 
-	userID, ok := profile["sub"].(string)
+	userID, ok := profile[p.Config.OwnerClaim].(string)
 	if !ok {
-		return nil, fmt.Errorf("cannot determine UserID")
+		return nil, fmt.Errorf("cannot determine owner claim %v", p.Config.OwnerClaim)
 	}
 
 	t := Token{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		UserID:       userID,
+		Owner:        userID,
 	}
 	return &t, nil
 }
@@ -115,13 +115,14 @@ func (p *GenericProvider) Refresh(ctx context.Context, refreshToken string) (*To
 		return nil, err
 	}
 
-	userID, _ := profile["sub"].(string)
-	// if it is not determined, request userId will used.
-
+	userID, ok := profile[p.Config.OwnerClaim].(string)
+	if !ok {
+		return nil, fmt.Errorf("cannot determine owner claim %v", p.Config.OwnerClaim)
+	}
 	return &Token{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		UserID:       userID,
+		Owner:        userID,
 	}, nil
 }

@@ -15,10 +15,10 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/codec/json"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/sdk/schema"
 )
 
@@ -35,7 +35,7 @@ type RetrieveDeviceWithLinksResponse struct {
 type pullDevicesHandler struct {
 	s                   *Store
 	asClient            pbAS.AuthorizationServiceClient
-	raClient            pbRA.ResourceAggregateClient
+	raClient            raService.ResourceAggregateClient
 	devicesSubscription *DevicesSubscription
 	linkedClouds        map[string]store.LinkedCloud
 	subscriptionManager *SubscriptionManager
@@ -95,14 +95,14 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 	return nil
 }
 
-func publishDeviceResources(ctx context.Context, raClient pbRA.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask func(Task)) error {
+func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask func(Task)) error {
 	var errors []error
 	userID := linkedAccount.UserID
 	for _, link := range dev.Links {
 		link.DeviceID = deviceID
 		href := removeDeviceIDFromHref(link.Href)
 		link.Href = href
-		err := publishResource(ctx, raClient, userID, link, pbCQRS.CommandMetadata{
+		err := publishResource(ctx, raClient, userID, link, commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
 			Sequence:     uint64(time.Now().UnixNano()),
 		})
@@ -137,7 +137,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 		return err
 	}
 
-	ctx = kitNetGrpc.CtxWithUserID(ctx, userID)
+	ctx = kitNetGrpc.CtxWithOwner(ctx, userID)
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		registeredDevices, err := getUsersDevices(ctx, p.asClient)
 		if err != nil {
@@ -161,11 +161,9 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 					errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
 					continue
 				}
-				err = status.Publish(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &pbCQRS.CommandMetadata{
+				err = status.Publish(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
-				}, &pbCQRS.AuthorizationContext{
-					DeviceId: deviceID,
 				})
 
 				if err != nil {
@@ -176,18 +174,14 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			}
 			delete(registeredDevices, deviceID)
 			if strings.ToLower(dev.Status) == "online" {
-				err = status.SetOnline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, time.Time{}, &pbCQRS.CommandMetadata{
+				err = status.SetOnline(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, time.Time{}, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
-				}, &pbCQRS.AuthorizationContext{
-					DeviceId: deviceID,
 				})
 			} else {
-				err = status.SetOffline(kitNetGrpc.CtxWithUserID(ctx, userID), p.raClient, deviceID, &pbCQRS.CommandMetadata{
+				err = status.SetOffline(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
-				}, &pbCQRS.AuthorizationContext{
-					DeviceId: deviceID,
 				})
 			}
 			if err != nil {
@@ -267,7 +261,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 		return err
 	}
 
-	ctx = kitNetGrpc.CtxWithUserID(ctx, userID)
+	ctx = kitNetGrpc.CtxWithOwner(ctx, userID)
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		for _, link := range dev.Links {
@@ -285,7 +279,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 				userID,
 				"application/json",
 				body,
-				pbCQRS.CommandMetadata{
+				commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
 				},
@@ -349,7 +343,7 @@ func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedA
 
 func pullDevices(ctx context.Context, s *Store,
 	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
+	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
 	oauthCallback string,

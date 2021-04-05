@@ -10,12 +10,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 )
 
 func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.ResourceValue) {
@@ -23,9 +24,24 @@ func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.Resourc
 	for idx := range want {
 		dataWant := want[idx].GetContent().GetData()
 		datagot := got[idx].GetContent().GetData()
-		want[idx].Content.Data = nil
-		got[idx].Content.Data = nil
-		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
+		w1 := &pb.ResourceValue{
+			ResourceId: want[idx].GetResourceId(),
+			Types:      want[idx].GetTypes(),
+			Content: &pb.Content{
+				ContentType: want[idx].GetContent().GetContentType(),
+			},
+			Status: want[idx].GetStatus(),
+		}
+		w2 := &pb.ResourceValue{
+			ResourceId: got[idx].GetResourceId(),
+			Types:      got[idx].GetTypes(),
+			Content: &pb.Content{
+				ContentType: got[idx].GetContent().GetContentType(),
+			},
+			Status: got[idx].GetStatus(),
+		}
+		w2.Content.Data = nil
+		test.CheckProtobufs(t, w1, w2, test.RequireToCheckFunc(require.Equal))
 		w := test.DecodeCbor(t, dataWant)
 		g := test.DecodeCbor(t, datagot)
 		require.Equal(t, w, g)
@@ -47,7 +63,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.RetrieveResourcesValuesRequest{
-					ResourceIdsFilter: []*pb.ResourceId{
+					ResourceIdsFilter: []*commands.ResourceId{
 						{
 							DeviceId: deviceID,
 							Href:     "/light/1",
@@ -57,7 +73,7 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 			},
 			want: []*pb.ResourceValue{
 				{
-					ResourceId: &pb.ResourceId{
+					ResourceId: &commands.ResourceId{
 						DeviceId: deviceID,
 						Href:     "/light/1",
 					},
@@ -68,6 +84,8 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 							"state": false,
 							"power": uint64(0),
 							"name":  "Light",
+							"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
+							"rt":    []interface{}{"core.light"},
 						}),
 					},
 					Status: pb.Status_OK,
@@ -78,10 +96,10 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

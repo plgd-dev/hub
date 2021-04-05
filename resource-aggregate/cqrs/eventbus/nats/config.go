@@ -14,8 +14,8 @@ import (
 type Option func(Config) Config
 
 type Config struct {
-	URL       string         `yaml:"url" json:"url" default:"nats://localhost:4222"`
-	TLSConfig client.Config  `yaml:"tls" json:"tls"`
+	URL       string         `yaml:"url" json:"url" envconfig:"URL" default:"nats://localhost:4222"`
+	TLSConfig client.Config  `yaml:"tls" json:"tls" envconfig:"TLS"`
 	Options   []nats.Option  `yaml:"options,omitempty" json:"options,omitempty"`
 }
 

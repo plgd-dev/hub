@@ -15,7 +15,12 @@ define build-docker-image
 		.
 endef
 
-test: build-servicecontainer
+build-servicecontainer:
+	$(call build-docker-image,service)
+
+build: build-servicecontainer
+
+build-test: build-servicecontainer
 	docker run -d --network=bridge \
 	-p 9081:9081 -p 9085:9085 \
 	--name=$(SERVICE_NAME) \
@@ -24,10 +29,13 @@ test: build-servicecontainer
 	-v $(shell pwd)/authorization.yaml:/data/authorization.yaml \
 	plgd/$(SERVICE_NAME):$(LATEST_TAG) --config=/data/authorization.yaml
 
-build-servicecontainer:
-	$(call build-docker-image,service)
-
-build: build-servicecontainer
+build-clean:
+ifneq ($(shell docker ps | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1),)
+	docker stop $(shell docker ps | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1)
+endif
+ifneq ($(shell docker ps -a | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1),)
+	docker rm $(shell docker ps -a | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1)
+endif
 
 push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(VERSION_TAG)

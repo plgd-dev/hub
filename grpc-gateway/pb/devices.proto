@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ocf.cloud.grpcgateway.pb;
 
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
+
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
 message GetDevicesRequest {
@@ -20,42 +22,38 @@ message GetResourceLinksRequest {
   repeated string device_ids_filter = 2;
 }
 
-message ResourceId {
-  string device_id = 1;
-  string href = 2;
-}
-
 // RetrieveResourceFromDeviceRequest retrieve value from device
 message RetrieveResourceFromDeviceRequest {
-  ResourceId resource_id = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
 }
 
 message RetrieveResourceFromDeviceResponse {
   Content content = 1;
+  Status status = 2;
 }
 
 // RetrieveResourcesValuesRequest get values from resource-shadow
 message RetrieveResourcesValuesRequest {
-  repeated ResourceId resource_ids_filter = 1;
+  repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 1;
   repeated string device_ids_filter = 2;
   repeated string type_filter = 3;
 }
 
 message ResourceValue {
-  ResourceId resource_id = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   repeated string types = 2;
   Content content = 3;
   Status status = 4;
 }
 
-message UpdateResourceValuesRequest {
-  ResourceId resource_id = 1;
+message UpdateResourceRequest {
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
   string resource_interface = 3;
 }
 
-message UpdateResourceValuesResponse {
+message UpdateResourceResponse {
   Content content = 1;
   Status status = 2;
 }
@@ -81,11 +79,13 @@ message SubscribeForEvents {
       RESOURCE_RETRIEVED = 5;
       RESOURCE_DELETE_PENDING = 6;
       RESOURCE_DELETED = 7;
+      RESOURCE_CREATE_PENDING = 8;
+      RESOURCE_CREATED = 9;
     }
     repeated Event filter_events = 2;
   }
   message ResourceEventFilter {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     enum Event {
       CONTENT_CHANGED = 0;
     }
@@ -123,39 +123,50 @@ message Event {
     repeated ResourceLink links = 2;
   }
   message ResourceChanged {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     Content content = 2;
     Status status = 3;
   }
   message ResourceUpdatePending {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     Content content = 2;
     string resource_interface = 3;
     string correlation_id = 4;
   }
   message ResourceUpdated {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     Content content = 2;
     Status status = 3;
     string correlation_id = 4;
   }
   message ResourceRetrievePending {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     string resource_interface = 2;
     string correlation_id = 3;
   }
   message ResourceRetrieved {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     Content content = 2;
     Status status = 3;
     string correlation_id = 4;
   }
   message ResourceDeletePending {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     string correlation_id = 2;
   }
   message ResourceDeleted {
-    ResourceId resource_id = 1;
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+    Content content = 2;
+    Status status = 3;
+    string correlation_id = 4;
+  }
+  message ResourceCreatePending {
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+    Content content = 2;
+    string correlation_id = 3;
+  }
+  message ResourceCreated {
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     Content content = 2;
     Status status = 3;
     string correlation_id = 4;
@@ -194,6 +205,8 @@ message Event {
     ResourceRetrieved resource_retrieved = 15;
     ResourceDeletePending resource_delete_pending = 16;
     ResourceDeleted resource_deleted = 17;
+    ResourceCreatePending resource_create_pending = 18;
+    ResourceCreated resource_created = 19;
   }
 
 }
@@ -253,13 +266,25 @@ enum Status {
   ACCEPTED = 8;
   ERROR = 9;
   METHOD_NOT_ALLOWED = 10;
+  CREATED = 11;
 }
 
 message DeleteResourceRequest {
-  ResourceId resource_id = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
 }
 
 message DeleteResourceResponse {
+  Content content = 1;
+  Status status = 2;
+}
+
+
+message CreateResourceRequest {
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+  Content content = 2;
+}
+
+message CreateResourceResponse {
   Content content = 1;
   Status status = 2;
 }

@@ -19,23 +19,24 @@ func MakeConfig(t *testing.T, withoutTLS ...bool) service.Config {
 	require.NoError(t, err)
 
 	if len(withoutTLS) > 0 {
-		gwCfg.Service.CoapGW.ServerTLSConfig.ClientCertificateRequired = false
-		gwCfg.Service.CoapGW.Addr = testCfg.GW_UNSECURE_HOST
+		gwCfg.Service.Coap.TLSConfig.ClientCertificateRequired = false
+		gwCfg.Service.Coap.Addr = testCfg.GW_UNSECURE_HOST
 	} else {
-		gwCfg.Service.CoapGW.ServerTLSConfig.ClientCertificateRequired = true
-		gwCfg.Service.CoapGW.Addr = testCfg.GW_HOST
+		gwCfg.Service.Coap.TLSConfig.ClientCertificateRequired = true
+		gwCfg.Service.Coap.Addr = testCfg.GW_HOST
 	}
-	gwCfg.Clients.Authorization.AuthServerAddr = testCfg.AUTH_HOST
-	gwCfg.Clients.ResourceAggregate.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
-	gwCfg.Clients.ResourceDirectory.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	gwCfg.Service.CoapGW.ExternalAddress = "coap-gateway-" + t.Name()
-	gwCfg.Clients.OAuthProvider.OAuthConfig.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	gwCfg.Clients.OAuthProvider.OAuthConfig.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	gwCfg.Service.CoapGW.HeartBeat = time.Millisecond * 300
+	gwCfg.Clients.Authorization.Addr = testCfg.AUTH_HOST
+	gwCfg.Clients.ResourceAggregate.Addr = testCfg.RESOURCE_AGGREGATE_HOST
+	gwCfg.Clients.ResourceDirectory.Addr = testCfg.RESOURCE_DIRECTORY_HOST
+	gwCfg.Service.Coap.ExternalAddress = "coap-gateway-" + t.Name()
+	gwCfg.Clients.OAuthProvider.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	gwCfg.Clients.OAuthProvider.OAuth.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	gwCfg.Clients.OAuthProvider.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
+	gwCfg.Service.Coap.HeartBeat = time.Millisecond * 300
 
-	gwCfg.Service.CoapGW.ServerTLSConfig.CertFile = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")
-	gwCfg.Service.CoapGW.ServerTLSConfig.KeyFile = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME")
-	gwCfg.Service.CoapGW.ServerTLSConfig.ClientCertificateRequired = false
+	gwCfg.Service.Coap.TLSConfig.CertFile = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")
+	gwCfg.Service.Coap.TLSConfig.KeyFile = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME")
+	gwCfg.Service.Coap.TLSConfig.ClientCertificateRequired = false
 	gwCfg.Log.Debug = true
 	return gwCfg
 }

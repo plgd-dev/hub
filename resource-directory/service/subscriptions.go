@@ -12,14 +12,13 @@ import (
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 type Subscriber interface {
@@ -29,7 +28,7 @@ type Subscriber interface {
 	Close(reason error) error
 }
 
-type subscriptions struct {
+type Subscriptions struct {
 	userDevicesManager *clientAS.UserDevicesManager
 
 	rwlock                sync.RWMutex
@@ -44,8 +43,8 @@ type subscriptions struct {
 
 type SendEventFunc func(e *pb.Event) error
 
-func NewSubscriptions() *subscriptions {
-	return &subscriptions{
+func NewSubscriptions() *Subscriptions {
+	return &Subscriptions{
 		allSubscriptions:      make(map[string]Subscriber),
 		resourceSubscriptions: make(map[string]map[string]map[string]map[string]*resourceSubscription),
 		deviceSubscriptions:   make(map[string]map[string]map[string]*deviceSubscription),
@@ -54,15 +53,15 @@ func NewSubscriptions() *subscriptions {
 	}
 }
 
-func (s *subscriptions) popInitSubscriptions(userID string) map[string]Subscriber {
+func (s *Subscriptions) popInitSubscriptions(owner string) map[string]Subscriber {
 	s.initSubscriptionsLock.Lock()
 	defer s.initSubscriptionsLock.Unlock()
-	v := s.initSubscriptions[userID]
-	delete(s.initSubscriptions, userID)
+	v := s.initSubscriptions[owner]
+	delete(s.initSubscriptions, owner)
 	return v
 }
 
-func (s *subscriptions) insertToInitSubscriptions(sub Subscriber) {
+func (s *Subscriptions) insertToInitSubscriptions(sub Subscriber) {
 	s.initSubscriptionsLock.Lock()
 	defer s.initSubscriptionsLock.Unlock()
 
@@ -74,25 +73,25 @@ func (s *subscriptions) insertToInitSubscriptions(sub Subscriber) {
 	v[sub.ID()] = sub
 }
 
-func (s *subscriptions) removeFromInitSubscriptions(id, userID string) {
+func (s *Subscriptions) removeFromInitSubscriptions(id, owner string) {
 	s.initSubscriptionsLock.Lock()
 	defer s.initSubscriptionsLock.Unlock()
 
-	delete(s.initSubscriptions[userID], id)
-	if len(s.initSubscriptions[userID]) == 0 {
-		delete(s.initSubscriptions, userID)
+	delete(s.initSubscriptions[owner], id)
+	if len(s.initSubscriptions[owner]) == 0 {
+		delete(s.initSubscriptions, owner)
 	}
 }
 
-func (s *subscriptions) getRemovedSubscriptions(userID string, removedDevices map[string]bool) []Subscriber {
+func (s *Subscriptions) getRemovedSubscriptions(owner string, removedDevices map[string]bool) []Subscriber {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 	remove := make([]Subscriber, 0, 32)
 	for deviceID := range removedDevices {
-		for _, sub := range s.deviceSubscriptions[userID][deviceID] {
+		for _, sub := range s.deviceSubscriptions[owner][deviceID] {
 			remove = append(remove, sub)
 		}
-		for _, resSubs := range s.resourceSubscriptions[userID][deviceID] {
+		for _, resSubs := range s.resourceSubscriptions[owner][deviceID] {
 			for _, sub := range resSubs {
 				remove = append(remove, sub)
 			}
@@ -102,11 +101,11 @@ func (s *subscriptions) getRemovedSubscriptions(userID string, removedDevices ma
 	return remove
 }
 
-func (s *subscriptions) getSubscriptionsToUpdate(userID string, init map[string]Subscriber) []*devicesSubscription {
+func (s *Subscriptions) getSubscriptionsToUpdate(owner string, init map[string]Subscriber) []*devicesSubscription {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 	updated := make([]*devicesSubscription, 0, 32)
-	for _, sub := range s.devicesSubscriptions[userID] {
+	for _, sub := range s.devicesSubscriptions[owner] {
 		if _, ok := init[sub.ID()]; !ok {
 			updated = append(updated, sub)
 		}
@@ -115,10 +114,10 @@ func (s *subscriptions) getSubscriptionsToUpdate(userID string, init map[string]
 	return updated
 }
 
-func (s *subscriptions) UserDevicesChanged(ctx context.Context, userID string, addedDevices, removedDevices, currentDevices map[string]bool) {
-	log.Debugf("subscriptions.UserDevicesChanged %v: added: %+v removed: %+v current: %+v\n", userID, addedDevices, removedDevices, currentDevices)
+func (s *Subscriptions) UserDevicesChanged(ctx context.Context, owner string, addedDevices, removedDevices, currentDevices map[string]bool) {
+	log.Debugf("subscriptions.UserDevicesChanged %v: added: %+v removed: %+v current: %+v\n", owner, addedDevices, removedDevices, currentDevices)
 
-	init := s.popInitSubscriptions(userID)
+	init := s.popInitSubscriptions(owner)
 	for _, sub := range init {
 		err := sub.Init(ctx, currentDevices)
 		if err != nil {
@@ -126,14 +125,14 @@ func (s *subscriptions) UserDevicesChanged(ctx context.Context, userID string, a
 			s.Close(sub.ID(), err)
 		}
 	}
-	remove := s.getRemovedSubscriptions(userID, removedDevices)
+	remove := s.getRemovedSubscriptions(owner, removedDevices)
 	for _, sub := range remove {
 		log.Infof("remove sub ID %v", sub.ID())
 		sub.Close(fmt.Errorf("device was removed from user"))
 	}
 
 	if len(addedDevices) > 0 || len(removedDevices) > 0 {
-		update := s.getSubscriptionsToUpdate(userID, init)
+		update := s.getSubscriptionsToUpdate(owner, init)
 		for _, sub := range update {
 			err := sub.Update(ctx, addedDevices, removedDevices)
 			if err != nil {
@@ -144,7 +143,7 @@ func (s *subscriptions) UserDevicesChanged(ctx context.Context, userID string, a
 	}
 }
 
-func (s *subscriptions) Get(id string) Subscriber {
+func (s *Subscriptions) Get(id string) Subscriber {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 	if sub, ok := s.allSubscriptions[id]; ok {
@@ -153,37 +152,37 @@ func (s *subscriptions) Get(id string) Subscriber {
 	return nil
 }
 
-func (s *subscriptions) Pop(id string) Subscriber {
+func (s *Subscriptions) Pop(id string) Subscriber {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	if sub, ok := s.allSubscriptions[id]; ok {
-		userID := sub.UserID()
+		owner := sub.UserID()
 		switch v := sub.(type) {
 		case *deviceSubscription:
-			delete(s.deviceSubscriptions[userID][v.DeviceID()], id)
-			if len(s.deviceSubscriptions[userID][v.DeviceID()]) == 0 {
+			delete(s.deviceSubscriptions[owner][v.DeviceID()], id)
+			if len(s.deviceSubscriptions[owner][v.DeviceID()]) == 0 {
 				delete(s.deviceSubscriptions, v.DeviceID())
-				if len(s.deviceSubscriptions[userID]) == 0 {
-					delete(s.deviceSubscriptions, userID)
+				if len(s.deviceSubscriptions[owner]) == 0 {
+					delete(s.deviceSubscriptions, owner)
 				}
 			}
 		case *resourceSubscription:
-			deviceID := v.DeviceID()
-			href := v.Href()
-			delete(s.resourceSubscriptions[userID][deviceID][href], id)
-			if len(s.resourceSubscriptions[userID][deviceID][href]) == 0 {
-				delete(s.resourceSubscriptions[userID][deviceID], href)
-				if len(s.resourceSubscriptions[userID][deviceID]) == 0 {
-					delete(s.resourceSubscriptions[userID], deviceID)
-					if len(s.resourceSubscriptions[userID]) == 0 {
-						delete(s.resourceSubscriptions, userID)
+			deviceID := v.ResourceID().GetDeviceId()
+			href := v.ResourceID().GetHref()
+			delete(s.resourceSubscriptions[owner][deviceID][href], id)
+			if len(s.resourceSubscriptions[owner][deviceID][href]) == 0 {
+				delete(s.resourceSubscriptions[owner][deviceID], href)
+				if len(s.resourceSubscriptions[owner][deviceID]) == 0 {
+					delete(s.resourceSubscriptions[owner], deviceID)
+					if len(s.resourceSubscriptions[owner]) == 0 {
+						delete(s.resourceSubscriptions, owner)
 					}
 				}
 			}
 		case *devicesSubscription:
-			delete(s.devicesSubscriptions[userID], id)
-			if len(s.devicesSubscriptions[userID]) == 0 {
-				delete(s.devicesSubscriptions, userID)
+			delete(s.devicesSubscriptions[owner], id)
+			if len(s.devicesSubscriptions[owner]) == 0 {
+				delete(s.devicesSubscriptions, owner)
 			}
 		}
 		delete(s.allSubscriptions, id)
@@ -192,7 +191,7 @@ func (s *subscriptions) Pop(id string) Subscriber {
 	return nil
 }
 
-func (s *subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, releaseFromUserDevManager bool) error {
+func (s *Subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, releaseFromUserDevManager bool) error {
 	sub := s.Pop(id)
 	if sub == nil {
 		return fmt.Errorf("cannot close subscription %v: not found", id)
@@ -209,11 +208,11 @@ func (s *subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, 
 	return nil
 }
 
-func (s *subscriptions) Close(id string, reason error) error {
+func (s *Subscriptions) Close(id string, reason error) error {
 	return s.closeWithReleaseUserDevicesMfg(id, reason, true)
 }
 
-func (s *subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devicesSubscription) error {
+func (s *Subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devicesSubscription) error {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	_, ok := s.allSubscriptions[sub.ID()]
@@ -223,11 +222,11 @@ func (s *subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devi
 	if sub == nil {
 		return nil
 	}
-	userID := sub.UserID()
-	userSubs, ok := s.devicesSubscriptions[userID]
+	owner := sub.UserID()
+	userSubs, ok := s.devicesSubscriptions[owner]
 	if !ok {
 		userSubs = make(map[string]*devicesSubscription)
-		s.devicesSubscriptions[userID] = userSubs
+		s.devicesSubscriptions[owner] = userSubs
 	}
 	userSubs[sub.ID()] = sub
 
@@ -236,7 +235,7 @@ func (s *subscriptions) InsertDevicesSubscription(ctx context.Context, sub *devi
 	return nil
 }
 
-func (s *subscriptions) InsertDeviceSubscription(ctx context.Context, sub *deviceSubscription) error {
+func (s *Subscriptions) InsertDeviceSubscription(ctx context.Context, sub *deviceSubscription) error {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	_, ok := s.allSubscriptions[sub.ID()]
@@ -246,12 +245,12 @@ func (s *subscriptions) InsertDeviceSubscription(ctx context.Context, sub *devic
 	if sub == nil {
 		return nil
 	}
-	userID := sub.UserID()
+	owner := sub.UserID()
 	deviceID := sub.DeviceID()
-	userSubs, ok := s.deviceSubscriptions[userID]
+	userSubs, ok := s.deviceSubscriptions[owner]
 	if !ok {
 		userSubs = make(map[string]map[string]*deviceSubscription)
-		s.deviceSubscriptions[userID] = userSubs
+		s.deviceSubscriptions[owner] = userSubs
 	}
 	devSubs, ok := userSubs[deviceID]
 	if !ok {
@@ -265,7 +264,7 @@ func (s *subscriptions) InsertDeviceSubscription(ctx context.Context, sub *devic
 	return nil
 }
 
-func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *resourceSubscription) error {
+func (s *Subscriptions) InsertResourceSubscription(ctx context.Context, sub *resourceSubscription) error {
 	s.rwlock.Lock()
 	defer s.rwlock.Unlock()
 	_, ok := s.allSubscriptions[sub.ID()]
@@ -275,13 +274,13 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 	if sub == nil {
 		return nil
 	}
-	userID := sub.UserID()
-	deviceID := sub.DeviceID()
-	href := sub.Href()
-	userSubs, ok := s.resourceSubscriptions[userID]
+	owner := sub.UserID()
+	deviceID := sub.ResourceID().GetDeviceId()
+	href := sub.ResourceID().GetHref()
+	userSubs, ok := s.resourceSubscriptions[owner]
 	if !ok {
 		userSubs = make(map[string]map[string]map[string]*resourceSubscription)
-		s.resourceSubscriptions[userID] = userSubs
+		s.resourceSubscriptions[owner] = userSubs
 	}
 	devSubs, ok := userSubs[deviceID]
 	if !ok {
@@ -299,38 +298,17 @@ func (s *subscriptions) InsertResourceSubscription(ctx context.Context, sub *res
 	return nil
 }
 
-func makeLinkRepresentation(eventType pb.SubscribeForEvents_DeviceEventFilter_Event, m eventstore.Model) (ResourceLink, bool) {
-	c := m.(*resourceCtx).Clone()
-	switch eventType {
-	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
-		if c.isPublished {
-			return ResourceLink{
-				link:    pb.RAResourceToProto(c.resource),
-				version: c.onResourcePublishedVersion,
-			}, true
-		}
-	case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
-		if !c.isPublished {
-			return ResourceLink{
-				link:    pb.RAResourceToProto(c.resource),
-				version: c.onResourceUnpublishedVersion,
-			}, true
-		}
-	}
-	return ResourceLink{}, false
-}
-
-func (s *subscriptions) OnResourcePublished(ctx context.Context, l ResourceLink) error {
+func (s *Subscriptions) OnResourceLinksPublished(ctx context.Context, deviceID string, links ResourceLinks) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, l.link.DeviceId) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, deviceID) {
 			continue
 		}
-		for _, sub := range userSubs[l.link.DeviceId] {
-			if err := sub.NotifyOfPublishedResource(ctx, []ResourceLink{l}); err != nil {
+		for _, sub := range userSubs[deviceID] {
+			if err := sub.NotifyOfPublishedResourceLinks(ctx, links); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -341,17 +319,17 @@ func (s *subscriptions) OnResourcePublished(ctx context.Context, l ResourceLink)
 	return nil
 }
 
-func (s *subscriptions) OnResourceUnpublished(ctx context.Context, l ResourceLink) error {
+func (s *Subscriptions) OnResourceLinksUnpublished(ctx context.Context, deviceID string, links ResourceLinks) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, l.link.DeviceId) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, deviceID) {
 			continue
 		}
-		for _, sub := range userSubs[l.link.DeviceId] {
-			if err := sub.NotifyOfUnpublishedResource(ctx, []ResourceLink{l}); err != nil {
+		for _, sub := range userSubs[deviceID] {
+			if err := sub.NotifyOfUnpublishedResourceLinks(ctx, links); err != nil {
 				errors = append(errors, err)
 			}
 		}
@@ -362,13 +340,13 @@ func (s *subscriptions) OnResourceUnpublished(ctx context.Context, l ResourceLin
 	return nil
 }
 
-func (s *subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending pb.Event_ResourceUpdatePending, version uint64) error {
+func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending *pb.Event_ResourceUpdatePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, updatePending.GetResourceId().GetDeviceId()) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, updatePending.GetResourceId().GetDeviceId()) {
 			continue
 		}
 		for _, sub := range userSubs[updatePending.GetResourceId().GetDeviceId()] {
@@ -383,13 +361,13 @@ func (s *subscriptions) OnResourceUpdatePending(ctx context.Context, updatePendi
 	return nil
 }
 
-func (s *subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_ResourceUpdated, version uint64) error {
+func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated *pb.Event_ResourceUpdated, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, updated.GetResourceId().GetDeviceId()) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, updated.GetResourceId().GetDeviceId()) {
 			continue
 		}
 		for _, sub := range userSubs[updated.GetResourceId().GetDeviceId()] {
@@ -404,13 +382,13 @@ func (s *subscriptions) OnResourceUpdated(ctx context.Context, updated pb.Event_
 	return nil
 }
 
-func (s *subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending pb.Event_ResourceRetrievePending, version uint64) error {
+func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending *pb.Event_ResourceRetrievePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, retrievePending.GetResourceId().GetDeviceId()) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, retrievePending.GetResourceId().GetDeviceId()) {
 			continue
 		}
 		for _, sub := range userSubs[retrievePending.GetResourceId().GetDeviceId()] {
@@ -425,13 +403,13 @@ func (s *subscriptions) OnResourceRetrievePending(ctx context.Context, retrieveP
 	return nil
 }
 
-func (s *subscriptions) OnResourceDeletePending(ctx context.Context, deletePending pb.Event_ResourceDeletePending, version uint64) error {
+func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePending *pb.Event_ResourceDeletePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, deletePending.GetResourceId().GetDeviceId()) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, deletePending.GetResourceId().GetDeviceId()) {
 			continue
 		}
 		for _, sub := range userSubs[deletePending.GetResourceId().GetDeviceId()] {
@@ -446,13 +424,34 @@ func (s *subscriptions) OnResourceDeletePending(ctx context.Context, deletePendi
 	return nil
 }
 
-func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Event_ResourceRetrieved, version uint64) error {
+func (s *Subscriptions) OnResourceCreatePending(ctx context.Context, createPending *pb.Event_ResourceCreatePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, retrieved.GetResourceId().GetDeviceId()) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, createPending.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[createPending.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfCreatePendingResource(ctx, createPending, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource create pending event: %v", errors)
+	}
+	return nil
+}
+
+func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved *pb.Event_ResourceRetrieved, version uint64) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, retrieved.GetResourceId().GetDeviceId()) {
 			continue
 		}
 		for _, sub := range userSubs[retrieved.GetResourceId().GetDeviceId()] {
@@ -467,13 +466,13 @@ func (s *subscriptions) OnResourceRetrieved(ctx context.Context, retrieved pb.Ev
 	return nil
 }
 
-func (s *subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_ResourceDeleted, version uint64) error {
+func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted *pb.Event_ResourceDeleted, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.deviceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, deleted.GetResourceId().GetDeviceId()) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, deleted.GetResourceId().GetDeviceId()) {
 			continue
 		}
 		for _, sub := range userSubs[deleted.GetResourceId().GetDeviceId()] {
@@ -488,13 +487,34 @@ func (s *subscriptions) OnResourceDeleted(ctx context.Context, deleted pb.Event_
 	return nil
 }
 
-func (s *subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion) error {
+func (s *Subscriptions) OnResourceCreated(ctx context.Context, created *pb.Event_ResourceCreated, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.devicesSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, dev.deviceID) {
+	for owner, userSubs := range s.deviceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, created.GetResourceId().GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs[created.GetResourceId().GetDeviceId()] {
+			if err := sub.NotifyOfCreatedResource(ctx, created, version); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send resource created event: %v", errors)
+	}
+	return nil
+}
+
+func (s *Subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for owner, userSubs := range s.devicesSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, dev.deviceID) {
 			continue
 		}
 		for _, sub := range userSubs {
@@ -510,13 +530,13 @@ func (s *subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion)
 	return nil
 }
 
-func (s *subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion) error {
+func (s *Subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
-	for userID, userSubs := range s.devicesSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, dev.deviceID) {
+	for owner, userSubs := range s.devicesSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, dev.deviceID) {
 			continue
 		}
 		for _, sub := range userSubs {
@@ -531,15 +551,15 @@ func (s *subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion
 	return nil
 }
 
-func (s *subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged pb.Event_ResourceChanged, version uint64) error {
+func (s *Subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged *pb.Event_ResourceChanged, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
 	var errors []error
 	deviceID := resourceChanged.GetResourceId().GetDeviceId()
 	href := resourceChanged.GetResourceId().GetHref()
-	for userID, userSubs := range s.resourceSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(userID, deviceID) {
+	for owner, userSubs := range s.resourceSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, deviceID) {
 			continue
 		}
 		res, ok := userSubs[deviceID]
@@ -559,7 +579,7 @@ func (s *subscriptions) OnResourceContentChanged(ctx context.Context, resourceCh
 	return nil
 }
 
-func (s *subscriptions) CancelResourceSubscriptions(ctx context.Context, deviceID, href string, err error) {
+func (s *Subscriptions) CancelResourceSubscriptions(ctx context.Context, deviceID, href string, err error) {
 	subsIDs := make([]string, 0, 4)
 	func() {
 		s.rwlock.RLock()
@@ -577,7 +597,7 @@ func (s *subscriptions) CancelResourceSubscriptions(ctx context.Context, deviceI
 	}
 }
 
-func isDeviceOnline(content *pbRA.Content) (bool, error) {
+func isDeviceOnline(content *commands.Content) (bool, error) {
 	if content == nil {
 		return false, nil
 	}
@@ -599,14 +619,14 @@ func isDeviceOnline(content *pbRA.Content) (bool, error) {
 	return cloudStatus.IsOnline(), nil
 }
 
-func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
-	sub := NewDevicesSubscription(subscriptionID, userID, token, send, resourceProjection, req)
+func (s *Subscriptions) SubscribeForDevicesEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
+	sub := NewDevicesSubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.InsertDevicesSubscription(ctx, sub)
 	if err != nil {
 		sub.Close(err)
 		return err
 	}
-	err = s.userDevicesManager.Acquire(ctx, userID)
+	err = s.userDevicesManager.Acquire(ctx, owner)
 	if err != nil {
 		s.closeWithReleaseUserDevicesMfg(subscriptionID, err, false)
 		return err
@@ -614,14 +634,14 @@ func (s *subscriptions) SubscribeForDevicesEvent(ctx context.Context, userID str
 	return nil
 }
 
-func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
-	sub := NewDeviceSubscription(subscriptionID, userID, token, send, resourceProjection, req)
+func (s *Subscriptions) SubscribeForDeviceEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
+	sub := NewDeviceSubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.InsertDeviceSubscription(ctx, sub)
 	if err != nil {
 		sub.Close(err)
 		return err
 	}
-	err = s.userDevicesManager.Acquire(ctx, userID)
+	err = s.userDevicesManager.Acquire(ctx, owner)
 	if err != nil {
 		s.closeWithReleaseUserDevicesMfg(subscriptionID, err, false)
 		return err
@@ -629,14 +649,14 @@ func (s *subscriptions) SubscribeForDeviceEvent(ctx context.Context, userID stri
 	return nil
 }
 
-func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
-	sub := NewResourceSubscription(subscriptionID, userID, token, send, resourceProjection, req)
+func (s *Subscriptions) SubscribeForResourceEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
+	sub := NewResourceSubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.InsertResourceSubscription(ctx, sub)
 	if err != nil {
 		sub.Close(err)
 		return err
 	}
-	err = s.userDevicesManager.Acquire(ctx, userID)
+	err = s.userDevicesManager.Acquire(ctx, owner)
 	if err != nil {
 		s.closeWithReleaseUserDevicesMfg(subscriptionID, err, false)
 		return err
@@ -644,7 +664,7 @@ func (s *subscriptions) SubscribeForResourceEvent(ctx context.Context, userID st
 	return nil
 }
 
-func (s *subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscriptionID string) error {
+func (s *Subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscriptionID string) error {
 	_, ok := localSubscriptions.Load(subscriptionID)
 	if !ok {
 		return fmt.Errorf("cannot cancel subscription %v: not found", subscriptionID)
@@ -653,8 +673,8 @@ func (s *subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscri
 	return s.Close(subscriptionID, nil)
 }
 
-func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
-	userID, err := kitNetGrpc.UserIDFromMD(srv.Context())
+func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
+	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
@@ -689,7 +709,7 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 	for {
 		subReq, err := srv.Recv()
 		if err == io.EOF {
-			log.Debugf("subscriptions.SubscribeForEvents: cannot receive events for userID %v: %v", userID, err)
+			log.Debugf("subscriptions.SubscribeForEvents: cannot receive events for owner %v: %v", owner, err)
 			break
 		}
 		if err != nil {
@@ -732,11 +752,11 @@ func (s *subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 
 		switch r := subReq.GetFilterBy().(type) {
 		case *pb.SubscribeForEvents_DevicesEvent:
-			err = s.SubscribeForDevicesEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DevicesEvent)
+			err = s.SubscribeForDevicesEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DevicesEvent)
 		case *pb.SubscribeForEvents_DeviceEvent:
-			err = s.SubscribeForDeviceEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DeviceEvent)
+			err = s.SubscribeForDeviceEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DeviceEvent)
 		case *pb.SubscribeForEvents_ResourceEvent:
-			err = s.SubscribeForResourceEvent(ctx, userID, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.ResourceEvent)
+			err = s.SubscribeForResourceEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.ResourceEvent)
 		case *pb.SubscribeForEvents_CancelSubscription_:
 			//handled by cancelation
 			err = nil

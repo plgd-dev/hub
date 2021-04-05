@@ -1,17 +1,18 @@
 SHELL = /bin/bash
 SIMULATOR_NAME_SUFFIX ?= $(shell hostname)
-CLOUD_SID ?= adebc667-1f2b-41e3-bf5c-6d6eabc68cc6
+CLOUD_SID ?= 00000000-0000-0000-0000-000000000001 #adebc667-1f2b-41e3-bf5c-6d6eabc68cc6
 LATEST_TAG ?= vnext
 ifeq ($(strip $(LATEST_TAG)),)
 BUILD_TAG := vnext
 else
 BUILD_TAG := $(LATEST_TAG)
 endif
+VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
-SUBDIRS := authorization resource-aggregate resource-directory coap-gateway cloud2cloud-connector cloud2cloud-gateway grpc-gateway certificate-authority http-gateway
-#portal-webapi bundle
+SUBDIRS := test/oauth-server authorization resource-aggregate resource-directory coap-gateway cloud2cloud-connector cloud2cloud-gateway grpc-gateway certificate-authority http-gateway
+#bundle
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates cloud-build
 
 default: build
@@ -20,13 +21,14 @@ cloud-build:
 	docker build \
 		--network=host \
 		--tag cloud-build \
-		-f Dockerfile.configtest \
+		--tag cloud-build:$(VERSION_TAG) \
 		.
 
 cloud-test:
 	docker build \
 		--network=host \
 		--tag cloud-test \
+		--tag cloud-test:$(VERSION_TAG) \
 		-f Dockerfile.configtest \
 		.
 
@@ -36,7 +38,28 @@ certificates: #cloud-test
 		--network=host \
 		-v $(shell pwd)/.tmp/certs:/certs \
 		cloud-test \
-		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key && cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --cert.san.domain=coap-gateway --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+
+privateKeys:
+	mkdir -p $(shell pwd)/.tmp/privKeys
+	openssl genrsa -out $(shell pwd)/.tmp/privKeys/idTokenKey.pem 4096
+	openssl ecparam -name prime256v1 -genkey -noout -out $(shell pwd)/.tmp/privKeys/accessTokenKey.pem
+
+coap-certs: #certificates
+	mkdir -p $(shell pwd)/.tmp/certs
+	docker run \
+		--network=host \
+		-v $(shell pwd)/.tmp/certs:/certs \
+		cloud-test \
+		/bin/bash -c "cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --cert.san.domain=coap-gateway --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+
+nats-certs: #certificates
+	mkdir -p $(shell pwd)/.tmp/certs
+	docker run \
+		--network=host \
+		-v $(shell pwd)/.tmp/certs:/certs \
+		cloud-test \
+		/bin/bash -c "cert-tool --cmd.generateCertificate --outCert=/certs/nats.crt --outKey=/certs/nats.key --cert.subject.cn=nats --cert.san.domain=localhost --cert.san.domain=nats --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
 
 mongo-certs: #certificates
 	mkdir -p $(shell pwd)/.tmp/certs
@@ -44,33 +67,46 @@ mongo-certs: #certificates
 		--network=host \
 		-v $(shell pwd)/.tmp/certs:/certs \
 		cloud-test \
-		/bin/bash -c "cert-tool --cmd.generateCertificate --outCert=/certs/mongo.crt --outKey=/certs/mongo.key --cert.subject.cn=localhost --cert.san.domain=localhost --cert.san.domain=mongo --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+		/bin/bash -c "cert-tool --cmd.generateCertificate --outCert=/certs/mongo.crt --outKey=/certs/mongo.key --cert.subject.cn=mongo --cert.san.domain=localhost --cert.san.domain=mongo --cert.san.domain=*.mongo --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
 	cat $(shell pwd)/.tmp/certs/mongo.crt > $(shell pwd)/.tmp/certs/mongo.certkey
 	cat $(shell pwd)/.tmp/certs/mongo.key >> $(shell pwd)/.tmp/certs/mongo.certkey
 		#--user $(shell id -u):$(shell id -g) \
 
-nats: #certificates
+service-certs: #certificates
+	mkdir -p $(shell pwd)/.tmp/certs
 	docker run \
-	    -d --network=bridge \
+		--network=host \
+		-v $(shell pwd)/.tmp/certs:/certs \
+		cloud-test \
+		/bin/bash -c "cert-tool --cmd.generateCertificate --outCert=/certs/service.crt --outKey=/certs/service.key --cert.subject.cn=*.ocf.cloud --cert.san.domain=localhost --cert.san.domain=authorization --cert.san.domain=resource-aggregate --cert.san.domain=resource-directory --cert.san.domain=http-gateway --cert.san.domain=grpc-gateway --cert.san.domain=cloud2cloud-gateway --cert.san.domain=cloud2cloud-connector --cert.san.domain=certificate-authority --cert.san.domain=oauth-server --cert.san.domain=auth.ocf.cloud --cert.san.domain=api.ocf.cloud --cert.san.domain=coapgw.ocf.cloud --cert.san.ip=127.0.0.1 --cert.san.ip=172.17.0.1 --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
+
+oauth-keys:
+	mkdir -p $(shell pwd)/.tmp/oauth/keys
+	openssl genrsa -out $(shell pwd)/.tmp/oauth/keys/id-token.pem 4096
+	openssl ecparam -name prime256v1 -genkey -noout -out $(shell pwd)/.tmp/oauth/keys/access-token.pem
+
+nats: #certificates nats-certs
+	docker run \
+	    -d --network=plgdnet \
 		-p 4222:4222 -p 6222:6222 -p 8222:8222 \
 		--name=nats \
 		--hostname=nats \
 		-v $(shell pwd)/.tmp/certs:/certs \
 		--user $(shell id -u):$(shell id -g) \
-		nats --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+		nats --tls --tlsverify --tlscert=/certs/nats.crt --tlskey=/certs/nats.key --tlscacert=/certs/root_ca.crt
 	docker run \
-	    -d --network=bridge \
+	    -d --network=plgdnet \
 		-p 34222:34222 \
 		--name=nats-cloud-connector \
 		--hostname=nats-cloud-connector \
 		-v $(shell pwd)/.tmp/certs:/certs \
 		--user $(shell id -u):$(shell id -g) \
-		nats --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+		nats --port 34222 --tls --tlsverify --tlscert=/certs/nats.crt --tlskey=/certs/nats.key --tlscacert=/certs/root_ca.crt
 
 mongo: #certificates mongo-certs
 	mkdir -p $(shell pwd)/.tmp/mongo
 	docker run \
-	    -d --network=bridge \
+	    -d --network=plgdnet \
 		-p 27017:27017 \
 		--name=mongo \
 		--hostname=mongo \
@@ -79,7 +115,7 @@ mongo: #certificates mongo-certs
 		mongo --port 27017 --bind_ip_all --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.certkey --tlsAllowInvalidCertificates
 	  	#--user $(shell id -u):$(shell id -g) \
 		#--noauth --bind_ip_all --tlsMode requireTLS
-env: clean certificates mongo-certs nats mongo
+env: clean certificates nats-certs mongo-certs coap-certs service-certs nats mongo
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
@@ -116,6 +152,40 @@ test: env
 
 build: cloud-build $(SUBDIRS)
 
+build-test: cloud-build mongo nats $(SUBDIRS)
+
+create-network:
+	docker network create plgdnet
+
+build-clean: $(SUBDIRS) mongo-clean nats-clean
+
+mongo-clean:
+ifneq ($(shell docker ps | grep mongo | tr -s ' ' | cut -d ' ' -f 1),)
+	docker stop $(shell docker ps | grep mongo | tr -s ' ' | cut -d ' ' -f 1)
+endif
+ifneq ($(shell docker ps -a | grep mongo | tr -s ' ' | cut -d ' ' -f 1),)
+	docker rm $(shell docker ps -a | grep mongo | tr -s ' ' | cut -d ' ' -f 1)
+endif
+
+nats-clean:
+ifneq ($(shell docker ps | grep nats | tr -s ' ' | cut -d ' ' -f 1),)
+	docker stop $(shell docker ps | grep nats | tr -s ' ' | cut -d ' ' -f 1)
+endif
+ifneq ($(shell docker ps -a | grep nats | tr -s ' ' | cut -d ' ' -f 1),)
+	docker rm $(shell docker ps -a | grep nats | tr -s ' ' | cut -d ' ' -f 1)
+endif
+ifneq ($(shell docker ps | grep nats-cloud-connector | tr -s ' ' | cut -d ' ' -f 1),)
+	docker stop $(shell docker ps | grep nats-cloud-connector | tr -s ' ' | cut -d ' ' -f 1)
+endif
+ifneq ($(shell docker ps -a | grep nats-cloud-connector | tr -s ' ' | cut -d ' ' -f 1),)
+	docker rm $(shell docker ps -a | grep nats-cloud-connector | tr -s ' ' | cut -d ' ' -f 1)
+endif
+
+image-clean:
+	docker rmi -f $(shell docker images | grep plgd/* | tr -s ' ' | cut -d ' ' -f 3)
+	docker rmi -f $(shell docker images | grep cloud-* | tr -s ' ' | cut -d ' ' -f 3)
+	#docker rmi -f $(shell docker images | grep "<none>" | awk "{print \$3}")
+
 clean:
 	docker rm -f mongo || true
 	docker rm -f nats || true
@@ -124,6 +194,7 @@ clean:
 	rm -rf ./.tmp/certs || true
 	rm -rf ./.tmp/mongo || true
 	rm -rf ./.tmp/home || true
+	rm -rf ./.tmp/privateKeys || true
 
 proto/generate: $(SUBDIRS)
 push: cloud-build $(SUBDIRS) 

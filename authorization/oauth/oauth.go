@@ -30,18 +30,22 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 	return oauth2.AuthStyleAutoDetect
 }
 
+type Endpoint struct {
+	AuthURL   	 string    `yaml:"authURL" json:"authURL" envconfig:"AUTH_URL"`
+	TokenURL  	 string    `yaml:"tokenURL" json:"tokenURL" envconfig:"TOKEN_URL"`
+	AuthStyle 	 AuthStyle `yaml:"authStyle" json:"authStyle" envconfig:"AUTH_STYLE"`
+}
+
 type Config struct {
-	ClientID     string    `yaml:"clientID" json:"clientID"`
-	ClientSecret string    `yaml:"clientSecret" json:"clientSecret"`
-	Scopes       []string  `yaml:"scopes" json:"scopes"`
-	AuthURL   	 string    `yaml:"authURL" json:"authURL"`
-	TokenURL  	 string    `yaml:"tokenURL" json:"tokenURL"`
-	AuthStyle 	 AuthStyle `yaml:"authStyle" json:"authStyle"`
-	Audience     string    `yaml:"audience" json:"audience"`
-	RedirectURL  string    `yaml:"redirectURL" json:"redirectURL"`
-	AccessType   string    `yaml:"accessType" json:"accessType"`
-	ResponseType string    `yaml:"responseType" json:"responseType"`
-	ResponseMode string    `yaml:"responseMode" json:"responseMode"`
+	ClientID     string    `yaml:"clientID" json:"clientID" envconfig:"CLIENT_ID"`
+	ClientSecret string    `yaml:"clientSecret" json:"clientSecret" envconfig:"CLIENT_SECRET"`
+	Scopes       []string  `yaml:"scopes" json:"scopes" envconfig:"SCOPES"`
+	Endpoint               `yaml:",inline"`
+	Audience     string    `yaml:"audience" json:"audience" envconfig:"AUDIENCE"`
+	RedirectURL  string    `yaml:"redirectURL" json:"redirectURL" envconfig:"REDIRECT_URL"`
+	AccessType   string    `yaml:"accessType" json:"accessType" envconfig:"ACCESS_TYPE"`
+	ResponseType string    `yaml:"responseType" json:"responseType" envconfig:"RESPONSE_TYPE"`
+	ResponseMode string    `yaml:"responseMode" json:"responseMode" envconfig:"RESPONSE_MODE"`
 }
 
 func (c Config) ToOAuth2() oauth2.Config {
@@ -51,9 +55,9 @@ func (c Config) ToOAuth2() oauth2.Config {
 		RedirectURL:  c.RedirectURL,
 		Scopes:       c.Scopes,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:   c.AuthURL,
-			TokenURL:  c.TokenURL,
-			AuthStyle: c.AuthStyle.ToOAuth2(),
+			AuthURL:   c.Endpoint.AuthURL,
+			TokenURL:  c.Endpoint.TokenURL,
+			AuthStyle: c.Endpoint.AuthStyle.ToOAuth2(),
 		},
 	}
 }

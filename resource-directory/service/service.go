@@ -8,8 +8,8 @@ import (
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
 	"github.com/plgd-dev/kit/security/jwt"
@@ -20,14 +20,23 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func NewService(logger *zap.Logger, config Config) (*kitNetGrpc.Server, error) {
+func NewService(config Config, logger *zap.Logger) (*kitNetGrpc.Server, error) {
 	log.Info(config.String())
 
-	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
+	var oauthCertManager *client.CertManager = nil
+	var oauthTLSConfig *tls.Config = nil
+	err := config.Clients.OAuthProvider.TLSConfig.Validate()
 	if err != nil {
-		log.Errorf("cannot create oauth client cert manager %w", err)
+		log.Errorf("failed to validate client tls config: %v", err)
+	} else {
+		oauthCertManager, err := client.New(config.Clients.OAuthProvider.TLSConfig, logger)
+		if err != nil {
+			log.Errorf("cannot create oauth client cert manager %v", err)
+		} else {
+			oauthTLSConfig = oauthCertManager.GetTLSConfig()
+		}
 	}
-	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig())
+	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, config.Clients.OAuthProvider.OwnerClaim, oauthTLSConfig)
 
 	var streamInterceptors []grpc.StreamServerInterceptor
 	if logger.Core().Enabled(zapcore.DebugLevel) {
@@ -43,11 +52,11 @@ func NewService(logger *zap.Logger, config Config) (*kitNetGrpc.Server, error) {
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
-	grpcCertManager, err := server.New(config.Service.RD.GrpcTLSConfig, logger)
+	grpcCertManager, err := server.New(config.Service.Grpc.TLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create grpc server cert manager %w", err)
 	}
-	server, err := kitNetGrpc.NewServer(config.Service.RD.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
+	server, err := kitNetGrpc.NewServer(config.Service.Grpc.Addr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),
@@ -60,7 +69,7 @@ func NewService(logger *zap.Logger, config Config) (*kitNetGrpc.Server, error) {
 		return nil, err
 	}
 	server.AddCloseFunc(func() {
-		oauthCertManager.Close()
+		if oauthCertManager != nil { oauthCertManager.Close() }
 		grpcCertManager.Close()
 	})
 
@@ -71,7 +80,7 @@ func NewService(logger *zap.Logger, config Config) (*kitNetGrpc.Server, error) {
 	return server, nil
 }
 
-func makeAuthFunc(jwksUrl string, tls *tls.Config) func(ctx context.Context, method string) (context.Context, error) {
+func makeAuthFunc(jwksUrl, ownerClaim string, tls *tls.Config) func(ctx context.Context, method string) (context.Context, error) {
 	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
@@ -86,21 +95,21 @@ func makeAuthFunc(jwksUrl string, tls *tls.Config) func(ctx context.Context, met
 			log.Errorf("auth interceptor %v %v: %v", method, token, err)
 			return ctx, err
 		}
-		userID, err := kitNetGrpc.UserIDFromMD(ctx)
+		owner, err := kitNetGrpc.OwnerFromMD(ctx)
 		if err != nil {
-			userID, err = kitNetGrpc.UserIDFromTokenMD(ctx)
+			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
 			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, userID)
+				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
 			}
 		}
 		if err != nil {
-			log.Errorf("auth cannot get userID: %v", err)
+			log.Errorf("auth cannot get owner: %v", err)
 			return ctx, err
 		}
-		return kitNetGrpc.CtxWithUserID(ctx, userID), nil
+		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
 	}
 }
 
-func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(jwksUrl, tls))
+func NewAuth(jwksUrl, ownerClaim string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(jwksUrl, ownerClaim, tls))
 }

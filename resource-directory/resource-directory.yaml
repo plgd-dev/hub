@@ -5,8 +5,8 @@ apis:
     address: "0.0.0.0:9082"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/service.crt"
+      keyFile: "/data/certs/service.key"
       clientCertificateRequired: true
     fqdn: "grpcgw.ocf.cloud"
     capabilities:
@@ -17,7 +17,7 @@ apis:
       userMgmtExpiration: 1m
 database:
   mongoDB:
-    uri: "mongodb://172.17.0.1:27017"
+    uri: "mongodb://mongo:27017"
     database: "eventStore"
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -29,35 +29,36 @@ database:
     maxConnIdleTime: 240s
 clients:
   nats:
-    url: "nats://172.17.0.1:4222"
-    tls:
-      caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
-  authorizationServer:
-    address: "172.17.0.1:9081"
-    tls:
-      caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
-  resourceAggregate:
-    address: "172.17.0.1:9083"
+    url: "nats://nats:4222"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   oauthProvider:
-    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://oauth-server:9090/.well-known/jwks.json"
+    ownerClaim: "sub"
     oauth:
-      clientID: ""
+      clientID: "test"
       clientSecret: ""
       scopes: []
-      audience: ""
-      tokenURL : "https://172.17.0.1:9085/api/authz/token"
+      audience: "test"
+      tokenURL : "https://oauth-server:9090/oauth/token"
       timeout : 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  authorizationServer:
+    address: "authorization:9081"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceAggregate:
+    address: "resource-aggregate:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
@@ -65,12 +66,10 @@ clients:
       useSystemCAPool: false
   clientConfiguration:
     cloudCAPool: "/data/certs/root_ca.crt"
-    cloudConfiguration:
-      accessTokenURL: "https://localhost:9085/api/authz/token"
-      authCodeURL: "https://localhost:9085/api/authz/code"
-      jwtClaimOwnerId: "sub"
-      signingServerAddress: "localhost:9087"
-      cloudID: "00000000-0000-0000-0000-000000000001"
-      cloudURL: "coaps+tcp://localhost:5684"
-      cloudAuthorizationProvider: "test"
-      cloudCertificateAuthorities: ""
+    accessTokenURL: "https://oauth-mock.ocf.cloud/oauth/token?client_id=test&audience=test"
+    authCodeURL: "https://oauth-mock.ocf.cloud/authorize?client_id=test"
+    jwtClaimOwnerId: "sub"
+    signingServerAddress: "httpgw.ocf.cloud:9086" # connect to certificate-authority via http-gateway external address
+    cloudID: "00000000-0000-0000-0000-000000000001"
+    cloudURL: "coaps+tcp://coapgw.ocf.cloud:5684"
+    cloudAuthorizationProvider: "plgd"

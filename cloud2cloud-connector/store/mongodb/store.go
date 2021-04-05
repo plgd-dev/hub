@@ -22,9 +22,9 @@ type Store struct {
 }
 
 type Config struct {
-	Host         string        `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
-	DatabaseName string        `yaml:"database" json:"database" default:"cloud2cloudConnector"`
-	TLSConfig    client.Config `yaml:"tls" json:"tls"`
+	Host         string        `yaml:"uri" json:"uri" envconfig:"URI" default:"mongodb://localhost:27017"`
+	DatabaseName string        `yaml:"database" json:"database" envconfig:"NAME" default:"cloud2cloudConnector"`
+	TLSConfig    client.Config `yaml:"tls" json:"tls" envconfig:"TLS"`
 	tlsCfg       *tls.Config
 }
 

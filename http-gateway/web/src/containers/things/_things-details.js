@@ -15,12 +15,17 @@ import { messages as t } from './things-i18n'
 
 export const ThingsDetails = memo(({ data, loading }) => {
   const { formatMessage: _ } = useIntl()
-  const isOnline = thingsStatuses.ONLINE === data?.status
+  const deviceStatus = data?.status
+  const isOnline = thingsStatuses.ONLINE === deviceStatus
+  const isUnregistered = thingsStatuses.UNREGISTERED === deviceStatus
   const LabelWithLoading = p =>
     createElement(Label, {
       ...p,
       inline: true,
-      className: classNames({ shimmering: loading }),
+      className: classNames({
+        shimmering: loading,
+        'grayed-out': isUnregistered,
+      }),
     })
 
   return (
@@ -31,7 +36,9 @@ export const ThingsDetails = memo(({ data, loading }) => {
         </LabelWithLoading>
         <LabelWithLoading title={_(t.types)}>
           <div className="align-items-end badges-box-vertical">
-            {data?.device?.rt?.map?.(type => <Badge key={type}>{type}</Badge>)}
+            {data?.device?.rt?.map?.(type => (
+              <Badge key={type}>{type}</Badge>
+            )) || '-'}
           </div>
         </LabelWithLoading>
       </Col>

@@ -17,7 +17,8 @@ func MakeConfig(t *testing.T) service.Config {
 	require.NoError(t, err)
 	grpcCfg.Service.GrpcConfig.Addr = testCfg.GRPC_HOST
 	grpcCfg.Service.GrpcConfig.TLSConfig.ClientCertificateRequired = false
-	grpcCfg.Clients.RDConfig.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	grpcCfg.Clients.ResourceDirectory.Addr = testCfg.RESOURCE_DIRECTORY_HOST
+	grpcCfg.Clients.ResourceAggregate.Addr = testCfg.RESOURCE_AGGREGATE_HOST
 	grpcCfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
 	return grpcCfg
 }

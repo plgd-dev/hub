@@ -13,9 +13,9 @@
       min-width: 40px;
       padding: 0;
       border-radius: 2px;
-      color: $blue_100;
-      background-color: $white_100;
-      border-color: $black_20;
+      color: $primary_100;
+      background-color: $light_100;
+      border-color: $secondary_20;
     }
 
     &.step {
@@ -27,7 +27,7 @@
     &.active,
     &:hover {
       .page-link {
-        background-color: rgba($black_20, 0.4);
+        background-color: rgba($secondary_20, 0.4);
       }
     }
 
@@ -35,14 +35,14 @@
       cursor: default;
 
       .page-link:active {
-        background-color: rgba($black_20, 0.4);
+        background-color: rgba($secondary_20, 0.4);
       }
     }
 
     .page-link {
       &:active,
       &:focus {
-        background-color: $black_20;
+        background-color: $secondary_20;
         box-shadow: none;
       }
     }
@@ -50,7 +50,7 @@
     &.disabled,
     &.disabled:hover {
       .page-link {
-        background-color: $white_100;
+        background-color: $light_100;
       }
     }
 

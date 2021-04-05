@@ -8,10 +8,9 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
 func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
@@ -91,19 +90,13 @@ func (s *SubscriptionManager) HandleResourceChangedEvent(ctx context.Context, su
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err := s.raClient.NotifyResourceChanged(ctx, &pbRA.NotifyResourceChangedRequest{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			DeviceId: subscriptionData.subscription.DeviceID,
-		},
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: subscriptionData.subscription.DeviceID,
-			Href:     kitHttp.CanonicalHref(subscriptionData.subscription.Href),
-		},
-		CommandMetadata: &pbCQRS.CommandMetadata{
+	_, err := s.raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
+		ResourceId: commands.NewResourceID(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: subscriptionData.linkedAccount.ID + "." + subscriptionData.subscription.ID,
 			Sequence:     header.SequenceNumber,
 		},
-		Content: &pbRA.Content{
+		Content: &commands.Content{
 			Data:              body,
 			ContentType:       header.ContentType,
 			CoapContentFormat: coapContentFormat,

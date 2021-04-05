@@ -63,14 +63,14 @@ type ClientConfigurationResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AccessTokenUrl              string `yaml:"accessTokenURL" protobuf:"bytes,1,opt,name=access_token_url,json=accessTokenUrl,proto3" json:"access_token_url,omitempty"`
-	AuthCodeUrl                 string `yaml:"authCodeURL" protobuf:"bytes,2,opt,name=auth_code_url,json=authCodeUrl,proto3" json:"auth_code_url,omitempty"`
-	JwtClaimOwnerId             string `yaml:"jwtClaimOwnerId" protobuf:"bytes,3,opt,name=jwt_claim_owner_id,json=jwtClaimOwnerId,proto3" json:"jwt_claim_owner_id,omitempty"`
-	SigningServerAddress        string `yaml:"signingServerAddress" protobuf:"bytes,4,opt,name=signing_server_address,json=signingServerAddress,proto3" json:"signing_server_address,omitempty"`
-	CloudId                     string `yaml:"cloudID" protobuf:"bytes,5,opt,name=cloud_id,json=cloudId,proto3" json:"cloud_id,omitempty"`
-	CloudUrl                    string `yaml:"cloudURL" protobuf:"bytes,6,opt,name=cloud_url,json=cloudUrl,proto3" json:"cloud_url,omitempty"`
-	CloudAuthorizationProvider  string `yaml:"cloudAuthorizationProvider" protobuf:"bytes,7,opt,name=cloud_authorization_provider,json=cloudAuthorizationProvider,proto3" json:"cloud_authorization_provider,omitempty"`
-	CloudCertificateAuthorities string `yaml:"cloudCertificateAuthorities,omitempty" protobuf:"bytes,8,opt,name=cloud_certificate_authorities,json=cloudCertificateAuthorities,proto3" json:"cloud_certificate_authorities,omitempty"`
+	AccessTokenUrl              string `yaml:"accessTokenURL" envconfig:"CLOUD_ACCESS_TOKEN_URL" protobuf:"bytes,1,opt,name=access_token_url,json=accessTokenUrl,proto3" json:"access_token_url,omitempty"`
+	AuthCodeUrl                 string `yaml:"authCodeURL" envconfig:"CLOUD_AUTH_CODE_URL" protobuf:"bytes,2,opt,name=auth_code_url,json=authCodeUrl,proto3" json:"auth_code_url,omitempty"`
+	JwtClaimOwnerId             string `yaml:"jwtClaimOwnerId" envconfig:"CLOUD_JWT_CLAIM_OWNER_ID" protobuf:"bytes,3,opt,name=jwt_claim_owner_id,json=jwtClaimOwnerId,proto3" json:"jwt_claim_owner_id,omitempty"`
+	SigningServerAddress        string `yaml:"signingServerAddress" envconfig:"CLOUD_SIGNING_SERVER_ADDRESS" protobuf:"bytes,4,opt,name=signing_server_address,json=signingServerAddress,proto3" json:"signing_server_address,omitempty"`
+	CloudId                     string `yaml:"cloudID" envconfig:"CLOUD_ID" protobuf:"bytes,5,opt,name=cloud_id,json=cloudId,proto3" json:"cloud_id,omitempty"`
+	CloudUrl                    string `yaml:"cloudURL" envconfig:"CLOUD_URL" protobuf:"bytes,6,opt,name=cloud_url,json=cloudUrl,proto3" json:"cloud_url,omitempty"`
+	CloudAuthorizationProvider  string `yaml:"cloudAuthorizationProvider" envconfig:"CLOUD_AUTH_PROVIDER" protobuf:"bytes,7,opt,name=cloud_authorization_provider,json=cloudAuthorizationProvider,proto3" json:"cloud_authorization_provider,omitempty"`
+	CloudCertificateAuthorities string `yaml:"cloudCertificateAuthorities,omitempty" envconfig:"CLOUD_CERTIFICATE_AUTHORIITY" protobuf:"bytes,8,opt,name=cloud_certificate_authorities,json=cloudCertificateAuthorities,proto3" json:"cloud_certificate_authorities,omitempty"`
 }
 
 func (x *ClientConfigurationResponse) Reset() {

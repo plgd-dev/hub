@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/plgd-dev/kit/config"
+	"github.com/plgd-dev/kit/log"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -10,6 +11,8 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
+	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,6 +32,24 @@ func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provi
 	err := config.Load(&cfg)
 	require.NoError(t, err)
 	t.Log(cfg.String())
+
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	log.Set(logger)
+	log.Info(cfg.String())
+
+	mongoCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	tlsConfig := mongoCertManager.GetTLSConfig()
+
+	if deviceProvider == nil {
+		deviceProvider = NewTestProvider()
+	}
+	if sdkProvider == nil {
+		deviceProvider = NewTestProvider()
+	}
+	persistence, err := mongodb.NewStore(context.Background(), cfg.Database.MongoDB, mongodb.WithTLS(tlsConfig))
+	require.NoError(t, err)
 
 	dir, err := ioutil.TempDir("", "gotesttmp")
 	require.NoError(t, err)
@@ -57,7 +78,7 @@ func (s *Server) cleanUp() {
 func newTestDevice() *persistence.AuthorizedDevice {
 	return &persistence.AuthorizedDevice{
 		DeviceID:     testDeviceID,
-		UserID:       testUserID,
+		Owner:        testUserID,
 		AccessToken:  testAccessToken,
 		RefreshToken: "testRefreshToken",
 		Expiry:       time.Now().Add(time.Hour),

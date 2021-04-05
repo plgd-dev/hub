@@ -8,15 +8,15 @@ import (
 	"net/http/httputil"
 	"strings"
 
-	"github.com/google/uuid"
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 
+	"github.com/google/uuid"
 	router "github.com/gorilla/mux"
 )
 
@@ -26,15 +26,17 @@ type RequestHandler struct {
 	caClient pbCA.CertificateAuthorityClient
 	config   *Config
 	manager  *ObservationManager
+	raClient *raClient.Client
 }
 
 //NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager) *RequestHandler {
+func NewRequestHandler(client *client.Client, caClient pbCA.CertificateAuthorityClient, config *Config, manager *ObservationManager, raClient *raClient.Client) *RequestHandler {
 	return &RequestHandler{
 		client:   client,
 		config:   config,
 		manager:  manager,
 		caClient: caClient,
+		raClient: raClient,
 	}
 }
 
@@ -45,7 +47,7 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.HrefKey] = "/" + strings.Join(paths[1:], "/")
+		rm.Vars[uri.HrefKey] = strings.Split("/"+strings.Join(paths[1:], "/"), "?")[0]
 		return true
 	}
 	return false
@@ -58,7 +60,7 @@ func wsResourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.HrefKey] = "/" + strings.Join(paths[1:], "/")
+		rm.Vars[uri.HrefKey] = strings.Split("/"+strings.Join(paths[1:], "/"), "?")[0]
 		return true
 	}
 	return false
@@ -112,6 +114,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodPut).HandlerFunc(requestHandler.updateResource)
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.getResource)
 	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodDelete).HandlerFunc(requestHandler.deleteResource)
+	r.PathPrefix(uri.DeviceResources).MatcherFunc(resourceMatcher).Methods(http.MethodPost).HandlerFunc(requestHandler.createResource)
 
 	// ws
 	r.PathPrefix(uri.WsStartDeviceResourceObservation).MatcherFunc(wsResourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.startResourceObservation)
@@ -120,14 +123,16 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 
 	// serve www directory
 	if requestHandler.config.UI.Enabled {
+		log.Infof("UI Enabled : %v, Directory: %v", requestHandler.config.UI.Enabled, requestHandler.config.UI.Directory)
 		r.HandleFunc(uri.OAuthConfiguration, requestHandler.getOAuthConfiguration).Methods(http.MethodGet)
 		fs := http.FileServer(http.Dir(requestHandler.config.UI.Directory))
 		r.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := httptest.NewRecorder()
 			fs.ServeHTTP(c, r)
 			if c.Code == http.StatusNotFound {
-				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-				return
+				c = httptest.NewRecorder()
+				r.URL.Path = "/"
+				fs.ServeHTTP(c, r)
 			}
 			for k, v := range c.HeaderMap {
 				w.Header().Set(k, strings.Join(v, ""))

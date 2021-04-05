@@ -12,32 +12,46 @@ apis:
       websocketReadLimit: 8192
       websocketReadTimeout: 4s
 clients:
+  nats:
+    url: "nats://localhost:4222"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
   oauthProvider:
-    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
+    jwksUrl: "https://localhost:9090/.well-known/jwks.json"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
-  resourceDirectory:
-    address: "localhost:9082"
-    tls:
-      caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   certificateAuthority:
     address: "localhost:9087"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
+  resourceDirectory:
+    address: "localhost:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
+  resourceAggregate:
+    address: "localhost:9083"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
 ui:
   enabled: true
-  directory: ""
   oauthClient:
-    domain: ""
-    clientID: ""
-    audience: ""
-    scope: ""
+    domain: "localhost:9090"
+    clientID: "test"
+    audience: "test"
+    scope: "openid offline_access"
+    httpGatewayAddress: "https://localhost:9086"

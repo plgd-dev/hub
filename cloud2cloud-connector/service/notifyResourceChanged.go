@@ -3,14 +3,14 @@ package service
 import (
 	"context"
 
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
-func notifyResourceChanged(ctx context.Context, raClient pbRA.ResourceAggregateClient, deviceID, href, userID string, contentType string, body []byte, cmdMetadata pbCQRS.CommandMetadata) error {
+func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID, href, userID string, contentType string, body []byte, cmdMetadata commands.CommandMetadata) error {
 	coapContentFormat := int32(-1)
 	switch contentType {
 	case message.AppCBOR.String():
@@ -21,16 +21,10 @@ func notifyResourceChanged(ctx context.Context, raClient pbRA.ResourceAggregateC
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err := raClient.NotifyResourceChanged(kitNetGrpc.CtxWithUserID(ctx, userID), &pbRA.NotifyResourceChangedRequest{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			DeviceId: deviceID,
-		},
-		ResourceId: &pbRA.ResourceId{
-			DeviceId: deviceID,
-			Href:     kitHttp.CanonicalHref(href),
-		},
+	_, err := raClient.NotifyResourceChanged(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.NotifyResourceChangedRequest{
+		ResourceId:      commands.NewResourceID(deviceID, kitHttp.CanonicalHref(href)),
 		CommandMetadata: &cmdMetadata,
-		Content: &pbRA.Content{
+		Content: &commands.Content{
 			Data:              body,
 			ContentType:       contentType,
 			CoapContentFormat: coapContentFormat,

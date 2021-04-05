@@ -53,6 +53,16 @@ type ResourceDeletedHandler = interface {
 	HandleResourceDeleted(ctx context.Context, val *pb.Event_ResourceDeleted) error
 }
 
+// ResourceCreatePendingHandler handler of events
+type ResourceCreatePendingHandler = interface {
+	HandleResourceCreatePending(ctx context.Context, val *pb.Event_ResourceCreatePending) error
+}
+
+// ResourceCreatedHandler handler of events
+type ResourceCreatedHandler = interface {
+	HandleResourceCreated(ctx context.Context, val *pb.Event_ResourceCreated) error
+}
+
 func NewDeviceSubscriptions(ctx context.Context, gwClient pb.GrpcGatewayClient, errFunc func(err error)) (*DeviceSubscriptions, error) {
 	client, err := gwClient.SubscribeForEvents(ctx)
 	if err != nil {
@@ -128,6 +138,8 @@ type deviceSub struct {
 	ResourceRetrievedHandler
 	ResourceDeletePendingHandler
 	ResourceDeletedHandler
+	ResourceCreatePendingHandler
+	ResourceCreatedHandler
 }
 
 func (s *deviceSub) HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error {
@@ -186,6 +198,20 @@ func (s *deviceSub) HandleResourceDeleted(ctx context.Context, val *pb.Event_Res
 	return s.ResourceDeletedHandler.HandleResourceDeleted(ctx, val)
 }
 
+func (s *deviceSub) HandleResourceCreatePending(ctx context.Context, val *pb.Event_ResourceCreatePending) error {
+	if s.ResourceCreatePendingHandler == nil {
+		return fmt.Errorf("ResourceCreatePendingHandler in not supported")
+	}
+	return s.ResourceCreatePendingHandler.HandleResourceCreatePending(ctx, val)
+}
+
+func (s *deviceSub) HandleResourceCreated(ctx context.Context, val *pb.Event_ResourceCreated) error {
+	if s.ResourceCreatedHandler == nil {
+		return fmt.Errorf("ResourceCreatedHandler in not supported")
+	}
+	return s.ResourceCreatedHandler.HandleResourceCreated(ctx, val)
+}
+
 type Subcription struct {
 	id     string
 	cancel func(context.Context) error
@@ -211,6 +237,8 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 	var resourceRetrievedHandler ResourceRetrievedHandler
 	var resourceDeletePendingHandler ResourceDeletePendingHandler
 	var resourceDeletedHandler ResourceDeletedHandler
+	var resourceCreatePendingHandler ResourceCreatePendingHandler
+	var resourceCreatedHandler ResourceCreatedHandler
 	filterEvents := make([]pb.SubscribeForEvents_DeviceEventFilter_Event, 0, 1)
 	if v, ok := handle.(ResourcePublishedHandler); ok {
 		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED)
@@ -244,6 +272,14 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETED)
 		resourceDeletedHandler = v
 	}
+	if v, ok := handle.(ResourceCreatePendingHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING)
+		resourceCreatePendingHandler = v
+	}
+	if v, ok := handle.(ResourceCreatedHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATED)
+		resourceCreatedHandler = v
+	}
 
 	if resourcePublishedHandler == nil &&
 		resourceUnpublishedHandler == nil &&
@@ -252,8 +288,10 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		resourceRetrievePendingHandler == nil &&
 		resourceRetrievedHandler == nil &&
 		resourceDeletePendingHandler == nil &&
-		resourceDeletedHandler == nil {
-		return nil, fmt.Errorf("invalid handler - it's supports: ResourcePublishedHandler, ResourceUnpublishedHandler, ResourceUpdatePendingHandler, ResourceUpdatedHandler, ResourceRetrievePendingHandler, ResourceRetrievedHandler, ResourceDeletePendingHandler, ResourceDeletedHandler")
+		resourceDeletedHandler == nil &&
+		resourceCreatePendingHandler == nil &&
+		resourceCreatedHandler == nil {
+		return nil, fmt.Errorf("invalid handler - it's supports: ResourcePublishedHandler, ResourceUnpublishedHandler, ResourceUpdatePendingHandler, ResourceUpdatedHandler, ResourceRetrievePendingHandler, ResourceRetrievedHandler, ResourceDeletePendingHandler, ResourceDeletedHandler, ResourceCreatePendingHandler, ResourceCreatedHandler")
 	}
 
 	token, err := uuid.NewV4()
@@ -271,6 +309,8 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		ResourceRetrievedHandler:       resourceRetrievedHandler,
 		ResourceDeletePendingHandler:   resourceDeletePendingHandler,
 		ResourceDeletedHandler:         resourceDeletedHandler,
+		ResourceCreatePendingHandler:   resourceCreatePendingHandler,
+		ResourceCreatedHandler:         resourceCreatedHandler,
 	})
 
 	ev, err := s.doOp(ctx, &pb.SubscribeForEvents{
@@ -483,6 +523,24 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 		} else if ct := ev.GetResourceDeleted(); ct != nil {
 			err = h.HandleResourceDeleted(s.client.Context(), ct)
+			if err == nil {
+				continue
+			}
+			err := s.cancelSubscription(ev.GetSubscriptionId())
+			if err != nil {
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+			}
+		} else if ct := ev.GetResourceCreatePending(); ct != nil {
+			err = h.HandleResourceCreatePending(s.client.Context(), ct)
+			if err == nil {
+				continue
+			}
+			err := s.cancelSubscription(ev.GetSubscriptionId())
+			if err != nil {
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+			}
+		} else if ct := ev.GetResourceCreated(); ct != nil {
+			err = h.HandleResourceCreated(s.client.Context(), ct)
 			if err == nil {
 				continue
 			}

@@ -1,7 +1,11 @@
 package test
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
+	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/kit/config"
 	"github.com/plgd-dev/kit/log"
 	"sync"
@@ -12,10 +16,17 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/service"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
+	"github.com/plgd-dev/kit/security/certManager/server"
 )
 
-func newService(config service.Config) (*service.Server, error) {
+func newService(config service.Config, tlsConfig *tls.Config) (*service.Server, error) {
 	logger, err := log.NewLogger(config.Log)
+
+	oauth := provider.NewPlgdProvider(config.Clients.Device, tlsConfig)
+	persistence, err := mongodb.NewStore(context.Background(), config.Database.MongoDB, mongodb.WithTLS(tlsConfig))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create logger %w", err)
 	}
@@ -33,9 +44,15 @@ func MakeConfig(t *testing.T) service.Config {
 	var authCfg service.Config
 	err := config.Load(&authCfg)
 	require.NoError(t, err)
-	authCfg.Service.GrpcServer.GrpcAddr = testCfg.AUTH_HOST
-	authCfg.Service.HttpServer.HttpAddr = testCfg.AUTH_HTTP_HOST
-	authCfg.Clients.Device.Provider = "test"
+	authCfg.Service.Grpc.Addr = testCfg.AUTH_HOST
+	authCfg.Service.Http.Addr = testCfg.AUTH_HTTP_HOST
+	authCfg.Clients.Device.Provider = "plgd"
+	authCfg.Clients.Device.OAuth.ClientID = oauthService.ClientTest
+	authCfg.Clients.Device.OAuth.Endpoint.AuthURL = "https://" + testCfg.OAUTH_SERVER_HOST + uri.Authorize
+	authCfg.Clients.Device.OAuth.Endpoint.TokenURL = "https://" + testCfg.OAUTH_SERVER_HOST + uri.Token
+	authCfg.Clients.SDK.OAuth.ClientID = oauthService.ClientTest
+	authCfg.Clients.SDK.OAuth.Endpoint.TokenURL = "https://" + testCfg.OAUTH_SERVER_HOST + uri.Token
+	authCfg.Clients.SDK.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 	return authCfg
 }
 
@@ -51,7 +68,11 @@ func New(t *testing.T, config service.Config) func() {
 	}
 	log.Set(logger)
 
-	auth, err := newService(config)
+	dialCertManager, err := server.New(config.Service.Grpc.TLSConfig, logger)
+	require.NoError(t, err)
+	tlsConfig := dialCertManager.GetTLSConfig()
+
+	auth, err := newService(config, tlsConfig)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)

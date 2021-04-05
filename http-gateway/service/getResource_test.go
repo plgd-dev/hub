@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	authTest "github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	cloudTest "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -24,9 +24,10 @@ func TestGetResource(t *testing.T) {
 	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -42,16 +43,17 @@ func TestGetResource(t *testing.T) {
 
 	var response map[string]interface{}
 	getResource(t, deviceID, uri.Device+"/light/1", &response)
-	require.Equal(t, map[string]interface{}{"name": "Light", "power": uint64(0), "state": false}, response)
+	require.Equal(t, map[string]interface{}{"if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "name": "Light", "power": uint64(0), "rt": []interface{}{"core.light"}, "state": false}, response)
 }
 
 func TestGetResourceNotExist(t *testing.T) {
 	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, authTest.UserToken)
+
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: cloudTest.GetRootCertificatePool(t),
@@ -66,7 +68,7 @@ func TestGetResourceNotExist(t *testing.T) {
 	defer webTearDown()
 
 	getReq := test.NewRequest("GET", uri.Device+"/notExist", strings.NewReader("")).
-		DeviceId(deviceID).AuthToken(authTest.UserToken).Build()
+		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
 	res := test.HTTPDo(t, getReq)
 	defer res.Body.Close()
 	var response map[string]string
@@ -81,7 +83,7 @@ func TestGetResourceNotExist(t *testing.T) {
 
 func getResource(t *testing.T, deviceID, uri string, data interface{}) {
 	getReq := test.NewRequest("GET", uri, nil).
-		DeviceId(deviceID).AuthToken(authTest.UserToken).Build()
+		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
 	res := test.HTTPDo(t, getReq)
 	defer res.Body.Close()
 	require.Equal(t, http.StatusOK, res.StatusCode)

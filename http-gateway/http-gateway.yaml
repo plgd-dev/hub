@@ -5,29 +5,43 @@ apis:
     address: "0.0.0.0:9086"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/service.crt"
+      keyFile: "/data/certs/service.key"
       clientCertificateRequired: false
     capabilities:
       websocketReadLimit: 8192
       websocketReadTimeout: 4s
 clients:
-  oauthProvider:
-    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
+  nats:
+    url: "nats://nats:4222"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
-  resourceDirectory:
-    address: "172.17.0.1:9082"
+  oauthProvider:
+    jwksUrl: "https://oauth-server:9090/.well-known/jwks.json"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   certificateAuthority:
-    address: "172.17.0.1:9087"
+    address: "certificate-authority:9087"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceDirectory:
+    address: "resource-directory:9082"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  resourceAggregate:
+    address: "resource-aggregate:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
@@ -35,9 +49,9 @@ clients:
       useSystemCAPool: false
 ui:
   enabled: true
-  directory: ""
   oauthClient:
-    domain: ""
-    clientID: ""
-    audience: ""
-    scope: ""
+    domain: "oauth.ocf.cloud"
+    clientID: "test"
+    audience: "test"
+    scope: "openid offline_access"
+    httpGatewayAddress: "https://httpgw.ocf.cloud"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 )
 
 type RefImpl struct {
@@ -20,7 +20,7 @@ func Init(config service.Config) (*RefImpl, error) {
 	log.Set(logger)
 	log.Info(config.String())
 
-	server, err := service.NewService(logger, config)
+	server, err := service.NewService(config, logger)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
@@ -28,7 +28,6 @@ func Init(config service.Config) (*RefImpl, error) {
 		service:          server,
 	}, nil
 }
-
 // Serve starts handling requests.
 func (r *RefImpl) Serve() error {
 	return r.service.Serve()

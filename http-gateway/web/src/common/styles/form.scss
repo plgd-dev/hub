@@ -1,0 +1,40 @@
+@import '@/common/styles/colors.scss';
+
+.form-control {
+  height: 40px;
+  border-radius: 0;
+  background-color: $light_100;
+  color: $primary_100;
+  border-color: $secondary_20;
+  padding: 10px;
+
+  &:hover {
+    border-color: $secondary_40;
+  }
+
+  &:focus {
+    box-shadow: none;
+    color: $primary_100;
+    border-color: $primary_100;
+  }
+}
+
+.form-control-with-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    &.close-button {
+      min-width: 0;
+    }
+  }
+}
+
+.h2-input {
+  margin-top: 35px;
+  margin-bottom: 10px;
+}

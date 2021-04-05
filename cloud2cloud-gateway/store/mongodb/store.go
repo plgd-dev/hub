@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,9 +22,9 @@ type Store struct {
 }
 
 type Config struct {
-	Host         string        `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
-	DatabaseName string        `yaml:"database" json:"database" default:"cloud2cloudGateway"`
-	TLSConfig    client.Config `yaml:"tls" json:"tls"`
+	URI          string        `yaml:"uri" json:"uri" envconfig:"URI" default:"mongodb://localhost:27017"`
+	DatabaseName string        `yaml:"database" json:"database" envconfig:"NAME" default:"cloud2cloudGateway"`
+	TLSConfig    client.Config `yaml:"tls" json:"tls" envconfig:"TLS"`
 
 	tlsCfg       *tls.Config
 }
@@ -46,9 +45,7 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 	for _, o := range opts {
 		cfg = o(cfg)
 	}
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.Host).SetTLSConfig(cfg.tlsCfg))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(cfg.tlsCfg))
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}

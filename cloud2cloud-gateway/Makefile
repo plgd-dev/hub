@@ -19,6 +19,23 @@ build-servicecontainer:
 
 build: build-servicecontainer
 
+build-test: build-servicecontainer
+	docker run -d --network=plgdnet \
+		-p 9088:9088 \
+		--name=$(SERVICE_NAME) \
+		--hostname=$(SERVICE_NAME) \
+		-v $(shell pwd)/../.tmp/certs:/data/certs \
+		-v $(shell pwd)/c2c-gateway.yaml:/data/c2c-gateway.yaml \
+		plgd/$(SERVICE_NAME):$(LATEST_TAG) --config=/data/c2c-gateway.yaml
+
+build-clean:
+ifneq ($(shell docker ps | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1),)
+	docker stop $(shell docker ps | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1)
+endif
+ifneq ($(shell docker ps -a | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1),)
+	docker rm $(shell docker ps -a | grep $(SERVICE_NAME) | tr -s ' ' | cut -d ' ' -f 1)
+endif
+
 push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(VERSION_TAG)
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)

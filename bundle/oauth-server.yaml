@@ -1,0 +1,13 @@
+log:
+  debug: true
+apis:
+  http:
+    address: "0.0.0.0:9090"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      clientCertificateRequired: false
+    domain: "localhost:9090" #"oauth-mock.ocf.cloud"
+    idTokenKeyPath: "/data/oauth/keys/id-token.pem"
+    accessTokenKeyPath: "/data/oauth/keys/access-token.pem"

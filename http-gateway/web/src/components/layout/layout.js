@@ -23,6 +23,7 @@ const { FULL_PAGE, SPLIT } = layoutTypes
  */
 export const Layout = props => {
   const {
+    className,
     header,
     breadcrumbs,
     loading,
@@ -30,6 +31,7 @@ export const Layout = props => {
     type,
     shimmeringBreadcrumbs,
     children,
+    ...rest
   } = props
   const isSplit = type === SPLIT && Array.isArray(children)
 
@@ -39,7 +41,7 @@ export const Layout = props => {
         <title>{title}</title>
       </Helmet>
       <PageLoader loading={loading} />
-      <div id="layout">
+      <div {...rest} className={classNames('layout', { className })}>
         {(breadcrumbs || header) && (
           <div className="layout-header">
             {breadcrumbs && (
@@ -75,6 +77,7 @@ export const Layout = props => {
 }
 
 Layout.propTypes = {
+  className: PropTypes.string,
   breadcrumbs: breadcrumbsShape,
   loading: PropTypes.bool,
   header: PropTypes.node,
@@ -84,6 +87,7 @@ Layout.propTypes = {
 }
 
 Layout.defaultProps = {
+  className: null,
   breadcrumbs: null,
   loading: false,
   header: null,

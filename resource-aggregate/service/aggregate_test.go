@@ -10,13 +10,13 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/panjf2000/ants/v2"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
 	"github.com/plgd-dev/go-coap/v2/message"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -25,9 +25,9 @@ import (
 
 var testUnauthorizedUser = "testUnauthorizedUser"
 
-func TestAggregateHandle_PublishResource(t *testing.T) {
+func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	type args struct {
-		request *pb.PublishResourceRequest
+		request *commands.PublishResourceLinksRequest
 		userID  string
 	}
 	test := []struct {
@@ -39,7 +39,16 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				request: testMakePublishResourceRequest("dev0", "/oic/p"),
+				request: testMakePublishResourceRequest("dev0", []string{"/oic/p"}),
+				userID:  "user0",
+			},
+			want:    codes.OK,
+			wantErr: false,
+		},
+		{
+			name: "valid multiple",
+			args: args{
+				request: testMakePublishResourceRequest("dev0", []string{"/oic/p", "/oic/d"}),
 				userID:  "user0",
 			},
 			want:    codes.OK,
@@ -48,7 +57,7 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakePublishResourceRequest("dev0", "/oic/p"),
+				request: testMakePublishResourceRequest("dev0", []string{"/oic/p"}),
 				userID:  "user0",
 			},
 			want:    codes.OK,
@@ -73,8 +82,8 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
@@ -84,9 +93,10 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	assert.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ag, err := NewAggregate(tt.args.request.ResourceId, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+
+			ag, err := NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			events, err := ag.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
+			events, err := ag.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -94,7 +104,7 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 				assert.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
-				err = publishEvents(ctx, publisher, tt.args.request.ResourceId.GetDeviceId(), ag.resourceID, events)
+				err = publishEvents(ctx, publisher, tt.args.request.GetDeviceId(), ag.ResourceID(), events)
 				assert.NoError(t, err)
 			}
 		}
@@ -102,12 +112,12 @@ func TestAggregateHandle_PublishResource(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore EventStore, deviceID, href, userID string, expStatusCode codes.Code, hasErr bool) {
-	pc := testMakePublishResourceRequest(deviceID, href)
+func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
+	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
-	ag, err := NewAggregate(pc.GetResourceId(), 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
-	events, err := ag.PublishResource(ctx, pc)
+	events, err := ag.PublishResourceLinks(ctx, pc)
 	if hasErr {
 		require.Error(t, err)
 		s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -115,14 +125,14 @@ func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nat
 		assert.Equal(t, expStatusCode, s.Code())
 	} else {
 		require.NoError(t, err)
-		err = publishEvents(ctx, publisher, deviceID, ag.resourceID, events)
+		err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 		assert.NoError(t, err)
 	}
 }
 
 func TestAggregateDuplicitPublishResource(t *testing.T) {
 	deviceID := "dupDeviceId"
-	resourceID := "dupResourceId"
+	resourceID := "/dupResourceId"
 	userID := "dupResourceId"
 
 	var cfg Config
@@ -134,33 +144,40 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
 
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
 	defer pool.Release()
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	pc1 := testMakePublishResourceRequest(deviceID, resourceID)
+	pc1 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 
-	events, err := ag.PublishResource(ctx, pc1)
+	events, err := ag.PublishResourceLinks(ctx, pc1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
-	ag2, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag2, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	pc2 := testMakePublishResourceRequest(deviceID, resourceID)
-	events, err = ag2.PublishResource(ctx, pc2)
+	pc2 := testMakePublishResourceRequest(deviceID, []string{resourceID})
+	events, err = ag2.PublishResourceLinks(ctx, pc2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(events))
+
+	ag3, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	require.NoError(t, err)
+	pc3 := testMakePublishResourceRequest(deviceID, []string{resourceID, resourceID, resourceID})
+	events, err = ag3.PublishResourceLinks(ctx, pc3)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 }
@@ -179,7 +196,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
@@ -191,48 +208,156 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
 
-	pc := testMakeUnpublishResourceRequest(deviceID, resourceID)
+	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
-	ag, err := NewAggregate(pc.GetResourceId(), 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
-	events, err := ag.UnpublishResource(ctx, pc)
-	assert.NoError(t, err)
-
-	err = publishEvents(ctx, publisher, deviceID, resourceID, events)
+	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 
-	events, err = ag.UnpublishResource(ctx, pc)
-	require.Error(t, err)
-	s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
-	require.True(t, ok)
-	assert.Equal(t, codes.FailedPrecondition, s.Code())
-	assert.Empty(t, events)
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
+	assert.NoError(t, err)
+
+	events, err = ag.UnpublishResourceLinks(ctx, pc)
+	assert.NoError(t, err)
 }
 
-func testGetResourceId(deviceID, href string) string {
-	return uuid.NewV5(uuid.NamespaceURL, deviceID+href).String()
+func TestAggregateHandleUnpublishAllResources(t *testing.T) {
+	deviceID := "dev0"
+	resourceID1 := "/res1"
+	resourceID2 := "/res2"
+	resourceID3 := "/res3"
+	userID := "user0"
+
+	var cfg Config
+	err := config.Load(&cfg)
+	assert.NoError(t, err)
+
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	log.Set(logger)
+	log.Info(cfg.String())
+
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	pool, err := ants.NewPool(16)
+	assert.NoError(t, err)
+	defer pool.Release()
+
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	require.NoError(t, err)
+
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3}, codes.OK, false)
+
+	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
+
+	ag, err := NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+	events, err := ag.UnpublishResourceLinks(ctx, pc)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(events))
+
+	unpublishedResourceLinks := (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs
+	assert.Equal(t, 3, len(unpublishedResourceLinks))
+	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
+
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
+	assert.NoError(t, err)
+
+	events, err = ag.UnpublishResourceLinks(ctx, pc)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(events))
+	assert.Equal(t, []string{}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 }
 
-func testMakePublishResourceRequest(deviceID, href string) *pb.PublishResourceRequest {
-	r := pb.PublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		Resource:             testNewResource(href, deviceID, utils.MakeResourceId(deviceID, href)),
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		TimeToLive:           1,
-		CommandMetadata: &pb.CommandMetadata{
+func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
+	deviceID := "dev0"
+	resourceID1 := "/res1"
+	resourceID2 := "/res2"
+	resourceID3 := "/res3"
+	resourceID4 := "/res4"
+	userID := "user0"
+
+	var cfg Config
+	err := config.Load(&cfg)
+	assert.NoError(t, err)
+
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	log.Set(logger)
+	log.Info(cfg.String())
+
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	pool, err := ants.NewPool(16)
+	assert.NoError(t, err)
+	defer pool.Release()
+
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	assert.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID1, resourceID2, resourceID3, resourceID4}, codes.OK, false)
+
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, resourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID3})
+	events, err := ag.UnpublishResourceLinks(ctx, pc)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(events))
+	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+
+	err = publishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
+	assert.NoError(t, err)
+
+	pc = testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID4, resourceID4})
+	events, err = ag.UnpublishResourceLinks(ctx, pc)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(events))
+	assert.Equal(t, []string{resourceID4}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+}
+
+func testMakePublishResourceRequest(deviceID string, href []string) *commands.PublishResourceLinksRequest {
+	resources := []*commands.Resource{}
+	for _, h := range href {
+		resources = append(resources, testNewResource(h, deviceID))
+	}
+	r := commands.PublishResourceLinksRequest{
+		Resources: resources,
+		DeviceId:  deviceID,
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -240,14 +365,11 @@ func testMakePublishResourceRequest(deviceID, href string) *pb.PublishResourceRe
 	return &r
 }
 
-func testMakeUnpublishResourceRequest(deviceID, href string) *pb.UnpublishResourceRequest {
-	r := pb.UnpublishResourceRequest{
-		ResourceId: &pb.ResourceId{
-			DeviceId: deviceID,
-			Href:     href,
-		},
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		CommandMetadata: &pb.CommandMetadata{
+func testMakeUnpublishResourceRequest(deviceID string, hrefs []string) *commands.UnpublishResourceLinksRequest {
+	r := commands.UnpublishResourceLinksRequest{
+		Hrefs:    hrefs,
+		DeviceId: deviceID,
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -255,18 +377,16 @@ func testMakeUnpublishResourceRequest(deviceID, href string) *pb.UnpublishResour
 	return &r
 }
 
-func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64) *pb.NotifyResourceChangedRequest {
-
-	r := pb.NotifyResourceChangedRequest{
-		ResourceId: &pb.ResourceId{
+func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64) *commands.NotifyResourceChangedRequest {
+	r := commands.NotifyResourceChangedRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		Content: &pb.Content{
+		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
-		CommandMetadata: &pb.CommandMetadata{
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: "test",
 			Sequence:     seqNum,
 		},
@@ -274,19 +394,18 @@ func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64) 
 	return &r
 }
 
-func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlationId string) *pb.UpdateResourceRequest {
-	r := pb.UpdateResourceRequest{
-		ResourceId: &pb.ResourceId{
+func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlationID string) *commands.UpdateResourceRequest {
+	r := commands.UpdateResourceRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		ResourceInterface:    resourceInterface,
-		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		Content: &pb.Content{
+		ResourceInterface: resourceInterface,
+		CorrelationId:     correlationID,
+		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
-		CommandMetadata: &pb.CommandMetadata{
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -294,15 +413,14 @@ func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlatio
 	return &r
 }
 
-func testMakeRetrieveResourceRequest(deviceID, href string, correlationId string) *pb.RetrieveResourceRequest {
-	r := pb.RetrieveResourceRequest{
-		ResourceId: &pb.ResourceId{
+func testMakeRetrieveResourceRequest(deviceID, href string, correlationID string) *commands.RetrieveResourceRequest {
+	r := commands.RetrieveResourceRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		CommandMetadata: &pb.CommandMetadata{
+		CorrelationId: correlationID,
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -310,15 +428,14 @@ func testMakeRetrieveResourceRequest(deviceID, href string, correlationId string
 	return &r
 }
 
-func testMakeDeleteResourceRequest(deviceID, href string, correlationId string) *pb.DeleteResourceRequest {
-	r := pb.DeleteResourceRequest{
-		ResourceId: &pb.ResourceId{
+func testMakeDeleteResourceRequest(deviceID, href string, correlationID string) *commands.DeleteResourceRequest {
+	r := commands.DeleteResourceRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		CommandMetadata: &pb.CommandMetadata{
+		CorrelationId: correlationID,
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -326,19 +443,36 @@ func testMakeDeleteResourceRequest(deviceID, href string, correlationId string) 
 	return &r
 }
 
-func testMakeConfirmResourceUpdateRequest(deviceID, href, correlationId string) *pb.ConfirmResourceUpdateRequest {
-	r := pb.ConfirmResourceUpdateRequest{
-		ResourceId: &pb.ResourceId{
+func testMakeCreateResourceRequest(deviceID, href string, correlationID string) *commands.CreateResourceRequest {
+	r := commands.CreateResourceRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		Content: &pb.Content{
+		Content: &commands.Content{
+			Data: []byte("create hello world"),
+		},
+		CorrelationId: correlationID,
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			Sequence:     0,
+		},
+	}
+	return &r
+}
+
+func testMakeConfirmResourceCreateRequest(deviceID, href, correlationID string) *commands.ConfirmResourceCreateRequest {
+	r := commands.ConfirmResourceCreateRequest{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId: correlationID,
+		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
-		Status: pb.Status_OK,
-		CommandMetadata: &pb.CommandMetadata{
+		Status: commands.Status_OK,
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -346,19 +480,18 @@ func testMakeConfirmResourceUpdateRequest(deviceID, href, correlationId string) 
 	return &r
 }
 
-func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationId string) *pb.ConfirmResourceRetrieveRequest {
-	r := pb.ConfirmResourceRetrieveRequest{
-		ResourceId: &pb.ResourceId{
+func testMakeConfirmResourceUpdateRequest(deviceID, href, correlationID string) *commands.ConfirmResourceUpdateRequest {
+	r := commands.ConfirmResourceUpdateRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		Content: &pb.Content{
+		CorrelationId: correlationID,
+		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
-		Status: pb.Status_OK,
-		CommandMetadata: &pb.CommandMetadata{
+		Status: commands.Status_OK,
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -366,19 +499,18 @@ func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationId string
 	return &r
 }
 
-func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationId string) *pb.ConfirmResourceDeleteRequest {
-	r := pb.ConfirmResourceDeleteRequest{
-		ResourceId: &pb.ResourceId{
+func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationID string) *commands.ConfirmResourceRetrieveRequest {
+	r := commands.ConfirmResourceRetrieveRequest{
+		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId:        correlationId,
-		AuthorizationContext: testNewAuthorizationContext(deviceID),
-		Content: &pb.Content{
+		CorrelationId: correlationID,
+		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
-		Status: pb.Status_OK,
-		CommandMetadata: &pb.CommandMetadata{
+		Status: commands.Status_OK,
+		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
@@ -386,22 +518,33 @@ func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationId string) 
 	return &r
 }
 
-func testNewAuthorizationContext(deviceID string) *pb.AuthorizationContext {
-	ac := pb.AuthorizationContext{
-		DeviceId: deviceID,
+func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) *commands.ConfirmResourceDeleteRequest {
+	r := commands.ConfirmResourceDeleteRequest{
+		ResourceId: &commands.ResourceId{
+			DeviceId: deviceID,
+			Href:     href,
+		},
+		CorrelationId: correlationID,
+		Content: &commands.Content{
+			Data: []byte("hello world"),
+		},
+		Status: commands.Status_OK,
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			Sequence:     0,
+		},
 	}
-	return &ac
+	return &r
 }
 
-func testNewResource(href string, deviceID string, resourceID string) *pb.Resource {
-	return &pb.Resource{
-		Id:            resourceID,
+func testNewResource(href string, deviceID string) *commands.Resource {
+	return &commands.Resource{
 		Href:          href,
+		DeviceId:      deviceID,
 		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
 		Interfaces:    []string{"oic.if.baseline"},
-		DeviceId:      deviceID,
 		Anchor:        "ocf://" + deviceID + "/oic/p",
-		Policies: &pb.Policies{
+		Policies: &commands.Policies{
 			BitFlags: 1,
 		},
 		Title:                 "device",
@@ -415,7 +558,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *pb.NotifyResourceChangedRequest
+		req *commands.NotifyResourceChangedRequest
 	}
 	tests := []struct {
 		name           string
@@ -427,9 +570,8 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&pb.NotifyResourceChangedRequest{
-					ResourceId:           &pb.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				&commands.NotifyResourceChangedRequest{
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -473,7 +615,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	pool, err := ants.NewPool(16)
 	assert.NoError(t, err)
@@ -485,17 +627,17 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
+	testHandlePublishResource(t, ctx, publisher, eventstore, userID, deviceID, []string{resourceID}, codes.OK, false)
 
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -522,7 +664,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *pb.UpdateResourceRequest
+		req *commands.UpdateResourceRequest
 	}
 	tests := []struct {
 		name           string
@@ -534,9 +676,8 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&pb.UpdateResourceRequest{
-					ResourceId:           &pb.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				&commands.UpdateResourceRequest{
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -572,29 +713,27 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
-
-	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
-	require.NoError(t, err)
-	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
-	assert.NoError(t, err)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
-
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
+
 			gotEvents, err := ag.UpdateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -617,7 +756,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *pb.ConfirmResourceUpdateRequest
+		req *commands.ConfirmResourceUpdateRequest
 	}
 	tests := []struct {
 		name           string
@@ -629,9 +768,8 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&pb.ConfirmResourceUpdateRequest{
-					ResourceId:           &pb.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				&commands.ConfirmResourceUpdateRequest{
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -658,31 +796,26 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
-
-	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
-	require.NoError(t, err)
-	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
-	assert.NoError(t, err)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
-
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
-
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceUpdate(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -705,7 +838,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *pb.RetrieveResourceRequest
+		req *commands.RetrieveResourceRequest
 	}
 	tests := []struct {
 		name           string
@@ -717,9 +850,8 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&pb.RetrieveResourceRequest{
-					ResourceId:           &pb.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				&commands.RetrieveResourceRequest{
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -745,29 +877,26 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
-
-	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
-	require.NoError(t, err)
-	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
-	assert.NoError(t, err)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
-
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.RetrieveResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -790,7 +919,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *pb.ConfirmResourceRetrieveRequest
+		req *commands.ConfirmResourceRetrieveRequest
 	}
 	tests := []struct {
 		name           string
@@ -802,9 +931,8 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&pb.ConfirmResourceRetrieveRequest{
-					ResourceId:           &pb.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				&commands.ConfirmResourceRetrieveRequest{
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -831,29 +959,26 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
-
-	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
-	require.NoError(t, err)
-	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
-	assert.NoError(t, err)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
-
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceRetrieve(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -870,7 +995,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	}
 }
 
-func testListDevicesOfUserFunc(ctx context.Context, correlationId, userID string) ([]string, codes.Code, error) {
+func testListDevicesOfUserFunc(ctx context.Context, correlationID, userID string) ([]string, codes.Code, error) {
 	if userID == testUnauthorizedUser {
 		return nil, codes.Unauthenticated, fmt.Errorf("unauthorized access")
 	}
@@ -884,7 +1009,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *pb.DeleteResourceRequest
+		req *commands.DeleteResourceRequest
 	}
 	tests := []struct {
 		name           string
@@ -896,9 +1021,8 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&pb.DeleteResourceRequest{
-					ResourceId:           &pb.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
+				&commands.DeleteResourceRequest{
+					ResourceId: &commands.ResourceId{},
 				},
 			},
 			wantEvents:     false,
@@ -925,29 +1049,26 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
-
-	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
-	require.NoError(t, err)
-	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
-	assert.NoError(t, err)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
-
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.DeleteResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -970,7 +1091,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *pb.ConfirmResourceDeleteRequest
+		req *commands.ConfirmResourceDeleteRequest
 	}
 	tests := []struct {
 		name           string
@@ -982,10 +1103,9 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&pb.ConfirmResourceDeleteRequest{
-					ResourceId:           &pb.ResourceId{},
-					AuthorizationContext: testNewAuthorizationContext(deviceID),
-					Status:               pb.Status_OK,
+				&commands.ConfirmResourceDeleteRequest{
+					ResourceId: &commands.ResourceId{},
+					Status:     commands.Status_OK,
 				},
 			},
 			wantEvents:     false,
@@ -1012,30 +1132,192 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
-
-	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
-	require.NoError(t, err)
-	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
-	assert.NoError(t, err)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	testHandlePublishResource(t, ctx, publisher, eventstore, deviceID, resourceID, userID, codes.OK, false)
-
-	ag, err := NewAggregate(&pb.ResourceId{DeviceId: deviceID, Href: resourceID}, 10, eventstore, cqrsAggregate.NewDefaultRetryFunc(1))
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			gotEvents, err := ag.ConfirmResourceDelete(ctx, tt.args.req)
+			if tt.wantErr {
+				require.Error(t, err)
+				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
+				require.True(t, ok)
+				assert.Equal(t, tt.wantStatusCode, s.Code())
+				return
+			}
+			require.NoError(t, err)
+
+			if tt.wantEvents {
+				assert.NotEmpty(t, gotEvents)
+			}
+		})
+	}
+}
+
+func Test_aggregate_HandleCreateResource(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "/oic/p"
+	userID := "user0"
+
+	type args struct {
+		req *commands.CreateResourceRequest
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantEvents     bool
+		wantStatusCode codes.Code
+		wantErr        bool
+	}{
+		{
+			name: "invalid",
+			args: args{
+				&commands.CreateResourceRequest{
+					ResourceId: &commands.ResourceId{},
+				},
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
+		},
+		{
+			name: "valid",
+			args: args{
+				testMakeCreateResourceRequest(deviceID, resourceID, "123"),
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+	}
+	var cfg Config
+	err := config.Load(&cfg)
+	assert.NoError(t, err)
+
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	log.Set(logger)
+	log.Info(cfg.String())
+
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
+			gotEvents, err := ag.CreateResource(ctx, tt.args.req)
+			if tt.wantErr {
+				require.Error(t, err)
+				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
+				require.True(t, ok)
+				assert.Equal(t, tt.wantStatusCode, s.Code())
+				return
+			}
+			require.NoError(t, err)
+			if tt.wantEvents {
+				assert.NotEmpty(t, gotEvents)
+			}
+		})
+	}
+}
+
+func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
+	deviceID := "dev0"
+	resourceID := "/oic/p"
+	userID := "user0"
+
+	type args struct {
+		req *commands.ConfirmResourceCreateRequest
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantEvents     bool
+		wantStatusCode codes.Code
+		wantErr        bool
+	}{
+		{
+			name: "invalid",
+			args: args{
+				&commands.ConfirmResourceCreateRequest{
+					ResourceId: &commands.ResourceId{},
+					Status:     commands.Status_OK,
+				},
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
+		},
+		{
+			name: "valid",
+			args: args{
+				testMakeConfirmResourceCreateRequest(deviceID, resourceID, "123"),
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+	}
+
+	var cfg Config
+	err := config.Load(&cfg)
+	assert.NoError(t, err)
+
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	log.Set(logger)
+	log.Info(cfg.String())
+
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
+
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	require.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	ag, err := NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, resourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	assert.NoError(t, err)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
+				_, err := ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.req.GetResourceId().GetDeviceId(), tt.args.req.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
+			gotEvents, err := ag.ConfirmResourceCreate(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))

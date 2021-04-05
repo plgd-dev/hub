@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
@@ -25,7 +26,11 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 
 	token, err := s.deviceProvider.Exchange(ctx, request.AuthorizationProvider, request.AuthorizationCode)
 	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: %v", err.Error()))
+		code := codes.Unauthenticated
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			code = codes.Unavailable
+		}
+		return nil, logAndReturnError(status.Errorf(code, "cannot sign up: %v", err.Error()))
 	}
 
 	dev, ok, err := tx.RetrieveByDevice(request.DeviceId)
@@ -33,14 +38,14 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot sign up: %v", err.Error()))
 	}
 	if ok {
-		if dev.UserID != token.UserID {
+		if dev.Owner != token.Owner {
 			return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: devices is owned by another user"))
 		}
 	}
 
 	d := persistence.AuthorizedDevice{
 		DeviceID:     request.DeviceId,
-		UserID:       token.UserID,
+		Owner:        token.Owner,
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
@@ -57,7 +62,7 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 
 	return &pb.SignUpResponse{
 		AccessToken:  token.AccessToken,
-		UserId:       token.UserID,
+		UserId:       token.Owner,
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    expiresIn,
 		RedirectUri:  "",

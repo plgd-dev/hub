@@ -13,7 +13,7 @@ import (
 
 // NewGitHubProvider creates GitHub OAuth client
 func NewGitHubProvider(config Config) *GitHubProvider {
-	oauth2 := config.OAuth2.ToOAuth2()
+	oauth2 := config.OAuth.ToOAuth2()
 	if oauth2.Endpoint.AuthURL == "" || oauth2.Endpoint.TokenURL == "" {
 		oauth2.Endpoint = githubconf.Endpoint
 	}
@@ -42,7 +42,7 @@ func (p *GitHubProvider) GetProviderName() string {
 
 // AuthCodeURL returns URL for redirecting to the GitHub authentication web page.
 func (p *GitHubProvider) AuthCodeURL(csrfToken string) string {
-	return p.Config.OAuth2.AuthCodeURL(csrfToken)
+	return p.Config.OAuth.AuthCodeURL(csrfToken)
 }
 
 // Exchange Auth Code for Access Token via OAuth.
@@ -69,7 +69,7 @@ func (p *GitHubProvider) Exchange(ctx context.Context, authorizationProvider, au
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		UserID:       strconv.FormatInt(user.GetID(), 10),
+		Owner:        strconv.FormatInt(user.GetID(), 10),
 	}
 	return &t, nil
 }

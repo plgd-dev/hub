@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -100,19 +101,19 @@ func (p *Projection) Unregister(deviceID string) error {
 }
 
 // Models returns models for device, resource or nil for non exist.
-func (p *Projection) Models(deviceID, resourceId string) []eventstore.Model {
-	return p.cqrsProjection.Models([]eventstore.SnapshotQuery{{GroupID: deviceID, AggregateID: resourceId}})
+func (p *Projection) Models(resourceID *commands.ResourceId) []eventstore.Model {
+	return p.cqrsProjection.Models([]eventstore.SnapshotQuery{{GroupID: resourceID.GetDeviceId(), AggregateID: resourceID.ToUUID()}})
 }
 
 // ForceUpdate invokes update registered resource model from evenstore.
-func (p *Projection) ForceUpdate(ctx context.Context, deviceID, resourceId string) error {
-	v, ok := p.refCountMap.LoadWithFunc(deviceID, func(v interface{}) interface{} {
+func (p *Projection) ForceUpdate(ctx context.Context, resourceID *commands.ResourceId) error {
+	v, ok := p.refCountMap.LoadWithFunc(resourceID.GetDeviceId(), func(v interface{}) interface{} {
 		r := v.(*kitSync.RefCounter)
 		r.Acquire()
 		return r
 	})
 	if !ok {
-		return fmt.Errorf("cannot force update projection for %v: not found", deviceID)
+		return fmt.Errorf("cannot force update projection for %v: not found", resourceID.GetDeviceId())
 	}
 	r := v.(*kitSync.RefCounter)
 	defer p.release(r)
@@ -120,9 +121,9 @@ func (p *Projection) ForceUpdate(ctx context.Context, deviceID, resourceId strin
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	err := p.cqrsProjection.Project(ctx, []eventstore.SnapshotQuery{{GroupID: deviceID, AggregateID: resourceId}})
+	err := p.cqrsProjection.Project(ctx, []eventstore.SnapshotQuery{{GroupID: resourceID.GetDeviceId(), AggregateID: resourceID.ToUUID()}})
 	if err != nil {
-		return fmt.Errorf("cannot force update projection for %v: %w", deviceID, err)
+		return fmt.Errorf("cannot force update projection for %v: %w", resourceID.GetDeviceId(), err)
 	}
 	return nil
 }

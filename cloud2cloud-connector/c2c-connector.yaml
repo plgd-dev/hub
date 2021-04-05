@@ -5,24 +5,24 @@ apis:
     address: "0.0.0.0:9089"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/service.crt"
+      keyFile: "/data/certs/service.key"
       clientCertificateRequired: true
-    callbackURL: "https://172.17.0.1:9089/api/v1/c2cCallback"
-    eventsURL: "https://172.17.0.1:9089/api/v1/events"
+    callbackURL: "https://cloud2cloud-connector:9089/api/v1/c2cCallback"
+    eventsURL: "https://cloud2cloud-connector:9089/api/v1/events"
   capabilities:
     pullDevicesDisabled: false
     pullDevicesInterval: 5s
     reconnectInterval: 10s
     resubscribeInterval: 10s
-  taskProccessor:
+  taskProcessor:
     cacheSize: 2048
     timeout: 5s
     maxParallel: 128
     delay: 0s  # 10s for CTT test
 database:
   mongoDB:
-    uri: "mongodb://172.17.0.1:27017"
+    uri: "mongodb://mongo:27017"
     database: "cloud2cloudConnector"
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -31,13 +31,14 @@ database:
       useSystemCAPool: false
 clients:
   oauthProvider:
-    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://oauth-server:9090/.well-known/jwks.json"
+    ownerClaim: "sub"
     oauth:
-      clientID: ""
+      clientID: "test"
       clientSecret: ""
       scopes: []
-      audience: ""
-      tokenURL: "https://172.17.0.1:9085/api/authz/token"
+      audience: "test"
+      tokenURL: "https://oauth-server:9090/oauth/token"
       timeout: 10s
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -45,21 +46,21 @@ clients:
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   authorizationServer:
-    address: "172.17.0.1:9081"
+    address: "authorization:9081"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   resourceDirectory:
-    address: "172.17.0.1:9082"
+    address: "resource-directory:9082"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   resourceAggregate:
-    address: "172.17.0.1:9083"
+    address: "resource-aggregate:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"

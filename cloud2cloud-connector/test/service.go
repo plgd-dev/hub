@@ -17,12 +17,12 @@ func MakeConfig(t *testing.T) service.Config {
 	err := config.Load(&cfg)
 	require.NoError(t, err)
 
-	cfg.Clients.Authorization.AuthServerAddr = testCfg.AUTH_HOST
-	cfg.Clients.ResourceAggregate.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
+	cfg.Clients.Authorization.Addr = testCfg.AUTH_HOST
+	cfg.Clients.ResourceAggregate.Addr = testCfg.RESOURCE_AGGREGATE_HOST
 	cfg.Service.Http.Addr = testCfg.C2C_CONNECTOR_HOST
-	cfg.Clients.ResourceDirectory.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	cfg.Clients.OAuthProvider.OAuthConfig.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	cfg.Clients.OAuthProvider.OAuthConfig.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	cfg.Clients.ResourceDirectory.Addr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.Clients.OAuthProvider.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	cfg.Clients.OAuthProvider.OAuth.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 	cfg.Service.Http.OAuthCallback = testCfg.C2C_CONNECTOR_OAUTH_CALLBACK
 	cfg.Service.Http.EventsURL = testCfg.C2C_CONNECTOR_EVENTS_URL
 	cfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL

@@ -11,7 +11,7 @@ import (
 )
 
 func (rh *RequestHandler) subscribeToDevices(w http.ResponseWriter, r *http.Request) (int, error) {
-	_, userID, err := parseAuth(r.Header.Get("Authorization"))
+	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
 	}

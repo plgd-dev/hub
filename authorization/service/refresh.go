@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,20 +18,24 @@ func (s *Service) RefreshToken(ctx context.Context, request *pb.RefreshTokenRequ
 
 	token, err := s.deviceProvider.Refresh(ctx, request.RefreshToken)
 	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: %v", err))
+		code := codes.Unauthenticated
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			code = codes.Unavailable
+		}
+		return nil, logAndReturnError(status.Errorf(code, "cannot refresh token: %v", err))
 	}
 
-	userID := token.UserID
-	if userID == "" {
-		userID = request.UserId
+	owner := token.Owner
+	if owner == "" {
+		owner = request.UserId
 	}
-	if userID == "" {
-		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: cannot determine userId"))
+	if owner == "" {
+		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: cannot determine owner"))
 	}
 
 	d := persistence.AuthorizedDevice{
 		DeviceID:     request.DeviceId,
-		UserID:       userID,
+		Owner:        owner,
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,

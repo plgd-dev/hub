@@ -1,0 +1,31 @@
+@import '@/common/styles/colors.scss';
+
+.editor {
+  position: relative;
+
+  &.disabled {
+    &:after {
+      content: '';
+      position: absolute;
+      z-index: 4;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+      background: rgba($light_100, 0.7);
+    }
+  }
+
+  .jsoneditor {
+    border-color: $secondary_20;
+
+    .ace-jsoneditor .ace_marker-layer .ace_active-line {
+      background-color: rgba($primary_100, 0.1);
+    }
+
+    div.jsoneditor-outer {
+      padding: 0 !important;
+    }
+  }
+}

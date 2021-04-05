@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	kit "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
-	kit "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/sdk/schema"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -27,7 +28,6 @@ const (
 
 var ClientTestCfg = client.Config{
 	GatewayAddress: testCfg.GRPC_HOST,
-	AccessTokenURL: testCfg.AUTH_HOST,
 }
 
 func NewTestClient(t *testing.T) *client.Client {
@@ -38,7 +38,7 @@ func NewTestClient(t *testing.T) *client.Client {
 	tlsCfg := tls.Config{
 		RootCAs: rootCAs,
 	}
-	c, err := client.NewClientFromConfig(&ClientTestCfg, &tlsCfg)
+	c, err := client.NewFromConfig(&ClientTestCfg, &tlsCfg)
 	require.NoError(t, err)
 	return c
 }
@@ -107,7 +107,7 @@ func (h *gatewayHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValues
 	return nil
 }
 
-func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceValuesRequest) (*pb.UpdateResourceValuesResponse, error) {
+func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceRequest) (*pb.UpdateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
@@ -129,7 +129,7 @@ func sendResourceValue(srv pb.GrpcGateway_RetrieveResourcesValuesServer, deviceI
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 	rv := pb.ResourceValue{
-		ResourceId: &pb.ResourceId{DeviceId: deviceId},
+		ResourceId: &commands.ResourceId{DeviceId: deviceId},
 		Types:      []string{resourceType},
 		Content:    &pb.Content{ContentType: message.AppCBOR.String(), Data: c},
 	}

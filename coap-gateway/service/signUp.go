@@ -66,7 +66,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		AuthorizationProvider: signUp.AuthorizationProvider,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), r.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), r.Token)
 		return
 	}
 
@@ -146,12 +146,12 @@ func signOffHandler(req *mux.Message, client *Client) {
 			userID = uid
 		}
 	}
-	authCurrentCtx := client.loadAuthorizationContext()
+	authCurrentCtx, _ := client.GetAuthorizationContext()
 	if userID == "" {
-		userID = authCurrentCtx.UserID
+		userID = authCurrentCtx.GetUserID()
 	}
 	if deviceID == "" {
-		deviceID = authCurrentCtx.GetDeviceId()
+		deviceID = authCurrentCtx.GetDeviceID()
 	}
 
 	err := validateSignOff(deviceID, accessToken)
@@ -165,9 +165,9 @@ func signOffHandler(req *mux.Message, client *Client) {
 		AccessToken: accessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.DELETE), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete), req.Token)
 		return
 	}
-	client.replaceAuthorizationContext(nil)
+	client.CleanUp()
 	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
 }

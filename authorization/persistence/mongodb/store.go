@@ -18,12 +18,12 @@ import (
 const userDevicesCName = "userdevices"
 
 var userDeviceQueryIndex = bson.D{
-	{userIDKey, 1},
+	{ownerKey, 1},
 	{deviceIDKey, 1},
 }
 
 var userDevicesQueryIndex = bson.D{
-	{userIDKey, 1},
+	{ownerKey, 1},
 }
 
 // Store implements an Store for MongoDB.
@@ -33,11 +33,11 @@ type Store struct {
 }
 
 type Config struct {
-	URI             string              `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
-	Database        string              `yaml:"database" json:"database" default:"authorization"`
-	TLSConfig		client.Config 		`yaml:"tls" json:"tls"`
+	URI             string              `yaml:"uri" json:"uri" envconfig:"URI" default:"mongodb://localhost:27017"`
+	Database        string              `yaml:"database" json:"database" envconfig:"NAME" default:"authorization"`
+	TLSConfig		client.Config 		`yaml:"tls" json:"tls" envconfig:"TLS"`
 
-	tlsCfg   *tls.Config
+	tlsCfg   		*tls.Config			`yaml:"-" ignored:"true"` //yaml ignored and envconfig ingnored
 }
 
 // Option provides the means to use function call chaining
@@ -56,9 +56,9 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 	for _, o := range opts {
 		cfg = o(cfg)
 	}
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
 
+	//clientOpts := options.Client().ApplyURI(cfg.URI+"/?ssl=true&sslInsecure=true&tlsCaFile="+cfg.TLSConfig.CAFile +"&tlsCertificateFile="+cfg.TLSConfig.CertFile+"&tlsPrivateKeyFile="+cfg.TLSConfig.KeyFile)
+	//client, err := mongo.Connect(ctx, clientOpts)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(cfg.tlsCfg))
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)

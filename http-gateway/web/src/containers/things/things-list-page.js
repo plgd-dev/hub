@@ -3,26 +3,21 @@ import { useIntl } from 'react-intl'
 import { toast } from 'react-toastify'
 
 import { Layout } from '@/components/layout'
-import { useApi } from '@/common/hooks'
-import { useAppConfig } from '@/containers/app'
+import { getApiErrorMessage } from '@/common/utils'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
-import { thingsApiEndpoints } from './constants'
+import { useThingsList } from './hooks'
 import { ThingsList } from './_things-list'
+import { ThingsListHeader } from './_things-list-header'
 
 export const ThingsListPage = () => {
   const { formatMessage: _ } = useIntl()
-  const { audience, httpGatewayAddress } = useAppConfig()
-
-  const { data, loading, error } = useApi(
-    `${httpGatewayAddress}${thingsApiEndpoints.THINGS}`,
-    { audience }
-  )
+  const { data, loading, error, refresh } = useThingsList()
 
   useEffect(
     () => {
       if (error) {
-        toast.error(error?.response?.data?.err || error?.message)
+        toast.error(getApiErrorMessage(error))
       }
     },
     [error]
@@ -41,7 +36,7 @@ export const ThingsListPage = () => {
         },
       ]}
       loading={loading}
-      header={<div />}
+      header={<ThingsListHeader loading={loading} refresh={refresh} />}
     >
       <ThingsList data={data} />
     </Layout>

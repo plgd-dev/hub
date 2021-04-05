@@ -5,6 +5,7 @@
 @import '@/common/styles/colors.scss';
 @import '@/common/styles/default.scss';
 @import '@/common/styles/animations.scss';
+@import '@/common/styles/form.scss';
 @import '@/components/page-loader/page-loader.scss';
 @import '@/components/breadcrumbs/breadcrumbs.scss';
 @import '@/components/layout/layout.scss';
@@ -12,6 +13,14 @@
 @import '@/components/table/pagination.scss';
 @import '@/components/badge/badge.scss';
 @import '@/components/label/label.scss';
+@import '@/components/modal/modal.scss';
+@import '@/components/button/button.scss';
+@import '@/components/select/select.scss';
+@import '@/components/editor/editor.scss';
+@import '@/components/toast/toast.scss';
+@import '@/components/switch/switch.scss';
+@import '@/components/action-button/action-button.scss';
+@import '@/components/tree-expander/tree-expander.scss';
 
 #app {
   padding: 0;
@@ -47,7 +56,7 @@
 }
 
 .client-error-message {
-  background-color: $red_50;
-  border: 1px solid $red_100;
-  color: $red_100;
+  background-color: $error_50;
+  border: 1px solid $error_100;
+  color: $error_100;
 }

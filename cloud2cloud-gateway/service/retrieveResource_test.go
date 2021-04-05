@@ -16,12 +16,12 @@ import (
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
 
-	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -52,9 +52,11 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppJSON.String(),
 			want: map[interface{}]interface{}{
+				"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
+				"rt":    []interface{}{"core.light"},
 			},
 		},
 		{
@@ -66,9 +68,11 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			wantCode:        http.StatusOK,
 			wantContentType: message.AppOcfCbor.String(),
 			want: map[interface{}]interface{}{
+				"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
+				"rt":    []interface{}{"core.light"},
 			},
 		},
 		{
@@ -95,10 +99,10 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
-
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

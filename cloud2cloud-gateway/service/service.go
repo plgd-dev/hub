@@ -9,17 +9,20 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
-	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 )
 
 //Server handle HTTP request
@@ -29,10 +32,13 @@ type Server struct {
 	handler *RequestHandler
 	ln      net.Listener
 	rdConn  *grpc.ClientConn
+
 	httpCertManager *server.CertManager
 	dbCertManager *client.CertManager
 	oauthCertManager *client.CertManager
 	rdCertManager *client.CertManager
+	raCertManager *client.CertManager
+
 	cancel  context.CancelFunc
 	doneWg  *sync.WaitGroup
 }
@@ -68,21 +74,31 @@ func New(config Config, logger *zap.Logger) *Server {
 		log.Fatalf("cannot listen and serve: %v", err)
 	}
 
-	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
+	var oauthCertManager *client.CertManager = nil
+	var oauthTLSConfig *tls.Config = nil
+	err = config.Clients.OAuthProvider.TLSConfig.Validate()
 	if err != nil {
-		log.Fatalf("cannot create oauth dial cert manager %v", err)
+		log.Errorf("failed to validate client tls config: %v", err)
+	} else {
+		oauthCertManager, err := client.New(config.Clients.OAuthProvider.TLSConfig, logger)
+		if err != nil {
+			log.Errorf("cannot create oauth client cert manager %v", err)
+		} else {
+			oauthTLSConfig = oauthCertManager.GetTLSConfig()
+		}
 	}
-	authInterceptor := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), authRules)
-	oauthMgr, err := oauthClient.NewManagerFromConfiguration(config.Clients.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
+
+	authInterceptor := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthTLSConfig, authRules)
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.Clients.OAuthProvider.OAuth, oauthTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
-	rdCertManager, err := client.New(config.Clients.ResourceDirectory.ResourceDirectoryTLSConfig, logger)
+	rdCertManager, err := client.New(config.Clients.ResourceDirectory.TLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot create resource-directory dial cert manager %v", err)
 	}
-	rdConn, err := grpc.Dial(config.Clients.ResourceDirectory.ResourceDirectoryAddr,
+	rdConn, err := grpc.Dial(config.Clients.ResourceDirectory.Addr,
 		grpc.WithTransportCredentials(credentials.NewTLS(rdCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
@@ -90,9 +106,32 @@ func New(config Config, logger *zap.Logger) *Server {
 		log.Fatalf("cannot create server: %v", err)
 	}
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
-	// TODO : need to check if it is tlsConf for client or server for example : httpCertManager.GetTLSConfig() or oauthCertManager.GetTLSConfig()
-	emitEvent := createEmitEventFunc(oauthCertManager.GetTLSConfig(), config.Service.Capabilities.EmitEventTimeout)
 
+	pool, err := ants.NewPool(config.Service.Capabilities.GoRoutinePoolSize)
+	if err != nil {
+		log.Fatalf("cannot create goroutine pool: %v", err)
+	}
+
+	raCertManager, err := client.New(config.Clients.ResourceAggregate.TLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create resource-directory dial cert manager %v", err)
+	}
+	resourceSubscriber, err := nats.NewSubscriber(config.Clients.Nats, pool.Submit, func(err error) {
+		log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(raCertManager.GetTLSConfig()))
+	if err != nil {
+		log.Fatalf("cannot create eventbus subscriber: %v", err)
+	}
+	raConn, err := grpc.Dial(
+		config.Clients.ResourceAggregate.Addr,
+		grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())),
+		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
+	)
+	if err != nil {
+		log.Fatalf("cannot connect to resource aggregate: %v", err)
+	}
+	raClient := raClient.New(raConn, resourceSubscriber)
+
+	emitEvent := createEmitEventFunc(raCertManager.GetTLSConfig(), config.Service.Capabilities.EmitEventTimeout)
 	ctx, cancel := context.WithCancel(context.Background())
 	subMgr := NewSubscriptionManager(ctx, subscriptionStore, rdClient, config.Service.Capabilities.ReconnectInterval, emitEvent)
 	err = subMgr.LoadSubscriptions()
@@ -106,7 +145,7 @@ func New(config Config, logger *zap.Logger) *Server {
 		subMgr.Run()
 	}()
 
-	requestHandler := NewRequestHandler(rdClient, subMgr, emitEvent)
+	requestHandler := NewRequestHandler(rdClient, raClient, subMgr, emitEvent, config.Clients.OAuthProvider.OwnerClaim)
 
 	server := Server{
 		server:  NewHTTP(requestHandler, authInterceptor),
@@ -118,6 +157,7 @@ func New(config Config, logger *zap.Logger) *Server {
 		dbCertManager: dbCertManager,
 		oauthCertManager: oauthCertManager,
 		rdCertManager: rdCertManager,
+		raCertManager: raCertManager,
 		cancel:  cancel,
 		doneWg:  &wg,
 	}
@@ -129,11 +169,14 @@ func New(config Config, logger *zap.Logger) *Server {
 func (s *Server) Serve() error {
 	defer func() {
 		s.doneWg.Wait()
-		s.rdConn.Close()
+
 		s.httpCertManager.Close()
 		s.dbCertManager.Close()
-		s.oauthCertManager.Close()
+		if s.oauthCertManager != nil { s.oauthCertManager.Close() }
 		s.rdCertManager.Close()
+		s.raCertManager.Close()
+
+		s.rdConn.Close()
 	}()
 	return s.server.Serve(s.ln)
 }

@@ -5,8 +5,8 @@ apis:
     address: "0.0.0.0:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/service.crt"
+      keyFile: "/data/certs/service.key"
       clientCertificateRequired: true
     capabilities:
       snapshotThreshold: 16
@@ -16,7 +16,7 @@ apis:
       maxParallelRequest: 8
 database:
   mongoDB:
-    uri: "mongodb://172.17.0.1:27017"
+    uri: "mongodb://mongo:27017"
     database: "eventStore"
     tls:
       caFile: "/data/certs/root_ca.crt"
@@ -28,28 +28,29 @@ database:
     maxConnIdleTime: 240s
 clients:
   nats:
-    url: "nats://172.17.0.1:4222"
-    tls:
-      caFile: "/data/certs/root_ca.crt"
-      certFile: "/data/certs/http.crt"
-      keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
-  authorizationServer:
-    address: "172.17.0.1:9081"
+    url: "nats://nats:4222"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       useSystemCAPool: false
   oauthProvider:
-    jwksUrl: "https://172.17.0.1:9085/.well-known/jwks.json"
+    jwksUrl: "https://oauth-server:9090/.well-known/jwks.json"
+    ownerClaim: "sub"
     oauth:
-      clientID: ""
+      clientID: "test"
       clientSecret: ""
       scopes: []
-      audience: ""
-      tokenURL : "https://172.17.0.1:9085/api/authz/token"
+      audience: "test"
+      tokenURL : "https://oauth-server:9090/oauth/token"
       timeout : 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: false
+  authorizationServer:
+    address: "authorization:9081"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"

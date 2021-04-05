@@ -2,13 +2,13 @@
 
 .breadcrumbs {
   display: flex;
-  color: $text_desc;
+  color: $secondary_40;
   align-items: center;
   margin-right: 20px;
   position: relative;
 
   a {
-    color: $text_primary;
+    color: $primary_100;
   }
 
   .divider {

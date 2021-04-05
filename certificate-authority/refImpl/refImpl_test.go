@@ -23,10 +23,10 @@ func TestInit(t *testing.T) {
 	defer os.RemoveAll(dir)
 	testSignerCerts(t, dir)
 
-	cfg.Clients.SignerConfig.ValidFrom = func() time.Time {
+	cfg.Clients.Signer.ValidFrom = func() time.Time {
 		return time.Now()  // now
 	}
-	cfg.Clients.SignerConfig.ValidDuration = time.Duration(time.Hour * 24) // 1d
+	cfg.Clients.Signer.ValidDuration = time.Duration(time.Hour * 24) // 1d
 
 	got, err := Init(cfg)
 	require.NoError(t, err)

@@ -1,6 +1,6 @@
 @import '@/common/styles/colors.scss';
 
-// Animation
+// Shimmering animation
 @keyframes placeHolderShimmer {
   0% {
     background-position: -468px 0;
@@ -16,6 +16,7 @@
   &:after {
     content: '';
     display: block;
+    z-index: 1;
     position: absolute;
     width: 100%;
     height: 100%;
@@ -26,8 +27,22 @@
     animation-iteration-count: infinite;
     animation-name: placeHolderShimmer;
     animation-timing-function: linear;
-    background: $black_20;
-    background: linear-gradient(to right, #F6F7F9 8%, $black_20 18%, #F6F7F9 33%);
+    background: $light_150;
+    background: linear-gradient(
+      to right,
+      $light_200 8%,
+      $light_150 18%,
+      $light_200 33%
+    );
     background-size: 300% 100%;
+  }
+}
+// Spin animation
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }

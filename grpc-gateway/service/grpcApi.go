@@ -2,15 +2,19 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"sync"
 
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	"github.com/plgd-dev/kit/security/certManager/client"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,11 +25,14 @@ import (
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
 	resourceDirectoryClient pb.GrpcGatewayClient
+
+	resourceAggregateClient *raClient.Client
 	closeFunc               func()
 }
 
-func AddHandler(svr *kitNetGrpc.Server, config RDConfig, clientTLS *tls.Config) error {
-	handler, err := NewRequestHandlerFromConfig(config, clientTLS)
+func AddHandler(svr *kitNetGrpc.Server, config ClientsConfig, logger *zap.Logger) error {
+
+	handler, err := NewRequestHandlerFromConfig(config, logger)
 	if err != nil {
 		return err
 	}
@@ -39,22 +46,63 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(config RDConfig, clientTLS *tls.Config) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(config ClientsConfig, logger *zap.Logger) (*RequestHandler, error) {
+	rdCertManager, err := client.New(config.ResourceDirectory.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create rd client cert manager %w", err)
+	}
+
 	rdConn, err := grpc.Dial(
-		config.ResourceDirectoryAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
+		config.ResourceDirectory.Addr,
+		grpc.WithTransportCredentials(credentials.NewTLS(rdCertManager.GetTLSConfig())),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
 
+	pool, err := ants.NewPool(config.GoRoutinePoolSize)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
+	}
+
+	natsCertManager, err := client.New(config.Nats.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create nats client cert manager %w", err)
+	}
+
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(natsCertManager.GetTLSConfig()))
+	if err != nil {
+		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
+	}
+
+	raCertManager, err := client.New(config.ResourceAggregate.TLSConfig, logger)
+	if err != nil {
+		log.Errorf("cannot create ra client cert manager %w", err)
+	}
+
+	raConn, err := grpc.Dial(
+		config.ResourceAggregate.Addr,
+		grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+	}
+	resourceAggregateClient := raClient.New(raConn, resourceSubscriber)
+
 	closeFunc := func() {
+		raConn.Close()
 		rdConn.Close()
+		resourceSubscriber.Close()
+
+		rdCertManager.Close()
+		raCertManager.Close()
+		natsCertManager.Close()
 	}
 
 	h := NewRequestHandler(
 		resourceDirectoryClient,
+		resourceAggregateClient,
 		closeFunc,
 	)
 	return h, nil
@@ -63,10 +111,12 @@ func NewRequestHandlerFromConfig(config RDConfig, clientTLS *tls.Config) (*Reque
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
 	resourceDirectoryClient pb.GrpcGatewayClient,
+	resourceAggregateClient *raClient.Client,
 	closeFunc func(),
 ) *RequestHandler {
 	return &RequestHandler{
 		resourceDirectoryClient: resourceDirectoryClient,
+		resourceAggregateClient: resourceAggregateClient,
 		closeFunc:               closeFunc,
 	}
 }

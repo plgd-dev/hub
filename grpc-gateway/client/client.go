@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"net/url"
 	"sync"
 	"time"
 
@@ -14,8 +13,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/strings"
 )
 
@@ -30,37 +29,18 @@ type subscription = interface {
 
 type Config struct {
 	GatewayAddress string
-	AccessTokenURL string
-}
-
-func validateURL(URL string) error {
-	if URL == "" {
-		return fmt.Errorf("empty url")
-	}
-	_, err := url.Parse(URL)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // NewClient constructs a new client client. For every call there is expected jwt token for grpc stored in context.
-func NewClient(accessTokenURL string, client pb.GrpcGatewayClient) (*Client, error) {
-	err := validateURL(accessTokenURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid AccessTokenURL: %w", err)
+func New(client pb.GrpcGatewayClient) *Client {
+	return &Client{
+		gateway:       client,
+		subscriptions: make(map[string]subscription),
 	}
-
-	cl := Client{
-		gateway:        client,
-		subscriptions:  make(map[string]subscription),
-		accessTokenURL: accessTokenURL,
-	}
-	return &cl, nil
 }
 
-// NewClientFromConfig constructs a new client client. For every call there is expected jwt token for grpc stored in context.
-func NewClientFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
+// NewFromConfig constructs a new client client. For every call there is expected jwt token for grpc stored in context.
+func NewFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 	if cfg == nil || cfg.GatewayAddress == "" {
 		return nil, fmt.Errorf("missing client client config")
 	}
@@ -77,11 +57,8 @@ func NewClientFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 
 	ocfGW := pb.NewGrpcGatewayClient(conn)
 
-	client, err := NewClient(cfg.AccessTokenURL, ocfGW)
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
+	client := New(ocfGW)
+
 	client.conn = conn
 
 	return client, nil
@@ -91,8 +68,6 @@ func NewClientFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 type Client struct {
 	gateway pb.GrpcGatewayClient
 	conn    *grpc.ClientConn
-
-	accessTokenURL string
 
 	subscriptionsLock sync.Mutex
 	subscriptions     map[string]subscription
@@ -151,12 +126,8 @@ func (c *Client) Close(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) GetAccessTokenURL(ctx context.Context) (string, error) {
-	return c.accessTokenURL, nil
-}
-
 // GetDevicesViaCallback returns devices. JWT token must be stored in context for grpc call.
-func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(pb.Device)) error {
+func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(*pb.Device)) error {
 	it := c.GetDevicesIterator(ctx, deviceIDs, resourceTypes...)
 	defer it.Close()
 
@@ -165,7 +136,7 @@ func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceT
 		if !it.Next(&v) {
 			break
 		}
-		callback(v)
+		callback(&v)
 	}
 	return it.Err
 }
@@ -260,7 +231,22 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 	return kitNetGrpc.NewIterator(c.gateway.GetResourceLinks(ctx, &r))
 }
 
-// RetrieveResourcesIterator gets resources contents. JWT token must be stored in context for grpc call.
+// RetrieveResourcesIterator gets resources contents from resource shadow (cache of backend). JWT token must be stored in context for grpc call.
+// By resourceIDs you can specify resources by deviceID and Href which will be retrieved from the backend, nil means all resources.
+// Or by deviceIDs or resourceTypes you can filter output when you get all resources.
+// Eg:
+//  get all resources
+//	it := client.RetrieveResourcesIterator(ctx, nil, nil)
+//
+//  get all oic.wk.d resources
+//  iter := client.RetrieveResourcesIterator(ctx, nil, nil, "oic.wk.d")
+//
+//  get oic.wk.d resources of 2 devices
+//  iter := client.RetrieveResourcesIterator(ctx, nil, string["60f6869d-343a-4989-7462-81ef215d31af", "07ef9eb6-1ce9-4ce4-73a6-9ee0a1d534d2"], "oic.wk.d")
+//
+//  get a certain resource /oic/p of the device"60f6869d-343a-4989-7462-81ef215d31af"
+//  iter := client.RetrieveResourcesIterator(ctx, commands.NewResourceID("60f6869d-343a-4989-7462-81ef215d31af", /oic/p), nil)
+//
 // Next queries the next resource value.
 // Returns false when failed or having no more items.
 // Check it.Err for errors.
@@ -273,18 +259,18 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 //	}
 //	if it.Err != nil {
 //	}
-func (c *Client) RetrieveResourcesIterator(ctx context.Context, resourceIDs []*pb.ResourceId, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
+func (c *Client) RetrieveResourcesIterator(ctx context.Context, resourceIDs []*commands.ResourceId, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
 	r := pb.RetrieveResourcesValuesRequest{ResourceIdsFilter: resourceIDs, DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
 	return kitNetGrpc.NewIterator(c.gateway.RetrieveResourcesValues(ctx, &r))
 }
 
 type ResourceIDCallback struct {
-	ResourceID *pb.ResourceId
+	ResourceID *commands.ResourceId
 	Callback   func(pb.ResourceValue)
 }
 
 func MakeResourceIDCallback(deviceID, href string, callback func(pb.ResourceValue)) ResourceIDCallback {
-	return ResourceIDCallback{ResourceID: &pb.ResourceId{
+	return ResourceIDCallback{ResourceID: &commands.ResourceId{
 		DeviceId: deviceID,
 		Href:     href,
 	}, Callback: callback}
@@ -296,9 +282,9 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 	resourceIDsCallbacks ...ResourceIDCallback,
 ) error {
 	tc := make(map[string]func(pb.ResourceValue), len(resourceIDsCallbacks))
-	resourceIDs := make([]*pb.ResourceId, 0, len(resourceIDsCallbacks))
+	resourceIDs := make([]*commands.ResourceId, 0, len(resourceIDsCallbacks))
 	for _, c := range resourceIDsCallbacks {
-		tc[utils.MakeResourceId(c.ResourceID.DeviceId, c.ResourceID.Href)] = c.Callback
+		tc[c.ResourceID.GetDeviceId()+c.ResourceID.GetHref()] = c.Callback
 		resourceIDs = append(resourceIDs, c.ResourceID)
 	}
 
@@ -309,7 +295,7 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 		if !it.Next(&v) {
 			break
 		}
-		c, ok := tc[utils.MakeResourceId(v.GetResourceId().GetDeviceId(), v.GetResourceId().GetHref())]
+		c, ok := tc[v.GetResourceId().GetDeviceId()+v.GetResourceId().GetHref()]
 		if ok {
 			c(v)
 		}

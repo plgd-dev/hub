@@ -23,43 +23,39 @@ database:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/mongo.crt"
       keyFile: "/data/certs/mongo.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
 oauthClients:
   device:
-    provider: "test"
-    providerName: "test provider"  # not implemented
+    provider: "plgd"
+    ownerClaim: "sub"
     oauth:
-      clientID: ""
+      clientID: "test"
       clientSecret: ""
       scopes: []
-      audience: ""
-      authURL : ""
-      tokenURL : ""
-      #authStype : ""  # not required
-      responseType: ""
-      responseMode: ""
-      redirectURL: ""
-      #accessType: ""   # not required
+      audience: "test"
+      authURL : "https://localhost:9090/authorize"
+      tokenURL : "https://localhost:9090/oauth/token"
+      responseType: "code"
+      responseMode: "form_post"
+      redirectURL: "https://localhost:9085/api/authz/callback"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   client:
     oauth:
-      clientID: ""
+      clientID: "test"
       clientSecret: ""
-      scopes: []
-      audience: ""
-      authURL : ""
-      tokenURL : ""
-      #authStype : ""  # not required
+      scopes: ["openid"]
+      audience: "test"
+      authURL : "https://localhost:9090/authorize"
+      tokenURL : "https://localhost:9090/oauth/token"
       responseType: ""
-      responseMode: ""
-      redirectURL: ""
-      #accessType: ""   # not required
+      responseMode: "form_post"
+      redirectURL: "https://localhost:9085/api/authz/callback"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true

@@ -3,7 +3,7 @@ package notification
 import (
 	"sync"
 
-	raEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/events"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 type RetrieveNotificationContainer struct {
@@ -14,18 +14,18 @@ func NewRetrieveNotificationContainer() *RetrieveNotificationContainer {
 	return &RetrieveNotificationContainer{}
 }
 
-func (c *RetrieveNotificationContainer) Add(correlationID string) <-chan raEvents.ResourceRetrieved {
-	notify := make(chan raEvents.ResourceRetrieved, 1)
+func (c *RetrieveNotificationContainer) Add(correlationID string) <-chan *events.ResourceRetrieved {
+	notify := make(chan *events.ResourceRetrieved, 1)
 	c.data.Store(correlationID, notify)
 	return notify
 }
 
-func (c *RetrieveNotificationContainer) Find(correlationID string) chan<- raEvents.ResourceRetrieved {
+func (c *RetrieveNotificationContainer) Find(correlationID string) chan<- *events.ResourceRetrieved {
 	v, ok := c.data.Load(correlationID)
 	if !ok {
 		return nil
 	}
-	return v.(chan raEvents.ResourceRetrieved)
+	return v.(chan *events.ResourceRetrieved)
 }
 
 func (c *RetrieveNotificationContainer) Remove(correlationID string) {

@@ -2,21 +2,20 @@ syntax = "proto3";
 
 package ocf.cloud.resourceaggregate.pb;
 
-option go_package = "github.com/plgd-dev/cloud/resource-aggregate/pb;pb";
+option go_package = "github.com/plgd-dev/cloud/resource-aggregate/commands;commands";
 
-// https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.oic-link-schema.json
+// https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links.properties.core-schema.json
 message Resource {
-    string id = 1; // calucalated from href as uuid.NewV5(uuid.NamespaceURL, device_id+href)
-    string href = 2;
+    string href = 1;
+    string device_id = 2;
     repeated string resource_types = 3;
     repeated string interfaces = 4;
-    string device_id = 5;
-    // int64 instance_id = 6;
-    string anchor = 7; 
-    Policies policies = 8;
-    string title = 9;
-    repeated string supported_content_types = 10;
-    repeated EndpointInformation endpoint_informations = 11;
+    string anchor = 5;
+    string title = 6;
+    repeated string supported_content_types = 7;
+    int32 time_to_live = 8;
+    Policies policies = 98;
+    repeated EndpointInformation endpoint_informations = 99;
 }
 
 message Policies {
@@ -46,4 +45,5 @@ enum Status {
   ACCEPTED = 8;
   ERROR = 9;
   METHOD_NOT_ALLOWED = 10;
+  CREATED = 11;
 }

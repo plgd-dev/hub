@@ -1,13 +1,11 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/plgd-dev/cloud/authorization/persistence"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,35 +23,36 @@ func hasMatchDeviceID(deviceId string, deviceIdsFilter map[string]bool) bool {
 	return false
 }
 
-type claims struct {
-	Subject string `json:"sub,omitempty"`
-}
-
-func (c *claims) Valid() error {
-	return nil
-}
-
 func logAndReturnError(err error) error {
 	log.Errorf("%v", err)
 	return err
 }
 
-func parseSubFromJwtToken(rawJwtToken string) (string, error) {
-	parser := &jwt.Parser{
-		SkipClaimsValidation: true,
+func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationService_GetUserDevicesServer, createIter func() persistence.Iterator) error {
+	deviceIdsFilter := make(map[string]bool)
+	for _, deviceID := range request.GetDeviceIdsFilter() {
+		deviceIdsFilter[deviceID] = true
+	}
+	ids := make([]string, 0, 16)
+	var d persistence.AuthorizedDevice
+	it := createIter()
+	for it.Next(&d) {
+		if hasMatchDeviceID(d.DeviceID, deviceIdsFilter) {
+			ids = append(ids, d.DeviceID)
+		}
+	}
+	it.Close()
+	if it.Err() != nil {
+		return logAndReturnError(status.Errorf(codes.Internal, "cannot get user devices: %v", it.Err()))
 	}
 
-	var claims claims
-	_, _, err := parser.ParseUnverified(rawJwtToken, &claims)
-	if err != nil {
-		return "", fmt.Errorf("cannot get subject from jwt token: %w", err)
+	for _, deviceID := range ids {
+		err := srv.Send(&pb.UserDevice{DeviceId: deviceID, UserId: d.Owner})
+		if err != nil {
+			return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get user devices: %v", err))
+		}
 	}
-
-	if claims.Subject != "" {
-		return claims.Subject, nil
-	}
-
-	return "", fmt.Errorf("cannot get subject from jwt token: not found")
+	return nil
 }
 
 // GetUserDevices returns a list of user's devices if the access token is valid.
@@ -67,40 +66,28 @@ func (s *Service) GetUserDevices(request *pb.GetUserDevicesRequest, srv pb.Autho
 		if err != nil {
 			return logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: %v", err))
 		}
-		userID, err := parseSubFromJwtToken(token)
+		owner, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
 		if err != nil {
-			log.Debugf("cannot parse user from jwt token: %v", err)
+			log.Debugf("cannot parse '%v' from jwt token: %v", s.ownerClaim, err)
 		}
-		if userID == "" {
+		if owner == "" {
 			return logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot get user devices: invalid userIdsFilter"))
 		}
-		userIdsFilter = []string{userID}
+		if owner == serviceOwner {
+			return sendUserDevices(request, srv, tx.RetrieveAll)
+		} else {
+			userIdsFilter = []string{owner}
+		}
 	}
 
-	deviceIdsFilter := make(map[string]bool)
-	for _, deviceID := range request.GetDeviceIdsFilter() {
-		deviceIdsFilter[deviceID] = true
-	}
+	// auth0 ->
 
-	for _, userID := range userIdsFilter {
-		var ids []string
-		it := tx.RetrieveAll(userID)
-		var d persistence.AuthorizedDevice
-		for it.Next(&d) {
-			if hasMatchDeviceID(d.DeviceID, deviceIdsFilter) {
-				ids = append(ids, d.DeviceID)
-			}
-		}
-		it.Close()
-		if it.Err() != nil {
-			return logAndReturnError(status.Errorf(codes.Internal, "cannot get user devices: %v", it.Err()))
-		}
-
-		for _, deviceID := range ids {
-			err := srv.Send(&pb.UserDevice{DeviceId: deviceID, UserId: userID})
-			if err != nil {
-				return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get user devices: %v", err))
-			}
+	for _, owner := range userIdsFilter {
+		err := sendUserDevices(request, srv, func() persistence.Iterator {
+			return tx.RetrieveByOwner(owner)
+		})
+		if err != nil {
+			return err
 		}
 	}
 	return nil

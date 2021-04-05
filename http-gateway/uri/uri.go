@@ -1,6 +1,5 @@
 package uri
 
-// KiConnect API URIs.
 const (
 	HrefKey     string = "Href"
 	DeviceIDKey string = "deviceId"

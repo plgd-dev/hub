@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,47 +18,70 @@ import (
 )
 
 func TestRequestHandler_PublishResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	href := "/res0"
 	user0 := "user0"
 	type args struct {
-		request *pb.PublishResourceRequest
+		request *commands.PublishResourceLinksRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.PublishResourceResponse
+		want      *commands.PublishResourceLinksResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
 			args: args{
-				request: testMakePublishResourceRequest(deviceId, resId),
+				request: testMakePublishResourceRequest(deviceID, []string{href}),
 			},
-			want: &pb.PublishResourceResponse{
-				AuditContext: &pb.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceId,
+			want: &commands.PublishResourceLinksResponse{
+				AuditContext: &commands.AuditContext{
+					UserId: user0,
 				},
+				PublishedResources: []*commands.Resource{testNewResource(href, deviceID)},
+				DeviceId:           deviceID,
 			},
 		},
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakePublishResourceRequest(deviceId, resId),
+				request: testMakePublishResourceRequest(deviceID, []string{href}),
 			},
-			want: &pb.PublishResourceResponse{
-				AuditContext: &pb.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceId,
+			want: &commands.PublishResourceLinksResponse{
+				AuditContext: &commands.AuditContext{
+					UserId: user0,
 				},
+				PublishedResources: []*commands.Resource{},
+				DeviceId:           deviceID,
 			},
 		},
 		{
+			name: "invalid href",
 			args: args{
-				request: &pb.PublishResourceRequest{},
+				request: testMakePublishResourceRequest(deviceID, []string{"hrefwithoutslash"}),
 			},
-			name:      "invalid",
+			wantError: true,
+		},
+		{
+			name: "empty href",
+			args: args{
+				request: testMakePublishResourceRequest(deviceID, []string{""}),
+			},
+			wantError: true,
+		},
+		{
+			name: "root href",
+			args: args{
+				request: testMakePublishResourceRequest(deviceID, []string{"/"}),
+			},
+			wantError: true,
+		},
+		{
+			name: "empty",
+			args: args{
+				request: &commands.PublishResourceLinksRequest{},
+			},
 			wantError: true,
 		},
 	}
@@ -71,7 +94,7 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -80,18 +103,18 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.PublishResource(ctx, tt.args.request)
+			response, err := requestHandler.PublishResourceLinks(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -106,53 +129,67 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 }
 
 func TestRequestHandler_UnpublishResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	href := "/res0"
 	user0 := "user0"
 
 	type args struct {
-		request *pb.UnpublishResourceRequest
+		request *commands.UnpublishResourceLinksRequest
 		userID  string
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.UnpublishResourceResponse
+		want      *commands.UnpublishResourceLinksResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
 			args: args{
-				request: testMakeUnpublishResourceRequest(deviceId, resId),
+				request: testMakeUnpublishResourceRequest(deviceID, []string{href}),
 				userID:  user0,
 			},
-			want: &pb.UnpublishResourceResponse{
-				AuditContext: &pb.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceId,
+			want: &commands.UnpublishResourceLinksResponse{
+				AuditContext: &commands.AuditContext{
+					UserId: user0,
 				},
+				UnpublishedHrefs: []string{href},
+				DeviceId:         deviceID,
 			},
-		},
-		{
-			name: "duplicit",
-			args: args{
-				request: testMakeUnpublishResourceRequest(deviceId, resId),
-				userID:  user0,
-			},
-			wantError: true,
 		},
 		{
 			name: "unauthorized",
 			args: args{
-				request: testMakeUnpublishResourceRequest(deviceId, resId),
+				request: testMakeUnpublishResourceRequest(deviceID, []string{href}),
 				userID:  testUnauthorizedUser,
 			},
 			wantError: true,
 		},
 		{
-			name: "invalid",
+			name: "invalid href",
 			args: args{
-				request: &pb.UnpublishResourceRequest{},
+				request: testMakeUnpublishResourceRequest(deviceID, []string{"hrefwithoutslash"}),
+			},
+			wantError: true,
+		},
+		{
+			name: "empty href",
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceID, []string{""}),
+			},
+			wantError: true,
+		},
+		{
+			name: "root href",
+			args: args{
+				request: testMakeUnpublishResourceRequest(deviceID, []string{"/"}),
+			},
+			wantError: true,
+		},
+		{
+			name: "empty",
+			args: args{
+				request: &commands.UnpublishResourceLinksRequest{},
 			},
 			wantError: true,
 		},
@@ -175,23 +212,23 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, user0), pubReq)
+	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
+	_, err = requestHandler.PublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), pubReq)
 	assert.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.UnpublishResource(kitNetGrpc.CtxWithIncomingUserID(ctx, tt.args.userID), tt.args.request)
+			response, err := requestHandler.UnpublishResourceLinks(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -204,33 +241,32 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 }
 
 func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "/res0"
 	user0 := "user0"
 
 	type args struct {
-		request *pb.NotifyResourceChangedRequest
+		request *commands.NotifyResourceChangedRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.NotifyResourceChangedResponse
+		want      *commands.NotifyResourceChangedResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeNotifyResourceChangedRequest(deviceId, resId, 2)},
-			want: &pb.NotifyResourceChangedResponse{
-				AuditContext: &pb.AuditContext{
-					UserId:   user0,
-					DeviceId: deviceId,
+			args: args{request: testMakeNotifyResourceChangedRequest(deviceID, resID, 2)},
+			want: &commands.NotifyResourceChangedResponse{
+				AuditContext: &commands.AuditContext{
+					UserId: user0,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.NotifyResourceChangedRequest{},
+				request: &commands.NotifyResourceChangedRequest{},
 			},
 			wantError: true,
 		},
@@ -244,7 +280,7 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -252,20 +288,15 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.NotifyResourceChanged(ctx, tt.args.request)
@@ -281,46 +312,44 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 }
 
 func TestRequestHandler_UpdateResourceContent(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "/res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.UpdateResourceRequest
+		request *commands.UpdateResourceRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.UpdateResourceResponse
+		want      *commands.UpdateResourceResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "", correlationId)},
-			want: &pb.UpdateResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "", correlationID)},
+			want: &commands.UpdateResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceId, resId, "oic.if.baseline", correlationId)},
-			want: &pb.UpdateResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "oic.if.baseline", correlationID)},
+			want: &commands.UpdateResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.UpdateResourceRequest{},
+				request: &commands.UpdateResourceRequest{},
 			},
 			wantError: true,
 		},
@@ -335,7 +364,7 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -343,22 +372,21 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.UpdateResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -372,35 +400,34 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 }
 
 func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "/res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.ConfirmResourceUpdateRequest
+		request *commands.ConfirmResourceUpdateRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.ConfirmResourceUpdateResponse
+		want      *commands.ConfirmResourceUpdateResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceUpdateRequest(deviceId, resId, correlationId)},
-			want: &pb.ConfirmResourceUpdateResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeConfirmResourceUpdateRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceUpdateResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.ConfirmResourceUpdateRequest{},
+				request: &commands.ConfirmResourceUpdateRequest{},
 			},
 			wantError: true,
 		},
@@ -414,7 +441,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -422,22 +449,21 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.ConfirmResourceUpdate(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -451,35 +477,34 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 }
 
 func TestRequestHandler_RetrieveResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "/res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.RetrieveResourceRequest
+		request *commands.RetrieveResourceRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.RetrieveResourceResponse
+		want      *commands.RetrieveResourceResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeRetrieveResourceRequest(deviceId, resId, correlationId)},
-			want: &pb.RetrieveResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeRetrieveResourceRequest(deviceID, resID, correlationID)},
+			want: &commands.RetrieveResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.RetrieveResourceRequest{},
+				request: &commands.RetrieveResourceRequest{},
 			},
 			wantError: true,
 		},
@@ -493,7 +518,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -501,22 +526,21 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.RetrieveResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -530,35 +554,34 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 }
 
 func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "/res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.ConfirmResourceRetrieveRequest
+		request *commands.ConfirmResourceRetrieveRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.ConfirmResourceRetrieveResponse
+		want      *commands.ConfirmResourceRetrieveResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceRetrieveRequest(deviceId, resId, correlationId)},
-			want: &pb.ConfirmResourceRetrieveResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeConfirmResourceRetrieveRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceRetrieveResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.ConfirmResourceRetrieveRequest{},
+				request: &commands.ConfirmResourceRetrieveRequest{},
 			},
 			wantError: true,
 		},
@@ -572,7 +595,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -580,22 +603,21 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.ConfirmResourceRetrieve(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -609,35 +631,34 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 }
 
 func TestRequestHandler_DeleteResource(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "/res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.DeleteResourceRequest
+		request *commands.DeleteResourceRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.DeleteResourceResponse
+		want      *commands.DeleteResourceResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeDeleteResourceRequest(deviceId, resId, correlationId)},
-			want: &pb.DeleteResourceResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeDeleteResourceRequest(deviceID, resID, correlationID)},
+			want: &commands.DeleteResourceResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.DeleteResourceRequest{},
+				request: &commands.DeleteResourceRequest{},
 			},
 			wantError: true,
 		},
@@ -651,7 +672,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -659,22 +680,21 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.DeleteResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -688,35 +708,34 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 }
 
 func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
-	deviceId := "dev0"
-	resId := "res0"
+	deviceID := "dev0"
+	resID := "/res0"
 	user0 := "user0"
-	correlationId := "123"
+	correlationID := "123"
 
 	type args struct {
-		request *pb.ConfirmResourceDeleteRequest
+		request *commands.ConfirmResourceDeleteRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *pb.ConfirmResourceDeleteResponse
+		want      *commands.ConfirmResourceDeleteResponse
 		wantError bool
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeConfirmResourceDeleteRequest(deviceId, resId, correlationId)},
-			want: &pb.ConfirmResourceDeleteResponse{
-				AuditContext: &pb.AuditContext{
+			args: args{request: testMakeConfirmResourceDeleteRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceDeleteResponse{
+				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					DeviceId:      deviceId,
-					CorrelationId: correlationId,
+					CorrelationId: correlationID,
 				},
 			},
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: &pb.ConfirmResourceDeleteRequest{},
+				request: &commands.ConfirmResourceDeleteRequest{},
 			},
 			wantError: true,
 		},
@@ -730,7 +749,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	log.Set(logger)
 	log.Info(cfg.String())
 
-	ctx := kitNetGrpc.CtxWithIncomingUserID(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 
 	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
 	require.NoError(t, err)
@@ -738,23 +757,176 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
-	require.NoError(t, err)
-	eventstore, err := mongodb.NewEventStore(cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Clear(ctx)
 		assert.NoError(t, err)
 	}()
 
-	requestHandler := NewRequestHandler(cfg.Service, eventstore, publisher, mockGetUserDevices)
-
-	pubReq := testMakePublishResourceRequest(deviceId, resId)
-	_, err = requestHandler.PublishResource(ctx, pubReq)
-	assert.NoError(t, err)
-
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
 			response, err := requestHandler.ConfirmResourceDelete(ctx, tt.args.request)
+			if tt.wantError {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, response)
+		}
+		t.Run(tt.name, tfunc)
+	}
+}
+
+func TestRequestHandler_CreateResource(t *testing.T) {
+	deviceID := "dev0"
+	resID := "/res0"
+	user0 := "user0"
+	correlationID := "123"
+
+	type args struct {
+		request *commands.CreateResourceRequest
+	}
+	test := []struct {
+		name      string
+		args      args
+		want      *commands.CreateResourceResponse
+		wantError bool
+	}{
+		{
+			name: "valid",
+			args: args{request: testMakeCreateResourceRequest(deviceID, resID, correlationID)},
+			want: &commands.CreateResourceResponse{
+				AuditContext: &commands.AuditContext{
+					UserId:        user0,
+					CorrelationId: correlationID,
+				},
+			},
+		},
+		{
+			name: "invalid",
+			args: args{
+				request: &commands.CreateResourceRequest{},
+			},
+			wantError: true,
+		},
+	}
+	var cfg Config
+	err := config.Load(&cfg)
+	assert.NoError(t, err)
+
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	log.Set(logger)
+	log.Info(cfg.String())
+
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
+	for _, tt := range test {
+		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
+			response, err := requestHandler.CreateResource(ctx, tt.args.request)
+			if tt.wantError {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, response)
+		}
+		t.Run(tt.name, tfunc)
+	}
+}
+
+func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
+	deviceID := "dev0"
+	resID := "/res0"
+	user0 := "user0"
+	correlationID := "123"
+
+	type args struct {
+		request *commands.ConfirmResourceCreateRequest
+	}
+	test := []struct {
+		name      string
+		args      args
+		want      *commands.ConfirmResourceCreateResponse
+		wantError bool
+	}{
+		{
+			name: "valid",
+			args: args{request: testMakeConfirmResourceCreateRequest(deviceID, resID, correlationID)},
+			want: &commands.ConfirmResourceCreateResponse{
+				AuditContext: &commands.AuditContext{
+					UserId:        user0,
+					CorrelationId: correlationID,
+				},
+			},
+		},
+		{
+			name: "invalid",
+			args: args{
+				request: &commands.ConfirmResourceCreateRequest{},
+			},
+			wantError: true,
+		},
+	}
+	var cfg Config
+	err := config.Load(&cfg)
+	assert.NoError(t, err)
+
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+	log.Set(logger)
+	log.Info(cfg.String())
+
+	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
+
+	natsCertManager, err := client.New(cfg.Clients.Nats.TLSConfig, logger)
+	require.NoError(t, err)
+	publisher, err := nats.NewPublisher(cfg.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
+	assert.NoError(t, err)
+
+	dbCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
+	assert.NoError(t, err)
+	eventstore, err := mongodb.NewEventStore(ctx, cfg.Database.MongoDB, nil, mongodb.WithTLS(dbCertManager.GetTLSConfig()))
+	require.NoError(t, err)
+	defer func() {
+		err := eventstore.Clear(ctx)
+		assert.NoError(t, err)
+	}()
+
+	requestHandler := NewRequestHandler(cfg, eventstore, publisher, mockGetUserDevices)
+	for _, tt := range test {
+		tfunc := func(t *testing.T) {
+			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
+				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
+				require.NoError(t, err)
+			}
+			response, err := requestHandler.ConfirmResourceCreate(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
 				return

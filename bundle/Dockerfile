@@ -36,6 +36,11 @@ ARG service=certificate-authority
 WORKDIR $root_directory/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
+#oauth-server
+ARG service=oauth-server
+WORKDIR $root_directory/test/$service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+
 #certificate-generator
 ARG service=kit
 WORKDIR /
@@ -54,7 +59,7 @@ RUN cd /web && npm install && npm run build
 
 FROM ubuntu:20.04 as service
 RUN apt update
-RUN apt install -y wget gnupg iproute2 systemctl openssl
+RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 RUN apt update
@@ -68,8 +73,10 @@ COPY --from=build /go/bin/authorization /usr/local/bin/authorization
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
+COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
 COPY --from=build-web /web/build /usr/local/var/www
 COPY run.sh /usr/local/bin/run.sh
+COPY nginx /nginx
 
 # global
 ENV FQDN="localhost"
@@ -82,35 +89,31 @@ ENV COAP_GATEWAY_ADDRESS="0.0.0.0:$COAP_GATEWAY_PORT"
 ENV COAP_GATEWAY_CLOUD_ID="00000000-0000-0000-0000-000000000001"
 ENV COAP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
 ENV COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER=false
-ENV COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX="1024"
+ENV COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX=1024
 ENV COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=false
 ENV COAP_GATEWAY_LOG_MESSAGES=true
 
-# grpc-gateway
-ENV GRPC_GATEWAY_ADDRESS="0.0.0.0:9084"
-ENV GRPC_GATEWAY_DISABLE_VERIFY_CLIENTS=true
-
-# http-gateway
-ENV HTTP_GATEWAY_ADDRESS="0.0.0.0:9086"
-ENV HTTP_GATEWAY_DISABLE_VERIFY_CLIENTS=true
-
-# authorization
-ENV AUTHORIZATION_ADDRESS="localhost:9081"
-ENV AUTHORIZATION_HTTP_ADDRESS="0.0.0.0:9085"
-
-# certificate-authority
-ENV CERTIFICATE_AUTHORITY_ADDRESS="0.0.0.0:9087"
-ENV CERTIFICATE_AUTHORITY_DISABLE_VERIFY_CLIENTS=true
-
-ENV JWKS_URL="https://$AUTHORIZATION_HTTP_ADDRESS/.well-known/jwks.json"
-ENV RESOURCE_AGGREGATE_ADDRESS="localhost:9083"
-ENV RESOURCE_AGGREGATE_MONGO_MAX_PARALLEL_QUERIES="8"
-ENV RESOURCE_DIRECTORY_ADDRESS="localhost:9082"
-ENV INITIALIZE_CERITIFICATES=true
-ENV MONGO_PATH="/data/db"
+# ports
+ENV NGINX_PORT=443
+ENV CERTIFICATE_AUTHORITY_PORT=9087
+ENV MOCKED_OAUTH_SERVER_PORT=9090
+ENV RESOURCE_AGGREGATE_PORT=9083
+ENV RESOURCE_DIRECTORY_PORT=9082
+ENV AUTHORIZATION_PORT=9081
+ENV AUTHORIZATION_HTTP_PORT=9085
+ENV GRPC_GATEWAY_PORT=9084
+ENV HTTP_GATEWAY_PORT=9086
 ENV MONGO_PORT=10000
 ENV NATS_PORT=10001
-ENV CERITIFICATES_PATH="/data/certs"
-ENV LOGS_PATH="/data/log"
+
+# OAuth
+ENV DEVICE_PROVIDER=plgd
+ENV DEVICE_PROVIDER_TYPE=plgd
+ENV DEVICE_OAUTH_SCOPES=profile,openid,offline_access
+ENV SDK_OAUTH_RESPONSE_MODE=form_post
+ENV SDK_OAUTH_SCOPES=openid
+ENV OWNER_CLAIM="sub"
+ENV SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="plgd"
+ENV SERVICE_OAUTH_CLIENT_ID=test
 
 ENTRYPOINT ["/usr/local/bin/run.sh"]

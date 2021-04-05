@@ -12,13 +12,13 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/kit/log"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 
 	router "github.com/gorilla/mux"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
 const cloudIDKey = "CloudId"
@@ -33,9 +33,10 @@ type provisionCacheData struct {
 type RequestHandler struct {
 	oauthCallback string
 	store         *Store
+	ownerClaim    string
 
 	asClient pbAS.AuthorizationServiceClient
-	raClient pbRA.ResourceAggregateClient
+	raClient raService.ResourceAggregateClient
 
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
@@ -54,9 +55,10 @@ func NewRequestHandler(
 	oauthCallback string,
 	subManager *SubscriptionManager,
 	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
+	raClient raService.ResourceAggregateClient,
 	store *Store,
 	triggerTask func(Task),
+	ownerClaim string,
 ) *RequestHandler {
 	return &RequestHandler{
 		oauthCallback:  oauthCallback,
@@ -66,6 +68,7 @@ func NewRequestHandler(
 		store:          store,
 		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
 		triggerTask:    triggerTask,
+		ownerClaim:     ownerClaim,
 	}
 }
 

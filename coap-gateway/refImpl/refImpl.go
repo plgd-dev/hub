@@ -12,16 +12,17 @@ type RefImpl struct {
 
 // Init creates reference implementation for coap-gateway with default authorization interceptor.
 func Init(config service.Config) (*RefImpl, error) {
-	config.CheckForDefaults()
+	config.SetDefaults()
 	logger, err := log.NewLogger(config.Log)
+
 	if err != nil {
 		return nil, fmt.Errorf("cannot create logger %w", err)
 	}
 	log.Set(logger)
-	log.Info(logger)
+	log.Info(config.String())
 
 	return &RefImpl{
-		service:           service.New(logger, config.Service, config.Clients),
+		service:           service.New(config, logger),
 	}, nil
 }
 

@@ -25,7 +25,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/authorization/provider"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 )
 
 // Provider defines interface for authentification against auth service
@@ -49,6 +49,7 @@ type Service struct {
 	sdkProvider    Provider
 	persistence    Persistence
 	csrfTokens     *cache.Cache
+	ownerClaim     string
 }
 
 // Server is an HTTP server for the Service.
@@ -63,12 +64,13 @@ type Server struct {
 	listener          net.Listener
 }
 
-func newService(deviceProvider, sdkProvider Provider, persistence Persistence) *Service {
+func newService(deviceProvider, sdkProvider Provider, persistence Persistence, ownerClaim string) *Service {
 	return &Service{
 		deviceProvider: deviceProvider,
 		sdkProvider:    sdkProvider,
 		persistence:    persistence,
 		csrfTokens:     cache.New(5*time.Minute, 10*time.Minute),
+		ownerClaim:     ownerClaim,
 	}
 }
 
@@ -83,38 +85,46 @@ func New(cfg Config) (*Server, error) {
 
 	mongoCertManager, err := client.New(cfg.Database.MongoDB.TLSConfig, logger)
 	if err != nil {
-		log.Fatalf("cannot parse config: %v", err)
+		log.Fatalf("cannot create mongo dial cert : %v", err)
 	}
 	mongoTlsConfig := mongoCertManager.GetTLSConfig()
 	persistence, err := mongodb.NewStore(context.Background(), cfg.Database.MongoDB, mongodb.WithTLS(mongoTlsConfig))
 	if err != nil {
-		log.Fatalf("cannot parse config: %v", err)
+		log.Fatalf("cannot create mongo connection: %v", err)
 	}
 
 	cfg.CheckForDefaults()
-	deviceProvider := provider.New(cfg.Clients.Device)
+	devAuthCertManager, err := client.New(cfg.Clients.Device.TLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create device auth dial cert : %v", err)
+	}
+	sdkAuthCertManager, err := client.New(cfg.Clients.SDK.TLSConfig, logger)
+	if err != nil {
+		log.Fatalf("cannot create sdk auth dial cert : %v", err)
+	}
+	deviceProvider := provider.New(cfg.Clients.Device, devAuthCertManager.GetTLSConfig())
 	sdkProvider := provider.New(provider.Config{
 		Provider: "generic",
-		OAuth2:   cfg.Clients.SDK.OAuth,
-	})
-	service := newService(deviceProvider, sdkProvider, persistence)
+		OAuth:   cfg.Clients.SDK.OAuth,
+	}, sdkAuthCertManager.GetTLSConfig())
+	service := newService(deviceProvider, sdkProvider, persistence, cfg.Clients.Device.OwnerClaim)
 
-	httpCertManager, err := server.New(cfg.Service.HttpServer.HttpTLSConfig, logger)
+	httpCertManager, err := server.New(cfg.Service.Http.TLSConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server cert manager %w", err)
 	}
 	httpServerTLSConfig := httpCertManager.GetTLSConfig()
 
-	listener, err := tls.Listen("tcp", cfg.Service.HttpServer.HttpAddr, httpServerTLSConfig)
+	listener, err := tls.Listen("tcp", cfg.Service.Http.Addr, httpServerTLSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("listening failed: %w", err)
 	}
-	grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
+	grpcCertManager, err := server.New(cfg.Service.Grpc.TLSConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server cert manager %w", err)
 	}
 	grpcServerTLSConfig := grpcCertManager.GetTLSConfig()
-	server, err := kitNetGrpc.NewServer(cfg.Service.GrpcServer.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcServerTLSConfig)))
+	server, err := kitNetGrpc.NewServer(cfg.Service.Grpc.Addr, grpc.Creds(credentials.NewTLS(grpcServerTLSConfig)))
 	if err != nil {
 		return nil, err
 	}

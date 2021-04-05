@@ -100,14 +100,14 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	logger, err := log.NewLogger(cfg.Log)
 	assert.NoError(t, err)
 
-	cfg.Service.GrpcServer.GrpcAddr = "localhost:1234"
+	cfg.Service.Grpc.Addr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-    grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
+    grpcCertManager, err := server.New(cfg.Service.Grpc.TLSConfig, logger)
 	assert.NoError(t, err)
-	conn, err := grpc.Dial(cfg.Service.GrpcServer.GrpcAddr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
+	conn, err := grpc.Dial(cfg.Service.Grpc.Addr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 
@@ -216,14 +216,14 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	logger, err := log.NewLogger(cfg.Log)
 	assert.NoError(t, err)
 
-	cfg.Service.GrpcServer.GrpcAddr = "localhost:1234"
+	cfg.Service.Grpc.Addr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
+	grpcCertManager, err := server.New(cfg.Service.Grpc.TLSConfig, logger)
 	assert.NoError(t, err)
-	conn, err := grpc.Dial(cfg.Service.GrpcServer.GrpcAddr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
+	conn, err := grpc.Dial(cfg.Service.Grpc.Addr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 
@@ -305,14 +305,14 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	logger, err := log.NewLogger(cfg.Log)
 	assert.NoError(t, err)
 
-	cfg.Service.GrpcServer.GrpcAddr = "localhost:1234"
+	cfg.Service.Grpc.Addr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	grpcCertManager, err := server.New(cfg.Service.GrpcServer.GrpcTLSConfig, logger)
+	grpcCertManager, err := server.New(cfg.Service.Grpc.TLSConfig, logger)
 	assert.NoError(t, err)
-	conn, err := grpc.Dial(cfg.Service.GrpcServer.GrpcAddr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
+	conn, err := grpc.Dial(cfg.Service.Grpc.Addr, grpc.WithTransportCredentials(credentials.NewTLS(grpcCertManager.GetTLSConfig())))
 	require.NoError(t, err)
 	c := pb.NewAuthorizationServiceClient(conn)
 

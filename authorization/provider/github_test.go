@@ -45,7 +45,7 @@ func TestSignUpGitHubProvider(t *testing.T) {
 	assert.Equal("TestRefreshToken", token.RefreshToken)
 	expiresIn := int(token.Expiry.Sub(time.Now()).Seconds())
 	assert.True(3595 < expiresIn && expiresIn <= 3600)
-	assert.Equal("42", token.UserID)
+	assert.Equal("42", token.Owner)
 }
 
 func TestRefreshTokenGitHubProvider(t *testing.T) {

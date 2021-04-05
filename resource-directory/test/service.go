@@ -16,14 +16,15 @@ func MakeConfig(t *testing.T) service.Config {
 	var rdCfg service.Config
 	err := config.Load(&rdCfg)
 	require.NoError(t, err)
-	rdCfg.Service.RD.GrpcAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	rdCfg.Service.RD.FQDN = "resource-directory-" + t.Name()
+	rdCfg.Service.Grpc.Addr = testCfg.RESOURCE_DIRECTORY_HOST
+	rdCfg.Service.Grpc.FQDN = "resource-directory-" + t.Name()
 	rdCfg.Clients.Authorization.Addr = testCfg.AUTH_HOST
 	rdCfg.Clients.ResourceAggregate.Addr = testCfg.RESOURCE_AGGREGATE_HOST
-	rdCfg.Clients.OAuthProvider.OAuthConfig.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	rdCfg.Clients.OAuthProvider.OAuthConfig.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	rdCfg.Service.RD.Capabilities.UserDevicesManagerTickFrequency = time.Millisecond * 500
-	rdCfg.Service.RD.Capabilities.UserDevicesManagerExpiration = time.Millisecond * 500
+	rdCfg.Clients.OAuthProvider.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	rdCfg.Clients.OAuthProvider.OAuth.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	rdCfg.Clients.OAuthProvider.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
+	rdCfg.Service.Grpc.Capabilities.UserDevicesManagerTickFrequency = time.Millisecond * 500
+	rdCfg.Service.Grpc.Capabilities.UserDevicesManagerExpiration = time.Millisecond * 500
 	rdCfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
 	rdCfg.Log.Debug = true
 	return rdCfg

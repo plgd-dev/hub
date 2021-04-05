@@ -17,13 +17,13 @@ import (
 	storeMongodb "github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitNetHttp "github.com/plgd-dev/kit/net/http"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
-	oauthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 )
 
 //Server handle HTTP request
@@ -58,7 +58,7 @@ func runDevicePulling(ctx context.Context,
 	config Config,
 	s *Store,
 	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
+	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
 	triggerTask func(Task),
@@ -86,7 +86,7 @@ func New(config Config, logger *zap.Logger) *Server {
 	}
 	db, err := storeMongodb.NewStore(context.Background(), config.Database.MongoDB, storeMongodb.WithTLS(dbCertManager.GetTLSConfig()))
 	if err != nil {
-		log.Fatalf("cannot create mongodb store %w", err)
+		log.Fatalf("cannot create mongodb store %v", err)
 		//return nil
 	}
 
@@ -105,33 +105,43 @@ func New(config Config, logger *zap.Logger) *Server {
 		}
 	}
 
-	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
+	var oauthCertManager *client.CertManager = nil
+	var oauthTLSConfig *tls.Config = nil
+	err = config.Clients.OAuthProvider.TLSConfig.Validate()
 	if err != nil {
-		log.Fatalf("cannot create oauth dial cert manager %v", err)
+		log.Errorf("failed to validate client tls config: %v", err)
+	} else {
+		oauthCertManager, err := client.New(config.Clients.OAuthProvider.TLSConfig, logger)
+		if err != nil {
+			log.Errorf("cannot create oauth client cert manager %v", err)
+		} else {
+			oauthTLSConfig = oauthCertManager.GetTLSConfig()
+		}
 	}
-	oauthMgr, err := oauthClient.NewManagerFromConfiguration(config.Clients.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
+
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.Clients.OAuthProvider.OAuth, oauthTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
-	raCertManager, err := client.New(config.Clients.ResourceAggregate.ResourceAggregateTLSConfig, logger)
+	raCertManager, err := client.New(config.Clients.ResourceAggregate.TLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot create resource-aggregate dial cert manager %v", err)
 	}
-	raConn, err := grpc.Dial(config.Clients.ResourceAggregate.ResourceAggregateAddr,
+	raConn, err := grpc.Dial(config.Clients.ResourceAggregate.Addr,
 		grpc.WithTransportCredentials(credentials.NewTLS(raCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
-	raClient := pbRA.NewResourceAggregateClient(raConn)
+	raClient := raService.NewResourceAggregateClient(raConn)
 
-	asCertManager, err := client.New(config.Clients.Authorization.AuthServerTLSConfig, logger)
+	asCertManager, err := client.New(config.Clients.Authorization.TLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot create authorization dial cert manager %v", err)
 	}
-	authConn, err := grpc.Dial(config.Clients.Authorization.AuthServerAddr,
+	authConn, err := grpc.Dial(config.Clients.Authorization.Addr,
 		grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
@@ -140,11 +150,11 @@ func New(config Config, logger *zap.Logger) *Server {
 	}
 	asClient := pbAS.NewAuthorizationServiceClient(authConn)
 
-	rdCertManager, err := client.New(config.Clients.ResourceDirectory.ResourceDirectoryTLSConfig, logger)
+	rdCertManager, err := client.New(config.Clients.ResourceDirectory.TLSConfig, logger)
 	if err != nil {
 		log.Fatalf("cannot create resource-directory dial cert manager %v", err)
 	}
-	rdConn, err := grpc.Dial(config.Clients.ResourceDirectory.ResourceDirectoryAddr,
+	rdConn, err := grpc.Dial(config.Clients.ResourceDirectory.Addr,
 		grpc.WithTransportCredentials(credentials.NewTLS(rdCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
 	)
@@ -166,7 +176,7 @@ func New(config Config, logger *zap.Logger) *Server {
 	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.Service.Capabilities.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.Service.TaskProcessor.MaxParallel, config.Service.TaskProcessor.CacheSize, config.Service.TaskProcessor.Timeout, config.Service.TaskProcessor.Delay)
 	subscriptionManager := NewSubscriptionManager(config.Service.Http.EventsURL, asClient, raClient, store, devicesSubscription, config.Service.Http.OAuthCallback, taskProcessor.Trigger, config.Service.Capabilities.ResubscribeInterval)
-	requestHandler := NewRequestHandler(config.Service.Http.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger)
+	requestHandler := NewRequestHandler(config.Service.Http.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger, config.Clients.OAuthProvider.OwnerClaim)
 
 	var wg sync.WaitGroup
 	if !config.Service.Capabilities.PullDevicesDisabled {
@@ -189,7 +199,7 @@ func New(config Config, logger *zap.Logger) *Server {
 	}()
 
 	oauthURL, _ := url.Parse(config.Service.Http.OAuthCallback)
-	auth := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), authRules, kitNetHttp.RequestMatcher{
+	auth := kitNetHttp.NewInterceptor(config.Clients.OAuthProvider.JwksURL, oauthTLSConfig, authRules, kitNetHttp.RequestMatcher{
 		Method: http.MethodGet,
 		URI:    regexp.MustCompile(regexp.QuoteMeta(oauthURL.Path)),
 	}, kitNetHttp.RequestMatcher{
@@ -234,7 +244,7 @@ func (s *Server) Serve() error {
 		s.asCertManager.Close()
 		s.raCertManager.Close()
 		s.rdCertManager.Close()
-		s.oauthCertManager.Close()
+		if s.oauthCertManager != nil { s.oauthCertManager.Close() }
 	}()
 	return s.server.Serve(s.ln)
 }

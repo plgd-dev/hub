@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"os"
 	"os/signal"
 	"sync"
@@ -16,17 +17,16 @@ import (
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
-	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/pb"
+
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
-	"github.com/plgd-dev/kit/security/jwt"
-	oAuthClient "github.com/plgd-dev/kit/security/oauth/service/client"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -68,30 +68,40 @@ type NumParallelProcessedRequestLimiter struct {
 }
 
 // New creates new Server with provided store and publisher.
-func New(logger *zap.Logger, service APIsConfig, database Database, clients ClientsConfig ) *Server {
-	mongoCertManager, err := client.New(database.MongoDB.TLSConfig, logger)
+func New(config Config, logger *zap.Logger) *Server {
+	mongoCertManager, err := client.New(config.Database.MongoDB.TLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create mongodb client cert manager %w", err)
 	}
-	eventStore, err := mongodb.NewEventStore(database.MongoDB, nil, mongodb.WithTLS(mongoCertManager.GetTLSConfig()))
+	eventStore, err := mongodb.NewEventStore(context.Background(), config.Database.MongoDB, nil, mongodb.WithTLS(mongoCertManager.GetTLSConfig()))
 	if err != nil {
 		log.Errorf("cannot create mongodb eventstore %w", err)
 	}
 
-	natsCertManager, err := client.New(clients.Nats.TLSConfig, logger)
+	natsCertManager, err := client.New(config.Clients.Nats.TLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create nats client cert manager %w", err)
 	}
-	publisher, err := nats.NewPublisher(clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
+	publisher, err := nats.NewPublisher(config.Clients.Nats, nats.WithTLS(natsCertManager.GetTLSConfig()))
 	if err != nil {
 		log.Errorf("cannot create kafka publisher %w", err)
 	}
 
-	oauthCertManager, err := client.New(clients.OAuthProvider.OAuthTLSConfig, logger)
+	var oauthCertManager *client.CertManager = nil
+	var oauthTLSConfig *tls.Config = nil
+	err = config.Clients.OAuthProvider.TLSConfig.Validate()
 	if err != nil {
-		log.Errorf("cannot create oauth client cert manager %w", err)
+		log.Errorf("failed to validate client tls config: %v", err)
+	} else {
+		oauthCertManager, err := client.New(config.Clients.OAuthProvider.TLSConfig, logger)
+		if err != nil {
+			log.Errorf("cannot create oauth client cert manager %v", err)
+		} else {
+			oauthTLSConfig = oauthCertManager.GetTLSConfig()
+		}
 	}
-	auth := NewAuth(clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig())
+
+	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, config.Clients.OAuthProvider.OwnerClaim, oauthTLSConfig)
 	streamInterceptors := []grpc.StreamServerInterceptor{}
 
 	if logger.Core().Enabled(zapcore.DebugLevel) {
@@ -107,11 +117,11 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
-	grpcCertManager, err := server.New(service.RA.GrpcTLSConfig, logger)
+	grpcCertManager, err := server.New(config.Service.Grpc.TLSConfig, logger)
 	if err != nil {
-		log.Errorf("cannot create grpc server cert manager %w", err)
+		log.Errorf("cannot create grpc server cert manager %v", err)
 	}
-	grpcServer, err := kitNetGrpc.NewServer(service.RA.GrpcAddr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
+	grpcServer, err := kitNetGrpc.NewServer(config.Service.Grpc.Addr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),
@@ -123,36 +133,29 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 		log.Fatalf("cannot create server: %v", err)
 	}
 
-	oauthMgr, err := oAuthClient.NewManagerFromConfiguration(clients.OAuthProvider.OAuthConfig, oauthCertManager.GetTLSConfig())
+	oauthMgr, err := manager.NewManagerFromConfiguration(config.Clients.OAuthProvider.OAuth, oauthTLSConfig)
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
 
-	asCertManager, err := client.New(clients.AuthServer.AuthTLSConfig, logger)
+	asCertManager, err := client.New(config.Clients.Authorization.TLSConfig, logger)
 	if err != nil {
 		log.Errorf("cannot create as client cert manager %w", err)
 	}
-	asConn, err := grpc.Dial(clients.AuthServer.AuthServerAddr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())),
+	asConn, err := grpc.Dial(config.Clients.Authorization.Addr, grpc.WithTransportCredentials(credentials.NewTLS(asCertManager.GetTLSConfig())),
 		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
 		log.Fatalf("cannot connect to authorization server: %v", err)
 	}
 	authClient := pbAS.NewAuthorizationServiceClient(asConn)
 
-	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient,
-		service.RA.Capabilities.UserDevicesManagerTickFrequency, service.RA.Capabilities.UserDevicesManagerExpiration,
-		func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
-		requestHandler := NewRequestHandler(service, eventStore, publisher, func(ctx context.Context, userID, deviceID string) (bool, error) {
-		devices, err := userDevicesManager.GetUserDevices(ctx, userID)
-		if err != nil {
-			return false, err
+	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.Service.Grpc.Capabilities.UserDevicesManagerTickFrequency, config.Service.Grpc.Capabilities.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
+	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner, deviceID string) (bool, error) {
+		ok := userDevicesManager.IsUserDevice(owner, deviceID)
+		if ok {
+			return ok, nil
 		}
-		for _, id := range devices {
-			if id == deviceID {
-				return true, nil
-			}
-		}
-		devices, err = userDevicesManager.UpdateUserDevices(ctx, userID)
+		devices, err := userDevicesManager.UpdateUserDevices(ctx, owner)
 		if err != nil {
 			return false, err
 		}
@@ -163,7 +166,7 @@ func New(logger *zap.Logger, service APIsConfig, database Database, clients Clie
 		}
 		return false, nil
 	})
-	pb.RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
+	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	server := Server{
 		server:             grpcServer,
@@ -208,7 +211,7 @@ func (s *Server) serveWithHandlingSignal(serve func() error) error {
 
 	s.eventstore.Close(context.Background())
 	s.publisher.Close()
-	s.oauthCertManager.Close()
+	if s.oauthCertManager != nil { s.oauthCertManager.Close() }
 	s.asCertManager.Close()
 	s.grpcCertManager.Close()
 	s.natsCertManager.Close()
@@ -228,7 +231,7 @@ func (s *Server) Shutdown() {
 	return
 }
 
-func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
+func NewAuth(jwksUrl, ownerClaim string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
 	interceptor := kitNetGrpc.ValidateJWT(jwksUrl, tls, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
@@ -238,17 +241,17 @@ func NewAuth(jwksUrl string, tls *tls.Config) kitNetGrpc.AuthInterceptors {
 			log.Errorf("auth interceptor: %v", err)
 			return ctx, err
 		}
-		userID, err := kitNetGrpc.UserIDFromMD(ctx)
+		owner, err := kitNetGrpc.OwnerFromMD(ctx)
 		if err != nil {
-			userID, err = kitNetGrpc.UserIDFromTokenMD(ctx)
+			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
 			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingUserID(ctx, userID)
+				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
 			}
 		}
 		if err != nil {
-			log.Errorf("auth cannot get userID: %v", err)
+			log.Errorf("auth cannot get owner: %v", err)
 			return ctx, err
 		}
-		return kitNetGrpc.CtxWithUserID(ctx, userID), nil
+		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
 	})
 }

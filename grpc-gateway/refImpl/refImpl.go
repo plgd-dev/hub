@@ -13,11 +13,11 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/service"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
-	"github.com/plgd-dev/kit/security/jwt"
 )
 
 func Init(config service.Config) (*kitNetGrpc.Server, error) {
@@ -28,11 +28,21 @@ func Init(config service.Config) (*kitNetGrpc.Server, error) {
 	log.Set(logger)
 	log.Info(config.String())
 
-	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
+	var oauthCertManager *client.CertManager = nil
+	var oauthTLSConfig *tls.Config = nil
+	err = config.Clients.OAuthProvider.TLSConfig.Validate()
 	if err != nil {
-		log.Errorf("cannot create oauth client cert manager %w", err)
+		log.Errorf("failed to validate client tls config: %v", err)
+	} else {
+		oauthCertManager, err := client.New(config.Clients.OAuthProvider.TLSConfig, logger)
+		if err != nil {
+			log.Errorf("cannot create oauth client cert manager %v", err)
+		} else {
+			oauthTLSConfig = oauthCertManager.GetTLSConfig()
+		}
 	}
-	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig())
+
+	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, oauthTLSConfig)
 	var streamInterceptors []grpc.StreamServerInterceptor
 	if config.Log.Debug {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
@@ -63,18 +73,13 @@ func Init(config service.Config) (*kitNetGrpc.Server, error) {
 		return nil, err
 	}
 
-	rdCertManager, err := client.New(config.Clients.RDConfig.ResourceDirectoryTLSConfig, logger)
-	if err != nil {
-		log.Errorf("cannot create rd client cert manager %w", err)
-	}
-	if err := service.AddHandler(server, config.Clients.RDConfig, rdCertManager.GetTLSConfig()); err != nil {
+	if err := service.AddHandler(server, config.Clients, logger); err != nil {
 		return nil, err
 	}
 
 	server.AddCloseFunc(func() {
-		oauthCertManager.Close()
+		if oauthCertManager != nil { oauthCertManager.Close() }
 		grpcCertManager.Close()
-		rdCertManager.Close()
 	})
 
 	return server, nil

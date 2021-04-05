@@ -57,6 +57,18 @@ func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Con
 	return nil
 }
 
+func (h *deviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Context, val *pb.Event_ResourceCreatePending) error {
+	h.client.server.taskQueue.Submit(func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+		err := h.client.createResource(ctx, val)
+		if err != nil {
+			log.Error(err)
+		}
+	})
+	return nil
+}
+
 func (h *deviceSubscriptionHandlers) Error(err error) {
 	h.client.server.taskQueue.Submit(func() {
 		h.mutex.Lock()

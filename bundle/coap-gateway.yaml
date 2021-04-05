@@ -7,6 +7,7 @@ apis:
     timeout: 10s  # default:10s
     heartbeat: 4s
     reconnectInterval: 10s
+    logMessageEnabled: true
     capabilities:
       maxMessageSize: 1024  # default:262144
       keepaliveEnabled: true
@@ -16,43 +17,52 @@ apis:
       tcpSignalMessageCSMDisabled : false
       peerTcpSignalMessageCSMisabled : false
       errorResponseEnabled : true
+    deviceStatusExpiration:
+      enabled: false
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/coap.crt"
       keyFile: "/data/certs/coap.key"
       clientCertificateRequired: true
 clients:
-  oauthProvider:
-    oauth:
-      clientID: ""
-      clientSecret: ""
-      scopes: []
-      audience: ""
-      tokenURL : "https://localhost:9085/api/authz/token"
-      timeout : 10s
+  nats:
+    url: "nats://localhost:4222"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
+  oauthProvider:
+    oauth:
+      clientID: "test"
+      clientSecret: ""
+      scopes: []
+      audience: "test"
+      tokenURL: "https://localhost:9090/oauth/token"
+      timeout: 10s
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
   authorizationServer:
     address: "localhost:9081"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   resourceDirectory:
     address: "localhost:9082"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   resourceAggregate:
     address: "localhost:9083"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true

@@ -18,11 +18,13 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Service.Http.Addr = testCfg.C2C_GW_HOST
 	cfg.Clients.OAuthProvider.JwksURL = testCfg.JWKS_URL
-	cfg.Clients.ResourceDirectory.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.Clients.ResourceDirectory.Addr = testCfg.RESOURCE_DIRECTORY_HOST
+	cfg.Clients.ResourceAggregate.Addr = testCfg.RESOURCE_AGGREGATE_HOST
 	cfg.Service.Http.FQDN = "cloud2cloud-gateway-" + t.Name()
 	cfg.Service.Http.TLSConfig.ClientCertificateRequired = false
-	cfg.Clients.OAuthProvider.OAuthConfig.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	cfg.Clients.OAuthProvider.OAuthConfig.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	cfg.Clients.OAuthProvider.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
+	cfg.Clients.OAuthProvider.OAuth.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
+	cfg.Clients.OAuthProvider.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
 	return cfg
 }
 

@@ -12,11 +12,11 @@ import (
 
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/certificate-authority/service"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"github.com/plgd-dev/kit/security/certManager/client"
 	"github.com/plgd-dev/kit/security/certManager/server"
-	"github.com/plgd-dev/kit/security/jwt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -38,15 +38,24 @@ func Init(config service.Config) (*RefImpl, error) {
 	log.Set(logger)
 	log.Info(config.String())
 
-	oauthCertManager, err := client.New(config.Clients.OAuthProvider.OAuthTLSConfig, logger)
+	var oauthCertManager *client.CertManager = nil
+	var oauthTLSConfig *tls.Config = nil
+	err = config.Clients.OAuthProvider.TLSConfig.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("cannot create oauth client cert manager %v", err)
+		log.Errorf("failed to validate client tls config: %v", err)
+	} else {
+		oauthCertManager, err := client.New(config.Clients.OAuthProvider.TLSConfig, logger)
+		if err != nil {
+			log.Errorf("cannot create oauth client cert manager %v", err)
+		} else {
+			oauthTLSConfig = oauthCertManager.GetTLSConfig()
+		}
 	}
 
-	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, oauthCertManager.GetTLSConfig(), "openid")
+	auth := NewAuth(config.Clients.OAuthProvider.JwksURL, oauthTLSConfig, "openid")
 	r, err := InitWithAuth(config, auth, logger)
 	if err != nil {
-		oauthCertManager.Close()
+		if oauthCertManager !=nil { oauthCertManager.Close() }
 		return nil, err
 	}
 	r.oauthCertManager = oauthCertManager
@@ -70,11 +79,11 @@ func NewRefImplFromConfig(config service.Config, auth kitNetGrpc.AuthInterceptor
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
-	grpcCertManager, err := server.New(config.Service.GrpcConfig.TLSConfig, logger)
+	grpcCertManager, err := server.New(config.Service.Grpc.TLSConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server cert manager %w", err)
 	}
-	svr, err := kitNetGrpc.NewServer(config.Service.GrpcConfig.Addr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
+	svr, err := kitNetGrpc.NewServer(config.Service.Grpc.Addr, grpc.Creds(credentials.NewTLS(grpcCertManager.GetTLSConfig())),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),
@@ -87,7 +96,7 @@ func NewRefImplFromConfig(config service.Config, auth kitNetGrpc.AuthInterceptor
 		return nil, err
 	}
 
-	handler, err := service.NewRequestHandlerFromConfig(config.Clients.SignerConfig)
+	handler, err := service.NewRequestHandlerFromConfig(config.Clients.Signer)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +126,7 @@ func (r *RefImpl) Serve() error {
 func (r *RefImpl) Shutdown() {
 	r.server.Stop()
 	r.grpcCertManager.Close()
-	r.oauthCertManager.Close()
+	if r.oauthCertManager != nil { r.oauthCertManager.Close() }
 }
 
 func NewAuth(jwksUrl string, tls *tls.Config, scope string) kitNetGrpc.AuthInterceptors {

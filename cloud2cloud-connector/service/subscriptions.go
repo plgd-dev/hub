@@ -12,11 +12,11 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	kitHttp "github.com/plgd-dev/kit/net/http"
 )
 
 const AuthorizationHeader string = "Authorization"
@@ -44,7 +44,7 @@ type Subscription struct {
 type SubscriptionManager struct {
 	eventsURL           string
 	store               *Store
-	raClient            pbRA.ResourceAggregateClient
+	raClient            raService.ResourceAggregateClient
 	asClient            pbAS.AuthorizationServiceClient
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
@@ -56,7 +56,7 @@ type SubscriptionManager struct {
 func NewSubscriptionManager(
 	EventsURL string,
 	asClient pbAS.AuthorizationServiceClient,
-	raClient pbRA.ResourceAggregateClient,
+	raClient raService.ResourceAggregateClient,
 	store *Store,
 	devicesSubscription *DevicesSubscription,
 	oauthCallback string,
@@ -171,7 +171,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	if header.EventSignature != calcEventSignature {
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v(%+v != %+v, %s): not match", header.ID, subData.subscription, header, body)
 	}
-	ctx = kitNetGrpc.CtxWithUserID(ctx, subData.linkedAccount.UserID)
+	ctx = kitNetGrpc.CtxWithOwner(ctx, subData.linkedAccount.UserID)
 	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot refresh token: %w", err)

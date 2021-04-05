@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/codec/json"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

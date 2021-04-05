@@ -12,50 +12,50 @@ import (
 
 // Config provides defaults and enables configuring via env variables.
 type Config struct {
-	Log         log.Config         `yaml:"log" json:"log"`
-	Service     APIsConfig         `yaml:"apis" json:"apis"`
-	Clients     OAuthClientsConfig `yaml:"oauthClients" json:"oauthClients"`
-	Database    MogoDBConfig       `yaml:"database" json:"database"`
+	Log         log.Config         `yaml:"log" json:"log" envconfig:"LOG" default:"true"`
+	Service     APIsConfig         `yaml:"apis" json:"apis" envconfig:"SERVICE"`
+	Clients     OAuthClientsConfig `yaml:"oauthClients" json:"oauthClients" envconfig:"CLIENTS"`
+	Database    MogoDBConfig       `yaml:"database" json:"database" envconfig:"DATABASE"`
 }
 
 type APIsConfig struct {
-	GrpcServer    GrpcConfig   `yaml:"grpc" json:"grpc"`
-	HttpServer    HttpConfig   `yaml:"http" json:"http"`
+	Grpc GrpcConfig `yaml:"grpc" json:"grpc" envconfig:"GRPC"`
+	Http HttpConfig `yaml:"http" json:"http" envconfig:"HTTP"`
 }
 
 type GrpcConfig struct {
-	GrpcAddr         string        `yaml:"address" json:"address" default:"0.0.0.0:9081"`
-	GrpcTLSConfig    server.Config `yaml:"tls" json:"tls"`
+	Addr      string        `yaml:"address" json:"address" envconfig:"ADDRESS" default:"0.0.0.0:9081"`
+	TLSConfig server.Config `yaml:"tls" json:"tls" envconfig:"TLS"`
 }
 
 type HttpConfig struct {
-	HttpAddr         string        `yaml:"address" json:"address" default:"0.0.0.0:9085"`
-	HttpTLSConfig    server.Config `yaml:"tls" json:"tls"`
+	Addr      string        `yaml:"address" json:"address" envconfig:"ADDRESS" default:"0.0.0.0:9085"`
+	TLSConfig server.Config `yaml:"tls" json:"tls" envconfig:"TLS"`
 }
 
 type OAuthClientsConfig struct {
-	Device    provider.Config    `yaml:"device" json:"device"`
-	SDK       SDKOAuthConfig     `yaml:"client" json:"client"`
+	Device    provider.Config    `yaml:"device" json:"device" envconfig:"DEVICE"`
+	SDK       SDKOAuthConfig     `yaml:"client" json:"client" envconfig:"SDK"`
 }
 
 type SDKOAuthConfig struct {
-	OAuth             oauth.Config     `yaml:"oauth" json:"oauth"`
-	OAuthTLSConfig    client.Config    `yaml:"tls" json:"tls"`
+	OAuth     oauth.Config  `yaml:"oauth" json:"oauth" envconfig:"OAUTH"`
+	TLSConfig client.Config `yaml:"tls" json:"tls" envconfig:"TLS"`
 }
 
 type MogoDBConfig struct {
-	MongoDB    mongodb.Config    `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB    mongodb.Config    `yaml:"mongoDB" json:"mongoDB" envconfig:"MONGODB"`
 }
 
 func (c Config) CheckForDefaults() Config {
-	if c.Clients.Device.OAuth2.AccessType == "" {
-		c.Clients.Device.OAuth2.AccessType = "offline"
+	if c.Clients.Device.OAuth.AccessType == "" {
+		c.Clients.Device.OAuth.AccessType = "offline"
 	}
-	if c.Clients.Device.OAuth2.ResponseType == "" {
-		c.Clients.Device.OAuth2.ResponseType = "code"
+	if c.Clients.Device.OAuth.ResponseType == "" {
+		c.Clients.Device.OAuth.ResponseType = "code"
 	}
-	if c.Clients.Device.OAuth2.ResponseMode == "" {
-		c.Clients.Device.OAuth2.ResponseMode = "query"
+	if c.Clients.Device.OAuth.ResponseMode == "" {
+		c.Clients.Device.OAuth.ResponseMode = "query"
 	}
 	if c.Clients.SDK.OAuth.AccessType == "" {
 		c.Clients.SDK.OAuth.AccessType = "online"

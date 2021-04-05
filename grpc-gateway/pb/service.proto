@@ -18,7 +18,7 @@ service GrpcGateway {
   // Retrieve resources values from resource shadow
   rpc RetrieveResourcesValues(RetrieveResourcesValuesRequest) returns (stream ResourceValue) {}
   // Update resource values
-  rpc UpdateResourcesValues(UpdateResourceValuesRequest) returns (UpdateResourceValuesResponse) {}
+  rpc UpdateResource(UpdateResourceRequest) returns (UpdateResourceResponse) {}
 
   // Subscribe to events
   rpc SubscribeForEvents(stream ocf.cloud.grpcgateway.pb.SubscribeForEvents) returns (stream Event) {}
@@ -28,4 +28,7 @@ service GrpcGateway {
 
   // Delete resource at the device.
   rpc DeleteResource(DeleteResourceRequest) returns (DeleteResourceResponse) {}
+
+  // Create resource at the device.
+  rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse) {}
 }

@@ -8,7 +8,7 @@ apis:
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
       clientCertificateRequired: true
-    fqdn: "cloud2cloud.pluggedin.cloud"
+    fqdn: "cloud2cloud.ocf.cloud"
   capabilities:
     reconnectInterval: 10s
     emitEventTimeout: 5s
@@ -20,26 +20,41 @@ database:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/mongo.crt"
       keyFile: "/data/certs/mongo.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
 clients:
+  nats:
+    url: "nats://localhost:4222"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true
   oauthProvider:
-    jwksUrl: "https://localhost:9085/.well-known/jwks.json"
+    jwksUrl: "https://localhost:9090/.well-known/jwks.json"
+    ownerClaim: "sub"
     oauth:
-      clientID: ""
+      clientID: "test"
       clientSecret: ""
       scopes: []
-      audience: ""
-      tokenURL: "https://localhost:9085/api/authz/token"
+      audience: "test"
+      tokenURL: "https://localhost:9090/oauth/token"
       timeout: 10s
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
   resourceDirectory:
     address: "localhost:9082"
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
       keyFile: "/data/certs/http.key"
-      useSystemCAPool: false
+      useSystemCAPool: true
+  resourceAggregate:
+    address: "localhost:9083"
+    tls:
+      caFile: "/data/certs/root_ca.crt"
+      certFile: "/data/certs/http.crt"
+      keyFile: "/data/certs/http.key"
+      useSystemCAPool: true

@@ -10,9 +10,9 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbRA "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
 	kitSync "github.com/plgd-dev/kit/sync"
 )
 
@@ -43,11 +43,11 @@ type DevicesSubscription struct {
 	ctx               context.Context
 	data              *kitSync.Map // //[deviceID]*deviceSubscription
 	rdClient          pb.GrpcGatewayClient
-	raClient          pbRA.ResourceAggregateClient
+	raClient          raService.ResourceAggregateClient
 	reconnectInterval time.Duration
 }
 
-func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient pbRA.ResourceAggregateClient, reconnectInterval time.Duration) *DevicesSubscription {
+func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, reconnectInterval time.Duration) *DevicesSubscription {
 	return &DevicesSubscription{
 		data:              kitSync.NewMap(),
 		rdClient:          rdClient,
@@ -103,7 +103,7 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 			}
 		},
 	}
-	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithUserID(c.ctx, linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
+	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithOwner(c.ctx, linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
 	if err != nil {
 		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)

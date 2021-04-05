@@ -17,6 +17,10 @@ export const messages = defineMessages({
     id: 'menu.notifications',
     defaultMessage: 'Notifications',
   },
+  configuration: {
+    id: 'menu.configuration',
+    defaultMessage: 'Configuration',
+  },
   collapse: {
     id: 'menu.collapse',
     defaultMessage: 'Collapse',

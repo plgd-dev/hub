@@ -10,15 +10,14 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbCQRS "github.com/plgd-dev/cloud/resource-aggregate/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/net/coap"
-	kitNetGrpc "github.com/plgd-dev/kit/net/grpc"
-	"github.com/plgd-dev/sdk/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -57,7 +56,8 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 			log.Errorf("signIn: cannot receive link for the device %v: %v", deviceID, err)
 			return
 		}
-		client.observeResource(ctx, m.GetDeviceId(), m.GetHref(), m.GetPolicies().GetBitFlags()&int32(schema.Observable) == int32(schema.Observable), true)
+		resource := m.ToRAProto()
+		client.observeResource(ctx, resource.GetResourceID(), resource.IsObservable(), true)
 	}
 }
 
@@ -69,7 +69,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		AccessToken: signIn.AccessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), req.Token)
 		return
 	}
 
@@ -93,10 +93,8 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	authCtx := authCtx{
-		AuthorizationContext: &pbCQRS.AuthorizationContext{
-			DeviceId: signIn.DeviceID,
-		},
+	authCtx := authorizationContext{
+		DeviceID:    signIn.DeviceID,
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
 		Expire:      expired,
@@ -107,12 +105,10 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		client.Close()
 		return
 	}
-	req.Context = kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
-	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &pbCQRS.CommandMetadata{
+	req.Context = kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
+	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &commands.CommandMetadata{
 		Sequence:     client.coapConn.Sequence(),
 		ConnectionId: client.remoteAddrString(),
-	}, &pbCQRS.AuthorizationContext{
-		DeviceId: signIn.DeviceID,
 	})
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
@@ -121,10 +117,8 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	err = deviceStatus.SetOnline(req.Context, client.server.raClient, signIn.DeviceID, expired, &pbCQRS.CommandMetadata{
-		Sequence:     client.coapConn.Sequence(),
-		ConnectionId: client.remoteAddrString(),
-	}, authCtx.AuthorizationContext)
+	oldAuthCtx := client.SetAuthorizationContext(&authCtx)
+	err = client.server.devicesStatusUpdater.Add(client)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
@@ -132,13 +126,12 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	oldAuthCtx := client.replaceAuthorizationContext(&authCtx)
 	newDevice := false
 
 	switch {
-	case oldAuthCtx.GetDeviceId() == "":
+	case oldAuthCtx.GetDeviceID() == "":
 		newDevice = true
-	case oldAuthCtx.GetDeviceId() != signIn.DeviceID || oldAuthCtx.UserID != signIn.UserID:
+	case oldAuthCtx.GetDeviceID() != signIn.DeviceID || oldAuthCtx.GetUserID() != signIn.UserID:
 		client.cancelResourceSubscriptions(true)
 		client.cancelDeviceSubscriptions(req.Context)
 		newDevice = true
@@ -146,7 +139,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 	if newDevice {
 		h := NewDeviceSubscriptionHandlers(client, signIn.DeviceID)
-		ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(client.server.ctx, serviceToken.AccessToken), signIn.UserID)
+		ctx := kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(client.server.ctx, serviceToken.AccessToken), signIn.UserID)
 		cancelSubscription, err := client.server.subscribeToDevice(ctx, signIn.UserID, signIn.DeviceID, h)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
@@ -158,7 +151,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		}
 	}
 	if expired.IsZero() {
-		client.server.expirationClientCache.Delete(signIn.DeviceID)
+		client.server.expirationClientCache.Set(signIn.DeviceID, nil, time.Millisecond)
 	} else {
 		client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
 	}
@@ -170,14 +163,14 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
 	// fix for iotivity-classic
-	authCurrentCtx := client.loadAuthorizationContext()
+	authCurrentCtx, _ := client.GetAuthorizationContext()
 	userID := signOut.UserID
 	deviceID := signOut.DeviceID
 	if userID == "" {
-		userID = authCurrentCtx.UserID
+		userID = authCurrentCtx.GetUserID()
 	}
 	if deviceID == "" {
-		deviceID = authCurrentCtx.GetDeviceId()
+		deviceID = authCurrentCtx.GetDeviceID()
 	}
 
 	_, err := client.server.asClient.SignOut(req.Context, &pbAS.SignOutRequest{
@@ -186,31 +179,28 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		AccessToken: signOut.AccessToken,
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapCodes.POST), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), req.Token)
 		client.Close()
 		return
 	}
-	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
-		client.Close()
-		return
-	}
-	ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
-
-	client.cancelResourceSubscriptions(true)
-	client.cancelDeviceSubscriptions(ctx)
-	oldAuthCtx := client.replaceAuthorizationContext(nil)
-	if oldAuthCtx.DeviceId != "" {
-		client.server.expirationClientCache.Delete(oldAuthCtx.DeviceId)
-		req.Context = kitNetGrpc.CtxWithUserID(ctx, oldAuthCtx.UserID)
-		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.DeviceId, &pbCQRS.CommandMetadata{
+	oldAuthCtx := client.CleanUp()
+	if oldAuthCtx.GetDeviceID() != "" {
+		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
+		}
+		ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
+		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
+		req.Context = kitNetGrpc.CtxWithOwner(ctx, oldAuthCtx.GetUserID())
+		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.GetDeviceID(), &commands.CommandMetadata{
 			Sequence:     client.coapConn.Sequence(),
 			ConnectionId: client.remoteAddrString(),
-		}, oldAuthCtx.AuthorizationContext)
+		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceId(), err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)
 			return
 		}
 	}
