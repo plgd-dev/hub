@@ -38,7 +38,8 @@ clients:
       scopes: []
       audience: "test"
       tokenURL: "https://localhost:9090/oauth/token"
-      timeout: 10s
+      request_timeout: 10s
+      tick_frequency: 15s
     tls:
       caFile: "/data/certs/root_ca.crt"
       certFile: "/data/certs/http.crt"
