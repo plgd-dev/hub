@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/certificate-authority/service"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -27,12 +28,12 @@ type Config struct {
 	Listen  certManager.Config   `envconfig:"LISTEN"`
 	Dial    certManager.Config   `envconfig:"DIAL"`
 	JwksURL string               `envconfig:"JWKS_URL"`
-	kitNetGrpc.Config
+	Addr    string               `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
 }
 
 type RefImpl struct {
 	handle            *service.RequestHandler
-	server            *kitNetGrpc.Server
+	server            *server.Server
 	listenCertManager certManager.CertManager
 	dialCertManager   certManager.CertManager
 }
@@ -66,7 +67,7 @@ func NewRefImplFromConfig(config Config, auth kitNetGrpc.AuthInterceptors) (*Ref
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
-	svr, err := kitNetGrpc.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+	svr, err := server.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),

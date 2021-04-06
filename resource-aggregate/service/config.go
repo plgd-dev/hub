@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 )
 
 //Config represent application configuration
 type Config struct {
-	grpc.Config
+	Addr                            string         `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
 	AuthServerAddr                  string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
 	SnapshotThreshold               int            `envconfig:"SNAPSHOT_THRESHOLD" default:"16"`
 	ConcurrencyExceptionMaxRetry    int            `envconfig:"OCC_MAX_RETRY" default:"8"`

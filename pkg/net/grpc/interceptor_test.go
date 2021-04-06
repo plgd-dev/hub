@@ -4,31 +4,32 @@ import (
 	"context"
 	"testing"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnaryInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
-	svr := StubGrpcServer(UnaryServerInterceptorOption(m.Intercept))
+	svr := server.StubGrpcServer(UnaryServerInterceptorOption(m.Intercept))
 	defer svr.Close()
 	go svr.Serve()
 
-	c := StubGrpcClient(svr.Addr())
-	c.TestCall(context.Background(), &TestRequest{})
+	c := server.StubGrpcClient(svr.Addr())
+	c.TestCall(context.Background(), &server.TestRequest{})
 	assert.Equal(t, "/ocf.cloud.test.pb.StubService/TestCall", m.Method)
 }
 
 func TestStreamInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
-	svr := StubGrpcServer(StreamServerInterceptorOption(m.Intercept))
+	svr := server.StubGrpcServer(StreamServerInterceptorOption(m.Intercept))
 	defer svr.Close()
 	go svr.Serve()
 
-	c := StubGrpcClient(svr.Addr())
+	c := server.StubGrpcClient(svr.Addr())
 	s, err := c.TestStream(context.Background())
 	require.NoError(t, err)
-	err = s.Send(&TestRequest{})
+	err = s.Send(&server.TestRequest{})
 	require.NoError(t, err)
 	s.Recv()
 	assert.Equal(t, "/ocf.cloud.test.pb.StubService/TestStream", m.Method)

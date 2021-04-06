@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/resource-aggregate/refImpl"
 	"github.com/plgd-dev/kit/log"
-	"github.com/kelseyhightower/envconfig"
 )
 
 func main() {

@@ -4,27 +4,35 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 
+	"github.com/plgd-dev/cloud/pkg/net/http/client"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 )
 
 // NewGenericProvider creates OAuth client
-func NewGenericProvider(config Config) *GenericProvider {
-	oauth2 := config.OAuth2.ToOAuth2()
-	return &GenericProvider{
-		Config:        config,
-		OAuth2:        &oauth2,
-		NewHTTPClient: func() *http.Client { return http.DefaultClient },
+func NewGenericProvider(config Config, logger *zap.Logger, responseMode, accessType, responseType string) (*GenericProvider, error) {
+	config.ResponseMode = responseMode
+	config.AccessType = accessType
+	config.ResponseType = responseType
+	httpClient, err := client.New(config.HTTP, logger)
+	if err != nil {
+		return nil, err
 	}
+	oauth2 := config.Config.ToOAuth2()
+	return &GenericProvider{
+		Config:     config,
+		OAuth2:     &oauth2,
+		HTTPClient: httpClient,
+	}, nil
 }
 
 // GenericProvider configuration with new http client
 type GenericProvider struct {
-	Config        Config
-	OAuth2        *oauth2.Config
-	NewHTTPClient func() *http.Client
+	Config     Config
+	OAuth2     *oauth2.Config
+	HTTPClient *client.Client
 }
 
 // GetProviderName returns unique name of the provider
@@ -34,7 +42,7 @@ func (p *GenericProvider) GetProviderName() string {
 
 // AuthCodeURL returns URL for redirecting to the authentication web page
 func (p *GenericProvider) AuthCodeURL(csrfToken string) string {
-	return p.Config.OAuth2.AuthCodeURL(csrfToken)
+	return p.Config.Config.AuthCodeURL(csrfToken)
 }
 
 // LogoutURL to logout the user
@@ -57,7 +65,7 @@ func (p *GenericProvider) Exchange(ctx context.Context, authorizationProvider, a
 	if p.GetProviderName() != authorizationProvider {
 		return nil, fmt.Errorf("unsupported authorization provider")
 	}
-	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.NewHTTPClient())
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 
 	token, err := p.OAuth2.Exchange(ctx, authorizationCode)
 	if err != nil {
@@ -125,4 +133,8 @@ func (p *GenericProvider) Refresh(ctx context.Context, refreshToken string) (*To
 		Expiry:       token.Expiry,
 		Owner:        userID,
 	}, nil
+}
+
+func (p *GenericProvider) Close() {
+	p.HTTPClient.Close()
 }

@@ -4,7 +4,7 @@
 // 	protoc        v3.6.1
 // source: github.com/plgd-dev/cloud/pkg/net/grpc/stub.proto
 
-package grpc
+package server
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

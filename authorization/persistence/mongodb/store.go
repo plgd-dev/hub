@@ -2,15 +2,16 @@ package mongodb
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.uber.org/zap"
 )
 
 const userDevicesCName = "userdevices"
@@ -26,34 +27,18 @@ var userDevicesQueryIndex = bson.D{
 
 // Store implements an Store for MongoDB.
 type Store struct {
-	client   *mongo.Client
-	dbPrefix string
-}
-
-type Config struct {
-	URI      string `envconfig:"URI" env:"URI" default:"mongodb://localhost:27017"`
-	Database string `envconfig:"DATABASE" env:"DATABASE" default:"authorization"`
-	tlsCfg   *tls.Config
-}
-
-// Option provides the means to use function call chaining
-type Option func(Config) Config
-
-// WithTLS configures connection to use TLS
-func WithTLS(cfg *tls.Config) Option {
-	return func(c Config) Config {
-		c.tlsCfg = cfg
-		return c
-	}
+	client    *mongo.Client
+	dbPrefix  string
+	closeFunc []func()
 }
 
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
-	for _, o := range opts {
-		cfg = o(cfg)
+func NewStore(ctx context.Context, cfg Config, logger *zap.Logger) (*Store, error) {
+	certManager, err := client.New(cfg.TLS, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(cfg.tlsCfg))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(certManager.GetTLSConfig()))
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
@@ -61,8 +46,13 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
-
-	return NewStoreWithSession(ctx, client, cfg.Database)
+	s, err := NewStoreWithSession(ctx, client, cfg.Database)
+	if err != nil {
+		certManager.Close()
+		return nil, err
+	}
+	s.AddCloseFunc(certManager.Close)
+	return s, nil
 }
 
 // NewStoreWithSession creates a new Store with a session.
@@ -123,5 +113,15 @@ func (s *Store) Clear(ctx context.Context) error {
 
 // Close closes the database session.
 func (s *Store) Close(ctx context.Context) error {
-	return s.client.Disconnect(ctx)
+	err := s.client.Disconnect(ctx)
+	for _, f := range s.closeFunc {
+		f()
+	}
+	return err
+}
+
+// AddCloseFunc adds a function to be called by the Close method.
+// This eliminates the need for wrapping the Server.
+func (s *Store) AddCloseFunc(f func()) {
+	s.closeFunc = append(s.closeFunc, f)
 }

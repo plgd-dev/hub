@@ -17,6 +17,7 @@ import (
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
@@ -35,7 +36,7 @@ type EventStore interface {
 
 //Server handle HTTP request
 type Server struct {
-	server             *kitNetGrpc.Server
+	server             *server.Server
 	cfg                Config
 	handler            *RequestHandler
 	sigs               chan os.Signal
@@ -76,7 +77,7 @@ func New(config Config, logger *zap.Logger, clientCertManager ClientCertManager,
 	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
-	grpcServer, err := kitNetGrpc.NewServer(config.Config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
+	grpcServer, err := server.NewServer(config.Addr, grpc.Creds(credentials.NewTLS(listenTLSConfig)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),

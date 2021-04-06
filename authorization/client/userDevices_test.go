@@ -7,14 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/authorization/service"
+	"github.com/plgd-dev/cloud/authorization/test"
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
+	clientCertManager "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 type testTrigger struct {
@@ -92,24 +91,24 @@ func (t *testTrigger) Trigger(ctx context.Context, userID string, addedDevices, 
 func TestAddDeviceAfterRegister(t *testing.T) {
 	trigger := newTestTrigger()
 
-	var cfg service.Config
-	err := envconfig.Process("", &cfg)
-	require.NoError(t, err)
-	cfg.Addr = "localhost:1234"
+	cfg := test.MakeConfig(t)
+	cfg.Service.GRPC.Addr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
-	err = envconfig.Process("LISTEN", &acmeCfg)
+	conn, err := client.New(client.Config{
+		Addr: cfg.Service.GRPC.Addr,
+		TLS: clientCertManager.Config{
+			CAPool:   cfg.Service.GRPC.TLS.CAPool,
+			CertFile: cfg.Service.GRPC.TLS.CertFile,
+			KeyFile:  cfg.Service.GRPC.TLS.KeyFile,
+		},
+	}, log.Get().Desugar())
 	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
-	require.NoError(t, err)
-	tlsConfig := certMgr.GetClientTLSConfig()
+	defer conn.Close()
 
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	require.NoError(t, err)
-	c := pb.NewAuthorizationServiceClient(conn)
+	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
 	m := NewUserDevicesManager(trigger.Trigger, c, time.Millisecond*200, time.Millisecond*500, func(err error) { fmt.Println(err) })
 	defer m.Close()
@@ -210,24 +209,24 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 		},
 	}
 
-	var cfg service.Config
-	err := envconfig.Process("", &cfg)
-	require.NoError(t, err)
-	cfg.Addr = "localhost:1234"
+	cfg := test.MakeConfig(t)
+	cfg.Service.GRPC.Addr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
-	err = envconfig.Process("LISTEN", &acmeCfg)
+	conn, err := client.New(client.Config{
+		Addr: cfg.Service.GRPC.Addr,
+		TLS: clientCertManager.Config{
+			CAPool:   cfg.Service.GRPC.TLS.CAPool,
+			CertFile: cfg.Service.GRPC.TLS.CertFile,
+			KeyFile:  cfg.Service.GRPC.TLS.KeyFile,
+		},
+	}, log.Get().Desugar())
 	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
-	require.NoError(t, err)
-	tlsConfig := certMgr.GetClientTLSConfig()
+	defer conn.Close()
 
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	require.NoError(t, err)
-	c := pb.NewAuthorizationServiceClient(conn)
+	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
 	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
 		UserId:   t.Name(),
@@ -301,24 +300,24 @@ func TestUserDevicesManager_Release(t *testing.T) {
 		},
 	}
 
-	var cfg service.Config
-	err := envconfig.Process("", &cfg)
-	require.NoError(t, err)
-	cfg.Addr = "localhost:1234"
+	cfg := test.MakeConfig(t)
+	cfg.Service.GRPC.Addr = "localhost:1234"
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	var acmeCfg certManager.Config
-	err = envconfig.Process("LISTEN", &acmeCfg)
+	conn, err := client.New(client.Config{
+		Addr: cfg.Service.GRPC.Addr,
+		TLS: clientCertManager.Config{
+			CAPool:   cfg.Service.GRPC.TLS.CAPool,
+			CertFile: cfg.Service.GRPC.TLS.CertFile,
+			KeyFile:  cfg.Service.GRPC.TLS.KeyFile,
+		},
+	}, log.Get().Desugar())
 	require.NoError(t, err)
-	certMgr, err := certManager.NewCertManager(acmeCfg)
-	require.NoError(t, err)
-	tlsConfig := certMgr.GetClientTLSConfig()
+	defer conn.Close()
 
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	require.NoError(t, err)
-	c := pb.NewAuthorizationServiceClient(conn)
+	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
 	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
 		UserId:   t.Name(),

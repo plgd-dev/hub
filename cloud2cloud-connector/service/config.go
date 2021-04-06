@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 )
 
@@ -18,7 +17,7 @@ type TaskProcessorConfig struct {
 
 //Config represent application configuration
 type Config struct {
-	grpc.Config
+	Addr                  string              `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
 	AuthServerAddr        string              `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
 	ResourceAggregateAddr string              `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
 	ResourceDirectoryAddr string              `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`

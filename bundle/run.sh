@@ -52,6 +52,9 @@ export LISTEN_FILE_CERT_DIR_PATH="$INTERNAL_CERT_DIR_PATH"
 export LISTEN_FILE_CERT_NAME="$GRPC_INTERNAL_CERT_NAME"
 export LISTEN_FILE_CERT_KEY_NAME="$GRPC_INTERNAL_CERT_KEY_NAME"
 
+#SECRETS
+export SECRETS_DIRECTORY=/data/secrets
+
 #OAUTH-SEVER KEYS
 export OAUTH_ID_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/id-token.pem
 export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
@@ -140,6 +143,13 @@ export COAP_GATEWAY_FQDN=$FQDN
 mkdir -p $CA_POOL_DIR
 mkdir -p $INTERNAL_CERT_DIR_PATH
 mkdir -p $EXTERNAL_CERT_DIR_PATH
+mkdir -p ${SECRETS_DIRECTORY}
+ln -s ${SECRETS_DIRECTORY} /secrets
+
+export CA_POOL=$CA_POOL_CERT_PATH
+export CERT_FILE=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME
+export KEY_FILE=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME
+
 fqdnSAN="--cert.san.domain=$FQDN"
 if ip route get $FQDN 2>/dev/null >/dev/null; then
   fqdnSAN="--cert.san.ip=$FQDN"
@@ -152,6 +162,7 @@ echo "generating COAP-GW cert"
 certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID --outCert=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$COAP_GATEWAY_FILE_CERT_KEY_NAME --cert.san.domain=$COAP_GATEWAY_FQDN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
 echo "generating NGINX cert"
 certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
+
 
 mkdir -p ${OAUTH_KEYS_PATH}
 openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
@@ -244,10 +255,48 @@ while true; do
 done
     
 # authorization
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/authorization.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/authorization.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/authorization.yaml | sort | uniq)
+
+### setup oauthclients
+cat /configs/authorization.yaml | yq e "\
+  .apis.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .apis.http.address = \"${AUTHORIZATION_HTTP_ADDRESS}\" |
+  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
+  .clients.oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .clients.oauthClients.device.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.oauthClients.device.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .clients.oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .clients.oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .clients.oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .clients.oauthClients.device.ownerClaim = \"${OWNER_CLAIM}\" |
+  .clients.oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
+  .clients.oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .clients.oauthClients.client.redirectURL = \"${SDK_OAUTH_REDIRECT_URL}\" |
+  .clients.oauthClients.client.audience = \"${SDK_OAUTH_AUDIENCE}\" |
+  .clients.oauthClients.client.scopes=[ \"${SDK_OAUTH_SCOPES}\" ]
+" - > /data/authorization.yaml
+
 echo "starting authorization"
-ADDRESS=${AUTHORIZATION_ADDRESS} \
-HTTP_ADDRESS=${AUTHORIZATION_HTTP_ADDRESS} \
-authorization >$LOGS_PATH/authorization.log 2>&1 &
+authorization --config /data/authorization.yaml >$LOGS_PATH/authorization.log 2>&1 &
 status=$?
 authorization_pid=$!
 if [ $status -ne 0 ]; then
