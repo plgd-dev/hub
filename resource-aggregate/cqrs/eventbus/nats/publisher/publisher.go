@@ -1,4 +1,4 @@
-package nats
+package publisher
 
 import (
 	"context"
@@ -28,21 +28,8 @@ func (p *Publisher) AddCloseFunc(f func()) {
 	p.closeFunc = append(p.closeFunc, f)
 }
 
-// NewPublisher creates new publisher with proto marshaller.
-func NewPublisher(config Config, opts ...Option) (*Publisher, error) {
-	for _, o := range opts {
-		config = o(config)
-	}
-
-	p, err := newPublisher(config.URL, utils.Marshal, config.Options...)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
-}
-
-// NewPublisherV2 creates new publisher with proto marshaller.
-func NewPublisherV2(config ConfigV2, logger *zap.Logger) (*Publisher, error) {
+// New creates new publisher with proto marshaller.
+func New(config Config, logger *zap.Logger) (*Publisher, error) {
 	certManager, err := client.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)

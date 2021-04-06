@@ -1,4 +1,4 @@
-package nats
+package subscriber
 
 import (
 	"context"
@@ -23,6 +23,11 @@ type Subscriber struct {
 	conn            *nats.Conn
 	url             string
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
+	closeFunc       []func()
+}
+
+func (p *Subscriber) AddCloseFunc(f func()) {
+	p.closeFunc = append(p.closeFunc, f)
 }
 
 //Observer handles events from kafka
@@ -37,11 +42,7 @@ type Observer struct {
 }
 
 // NewSubscriber create new subscriber with proto unmarshaller.
-func NewSubscriber(config Config, goroutinePoolGo eventbus.GoroutinePoolGoFunc, errFunc eventbus.ErrFunc, opts ...Option) (*Subscriber, error) {
-	for _, o := range opts {
-		config = o(config)
-	}
-
+func New(config Config, goroutinePoolGo eventbus.GoroutinePoolGoFunc, errFunc eventbus.ErrFunc) (*Subscriber, error) {
 	s, err := newSubscriber(config.URL, utils.Unmarshal, goroutinePoolGo, errFunc, config.Options...)
 	if err != nil {
 		return nil, err
@@ -86,6 +87,9 @@ func (b *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topic
 // Close closes subscriber.
 func (b *Subscriber) Close() {
 	b.conn.Close()
+	for _, f := range b.closeFunc {
+		f()
+	}
 }
 
 func (b *Subscriber) newObservation(ctx context.Context, subscriptionId string, eh eventbus.Handler) *Observer {

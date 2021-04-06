@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
@@ -22,7 +23,6 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/log"
 )
 
 const TEST_TIMEOUT = time.Second * 30

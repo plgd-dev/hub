@@ -15,11 +15,11 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/resource-directory/service"
-	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/credentials"
 )
 

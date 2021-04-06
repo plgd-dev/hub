@@ -1,4 +1,4 @@
-package nats
+package subscriber
 
 import (
 	"context"
@@ -22,18 +22,10 @@ func TestSubscriber(t *testing.T) {
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
 
-	var config certManager.Config
-	err := envconfig.Process("DIAL", &config)
-	assert.NoError(t, err)
 
-	dialCertManager, err := certManager.NewCertManager(config)
-	require.NoError(t, err)
-
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
-	publisher, err := NewPublisher(Config{
+	publisher, err := publisher.New(Config{
 		URL: "nats://localhost:4222",
-	}, WithTLS(tlsConfig))
+	})
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer publisher.Close()
