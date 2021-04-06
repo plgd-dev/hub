@@ -30,7 +30,7 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.Addr == "" {
-		return fmt.Errorf("address")
+		return fmt.Errorf("address('%v')", c.Addr)
 	}
 	err := c.TLS.Validate()
 	if err != nil {

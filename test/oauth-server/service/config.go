@@ -60,7 +60,7 @@ func (c *Client) SetDefaults() {
 
 func (c *Client) Validate() error {
 	if c.ID == "" {
-		return fmt.Errorf("invalid ID")
+		return fmt.Errorf("id('%v')", c.ID)
 	}
 	return nil
 }
@@ -100,13 +100,13 @@ func (c *Config) SetDefaults() {
 
 func (c *Config) Validate() error {
 	if c.IDTokenPrivateKeyPath == "" {
-		return fmt.Errorf("invalid IDTokenPrivateKeyPath")
+		return fmt.Errorf("idTokenPrivateKeyPath('%v')", c.IDTokenPrivateKeyPath)
 	}
 	if c.AccessTokenKeyPrivateKeyPath == "" {
-		return fmt.Errorf("invalid AccessTokenKeyPrivateKeyPath")
+		return fmt.Errorf("accessTokenKeyPrivateKeyPath('%v')", c.AccessTokenKeyPrivateKeyPath)
 	}
 	if c.Domain == "" {
-		return fmt.Errorf("invalid Domain")
+		return fmt.Errorf("domain('%v')", c.Domain)
 	}
 	return nil
 }

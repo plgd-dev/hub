@@ -52,19 +52,19 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.MaxIdleConns < 0 {
-		return fmt.Errorf("maxIdleConns")
+		return fmt.Errorf("maxIdleConns('%v')", c.MaxIdleConns)
 	}
 	if c.MaxConnsPerHost < 0 {
-		return fmt.Errorf("maxConnsPerHost")
+		return fmt.Errorf("maxConnsPerHost('%v')", c.MaxConnsPerHost)
 	}
 	if c.MaxIdleConnsPerHost < 0 {
-		return fmt.Errorf("maxIdleConnsPerHost")
+		return fmt.Errorf("maxIdleConnsPerHost('%v')", c.MaxIdleConnsPerHost)
 	}
 	if c.IdleConnTimeout < 0 {
-		return fmt.Errorf("idleConnTimeout")
+		return fmt.Errorf("idleConnTimeout('%v')", c.IdleConnTimeout)
 	}
 	if c.Timeout < 0 {
-		return fmt.Errorf("timeout")
+		return fmt.Errorf("timeout('%v')", c.Timeout)
 	}
 	err := c.TLS.Validate()
 	if err != nil {

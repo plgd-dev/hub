@@ -17,10 +17,10 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.Provider == "" {
-		return fmt.Errorf("provider")
+		return fmt.Errorf("provider('%v')", c.Provider)
 	}
 	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim")
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
 	err := c.HTTP.Validate()
 	if err != nil {

@@ -14,10 +14,10 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.URI == "" {
-		return fmt.Errorf("uri")
+		return fmt.Errorf("uri('%v')", c.URI)
 	}
 	if c.Database == "" {
-		return fmt.Errorf("database")
+		return fmt.Errorf("database('%v')", c.Database)
 	}
 	err := c.TLS.Validate()
 	if err != nil {

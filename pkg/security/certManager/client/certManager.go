@@ -18,13 +18,13 @@ type Config struct {
 
 func (c Config) Validate() error {
 	if c.CAPool == "" && !c.UseSystemCAPool {
-		return fmt.Errorf("caPool")
+		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
 	if c.CertFile == "" {
-		return fmt.Errorf("certFile")
+		return fmt.Errorf("certFile('%v')", c.CertFile)
 	}
 	if c.KeyFile == "" {
-		return fmt.Errorf("keyFile")
+		return fmt.Errorf("keyFile('%v')", c.KeyFile)
 	}
 	return nil
 }
