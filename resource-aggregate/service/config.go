@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	client2 "github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	eventbusConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/config"
 	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
@@ -34,7 +33,7 @@ func (c *Config) Validate() error {
 }
 
 type APIsConfig struct {
-	GRPC GrpcConfig `yaml:"grpc" json:"grpc"`
+	GRPC grpcServer.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *APIsConfig) Validate() error {
@@ -45,59 +44,55 @@ func (c *APIsConfig) Validate() error {
 	return nil
 }
 
-type GrpcConfig struct {
-	Server       grpcServer.Config  `yaml:",inline" json:",inline"`
-	Capabilities CapabilitiesConfig `yaml:"capabilities" json:"capabilities"`
+type EventStoreConfig struct {
+	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
+	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold" default:"16"`
+	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry" default:"8"`
 }
 
-func (c *GrpcConfig) Validate() error {
-	err := c.Server.Validate()
-	if err != nil {
-		return err
-	}
-	err = c.Capabilities.Validate()
-	if err != nil {
-		return fmt.Errorf("capabilities.%w", err)
-	}
-	return nil
-}
-
-type CapabilitiesConfig struct {
-	SnapshotThreshold               int           `yaml:"snapshotThreshold" json:"snapshotThreshold" default:"16"`
-	ConcurrencyExceptionMaxRetry    int           `yaml:"occMaxRetry" json:"occMaxRetry" default:"8"`
-	UserDevicesManagerTickFrequency time.Duration `yaml:"userMgmtTickFrequency" json:"userMgmtTickFrequency" default:"15s"`
-	UserDevicesManagerExpiration    time.Duration `yaml:"userMgmtExpiration" json:"userMgmtExpiration" default:"1m"`
-}
-
-func (c *CapabilitiesConfig) Validate() error {
+func (c *EventStoreConfig) Validate() error {
 	if c.SnapshotThreshold <= 0 {
 		return fmt.Errorf("snapshotThreshold('%v')", c.SnapshotThreshold)
 	}
 	if c.ConcurrencyExceptionMaxRetry <= 0 {
 		return fmt.Errorf("occMaxRetry('%v')", c.ConcurrencyExceptionMaxRetry)
 	}
-	if c.UserDevicesManagerTickFrequency <= 0 {
-		return fmt.Errorf("userMgmtTickFrequency('%v')", c.UserDevicesManagerTickFrequency)
+	return c.Connection.Validate()
+}
+
+type AuthorizationServerConfig struct {
+	Connection      client.Config    `yaml:"grpc" json:"grpc"`
+	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency" default:"15s"`
+	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration" default:"1m"`
+	OAuth           client2.ConfigV2 `yaml:"oauth" json:"oauth"`
+}
+
+func (c *AuthorizationServerConfig) Validate() error {
+	if c.PullFrequency <= 0 {
+		return fmt.Errorf("pullFrequency('%v')", c.PullFrequency)
 	}
-	if c.UserDevicesManagerExpiration <= 0 {
-		return fmt.Errorf("userMgmtExpiration('%v')", c.UserDevicesManagerExpiration)
+	if c.CacheExpiration <= 0 {
+		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
 	}
-	return nil
+	err := c.OAuth.Validate()
+	if err != nil {
+		return fmt.Errorf("oauth.%w", err)
+	}
+	err = c.Connection.Validate()
+	if err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return err
 }
 
 type ClientsConfig struct {
-	Eventbus      eventbusConfig.Config   `yaml:"eventBus" json:"eventBus"`
-	Eventstore    eventstoreConfig.Config `yaml:"eventStore" json:"eventStore"`
-	OAuthProvider OAuthProviderConfig     `yaml:"oauthProvider" json:"oauthProvider"`
-	AuthServer    client.Config           `yaml:"authorizationServer" json:"authorizationServer"`
+	Eventbus   eventbusConfig.Config     `yaml:"eventBus" json:"eventBus"`
+	Eventstore EventStoreConfig          `yaml:"eventStore" json:"eventStore"`
+	AuthServer AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
 }
 
 func (c *ClientsConfig) Validate() error {
-	err := c.OAuthProvider.Validate()
-	if err != nil {
-		return fmt.Errorf("oauthProvider.%w", err)
-	}
-	err = c.AuthServer.Validate()
+	err := c.AuthServer.Validate()
 	if err != nil {
 		return fmt.Errorf("authorizationServer.%w", err)
 	}
@@ -108,27 +103,6 @@ func (c *ClientsConfig) Validate() error {
 	err = c.Eventstore.Validate()
 	if err != nil {
 		return fmt.Errorf("eventstore.%w", err)
-	}
-	return nil
-}
-
-type OAuthProviderConfig struct {
-	Jwks       validator.Config `yaml:"jwks" json:"jwks"`
-	OAuth      client2.ConfigV2 `yaml:"oauth" json:"oauth"`
-	OwnerClaim string           `yaml:"ownerClaim" json:"ownerClaim"`
-}
-
-func (c *OAuthProviderConfig) Validate() error {
-	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
-	}
-	err := c.Jwks.Validate()
-	if err != nil {
-		return fmt.Errorf("jwks.%w", err)
-	}
-	err = c.OAuth.Validate()
-	if err != nil {
-		return fmt.Errorf("oauth.%w", err)
 	}
 	return nil
 }

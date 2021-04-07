@@ -77,8 +77,9 @@ func MakeTLSServerConfig() server.Config {
 
 func MakeGrpcServerConfig(address string) grpcServer.Config {
 	return grpcServer.Config{
-		Addr: address,
-		TLS:  MakeTLSServerConfig(),
+		Addr:          address,
+		TLS:           MakeTLSServerConfig(),
+		Authorization: MakeAuthorizationConfig(),
 	}
 }
 
@@ -118,10 +119,12 @@ func MakeEventsStoreMongoDBConfig() mongodb.ConfigV2 {
 	}
 }
 
-func MakeJWKsConfig() validator.Config {
+func MakeAuthorizationConfig() validator.Config {
 	return validator.Config{
-		URL:  JWKS_URL,
-		HTTP: MakeHttpClientConfig(),
+		Authority:  "https://" + OAUTH_SERVER_HOST,
+		Audience:   "https://localhost/",
+		OwnerClaim: OWNER_CLAIM,
+		HTTP:       MakeHttpClientConfig(),
 	}
 }
 

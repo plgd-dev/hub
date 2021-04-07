@@ -8,11 +8,21 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
-    capabilities:
-      snapshotThreshold: 16
-      occMaxRetry: 8
-      userMgmtTickFrequency: 15s
-      userMgmtExpiration: 1m
+    authorization:
+      authority:
+      audience:
+      ownerClaim: sub
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
 clients:
   eventBus:
     nats:
@@ -31,23 +41,30 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-      batchSize: 16
+      # limits number of queries in one find request.
+      batchSize: 128
+      # limits number of connections.
       maxPoolSize: 16
+      # close connection when idle time reach the value.
       maxConnIdleTime: 4m0s
-  oauthProvider:
-    jwks:
-      url:
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
+    # tries to create the snapshot event after n events
+    snapshotThreshold: 16
+    # limits number of try to store event
+    occMaxRetry: 8
+  authorizationServer:
+    grpc:
+      address:
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+      keepAlive:
+        Time: 10s
+        Timeout: 20s
+        permitWithoutStream: true
+    pullFrequency: 15s
+    cacheExpiration: 1m
     oauth:
       clientID:
       clientSecret:
@@ -66,15 +83,3 @@ clients:
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
       tickFrequency: 10s
-    ownerClaim: sub
-  authorizationServer:
-    address:
-    tls:
-      caPool: "/secrets/public/rootca.crt"
-      keyFile: "/secrets/private/cert.key"
-      certFile: "/secrets/public/cert.crt"
-      useSystemCAPool: false
-    keepAlive:
-      Time: 10s
-      Timeout: 20s
-      permitWithoutStream: true

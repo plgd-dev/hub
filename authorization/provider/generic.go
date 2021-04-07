@@ -12,7 +12,7 @@ import (
 )
 
 // NewGenericProvider creates OAuth client
-func NewGenericProvider(config Config, logger *zap.Logger, responseMode, accessType, responseType string) (*GenericProvider, error) {
+func NewGenericProvider(config Config, logger *zap.Logger, ownerClaim, responseMode, accessType, responseType string) (*GenericProvider, error) {
 	config.ResponseMode = responseMode
 	config.AccessType = accessType
 	config.ResponseType = responseType
@@ -25,6 +25,7 @@ func NewGenericProvider(config Config, logger *zap.Logger, responseMode, accessT
 		Config:     config,
 		OAuth2:     &oauth2,
 		HTTPClient: httpClient,
+		OwnerClaim: ownerClaim,
 	}, nil
 }
 
@@ -33,6 +34,7 @@ type GenericProvider struct {
 	Config     Config
 	OAuth2     *oauth2.Config
 	HTTPClient *client.Client
+	OwnerClaim string
 }
 
 // GetProviderName returns unique name of the provider
@@ -85,9 +87,9 @@ func (p *GenericProvider) Exchange(ctx context.Context, authorizationProvider, a
 		return nil, err
 	}
 
-	userID, ok := profile[p.Config.OwnerClaim].(string)
+	userID, ok := profile[p.OwnerClaim].(string)
 	if !ok {
-		return nil, fmt.Errorf("cannot determine owner claim %v", p.Config.OwnerClaim)
+		return nil, fmt.Errorf("cannot determine owner claim %v", p.OwnerClaim)
 	}
 
 	t := Token{
@@ -123,9 +125,9 @@ func (p *GenericProvider) Refresh(ctx context.Context, refreshToken string) (*To
 		return nil, err
 	}
 
-	userID, ok := profile[p.Config.OwnerClaim].(string)
+	userID, ok := profile[p.OwnerClaim].(string)
 	if !ok {
-		return nil, fmt.Errorf("cannot determine owner claim %v", p.Config.OwnerClaim)
+		return nil, fmt.Errorf("cannot determine owner claim %v", p.OwnerClaim)
 	}
 	return &Token{
 		AccessToken:  token.AccessToken,

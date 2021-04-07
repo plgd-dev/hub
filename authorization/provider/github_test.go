@@ -127,7 +127,7 @@ func newGithubOAuth(t *testing.T, server *httptest.Server, logger *zap.Logger) P
 			TokenURL:     server.URL + "/oauth/access_token",
 		},
 	}
-	p, err := NewGitHubProvider(Config, logger, "", "", "")
+	p, err := NewGitHubProvider(Config, logger, "", "", "", "")
 	require.NoError(t, err)
 	p.NewGithubClient = func(h *http.Client) *github.Client {
 		c := github.NewClient(h)

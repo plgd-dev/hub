@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/authorization/uri"
@@ -22,6 +23,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 )
 
 // Provider defines interface for authentification against auth service
@@ -67,13 +69,13 @@ func NewService(deviceProvider, sdkProvider Provider, persistence Persistence, o
 	}
 }
 
-func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvider Provider, sdkProvider Provider) (*Server, error) {
-	grpcServer, err := server.New(cfg.Service.GRPC, logger)
+func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvider Provider, sdkProvider Provider, grpcOpts ...grpc.ServerOption) (*Server, error) {
+	grpcServer, err := server.New(cfg.APIs.GRPC, logger, grpcOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
 	}
 
-	httpListener, err := listener.New(cfg.Service.HTTP, logger)
+	httpListener, err := listener.New(cfg.APIs.HTTP, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http listener: %w", err)
 	}
@@ -84,7 +86,7 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 	}
 	grpcServer.AddCloseFunc(func() { persistence.Close(ctx) })
 
-	service := NewService(deviceProvider, sdkProvider, persistence, cfg.Clients.OAuthClients.Device.OwnerClaim)
+	service := NewService(deviceProvider, sdkProvider, persistence, cfg.APIs.GRPC.Authorization.OwnerClaim)
 
 	pb.RegisterAuthorizationServiceServer(grpcServer.Server, service)
 
@@ -107,23 +109,41 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 
 // New creates the service's HTTP server.
 func New(ctx context.Context, cfg Config, logger *zap.Logger) (*Server, error) {
-	deviceProvider, err := provider.New(cfg.Clients.OAuthClients.Device, logger, "query", "offline", "code")
+	deviceProvider, err := provider.New(cfg.OAuthClients.Device, logger, cfg.APIs.GRPC.Authorization.OwnerClaim, "query", "offline", "code")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
 	sdkProvider, err := provider.New(provider.Config{
 		Provider: "generic",
-		Config:   cfg.Clients.OAuthClients.SDK.Config,
-		HTTP:     cfg.Clients.OAuthClients.SDK.HTTP,
-	}, logger, "form_post", "online", "token")
+		Config:   cfg.OAuthClients.SDK.Config,
+		HTTP:     cfg.OAuthClients.SDK.HTTP,
+	}, logger, "", "form_post", "online", "token")
 	if err != nil {
+		deviceProvider.Close()
 		return nil, fmt.Errorf("cannot create sdk provider: %w", err)
 	}
-
-	s, err := NewServer(ctx, cfg, logger, deviceProvider, sdkProvider)
+	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization, logger)
 	if err != nil {
+		deviceProvider.Close()
+		sdkProvider.Close()
+		return nil, fmt.Errorf("cannot create validator: %w", err)
+	}
+	opts, err := server.MakeDefaultOptions(validator, cfg.APIs.GRPC.Authorization.OwnerClaim, logger)
+	if err != nil {
+		deviceProvider.Close()
+		sdkProvider.Close()
+		validator.Close()
+		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
+	}
+
+	s, err := NewServer(ctx, cfg, logger, deviceProvider, sdkProvider, opts...)
+	if err != nil {
+		deviceProvider.Close()
+		sdkProvider.Close()
+		validator.Close()
 		return nil, fmt.Errorf("cannot create server: %w", err)
 	}
+	s.grpcServer.AddCloseFunc(validator.Close)
 	s.grpcServer.AddCloseFunc(deviceProvider.Close)
 	s.grpcServer.AddCloseFunc(sdkProvider.Close)
 	return s, nil

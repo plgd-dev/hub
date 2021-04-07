@@ -19,8 +19,8 @@ import (
 
 func TestPublishUnpublish(t *testing.T) {
 	config := test.MakeConfig(t)
-	config.APIs.GRPC.Server.Addr = "localhost:9888"
-	config.APIs.GRPC.Capabilities.SnapshotThreshold = 1
+	config.APIs.GRPC.Addr = "localhost:9888"
+	config.Clients.Eventstore.SnapshotThreshold = 1
 
 	oauthShutdown := oauthTest.SetUp(t)
 	defer oauthShutdown()
@@ -33,12 +33,12 @@ func TestPublishUnpublish(t *testing.T) {
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetServiceToken(t))
 
-	authConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.AuthServer.Addr), log.Get().Desugar())
+	authConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.AuthServer.Connection.Addr), log.Get().Desugar())
 	require.NoError(t, err)
 	defer authConn.Close()
 	authClient := pbAS.NewAuthorizationServiceClient(authConn.GRPC())
 
-	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Server.Addr), log.Get().Desugar())
+	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get().Desugar())
 	require.NoError(t, err)
 	defer raConn.Close()
 	raClient := service.NewResourceAggregateClient(raConn.GRPC())
@@ -61,43 +61,3 @@ func TestPublishUnpublish(t *testing.T) {
 	_, err = raClient.UnpublishResourceLinks(ctx, unpubReq)
 	require.NoError(t, err)
 }
-
-/*
-func testMakePublishResourceRequest(deviceId, href, userId, accesstoken string) *commands.PublishResourceLinksRequest {
-	r := &commands.PublishResourceLinksRequest{
-		Resources: []*commands.Resource{testNewResource(href, deviceId)},
-		DeviceId:  deviceId,
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
-			Sequence:     0,
-		},
-	}
-	return r
-}
-
-func testMakeUnpublishResourceRequest(deviceId, href, userId, accesstoken string) *commands.UnpublishResourceLinksRequest {
-	r := &commands.UnpublishResourceLinksRequest{
-		Hrefs:    []string{href},
-		DeviceId: deviceId,
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
-			Sequence:     0,
-		},
-	}
-	return r
-}
-
-func testNewResource(href string, deviceId string) *commands.Resource {
-	return &commands.Resource{
-		Href:          href,
-		ResourceTypes: []string{"oic.wk.d", "x.org.iotivity.device"},
-		Interfaces:    []string{"oic.if.baseline"},
-		DeviceId:      deviceId,
-		Anchor:        "ocf://" + deviceId + "/oic/p",
-		Policies: &commands.Policies{
-			BitFlags: 1,
-		},
-		Title: "device",
-	}
-}
-*/

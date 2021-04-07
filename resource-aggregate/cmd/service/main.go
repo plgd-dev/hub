@@ -10,17 +10,16 @@ import (
 
 func main() {
 	var cfg service.Config
-	cfg.Log.Debug = true
+	err := config.LoadAndValidateConfig(&cfg)
+	if err != nil {
+		log.Fatalf("cannot load config: %v", err)
+	}
 	logger, err := log.NewLogger(cfg.Log)
 	if err != nil {
 		log.Fatalf("cannot create logger: %v", err)
 	}
 	log.Set(logger)
 	log.Infof("config: %v", cfg.String())
-	err = config.LoadAndValidateConfig(&cfg)
-	if err != nil {
-		log.Fatalf("cannot load config: %v", err)
-	}
 	s, err := service.New(context.Background(), cfg, logger)
 	if err != nil {
 		log.Fatalf("cannot create service: %v", err)

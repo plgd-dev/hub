@@ -15,18 +15,18 @@ import (
 func MakeConfig(t *testing.T) service.Config {
 	var raCfg service.Config
 
-	raCfg.APIs.GRPC.Server = testCfg.MakeGrpcServerConfig(testCfg.RESOURCE_AGGREGATE_HOST)
-	raCfg.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry = 8
-	raCfg.APIs.GRPC.Capabilities.SnapshotThreshold = 16
-	raCfg.APIs.GRPC.Capabilities.UserDevicesManagerExpiration = time.Second
-	raCfg.APIs.GRPC.Capabilities.UserDevicesManagerTickFrequency = time.Millisecond * 500
+	raCfg.APIs.GRPC = testCfg.MakeGrpcServerConfig(testCfg.RESOURCE_AGGREGATE_HOST)
 
-	raCfg.Clients.AuthServer = testCfg.MakeGrpcClientConfig(testCfg.AUTH_HOST)
+	raCfg.Clients.AuthServer.CacheExpiration = time.Second
+	raCfg.Clients.AuthServer.PullFrequency = time.Millisecond * 500
+	raCfg.Clients.AuthServer.Connection = testCfg.MakeGrpcClientConfig(testCfg.AUTH_HOST)
+	raCfg.Clients.AuthServer.OAuth = testCfg.MakeOAuthConfig()
+
 	raCfg.Clients.Eventbus.NATS = testCfg.MakeNATSConfig()
-	raCfg.Clients.Eventstore.MongoDB = testCfg.MakeEventsStoreMongoDBConfig()
-	raCfg.Clients.OAuthProvider.Jwks = testCfg.MakeJWKsConfig()
-	raCfg.Clients.OAuthProvider.OAuth = testCfg.MakeOAuthConfig()
-	raCfg.Clients.OAuthProvider.OwnerClaim = testCfg.OWNER_CLAIM
+
+	raCfg.Clients.Eventstore.Connection.MongoDB = testCfg.MakeEventsStoreMongoDBConfig()
+	raCfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 8
+	raCfg.Clients.Eventstore.SnapshotThreshold = 16
 
 	err := raCfg.Validate()
 	require.NoError(t, err)

@@ -83,7 +83,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 	}
 
 	resID := commands.NewResourceID(request.DeviceId, commands.ResourceLinksHref)
-	aggregate, err := NewAggregate(resID, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot publish resource links: %v", err))
 	}
@@ -124,7 +124,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 	}
 
 	resID := commands.NewResourceID(request.DeviceId, commands.ResourceLinksHref)
-	aggregate, err := NewAggregate(resID, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot unpublish resource links: %v", err))
 	}
@@ -163,7 +163,7 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *comm
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot notify about resource content change: %v", err))
 	}
@@ -188,7 +188,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource content: %v", err))
 	}
@@ -213,7 +213,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *comm
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm resource content update: %v", err))
 	}
@@ -238,7 +238,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot retrieve resource content: %v", err))
 	}
@@ -263,7 +263,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *co
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "ccannot confirm resource content retrieve: %v", err))
 	}
@@ -289,7 +289,7 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete resource: %v", err))
 	}
@@ -315,7 +315,7 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *comm
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
 
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm resource deletion: %v", err))
 	}
@@ -340,7 +340,7 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot create resource: %v", err))
 	}
@@ -366,7 +366,7 @@ func (r RequestHandler) ConfirmResourceCreate(ctx context.Context, request *comm
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
 
-	aggregate, err := NewAggregate(request.ResourceId, r.config.APIs.GRPC.Capabilities.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.APIs.GRPC.Capabilities.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.ResourceId, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm resource creation: %v", err))
 	}

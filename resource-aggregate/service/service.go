@@ -8,15 +8,12 @@ import (
 	"sync"
 	"syscall"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
@@ -47,7 +44,7 @@ type Service struct {
 }
 
 func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
@@ -57,7 +54,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 		return nil, fmt.Errorf("cannot create kafka publisher %w", err)
 	}
 
-	service, err := NewService(config, logger, eventstore, publisher)
+	service, err := NewService(ctx, config, logger, eventstore, publisher)
 	if err != nil {
 		eventstore.Close(ctx)
 		publisher.Close()
@@ -75,44 +72,31 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 }
 
 // New creates new Server with provided store and publisher.
-func NewService(config Config, logger *zap.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
-	validator, err := validator.New(config.Clients.OAuthProvider.Jwks, logger)
+func NewService(ctx context.Context, config Config, logger *zap.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
+	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	auth := NewAuth(validator, config.Clients.OAuthProvider.OwnerClaim)
-	streamInterceptors := []grpc.StreamServerInterceptor{}
-	if logger.Core().Enabled(zapcore.DebugLevel) {
-		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(logger))
+	opts, err := server.MakeDefaultOptions(validator, config.APIs.GRPC.Authorization.OwnerClaim, logger)
+	if err != nil {
+		validator.Close()
+		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
-	streamInterceptors = append(streamInterceptors, auth.Stream())
 
-	unaryInterceptors := []grpc.UnaryServerInterceptor{}
-	if logger.Core().Enabled(zapcore.DebugLevel) {
-		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(logger))
-	}
-	unaryInterceptors = append(unaryInterceptors, auth.Unary())
-	grpcServer, err := server.New(config.APIs.GRPC.Server, logger, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-		streamInterceptors...,
-	)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			unaryInterceptors...,
-		)))
+	grpcServer, err := server.New(config.APIs.GRPC, logger, opts...)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)
 	}
 	grpcServer.AddCloseFunc(validator.Close)
 
-	oauthMgr, err := manager.New(config.Clients.OAuthProvider.OAuth, logger)
+	oauthMgr, err := manager.New(config.Clients.AuthServer.OAuth, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
 	}
 	grpcServer.AddCloseFunc(oauthMgr.Close)
 
-	asConn, err := client.New(config.Clients.AuthServer, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	asConn, err := client.New(config.Clients.AuthServer.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
 	}
@@ -125,7 +109,7 @@ func NewService(config Config, logger *zap.Logger, eventStore EventStore, publis
 
 	authClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
 
-	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.APIs.GRPC.Capabilities.UserDevicesManagerTickFrequency, config.APIs.GRPC.Capabilities.UserDevicesManagerExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
+	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.Clients.AuthServer.PullFrequency, config.Clients.AuthServer.CacheExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner, deviceID string) (bool, error) {
 		ok := userDevicesManager.IsUserDevice(owner, deviceID)
 		if ok {

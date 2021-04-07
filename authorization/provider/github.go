@@ -14,7 +14,7 @@ import (
 )
 
 // NewGitHubProvider creates GitHub OAuth client
-func NewGitHubProvider(config Config, logger *zap.Logger, responseMode, accessType, responseType string) (*GitHubProvider, error) {
+func NewGitHubProvider(config Config, logger *zap.Logger, ownerClaim, responseMode, accessType, responseType string) (*GitHubProvider, error) {
 	config.ResponseMode = responseMode
 	config.AccessType = accessType
 	config.ResponseType = responseType
