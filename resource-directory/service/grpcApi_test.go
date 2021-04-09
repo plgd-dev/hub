@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -421,7 +422,11 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := test.SetUp(ctx, t)
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.Service.DeviceStatusExpiration.Enabled = false
+	coapgwCfg.Service.DeviceStatusExpiration.ExpiresIn = time.Millisecond * 50
+
+	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg))
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
@@ -487,8 +492,20 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	ev, err = client.Recv()
-	require.NoError(t, err)
+	for {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+		if ev.GetDeviceOnline() != nil && len(ev.GetDeviceOnline().GetDeviceIds()) == 0 {
+			continue
+		}
+		if ev.GetDeviceOffline() != nil && len(ev.GetDeviceOffline().GetDeviceIds()) == 0 {
+			continue
+		}
+		if ev.GetDeviceOffline() != nil && len(ev.GetDeviceOffline().GetDeviceIds()) == 1 && ev.GetDeviceOffline().GetDeviceIds()[0] == deviceID {
+			continue
+		}
+		break
+	}
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
 		Type: &pb.Event_DeviceOnline_{
@@ -499,6 +516,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	time.Sleep(time.Second * 10)
 
 	ev, err = client.Recv()
 	require.NoError(t, err)

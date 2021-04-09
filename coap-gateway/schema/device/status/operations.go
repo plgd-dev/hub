@@ -35,7 +35,7 @@ func update(ctx context.Context, client service.ResourceAggregateClient, deviceI
 		ResourceTypes: ResourceTypes,
 		Interfaces:    Interfaces,
 		State:         state,
-		ValidUntil:    validUntil.Unix(),
+		ValidUntil:    validUntil.UnixNano(),
 	})
 	if err != nil {
 		return err

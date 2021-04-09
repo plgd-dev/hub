@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -11,7 +12,8 @@ import (
 
 type devicesSubscription struct {
 	*subscription
-	devicesEvent *pb.SubscribeForEvents_DevicesEventFilter
+	devicesEvent  *pb.SubscribeForEvents_DevicesEventFilter
+	isInitialized sync.Map
 }
 
 func NewDevicesSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeForEvents_DevicesEventFilter) *devicesSubscription {
@@ -92,6 +94,9 @@ func (s *devicesSubscription) NotifyOfRegisteredDevice(ctx context.Context, devi
 			found = true
 		}
 	}
+	for _, d := range deviceIDs {
+		s.isInitialized.Store(d, true)
+	}
 	if !found {
 		return nil
 	}
@@ -113,6 +118,9 @@ func (s *devicesSubscription) NotifyOfUnregisteredDevice(ctx context.Context, de
 		case pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED:
 			found = true
 		}
+	}
+	for _, d := range deviceIDs {
+		s.isInitialized.Delete(d)
 	}
 	if !found {
 		return nil
@@ -145,7 +153,10 @@ func (s *devicesSubscription) NotifyOfOnlineDevice(ctx context.Context, devs []D
 	}
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.FilterByVersion(d.deviceID, commands.StatusHref, "devStatus", d.version) {
+		if _, ok := s.isInitialized.Load(d.deviceID); !ok {
+			continue
+		}
+		if s.FilterByVersionAndHash(d.deviceID, commands.StatusHref, "devStatus", d.version, CalcHashFromBytes([]byte("online"))) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)
@@ -176,7 +187,10 @@ func (s *devicesSubscription) NotifyOfOfflineDevice(ctx context.Context, devs []
 	}
 	toSend := make([]string, 0, 32)
 	for _, d := range devs {
-		if s.FilterByVersion(d.deviceID, commands.StatusHref, "devStatus", d.version) {
+		if _, ok := s.isInitialized.Load(d.deviceID); !ok {
+			continue
+		}
+		if s.FilterByVersionAndHash(d.deviceID, commands.StatusHref, "devStatus", d.version, CalcHashFromBytes([]byte("offline"))) {
 			continue
 		}
 		toSend = append(toSend, d.deviceID)

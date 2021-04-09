@@ -338,7 +338,11 @@ func setUp(t *testing.T, withoutTLS ...bool) func() {
 	auShutdown := authTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
-	gwShutdown := coapgwTest.SetUp(t, withoutTLS...)
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	if len(withoutTLS) > 0 {
+		coapgwCfg.ListenWithoutTLS = true
+	}
+	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	return func() {
 		gwShutdown()
 		rdShutdown()

@@ -86,7 +86,7 @@ func (s *resourceSubscription) ResourceID() *commands.ResourceId {
 func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Context, resourceChanged *pb.Event_ResourceChanged, version uint64) error {
 	deviceID := resourceChanged.GetResourceId().GetDeviceId()
 	href := resourceChanged.GetResourceId().GetHref()
-	if s.FilterByVersion(deviceID, href, "res", version) {
+	if s.FilterByVersionAndHash(deviceID, href, "res", version, CalcHashFromBytes(resourceChanged.GetContent().GetData())) {
 		return nil
 	}
 	var found bool

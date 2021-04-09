@@ -48,13 +48,9 @@ func NewResourceProjection(subscriptions *Subscriptions, updateNotificationConta
 
 func (rp *resourceProjection) cloneLocked() *resourceProjection {
 	resourceUpdatePendings := make([]*events.ResourceUpdatePending, 0, len(rp.resourceUpdatePendings))
-	for _, v := range rp.resourceUpdatePendings {
-		resourceUpdatePendings = append(resourceUpdatePendings, v)
-	}
+	resourceUpdatePendings = append(resourceUpdatePendings, rp.resourceUpdatePendings...)
 	resourceCreatePendings := make([]*events.ResourceCreatePending, 0, len(rp.resourceCreatePendings))
-	for _, v := range rp.resourceCreatePendings {
-		resourceCreatePendings = append(resourceCreatePendings, v)
-	}
+	resourceCreatePendings = append(resourceCreatePendings, rp.resourceCreatePendings...)
 	return &resourceProjection{
 		resourceID:             rp.resourceID,
 		content:                rp.content,
