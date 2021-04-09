@@ -17,7 +17,6 @@ const RESOURCE_DIRECTORY_HOST = "localhost:20004"
 const GRPC_HOST = "localhost:20005"
 const C2C_CONNECTOR_HOST = "localhost:20006"
 const C2C_GW_HOST = "localhost:20007"
-const GW_UNSECURE_HOST = "localhost:20008"
 const OAUTH_SERVER_HOST = "localhost:20009"
 const TEST_TIMEOUT = time.Second * 20
 const OAUTH_MANAGER_CLIENT_ID = service.ClientTest

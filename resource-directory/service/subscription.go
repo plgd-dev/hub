@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"hash/crc64"
 	"sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -21,7 +22,12 @@ type subscription struct {
 	registeredDevicesInProjection map[string]bool
 
 	eventVersionsLock sync.Mutex
-	eventVersions     map[string]uint64
+	eventVersions     map[string]subscriptionEvent
+}
+
+type subscriptionEvent struct {
+	version uint64
+	hash    uint64
 }
 
 func NewSubscription(userID, id, token string, send SendEventFunc, resourceProjection *Projection) *subscription {
@@ -31,7 +37,7 @@ func NewSubscription(userID, id, token string, send SendEventFunc, resourceProje
 		token:                         token,
 		send:                          send,
 		resourceProjection:            resourceProjection,
-		eventVersions:                 make(map[string]uint64),
+		eventVersions:                 make(map[string]subscriptionEvent),
 		registeredDevicesInProjection: make(map[string]bool),
 	}
 }
@@ -48,21 +54,36 @@ func (s *subscription) Token() string {
 	return s.token
 }
 
-func (s *subscription) FilterByVersion(deviceID, href, typeEvent string, version uint64) bool {
-	resourceID := (&commands.ResourceId{DeviceId: deviceID, Href: href + "." + typeEvent}).ToUUID()
+func CalcHashFromBytes(content []byte) uint64 {
+	if len(content) > 0 {
+		return crc64.Checksum(content, crc64.MakeTable(crc64.ISO))
+	}
+	return 0
+}
 
+func (s *subscription) FilterByVersionAndHash(deviceID, href, typeEvent string, version, hash uint64) bool {
+	resourceID := (&commands.ResourceId{DeviceId: deviceID, Href: href + "." + typeEvent}).ToUUID()
 	s.eventVersionsLock.Lock()
 	defer s.eventVersionsLock.Unlock()
 	v, ok := s.eventVersions[resourceID]
 	if !ok {
-		s.eventVersions[resourceID] = version
+		s.eventVersions[resourceID] = subscriptionEvent{
+			version: version,
+			hash:    hash,
+		}
 		return false
 	}
-	if v >= version {
+	if v.version >= version {
 		return true
 	}
-	s.eventVersions[resourceID] = version
-	return false
+	var ret bool
+	if hash != 0 {
+		ret = v.hash == hash
+		v.hash = hash
+	}
+	v.version = version
+	s.eventVersions[resourceID] = v
+	return ret
 }
 
 func (s *subscription) RegisterToProjection(ctx context.Context, deviceID string) (loaded bool, err error) {

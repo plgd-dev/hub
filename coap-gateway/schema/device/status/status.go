@@ -1,6 +1,8 @@
 package status
 
-import "time"
+import (
+	"time"
+)
 
 const ResourceType string = "x.cloud.device.status"
 const Title string = "Device cloud status"
@@ -34,5 +36,5 @@ func (s Status) IsOnline() bool {
 	if s.ValidUntil <= 0 {
 		return s.State == State_Online
 	}
-	return time.Now().Before(time.Unix(s.ValidUntil, 0))
+	return time.Now().Before(time.Unix(0, s.ValidUntil))
 }

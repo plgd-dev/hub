@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"hash/crc64"
+	"sort"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -35,6 +37,40 @@ type ResourceLinks struct {
 	isInit  bool
 }
 
+type SortResourceLinks []*pb.ResourceLink
+
+func (a SortResourceLinks) Len() int {
+	return len(a)
+}
+
+func (a SortResourceLinks) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a SortResourceLinks) Less(i, j int) bool {
+	if a[i].DeviceId < a[j].DeviceId {
+		return true
+	}
+	if a[i].Href < a[j].Href {
+		return true
+	}
+	return false
+}
+
+func CalcHashFromResourceLinks(action string, links []*pb.ResourceLink) uint64 {
+	hash := crc64.New(crc64.MakeTable(crc64.ISO))
+	hash.Write([]byte(action))
+	for i := range links {
+		hash.Write([]byte(links[i].DeviceId))
+		hash.Write([]byte(links[i].Href))
+		hash.Write([]byte(links[i].Title))
+		for j := range links[i].Types {
+			hash.Write([]byte(links[i].Types[j]))
+		}
+	}
+	return hash.Sum64()
+}
+
 func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
@@ -51,7 +87,11 @@ func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context,
 	if !s.isInitializedResourcePublish.Load() {
 		return nil
 	}
-	if len(links.links) == 0 || s.FilterByVersion(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version) {
+	if len(links.links) == 0 {
+		return nil
+	}
+	sort.Sort(SortResourceLinks(links.links))
+	if s.FilterByVersionAndHash(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version, CalcHashFromResourceLinks("publish", links.links)) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -75,9 +115,14 @@ func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Contex
 	if !found {
 		return nil
 	}
-	if len(links.links) == 0 || s.FilterByVersion(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version) {
+	if len(links.links) == 0 {
 		return nil
 	}
+	sort.Sort(SortResourceLinks(links.links))
+	if s.FilterByVersionAndHash(links.links[0].GetDeviceId(), commands.ResourceLinksHref, "res", links.version, CalcHashFromResourceLinks("unpublish", links.links)) {
+		return nil
+	}
+
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
@@ -99,7 +144,7 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(updatePending.GetResourceId().GetDeviceId(), updatePending.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -121,7 +166,7 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -143,7 +188,7 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(retrievePending.GetResourceId().GetDeviceId(), retrievePending.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(retrievePending.GetResourceId().GetDeviceId(), retrievePending.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -165,7 +210,7 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(retrieved.GetResourceId().GetDeviceId(), retrieved.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(retrieved.GetResourceId().GetDeviceId(), retrieved.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -187,7 +232,7 @@ func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, 
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(deletePending.GetResourceId().GetDeviceId(), deletePending.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(deletePending.GetResourceId().GetDeviceId(), deletePending.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -209,7 +254,7 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(deleted.GetResourceId().GetDeviceId(), deleted.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(deleted.GetResourceId().GetDeviceId(), deleted.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -231,7 +276,7 @@ func (s *deviceSubscription) NotifyOfCreatePendingResource(ctx context.Context, 
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(createPending.GetResourceId().GetDeviceId(), createPending.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(createPending.GetResourceId().GetDeviceId(), createPending.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -253,7 +298,7 @@ func (s *deviceSubscription) NotifyOfCreatedResource(ctx context.Context, create
 	if !found {
 		return nil
 	}
-	if s.FilterByVersion(created.GetResourceId().GetDeviceId(), created.GetResourceId().GetHref(), "res", version) {
+	if s.FilterByVersionAndHash(created.GetResourceId().GetDeviceId(), created.GetResourceId().GetHref(), "res", version, 0) {
 		return nil
 	}
 	return s.Send(&pb.Event{
@@ -373,6 +418,8 @@ func (s *deviceSubscription) Init(ctx context.Context, currentDevices map[string
 			err = s.initSendResourcesRetrievePending(ctx)
 		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING:
 			err = s.initSendResourcesDeletePending(ctx)
+		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING:
+			err = s.initSendResourcesCreatePending(ctx)
 		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED:
 			// do nothing
 		}

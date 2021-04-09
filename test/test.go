@@ -34,8 +34,9 @@ import (
 	"github.com/plgd-dev/sdk/schema/acl"
 
 	"github.com/kelseyhightower/envconfig"
+	coapgw "github.com/plgd-dev/cloud/coap-gateway/refImpl"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
-	coapgwService "github.com/plgd-dev/cloud/coap-gateway/test"
+	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
@@ -170,21 +171,39 @@ func ClearDB(ctx context.Context, t *testing.T) {
 	*/
 }
 
-func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
+type Config struct {
+	COAPGW coapgw.Config
+}
+
+func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.COAPGW = coapgwCfg
+	}
+}
+
+type SetUpOption = func(cfg *Config)
+
+func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
+	config := Config{
+		COAPGW: coapgwTest.MakeConfig(t),
+	}
+
+	for _, o := range opts {
+		o(&config)
+	}
+
 	ClearDB(ctx, t)
 	oauthShutdown := oauthService.SetUp(t)
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
-	gwShutdown := coapgwService.SetUp(t, true)
 	grpcShutdown := grpcgwService.SetUp(t)
 	c2cgwShutdown := c2cgwService.SetUp(t)
-	secureGWShutdown := coapgwService.SetUp(t)
+	secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 
 	return func() {
 		c2cgwShutdown()
 		grpcShutdown()
-		gwShutdown()
 		secureGWShutdown()
 		rdShutdown()
 		raShutdown()

@@ -12,17 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T, withoutTLS ...bool) refImpl.Config {
+func MakeConfig(t *testing.T) refImpl.Config {
 	var gwCfg refImpl.Config
 	err := envconfig.Process("", &gwCfg)
 	require.NoError(t, err)
-	if len(withoutTLS) > 0 {
-		gwCfg.ListenWithoutTLS = true
-		gwCfg.Service.Addr = testCfg.GW_UNSECURE_HOST
-	} else {
-		gwCfg.ListenWithoutTLS = false
-		gwCfg.Service.Addr = testCfg.GW_HOST
-	}
+	gwCfg.ListenWithoutTLS = false
+	gwCfg.Service.Addr = testCfg.GW_HOST
 	gwCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
 	gwCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 
@@ -40,8 +35,8 @@ func MakeConfig(t *testing.T, withoutTLS ...bool) refImpl.Config {
 	return gwCfg
 }
 
-func SetUp(t *testing.T, withoutTLS ...bool) (TearDown func()) {
-	return New(t, MakeConfig(t, withoutTLS...))
+func SetUp(t *testing.T) (TearDown func()) {
+	return New(t, MakeConfig(t))
 }
 
 // New creates test coap-gateway.
