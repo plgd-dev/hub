@@ -11,10 +11,10 @@ import (
 type ConfigV2 struct {
 	URI             string        `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
 	Database        string        `yaml:"database" json:"database" default:"eventStore"`
-	TLS             client.Config `yaml:"tls" json:"tls"`
 	BatchSize       int           `yaml:"batchSize" json:"batchSize" default:"16"`
 	MaxPoolSize     uint64        `yaml:"maxPoolSize" json:"maxPoolSize" default:"16"`
 	MaxConnIdleTime time.Duration `yaml:"maxConnIdleTime" json:"maxConnIdleTime" default:"240s"`
+	TLS             client.Config `yaml:"tls" json:"tls"`
 
 	marshalerFunc   MarshalerFunc   `yaml:"-" json:"-"`
 	unmarshalerFunc UnmarshalerFunc `yaml:"-" json:"-"`

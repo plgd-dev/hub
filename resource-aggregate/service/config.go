@@ -45,9 +45,9 @@ func (c *APIsConfig) Validate() error {
 }
 
 type EventStoreConfig struct {
-	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
 	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold" default:"16"`
 	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry" default:"8"`
+	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
 }
 
 func (c *EventStoreConfig) Validate() error {
@@ -61,9 +61,9 @@ func (c *EventStoreConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
-	Connection      client.Config    `yaml:"grpc" json:"grpc"`
 	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency" default:"15s"`
 	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration" default:"1m"`
+	Connection      client.Config    `yaml:"grpc" json:"grpc"`
 	OAuth           client2.ConfigV2 `yaml:"oauth" json:"oauth"`
 }
 

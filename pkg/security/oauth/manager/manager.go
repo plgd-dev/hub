@@ -18,16 +18,16 @@ import (
 
 // Manager holds certificates from filesystem watched for changes
 type Manager struct {
-	mutex             sync.Mutex
-	config            clientcredentials.Config
-	requestTimeout    time.Duration
-	tickFrequency     time.Duration
-	startRefreshToken time.Time
-	token             *oauth2.Token
-	httpClient        *http.Client
-	tokenErr          error
-	doneWg            sync.WaitGroup
-	done              chan struct{}
+	mutex                       sync.Mutex
+	config                      clientcredentials.Config
+	requestTimeout              time.Duration
+	verifyServiceTokenFrequency time.Duration
+	startRefreshToken           time.Time
+	token                       *oauth2.Token
+	httpClient                  *http.Client
+	tokenErr                    error
+	doneWg                      sync.WaitGroup
+	done                        chan struct{}
 
 	http *client.Client
 }
@@ -52,19 +52,19 @@ func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, e
 	return m, nil
 }
 
-func new(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout, tickFrequency time.Duration) (*Manager, error) {
+func new(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout, verifyServiceTokenFrequency time.Duration) (*Manager, error) {
 	token, startRefreshToken, err := getToken(cfg, httpClient, requestTimeout)
 	if err != nil {
 		return nil, err
 	}
 
 	mgr := &Manager{
-		config:            cfg,
-		token:             token,
-		startRefreshToken: startRefreshToken,
-		requestTimeout:    requestTimeout,
-		httpClient:        httpClient,
-		tickFrequency:     tickFrequency,
+		config:                      cfg,
+		token:                       token,
+		startRefreshToken:           startRefreshToken,
+		requestTimeout:              requestTimeout,
+		httpClient:                  httpClient,
+		verifyServiceTokenFrequency: verifyServiceTokenFrequency,
 
 		done: make(chan struct{}),
 	}
@@ -80,7 +80,7 @@ func New(config ConfigV2, logger *zap.Logger) (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http client: %w", err)
 	}
-	m, err := new(config.ToClientCrendtials(), http.HTTP(), config.HTTP.Timeout, config.TickFrequency)
+	m, err := new(config.ToClientCrendtials(), http.HTTP(), config.HTTP.Timeout, config.VerifyServiceTokenFrequency)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (a *Manager) refreshToken() {
 
 func (a *Manager) watchToken() {
 	defer a.doneWg.Done()
-	t := time.NewTicker(a.tickFrequency)
+	t := time.NewTicker(a.verifyServiceTokenFrequency)
 	defer t.Stop()
 
 	for {

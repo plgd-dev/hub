@@ -33,25 +33,27 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   eventStore:
+    # tries to create the snapshot event after n events
+    snapshotThreshold: 16
+    # limits number of try to store event
+    occMaxRetry: 8
     mongoDB:
       uri:
       database: eventStore
-      tls:
-        caPool: "/secrets/public/rootca.crt"
-        keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
-        useSystemCAPool: false
       # limits number of queries in one find request.
       batchSize: 128
       # limits number of connections.
       maxPoolSize: 16
       # close connection when idle time reach the value.
       maxConnIdleTime: 4m0s
-    # tries to create the snapshot event after n events
-    snapshotThreshold: 16
-    # limits number of try to store event
-    occMaxRetry: 8
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
   authorizationServer:
+    pullFrequency: 15s 
+    cacheExpiration: 1m
     grpc:
       address:
       tls:
@@ -60,17 +62,16 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
       keepAlive:
-        Time: 10s
-        Timeout: 20s
+        time: 10s
+        timeout: 20s
         permitWithoutStream: true
-    pullFrequency: 15s
-    cacheExpiration: 1m
     oauth:
       clientID:
       clientSecret:
       scopes: []
       tokenURL:
       audience:
+      verifyServiceTokenFrequency: 10s
       http:
         maxIdleConns: 16
         maxConnsPerHost: 32
@@ -81,5 +82,4 @@ clients:
           caPool: "/secrets/public/rootca.crt"
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
-      tickFrequency: 10s
+          useSystemCAPool: false   

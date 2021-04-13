@@ -10,13 +10,13 @@ import (
 )
 
 type ConfigV2 struct {
-	ClientID      string        `yaml:"clientID" json:"clientID"`
-	ClientSecret  string        `yaml:"clientSecret" json:"clientSecret"`
-	Scopes        []string      `yaml:"scopes" json:"scopes"`
-	TokenURL      string        `yaml:"tokenURL" json:"tokenURL"`
-	Audience      string        `yaml:"audience" json:"audience"`
-	HTTP          client.Config `yaml:"http" json:"http"`
-	TickFrequency time.Duration `yaml:"tickFrequency" json:"tickFrequency"`
+	ClientID                    string        `yaml:"clientID" json:"clientID"`
+	ClientSecret                string        `yaml:"clientSecret" json:"clientSecret"`
+	Scopes                      []string      `yaml:"scopes" json:"scopes"`
+	TokenURL                    string        `yaml:"tokenURL" json:"tokenURL"`
+	Audience                    string        `yaml:"audience" json:"audience"`
+	VerifyServiceTokenFrequency time.Duration `yaml:"verifyServiceTokenFrequency" json:"verifyServiceTokenFrequency"`
+	HTTP                        client.Config `yaml:"http" json:"http"`
 }
 
 func (c *ConfigV2) Validate() error {
@@ -29,8 +29,8 @@ func (c *ConfigV2) Validate() error {
 	if c.TokenURL == "" {
 		return fmt.Errorf("tokenURL('%v')", c.TokenURL)
 	}
-	if c.TickFrequency < 1 {
-		return fmt.Errorf("tickFrequency('%v')", c.TickFrequency)
+	if c.VerifyServiceTokenFrequency < 1 {
+		return fmt.Errorf("verifyServiceTokenFrequency('%v')", c.VerifyServiceTokenFrequency)
 	}
 	err := c.HTTP.Validate()
 	if err != nil {

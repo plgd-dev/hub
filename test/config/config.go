@@ -130,11 +130,11 @@ func MakeAuthorizationConfig() validator.Config {
 
 func MakeOAuthConfig() manager.ConfigV2 {
 	return manager.ConfigV2{
-		ClientID:      OAUTH_MANAGER_CLIENT_ID,
-		ClientSecret:  "secret",
-		Audience:      OAUTH_MANAGER_AUDIENCE,
-		TokenURL:      OAUTH_MANAGER_ENDPOINT_TOKENURL,
-		HTTP:          MakeHttpClientConfig(),
-		TickFrequency: time.Second * 10,
+		ClientID:                    OAUTH_MANAGER_CLIENT_ID,
+		ClientSecret:                "secret",
+		Audience:                    OAUTH_MANAGER_AUDIENCE,
+		TokenURL:                    OAUTH_MANAGER_ENDPOINT_TOKENURL,
+		HTTP:                        MakeHttpClientConfig(),
+		VerifyServiceTokenFrequency: time.Second * 10,
 	}
 }
