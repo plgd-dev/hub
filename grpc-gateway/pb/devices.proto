@@ -218,12 +218,12 @@ message LocalizedString {
 
 message Device {
   string id = 1;
-  repeated string types = 2;
+  repeated string types = 2; // list of device resource types [oic.wk.d, x.com.mycompany.device, ...]
   string name = 3;
   bool is_online = 4;
   repeated LocalizedString manufacturer_name = 5;
   string model_number = 6;
-  repeated string interfaces = 7;
+  repeated string interfaces = 7; // list of resource interfaces supported by device resource types. [oic.if.baseline, oic.if.r, ...]
   string protocol_independent_id = 8;
 }
 

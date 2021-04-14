@@ -1322,12 +1322,12 @@ type Device struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id                    string             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Types                 []string           `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty"`
+	Types                 []string           `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty"` // list of device resource types [oic.wk.d, x.com.mycompany.device, ...]
 	Name                  string             `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	IsOnline              bool               `protobuf:"varint,4,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	ManufacturerName      []*LocalizedString `protobuf:"bytes,5,rep,name=manufacturer_name,json=manufacturerName,proto3" json:"manufacturer_name,omitempty"`
 	ModelNumber           string             `protobuf:"bytes,6,opt,name=model_number,json=modelNumber,proto3" json:"model_number,omitempty"`
-	Interfaces            []string           `protobuf:"bytes,7,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	Interfaces            []string           `protobuf:"bytes,7,rep,name=interfaces,proto3" json:"interfaces,omitempty"` // list of resource interfaces supported by device resource types. [oic.if.baseline, oic.if.r, ...]
 	ProtocolIndependentId string             `protobuf:"bytes,8,opt,name=protocol_independent_id,json=protocolIndependentId,proto3" json:"protocol_independent_id,omitempty"`
 }
 

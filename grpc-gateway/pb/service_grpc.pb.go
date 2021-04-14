@@ -18,15 +18,46 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GrpcGatewayClient interface {
 	// Get all devices
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// If all filter properties of GetDevicesRequest are unset it returns all devices of owner(user).
+	// To retrieve certain devices set GetDevicesRequest.device_ids_filter with device ids.
+	// To retrieve all online/offline devices set GetDevicesRequest.status_filter with [ONLINE/OFFLINE] value. Empty means all.
+	// To retrieve all devices with certain oic.wk.d.rt types set GetDevicesRequest.type_filter with devices resource types.
+	// Relations among fitlers is defined as logical AND operation:
+	//   eg. GetDevicesRequest.device_ids_filter("[deviceID1, deviceID2]") && GetDevicesRequest.status_filter([ONLINE])
+	// returns only online deviceID1 because deviceID2 is offline.
 	GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error)
 	// Get resource links of devices.
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// If all filter properties of GetResourceLinksRequest are unset it returns all resource links of owner(user).
+	// To retrieve certain resources links of devices set GetResourceLinksRequest.device_ids_filter with device ids.
+	// To retrieve certain resources links of resource types set GetResourceLinksRequest.type_filter with resource types.
+	// Relations among fitlers is defined as logical AND operation:
+	//   eg. GetResourceLinksRequest.device_ids_filter("[deviceID1, deviceID2]") && GetResourceLinksRequest.type_filter([oic.wk.d])
+	// returns two resource links oic.wk.d, each for one deviceID.
 	GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error)
 	RetrieveResourceFromDevice(ctx context.Context, in *RetrieveResourceFromDeviceRequest, opts ...grpc.CallOption) (*RetrieveResourceFromDeviceResponse, error)
 	// Retrieve resources values from resource shadow
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// If all filter properties of RetrieveResourcesValuesRequest are unset it returns all resources contents of owner(user).
+	// To retrieve certain resources contents with specified hrefs set RetrieveResourcesValuesRequest.resource_ids_filter with pairs {deviceID, href}.
+	// To retrieve certain resources contents of devices set RetrieveResourcesValuesRequest.device_ids_filter with device ids.
+	// To retrieve certain resources contents of resource types set RetrieveResourcesValuesRequest.type_filter with resource types.
+	// Relations among these fitlers is defined as logical  operation: (RetrieveResourcesValuesRequest.device_ids_filter OR RetrieveResourcesValuesRequest.resource_ids_filter) && RetrieveResourcesValuesRequest.type_filter
+	//   eg. RetrieveResourcesValuesRequest.device_ids_filter("[deviceID1, deviceID2]") && RetrieveResourcesValuesRequest.type_filter([oic.wk.d])
+	// returns resources contents of oic.wk.d, each for one deviceID.
 	RetrieveResourcesValues(ctx context.Context, in *RetrieveResourcesValuesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesValuesClient, error)
 	// Update resource values
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error)
 	// Subscribe to events
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// In current version it's validate token only once and stream is opened until client close it. In future it will close connection when token expires, but there will be API for prolonging stream.
+	// You can set SubscribeForEvents.token and then all events of subcription will be contains that the token.
+	// To receive devices events send a message SubscribeForEvents with filter_by.devices_event.filter_events where is defined events(eg ONLINE, OFFLINE, REGISTERED, UNREGISTERED) which will be send through stream.
+	// To receive device events send a message SubscribeForEvents with filter_by.device_event.{device_id, filter_events} where is defined events(eg RESOURCE_PUBLISHED, RESOURCE_UNPUBLISHED, RESOURCE_UPDATE_PENDING, RESOURCE_UPDATED, ...) which will be send through stream.
+	// To receive resource events send a message SubscribeForEvents with filter_by.device_event.{resource_id.{device_id, href}, filter_events} where is defined events(eg CONTENT_CHANGED) which will be send through stream.
+	// For each message SubscribeForEvents the first event is type of OperationProcessed and when OperationProcessed.error_status.code == OK then subscriptionId is set and it stream next events of subcription(subscriptionId).
+	// If owner lost a device (unregister, not shared with user any more), the client receive events SubscriptionCanceled with certain subcriptionId.
 	SubscribeForEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeForEventsClient, error)
 	// Get client configuration
 	GetClientConfiguration(ctx context.Context, in *ClientConfigurationRequest, opts ...grpc.CallOption) (*ClientConfigurationResponse, error)
@@ -221,15 +252,46 @@ func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResour
 // for forward compatibility
 type GrpcGatewayServer interface {
 	// Get all devices
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// If all filter properties of GetDevicesRequest are unset it returns all devices of owner(user).
+	// To retrieve certain devices set GetDevicesRequest.device_ids_filter with device ids.
+	// To retrieve all online/offline devices set GetDevicesRequest.status_filter with [ONLINE/OFFLINE] value. Empty means all.
+	// To retrieve all devices with certain oic.wk.d.rt types set GetDevicesRequest.type_filter with devices resource types.
+	// Relations among fitlers is defined as logical AND operation:
+	//   eg. GetDevicesRequest.device_ids_filter("[deviceID1, deviceID2]") && GetDevicesRequest.status_filter([ONLINE])
+	// returns only online deviceID1 because deviceID2 is offline.
 	GetDevices(*GetDevicesRequest, GrpcGateway_GetDevicesServer) error
 	// Get resource links of devices.
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// If all filter properties of GetResourceLinksRequest are unset it returns all resource links of owner(user).
+	// To retrieve certain resources links of devices set GetResourceLinksRequest.device_ids_filter with device ids.
+	// To retrieve certain resources links of resource types set GetResourceLinksRequest.type_filter with resource types.
+	// Relations among fitlers is defined as logical AND operation:
+	//   eg. GetResourceLinksRequest.device_ids_filter("[deviceID1, deviceID2]") && GetResourceLinksRequest.type_filter([oic.wk.d])
+	// returns two resource links oic.wk.d, each for one deviceID.
 	GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error
 	RetrieveResourceFromDevice(context.Context, *RetrieveResourceFromDeviceRequest) (*RetrieveResourceFromDeviceResponse, error)
 	// Retrieve resources values from resource shadow
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// If all filter properties of RetrieveResourcesValuesRequest are unset it returns all resources contents of owner(user).
+	// To retrieve certain resources contents with specified hrefs set RetrieveResourcesValuesRequest.resource_ids_filter with pairs {deviceID, href}.
+	// To retrieve certain resources contents of devices set RetrieveResourcesValuesRequest.device_ids_filter with device ids.
+	// To retrieve certain resources contents of resource types set RetrieveResourcesValuesRequest.type_filter with resource types.
+	// Relations among these fitlers is defined as logical  operation: (RetrieveResourcesValuesRequest.device_ids_filter OR RetrieveResourcesValuesRequest.resource_ids_filter) && RetrieveResourcesValuesRequest.type_filter
+	//   eg. RetrieveResourcesValuesRequest.device_ids_filter("[deviceID1, deviceID2]") && RetrieveResourcesValuesRequest.type_filter([oic.wk.d])
+	// returns resources contents of oic.wk.d, each for one deviceID.
 	RetrieveResourcesValues(*RetrieveResourcesValuesRequest, GrpcGateway_RetrieveResourcesValuesServer) error
 	// Update resource values
 	UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error)
 	// Subscribe to events
+	// Requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+	// In current version it's validate token only once and stream is opened until client close it. In future it will close connection when token expires, but there will be API for prolonging stream.
+	// You can set SubscribeForEvents.token and then all events of subcription will be contains that the token.
+	// To receive devices events send a message SubscribeForEvents with filter_by.devices_event.filter_events where is defined events(eg ONLINE, OFFLINE, REGISTERED, UNREGISTERED) which will be send through stream.
+	// To receive device events send a message SubscribeForEvents with filter_by.device_event.{device_id, filter_events} where is defined events(eg RESOURCE_PUBLISHED, RESOURCE_UNPUBLISHED, RESOURCE_UPDATE_PENDING, RESOURCE_UPDATED, ...) which will be send through stream.
+	// To receive resource events send a message SubscribeForEvents with filter_by.device_event.{resource_id.{device_id, href}, filter_events} where is defined events(eg CONTENT_CHANGED) which will be send through stream.
+	// For each message SubscribeForEvents the first event is type of OperationProcessed and when OperationProcessed.error_status.code == OK then subscriptionId is set and it stream next events of subcription(subscriptionId).
+	// If owner lost a device (unregister, not shared with user any more), the client receive events SubscriptionCanceled with certain subcriptionId.
 	SubscribeForEvents(GrpcGateway_SubscribeForEventsServer) error
 	// Get client configuration
 	GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error)
