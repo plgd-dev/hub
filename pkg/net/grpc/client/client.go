@@ -47,7 +47,7 @@ func New(config Config, logger *zap.Logger, opts ...grpc.DialOption) (*Client, e
 			PermitWithoutStream: config.KeepAlive.PermitWithoutStream,
 		}),
 	}
-	if len(v) > 0 {
+	if len(opts) > 0 {
 		v = append(v, opts...)
 	}
 

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,6 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 )
@@ -69,6 +71,39 @@ type EventStore struct {
 	dataMarshaler   MarshalerFunc
 	dataUnmarshaler UnmarshalerFunc
 	ensuredIndexes  *cache.Cache
+	closeFunc       []func()
+}
+
+func (s *EventStore) AddCloseFunc(f func()) {
+	s.closeFunc = append(s.closeFunc, f)
+}
+
+func New(ctx context.Context, config ConfigV2, logger *zap.Logger, goroutinePoolGo GoroutinePoolGoFunc, opts ...OptionV2) (*EventStore, error) {
+	config.marshalerFunc = utils.Marshal
+	config.unmarshalerFunc = utils.Unmarshal
+	for _, o := range opts {
+		o.applyOnV2(&config)
+	}
+	certManager, err := client.New(config.TLS, logger)
+	if err != nil {
+		return nil, fmt.Errorf("could not create cert manager: %w", err)
+	}
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.URI).SetMaxPoolSize(config.MaxPoolSize).SetMaxConnIdleTime(config.MaxConnIdleTime).SetTLSConfig(certManager.GetTLSConfig()))
+	if err != nil {
+		return nil, fmt.Errorf("could not dial database: %w", err)
+	}
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		return nil, fmt.Errorf("could not dial database: %w", err)
+	}
+
+	store, err := newEventStoreWithClient(ctx, client, config.Database, "events", config.BatchSize, goroutinePoolGo, config.marshalerFunc, config.unmarshalerFunc, nil)
+	if err != nil {
+		return nil, err
+	}
+	store.AddCloseFunc(certManager.Close)
+	return store, nil
 }
 
 //NewEventStore create a event store from configuration
@@ -76,7 +111,7 @@ func NewEventStore(ctx context.Context, config Config, goroutinePoolGo Goroutine
 	config.marshalerFunc = utils.Marshal
 	config.unmarshalerFunc = utils.Unmarshal
 	for _, o := range opts {
-		config = o(config)
+		o.applyOn(&config)
 	}
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.URI).SetMaxPoolSize(config.MaxPoolSize).SetMaxConnIdleTime(config.MaxConnIdleTime).SetTLSConfig(config.tlsCfg))
@@ -238,7 +273,6 @@ func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, ind
 	}
 	for _, keys := range indexes {
 		opts := options.Index()
-		opts.SetBackground(false)
 		index := mongo.IndexModel{
 			Keys:    keys,
 			Options: opts,
@@ -613,7 +647,11 @@ func (s *EventStore) Clear(ctx context.Context) error {
 // Close closes the database session.
 func (s *EventStore) Close(ctx context.Context) error {
 	s.ensuredIndexes.Flush()
-	return s.client.Disconnect(ctx)
+	err := s.client.Disconnect(ctx)
+	for _, f := range s.closeFunc {
+		f()
+	}
+	return err
 }
 
 // newDBEvent returns a new dbEvent for an eventstore.

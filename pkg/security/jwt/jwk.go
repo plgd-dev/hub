@@ -18,6 +18,10 @@ type KeyCache struct {
 	keys *jwk.Set
 }
 
+func NewKeyCacheWithHttp(url string, client *http.Client) *KeyCache {
+	return &KeyCache{url: url, http: client}
+}
+
 func NewKeyCache(url string, tls *tls.Config) *KeyCache {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -30,7 +34,7 @@ func NewKeyCache(url string, tls *tls.Config) *KeyCache {
 		Transport: t,
 		Timeout:   time.Second * 10,
 	}
-	return &KeyCache{url: url, http: client}
+	return NewKeyCacheWithHttp(url, client)
 }
 
 func (c *KeyCache) GetOrFetchKey(token *jwt.Token) (interface{}, error) {

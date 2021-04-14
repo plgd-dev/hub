@@ -1,9 +1,10 @@
-package grpc
+package grpc_test
 
 import (
 	"context"
 	"testing"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,7 @@ import (
 
 func TestUnaryInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
-	svr := server.StubGrpcServer(UnaryServerInterceptorOption(m.Intercept))
+	svr := server.StubGrpcServer(grpc.UnaryServerInterceptorOption(m.Intercept))
 	defer svr.Close()
 	go svr.Serve()
 
@@ -22,7 +23,7 @@ func TestUnaryInterceptor(t *testing.T) {
 
 func TestStreamInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
-	svr := server.StubGrpcServer(StreamServerInterceptorOption(m.Intercept))
+	svr := server.StubGrpcServer(grpc.StreamServerInterceptorOption(m.Intercept))
 	defer svr.Close()
 	go svr.Serve()
 

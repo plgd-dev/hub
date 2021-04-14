@@ -18,6 +18,10 @@ func (c *Client) HTTP() *http.Client {
 	return c.client
 }
 
+func (c *Client) AddCloseFunc(f func()) {
+	c.closeFunc = append(c.closeFunc, f)
+}
+
 func (s *Client) Close() {
 	s.client.CloseIdleConnections()
 	for _, f := range s.closeFunc {

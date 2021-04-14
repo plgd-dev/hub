@@ -1,28 +1,113 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/config"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
+	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
+	client2 "github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	eventbusConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/config"
+	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
 )
 
 //Config represent application configuration
 type Config struct {
-	Addr                            string         `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
-	AuthServerAddr                  string         `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
-	SnapshotThreshold               int            `envconfig:"SNAPSHOT_THRESHOLD" default:"16"`
-	ConcurrencyExceptionMaxRetry    int            `envconfig:"OCC_MAX_RETRY" default:"8"`
-	JwksURL                         string         `envconfig:"JWKS_URL"`
-	OAuth                           manager.Config `envconfig:"OAUTH"`
-	UserDevicesManagerTickFrequency time.Duration  `envconfig:"USER_MGMT_TICK_FREQUENCY" default:"15s"`
-	UserDevicesManagerExpiration    time.Duration  `envconfig:"USER_MGMT_EXPIRATION" default:"1m"`
-	OwnerClaim                      string         `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
+	Log     log.Config    `yaml:"log" json:"log"`
+	APIs    APIsConfig    `yaml:"apis" json:"apis"`
+	Clients ClientsConfig `yaml:"clients" json:"clients"`
+}
+
+func (c *Config) Validate() error {
+	err := c.APIs.Validate()
+	if err != nil {
+		return fmt.Errorf("apis.%w", err)
+	}
+	err = c.Clients.Validate()
+	if err != nil {
+		return fmt.Errorf("clients.%w", err)
+	}
+	return nil
+}
+
+type APIsConfig struct {
+	GRPC grpcServer.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *APIsConfig) Validate() error {
+	err := c.GRPC.Validate()
+	if err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
+type EventStoreConfig struct {
+	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold" default:"16"`
+	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry" default:"8"`
+	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
+}
+
+func (c *EventStoreConfig) Validate() error {
+	if c.SnapshotThreshold <= 0 {
+		return fmt.Errorf("snapshotThreshold('%v')", c.SnapshotThreshold)
+	}
+	if c.ConcurrencyExceptionMaxRetry <= 0 {
+		return fmt.Errorf("occMaxRetry('%v')", c.ConcurrencyExceptionMaxRetry)
+	}
+	return c.Connection.Validate()
+}
+
+type AuthorizationServerConfig struct {
+	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency" default:"15s"`
+	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration" default:"1m"`
+	Connection      client.Config    `yaml:"grpc" json:"grpc"`
+	OAuth           client2.ConfigV2 `yaml:"oauth" json:"oauth"`
+}
+
+func (c *AuthorizationServerConfig) Validate() error {
+	if c.PullFrequency <= 0 {
+		return fmt.Errorf("pullFrequency('%v')", c.PullFrequency)
+	}
+	if c.CacheExpiration <= 0 {
+		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
+	}
+	err := c.OAuth.Validate()
+	if err != nil {
+		return fmt.Errorf("oauth.%w", err)
+	}
+	err = c.Connection.Validate()
+	if err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return err
+}
+
+type ClientsConfig struct {
+	Eventbus   eventbusConfig.Config     `yaml:"eventBus" json:"eventBus"`
+	Eventstore EventStoreConfig          `yaml:"eventStore" json:"eventStore"`
+	AuthServer AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
+}
+
+func (c *ClientsConfig) Validate() error {
+	err := c.AuthServer.Validate()
+	if err != nil {
+		return fmt.Errorf("authorizationServer.%w", err)
+	}
+	err = c.Eventbus.Validate()
+	if err != nil {
+		return fmt.Errorf("eventbus.%w", err)
+	}
+	err = c.Eventstore.Validate()
+	if err != nil {
+		return fmt.Errorf("eventstore.%w", err)
+	}
+	return nil
 }
 
 //String return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }

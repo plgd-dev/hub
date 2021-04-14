@@ -18,16 +18,15 @@ func New(config Config, logger *zap.Logger, opts ...grpc.ServerOption) (*Server,
 	v := []grpc.ServerOption{
 		grpc.Creds(credentials.NewTLS(tls.GetTLSConfig())),
 	}
-	if len(v) > 0 {
+	if len(opts) > 0 {
 		v = append(v, opts...)
 	}
-
 	server, err := NewServer(config.Addr, v...)
 	if err != nil {
-		return nil, err
-	}
-	server.AddCloseFunc(func() {
 		tls.Close()
-	})
+		return nil, fmt.Errorf("cannot create grpc server: %w", err)
+	}
+	server.AddCloseFunc(tls.Close)
+
 	return server, nil
 }

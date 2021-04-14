@@ -15,13 +15,13 @@ type Provider = interface {
 }
 
 // New creates GitHub OAuth client
-func New(config Config, logger *zap.Logger, responseMode, accessType, responseType string) (Provider, error) {
+func New(config Config, logger *zap.Logger, ownerClaim, responseMode, accessType, responseType string) (Provider, error) {
 	switch config.Provider {
 	case "github":
-		return NewGitHubProvider(config, logger, responseMode, accessType, responseType)
+		return NewGitHubProvider(config, logger, ownerClaim, responseMode, accessType, responseType)
 	case "plgd":
-		return NewPlgdProvider(config, logger, responseMode, accessType, responseType)
+		return NewPlgdProvider(config, logger, ownerClaim, responseMode, accessType, responseType)
 	default:
-		return NewGenericProvider(config, logger, responseMode, accessType, responseType)
+		return NewGenericProvider(config, logger, ownerClaim, responseMode, accessType, responseType)
 	}
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/refImpl/maintenance"
+	"github.com/plgd-dev/cloud/resource-aggregate/maintenance"
 	"github.com/plgd-dev/kit/log"
 )
 

@@ -11,9 +11,13 @@ import (
 	"github.com/plgd-dev/cloud/authorization/test"
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	clientCertManager "github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
 )
 
 type testTrigger struct {
@@ -92,30 +96,44 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	trigger := newTestTrigger()
 
 	cfg := test.MakeConfig(t)
-	cfg.Service.GRPC.Addr = "localhost:1234"
+	cfg.APIs.GRPC.Addr = "localhost:1234"
+
+	oauthShutdown := oauthService.SetUp(t)
+	defer oauthShutdown()
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
+	token := oauthService.GetServiceToken(t)
+
 	conn, err := client.New(client.Config{
-		Addr: cfg.Service.GRPC.Addr,
+		Addr: cfg.APIs.GRPC.Addr,
 		TLS: clientCertManager.Config{
-			CAPool:   cfg.Service.GRPC.TLS.CAPool,
-			CertFile: cfg.Service.GRPC.TLS.CertFile,
-			KeyFile:  cfg.Service.GRPC.TLS.KeyFile,
+			CAPool:   cfg.APIs.GRPC.TLS.CAPool,
+			CertFile: cfg.APIs.GRPC.TLS.CertFile,
+			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get().Desugar())
+	}, log.Get().Desugar(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+		return &oauth2.Token{
+			AccessToken:  token,
+			TokenType:    "Bearer",
+			RefreshToken: "",
+			Expiry:       time.Time{},
+		}, nil
+	})))
 	require.NoError(t, err)
 	defer conn.Close()
 
 	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), token)
+
 	m := NewUserDevicesManager(trigger.Trigger, c, time.Millisecond*200, time.Millisecond*500, func(err error) { fmt.Println(err) })
 	defer m.Close()
-	err = m.Acquire(context.Background(), t.Name())
+	err = m.Acquire(ctx, t.Name())
 	require.NoError(t, err)
 
-	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
+	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
@@ -128,12 +146,12 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	}, trigger.Clone().allDevices)
 
 	for i := 0; i < 5; i++ {
-		devs, err := m.GetUserDevices(context.Background(), t.Name())
+		devs, err := m.GetUserDevices(ctx, t.Name())
 		require.NoError(t, err)
 		require.NotEmpty(t, devs)
 	}
 
-	_, err = c.RemoveDevice(context.Background(), &pb.RemoveDeviceRequest{
+	_, err = c.RemoveDevice(ctx, &pb.RemoveDeviceRequest{
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
@@ -144,17 +162,17 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	err = m.Release(t.Name())
 	require.NoError(t, err)
 
-	devs, err := m.GetUserDevices(context.Background(), t.Name())
+	devs, err := m.GetUserDevices(ctx, t.Name())
 	require.NoError(t, err)
 	require.Empty(t, devs)
 
-	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
+	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
 	time.Sleep(time.Second * 2)
 
-	devs, err = m.GetUserDevices(context.Background(), t.Name())
+	devs, err = m.GetUserDevices(ctx, t.Name())
 	require.NoError(t, err)
 	require.NotEmpty(t, devs)
 
@@ -210,25 +228,39 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	}
 
 	cfg := test.MakeConfig(t)
-	cfg.Service.GRPC.Addr = "localhost:1234"
+	cfg.APIs.GRPC.Addr = "localhost:1234"
+
+	oauthShutdown := oauthService.SetUp(t)
+	defer oauthShutdown()
+
+	token := oauthService.GetServiceToken(t)
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
 	conn, err := client.New(client.Config{
-		Addr: cfg.Service.GRPC.Addr,
+		Addr: cfg.APIs.GRPC.Addr,
 		TLS: clientCertManager.Config{
-			CAPool:   cfg.Service.GRPC.TLS.CAPool,
-			CertFile: cfg.Service.GRPC.TLS.CertFile,
-			KeyFile:  cfg.Service.GRPC.TLS.KeyFile,
+			CAPool:   cfg.APIs.GRPC.TLS.CAPool,
+			CertFile: cfg.APIs.GRPC.TLS.CertFile,
+			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get().Desugar())
+	}, log.Get().Desugar(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+		return &oauth2.Token{
+			AccessToken:  token,
+			TokenType:    "Bearer",
+			RefreshToken: "",
+			Expiry:       time.Time{},
+		}, nil
+	})))
 	require.NoError(t, err)
 	defer conn.Close()
 
 	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
-	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), token)
+
+	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
@@ -237,7 +269,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewUserDevicesManager(tt.fields.trigger.Trigger, c, time.Millisecond*200, time.Second, func(err error) { fmt.Println(err) })
 			defer m.Close()
-			err := m.Acquire(context.Background(), tt.args.userID)
+			err := m.Acquire(ctx, tt.args.userID)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -301,25 +333,39 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	}
 
 	cfg := test.MakeConfig(t)
-	cfg.Service.GRPC.Addr = "localhost:1234"
+	cfg.APIs.GRPC.Addr = "localhost:1234"
+
+	oauthShutdown := oauthService.SetUp(t)
+	defer oauthShutdown()
+
+	token := oauthService.GetServiceToken(t)
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
 	conn, err := client.New(client.Config{
-		Addr: cfg.Service.GRPC.Addr,
+		Addr: cfg.APIs.GRPC.Addr,
 		TLS: clientCertManager.Config{
-			CAPool:   cfg.Service.GRPC.TLS.CAPool,
-			CertFile: cfg.Service.GRPC.TLS.CertFile,
-			KeyFile:  cfg.Service.GRPC.TLS.KeyFile,
+			CAPool:   cfg.APIs.GRPC.TLS.CAPool,
+			CertFile: cfg.APIs.GRPC.TLS.CertFile,
+			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get().Desugar())
+	}, log.Get().Desugar(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+		return &oauth2.Token{
+			AccessToken:  token,
+			TokenType:    "Bearer",
+			RefreshToken: "",
+			Expiry:       time.Time{},
+		}, nil
+	})))
 	require.NoError(t, err)
 	defer conn.Close()
 
 	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
-	_, err = c.AddDevice(context.Background(), &pb.AddDeviceRequest{
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), token)
+
+	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
@@ -328,7 +374,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewUserDevicesManager(tt.fields.trigger.Trigger, c, time.Millisecond*200, time.Millisecond*500, func(err error) { fmt.Println(err) })
 			defer m.Close()
-			err := m.Acquire(context.Background(), tt.args.userID)
+			err := m.Acquire(ctx, tt.args.userID)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

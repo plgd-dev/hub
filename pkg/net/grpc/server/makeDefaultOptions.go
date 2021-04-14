@@ -1,0 +1,68 @@
+package server
+
+import (
+	context "context"
+
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
+)
+
+func MakeDefaultOptions(validator *validator.Validator, ownerClaim string, logger *zap.Logger) ([]grpc.ServerOption, error) {
+	auth := NewAuth(validator, ownerClaim)
+	streamInterceptors := []grpc.StreamServerInterceptor{}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.StreamServerInterceptor(logger))
+	}
+	streamInterceptors = append(streamInterceptors, auth.Stream())
+
+	unaryInterceptors := []grpc.UnaryServerInterceptor{}
+	if logger.Core().Enabled(zapcore.DebugLevel) {
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(logger))
+	}
+	unaryInterceptors = append(unaryInterceptors, auth.Unary())
+
+	return []grpc.ServerOption{
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			streamInterceptors...,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			unaryInterceptors...,
+		)),
+	}, nil
+
+}
+
+func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
+	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
+		return jwt.NewScopeClaims()
+	})
+	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
+		ctx, err := interceptor(ctx, method)
+		if err != nil {
+			log.Errorf("auth interceptor: %v", err)
+			return ctx, err
+		}
+		owner, err := kitNetGrpc.OwnerFromMD(ctx)
+		if err != nil {
+			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
+			if err == nil {
+				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
+			}
+		}
+		if err != nil {
+			log.Errorf("auth cannot get owner: %v", err)
+			return ctx, err
+		}
+		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
+	})
+}

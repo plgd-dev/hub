@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/jessevdk/go-flags"
@@ -19,7 +20,11 @@ func LoadAndValidateConfig(v Validator) error {
 	if err != nil {
 		return err
 	}
-	return v.Validate()
+	err = v.Validate()
+	if err != nil {
+		return fmt.Errorf("invalid value: %w", err)
+	}
+	return nil
 }
 
 // Load loads config from ENV config or arguments config.

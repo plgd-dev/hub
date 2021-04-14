@@ -2,62 +2,76 @@ log:
   debug: false
 apis:
   grpc:
-    address: "0.0.0.0:9000"
+    address: "0.0.0.0:9100"
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+    authorization:
+      authority:
+      audience:
+      ownerClaim: sub
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
   http:
-    address: "0.0.0.0:9001"
+    address: "0.0.0.0:9101"
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+oauthClients:
+  device:
+    provider: "plgd"
+    clientID: ""
+    clientSecret: ""
+    scopes: []
+    authorizationURL: ""
+    tokenURL: ""
+    redirectURL: "" 
+    http:
+      maxIdleConns: 16
+      maxConnsPerHost: 32
+      maxIdleConnsPerHost: 16
+      idleConnTimeout: 30s
+      timeout: 10s
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  client:
+    clientID: ""
+    scopes: []
+    authorizationURL: ""
+    audience: ""
+    redirectURL: ""
+    http:
+      maxIdleConns: 16
+      maxConnsPerHost: 32
+      maxIdleConnsPerHost: 16
+      idleConnTimeout: 30s
+      timeout: 10s
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
 clients:
-  oauthClients:
-    device:
-      provider: "plgd"
-      clientID: ""
-      clientSecret: ""
-      scopes: []
-      authorizationURL: ""
-      tokenURL: ""
-      redirectURL: "" 
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
-      ownerClaim: "sub"
-    client:
-      clientID: ""
-      scopes: []
-      authorizationURL: ""
-      audience: ""
-      redirectURL: ""
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
   storage:
     mongoDB:
       uri: "mongodb://localhost:27017"
-      database: "usersDevices"
+      database: "ownersDevices"
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"

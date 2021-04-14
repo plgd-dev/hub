@@ -217,6 +217,28 @@ while true; do
   sleep 1
 done
 
+# starting nginx
+echo "starting nginx"
+nginx -c $NGINX_PATH/nginx.conf >$LOGS_PATH/nginx.log 2>&1
+status=$?
+nginx_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start nginx: $status"
+  sync
+  cat $LOGS_PATH/nginx.log
+  exit $status
+fi
+
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${FQDN_NGINX_HTTPS} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to nginx(${FQDN_NGINX_HTTPS}) $i"
+  sleep 1
+done
+
 # oauth-server
 echo "starting oauth-server"
 cat > /data/oauth-server.yaml << EOF
@@ -278,21 +300,23 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/authorization.
 ### setup oauthclients
 cat /configs/authorization.yaml | yq e "\
   .apis.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .apis.http.address = \"${AUTHORIZATION_HTTP_ADDRESS}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
-  .clients.oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
-  .clients.oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .clients.oauthClients.device.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.oauthClients.device.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
-  .clients.oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
-  .clients.oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
-  .clients.oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
-  .clients.oauthClients.device.ownerClaim = \"${OWNER_CLAIM}\" |
-  .clients.oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
-  .clients.oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
-  .clients.oauthClients.client.redirectURL = \"${SDK_OAUTH_REDIRECT_URL}\" |
-  .clients.oauthClients.client.audience = \"${SDK_OAUTH_AUDIENCE}\" |
-  .clients.oauthClients.client.scopes=[ \"${SDK_OAUTH_SCOPES}\" ]
+  .oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
+  .oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .oauthClients.device.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .oauthClients.device.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
+  .oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .oauthClients.client.redirectURL = \"${SDK_OAUTH_REDIRECT_URL}\" |
+  .oauthClients.client.audience = \"${SDK_OAUTH_AUDIENCE}\" |
+  .oauthClients.client.scopes=[ \"${SDK_OAUTH_SCOPES}\" ]
 " - > /data/authorization.yaml
 
 echo "starting authorization"
@@ -317,9 +341,43 @@ while true; do
 done
 
 # resource-aggregate
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-aggregate.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-aggregate.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggregate.yaml | sort | uniq)
+
+### setup cfgs from env
+cat /configs/resource-aggregate.yaml | yq e "\
+  .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
+  .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
+  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+" - > /data/resource-aggregate.yaml
+
 echo "starting resource-aggregate"
-ADDRESS=${RESOURCE_AGGREGATE_ADDRESS} \
-resource-aggregate >$LOGS_PATH/resource-aggregate.log 2>&1 &
+resource-aggregate --config /data/resource-aggregate.yaml >$LOGS_PATH/resource-aggregate.log 2>&1 &
 status=$?
 resource_aggregate_pid=$!
 if [ $status -ne 0 ]; then
@@ -521,27 +579,6 @@ while true; do
   sleep 1
 done
 
-# starting nginx
-echo "starting nginx"
-nginx -c $NGINX_PATH/nginx.conf >$LOGS_PATH/nginx.log 2>&1
-status=$?
-nginx_pid=$!
-if [ $status -ne 0 ]; then
-  echo "Failed to start nginx: $status"
-  sync
-  cat $LOGS_PATH/nginx.log
-  exit $status
-fi
-
-i=0
-while true; do
-  i=$((i+1))
-  if openssl s_client -connect ${FQDN_NGINX_HTTPS} <<< "Q" 2>/dev/null > /dev/null; then
-    break
-  fi
-  echo "Try to reconnect to nginx(${FQDN_NGINX_HTTPS}) $i"
-  sleep 1
-done
 
 echo "Open browser at https://${DOMAIN}"
 

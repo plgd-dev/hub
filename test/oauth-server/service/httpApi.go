@@ -97,6 +97,7 @@ func NewHTTP(requestHandler *RequestHandler) *http.Server {
 
 	// get JWKs
 	r.HandleFunc(uri.JWKs, requestHandler.getJWKs).Methods(http.MethodGet)
+	r.HandleFunc(uri.OpenIDConfiguration, requestHandler.getOpenIDConfiguration).Methods(http.MethodGet)
 
 	r.HandleFunc(uri.Authorize, requestHandler.authorize)
 	r.HandleFunc(uri.Token, requestHandler.tokenOptions).Methods(http.MethodOptions)

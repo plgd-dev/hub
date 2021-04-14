@@ -14,9 +14,10 @@ const (
 	AudienceKey    = "audience"
 	ResponseMode   = "response_mode"
 
-	Token     = "/oauth/token"
-	Authorize = "/authorize"
-	UserInfo  = Authorize + "/userinfo"
-	JWKs      = "/.well-known/jwks.json"
-	LogOut    = "/v2/logout"
+	Token               = "/oauth/token"
+	Authorize           = "/authorize"
+	UserInfo            = Authorize + "/userinfo"
+	JWKs                = "/.well-known/jwks.json"
+	OpenIDConfiguration = "/.well-known/openid-configuration"
+	LogOut              = "/v2/logout"
 )

@@ -5,6 +5,16 @@ import (
 	"time"
 
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
+	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
+	httpClient "github.com/plgd-dev/cloud/pkg/net/http/client"
+	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 )
@@ -26,9 +36,104 @@ var CA_POOL = os.Getenv("LISTEN_FILE_CA_POOL")
 var KEY_FILE = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_KEY_NAME")
 var CERT_FILE = os.Getenv("LISTEN_FILE_CERT_DIR_PATH") + "/" + os.Getenv("LISTEN_FILE_CERT_NAME")
 var MONGODB_URI = "mongodb://localhost:27017"
+var NATS_URL = "nats://localhost:4222"
+var OWNER_CLAIM = "sub"
 
 var OAUTH_MANAGER_ENDPOINT_AUTHURL = "https://" + OAUTH_SERVER_HOST + uri.Authorize
 var OAUTH_MANAGER_ENDPOINT_TOKENURL = "https://" + OAUTH_SERVER_HOST + uri.Token
 var C2C_CONNECTOR_EVENTS_URL = "https://" + C2C_CONNECTOR_HOST + c2curi.Events
 var C2C_CONNECTOR_OAUTH_CALLBACK = "https://" + C2C_CONNECTOR_HOST + "/oauthCbk"
 var JWKS_URL = "https://" + OAUTH_SERVER_HOST + uri.JWKs
+
+func MakeTLSClientConfig() client.Config {
+	return client.Config{
+		CAPool:   CA_POOL,
+		KeyFile:  KEY_FILE,
+		CertFile: CERT_FILE,
+	}
+}
+
+func MakeGrpcClientConfig(address string) grpcClient.Config {
+	return grpcClient.Config{
+		Addr: address,
+		TLS:  MakeTLSClientConfig(),
+		KeepAlive: grpcClient.KeepAliveConfig{
+			Time:                time.Second * 10,
+			Timeout:             time.Second * 20,
+			PermitWithoutStream: true,
+		},
+	}
+}
+
+func MakeTLSServerConfig() server.Config {
+	return server.Config{
+		CAPool:                    CA_POOL,
+		KeyFile:                   KEY_FILE,
+		CertFile:                  CERT_FILE,
+		ClientCertificateRequired: true,
+	}
+}
+
+func MakeGrpcServerConfig(address string) grpcServer.Config {
+	return grpcServer.Config{
+		Addr:          address,
+		TLS:           MakeTLSServerConfig(),
+		Authorization: MakeAuthorizationConfig(),
+	}
+}
+
+func MakeListenerConfig(address string) listener.Config {
+	return listener.Config{
+		Addr: address,
+		TLS:  MakeTLSServerConfig(),
+	}
+}
+
+func MakeHttpClientConfig() httpClient.Config {
+	return httpClient.Config{
+		MaxIdleConns:        10,
+		MaxConnsPerHost:     10,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     time.Second * 5,
+		Timeout:             time.Second * 2,
+		TLS:                 MakeTLSClientConfig(),
+	}
+}
+
+func MakeNATSConfig() nats.ConfigV2 {
+	return nats.ConfigV2{
+		URL: NATS_URL,
+		TLS: MakeTLSClientConfig(),
+	}
+}
+
+func MakeEventsStoreMongoDBConfig() mongodb.ConfigV2 {
+	return mongodb.ConfigV2{
+		URI:             MONGODB_URI,
+		BatchSize:       16,
+		MaxPoolSize:     16,
+		MaxConnIdleTime: 4 * time.Minute,
+		Database:        "eventStore",
+		TLS:             MakeTLSClientConfig(),
+	}
+}
+
+func MakeAuthorizationConfig() validator.Config {
+	return validator.Config{
+		Authority:  "https://" + OAUTH_SERVER_HOST,
+		Audience:   "https://localhost/",
+		OwnerClaim: OWNER_CLAIM,
+		HTTP:       MakeHttpClientConfig(),
+	}
+}
+
+func MakeOAuthConfig() manager.ConfigV2 {
+	return manager.ConfigV2{
+		ClientID:                    OAUTH_MANAGER_CLIENT_ID,
+		ClientSecret:                "secret",
+		Audience:                    OAUTH_MANAGER_AUDIENCE,
+		TokenURL:                    OAUTH_MANAGER_ENDPOINT_TOKENURL,
+		HTTP:                        MakeHttpClientConfig(),
+		VerifyServiceTokenFrequency: time.Second * 10,
+	}
+}

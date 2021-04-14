@@ -71,6 +71,7 @@ COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-aggregate/config.yaml /configs/resource-aggregate.yaml
 COPY --from=build /go/bin/authorization /usr/local/bin/authorization
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/authorization/config.yaml /configs/authorization.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
@@ -116,5 +117,6 @@ ENV SDK_OAUTH_SCOPES=openid
 ENV OWNER_CLAIM="sub"
 ENV SERVICE_CLIENT_CONFIGURATION_CLOUDAUTHORIZATIONPROVIDER="plgd"
 ENV SERVICE_OAUTH_CLIENT_ID=test
+ENV SERVICE_OAUTH_CLIENT_SECRET=secret
 
 ENTRYPOINT ["/usr/local/bin/run.sh"]

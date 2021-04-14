@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 )
 
 type Config struct {
-	Addr string        `yaml:"address" json:"address"`
-	TLS  server.Config `yaml:"tls" json:"tls"`
+	Addr          string           `yaml:"address" json:"address"`
+	TLS           server.Config    `yaml:"tls" json:"tls"`
+	Authorization validator.Config `yaml:"authorization" json:"authorization"`
 }
 
 func (c *Config) Validate() error {
@@ -18,6 +20,10 @@ func (c *Config) Validate() error {
 	err := c.TLS.Validate()
 	if err != nil {
 		return fmt.Errorf("tls.%w", err)
+	}
+	err = c.Authorization.Validate()
+	if err != nil {
+		return fmt.Errorf("authorization.%w", err)
 	}
 	return nil
 }

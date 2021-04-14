@@ -8,29 +8,64 @@ import (
 )
 
 // Option provides the means to use function call chaining
-type Option func(Config) Config
+type Option interface {
+	applyOn(cfg *Config)
+}
+
+type OptionV2 interface {
+	applyOnV2(cfg *ConfigV2)
+}
+
+type MarshalerOpt struct {
+	f MarshalerFunc
+}
+
+func (o MarshalerOpt) applyOn(cfg *Config) {
+	cfg.marshalerFunc = o.f
+}
+
+func (o MarshalerOpt) applyOnV2(cfg *ConfigV2) {
+	cfg.marshalerFunc = o.f
+}
 
 // WithMarshaler provides the possibility to set an marshaling function for the config
 func WithMarshaler(f MarshalerFunc) Option {
-	return func(cfg Config) Config {
-		cfg.marshalerFunc = f
-		return cfg
+	return MarshalerOpt{
+		f: f,
 	}
+}
+
+type UnmarshalerOpt struct {
+	f UnmarshalerFunc
+}
+
+func (o UnmarshalerOpt) applyOn(cfg *Config) {
+	cfg.unmarshalerFunc = o.f
+}
+
+func (o UnmarshalerOpt) applyOnV2(cfg *ConfigV2) {
+	cfg.unmarshalerFunc = o.f
 }
 
 // WithUnmarshaler provides the possibility to set an unmarshaling function for the config
 func WithUnmarshaler(f UnmarshalerFunc) Option {
-	return func(cfg Config) Config {
-		cfg.unmarshalerFunc = f
-		return cfg
+	return UnmarshalerOpt{
+		f: f,
 	}
 }
 
+type TLSOpt struct {
+	tlsCfg *tls.Config
+}
+
+func (o TLSOpt) applyOn(cfg *Config) {
+	cfg.tlsCfg = o.tlsCfg
+}
+
 // WithTLS configures connection to use TLS
-func WithTLS(cfg *tls.Config) Option {
-	return func(c Config) Config {
-		c.tlsCfg = cfg
-		return c
+func WithTLS(tlsCfg *tls.Config) Option {
+	return TLSOpt{
+		tlsCfg: tlsCfg,
 	}
 }
 

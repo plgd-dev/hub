@@ -22,11 +22,11 @@ type aggregate struct {
 	eventstore EventStore
 }
 
-func resourceStateFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+func ResourceStateFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
 	return raEvents.NewResourceStateSnapshotTaken(), nil
 }
 
-func resourceLinksFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+func ResourceLinksFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
 	return raEvents.NewResourceLinksSnapshotTaken(), nil
 }
 

@@ -43,6 +43,9 @@ func (e *ResourceLinksSnapshotTaken) EventType() string {
 
 func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx context.Context, pub *ResourceLinksPublished) error {
 	for _, res := range pub.GetResources() {
+		if e.GetResources() == nil {
+			e.Resources = make(map[string]*commands.Resource)
+		}
 		e.GetResources()[res.GetHref()] = res
 	}
 	e.DeviceId = pub.GetDeviceId()
@@ -60,10 +63,12 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx con
 		e.Resources = make(map[string]*commands.Resource)
 	} else {
 		unpublished = make([]string, 0, len(upub.GetHrefs()))
-		for _, href := range upub.GetHrefs() {
-			if _, present := e.GetResources()[href]; present {
-				unpublished = append(unpublished, href)
-				delete(e.GetResources(), href)
+		if len(e.GetResources()) > 0 {
+			for _, href := range upub.GetHrefs() {
+				if _, present := e.GetResources()[href]; present {
+					unpublished = append(unpublished, href)
+					delete(e.GetResources(), href)
+				}
 			}
 		}
 	}

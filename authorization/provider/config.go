@@ -12,15 +12,11 @@ type Config struct {
 	Provider     string `yaml:"provider" json:"provider" default:"generic"` // value which comes from the device during the sign-up ("apn")
 	oauth.Config `yaml:",inline"`
 	HTTP         client.Config `yaml:"http" json:"http"`
-	OwnerClaim   string        `yaml:"ownerClaim" json:"ownerClaim"`
 }
 
 func (c *Config) Validate() error {
 	if c.Provider == "" {
 		return fmt.Errorf("provider('%v')", c.Provider)
-	}
-	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
 	err := c.HTTP.Validate()
 	if err != nil {
