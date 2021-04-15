@@ -206,6 +206,82 @@ Client requesting resource observation will immediately start to receive notific
 :::
 
 ## Resource Aggregate
+Every transaction on the device's resource is scoped to the single [aggregate](https://martinfowler.com/bliki/DDD_Aggregate.html) - Resource Aggregate. The RA builds it's internal state, which is a projection of a single fine-grained event stream. When the aggregate receives a new command from any of the plgd gateway, the command is validated and after successful validation event describing the action is created and persisted in the [EventStore](#event-store). After successful write to the [EventStore](#event-store), event is published to the [EventBus](#event-bus).
+
+> To prevent the conflicts during the write to EventStore, [Optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) method is used
+
+### Commands and Events Overview
+@startuml
+
+left to right direction
+skinparam usecase {
+
+    BackgroundColor<< Command >> LightBlue
+    BorderColor<< Command >> LightBlue
+    BackgroundColor<< Event >> LightRed
+    BorderColor<< Event >> DarkRed
+}
+
+usecase (Resource\nAggregate) as Aggregate
+
+(PublishResourceLinks) << Command >>
+(UnpublishResourceLinks) << Command >>
+(RetrieveResource) << Command >>
+(ConfirmResourceRetrieve) << Command >>
+(CreateResource) << Command >>
+(ConfirmResourceCreate) << Command >>
+(UpdateResource) << Command >>
+(ConfirmResourceUpdate) << Command >>
+(DeleteResource) << Command >>
+(ConfirmResourceDelete) << Command >>
+(NotifyResourceChanged) << Command >>
+
+(ResourceLinksPublished) << Event >>
+(ResourceLinksUnpublished) << Event >>
+(ResourceLinksSnapshotTaken) << Event >>
+(ResourceRetrievePending) << Event >>
+(ResourceRetrieved) << Event >>
+(ResourceCreatePending) << Event >>
+(ResourceCreated) << Event >>
+(ResourceUpdatePending) << Event >>
+(ResourceUpdated) << Event >>
+(ResourceDeletePending) << Event >>
+(ResourceDeleted) << Event >>
+(ResourceChanged) << Event >>
+(ResourceStateSnapshotTaken) << Event >>
+
+(PublishResourceLinks) -down-> Aggregate
+(UnpublishResourceLinks) -down-> Aggregate
+(RetrieveResource) -down-> Aggregate
+(ConfirmResourceRetrieve) -down-> Aggregate
+(CreateResource) -down-> Aggregate
+(ConfirmResourceCreate) -down-> Aggregate
+(UpdateResource) -down-> Aggregate
+(ConfirmResourceUpdate) -down-> Aggregate
+(DeleteResource) -down-> Aggregate
+(ConfirmResourceDelete) -down-> Aggregate
+(NotifyResourceChanged) -down-> Aggregate
+
+Aggregate -down-> (ResourceLinksPublished)
+Aggregate -down-> (ResourceLinksUnpublished)
+Aggregate -down-> (ResourceLinksSnapshotTaken)
+Aggregate -down-> (ResourceRetrievePending)
+Aggregate -down-> (ResourceRetrieved)
+Aggregate -down-> (ResourceCreatePending)
+Aggregate -down-> (ResourceCreated)
+Aggregate -down-> (ResourceUpdatePending)
+Aggregate -down-> (ResourceUpdated)
+Aggregate -down-> (ResourceDeletePending)
+Aggregate -down-> (ResourceDeleted)
+Aggregate -down-> (ResourceChanged)
+Aggregate -down-> (ResourceStateSnapshotTaken)
+
+@enduml
+
+::: tip
+More detailed flows which command triggers which event can be find directly in the [commands proto file](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/pb/commands.proto).
+:::
+
 ::: details Resource Aggregate Component Diagram
 ![L3](/img/diagrams/component-resourceaggregate.svg =600x)
 :::
@@ -227,6 +303,13 @@ https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2
 ::: details Client Component Diagram
 ![L3](/img/diagrams/component-clients.svg =600x)
 :::
+
+## Event Bus
+After every successful write to the [EventStore](#event-store), an event is published on the event bus. Other plgd services are subscribed to the event bus to be notified when the change in the system / on the devices occurs or is requested. One such party is a resource directory, which aggregates resource models in memory for fast retrieve requested by the plgd gateways. Gateways are subscribed as well to be able to synchronously process device's resource updates.
+
+plgd cloud uses [NATS](https://nats.io) messaging system as it's event bus.
+
+> We are using pure NATS, not NATS Streaming nor Jetstream.
 
 ## Event Store
 plgd cloud persist events in an event store, which is a database of events. The store has an API for adding and retrieving device's events. Events needs to be versioned and written in a correct order. To achieve the consistency, optimistic concurrency control method is applied during each write.
