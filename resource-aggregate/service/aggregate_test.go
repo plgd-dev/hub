@@ -13,7 +13,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
@@ -73,7 +73,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	fmt.Printf("%v\n", cfg.String())
 
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -81,7 +81,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -106,7 +106,7 @@ func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	}
 }
 
-func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *nats.Publisher, eventstore service.EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
+func testHandlePublishResource(t *testing.T, ctx context.Context, publisher *publisher.Publisher, eventstore service.EventStore, userID, deviceID string, hrefs []string, expStatusCode codes.Code, hasErr bool) {
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
 	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
@@ -137,7 +137,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "token"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, pool.Submit)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithGoPool(pool.Submit))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, pool.Submit)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithGoPool(pool.Submit))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -224,7 +224,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, pool.Submit)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithGoPool(pool.Submit))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -232,7 +232,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -274,7 +274,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, pool.Submit)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithGoPool(pool.Submit))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -282,7 +282,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -568,7 +568,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -576,7 +576,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := nats.NewPublisherV2(cfg.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -653,7 +653,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -729,7 +729,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -806,7 +806,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -881,7 +881,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -964,7 +964,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -1040,7 +1040,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -1116,7 +1116,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
@@ -1192,7 +1192,7 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), userID)
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)

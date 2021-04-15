@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	MongoDB mongodb.ConfigV2 `yaml:"mongoDB" json:"mongoDB"`
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
 }
 
 func (c *Config) Validate() error {

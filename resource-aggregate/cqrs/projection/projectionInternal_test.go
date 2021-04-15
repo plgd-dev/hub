@@ -3,20 +3,20 @@ package projection
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
@@ -51,59 +51,36 @@ func TestProjection(t *testing.T) {
 	waitForSubscription := time.Second * 1
 
 	topics := []string{"test_projection_topic0_" + uuid.Must(uuid.NewV4()).String(), "test_projection_topic1_" + uuid.Must(uuid.NewV4()).String()}
-	var config certManager.Config
-	err := envconfig.Process("DIAL", &config)
-	assert.NoError(t, err)
-
-	dialCertManager, err := certManager.NewCertManager(config)
+	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
-	publisher, err := nats.NewPublisher(nats.Config{
-		URL: "nats://localhost:4222",
-	}, nats.WithTLS(tlsConfig))
+	publisher, err := publisher.New(config.MakePublisherConfig(), logger)
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer publisher.Close()
-
-	subscriber, err := nats.NewSubscriber(nats.Config{
-		URL: "nats://localhost:4222",
-	},
-		func(f func()) error { go f(); return nil },
-		func(err error) {
-			assert.NoError(t, err)
-		},
-		nats.WithTLS(tlsConfig),
-	)
-	assert.NoError(t, err)
-	assert.NotNil(t, subscriber)
-	defer subscriber.Close()
-
-	// Local Mongo testing with Docker
-	host := os.Getenv("MONGO_HOST")
-
-	if host == "" {
-		// Default to localhost
-		host = "localhost:27017"
-	}
 
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
 	defer pool.Release()
 
+	subscriber, err := subscriber.New(config.MakeSubscriberConfig(),
+		logger,
+		subscriber.WithGoPool(pool.Submit),
+	)
+	assert.NoError(t, err)
+	assert.NotNil(t, subscriber)
+	defer subscriber.Close()
+
 	ctx := context.Background()
 	ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, "test")
 
-	store, err := mongodb.NewEventStore(
+	store, err := mongodb.New(
 		ctx,
-		mongodb.Config{
-			URI: "mongodb://localhost:27017",
-		},
-		func(f func()) error { go f(); return nil },
-		mongodb.WithTLS(tlsConfig),
+		config.MakeEventsStoreMongoDBConfig(),
+		logger,
+		mongodb.WithGoPool(pool.Submit),
 	)
-	/*bson.Marshal, bson.Unmarshal*/
+
 	require.NoError(t, err)
 	require.NotNil(t, store)
 

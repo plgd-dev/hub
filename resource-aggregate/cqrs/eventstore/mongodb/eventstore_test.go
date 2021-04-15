@@ -1,37 +1,34 @@
-package mongodb
+package mongodb_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestEventStore(t *testing.T) {
-	var config certManager.Config
-	err := envconfig.Process("DIAL", &config)
-	assert.NoError(t, err)
-
-	dialCertManager, err := certManager.NewCertManager(config)
+	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	tlsConfig := dialCertManager.GetClientTLSConfig()
 
-	store, err := NewEventStore(
+	store, err := mongodb.New(
 		ctx,
-		Config{
+		mongodb.Config{
 			URI: "mongodb://localhost:27017",
+			TLS: config.MakeTLSClientConfig(),
 		},
-		func(f func()) error { go f(); return nil },
-		WithMarshaler(bson.Marshal),
-		WithUnmarshaler(bson.Unmarshal),
-		WithTLS(tlsConfig),
+		logger,
+		mongodb.WithMarshaler(bson.Marshal),
+		mongodb.WithUnmarshaler(bson.Unmarshal),
+		mongodb.WithGoPool(func(f func()) error { go f(); return nil }),
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, store)

@@ -13,7 +13,8 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
@@ -100,15 +101,22 @@ func MakeHttpClientConfig() httpClient.Config {
 	}
 }
 
-func MakeNATSConfig() nats.ConfigV2 {
-	return nats.ConfigV2{
+func MakePublisherConfig() publisher.Config {
+	return publisher.Config{
 		URL: NATS_URL,
 		TLS: MakeTLSClientConfig(),
 	}
 }
 
-func MakeEventsStoreMongoDBConfig() mongodb.ConfigV2 {
-	return mongodb.ConfigV2{
+func MakeSubscriberConfig() subscriber.Config {
+	return subscriber.Config{
+		URL: NATS_URL,
+		TLS: MakeTLSClientConfig(),
+	}
+}
+
+func MakeEventsStoreMongoDBConfig() mongodb.Config {
+	return mongodb.Config{
 		URI:             MONGODB_URI,
 		BatchSize:       16,
 		MaxPoolSize:     16,

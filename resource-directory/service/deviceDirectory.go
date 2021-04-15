@@ -10,9 +10,9 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -188,20 +188,11 @@ func TestResourceShadow_RetrieveResourcesValues(t *testing.T) {
 			},
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
-	defer dialCertManager.Close()
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	require.NoError(t, err)
-	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(tlsConfig))
+	resourceSubscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(pool.Submit))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 

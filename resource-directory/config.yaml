@@ -33,12 +33,12 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   eventStore:
-    # tries to create the snapshot event after n events
-    snapshotThreshold: 16
-    # limits number of try to store event
-    occMaxRetry: 8
+    # expiration time of cached resource in projection
+    cacheExpiration: 1m
+    # number of routines to process events in projection
+    goPoolSize: 16
     mongoDB:
-      uri:
+      uri: ""
       database: eventStore
       # limits number of queries in one find request.
       batchSize: 128
@@ -52,7 +52,7 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   authorizationServer:
-    pullFrequency: 15s 
+    pullFrequency: 15s
     cacheExpiration: 1m
     grpc:
       address: ""
@@ -82,4 +82,13 @@ clients:
           caPool: "/secrets/public/rootca.crt"
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false   
+          useSystemCAPool: false
+publicConfiguration:
+  caPool: "/secrets/public/rootca.crt"
+  tokenURL: ""
+  authorizationURL: ""
+  ownerClaim: "sub"
+  signingServerAddress: ""
+  cloudID: ""
+  cloudURL: ""
+  cloudAuthorizationProvider: "plgd"

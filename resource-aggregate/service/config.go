@@ -9,7 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	client2 "github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	eventbusConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/config"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
 )
 
@@ -40,6 +40,18 @@ func (c *APIsConfig) Validate() error {
 	err := c.GRPC.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
+type EventBusConfig struct {
+	NATS publisher.Config `yaml:"nats" json:"nats"`
+}
+
+func (c *EventBusConfig) Validate() error {
+	err := c.NATS.Validate()
+	if err != nil {
+		return fmt.Errorf("nats.%w", err)
 	}
 	return nil
 }
@@ -86,7 +98,7 @@ func (c *AuthorizationServerConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus   eventbusConfig.Config     `yaml:"eventBus" json:"eventBus"`
+	Eventbus   EventBusConfig            `yaml:"eventBus" json:"eventBus"`
 	Eventstore EventStoreConfig          `yaml:"eventStore" json:"eventStore"`
 	AuthServer AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
 }

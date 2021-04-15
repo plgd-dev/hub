@@ -162,7 +162,7 @@ func PerformMaintenance() error {
 	}
 	log.Info(config.String())
 
-	eventStore, err := mongodb.NewEventStore(ctx, config.Mongo, nil, mongodb.WithUnmarshaler(unmarshalPlain))
+	eventStore, err := mongodb.New(ctx, config.Mongo, nil, mongodb.WithUnmarshaler(unmarshalPlain))
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package nats
+package publisher
 
 import (
 	"context"
@@ -6,9 +6,11 @@ import (
 	"fmt"
 
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -26,16 +28,48 @@ func (p *Publisher) AddCloseFunc(f func()) {
 	p.closeFunc = append(p.closeFunc, f)
 }
 
-// NewPublisher creates new publisher with proto marshaller.
-func NewPublisher(config Config, opts ...Option) (*Publisher, error) {
+type options struct {
+	dataMarshaler MarshalerFunc
+}
+
+type Option interface {
+	apply(o *options)
+}
+
+type MarshalerOpt struct {
+	dataMarshaler MarshalerFunc
+}
+
+func (o MarshalerOpt) apply(opts *options) {
+	opts.dataMarshaler = o.dataMarshaler
+}
+
+func WithMarshaler(dataMarshaler MarshalerFunc) MarshalerOpt {
+	return MarshalerOpt{
+		dataMarshaler: dataMarshaler,
+	}
+}
+
+// New creates new publisher with proto marshaller.
+func New(config Config, logger *zap.Logger, opts ...Option) (*Publisher, error) {
+	cfg := options{
+		dataMarshaler: utils.Marshal,
+	}
 	for _, o := range opts {
-		config = o(config)
+		o.apply(&cfg)
 	}
 
-	p, err := newPublisher(config.URL, utils.Marshal, config.Options...)
+	certManager, err := client.New(config.TLS, logger)
 	if err != nil {
+		return nil, fmt.Errorf("cannot create cert manager: %w", err)
+	}
+	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()))
+	p, err := newPublisher(config.URL, cfg.dataMarshaler, config.Options...)
+	if err != nil {
+		certManager.Close()
 		return nil, err
 	}
+	p.AddCloseFunc(certManager.Close)
 	return p, nil
 }
 

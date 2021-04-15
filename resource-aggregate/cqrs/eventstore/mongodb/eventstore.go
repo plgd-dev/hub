@@ -78,11 +78,11 @@ func (s *EventStore) AddCloseFunc(f func()) {
 	s.closeFunc = append(s.closeFunc, f)
 }
 
-func New(ctx context.Context, config ConfigV2, logger *zap.Logger, goroutinePoolGo GoroutinePoolGoFunc, opts ...OptionV2) (*EventStore, error) {
+func New(ctx context.Context, config Config, logger *zap.Logger, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = utils.Marshal
 	config.unmarshalerFunc = utils.Unmarshal
 	for _, o := range opts {
-		o.applyOnV2(&config)
+		o.apply(&config)
 	}
 	certManager, err := client.New(config.TLS, logger)
 	if err != nil {
@@ -98,32 +98,12 @@ func New(ctx context.Context, config ConfigV2, logger *zap.Logger, goroutinePool
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 
-	store, err := newEventStoreWithClient(ctx, client, config.Database, "events", config.BatchSize, goroutinePoolGo, config.marshalerFunc, config.unmarshalerFunc, nil)
+	store, err := newEventStoreWithClient(ctx, client, config.Database, "events", config.BatchSize, config.goroutinePoolGo, config.marshalerFunc, config.unmarshalerFunc, nil)
 	if err != nil {
 		return nil, err
 	}
 	store.AddCloseFunc(certManager.Close)
 	return store, nil
-}
-
-//NewEventStore create a event store from configuration
-func NewEventStore(ctx context.Context, config Config, goroutinePoolGo GoroutinePoolGoFunc, opts ...Option) (*EventStore, error) {
-	config.marshalerFunc = utils.Marshal
-	config.unmarshalerFunc = utils.Unmarshal
-	for _, o := range opts {
-		o.applyOn(&config)
-	}
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.URI).SetMaxPoolSize(config.MaxPoolSize).SetMaxConnIdleTime(config.MaxConnIdleTime).SetTLSConfig(config.tlsCfg))
-	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
-	}
-	err = client.Ping(ctx, readpref.Primary())
-	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
-	}
-
-	return newEventStoreWithClient(ctx, client, config.DatabaseName, "events", config.BatchSize, goroutinePoolGo, config.marshalerFunc, config.unmarshalerFunc, nil)
 }
 
 // NewEventStore creates a new EventStore.

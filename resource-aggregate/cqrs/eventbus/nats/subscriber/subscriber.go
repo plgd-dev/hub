@@ -1,4 +1,4 @@
-package nats
+package subscriber
 
 import (
 	"context"
@@ -6,9 +6,11 @@ import (
 	"sync"
 
 	nats "github.com/nats-io/nats.go"
+	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -19,10 +21,15 @@ type UnmarshalerFunc = func(b []byte, v interface{}) error
 type Subscriber struct {
 	clientId        string
 	dataUnmarshaler UnmarshalerFunc
-	errFunc         eventbus.ErrFunc
+	logger          *zap.Logger
 	conn            *nats.Conn
 	url             string
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
+	closeFunc       []func()
+}
+
+func (p *Subscriber) AddCloseFunc(f func()) {
+	p.closeFunc = append(p.closeFunc, f)
 }
 
 //Observer handles events from nats
@@ -30,32 +37,76 @@ type Observer struct {
 	lock            sync.Mutex
 	dataUnmarshaler UnmarshalerFunc
 	eventHandler    eventbus.Handler
-	errFunc         eventbus.ErrFunc
+	logger          *zap.Logger
 	conn            *nats.Conn
 	subscriptionId  string
 	subs            map[string]*nats.Subscription
 }
 
-// NewSubscriber create new subscriber with proto unmarshaller.
-func NewSubscriber(config Config, goroutinePoolGo eventbus.GoroutinePoolGoFunc, errFunc eventbus.ErrFunc, opts ...Option) (*Subscriber, error) {
-	for _, o := range opts {
-		config = o(config)
-	}
+type options struct {
+	dataUnmarshaler UnmarshalerFunc
+	goroutinePoolGo eventbus.GoroutinePoolGoFunc
+}
 
-	s, err := newSubscriber(config.URL, utils.Unmarshal, goroutinePoolGo, errFunc, config.Options...)
+type Option interface {
+	apply(o *options)
+}
+
+type UnmarshalerOpt struct {
+	dataUnmarshaler UnmarshalerFunc
+}
+
+func (o UnmarshalerOpt) apply(opts *options) {
+	opts.dataUnmarshaler = o.dataUnmarshaler
+}
+
+func WithUnmarshaler(dataUnmarshaler UnmarshalerFunc) UnmarshalerOpt {
+	return UnmarshalerOpt{
+		dataUnmarshaler: dataUnmarshaler,
+	}
+}
+
+type GoroutinePoolGoOpt struct {
+	goroutinePoolGo eventbus.GoroutinePoolGoFunc
+}
+
+func (o GoroutinePoolGoOpt) apply(opts *options) {
+	opts.goroutinePoolGo = o.goroutinePoolGo
+}
+
+func WithGoPool(goroutinePoolGo eventbus.GoroutinePoolGoFunc) GoroutinePoolGoOpt {
+	return GoroutinePoolGoOpt{
+		goroutinePoolGo: goroutinePoolGo,
+	}
+}
+
+// NewSubscriber create new subscriber with proto unmarshaller.
+func New(config Config, logger *zap.Logger, opts ...Option) (*Subscriber, error) {
+	cfg := options{
+		dataUnmarshaler: utils.Unmarshal,
+		goroutinePoolGo: nil,
+	}
+	for _, o := range opts {
+		o.apply(&cfg)
+	}
+	certManager, err := client.New(config.TLS, logger)
 	if err != nil {
+		return nil, fmt.Errorf("cannot create cert manager: %w", err)
+	}
+	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()))
+	s, err := newSubscriber(config.URL, cfg.dataUnmarshaler, cfg.goroutinePoolGo, logger, config.Options...)
+	if err != nil {
+		certManager.Close()
 		return nil, err
 	}
+	s.AddCloseFunc(certManager.Close)
 	return s, nil
 }
 
 // NewSubscriber creates a subscriber.
-func newSubscriber(url string, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, errFunc eventbus.ErrFunc, options ...nats.Option) (*Subscriber, error) {
+func newSubscriber(url string, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger *zap.Logger, options ...nats.Option) (*Subscriber, error) {
 	if eventUnmarshaler == nil {
 		return nil, fmt.Errorf("invalid eventUnmarshaler")
-	}
-	if errFunc == nil {
-		return nil, fmt.Errorf("invalid errFunc")
 	}
 
 	conn, err := nats.Connect(url, options...)
@@ -65,7 +116,7 @@ func newSubscriber(url string, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo
 
 	return &Subscriber{
 		dataUnmarshaler: eventUnmarshaler,
-		errFunc:         errFunc,
+		logger:          logger,
 		conn:            conn,
 		goroutinePoolGo: goroutinePoolGo,
 	}, nil
@@ -73,7 +124,7 @@ func newSubscriber(url string, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo
 
 // Subscribe creates a observer that listen on events from topics.
 func (b *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topics []string, eh eventbus.Handler) (eventbus.Observer, error) {
-	observer := b.newObservation(ctx, subscriptionId, eventbus.NewGoroutinePoolHandler(b.goroutinePoolGo, eh, b.errFunc))
+	observer := b.newObservation(ctx, subscriptionId, eventbus.NewGoroutinePoolHandler(b.goroutinePoolGo, eh, func(err error) { b.logger.Sugar().Error(err) }))
 
 	err := observer.SetTopics(ctx, topics)
 	if err != nil {
@@ -86,6 +137,9 @@ func (b *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topic
 // Close closes subscriber.
 func (b *Subscriber) Close() {
 	b.conn.Close()
+	for _, f := range b.closeFunc {
+		f()
+	}
 }
 
 func (b *Subscriber) newObservation(ctx context.Context, subscriptionId string, eh eventbus.Handler) *Observer {
@@ -95,7 +149,7 @@ func (b *Subscriber) newObservation(ctx context.Context, subscriptionId string, 
 		subscriptionId:  subscriptionId,
 		subs:            make(map[string]*nats.Subscription),
 		eventHandler:    eh,
-		errFunc:         b.errFunc,
+		logger:          b.logger,
 	}
 }
 
@@ -165,7 +219,7 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 
 	err := proto.Unmarshal(msg.Data, &e)
 	if err != nil {
-		o.errFunc(fmt.Errorf("cannot unmarshal event: %w", err))
+		o.logger.Sugar().Errorf("cannot unmarshal event: %v", err)
 		return
 	}
 
@@ -178,7 +232,7 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 	}
 
 	if err := o.eventHandler.Handle(context.Background(), &i); err != nil {
-		o.errFunc(fmt.Errorf("cannot unmarshal event: %w", err))
+		o.logger.Sugar().Errorf("cannot unmarshal event: %v", err)
 	}
 }
 

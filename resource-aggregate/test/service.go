@@ -22,7 +22,7 @@ func MakeConfig(t *testing.T) service.Config {
 	raCfg.Clients.AuthServer.Connection = testCfg.MakeGrpcClientConfig(testCfg.AUTH_HOST)
 	raCfg.Clients.AuthServer.OAuth = testCfg.MakeOAuthConfig()
 
-	raCfg.Clients.Eventbus.NATS = testCfg.MakeNATSConfig()
+	raCfg.Clients.Eventbus.NATS = testCfg.MakePublisherConfig()
 
 	raCfg.Clients.Eventstore.Connection.MongoDB = testCfg.MakeEventsStoreMongoDBConfig()
 	raCfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 8
