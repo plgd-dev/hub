@@ -7,8 +7,8 @@ import (
 	"sort"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/log"
 	"go.uber.org/atomic"
 )
 

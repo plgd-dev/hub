@@ -20,7 +20,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
@@ -44,21 +44,21 @@ type Service struct {
 }
 
 func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, nil)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
-	publisher, err := nats.NewPublisherV2(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
 		eventstore.Close(ctx)
-		return nil, fmt.Errorf("cannot create kafka publisher %w", err)
+		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
 
 	service, err := NewService(ctx, config, logger, eventstore, publisher)
 	if err != nil {
 		eventstore.Close(ctx)
 		publisher.Close()
-		return nil, fmt.Errorf("cannot create kafka publisher %w", err)
+		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
 	service.AddCloseFunc(func() {
 		err := eventstore.Close(ctx)
@@ -77,7 +77,7 @@ func NewService(ctx context.Context, config Config, logger *zap.Logger, eventSto
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(validator, config.APIs.GRPC.Authorization.OwnerClaim, logger)
+	opts, err := server.MakeDefaultOptions(server.NewAuth(validator, config.APIs.GRPC.Authorization.OwnerClaim), logger)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -24,7 +25,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			want: &pb.ClientConfigurationResponse{},
+			want: rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto(),
 		},
 	}
 
@@ -49,6 +50,8 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
+				require.NotEmpty(t, got.CloudCertificateAuthorities)
+				got.CloudCertificateAuthorities = ""
 				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
 		})

@@ -7,11 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/kit/security/certManager"
-	"github.com/stretchr/testify/assert"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
@@ -120,22 +119,13 @@ func (eh *mockEventHandler) SnapshotEventType() string {
 }
 
 func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
-	var config certManager.Config
-	err := envconfig.Process("DIAL", &config)
-	assert.NoError(t, err)
-
-	dialCertManager, err := certManager.NewCertManager(config)
+	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
-
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
-	store, err := mongodb.NewEventStore(
+	store, err := mongodb.New(
 		ctx,
-		mongodb.Config{
-			URI: "mongodb://localhost:27017",
-		},
-		func(f func()) error { go f(); return nil },
-		mongodb.WithTLS(tlsConfig),
+		config.MakeEventsStoreMongoDBConfig(),
+		logger,
+		mongodb.WithGoPool(func(f func()) error { go f(); return nil }),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, store)

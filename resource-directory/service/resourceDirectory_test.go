@@ -5,19 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -52,20 +52,11 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 			},
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
-	defer dialCertManager.Close()
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	require.NoError(t, err)
-	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(tlsConfig))
+	resourceSubscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(pool.Submit))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 
@@ -78,7 +69,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	resourceProjection, err := service.NewProjection(ctx, "test", testCreateEventstore(), resourceSubscriber, service.NewEventStoreModelFactory(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer), time.Second)
 	require.NoError(t, err)
 
-	rd := service.New(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
+	rd := service.NewResourceDirectory(resourceProjection, []string{ /*Resource0.DeviceId,*/ Resource1.DeviceId, Resource2.DeviceId})
 
 	for _, tt := range tests {
 		fn := func(t *testing.T) {

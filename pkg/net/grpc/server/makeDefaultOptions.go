@@ -9,14 +9,12 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
-	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 )
 
-func MakeDefaultOptions(validator *validator.Validator, ownerClaim string, logger *zap.Logger) ([]grpc.ServerOption, error) {
-	auth := NewAuth(validator, ownerClaim)
+func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger *zap.Logger) ([]grpc.ServerOption, error) {
 	streamInterceptors := []grpc.StreamServerInterceptor{}
 	if logger.Core().Enabled(zapcore.DebugLevel) {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),

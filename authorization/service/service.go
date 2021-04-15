@@ -21,8 +21,11 @@ import (
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/authorization/provider"
+	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 )
 
@@ -128,7 +131,7 @@ func New(ctx context.Context, cfg Config, logger *zap.Logger) (*Server, error) {
 		sdkProvider.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(validator, cfg.APIs.GRPC.Authorization.OwnerClaim, logger)
+	opts, err := server.MakeDefaultOptions(NewAuth(validator, cfg.APIs.GRPC.Authorization.OwnerClaim), logger)
 	if err != nil {
 		deviceProvider.Close()
 		sdkProvider.Close()
@@ -163,4 +166,18 @@ func (s *Server) Serve() error {
 func (s *Server) Shutdown() {
 	s.grpcServer.Close()
 	s.httpServer.Shutdown()
+}
+
+func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
+	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
+		return jwt.NewScopeClaims()
+	})
+	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
+		ctx, err := interceptor(ctx, method)
+		if err != nil {
+			log.Errorf("auth interceptor: %v", err)
+			return ctx, err
+		}
+		return ctx, nil
+	})
 }

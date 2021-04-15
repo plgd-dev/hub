@@ -13,7 +13,7 @@ type ResourceDirectory struct {
 	userDeviceIds strings.Set
 }
 
-func New(projection *Projection, deviceIds []string) *ResourceDirectory {
+func NewResourceDirectory(projection *Projection, deviceIds []string) *ResourceDirectory {
 	mapDeviceIds := make(strings.Set)
 	mapDeviceIds.Add(deviceIds...)
 

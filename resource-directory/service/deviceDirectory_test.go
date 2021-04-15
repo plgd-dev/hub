@@ -2,30 +2,28 @@ package service_test
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc/status"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/resource-directory/service"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 
 	cbor "github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/security/certManager"
 
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -111,20 +109,12 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 		},
 	}
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	defer dialCertManager.Close()
-	tlsConfig := dialCertManager.GetClientTLSConfig()
 
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	var natsCfg nats.Config
-	err = envconfig.Process("", &natsCfg)
-	require.NoError(t, err)
-	resourceSubscriber, err := nats.NewSubscriber(natsCfg, pool.Submit, func(err error) { require.NoError(t, err) }, nats.WithTLS(tlsConfig))
+	resourceSubscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(pool.Submit))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 

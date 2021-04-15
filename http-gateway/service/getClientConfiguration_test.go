@@ -3,14 +3,13 @@ package service_test
 import (
 	"context"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	cloudTest "github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/stretchr/testify/require"
@@ -20,8 +19,6 @@ func TestGetClientConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
 	defer cancel()
 
-	os.Setenv("SERVICE_CLIENT_CONFIGURATION_CLOUDURL", "coaps+tcp://"+config.GW_HOST)
-	defer os.Unsetenv("SERVICE_CLIENT_CONFIGURATION_CLOUDURL")
 	tearDown := cloudTest.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
@@ -36,5 +33,13 @@ func TestGetClientConfiguration(t *testing.T) {
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	err := json.ReadFrom(res.Body, &response)
 	require.NoError(t, err)
-	require.Equal(t, map[string]interface{}{"cloud_url": "coaps+tcp://localhost:20002"}, response)
+
+	data, err := json.Encode(rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto())
+	require.NoError(t, err)
+	var exp map[string]interface{}
+	err = json.Decode(data, &exp)
+	require.NoError(t, err)
+	require.NotEmpty(t, response["cloud_certificate_authorities"])
+	delete(response, "cloud_certificate_authorities")
+	require.Equal(t, exp, response)
 }

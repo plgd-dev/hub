@@ -10,7 +10,6 @@ export LOGS_PATH="/data/log"
 export MONGO_PATH="/data/db"
 export NGINX_PATH="/data/nginx"
 
-export SERVICE_CLIENT_CONFIGURATION_JWTCLAIMOWNERID=${OWNER_CLAIM}
 export SERVICE_OWNER_CLAIM=${OWNER_CLAIM}
 export DEVICE_OWNER_CLAIM=${OWNER_CLAIM}
 
@@ -300,6 +299,7 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/authorization.
 ### setup oauthclients
 cat /configs/authorization.yaml | yq e "\
   .apis.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
@@ -312,10 +312,12 @@ cat /configs/authorization.yaml | yq e "\
   .oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
   .oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
   .oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .oauthClients.device.http.tls.useSystemCAPool = true |
   .oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
   .oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
   .oauthClients.client.redirectURL = \"${SDK_OAUTH_REDIRECT_URL}\" |
   .oauthClients.client.audience = \"${SDK_OAUTH_AUDIENCE}\" |
+  .oauthClients.client.http.tls.useSystemCAPool = true |
   .oauthClients.client.scopes=[ \"${SDK_OAUTH_SCOPES}\" ]
 " - > /data/authorization.yaml
 
@@ -364,6 +366,7 @@ done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggre
 ### setup cfgs from env
 cat /configs/resource-aggregate.yaml | yq e "\
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
@@ -373,6 +376,7 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
   .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
   .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
   .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
 " - > /data/resource-aggregate.yaml
 
@@ -399,13 +403,51 @@ while true; do
 done
 
 # resource-directory
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-directory.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-directory.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-directory.yaml | sort | uniq)
+
+### setup cfgs from env
+cat /configs/resource-directory.yaml | yq e "\
+  .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
+  .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
+  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
+  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .publicConfiguration.tokenURL = \"${SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL}\" |
+  .publicConfiguration.authorizationURL = \"${SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL}\" |
+  .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
+  .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
+  .publicConfiguration.signingServerAddress = \"${FQDN_NGINX_HTTPS}\" |
+  .publicConfiguration.ownerClaim = \"${OWNER_CLAIM}\"
+" - > /data/resource-directory.yaml
+
 echo "starting resource-directory"
-ADDRESS=${RESOURCE_DIRECTORY_ADDRESS} \
-SERVICE_CLIENT_CONFIGURATION_CLOUD_CA_POOL=${CA_POOL_CERT_PATH} \
-SERVICE_CLIENT_CONFIGURATION_CLOUDID=${COAP_GATEWAY_CLOUD_ID} \
-SERVICE_CLIENT_CONFIGURATION_CLOUDURL="coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}" \
-SERVICE_CLIENT_CONFIGURATION_SIGNINGSERVERADDRESS=${FQDN_NGINX_HTTPS} \
-resource-directory >$LOGS_PATH/resource-directory.log 2>&1 &
+resource-directory --config /data/resource-directory.yaml >$LOGS_PATH/resource-directory.log 2>&1 &
 status=$?
 resource_directory_pid=$!
 if [ $status -ne 0 ]; then

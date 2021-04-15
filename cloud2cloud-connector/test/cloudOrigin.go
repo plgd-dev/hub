@@ -50,19 +50,22 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	raCfg.Clients.Eventstore.Connection.MongoDB.Database = cloudConnectorDB
 	raCfg.APIs.GRPC.Addr = RESOURCE_AGGREGATE_HOST
 	raCfg.Clients.AuthServer.Connection.Addr = AUTH_HOST
+	raCfg.Clients.AuthServer.OAuth.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
+	raCfg.Clients.AuthServer.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
+	raCfg.Clients.AuthServer.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
 	raCfg.Clients.Eventbus.NATS.URL = cloudConnectorNatsURL
 	raShutdown := raService.New(t, raCfg)
 
 	rdCfg := rdService.MakeConfig(t)
-	rdCfg.Addr = RESOURCE_DIRECTORY_HOST
-	rdCfg.JwksURL = JWKS_URL
-	rdCfg.MongoDB.DatabaseName = cloudConnectorDB
+	rdCfg.APIs.GRPC.Addr = RESOURCE_DIRECTORY_HOST
+	rdCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
+	rdCfg.Clients.Eventstore.Connection.MongoDB.Database = cloudConnectorDB
 	//rdCfg.mongodb.URL = cloudConnectormongodbURL
-	rdCfg.Nats.URL = cloudConnectorNatsURL
-	rdCfg.Service.AuthServerAddr = AUTH_HOST
-	rdCfg.Service.OAuth.Endpoint.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
-	rdCfg.Service.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
-	rdCfg.Service.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
+	rdCfg.Clients.Eventbus.NATS.URL = cloudConnectorNatsURL
+	rdCfg.Clients.AuthServer.Connection.Addr = AUTH_HOST
+	rdCfg.Clients.AuthServer.OAuth.TokenURL = OAUTH_MANAGER_ENDPOINT_TOKENURL
+	rdCfg.Clients.AuthServer.OAuth.ClientID = OAUTH_MANAGER_CLIENT_ID
+	rdCfg.Clients.AuthServer.OAuth.Audience = OAUTH_MANAGER_AUDIENCE
 	rdShutdown := rdService.New(t, rdCfg)
 
 	grpcCfg := grpcService.MakeConfig(t)

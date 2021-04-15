@@ -7,5 +7,5 @@ import (
 )
 
 func (r *RequestHandler) GetClientConfiguration(context.Context, *pb.ClientConfigurationRequest) (*pb.ClientConfigurationResponse, error) {
-	return &r.clientConfiguration, nil
+	return r.publicConfiguration.ToProto(), nil
 }
