@@ -41,6 +41,9 @@ type Observer struct {
 	conn            *nats.Conn
 	subscriptionId  string
 	subs            map[string]*nats.Subscription
+	ch              chan *nats.Msg
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 type options struct {
@@ -143,14 +146,33 @@ func (b *Subscriber) Close() {
 }
 
 func (b *Subscriber) newObservation(ctx context.Context, subscriptionId string, eh eventbus.Handler) *Observer {
-	return &Observer{
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan *nats.Msg, 32)
+	o := &Observer{
 		conn:            b.conn,
 		dataUnmarshaler: b.dataUnmarshaler,
 		subscriptionId:  subscriptionId,
 		subs:            make(map[string]*nats.Subscription),
 		eventHandler:    eh,
 		logger:          b.logger,
+		ctx:             ctx,
+		cancel:          cancel,
+		ch:              ch,
 	}
+	go func() {
+		for {
+			select {
+			case <-o.ctx.Done():
+				return
+			case msg := <-ch:
+				if msg != nil {
+					o.handleMsg(msg)
+				}
+			}
+		}
+	}()
+
+	return o
 }
 
 func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
@@ -192,7 +214,7 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 		return fmt.Errorf("cannot set topics: %w", err)
 	}
 	for topic := range newTopicsForSub {
-		sub, err := o.conn.QueueSubscribe(topic, o.subscriptionId, o.handleMsg)
+		sub, err := o.conn.QueueSubscribeSyncWithChan(topic, o.subscriptionId, o.ch)
 		if err != nil {
 			o.cleanUp(make(map[string]bool))
 			return fmt.Errorf("cannot subscribe to topics: %w", err)
@@ -205,11 +227,16 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 
 // Close cancel observation and close connection to nats.
 func (o *Observer) Close() error {
+	o.cancel()
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	_, err := o.cleanUp(make(map[string]bool))
 	if err != nil {
 		return fmt.Errorf("cannot close observer: %w", err)
+	}
+	if o.ch != nil {
+		close(o.ch)
+		o.ch = nil
 	}
 	return nil
 }
