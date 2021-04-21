@@ -371,6 +371,61 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 			rp.content = s.LatestResourceChange
 			rp.onResourceChangedVersion = eu.Version()
 			onResourceContentChanged = true
+			if len(s.GetResourceUpdatePendings()) > 0 {
+				if len(s.GetResourceUpdatePendings()) != len(rp.resourceUpdatePendings) {
+					onResourceUpdatePending = true
+				} else {
+					for i, p := range s.GetResourceUpdatePendings() {
+						if rp.resourceUpdatePendings[i].GetAuditContext().GetCorrelationId() != p.GetAuditContext().GetCorrelationId() {
+							onResourceUpdatePending = true
+							break
+						}
+					}
+				}
+			}
+			rp.resourceUpdatePendings = s.GetResourceUpdatePendings()
+
+			if len(s.GetResourceCreatePendings()) > 0 {
+				if len(s.GetResourceCreatePendings()) != len(rp.resourceCreatePendings) {
+					onResourceCreatePending = true
+				} else {
+					for i, p := range s.GetResourceCreatePendings() {
+						if rp.resourceCreatePendings[i].GetAuditContext().GetCorrelationId() != p.GetAuditContext().GetCorrelationId() {
+							onResourceCreatePending = true
+							break
+						}
+					}
+				}
+			}
+			rp.resourceCreatePendings = s.GetResourceCreatePendings()
+
+			if len(s.GetResourceDeletePendings()) > 0 {
+				if len(s.GetResourceDeletePendings()) != len(rp.resourceDeletePendings) {
+					onResourceDeletePending = true
+				} else {
+					for i, p := range s.GetResourceDeletePendings() {
+						if rp.resourceDeletePendings[i].GetAuditContext().GetCorrelationId() != p.GetAuditContext().GetCorrelationId() {
+							onResourceDeletePending = true
+							break
+						}
+					}
+				}
+			}
+			rp.resourceDeletePendings = s.GetResourceDeletePendings()
+
+			if len(s.GetResourceRetrievePendings()) > 0 {
+				if len(s.GetResourceRetrievePendings()) != len(rp.resourceRetrievePendings) {
+					onResourceRetrievePending = true
+				} else {
+					for i, p := range s.GetResourceRetrievePendings() {
+						if rp.resourceRetrievePendings[i].GetAuditContext().GetCorrelationId() != p.GetAuditContext().GetCorrelationId() {
+							onResourceRetrievePending = true
+							break
+						}
+					}
+				}
+			}
+			rp.resourceRetrievePendings = s.GetResourceRetrievePendings()
 		case (&events.ResourceChanged{}).EventType():
 			var s events.ResourceChanged
 			if err := eu.Unmarshal(&s); err != nil {
