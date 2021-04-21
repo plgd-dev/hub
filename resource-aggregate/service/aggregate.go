@@ -220,12 +220,24 @@ func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []event
 			}
 			break
 		}
+		if ru, ok := event.(*raEvents.ResourceLinksSnapshotTaken); ok {
+			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupId(), AggregateID: ru.AggregateId(), Version: ru.Version()}}); err != nil {
+				log.Info("unable to remove events up to snapshot for resource link of deviceId('%v')", ru.GetDeviceId())
+			}
+			break
+		}
 	}
 }
 
 func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
 	for _, event := range events {
 		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
+			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateId(), Version: ru.Version()}); err != nil {
+				log.Info("unable to insert the snapshot information into the maintenance db")
+			}
+			break
+		}
+		if ru, ok := event.(*raEvents.ResourceLinksSnapshotTaken); ok {
 			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateId(), Version: ru.Version()}); err != nil {
 				log.Info("unable to insert the snapshot information into the maintenance db")
 			}

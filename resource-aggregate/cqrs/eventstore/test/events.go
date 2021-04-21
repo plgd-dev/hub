@@ -77,13 +77,18 @@ func MakeResourceLinksSnapshotTaken(resources map[string]*commands.Resource, dev
 	)
 }
 
-func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeAuditContext(userID string, correlationID string) *commands.AuditContext {
+	return &commands.AuditContext{
+		UserId:        userID,
+		CorrelationId: correlationID,
+	}
+}
+
+func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceUpdatePending{
-		ResourceId: resourceId,
-		Content:    content,
-		AuditContext: &commands.AuditContext{
-			UserId: "userId",
-		},
+		ResourceId:    resourceId,
+		Content:       content,
+		AuditContext:  auditContext,
 		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
@@ -101,14 +106,12 @@ func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *command
 	)
 }
 
-func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceUpdated{
-		ResourceId: resourceId,
-		Content:    content,
-		Status:     status,
-		AuditContext: &commands.AuditContext{
-			UserId: "userId",
-		},
+		ResourceId:    resourceId,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
 		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
@@ -126,12 +129,10 @@ func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status
 	)
 }
 
-func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceChanged{
-		ResourceId: resourceId,
-		AuditContext: &commands.AuditContext{
-			UserId: "userId",
-		},
+		ResourceId:    resourceId,
+		AuditContext:  auditContext,
 		Content:       content,
 		EventMetadata: eventMetadata,
 	}
@@ -150,14 +151,12 @@ func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands
 	)
 }
 
-func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceRetrievePending{
 		ResourceId:        resourceId,
 		ResourceInterface: resourceInterface,
-		AuditContext: &commands.AuditContext{
-			UserId: "userId",
-		},
-		EventMetadata: eventMetadata,
+		AuditContext:      auditContext,
+		EventMetadata:     eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
@@ -174,15 +173,13 @@ func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterf
 	)
 }
 
-func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceRetrieved{
-		ResourceId: resourceId,
-		Content:    content,
-		Status:     status,
-		AuditContext: &commands.AuditContext{
-			UserId: "userId",
-		},
-		EventMetadata: &eventMetadata,
+		ResourceId:    resourceId,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
@@ -199,11 +196,12 @@ func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Stat
 	)
 }
 
-func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.NewResourceStateSnapshotTaken()
 	e.ResourceId = resourceId
 	e.LatestResourceChange = latestResourceChange
 	e.EventMetadata = eventMetadata
+	e.AuditContext = auditContext
 
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),

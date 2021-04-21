@@ -20,7 +20,6 @@ import (
 
 const eventTypeResourceStateSnapshotTaken = "ocf.cloud.resourceaggregate.events.resourcestatesnapshottaken"
 
-const errInvalidDeviceID = "invalid device id"
 const errInvalidVersion = "invalid version for events"
 const errInvalidCommandMetadata = "invalid command metadata"
 
@@ -49,48 +48,110 @@ func (e *ResourceStateSnapshotTaken) EventType() string {
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
-	e.PendingRequestsCount++
+	for _, event := range e.GetResourceCreatePendings() {
+		if event.GetAuditContext().GetCorrelationId() == createPending.GetAuditContext().GetCorrelationId() {
+			return fmt.Errorf("resource create pending with correlationId('%v') already exist", createPending.GetAuditContext().GetCorrelationId())
+		}
+	}
 	e.ResourceId = createPending.GetResourceId()
 	e.EventMetadata = createPending.GetEventMetadata()
+	e.ResourceCreatePendings = append(e.ResourceCreatePendings, createPending)
+	e.AuditContext = createPending.GetAuditContext()
 	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
-	e.PendingRequestsCount++
+	for _, event := range e.GetResourceUpdatePendings() {
+		if event.GetAuditContext().GetCorrelationId() == updatePending.GetAuditContext().GetCorrelationId() {
+			return fmt.Errorf("resource update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
+		}
+	}
 	e.ResourceId = updatePending.GetResourceId()
 	e.EventMetadata = updatePending.GetEventMetadata()
+	e.ResourceUpdatePendings = append(e.ResourceUpdatePendings, updatePending)
+	e.AuditContext = updatePending.GetAuditContext()
 	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, retrievePending *ResourceRetrievePending) error {
+	for _, event := range e.GetResourceRetrievePendings() {
+		if event.GetAuditContext().GetCorrelationId() == retrievePending.GetAuditContext().GetCorrelationId() {
+			return fmt.Errorf("resource retrieve pending with correlationId('%v') already exist", retrievePending.GetAuditContext().GetCorrelationId())
+		}
+	}
 	e.ResourceId = retrievePending.GetResourceId()
 	e.EventMetadata = retrievePending.GetEventMetadata()
+	e.ResourceRetrievePendings = append(e.ResourceRetrievePendings, retrievePending)
 	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
+	for _, event := range e.GetResourceDeletePendings() {
+		if event.GetAuditContext().GetCorrelationId() == deletePending.GetAuditContext().GetCorrelationId() {
+			return fmt.Errorf("resource delete pending with correlationId('%v') already exist", deletePending.GetAuditContext().GetCorrelationId())
+		}
+	}
 	e.ResourceId = deletePending.GetResourceId()
 	e.EventMetadata = deletePending.GetEventMetadata()
+	e.ResourceDeletePendings = append(e.ResourceDeletePendings, deletePending)
+	e.AuditContext = deletePending.GetAuditContext()
 	return nil
+}
+func RemoveIndex(s []int, index int) []int {
+	return append(s[:index], s[index+1:]...)
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreated(ctx context.Context, created *ResourceCreated) error {
-	e.PendingRequestsCount--
+	index := -1
+	for i, event := range e.GetResourceCreatePendings() {
+		if event.GetAuditContext().GetCorrelationId() == created.GetAuditContext().GetCorrelationId() {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		return fmt.Errorf("cannot find resource create pending event with correlationId('%v')", created.GetAuditContext().GetCorrelationId())
+	}
 	e.ResourceId = created.GetResourceId()
 	e.EventMetadata = created.GetEventMetadata()
+	e.ResourceCreatePendings = append(e.ResourceCreatePendings[:index], e.ResourceCreatePendings[index+1:]...)
+	e.AuditContext = created.GetAuditContext()
 	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdated(ctx context.Context, updated *ResourceUpdated) error {
-	e.PendingRequestsCount--
+	index := -1
+	for i, event := range e.GetResourceUpdatePendings() {
+		if event.GetAuditContext().GetCorrelationId() == updated.GetAuditContext().GetCorrelationId() {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		return fmt.Errorf("cannot find resource update pending event with correlationId('%v')", updated.GetAuditContext().GetCorrelationId())
+	}
 	e.ResourceId = updated.GetResourceId()
 	e.EventMetadata = updated.GetEventMetadata()
+	e.ResourceUpdatePendings = append(e.ResourceUpdatePendings[:index], e.ResourceUpdatePendings[index+1:]...)
+	e.AuditContext = updated.GetAuditContext()
 	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrieved(ctx context.Context, retrieved *ResourceRetrieved) error {
+	index := -1
+	for i, event := range e.GetResourceRetrievePendings() {
+		if event.GetAuditContext().GetCorrelationId() == retrieved.GetAuditContext().GetCorrelationId() {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		return fmt.Errorf("cannot find resource retrieve pending event with correlationId('%v')", retrieved.GetAuditContext().GetCorrelationId())
+	}
 	e.ResourceId = retrieved.GetResourceId()
 	e.EventMetadata = retrieved.GetEventMetadata()
+	e.ResourceRetrievePendings = append(e.ResourceRetrievePendings[:index], e.ResourceRetrievePendings[index+1:]...)
+	e.AuditContext = retrieved.GetAuditContext()
 	return nil
 }
 
@@ -118,18 +179,32 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Cont
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Context, deleted *ResourceDeleted) error {
+	index := -1
+	for i, event := range e.GetResourceDeletePendings() {
+		if event.GetAuditContext().GetCorrelationId() == deleted.GetAuditContext().GetCorrelationId() {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		return fmt.Errorf("cannot find resource delete pending event with correlationId('%v')", deleted.GetAuditContext().GetCorrelationId())
+	}
 	e.ResourceId = deleted.GetResourceId()
 	e.EventMetadata = deleted.GetEventMetadata()
+	e.ResourceDeletePendings = append(e.ResourceDeletePendings[:index], e.ResourceDeletePendings[index+1:]...)
+	e.AuditContext = deleted.GetAuditContext()
 	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) error {
-	if snapshot.GetPendingRequestsCount() != 0 {
-		return status.Errorf(codes.FailedPrecondition, "invalid pending requests")
-	}
 	e.ResourceId = snapshot.GetResourceId()
 	e.LatestResourceChange = snapshot.GetLatestResourceChange()
 	e.EventMetadata = snapshot.GetEventMetadata()
+
+	e.ResourceCreatePendings = snapshot.GetResourceCreatePendings()
+	e.ResourceRetrievePendings = snapshot.GetResourceRetrievePendings()
+	e.ResourceUpdatePendings = snapshot.GetResourceUpdatePendings()
+	e.ResourceDeletePendings = snapshot.GetResourceDeletePendings()
 
 	return nil
 }
@@ -487,16 +562,15 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 func (e *ResourceStateSnapshotTaken) SnapshotEventType() string { return e.EventType() }
 
 func (e *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
-	if e.PendingRequestsCount > 0 {
-		return nil, false
-	}
-	e.EventMetadata.Version = version
-	// we need to return as new event because `e` is a pointer,
-	// otherwise ResourceStateSnapshotTaken.Handle override version of snapshot which will be fired to eventbus
 	return &ResourceStateSnapshotTaken{
-		ResourceId:           e.GetResourceId(),
-		LatestResourceChange: e.GetLatestResourceChange(),
-		EventMetadata:        e.GetEventMetadata(),
+		ResourceId:               e.GetResourceId(),
+		LatestResourceChange:     e.GetLatestResourceChange(),
+		EventMetadata:            MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
+		ResourceCreatePendings:   e.GetResourceCreatePendings(),
+		ResourceUpdatePendings:   e.GetResourceUpdatePendings(),
+		ResourceRetrievePendings: e.GetResourceRetrievePendings(),
+		ResourceDeletePendings:   e.GetResourceDeletePendings(),
+		AuditContext:             e.GetAuditContext(),
 	}, true
 }
 

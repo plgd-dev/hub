@@ -106,7 +106,11 @@ message ResourceCreated {
 
 message ResourceStateSnapshotTaken {
     ResourceId resource_id = 1;
-    ResourceChanged  latest_resource_change = 3;
-    uint32 pending_requests_count = 4;
-    EventMetadata event_metadata = 5;
+    ResourceChanged  latest_resource_change = 2;
+    repeated ResourceCreatePending resource_create_pendings = 3;
+    repeated ResourceRetrievePending resource_retrieve_pendings = 4;
+    repeated ResourceUpdatePending resource_update_pendings = 5;
+    repeated ResourceDeletePending resource_delete_pendings = 6;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
 }

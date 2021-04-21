@@ -266,20 +266,20 @@ func testCreateResourceDeviceEventstores() (resourceEventStore *mockEventStore.M
 
 	//without cloud state
 	resourceEventStore.Append(ddResource0.DeviceId, commands.MakeLinksResourceUUID(ddResource0.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource0.Resource}, ddResource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	resourceEventStore.Append(ddResource0.DeviceId, ddResource0.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource0.Resource.GetResourceID(), &ddResource0.Content, events.MakeEventMeta("a", 0, 0)))
+	resourceEventStore.Append(ddResource0.DeviceId, ddResource0.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource0.Resource.GetResourceID(), &ddResource0.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
 
 	resourceEventStore.Append(ddResource1.DeviceId, commands.MakeLinksResourceUUID(ddResource1.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource1.Resource, &ddResource1Cloud.Resource}, ddResource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	resourceEventStore.Append(ddResource1.DeviceId, ddResource1.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource1.Resource.GetResourceID(), &ddResource1.Content, events.MakeEventMeta("a", 0, 0)))
-	resourceEventStore.Append(ddResource1Cloud.DeviceId, ddResource1Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource1Cloud.Resource.GetResourceID(), &ddResource1Cloud.Content, events.MakeEventMeta("a", 0, 0)))
+	resourceEventStore.Append(ddResource1.DeviceId, ddResource1.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource1.Resource.GetResourceID(), &ddResource1.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
+	resourceEventStore.Append(ddResource1Cloud.DeviceId, ddResource1Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource1Cloud.Resource.GetResourceID(), &ddResource1Cloud.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "1")))
 
 	//with cloud state - online
 	resourceEventStore.Append(ddResource2.DeviceId, commands.MakeLinksResourceUUID(ddResource2.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource2.Resource, &ddResource2Cloud.Resource}, ddResource2.Resource.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	resourceEventStore.Append(ddResource2.DeviceId, ddResource2.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource2.Resource.GetResourceID(), &ddResource2.Content, events.MakeEventMeta("a", 0, 0)))
-	resourceEventStore.Append(ddResource2Cloud.DeviceId, ddResource2Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource2Cloud.Resource.GetResourceID(), &ddResource2Cloud.Content, events.MakeEventMeta("a", 0, 0)))
+	resourceEventStore.Append(ddResource2.DeviceId, ddResource2.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource2.Resource.GetResourceID(), &ddResource2.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
+	resourceEventStore.Append(ddResource2Cloud.DeviceId, ddResource2Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource2Cloud.Resource.GetResourceID(), &ddResource2Cloud.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "1")))
 
 	//without device resource
 	resourceEventStore.Append(ddResource4Cloud.DeviceId, commands.MakeLinksResourceUUID(ddResource4.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource4Cloud.Resource}, ddResource4Cloud.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	resourceEventStore.Append(ddResource4Cloud.DeviceId, ddResource4Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource4Cloud.Resource.GetResourceID(), &ddResource4Cloud.Content, events.MakeEventMeta("a", 0, 1)))
+	resourceEventStore.Append(ddResource4Cloud.DeviceId, ddResource4Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource4Cloud.Resource.GetResourceID(), &ddResource4Cloud.Content, events.MakeEventMeta("a", 0, 1), mockEvents.MakeAuditContext("userId", "0")))
 
 	return resourceEventStore
 }
