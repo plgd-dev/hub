@@ -290,7 +290,6 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	deviceID := "dev0"
 	resID := "/res0"
 	user0 := "user0"
-	correlationID := "123"
 
 	type args struct {
 		request *commands.UpdateResourceRequest
@@ -303,21 +302,26 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "", correlationID)},
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "", "123")},
 			want: &commands.UpdateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					CorrelationId: correlationID,
+					CorrelationId: "123",
 				},
 			},
 		},
 		{
+			name:      "error-duplicit-correlationID",
+			args:      args{request: testMakeUpdateResourceRequest(deviceID, resID, "", "123")},
+			wantError: true,
+		},
+		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "oic.if.baseline", correlationID)},
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "oic.if.baseline", "456")},
 			want: &commands.UpdateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
-					CorrelationId: correlationID,
+					CorrelationId: "456",
 				},
 			},
 		},
@@ -391,6 +395,11 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 			},
 		},
 		{
+			name:      "error-not-found-correlationID",
+			args:      args{request: testMakeConfirmResourceUpdateRequest(deviceID, resID, correlationID)},
+			wantError: true,
+		},
+		{
 			name: "invalid",
 			args: args{
 				request: &commands.ConfirmResourceUpdateRequest{},
@@ -416,12 +425,13 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	defer publisher.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
+	require.NoError(t, err)
+	_, err = requestHandler.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resID, "", correlationID))
+	require.NoError(t, err)
+
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
-				_, err := requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(tt.args.request.GetResourceId().GetDeviceId(), tt.args.request.GetResourceId().GetHref(), 0))
-				require.NoError(t, err)
-			}
 			response, err := requestHandler.ConfirmResourceUpdate(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
@@ -458,6 +468,11 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 					CorrelationId: correlationID,
 				},
 			},
+		},
+		{
+			name:      "error-duplicit-correlationID",
+			args:      args{request: testMakeRetrieveResourceRequest(deviceID, resID, correlationID)},
+			wantError: true,
 		},
 		{
 			name: "invalid",
@@ -529,6 +544,11 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 			},
 		},
 		{
+			name:      "error-not-found-correlationID",
+			args:      args{request: testMakeConfirmResourceRetrieveRequest(deviceID, resID, correlationID)},
+			wantError: true,
+		},
+		{
 			name: "invalid",
 			args: args{
 				request: &commands.ConfirmResourceRetrieveRequest{},
@@ -554,6 +574,10 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	defer publisher.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
+	require.NoError(t, err)
+	_, err = requestHandler.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resID, correlationID))
+	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -596,6 +620,11 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 					CorrelationId: correlationID,
 				},
 			},
+		},
+		{
+			name:      "error-duplicit-correlationID",
+			args:      args{request: testMakeDeleteResourceRequest(deviceID, resID, correlationID)},
+			wantError: true,
 		},
 		{
 			name: "invalid",
@@ -667,6 +696,11 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 			},
 		},
 		{
+			name:      "error-not-found-correlationID",
+			args:      args{request: testMakeConfirmResourceDeleteRequest(deviceID, resID, correlationID)},
+			wantError: true,
+		},
+		{
 			name: "invalid",
 			args: args{
 				request: &commands.ConfirmResourceDeleteRequest{},
@@ -692,6 +726,10 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	defer publisher.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
+	require.NoError(t, err)
+	_, err = requestHandler.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID, correlationID))
+	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {
@@ -734,6 +772,11 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 					CorrelationId: correlationID,
 				},
 			},
+		},
+		{
+			name:      "error-duplicit-correlationID",
+			args:      args{request: testMakeCreateResourceRequest(deviceID, resID, correlationID)},
+			wantError: true,
 		},
 		{
 			name: "invalid",
@@ -805,6 +848,11 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 			},
 		},
 		{
+			name:      "not-found",
+			args:      args{request: testMakeConfirmResourceCreateRequest(deviceID, resID, correlationID)},
+			wantError: true,
+		},
+		{
 			name: "invalid",
 			args: args{
 				request: &commands.ConfirmResourceCreateRequest{},
@@ -830,6 +878,10 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	defer publisher.Close()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
+	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
+	require.NoError(t, err)
+	_, err = requestHandler.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resID, correlationID))
+	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			if tt.args.request.GetResourceId().GetDeviceId() != "" && tt.args.request.GetResourceId().GetHref() != "" {

@@ -641,7 +641,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		{
 			name: "valid with resource interface",
 			args: args{
-				testMakeUpdateResourceRequest(deviceID, resourceID, "oic.if.baseline", "123"),
+				testMakeUpdateResourceRequest(deviceID, resourceID, "oic.if.baseline", "456"),
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
@@ -739,9 +739,12 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NoError(t, err)
+	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
+	require.NoError(t, err)
+	_, err = ag.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resourceID, "", "123"))
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -892,6 +895,11 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
+
+	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
+	require.NoError(t, err)
+	_, err = ag.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resourceID, "123"))
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1052,6 +1060,11 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
 
+	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
+	require.NoError(t, err)
+	_, err = ag.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resourceID, "123"))
+	require.NoError(t, err)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.args.req.GetResourceId().GetDeviceId() != "" && tt.args.req.GetResourceId().GetHref() != "" {
@@ -1203,6 +1216,11 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), 10, eventstore, service.ResourceStateFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	assert.NoError(t, err)
+
+	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
+	require.NoError(t, err)
+	_, err = ag.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resourceID, "123"))
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
