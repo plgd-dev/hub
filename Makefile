@@ -68,7 +68,7 @@ mongo: certificates
 		--name=mongo \
 		-v $(shell pwd)/.tmp/mongo:/data/db \
 		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
-		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
+		mongo:4.2.12 --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
 env: clean certificates nats mongo privateKeys
 	if [ "${TRAVIS_OS_NAME}" == "linux" ]; then \

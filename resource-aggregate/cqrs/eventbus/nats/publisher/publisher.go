@@ -108,7 +108,9 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 
 	var errors []error
 	for _, t := range topics {
+		fmt.Printf("BEFORE Publisher.Publish topics=%+v deviceID=%v aggregateId=%v event=%+v\n", topics, groupId, aggregateId, event)
 		err := p.conn.Publish(t, eData)
+		fmt.Printf("AFTER Publisher.Publish topics=%+v deviceID=%v aggregateId=%v event=%+v\n", topics, groupId, aggregateId, event)
 		if err != nil {
 			errors = append(errors, err)
 		}

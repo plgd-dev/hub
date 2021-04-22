@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/crc64"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -277,6 +278,7 @@ func getEventCollectionName(groupID string) string {
 
 // Save save events to path.
 func (s *EventStore) Save(ctx context.Context, collectionID, aggregateID string, events []eventstore.Event) (concurrencyException bool, err error) {
+
 	s.LogDebugfFunc("mongodb.Evenstore.Save start")
 	t := time.Now()
 	defer func() {
@@ -308,10 +310,14 @@ func (s *EventStore) Save(ctx context.Context, collectionID, aggregateID string,
 		}
 	}
 
+	fmt.Printf("BEFORE mongodb.Save deviceID=%v aggregateID=%v events=%+v\n", collectionID, aggregateID, events)
 	if len(events) > 1 {
-		return s.saveEvents(ctx, col, collectionID, aggregateID, events)
+		concurrencyException, err = s.saveEvents(ctx, col, collectionID, aggregateID, events)
+	} else {
+		concurrencyException, err = s.saveEvent(ctx, col, collectionID, aggregateID, events[0])
 	}
-	return s.saveEvent(ctx, col, collectionID, aggregateID, events[0])
+	fmt.Printf("AFTER mongodb.Save deviceID=%v aggregateID=%v concurrencyException=%v err=%v events=%+v\n", collectionID, aggregateID, concurrencyException, err, events)
+	return
 }
 
 func (s *EventStore) SaveSnapshot(ctx context.Context, collectionID string, aggregateID string, ev eventstore.Event) (concurrencyException bool, err error) {
@@ -353,7 +359,10 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		event[aggregateIDStrKey].(string),
 		i.groupID,
 		func(v interface{}) error {
-			return i.dataUnmarshaler(data.Data, v)
+			err := i.dataUnmarshaler(data.Data, v)
+			val := reflect.ValueOf(v).Elem()
+			fmt.Printf("mongodb.iterator.Next deviceID=%v aggregateID=%v version=%v event=%+v\n", i.groupID, event[aggregateIDStrKey].(string), version, val)
+			return err
 		}), true
 }
 

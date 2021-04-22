@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/gofrs/uuid"
+	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
@@ -17,6 +20,72 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestPubSub(t *testing.T) {
+	var wg sync.WaitGroup
+
+	done := make(chan struct{})
+	defer close(done)
+	for i := 0; i < 500; i++ {
+		wg.Add(1)
+		go func(ID int) {
+			wg.Done()
+			for {
+				select {
+				case <-done:
+					return
+				default:
+					fmt.Printf("%v running\n", ID)
+				}
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+	certManager, err := client.New(config.MakeTLSClientConfig(), logger)
+	require.NoError(t, err)
+	defer certManager.Close()
+	conn, err := nats.Connect("nats://localhost:4222", nats.Secure(certManager.GetTLSConfig()))
+	require.NoError(t, err)
+
+	subj := "events-b1288d41-4817-4b6c-6df0-d3b12967551f-resource-aggregate"
+
+	err = conn.Publish(subj, make([]byte, 4096))
+	require.NoError(t, err)
+	err = conn.Publish(subj, make([]byte, 4096))
+	require.NoError(t, err)
+	ch := make(chan *nats.Msg, 32)
+	wg.Add(1)
+	data := make([]byte, 32*1024)
+	var wg1 sync.WaitGroup
+	wg1.Add(1)
+	go func() {
+		wg1.Done()
+		wg.Wait()
+		err := conn.Publish(subj, data)
+		require.NoError(t, err)
+		fmt.Printf("conn.Publish\n")
+	}()
+	wg1.Wait()
+	sub, err := conn.QueueSubscribeSyncWithChan(subj, "queue", ch)
+	wg.Done()
+	require.NoError(t, err)
+	defer sub.Unsubscribe()
+	wg1.Add(1)
+	go func() {
+		defer wg1.Done()
+		select {
+		case msg := <-ch:
+			assert.Equal(t, data, msg.Data)
+			fmt.Printf("conn.Received\n")
+		case <-time.After(time.Minute):
+			assert.NoError(t, fmt.Errorf("timeout"))
+		}
+	}()
+	wg1.Wait()
+}
 
 func TestSubscriber(t *testing.T) {
 	topics := []string{"test_subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test_subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}

@@ -47,6 +47,8 @@ func (rlp *resourceLinksProjection) InitialNotifyOfPublishedResourceLinks(ctx co
 	rlp.lock.Lock()
 	defer rlp.lock.Unlock()
 
+	log.Debugf("resourceLinksProjection.InitialNotifyOfPublishedResourceLinks subID=%v resources=%+v", subscription.ID(), rlp.resources)
+
 	links := pb.RAResourcesToProto(rlp.resources)
 	return subscription.NotifyOfPublishedResourceLinks(ctx, ResourceLinks{
 		links:   links,
@@ -56,6 +58,7 @@ func (rlp *resourceLinksProjection) InitialNotifyOfPublishedResourceLinks(ctx co
 }
 
 func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Context, publishedResources map[string]*commands.Resource) error {
+	log.Debugf("resourceLinksProjection.onResourcePublishedLocked resources=%+v", publishedResources)
 	links := pb.RAResourcesToProto(publishedResources)
 	return rlp.subscriptions.OnResourceLinksPublished(ctx, rlp.deviceID, ResourceLinks{
 		links:   links,
@@ -64,6 +67,7 @@ func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Contex
 }
 
 func (rlp *resourceLinksProjection) onResourceUnpublishedLocked(ctx context.Context, unpublishedResources map[string]*commands.Resource) error {
+	log.Debugf("resourceLinksProjection.onResourceUnpublishedLocked resources=%+v", unpublishedResources)
 	links := pb.RAResourcesToProto(unpublishedResources)
 	return rlp.subscriptions.OnResourceLinksUnpublished(ctx, rlp.deviceID, ResourceLinks{
 		links:   links,
@@ -89,6 +93,7 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 		}
 		anyEventProcessed = true
 		rlp.version = eu.Version()
+		log.Debugf("resourceLinksProjection.Handle event=%+v", eu)
 		switch eu.EventType() {
 		case (&events.ResourceLinksSnapshotTaken{}).EventType():
 			var e events.ResourceLinksSnapshotTaken

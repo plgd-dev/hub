@@ -35,6 +35,7 @@ func MakeConfig(t *testing.T) service.Config {
 	rdCfg.ExposedCloudConfiguration.CloudURL = "CloudUrl"
 	rdCfg.ExposedCloudConfiguration.OwnerClaim = "JwtClaimOwnerId"
 	rdCfg.ExposedCloudConfiguration.SigningServerAddress = "SigningServerAddress"
+	rdCfg.Log.Debug = true
 
 	err := rdCfg.Validate()
 	require.NoError(t, err)
@@ -50,6 +51,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	ctx := context.Background()
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
+	log.Set(logger)
 
 	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)

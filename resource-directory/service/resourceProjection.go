@@ -361,6 +361,7 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 		aggregateID = eu.AggregateID()
 		anyEventProcessed = true
 		rp.version = eu.Version()
+		log.Debugf("resourceProjection.Handle event=%+v", eu)
 		switch eu.EventType() {
 		case (&events.ResourceStateSnapshotTaken{}).EventType():
 			var s events.ResourceStateSnapshotTaken

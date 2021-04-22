@@ -3,6 +3,7 @@ package subscriber
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sync"
 
 	nats "github.com/nats-io/nats.go"
@@ -214,7 +215,9 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 		return fmt.Errorf("cannot set topics: %w", err)
 	}
 	for topic := range newTopicsForSub {
+		fmt.Printf("BEFORE Observer.SetTopics.QueueSubscribeSyncWithChan subID=%v topic=%+v\n", o.subscriptionId, topic)
 		sub, err := o.conn.QueueSubscribeSyncWithChan(topic, o.subscriptionId, o.ch)
+		fmt.Printf("AFTER Observer.SetTopics.QueueSubscribeSyncWithChan subID=%v topic=%+v err=%v\n", o.subscriptionId, topic, err)
 		if err != nil {
 			o.cleanUp(make(map[string]bool))
 			return fmt.Errorf("cannot subscribe to topics: %w", err)
@@ -249,12 +252,16 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 		o.logger.Sugar().Errorf("cannot unmarshal event: %v", err)
 		return
 	}
+	fmt.Printf("Observer.handleMsg event=%+v\n", e)
 
 	i := iter{
 		hasNext: true,
 		e:       e,
 		dataUnmarshaler: func(v interface{}) error {
-			return o.dataUnmarshaler(e.Data, v)
+			err := o.dataUnmarshaler(e.Data, v)
+			val := reflect.ValueOf(v).Elem()
+			fmt.Printf("Observer.handleMsg.iter.dataUnmarshaler event=%+v\n", val)
+			return err
 		},
 	}
 
