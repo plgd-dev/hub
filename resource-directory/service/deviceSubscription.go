@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"hash/crc64"
 	"sort"
+	"sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"go.uber.org/atomic"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
 type deviceSubscription struct {
 	*subscription
-	deviceEvent                  *pb.SubscribeForEvents_DeviceEventFilter
-	isInitializedResourcePublish atomic.Bool
+	deviceEvent *pb.SubscribeForEvents_DeviceEventFilter
+
+	isInitializedResourcePublishLock sync.Mutex
+	isInitializedResourcePublish     bool
 }
 
 func NewDeviceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, deviceEvent *pb.SubscribeForEvents_DeviceEventFilter) *deviceSubscription {
@@ -71,6 +74,15 @@ func CalcHashFromResourceLinks(action string, links []*pb.ResourceLink) uint64 {
 	return hash.Sum64()
 }
 
+func (s *deviceSubscription) initializeResourcePublish(isInit bool) bool {
+	s.isInitializedResourcePublishLock.Lock()
+	defer s.isInitializedResourcePublishLock.Unlock()
+	if isInit {
+		s.isInitializedResourcePublish = true
+	}
+	return s.isInitializedResourcePublish
+}
+
 func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
@@ -81,10 +93,7 @@ func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context,
 	if !found {
 		return nil
 	}
-	if links.isInit {
-		s.isInitializedResourcePublish.Store(true)
-	}
-	if !s.isInitializedResourcePublish.Load() {
+	if !s.initializeResourcePublish(links.isInit) {
 		return nil
 	}
 	if len(links.links) == 0 {
@@ -310,13 +319,24 @@ func (s *deviceSubscription) NotifyOfCreatedResource(ctx context.Context, create
 	})
 }
 
-func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
+func (s *deviceSubscription) initGetResourceLinkProjection() eventstore.Model {
+	s.isInitializedResourcePublishLock.Lock()
+	defer s.isInitializedResourcePublishLock.Unlock()
 	models := s.resourceProjection.Models(commands.NewResourceID(s.DeviceID(), commands.ResourceLinksHref))
 	if len(models) != 1 {
+		s.isInitializedResourcePublish = true
+		return nil
+	}
+	return models[0]
+}
+
+func (s *deviceSubscription) initSendResourcesPublished(ctx context.Context) error {
+	model := s.initGetResourceLinkProjection()
+	if model == nil {
 		return nil
 	}
 
-	rlp, ok := models[0].(*resourceLinksProjection)
+	rlp, ok := model.(*resourceLinksProjection)
 	if !ok {
 		return fmt.Errorf("unexpected event type")
 	}
