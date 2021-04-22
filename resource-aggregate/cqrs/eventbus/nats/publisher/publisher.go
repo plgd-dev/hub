@@ -113,6 +113,10 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 			errors = append(errors, err)
 		}
 	}
+	err = p.conn.Flush()
+	if err != nil {
+		errors = append(errors, err)
+	}
 	if len(errors) > 0 {
 		return fmt.Errorf("cannot publish events: %v", errors)
 	}
