@@ -115,6 +115,12 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 			errors = append(errors, err)
 		}
 	}
+	fmt.Printf("BEFORE Publisher.Flush topics=%+v deviceID=%v aggregateId=%v event=%+v\n", topics, groupId, aggregateId, event)
+	err = p.conn.Flush()
+	fmt.Printf("AFTER Publisher.Flush topics=%+v deviceID=%v aggregateId=%v event=%+v\n", topics, groupId, aggregateId, event)
+	if err != nil {
+		errors = append(errors, err)
+	}
 	if len(errors) > 0 {
 		return fmt.Errorf("cannot publish events: %v", errors)
 	}
