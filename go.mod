@@ -28,7 +28,7 @@ require (
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
 	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
 	github.com/smallstep/nosql v0.2.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasthttp v1.16.0
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/atomic v1.7.0
