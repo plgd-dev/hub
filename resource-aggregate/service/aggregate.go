@@ -222,7 +222,7 @@ func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []event
 		}
 		if ru, ok := event.(*raEvents.ResourceLinksSnapshotTaken); ok {
 			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupId(), AggregateID: ru.AggregateId(), Version: ru.Version()}}); err != nil {
-				log.Info("unable to remove events up to snapshot for resource link of deviceId('%v')", ru.GetDeviceId())
+				log.Info("unable to remove events up to snapshot with version('%v') for resource links of deviceId('%v')", ru.Version(), ru.GetDeviceId())
 			}
 			break
 		}
