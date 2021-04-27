@@ -222,6 +222,9 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 		o.subs[topic] = sub
 	}
 
+	if len(newTopicsForSub) > 0 {
+		return o.conn.Flush()
+	}
 	return nil
 }
 
