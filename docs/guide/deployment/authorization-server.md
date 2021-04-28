@@ -7,7 +7,7 @@ Authorize access for users to devices.
 ## Docker Image
 
 ```bash
-docker pull plgd/authorization:vnext
+docker pull plgd/authorization:v2next
 ```
 
 ### API
@@ -19,14 +19,14 @@ All requests to service must contains valid access token in [grpc metadata](http
 - sign up - exchange authorization code for opaque token
 - sign in - validate access token of the device
 - sign out - invalidate access token of the device
-- sign off - remove device fron DB and invalidate all credendtials
+- sign off - remove device from DB and invalidate all credentials
 - refresh token - refresh access token with refresh token
 - get user devices - returns list of users devices
 
 #### Contract
 
-- [service](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/service.proto)
-- [requets/responses](https://github.com/plgd-dev/cloud/blob/master/authorization/pb/auth.proto)
+- [service](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service.proto)
+- [requets/responses](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/auth.proto)
 
 ## Configuration
 
@@ -94,3 +94,6 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `-` | `.clients.storage.mongoDB.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `-` | `.clients.storage.mongoDB.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `-` | `.clients.storage.mongoDB.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
+
+Read more detail about how to config OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0) 
