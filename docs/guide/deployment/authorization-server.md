@@ -62,6 +62,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `oauthClients.device.scopes` | string | `Comma separated list of required scopes` | `""` |
 | `oauthClients.device.authorizationURL` | string | `authorization endpoint` | `""` |
 | `oauthClients.device.tokenURL` | string | `token endpoint` | `""` |
+| `oauthClients.device.audience` | string | `audience of oauth provider` | `""` |
 | `oauthClients.device.redirectURL` | string | `redirect url used to obtain device access token` | `""` |
 | `oauthClients.device.responseType` | string | `one of "code/token"` | `"code"` |
 | `oauthClients.device.responseMode` | string | `one of "query/post_form"` | `"post_form"` |
@@ -78,6 +79,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `oauthClients.client.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
 | `oauthClients.client.scopes` | string | `Comma separated list of required scopes` | `""` |
 | `oauthClients.client.authorizationURL` | string | `authorization endpoint` | `""` |
+| `oauthClients.client.audience` | string | `audience of oauth provider` | `""` |
 | `oauthClients.client.redirectURL` | string | `redirect url used to obtain device access token` | `""` |
 | `oauthClients.client.responseMode` | string | `one of "query/post_form"` | `"post_form"` |
 | `oauthClients.client.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
