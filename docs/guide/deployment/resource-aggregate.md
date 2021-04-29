@@ -36,7 +36,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 - [resource-aggregate/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/config.yaml) 
 
 
-| ENV variable | Type | Description | Default |
+| Key | Type | Description | Default |
 | --------- | ----------- | ------- | ------- |
 | `log.debug` | bool | `enable debugging message` | `false` |
 | `api.grpc.address` | string | `listen address` | `"0.0.0.0:9100"` |
@@ -64,7 +64,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `clients.eventStore.snapshotThreshold` | int | `tries to create the snapshot event after n events` | `16` |
 | `clients.eventStore.occMaxRetry` | int | `limits number of try to store event` | `8` |
 | `clients.eventStore.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
-| `clients.eventStore.mongoDB.database` | string | `name of database` | `"authorization"` |
+| `clients.eventStore.mongoDB.database` | string | `name of database` | `"eventStore"` |
 | `clients.eventStore.mongoDB.batchSize` | int | `limits number of queries in one find request` | `16` |
 | `clients.eventStore.mongoDB.maxPoolSize` | int | `limits number of connections` | `16` |
 | `clients.eventStore.mongoDB.maxConnIdleTime` | string | `close connection when idle time reach the value` | `240s` |
@@ -81,7 +81,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 | `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
 | `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.authorizationServer.grpc.keepAlive.timeout` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+| `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 | `clients.authorizationServer.oauth.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
 | `clients.authorizationServer.oauth.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
 | `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes` | `""` |
