@@ -7,7 +7,7 @@ According to CQRS pattern it translates commands to events, store them to DB and
 ## Docker Image
 
 ```bash
-docker pull plgd/resource-aggregate:vnext
+docker pull plgd/resource-aggregate:v2next
 ```
 
 ## API
@@ -28,47 +28,73 @@ All requests to service must contains valid access token in [grpc metadata](http
 
 ### Contract
 
-- [service](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/service.proto)
-- [requets/responses](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/commands.proto)
-- [events](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/events.proto)
+- [service](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/pb/service.proto)
+- [requets/responses](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/pb/commands.proto)
+- [events](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/pb/events.proto)
 
-## Configuration
+## Yaml Configuration
+- [resource-aggregate/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/config.yaml) 
 
-| Option | ENV variable | Type | Description | Default |
-| ------ | --------- | ----------- | ------- | ------- |
-| `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
-| `-` | `AUTH_SERVER_ADDRESS` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
-| `-` | `SNAPSHOT_THRESHOLD` | int | `number of events to spawn snapshot event` | `128` |
-| `-` | `OCC_MAX_RETRY` | int | `maximum tries to store event to db` | `8` |
-| `-` | `JWKS_URL` | string | `url to get JSON Web Key` | `""` |
-| `-` | `NATS_URL` | string | `url to nats messaging system` | `"nats://localhost:4222"` |
-| `-` | `MONGODB_URI` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
-| `-` | `MONGODB_DATABASE` | string | `name of database` | `"eventstore"` |
-| `-` | `MONGODB_BATCH_SIZE` | int | `maximum number resources in one batch request`  | `16` |
-| `-` | `MONGODB_MAX_POOL_SIZE` | int | `maximum parallel request to DB` | `16` |
-| `-` | `MONGODB_MAX_CONN_IDLE_TIME` | string |  `maximum time of idle connection` | `"240s"` |
-| `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `DIAL_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `DIAL_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `DIAL_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `DIAL_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `DIAL_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `DIAL_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `DIAL_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `DIAL_FILE_CERT_DIR_PATH` | string | `path to directory which contains DIAL_FILE_CERT_KEY_NAME and DIAL_FILE_CERT_NAME` | `""` |
-| `-` | `DIAL_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `DIAL_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_TYPE` | string | `defines how to obtain listen TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `LISTEN_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `LISTEN_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
-| `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
+
+| ENV variable | Type | Description | Default |
+| --------- | ----------- | ------- | ------- |
+| `log.debug` | bool | `enable debugging message` | `false` |
+| `api.grpc.address` | string | `listen address` | `"0.0.0.0:9100"` |
+| `api.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
+| `api.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
+| `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
+| `api.grpc.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
+| `api.grpc.authorization.authority` | string | `endpoint of oauth provider` | `""` |
+| `api.grpc.authorization.audience` | string | `audience of oauth provider` | `""` |
+| `api.grpc.authorization.ownerClaim` | string | `owner claim of oauth provider` | `"sub"` |
+| `api.grpc.authorization.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `api.grpc.authorization.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `api.grpc.authorization.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `api.grpc.authorization.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `api.grpc.authorization.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
+| `api.grpc.authorization.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
+| `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
+| `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.eventBus.nats.url` | string | `url to nats messaging system` | `"nats://localhost:4222"` |
+| `clients.eventBus.nats.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
+| `clients.eventBus.nats.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
+| `clients.eventBus.nats.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
+| `clients.eventBus.nats.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.eventStore.snapshotThreshold` | int | `tries to create the snapshot event after n events` | `16` |
+| `clients.eventStore.occMaxRetry` | int | `limits number of try to store event` | `8` |
+| `clients.eventStore.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
+| `clients.eventStore.mongoDB.database` | string | `name of database` | `"authorization"` |
+| `clients.eventStore.mongoDB.batchSize` | int | `limits number of queries in one find request` | `16` |
+| `clients.eventStore.mongoDB.maxPoolSize` | int | `limits number of connections` | `16` |
+| `clients.eventStore.mongoDB.maxConnIdleTime` | string | `close connection when idle time reach the value` | `240s` |
+| `clients.eventStore.mongoDB.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
+| `clients.eventStore.mongoDB.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
+| `clients.eventStore.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
+| `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.authorizationServer.pullFrequency` | string | `frequency to pull changed user device` | `15s` |
+| `clients.authorizationServer.cacheExpiration` | string | `expiration of user device cache` | `1m` |
+| `clients.authorizationServer.grpc.address` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
+| `clients.authorizationServer.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
+| `clients.authorizationServer.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
+| `clients.authorizationServer.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
+| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.authorizationServer.grpc.keepAlive.timeout` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+| `clients.authorizationServer.oauth.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
+| `clients.authorizationServer.oauth.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
+| `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes` | `""` |
+| `clients.authorizationServer.oauth.tokenURL` | string | `token endpoint` | `""` |
+| `clients.authorizationServer.oauth.audience` | string | `audience of oauth provider` | `""` |
+| `clients.authorizationServer.oauth.verifyServiceTokenFrequency` | string | `frequency to verify service token` | `10s` |
+| `clients.authorizationServer.oauth.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `clients.authorizationServer.oauth.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `clients.authorizationServer.oauth.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `clients.authorizationServer.oauth.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `clients.authorizationServer.oauth.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `clients.authorizationServer.oauth.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
+| `clients.authorizationServer.oauth.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
+| `clients.authorizationServer.oauth.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
+| `clients.authorizationServer.oauth.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
