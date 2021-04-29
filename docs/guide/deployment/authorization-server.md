@@ -45,8 +45,8 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `api.grpc.authorization.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.grpc.authorization.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
 | `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `api.grpc.authorization.http.idleConnTimeout` | int | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30` |
-| `api.grpc.authorization.http.timeout` | int | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10` |
+| `api.grpc.authorization.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `api.grpc.authorization.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
 | `api.grpc.authorization.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `api.grpc.authorization.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
@@ -68,8 +68,8 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `oauthClients.device.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `oauthClients.device.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
 | `oauthClients.device.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `oauthClients.device.http.idleConnTimeout` | int | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30` |
-| `oauthClients.device.http.timeout` | int | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10` |
+| `oauthClients.device.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `oauthClients.device.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
 | `oauthClients.device.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `oauthClients.device.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `oauthClients.device.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
@@ -83,8 +83,8 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `oauthClients.client.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `oauthClients.client.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
 | `oauthClients.client.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `oauthClients.client.http.idleConnTimeout` | int | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30` |
-| `oauthClients.client.http.timeout` | int | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10` |
+| `oauthClients.client.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `oauthClients.client.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
 | `oauthClients.client.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `oauthClients.client.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `oauthClients.client.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
