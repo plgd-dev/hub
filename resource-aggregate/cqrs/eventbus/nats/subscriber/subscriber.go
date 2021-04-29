@@ -255,7 +255,7 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 
 	i := iter{
 		hasNext: true,
-		e:       e,
+		e:       &e,
 		dataUnmarshaler: func(v interface{}) error {
 			return o.dataUnmarshaler(e.Data, v)
 		},
@@ -267,31 +267,31 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 }
 
 type eventUnmarshaler struct {
-	version         uint64
-	eventType       string
-	aggregateID     string
-	groupID         string
+	pb              *pb.Event
 	dataUnmarshaler func(v interface{}) error
 }
 
 func (e *eventUnmarshaler) Version() uint64 {
-	return e.version
+	return e.pb.GetVersion()
 }
 func (e *eventUnmarshaler) EventType() string {
-	return e.eventType
+	return e.pb.GetEventType()
 }
 func (e *eventUnmarshaler) AggregateID() string {
-	return e.aggregateID
+	return e.pb.GetAggregateId()
 }
 func (e *eventUnmarshaler) GroupID() string {
-	return e.groupID
+	return e.pb.GetGroupId()
+}
+func (e *eventUnmarshaler) IsSnapshot() bool {
+	return e.pb.GetIsSnapshot()
 }
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
 }
 
 type iter struct {
-	e               pb.Event
+	e               *pb.Event
 	dataUnmarshaler func(v interface{}) error
 	hasNext         bool
 }
@@ -300,10 +300,7 @@ func (i *iter) Next(ctx context.Context) (eventbus.EventUnmarshaler, bool) {
 	if i.hasNext {
 		i.hasNext = false
 		return &eventUnmarshaler{
-			version:         i.e.Version,
-			aggregateID:     i.e.AggregateId,
-			eventType:       i.e.EventType,
-			groupID:         i.e.GroupId,
+			pb:              i.e,
 			dataUnmarshaler: i.dataUnmarshaler,
 		}, true
 	}

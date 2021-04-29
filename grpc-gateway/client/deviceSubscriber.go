@@ -22,7 +22,7 @@ type syncVersion struct {
 	value uint64
 }
 
-type deviceSubscriptionHandlers struct {
+type DeviceSubscriptionHandlers struct {
 	operations             Operations
 	pendingCommandsVersion *kitSync.Map
 }
@@ -34,14 +34,14 @@ type Operations interface {
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
 }
 
-func NewDeviceSubscriptionHandlers(operations Operations) *deviceSubscriptionHandlers {
-	return &deviceSubscriptionHandlers{
+func NewDeviceSubscriptionHandlers(operations Operations) *DeviceSubscriptionHandlers {
+	return &DeviceSubscriptionHandlers{
 		operations:             operations,
 		pendingCommandsVersion: kitSync.NewMap(),
 	}
 }
 
-func (h *deviceSubscriptionHandlers) wantToProcessEvent(key string, eventVersion uint64) bool {
+func (h *DeviceSubscriptionHandlers) wantToProcessEvent(key string, eventVersion uint64) bool {
 	valI, loaded := h.pendingCommandsVersion.LoadOrStoreWithFunc(key, func(value interface{}) interface{} {
 		val := value.(*syncVersion)
 		val.Lock()
@@ -64,8 +64,8 @@ func (h *deviceSubscriptionHandlers) wantToProcessEvent(key string, eventVersion
 	return true
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error {
-	if !h.wantToProcessEvent(val.AggregateId()+val.EventType(), val.Version()) {
+func (h *DeviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error {
+	if !h.wantToProcessEvent(val.GetResourceId().ToUUID()+val.EventType(), val.Version()) {
 		return nil
 	}
 
@@ -76,8 +76,8 @@ func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Con
 	return err
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error {
-	if !h.wantToProcessEvent(val.AggregateId()+val.EventType(), val.Version()) {
+func (h *DeviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error {
+	if !h.wantToProcessEvent(val.GetResourceId().ToUUID()+val.EventType(), val.Version()) {
 		return nil
 	}
 
@@ -88,8 +88,8 @@ func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.C
 	return err
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error {
-	if !h.wantToProcessEvent(val.AggregateId()+val.EventType(), val.Version()) {
+func (h *DeviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error {
+	if !h.wantToProcessEvent(val.GetResourceId().ToUUID()+val.EventType(), val.Version()) {
 		return nil
 	}
 
@@ -100,8 +100,8 @@ func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Con
 	return err
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error {
-	if !h.wantToProcessEvent(val.AggregateId()+val.EventType(), val.Version()) {
+func (h *DeviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error {
+	if !h.wantToProcessEvent(val.GetResourceId().ToUUID()+val.EventType(), val.Version()) {
 		return nil
 	}
 
@@ -183,7 +183,7 @@ func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h PendingC
 	return sendEvent(ctx)
 }
 
-func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h PendingCommandsHandler) error {
+func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *DeviceSubscriptionHandlers) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	resp, err := s.rdClient.RetrievePendingCommands(ctx, &pbGRPC.RetrievePendingCommandsRequest{

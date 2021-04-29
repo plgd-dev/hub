@@ -8,6 +8,9 @@ import (
 type Event = interface {
 	Version() uint64
 	EventType() string
+	AggregateID() string
+	GroupID() string
+	IsSnapshot() bool
 }
 
 //EventUnmarshaler provides event.
@@ -16,6 +19,7 @@ type EventUnmarshaler = interface {
 	EventType() string
 	AggregateID() string
 	GroupID() string
+	IsSnapshot() bool
 	Unmarshal(v interface{}) error
 }
 
@@ -35,6 +39,7 @@ type LoadedEvent struct {
 	eventType       string
 	aggregateID     string
 	groupID         string
+	isSnapshot      bool
 	dataUnmarshaler func(v interface{}) error
 }
 
@@ -43,12 +48,14 @@ func NewLoadedEvent(
 	eventType string,
 	aggregateID string,
 	groupID string,
+	isSnapshot bool,
 	dataUnmarshaler func(v interface{}) error) LoadedEvent {
 	return LoadedEvent{
 		version:         version,
 		eventType:       eventType,
 		aggregateID:     aggregateID,
 		groupID:         groupID,
+		isSnapshot:      isSnapshot,
 		dataUnmarshaler: dataUnmarshaler,
 	}
 }
@@ -67,4 +74,7 @@ func (e LoadedEvent) GroupID() string {
 }
 func (e LoadedEvent) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
+}
+func (e LoadedEvent) IsSnapshot() bool {
+	return e.isSnapshot
 }

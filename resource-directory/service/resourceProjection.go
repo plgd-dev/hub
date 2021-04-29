@@ -271,9 +271,9 @@ func (rp *resourceProjection) onResourceCreatedLocked(ctx context.Context, resou
 	return rp.sendEventResourceCreated(ctx, resourceCreated)
 }
 
-func (rp *resourceProjection) SnapshotEventType() string {
+func (rp *resourceProjection) EventType() string {
 	s := &events.ResourceStateSnapshotTaken{}
-	return s.SnapshotEventType()
+	return s.EventType()
 }
 
 func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) error {

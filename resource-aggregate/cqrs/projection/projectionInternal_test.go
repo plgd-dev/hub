@@ -41,11 +41,6 @@ func (eh *mockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) er
 	return nil
 }
 
-func (eh *mockEventHandler) SnapshotEventType() string {
-	var rs events.ResourceStateSnapshotTaken
-	return rs.SnapshotEventType()
-}
-
 func TestProjection(t *testing.T) {
 	numEventsInSnapshot := 1
 	waitForSubscription := time.Second * 1
@@ -78,7 +73,6 @@ func TestProjection(t *testing.T) {
 		ctx,
 		config.MakeEventsStoreMongoDBConfig(),
 		logger,
-		mongodb.WithGoPool(pool.Submit),
 	)
 
 	require.NoError(t, err)
@@ -135,11 +129,6 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evs)
 
-	snapshotEventType := func() string {
-		s := &events.ResourceStateSnapshotTaken{}
-		return s.SnapshotEventType()
-	}
-
 	a2, err := aggregate.NewAggregate(res2.DeviceId, res2.ToUUID(), aggregate.NewDefaultRetryFunc(1), numEventsInSnapshot, store, func(context.Context) (aggregate.AggregateModel, error) {
 		return &events.ResourceStateSnapshotTaken{
 			ResourceId:    &res2,
@@ -156,17 +145,15 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
-		GroupID:           res1.DeviceId,
-		AggregateID:       res1.ToUUID(),
-		SnapshotEventType: snapshotEventType(),
+		GroupID:     res1.DeviceId,
+		AggregateID: res1.ToUUID(),
 	}})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(projection.Models(nil)))
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
-		GroupID:           res2.DeviceId,
-		AggregateID:       res2.ToUUID(),
-		SnapshotEventType: snapshotEventType(),
+		GroupID:     res2.DeviceId,
+		AggregateID: res2.ToUUID(),
 	}})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(projection.Models(nil)))
@@ -200,9 +187,8 @@ func TestProjection(t *testing.T) {
 	time.Sleep(waitForSubscription)
 
 	err = projection.Forget([]eventstore.SnapshotQuery{{
-		GroupID:           res3.DeviceId,
-		AggregateID:       res3.ToUUID(),
-		SnapshotEventType: snapshotEventType(),
+		GroupID:     res3.DeviceId,
+		AggregateID: res3.ToUUID(),
 	}})
 	require.NoError(t, err)
 

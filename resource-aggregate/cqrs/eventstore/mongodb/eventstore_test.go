@@ -28,7 +28,6 @@ func TestEventStore(t *testing.T) {
 		logger,
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(bson.Unmarshal),
-		mongodb.WithGoPool(func(f func()) error { go f(); return nil }),
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, store)

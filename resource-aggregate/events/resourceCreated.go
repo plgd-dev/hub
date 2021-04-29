@@ -22,6 +22,14 @@ func (e *ResourceCreated) EventType() string {
 	return eventTypeResourceCreated
 }
 
-func (e *ResourceCreated) AggregateId() string {
+func (e *ResourceCreated) AggregateID() string {
 	return e.GetResourceId().ToUUID()
+}
+
+func (e *ResourceCreated) GroupID() string {
+	return e.GetResourceId().GetDeviceId()
+}
+
+func (e *ResourceCreated) IsSnapshot() bool {
+	return false
 }

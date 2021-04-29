@@ -22,6 +22,14 @@ func (e *ResourceCreatePending) EventType() string {
 	return eventTypeResourceCreatePending
 }
 
-func (e *ResourceCreatePending) AggregateId() string {
+func (e *ResourceCreatePending) AggregateID() string {
 	return e.GetResourceId().ToUUID()
+}
+
+func (e *ResourceCreatePending) GroupID() string {
+	return e.GetResourceId().GetDeviceId()
+}
+
+func (e *ResourceCreatePending) IsSnapshot() bool {
+	return false
 }

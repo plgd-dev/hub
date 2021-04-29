@@ -23,6 +23,14 @@ func (e *ResourceLinksUnpublished) EventType() string {
 	return eventTypeResourceLinksUnpublished
 }
 
-func (e *ResourceLinksUnpublished) AggregateId() string {
+func (e *ResourceLinksUnpublished) AggregateID() string {
 	return commands.MakeLinksResourceUUID(e.GetDeviceId())
+}
+
+func (e *ResourceLinksUnpublished) GroupID() string {
+	return e.GetDeviceId()
+}
+
+func (e *ResourceLinksUnpublished) IsSnapshot() bool {
+	return false
 }

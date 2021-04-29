@@ -20,20 +20,26 @@ func (e *Published) EventType() string        { return "ocf.cloud.resourceaggreg
 func (e *Published) Marshal() ([]byte, error) { return proto.Marshal(e) }
 func (e *Published) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
 func (e *Published) AggregateID() string      { return e.DeviceId + e.Href }
+func (e *Published) GroupID() string          { return e.DeviceId }
+func (e *Published) IsSnapshot() bool         { return false }
 
 func (e *Unpublished) Version() uint64          { return e.EventVersion }
 func (e *Unpublished) EventType() string        { return "ocf.cloud.resourceaggregate.pb.Unublished" }
 func (e *Unpublished) Marshal() ([]byte, error) { return proto.Marshal(e) }
 func (e *Unpublished) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
 func (e *Unpublished) AggregateID() string      { return e.DeviceId + e.Href }
+func (e *Unpublished) GroupID() string          { return e.DeviceId }
+func (e *Unpublished) IsSnapshot() bool         { return false }
 
-func (e *Snapshot) Version() uint64           { return e.EventVersion }
-func (e *Snapshot) EventType() string         { return "ocf.cloud.resourceaggregate.pb.Snapshot" }
-func (e *Snapshot) Marshal() ([]byte, error)  { return proto.Marshal(e) }
-func (e *Snapshot) Unmarshal(b []byte) error  { return proto.Unmarshal(b, e) }
-func (e *Snapshot) AggregateID() string       { return e.DeviceId + e.Href }
-func (e *Snapshot) SnapshotEventType() string { return e.EventType() }
-func (e *Snapshot) GroupId() string           { return e.DeviceId }
+func (e *Snapshot) Version() uint64          { return e.EventVersion }
+func (e *Snapshot) EventType() string        { return "ocf.cloud.resourceaggregate.pb.Snapshot" }
+func (e *Snapshot) Marshal() ([]byte, error) { return proto.Marshal(e) }
+func (e *Snapshot) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
+func (e *Snapshot) AggregateID() string      { return e.DeviceId + e.Href }
+func (e *Snapshot) GroupId() string          { return e.DeviceId }
+func (e *Snapshot) GroupID() string          { return e.DeviceId }
+func (e *Snapshot) IsSnapshot() bool         { return false }
+
 func (e *Snapshot) Handle(ctx context.Context, iter eventstore.Iter) error {
 	for {
 		eu, ok := iter.Next(ctx)
@@ -113,11 +119,6 @@ func (eh *mockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) er
 	return nil
 }
 
-func (eh *mockEventHandler) SnapshotEventType() string {
-	var s Snapshot
-	return s.SnapshotEventType()
-}
-
 func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
@@ -125,7 +126,6 @@ func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 		ctx,
 		config.MakeEventsStoreMongoDBConfig(),
 		logger,
-		mongodb.WithGoPool(func(f func()) error { go f(); return nil }),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, store)
@@ -230,9 +230,8 @@ func TestAggregate(t *testing.T) {
 
 	err = p.Project(ctx, []eventstore.SnapshotQuery{
 		{
-			GroupID:           res1.DeviceID,
-			AggregateID:       res1.DeviceID + res1.Href,
-			SnapshotEventType: handler.SnapshotEventType(),
+			GroupID:     res1.DeviceID,
+			AggregateID: res1.DeviceID + res1.Href,
 		},
 	})
 	require.NoError(t, err)
@@ -250,7 +249,7 @@ func TestAggregate(t *testing.T) {
 	require.NotNil(t, ev)
 
 	ev, concurrencyException, err = a.handleCommandWithAggrModel(ctx, &commandPub1, amodel)
-	require.NoError(t, nil)
+	require.NoError(t, err)
 	require.True(t, concurrencyException)
 	require.Nil(t, ev)
 }

@@ -675,12 +675,12 @@ func TestResourceStateProjection_Models(t *testing.T) {
 			mapWant := make(map[string]*events.ResourceStateSnapshotTaken)
 			for _, r := range tt.want {
 				m := r.(*events.ResourceStateSnapshotTaken)
-				mapWant[m.GroupId()] = m
+				mapWant[m.GroupID()] = m
 			}
 			mapGot := make(map[string]*events.ResourceStateSnapshotTaken)
 			for _, r := range got {
 				m := r.(*events.ResourceStateSnapshotTaken)
-				mapGot[m.GroupId()] = m
+				mapGot[m.GroupID()] = m
 			}
 
 			assert.Equal(t, mapWant, mapGot)

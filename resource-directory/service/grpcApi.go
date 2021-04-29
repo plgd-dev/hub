@@ -43,7 +43,6 @@ type RequestHandler struct {
 
 	resourceProjection            *Projection
 	subscriptions                 *Subscriptions
-	seqNum                        uint64
 	updateNotificationContainer   *notification.UpdateNotificationContainer
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
 	deleteNotificationContainer   *notification.DeleteNotificationContainer
@@ -105,7 +104,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 	})
 	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
 
-	eventstore, err := mongodb.New(ctx, config.Eventstore.Connection.MongoDB, logger, mongodb.WithGoPool(goroutinePoolGo))
+	eventstore, err := mongodb.New(ctx, config.Eventstore.Connection.MongoDB, logger)
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)

@@ -16,9 +16,8 @@ type Config struct {
 	MaxConnIdleTime time.Duration `yaml:"maxConnIdleTime" json:"maxConnIdleTime" default:"240s"`
 	TLS             client.Config `yaml:"tls" json:"tls"`
 
-	marshalerFunc   MarshalerFunc       `yaml:"-" json:"-"`
-	unmarshalerFunc UnmarshalerFunc     `yaml:"-" json:"-"`
-	goroutinePoolGo GoroutinePoolGoFunc `yaml:"-" json:"-"`
+	marshalerFunc   MarshalerFunc   `yaml:"-" json:"-"`
+	unmarshalerFunc UnmarshalerFunc `yaml:"-" json:"-"`
 }
 
 func (c *Config) Validate() error {
@@ -67,19 +66,5 @@ func (o UnmarshalerOpt) apply(cfg *Config) {
 func WithUnmarshaler(f UnmarshalerFunc) UnmarshalerOpt {
 	return UnmarshalerOpt{
 		f: f,
-	}
-}
-
-type GoroutinePoolGoOpt struct {
-	goroutinePoolGo GoroutinePoolGoFunc
-}
-
-func (o GoroutinePoolGoOpt) apply(cfg *Config) {
-	cfg.goroutinePoolGo = o.goroutinePoolGo
-}
-
-func WithGoPool(goroutinePoolGo GoroutinePoolGoFunc) GoroutinePoolGoOpt {
-	return GoroutinePoolGoOpt{
-		goroutinePoolGo: goroutinePoolGo,
 	}
 }

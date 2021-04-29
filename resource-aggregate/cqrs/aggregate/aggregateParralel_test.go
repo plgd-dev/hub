@@ -26,7 +26,6 @@ func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 		ctx,
 		config.MakeEventsStoreMongoDBConfig(),
 		logger,
-		mongodb.WithGoPool(func(f func()) error { go f(); return nil }),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, store)
@@ -37,7 +36,7 @@ func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventStore, evs []eventstore.Event) {
 	for _, event := range evs {
 		if ru, ok := event.(*events.ResourceStateSnapshotTaken); ok {
-			if err := store.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupId(), AggregateID: ru.AggregateId(), Version: ru.Version()}}); err != nil {
+			if err := store.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupID(), AggregateID: ru.AggregateID(), Version: ru.Version()}}); err != nil {
 				require.NoError(t, err)
 			}
 			fmt.Printf("snapshot at version %v\n", event.Version())
@@ -46,6 +45,8 @@ func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventSt
 	}
 }
 
+//old 452.969s
+//new 474.906s
 func Test_parallelRequest(t *testing.T) {
 	ctx := context.Background()
 	ctx = grpc.CtxWithIncomingOwner(ctx, "test")
@@ -60,7 +61,7 @@ func Test_parallelRequest(t *testing.T) {
 	href := "/test/resource/1"
 
 	newAggragate := func(deviceID, href string) *aggregate.Aggregate {
-		a, err := aggregate.NewAggregate(deviceID, href, aggregate.NewDefaultRetryFunc(64), 16, store, func(context.Context) (aggregate.AggregateModel, error) {
+		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID(), aggregate.NewDefaultRetryFunc(64), 16, store, func(context.Context) (aggregate.AggregateModel, error) {
 			ev := events.NewResourceStateSnapshotTaken()
 			ev.ResourceId = commands.NewResourceID(deviceID, href)
 			return ev, nil

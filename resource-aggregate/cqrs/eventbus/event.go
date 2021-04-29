@@ -8,6 +8,9 @@ import (
 type Event = interface {
 	Version() uint64
 	EventType() string
+	AggregateID() string
+	GroupID() string
+	IsSnapshot() bool
 }
 
 //EventUnmarshaler provides event.
@@ -16,6 +19,7 @@ type EventUnmarshaler = interface {
 	EventType() string
 	AggregateID() string
 	GroupID() string
+	IsSnapshot() bool
 	Unmarshal(v interface{}) error
 }
 
