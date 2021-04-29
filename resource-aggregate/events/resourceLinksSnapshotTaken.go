@@ -17,11 +17,11 @@ import (
 
 const eventTypeResourceLinksSnapshotTaken = "ocf.cloud.resourceaggregate.events.resourcelinkssnapshottaken"
 
-func (e *ResourceLinksSnapshotTaken) AggregateId() string {
+func (e *ResourceLinksSnapshotTaken) AggregateID() string {
 	return commands.MakeLinksResourceUUID(e.GetDeviceId())
 }
 
-func (e *ResourceLinksSnapshotTaken) GroupId() string {
+func (e *ResourceLinksSnapshotTaken) GroupID() string {
 	return e.GetDeviceId()
 }
 
@@ -39,6 +39,10 @@ func (e *ResourceLinksSnapshotTaken) Unmarshal(b []byte) error {
 
 func (e *ResourceLinksSnapshotTaken) EventType() string {
 	return eventTypeResourceLinksSnapshotTaken
+}
+
+func (e *ResourceLinksSnapshotTaken) IsSnapshot() bool {
+	return true
 }
 
 func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx context.Context, pub *ResourceLinksPublished) error {
@@ -173,8 +177,6 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 
 	return nil, fmt.Errorf("unknown command")
 }
-
-func (e *ResourceLinksSnapshotTaken) SnapshotEventType() string { return e.EventType() }
 
 func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
 	e.EventMetadata.Version = version

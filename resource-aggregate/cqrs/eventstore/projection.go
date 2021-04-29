@@ -9,7 +9,6 @@ import (
 // Model user defined model where events from eventstore will be projected.
 type Model interface {
 	Handler
-	SnapshotEventType() string
 }
 
 // FactoryModelFunc creates user model.
@@ -29,10 +28,6 @@ type aggregateModel struct {
 	LogDebugfFunc LogDebugfFunc
 }
 
-func (am *aggregateModel) SnapshotEventType() string {
-	return am.model.SnapshotEventType()
-}
-
 func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) {
 	am.lock.Lock()
 	defer am.lock.Unlock()
@@ -40,8 +35,8 @@ func (am *aggregateModel) Update(e EventUnmarshaler) (ignore bool, reload bool) 
 	am.LogDebugfFunc("projection.aggregateModel.Update: am.GroupId %v: AggregateId %v: Version %v, hasSnapshot %v", am.groupID, am.aggregateID, am.version, am.hasSnapshot)
 
 	switch {
-	case e.Version() == 0 || am.SnapshotEventType() == e.EventType():
-		am.LogDebugfFunc("projection.aggregateModel.Update: e.Version == 0 || am.SnapshotEventType() == e.EventType")
+	case e.Version() == 0 || e.IsSnapshot():
+		am.LogDebugfFunc("projection.aggregateModel.Update: e.Version == 0 || e.IsSnapshot()")
 		am.version = e.Version()
 		am.hasSnapshot = true
 	case am.version+1 == e.Version() && am.hasSnapshot:
@@ -115,7 +110,7 @@ func (i *iterator) RewindToSnapshot(ctx context.Context) (snapshot EventUnmarsha
 		if !ok {
 			return nil, nil
 		}
-		if e.EventType() == i.model.SnapshotEventType() && e.GroupID() == i.model.groupID && e.AggregateID() == i.model.aggregateID {
+		if e.IsSnapshot() && e.GroupID() == i.model.groupID && e.AggregateID() == i.model.aggregateID {
 			return e, nil
 		}
 		if e.GroupID() != i.model.groupID || e.AggregateID() != i.model.aggregateID {

@@ -12,12 +12,8 @@ type MockEventStore struct {
 	events map[string]map[string][]eventstore.EventUnmarshaler
 }
 
-func (s *MockEventStore) Save(ctx context.Context, groupId, aggregateId string, events []eventstore.Event) (concurrencyException bool, err error) {
-	return false, errors.New("not supported")
-}
-
-func (s *MockEventStore) SaveSnapshot(ctx context.Context, groupId, aggregateId string, event eventstore.Event) (concurrencyException bool, err error) {
-	return false, errors.New("not supported")
+func (s *MockEventStore) Save(ctx context.Context, events ...eventstore.Event) (eventstore.SaveStatus, error) {
+	return eventstore.Fail, errors.New("not supported")
 }
 
 func (s *MockEventStore) LoadFromVersion(ctx context.Context, queries []eventstore.VersionQuery, eventHandler eventstore.Handler) error {

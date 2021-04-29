@@ -64,6 +64,8 @@ type mockEvent struct {
 	VersionI     uint64
 	EventTypeI   string
 	AggregateIDI string
+	groupID      string
+	isSnapshot   bool
 	Data         string
 }
 
@@ -75,8 +77,16 @@ func (e mockEvent) EventType() string {
 	return e.EventTypeI
 }
 
-func (e mockEvent) AggregateId() string {
+func (e mockEvent) AggregateID() string {
 	return e.AggregateIDI
+}
+
+func (e mockEvent) GroupID() string {
+	return e.groupID
+}
+
+func (e mockEvent) IsSnapshot() bool {
+	return e.isSnapshot
 }
 
 type mockEventHandler struct {

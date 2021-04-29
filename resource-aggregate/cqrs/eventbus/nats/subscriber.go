@@ -187,6 +187,7 @@ type eventUnmarshaler struct {
 	eventType       string
 	aggregateID     string
 	groupID         string
+	isSnapshot      bool
 	dataUnmarshaler func(v interface{}) error
 }
 
@@ -202,6 +203,9 @@ func (e *eventUnmarshaler) AggregateID() string {
 func (e *eventUnmarshaler) GroupID() string {
 	return e.groupID
 }
+func (e *eventUnmarshaler) IsSnapshot() bool {
+	return e.isSnapshot
+}
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
 }
@@ -216,10 +220,11 @@ func (i *iter) Next(ctx context.Context) (eventbus.EventUnmarshaler, bool) {
 	if i.hasNext {
 		i.hasNext = false
 		return &eventUnmarshaler{
-			version:         i.e.Version,
-			aggregateID:     i.e.AggregateId,
-			eventType:       i.e.EventType,
-			groupID:         i.e.GroupId,
+			version:         i.e.GetVersion(),
+			aggregateID:     i.e.GetAggregateId(),
+			eventType:       i.e.GetEventType(),
+			groupID:         i.e.GetGroupId(),
+			isSnapshot:      i.e.GetIsSnapshot(),
 			dataUnmarshaler: i.dataUnmarshaler,
 		}, true
 	}

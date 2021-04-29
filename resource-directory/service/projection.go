@@ -149,7 +149,7 @@ func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter
 	}
 
 	for _, m := range models {
-		if m.SnapshotEventType() == events.NewResourceLinksSnapshotTaken().SnapshotEventType() {
+		if m.(interface{ EventType() string }).EventType() == events.NewResourceLinksSnapshotTaken().EventType() {
 			continue
 		}
 		rp := m.(*resourceProjection).Clone()

@@ -215,13 +215,13 @@ func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteReques
 func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
 	for _, event := range events {
 		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
-			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupId(), AggregateID: ru.AggregateId(), Version: ru.Version()}}); err != nil {
+			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupID(), AggregateID: ru.AggregateID(), Version: ru.Version()}}); err != nil {
 				log.Info("unable to remove events up to snapshot for resource: %v", ru.GetResourceId())
 			}
 			break
 		}
 		if ru, ok := event.(*raEvents.ResourceLinksSnapshotTaken); ok {
-			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupId(), AggregateID: ru.AggregateId(), Version: ru.Version()}}); err != nil {
+			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupID(), AggregateID: ru.AggregateID(), Version: ru.Version()}}); err != nil {
 				log.Info("unable to remove events up to snapshot with version('%v') for resource links of deviceId('%v')", ru.Version(), ru.GetDeviceId())
 			}
 			break
@@ -232,13 +232,13 @@ func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []event
 func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
 	for _, event := range events {
 		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
-			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateId(), Version: ru.Version()}); err != nil {
+			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateID(), Version: ru.Version()}); err != nil {
 				log.Info("unable to insert the snapshot information into the maintenance db")
 			}
 			break
 		}
 		if ru, ok := event.(*raEvents.ResourceLinksSnapshotTaken); ok {
-			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateId(), Version: ru.Version()}); err != nil {
+			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateID(), Version: ru.Version()}); err != nil {
 				log.Info("unable to insert the snapshot information into the maintenance db")
 			}
 			break

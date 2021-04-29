@@ -22,6 +22,7 @@ func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID st
 		(&events.ResourceLinksPublished{}).EventType(),
 		commands.MakeLinksResourceUUID(e.GetDeviceId()),
 		e.GetDeviceId(),
+		false,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksPublished); ok {
 				*x = e
@@ -46,6 +47,7 @@ func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMet
 		(&events.ResourceLinksUnpublished{}).EventType(),
 		commands.MakeLinksResourceUUID(e.GetDeviceId()),
 		e.GetDeviceId(),
+		false,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksUnpublished); ok {
 				*x = e
@@ -67,6 +69,7 @@ func MakeResourceLinksSnapshotTaken(resources map[string]*commands.Resource, dev
 		(&events.ResourceLinksSnapshotTaken{}).EventType(),
 		commands.MakeLinksResourceUUID(e.GetDeviceId()),
 		e.GetDeviceId(),
+		true,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksSnapshotTaken); ok {
 				*x = *e
@@ -96,6 +99,7 @@ func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *command
 		(&events.ResourceUpdatePending{}).EventType(),
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
+		false,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdatePending); ok {
 				*x = e
@@ -119,6 +123,7 @@ func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status
 		(&events.ResourceUpdated{}).EventType(),
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
+		false,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdated); ok {
 				*x = e
@@ -141,6 +146,7 @@ func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands
 		(&events.ResourceChanged{}).EventType(),
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
+		false,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceChanged); ok {
 				*x = e
@@ -163,6 +169,7 @@ func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterf
 		(&events.ResourceRetrievePending{}).EventType(),
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
+		false,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrievePending); ok {
 				*x = e
@@ -186,6 +193,7 @@ func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Stat
 		(&events.ResourceRetrieved{}).EventType(),
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
+		false,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrieved); ok {
 				*x = e
@@ -208,6 +216,7 @@ func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResou
 		(&events.ResourceStateSnapshotTaken{}).EventType(),
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
+		true,
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
 				*x = *e

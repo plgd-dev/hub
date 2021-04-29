@@ -18,7 +18,7 @@ type AggregateModel = interface {
 
 	HandleCommand(ctx context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error)
 	TakeSnapshot(version uint64) (snapshotEvent eventstore.Event, ok bool)
-	GroupId() string //defines group where model belows
+	GroupID() string //defines group where model belows
 }
 
 // RetryFunc defines policy to repeat HandleCommand on concurrency exception.
@@ -48,6 +48,7 @@ type Aggregate struct {
 	retryFunc           RetryFunc
 	factoryModel        FactoryModelFunc
 	LogDebugfFunc       eventstore.LogDebugfFunc
+	createdSnapshot     eventstore.Event
 }
 
 // NewAggregate creates aggregate. it load and store events created from commands
@@ -80,10 +81,9 @@ func NewAggregate(groupID, aggregateID string, retryFunc RetryFunc, numEventsInS
 }
 
 type aggrIterator struct {
-	iter              eventstore.Iter
-	lastVersion       uint64
-	numEvents         int
-	snapshotEventType string
+	iter        eventstore.Iter
+	lastVersion uint64
+	numEvents   int
 }
 
 func (i *aggrIterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
@@ -92,10 +92,10 @@ func (i *aggrIterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, b
 		return nil, false
 	}
 	i.lastVersion = event.Version()
-	if event.EventType() != i.snapshotEventType {
-		i.numEvents++
-	} else {
+	if event.IsSnapshot() {
 		i.numEvents = 0
+	} else {
+		i.numEvents++
 	}
 	return event, true
 }
@@ -114,12 +114,8 @@ func (ah *aggrModel) TakeSnapshot(newVersion uint64) (eventstore.Event, bool) {
 	return ah.model.TakeSnapshot(newVersion)
 }
 
-func (ah *aggrModel) SnapshotEventType() string {
-	return ah.model.SnapshotEventType()
-}
-
-func (ah *aggrModel) GroupId() string {
-	return ah.model.GroupId()
+func (ah *aggrModel) GroupID() string {
+	return ah.model.GroupID()
 }
 
 func (ah *aggrModel) HandleCommand(ctx context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error) {
@@ -128,8 +124,7 @@ func (ah *aggrModel) HandleCommand(ctx context.Context, cmd Command, newVersion 
 
 func (ah *aggrModel) Handle(ctx context.Context, iter eventstore.Iter) error {
 	i := aggrIterator{
-		iter:              iter,
-		snapshotEventType: ah.SnapshotEventType(),
+		iter: iter,
 	}
 	err := ah.model.Handle(ctx, &i)
 	ah.lastVersion = i.lastVersion
@@ -143,7 +138,8 @@ func handleRetry(ctx context.Context, retryFunc RetryFunc) error {
 		return fmt.Errorf("cannot retry: %w", err)
 	}
 	select {
-	case <-time.After(when.Sub(time.Now())):
+
+	case <-time.After(time.Until(when)):
 	case <-ctx.Done():
 		return fmt.Errorf("retry canceled")
 	}
@@ -155,9 +151,8 @@ func newAggrModel(ctx context.Context, groupID, aggregateID string, store events
 	ep := eventstore.NewProjection(store, func(ctx context.Context, groupID, aggregateID string) (eventstore.Model, error) { return amodel, nil }, logDebugfFunc)
 	err := ep.Project(ctx, []eventstore.SnapshotQuery{
 		{
-			GroupID:           groupID,
-			AggregateID:       aggregateID,
-			SnapshotEventType: model.SnapshotEventType(),
+			GroupID:     groupID,
+			AggregateID: aggregateID,
 		},
 	})
 
@@ -174,39 +169,65 @@ func (a *Aggregate) handleCommandWithAggrModel(ctx context.Context, cmd Command,
 		newVersion++
 	}
 
-	events = make([]eventstore.Event, 0, 32)
+	previousSnapshotEvent, ok := amodel.TakeSnapshot(newVersion)
 	if amodel.numEvents >= a.numEventsInSnapshot {
-		snapshotEvent, ok := amodel.TakeSnapshot(newVersion)
 		if ok {
-			concurrencyException, err := a.store.SaveSnapshot(ctx, a.groupID, a.aggregateID, snapshotEvent)
+			status, err := a.store.Save(ctx, previousSnapshotEvent)
 			if err != nil {
 				return nil, false, fmt.Errorf("cannot save snapshot: %w", err)
 			}
-			if concurrencyException {
+			switch status {
+			case eventstore.SnapshotRequired:
+				return nil, false, fmt.Errorf("cannot need snapshot during store a snapshot")
+			case eventstore.ConcurrencyException:
 				return nil, true, nil
 			}
 			newVersion++
-			events = append(events, snapshotEvent)
+			a.createdSnapshot = previousSnapshotEvent
 		}
 	}
 
 	newEvents, err := amodel.HandleCommand(ctx, cmd, newVersion)
 	if err != nil {
-		return nil, false, fmt.Errorf("cannot handle command by model: %w", err)
+		return nil, false, fmt.Errorf("error occurred during command handling: %w", err)
 	}
-
-	if len(newEvents) > 0 {
-		concurrencyException, err := a.store.Save(ctx, a.groupID, a.aggregateID, newEvents)
+	if newEvents == nil {
+		if a.createdSnapshot != nil && a.createdSnapshot.Version()+1 == newVersion {
+			events = append(events, a.createdSnapshot)
+			a.createdSnapshot = nil
+		}
+		return events, false, nil
+	}
+	status, err := a.store.Save(ctx, newEvents...)
+	if err != nil {
+		return nil, false, fmt.Errorf("cannot save events: %w", err)
+	}
+	switch status {
+	case eventstore.SnapshotRequired:
+		if previousSnapshotEvent == nil {
+			return nil, false, fmt.Errorf("cannot save events[%v]: snapshot is not supported", newEvents)
+		}
+		if a.createdSnapshot != nil && a.createdSnapshot.Version()+1 == newEvents[0].Version() {
+			return nil, false, fmt.Errorf("cannot save events[%v]: snapshot[%v] follows created previous snapshot[%v]", newEvents, previousSnapshotEvent, a.createdSnapshot)
+		}
+		status, err = a.store.Save(ctx, previousSnapshotEvent)
 		if err != nil {
-			return nil, false, fmt.Errorf("cannot save events: %w", err)
+			return nil, false, fmt.Errorf("cannot save snapshot: %w", err)
 		}
-
-		if concurrencyException {
-			return nil, true, nil
+		if status == eventstore.SnapshotRequired {
+			return nil, false, fmt.Errorf("cannot handle status need snapshot during save snapshot[%v]", previousSnapshotEvent)
 		}
+		a.createdSnapshot = previousSnapshotEvent
+		return nil, true, nil
+	case eventstore.ConcurrencyException:
+		return nil, true, nil
 	}
-
-	return append(events, newEvents...), false, nil
+	if a.createdSnapshot != nil && a.createdSnapshot.Version()+1 == newEvents[0].Version() {
+		events = append(events, a.createdSnapshot)
+		a.createdSnapshot = nil
+		return append(events, newEvents...), false, nil
+	}
+	return newEvents, false, nil
 }
 
 // HandleCommand transforms command to a event, store and publish eventstore.

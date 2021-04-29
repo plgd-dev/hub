@@ -23,11 +23,11 @@ const eventTypeResourceStateSnapshotTaken = "ocf.cloud.resourceaggregate.events.
 const errInvalidVersion = "invalid version for events"
 const errInvalidCommandMetadata = "invalid command metadata"
 
-func (e *ResourceStateSnapshotTaken) AggregateId() string {
+func (e *ResourceStateSnapshotTaken) AggregateID() string {
 	return e.GetResourceId().ToUUID()
 }
 
-func (e *ResourceStateSnapshotTaken) GroupId() string {
+func (e *ResourceStateSnapshotTaken) GroupID() string {
 	return e.GetResourceId().GetDeviceId()
 }
 
@@ -45,6 +45,10 @@ func (e *ResourceStateSnapshotTaken) Unmarshal(b []byte) error {
 
 func (e *ResourceStateSnapshotTaken) EventType() string {
 	return eventTypeResourceStateSnapshotTaken
+}
+
+func (e *ResourceStateSnapshotTaken) IsSnapshot() bool {
+	return true
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
@@ -558,8 +562,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 
 	return nil, fmt.Errorf("unknown command")
 }
-
-func (e *ResourceStateSnapshotTaken) SnapshotEventType() string { return e.EventType() }
 
 func (e *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
 	return &ResourceStateSnapshotTaken{

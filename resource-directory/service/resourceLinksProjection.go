@@ -71,9 +71,9 @@ func (rlp *resourceLinksProjection) onResourceUnpublishedLocked(ctx context.Cont
 	})
 }
 
-func (rlp *resourceLinksProjection) SnapshotEventType() string {
+func (rlp *resourceLinksProjection) EventType() string {
 	s := &events.ResourceLinksSnapshotTaken{}
-	return s.SnapshotEventType()
+	return s.EventType()
 }
 
 func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.Iter) error {

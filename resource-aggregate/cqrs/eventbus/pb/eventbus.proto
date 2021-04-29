@@ -10,4 +10,5 @@ message Event {
     string group_id = 3;
     string aggregate_id = 4;
     bytes data = 5;
+    bool is_snapshot = 6;
 }
