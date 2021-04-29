@@ -91,10 +91,10 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `oauthClients.client.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 | `clients.storage.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
 | `clients.storage.mongoDB.database` | string | `name of database` | `"authorization"` |
-| `clients.storage.mongoDB.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `clients.storage.mongoDB.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `clients.storage.mongoDB.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `clients.storage.mongoDB.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.storage.mongoDB.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
+| `clients.storage.mongoDB.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
+| `clients.storage.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
+| `clients.storage.mongoDB.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 
 
 Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0) 
