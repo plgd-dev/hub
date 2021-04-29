@@ -92,7 +92,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `oauthClients.client.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `oauthClients.client.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 | `clients.storage.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
-| `clients.storage.mongoDB.database` | string | `name of database` | `"authorization"` |
+| `clients.storage.mongoDB.database` | string | `name of database` | `"ownersDevices"` |
 | `clients.storage.mongoDB.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `clients.storage.mongoDB.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `clients.storage.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
