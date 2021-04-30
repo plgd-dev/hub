@@ -73,7 +73,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `clients.eventStore.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 | `clients.authorizationServer.pullFrequency` | string | `frequency to pull changed user device` | `15s` |
-| `clients.authorizationServer.cacheExpiration` | string | `expiration of user device cache` | `1m` |
+| `clients.authorizationServer.cacheExpiration` | string | `expiration time of cached user device` | `1m` |
 | `clients.authorizationServer.grpc.address` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
 | `clients.authorizationServer.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `clients.authorizationServer.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
