@@ -98,5 +98,6 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `clients.storage.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `clients.storage.mongoDB.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 
+> Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
 
 Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0) 
