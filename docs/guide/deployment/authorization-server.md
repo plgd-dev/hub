@@ -59,15 +59,26 @@ docker run -d --network=host \
 ```
 
 ## YAML Configuration
+### Logging
 
-| Key | Type | Description | Default |
+| Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `log.debug` | bool | `set to true if you would like to see extra information on logs` | `false` |
+
+### Grpc Connectivity & TLS
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `api.grpc.address` | string | `listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
 | `api.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `api.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
+
+### Authorization Client & TLS
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `api.grpc.authorization.authority` | string | `endpoint of oauth provider` | `""` |
 | `api.grpc.authorization.audience` | string | `audience of oauth provider` | `""` |
 | `api.grpc.authorization.ownerClaim` | string | `owner claim of oauth provider` | `"sub"` |
@@ -80,11 +91,21 @@ docker run -d --network=host \
 | `api.grpc.authorization.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
+### Http Connectivity & TLS
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `api.http.address` | string | `listen specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
 | `api.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `api.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.http.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
+
+### Authorization Client & TLS for Device OAuth Provider
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `oauthClients.device.provider` | string | `value which comes from the device during the sign-up ("apn")` | `"generic"` |
 | `oauthClients.device.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
 | `oauthClients.device.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
@@ -104,6 +125,11 @@ docker run -d --network=host \
 | `oauthClients.device.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `oauthClients.device.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `oauthClients.device.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
+### Authorization Client & TLS for Service OAuth Provider
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `oauthClients.client.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
 | `oauthClients.client.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
 | `oauthClients.client.scopes` | string | `Comma separated list of required scopes` | `""` |
@@ -120,6 +146,11 @@ docker run -d --network=host \
 | `oauthClients.client.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `oauthClients.client.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `oauthClients.client.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
+### Storage Database & TLS 
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `clients.storage.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
 | `clients.storage.mongoDB.database` | string | `name of database` | `"ownersDevices"` |
 | `clients.storage.mongoDB.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
