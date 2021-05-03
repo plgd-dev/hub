@@ -1,40 +1,69 @@
 # Authorization server
 
-## Description
-
-Authorize access for users to devices.
-
 ## Docker Image
 
 ```bash
 docker pull plgd/authorization:v2next
 ```
+Or 
+```bash
+git clone https://github.com/plgd-dev/cloud.git 
+cd cloud/
+make build
+```
 
-### API
+## Docker Run
+### How to make certificates
+Before you run docker image of plgd/authorization, you make sure to execute below script only once. 
+```bash
+git clone https://github.com/plgd-dev/cloud.git 
 
-All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2).
+cd cloud/
+make certificates 
+make privateKeys
+```
 
-#### Commands
+### How to get configuration file
+- A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). 
 
-- sign up - exchange authorization code for opaque token
-- sign in - validate access token of the device
-- sign out - invalidate access token of the device
-- sign off - remove device from DB and invalidate all credentials
-- refresh token - refresh access token with refresh token
-- get user devices - returns list of users devices
+You can also see configuration file via executing below script. 
+```bash
+git clone https://github.com/plgd-dev/cloud.git 
 
-#### Contract
+cd cloud/
+cat authorization/conifg.yaml 
+```
 
-- [service](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service.proto)
-- [requets/responses](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/auth.proto)
+### Edit configuration file 
+You can edit configuration file such as server port, certificates, oauth provider and so on.
+Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0) 
 
-## Yaml Configuration
-- [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml) 
+See an example of tls config on the followings.
+```yaml
+...
+    tls:
+      caPool: "/data/certs/rootca.crt"
+      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/http.crt"
+...
+```
+
+### Run docker image 
+You can run plgd/authorization image using certificates and configuration file on the plgd/authorization directory.
+```bash
+docker run -d --network=host \
+	--name=authorization \
+	-v $(shell pwd)/../.tmp/certs:/data/certs \
+	-v $(shell pwd)/config.yaml:/data/authorization.yaml \
+	plgd/authorization:v2next --config=/data/authorization.yaml
+```
+
+## YAML Configuration
 
 | Key | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `log.debug` | bool | `enable debugging message` | `false` |
-| `api.grpc.address` | string | `listen address` | `"0.0.0.0:9100"` |
+| `log.debug` | bool | `set to true if you would like to see extra information on logs` | `false` |
+| `api.grpc.address` | string | `listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
 | `api.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `api.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
@@ -51,7 +80,7 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `api.grpc.authorization.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
-| `api.http.address` | string | `listen address` | `"0.0.0.0:9100"` |
+| `api.http.address` | string | `listen specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
 | `api.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `api.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
@@ -100,4 +129,3 @@ All requests to service must contains valid access token in [grpc metadata](http
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
 
-Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0) 
