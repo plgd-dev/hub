@@ -8,6 +8,7 @@ docker pull plgd/authorization:v2next
 Or 
 ```bash
 git clone https://github.com/plgd-dev/cloud.git 
+
 cd cloud/
 make build
 ```
@@ -24,7 +25,7 @@ make privateKeys
 ```
 
 ### How to get configuration file
-- A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). 
+A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). 
 
 You can also see configuration file via executing below script. 
 ```bash
@@ -65,7 +66,7 @@ docker run -d --network=host \
 | ---------- | -------- | -------------- | ------- |
 | `log.debug` | bool | `set to true if you would like to see extra information on logs` | `false` |
 
-### Grpc Connectivity & TLS
+### Grpc Connectivity
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -75,7 +76,7 @@ docker run -d --network=host \
 | `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
 
-### Authorization Client & TLS
+### Authorization Client
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -92,7 +93,7 @@ docker run -d --network=host \
 | `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 
-### Http Connectivity & TLS
+### Http Connectivity
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -102,7 +103,7 @@ docker run -d --network=host \
 | `api.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.http.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
 
-### Authorization Client & TLS for Device OAuth Provider
+### Authorization Client for Device OAuth Provider
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -126,7 +127,7 @@ docker run -d --network=host \
 | `oauthClients.device.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `oauthClients.device.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 
-### Authorization Client & TLS for Service OAuth Provider
+### Authorization Client for Service OAuth Provider
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -147,7 +148,7 @@ docker run -d --network=host \
 | `oauthClients.client.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `oauthClients.client.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 
-### Storage Database & TLS 
+### Storage Database
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
