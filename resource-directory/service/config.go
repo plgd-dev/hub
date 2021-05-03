@@ -57,10 +57,14 @@ type ClientsConfig struct {
 }
 
 type EventBusConfig struct {
-	NATS subscriber.Config `yaml:"nats" json:"nats"`
+	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize" envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
+	NATS       subscriber.Config `yaml:"nats" json:"nats"`
 }
 
 func (c *EventBusConfig) Validate() error {
+	if c.GoPoolSize <= 0 {
+		return fmt.Errorf("goPoolSize('%v')", c.GoPoolSize)
+	}
 	err := c.NATS.Validate()
 	if err != nil {
 		return fmt.Errorf("nats.%w", err)
@@ -70,16 +74,12 @@ func (c *EventBusConfig) Validate() error {
 
 type EventStoreConfig struct {
 	ProjectionCacheExpiration time.Duration           `yaml:"cacheExpiration" json:"cacheExpiration" envconfig:"CACHE_EXPIRATION" default:"1m"`
-	GoPoolSize                int                     `yaml:"goPoolSize" json:"goPoolSize" envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
 	Connection                eventstoreConfig.Config `yaml:",inline" json:",inline"`
 }
 
 func (c *EventStoreConfig) Validate() error {
 	if c.ProjectionCacheExpiration <= 0 {
 		return fmt.Errorf("cacheExpiration('%v')", c.ProjectionCacheExpiration)
-	}
-	if c.GoPoolSize <= 0 {
-		return fmt.Errorf("goPoolSize('%v')", c.GoPoolSize)
 	}
 	return c.Connection.Validate()
 }

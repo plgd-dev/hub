@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -43,7 +43,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := AddHandler(ctx, server, config.Clients, config.ExposedCloudConfiguration, logger, pool.Submit); err != nil {
+	if err := AddHandler(ctx, server, config.Clients, logger, pool.Submit); err != nil {
 		server.Close()
 		return nil, err
 	}
@@ -68,18 +68,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 			log.Errorf("auth interceptor %v %v: %v", method, token, err)
 			return ctx, err
 		}
-		owner, err := kitNetGrpc.OwnerFromMD(ctx)
-		if err != nil {
-			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
-			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
-			}
-		}
-		if err != nil {
-			log.Errorf("auth cannot get owner: %v", err)
-			return ctx, err
-		}
-		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
+		return kitNetGrpc.CtxWithToken(ctx, token), nil
 	}
 }
 

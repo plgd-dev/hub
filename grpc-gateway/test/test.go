@@ -1,35 +1,43 @@
 package test
 
 import (
+	"context"
 	"sync"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
-	"github.com/plgd-dev/cloud/grpc-gateway/refImpl"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/grpc-gateway/service"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) refImpl.Config {
-	var grpcCfg refImpl.Config
-	err := envconfig.Process("", &grpcCfg)
-	require.NoError(t, err)
-	grpcCfg.Addr = testCfg.GRPC_HOST
-	grpcCfg.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	grpcCfg.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
+func MakeConfig(t *testing.T) service.Config {
+	var cfg service.Config
+	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.GRPC_HOST)
+	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 
-	grpcCfg.JwksURL = testCfg.JWKS_URL
-	grpcCfg.Listen.File.DisableVerifyClientCertificate = true
-	return grpcCfg
+	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
+	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
+
+	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
+	cfg.Clients.Eventbus.GoPoolSize = 16
+
+	err := cfg.Validate()
+	require.NoError(t, err)
+
+	return cfg
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
-func New(t *testing.T, cfg refImpl.Config) func() {
+func New(t *testing.T, cfg service.Config) func() {
+	ctx := context.Background()
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
 
-	s, err := refImpl.Init(cfg)
+	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup

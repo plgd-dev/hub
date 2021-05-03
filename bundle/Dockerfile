@@ -68,10 +68,11 @@ RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/grpc-gateway/config.yaml /configs/grpc-gateway.yaml
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/http-gateway/config.yaml /configs/http-gateway.yaml
 COPY --from=build /go/bin/resource-directory /usr/local/bin/resource-directory
-COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud//resource-directory/config.yaml /configs/resource-directory.yaml
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-directory/config.yaml /configs/resource-directory.yaml
 COPY --from=build /go/bin/resource-aggregate /usr/local/bin/resource-aggregate
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-aggregate/config.yaml /configs/resource-aggregate.yaml
 COPY --from=build /go/bin/authorization /usr/local/bin/authorization

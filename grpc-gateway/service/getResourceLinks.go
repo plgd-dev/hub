@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -12,7 +13,7 @@ func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 	ctx := srv.Context()
 	rd, err := r.resourceDirectoryClient.GetResourceLinks(ctx, req)
 	if err != nil {
-		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get resource links: %v", err)
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get resource links: %v", err))
 	}
 	for {
 		resp, err := rd.Recv()
@@ -20,11 +21,11 @@ func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 			break
 		}
 		if err != nil {
-			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive link: %v", err)
+			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive link: %v", err))
 		}
 		err = srv.Send(resp)
 		if err != nil {
-			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send link: %v", err)
+			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send link: %v", err))
 		}
 	}
 	return nil

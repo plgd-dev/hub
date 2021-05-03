@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 
 	"github.com/gofrs/uuid"
@@ -194,23 +192,10 @@ func NewEventStoreModelFactory(subscriptions *Subscriptions, updateNotificationC
 	}
 }
 
-func logAndReturnError(err error) error {
-	if errors.Is(err, io.EOF) {
-		log.Debugf("%v", err)
-		return err
-	}
-	if errors.Is(err, context.Canceled) {
-		log.Debugf("%v", err)
-		return err
-	}
-	log.Errorf("%v", err)
-	return err
-}
-
 func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEventsServer) error {
 	err := r.subscriptions.SubscribeForEvents(r.resourceProjection, srv)
 	if err != nil {
-		return logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err))
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err))
 	}
 	return nil
 }

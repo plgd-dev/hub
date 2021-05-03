@@ -94,11 +94,11 @@ func MakeListenerConfig(address string) listener.Config {
 
 func MakeHttpClientConfig() httpClient.Config {
 	return httpClient.Config{
-		MaxIdleConns:        10,
-		MaxConnsPerHost:     10,
-		MaxIdleConnsPerHost: 10,
-		IdleConnTimeout:     time.Second * 5,
-		Timeout:             time.Second * 2,
+		MaxIdleConns:        16,
+		MaxConnsPerHost:     32,
+		MaxIdleConnsPerHost: 16,
+		IdleConnTimeout:     time.Second * 30,
+		Timeout:             time.Second * 10,
 		TLS:                 MakeTLSClientConfig(),
 	}
 }

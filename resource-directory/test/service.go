@@ -22,9 +22,9 @@ func MakeConfig(t *testing.T) service.Config {
 	rdCfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
 
 	rdCfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
+	rdCfg.Clients.Eventbus.GoPoolSize = 16
 
 	rdCfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
-	rdCfg.Clients.Eventstore.GoPoolSize = 16
 	rdCfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
 
 	rdCfg.ExposedCloudConfiguration.CAPool = config.CA_POOL

@@ -69,12 +69,12 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	rdShutdown := rdService.New(t, rdCfg)
 
 	grpcCfg := grpcService.MakeConfig(t)
-	grpcCfg.Addr = GRPC_GATEWAY_HOST
-	grpcCfg.JwksURL = JWKS_URL
-	grpcCfg.Nats.URL = cloudConnectorNatsURL
-	grpcCfg.Listen.File.DisableVerifyClientCertificate = true
-	grpcCfg.ResourceAggregateAddr = RESOURCE_AGGREGATE_HOST
-	grpcCfg.ResourceDirectoryAddr = RESOURCE_DIRECTORY_HOST
+	grpcCfg.APIs.GRPC.Addr = GRPC_GATEWAY_HOST
+	grpcCfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	grpcCfg.APIs.GRPC.Authorization.Authority = "https://" + OAUTH_HOST
+	grpcCfg.Clients.Eventbus.NATS.URL = cloudConnectorNatsURL
+	grpcCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
+	grpcCfg.Clients.ResourceDirectory.Connection.Addr = RESOURCE_DIRECTORY_HOST
 	grpcShutdown := grpcService.New(t, grpcCfg)
 
 	c2cConnectorCfg := MakeConfig(t)
