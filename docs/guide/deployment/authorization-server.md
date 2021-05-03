@@ -25,9 +25,7 @@ make privateKeys
 ```
 
 ### How to get configuration file
-A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). 
-
-You can also see configuration file via executing below script. 
+A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). You can also see configuration file via executing below script. 
 ```bash
 git clone https://github.com/plgd-dev/cloud.git 
 
@@ -37,7 +35,7 @@ cat authorization/conifg.yaml
 
 ### Edit configuration file 
 You can edit configuration file such as server port, certificates, oauth provider and so on.
-Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0) 
+Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
 
 See an example of tls config on the followings.
 ```yaml
