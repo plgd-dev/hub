@@ -26,7 +26,7 @@ require (
 	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210204203130-38a043760811
 	github.com/plgd-dev/kit v0.0.0-20210205135220-6c16c4ac0fd5
 	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
-	github.com/smallstep/certificates v0.13.4-0.20191007194430-e2858e17b094
+	github.com/smallstep/certificates v0.15.15
 	github.com/smallstep/nosql v0.2.0
 	github.com/stretchr/testify v1.6.1
 	github.com/valyala/fasthttp v1.16.0
