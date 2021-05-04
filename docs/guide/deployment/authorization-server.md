@@ -5,11 +5,13 @@
 ```bash
 docker pull plgd/authorization:v2next
 ```
-Or 
+Or by using source
 ```bash
+# Dowonload github source
 git clone https://github.com/plgd-dev/cloud.git 
 
-cd cloud/
+# Build the source
+cd cloud/ 
 make build
 ```
 
@@ -17,19 +19,14 @@ make build
 ### How to make certificates
 Before you run docker image of plgd/authorization, you make sure to execute below script only once. 
 ```bash
-git clone https://github.com/plgd-dev/cloud.git 
-
-cd cloud/
+# Create certificates on the source
 make certificates 
-make privateKeys
 ```
 
 ### How to get configuration file
 A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). You can also see configuration file via executing below script. 
 ```bash
-git clone https://github.com/plgd-dev/cloud.git 
-
-cd cloud/
+# See config file on the source
 cat authorization/conifg.yaml 
 ```
 
@@ -48,7 +45,7 @@ See an example of tls config on the followings.
 ```
 
 ### Run docker image 
-You can run plgd/authorization image using certificates and configuration file on the plgd/authorization directory.
+You can run plgd/authorization image using certificates and configuration file on the source directory of authorization.
 ```bash
 docker run -d --network=host \
 	--name=authorization \
@@ -74,7 +71,7 @@ docker run -d --network=host \
 | `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
 
-### Authorization Client
+### Authorization Client for Grpc Connectivity
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -146,7 +143,7 @@ docker run -d --network=host \
 | `oauthClients.client.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `oauthClients.client.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
 
-### Storage Database
+### Storage Client
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

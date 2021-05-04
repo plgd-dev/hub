@@ -1,49 +1,80 @@
 # Resource aggregate
 
-## Description
-
-According to CQRS pattern it translates commands to events, store them to DB and publish them to messaging system.
-
 ## Docker Image
 
 ```bash
 docker pull plgd/resource-aggregate:v2next
 ```
+Or by using source
+```bash
+# Dowonload github source
+git clone https://github.com/plgd-dev/cloud.git 
 
-## API
+# Build the source
+cd cloud/ 
+make build
+```
 
-All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2). Any success command creates event and it can create additional snapshot event. The event is stored in DB and published via messaging system.
+## Docker Run
+### How to make certificates
+Before you run docker image of plgd/resource-aggregate, you make sure to execute below script only once. 
+```bash
+# Create certificates on the source
+make certificates 
+```
 
-### Commands
+### How to get configuration file
+A configuration template is available on [resource-aggregate/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/config.yaml). You can also see configuration file via executing below script.  
+```bash
+# See config file on the source
+cat resource-aggregate/conifg.yaml 
+```
 
-- publish resource - create resource/republish of the device
-- unpublish resource - unpublish resource from the cloud
-- notify resource changed - set/update content of the resource in the cloud
-- update resource - request to update resource in the device via cloud
-- confirm resource update - response to update resource request
-- retrieve resource - request to retrieve resource from the device via cloud
-- confirm resource retrieve - response to retrieve resource request
-- delete resource - request to delete resource from the device via cloud
-- confirm resource delete - response to delete resource request
+### Edit configuration file 
+You can edit configuration file such as server port, certificates, oauth provider and so on.
+Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
 
-### Contract
+See an example of tls config on the followings.
+```yaml
+...
+    tls:
+      caPool: "/data/certs/rootca.crt"
+      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/http.crt"
+...
+```
 
-- [service](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/pb/service.proto)
-- [requets/responses](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/pb/commands.proto)
-- [events](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/pb/events.proto)
+### Run docker image 
+You can run plgd/resource-aggregate image using certificates and configuration file on the source directory of resource-aggregate.
+```bash
+docker run -d --network=host \
+	--name=resource-aggregate \
+	-v $(shell pwd)/../.tmp/certs:/data/certs \
+	-v $(shell pwd)/config.yaml:/data/resource-aggregate.yaml \
+	plgd/resource-aggregate:v2next --config=/data/resource-aggregate.yaml
+```
 
-## Yaml Configuration
-- [resource-aggregate/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/config.yaml) 
+## YAML Configuration
+### Logging
 
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `log.debug` | bool | `set to true if you would like to see extra information on logs` | `false` |
 
-| Key | Type | Description | Default |
-| --------- | ----------- | ------- | ------- |
-| `log.debug` | bool | `enable debugging message` | `false` |
-| `api.grpc.address` | string | `listen address` | `"0.0.0.0:9100"` |
+### Grpc Connectivity
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `api.grpc.address` | string | `listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
 | `api.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `api.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
+
+### Authorization Client for Grpc Connectivity
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `api.grpc.authorization.authority` | string | `endpoint of oauth provider` | `""` |
 | `api.grpc.authorization.audience` | string | `audience of oauth provider` | `""` |
 | `api.grpc.authorization.ownerClaim` | string | `owner claim of oauth provider` | `"sub"` |
@@ -56,11 +87,21 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `api.grpc.authorization.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
+### Event Bus Client
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `clients.eventBus.nats.url` | string | `url to nats messaging system` | `"nats://localhost:4222"` |
 | `clients.eventBus.nats.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
 | `clients.eventBus.nats.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `clients.eventBus.nats.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
+### Storage Client
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `clients.eventStore.snapshotThreshold` | int | `tries to create the snapshot event after n events` | `16` |
 | `clients.eventStore.occMaxRetry` | int | `limits number of try to store event` | `8` |
 | `clients.eventStore.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
@@ -72,6 +113,11 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `clients.eventStore.mongoDB.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
 | `clients.eventStore.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+
+### Authorization Server Client
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `clients.authorizationServer.pullFrequency` | string | `frequency to pull changed user device` | `15s` |
 | `clients.authorizationServer.cacheExpiration` | string | `expiration time of cached user device` | `1m` |
 | `clients.authorizationServer.grpc.address` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
@@ -82,6 +128,11 @@ All requests to service must contains valid access token in [grpc metadata](http
 | `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
 | `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
 | `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+
+### Authorization Client for OAuth Provider
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
 | `clients.authorizationServer.oauth.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
 | `clients.authorizationServer.oauth.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
 | `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes` | `""` |
