@@ -45,7 +45,7 @@ See an example of tls config on the followings.
 ```
 
 ### Run docker image 
-You can run plgd/resource-aggregate image using certificates and configuration file on the source directory of resource-aggregate.
+You can run plgd/resource-directory image using certificates and configuration file on the source directory of resource-directory.
 ```bash
 docker run -d --network=host \
 	--name=resource-directory \
