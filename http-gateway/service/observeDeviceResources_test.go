@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 
@@ -78,5 +79,5 @@ func readMessage(t *testing.T, conn *websocket.Conn, messages *sync.Map) {
 }
 
 func GetDeviceResourcesObservationUri(deviceID string) string {
-	return fmt.Sprintf("wss://localhost:%d%s/%s", test.HTTP_GW_Port, uri.WSDevices, deviceID)
+	return fmt.Sprintf("wss://%v%v/%s", config.HTTP_GW_HOST, uri.WSDevices, deviceID)
 }

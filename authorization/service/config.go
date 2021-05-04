@@ -84,7 +84,7 @@ func (c *OAuthClientsConfig) Validate() error {
 }
 
 type SDKOAuthConfig struct {
-	oauth.Config `yaml:",inline"`
+	oauth.Config `yaml:",inline" json:",inline"`
 	HTTP         httpClient.Config `yaml:"http" json:"http"`
 }
 

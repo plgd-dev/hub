@@ -1,0 +1,84 @@
+log:
+  debug: false
+apis:
+  http:
+    address: "0.0.0.0:9100"
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: true
+    webSocket:
+      readLimit: 8192
+      readTimeout: 4s
+    authorization:
+      authority: ""
+      audience: ""
+      ownerClaim: sub
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+clients:
+  eventBus:
+    goPoolSize: 16
+    nats:
+      url: ""
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  resourceAggregate:
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  resourceDirectory:
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  certificateAuthority:
+    enabled: false
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+ui:
+  enabled: false
+  directory: "/usr/local/var/www"
+  oauthClient:
+    domain: ""
+    clientID: ""
+    audience: ""
+    scope: ""
+    httpGatewayAddress: ""

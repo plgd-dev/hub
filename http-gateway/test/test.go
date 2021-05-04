@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -12,28 +13,36 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-const HTTP_GW_Port = 7000
-const HTTP_GW_Host = "0.0.0.0"
 const TestTimeout = 20 * time.Second
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
-	envconfig.Process("", &cfg)
-	cfg.Address = fmt.Sprintf("%s:%d", HTTP_GW_Host, HTTP_GW_Port)
-	cfg.Listen.File.DisableVerifyClientCertificate = true
-	cfg.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	cfg.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
-	cfg.JwksURL = testCfg.JWKS_URL
-	cfg.GoRoutinePoolSize = 16
+	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.WebSocket.ReadLimit = 8 * 1024
+	cfg.APIs.HTTP.WebSocket.ReadTimeout = time.Second * 4
+	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
+	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
+
+	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
+	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
+
+	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
+	cfg.Clients.Eventbus.GoPoolSize = 16
+
+	err := cfg.Validate()
+	require.NoError(t, err)
+
+	fmt.Printf("cfg\n%v\n", cfg.String())
+
 	return cfg
 }
 
@@ -42,22 +51,27 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	service, err := service.New(cfg)
+	ctx := context.Background()
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
+
+	s, err := service.New(ctx, cfg, logger)
+	require.NoError(t, err)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		service.Serve()
+		s.Serve()
 	}()
 	return func() {
-		service.Shutdown()
+		s.Shutdown()
 		wg.Wait()
 	}
 }
 
 func GetTestRebootUri(deviceID string, t *testing.T) string {
-	template, _ := uritemplates.Parse(fmt.Sprintf("https://localhost:%d%s", HTTP_GW_Port, uri.DeviceReboot))
+	template, _ := uritemplates.Parse(fmt.Sprintf("https://%v%v", config.HTTP_GW_HOST, uri.DeviceReboot))
 	values := make(map[string]interface{})
 	values[uri.DeviceIDKey] = deviceID
 	u, _ := template.Expand(values)
@@ -69,7 +83,7 @@ func NewRequest(method, url string, body io.Reader) *requestBuilder {
 	b := requestBuilder{
 		method:      method,
 		body:        body,
-		uri:         fmt.Sprintf("https://localhost:%d%s", HTTP_GW_Port, url),
+		uri:         fmt.Sprintf("https://%v%v", config.HTTP_GW_HOST, url),
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
 		queryParams: make(map[string]string),

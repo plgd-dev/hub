@@ -7,12 +7,16 @@ import (
 	netHttp "net/http"
 	"strings"
 
+	extJwt "github.com/dgrijalva/jwt-go"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 )
 
 type Claims = interface{ Valid() error }
 type ClaimsFunc = func(ctx context.Context, method, uri string) Claims
 type OnUnauthorizedAccessFunc = func(ctx context.Context, w netHttp.ResponseWriter, r *netHttp.Request, err error)
+type Validator interface {
+	ParseWithClaims(token string, claims extJwt.Claims) error
+}
 
 const bearerKey = "bearer"
 const authorizationKey = "authorization"
@@ -36,8 +40,7 @@ func TokenFromCtx(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("token not found")
 }
 
-func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
-	validator := jwt.NewValidator(jwksURL, tls)
+func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
 	return func(ctx context.Context, method, uri string) (context.Context, error) {
 		token, err := TokenFromCtx(ctx)
 		if err != nil {
@@ -49,6 +52,11 @@ func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor
 		}
 		return ctx, nil
 	}
+}
+
+func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
+	validator := jwt.NewValidator(jwksURL, tls)
+	return ValidateJWTWithValidator(validator, claims)
 }
 
 // CreateAuthMiddleware creates middleware for authorization

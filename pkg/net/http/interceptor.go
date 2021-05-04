@@ -23,12 +23,25 @@ type RequestMatcher struct {
 	URI    *regexp.Regexp
 }
 
+// NewInterceptor authorizes HTTP request with validator.
+func NewInterceptorWithValidator(validator Validator, auths map[string][]AuthArgs, whiteList ...RequestMatcher) Interceptor {
+	validateJWT := ValidateJWTWithValidator(validator, MakeClaimsFunc(auths))
+	return func(ctx context.Context, method, uri string) (context.Context, error) {
+		for _, wa := range whiteList {
+			if strings.EqualFold(method, wa.Method) && wa.URI.MatchString(uri) {
+				return ctx, nil
+			}
+		}
+		return validateJWT(ctx, method, uri)
+	}
+}
+
 // NewInterceptor authorizes HTTP request.
 func NewInterceptor(jwksURL string, tls *tls.Config, auths map[string][]AuthArgs, whiteList ...RequestMatcher) Interceptor {
 	validateJWT := ValidateJWT(jwksURL, tls, MakeClaimsFunc(auths))
 	return func(ctx context.Context, method, uri string) (context.Context, error) {
 		for _, wa := range whiteList {
-			if strings.ToLower(method) == strings.ToLower(wa.Method) && wa.URI.MatchString(uri) {
+			if strings.EqualFold(method, wa.Method) && wa.URI.MatchString(uri) {
 				return ctx, nil
 			}
 		}
