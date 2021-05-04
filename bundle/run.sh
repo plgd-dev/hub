@@ -537,44 +537,48 @@ done
 
 
 # http-gateway
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/http-gateway.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/http-gateway.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/http-gateway.yaml | sort | uniq)
+
+### setup cfgs from env
+cat /configs/http-gateway.yaml | yq e "\
+  .apis.http.address = \"${HTTP_GATEWAY_ADDRESS}\" |
+  .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.http.authorization.http.tls.useSystemCAPool = true |
+  .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.http.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.certificateAuthority.enabled = true |
+  .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
+  .ui.enabled = true |
+  .ui.oauthClient.domain = \"${OAUTH_ENDPOINT}\" |
+  .ui.oauthClient.clientID = \"${OAUTH_CLIENT_ID}\" |
+  .ui.oauthClient.audience = \"${OAUTH_AUDIENCE}\" |
+  .ui.oauthClient.scope = \"openid offline_access\" |
+  .ui.oauthClient.httpGatewayAddress =\"https://${FQDN_NGINX_HTTPS}\"
+" - > /data/http-gateway.yaml
+
 echo "starting http-gateway"
-cat > /data/httpgw.yaml << EOF
-Address: ${HTTP_GATEWAY_ADDRESS}
-Listen:
-  Type: file
-  File:
-    CAPool: ${CA_POOL_CERT_PATH}
-    TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
-    DirPath: ${INTERNAL_CERT_DIR_PATH}
-    TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
-    DisableVerifyClientCertificate: false
-    UseSystemCertPool: false
-Dial:
-  Type: file
-  File:
-    CAPool: ${CA_POOL_CERT_PATH}
-    TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
-    DirPath: ${INTERNAL_CERT_DIR_PATH}
-    TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
-    DisableVerifyClientCertificate: false
-    UseSystemCertPool: true
-JwksURL: ${JWKS_URL}
-ResourceDirectoryAddr: ${RESOURCE_DIRECTORY_ADDRESS}
-ResourceAggregateAddr: ${RESOURCE_AGGREGATE_ADDRESS}
-Nats:
-  URL: ${NATS_URL}
-CertificateAuthorityAddr: ${CERTIFICATE_AUTHORITY_ADDRESS}
-UI:
-  enabled: true
-  oauthClient:
-    domain: ${OAUTH_ENDPOINT}
-    clientID: ${OAUTH_CLIENT_ID}
-    audience: ${OAUTH_AUDIENCE}
-    scope: "openid offline_access"
-    httpGatewayAddress: https://${FQDN_NGINX_HTTPS}
-EOF
-ADDRESS=${HTTP_GATEWAY_ADDRESS} \
-http-gateway --config=/data/httpgw.yaml >$LOGS_PATH/http-gateway.log 2>&1 &
+http-gateway --config=/data/http-gateway.yaml >$LOGS_PATH/http-gateway.log 2>&1 &
 status=$?
 http_gw_pid=$!
 if [ $status -ne 0 ]; then

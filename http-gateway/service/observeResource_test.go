@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	cloudTest "github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
@@ -104,7 +105,7 @@ func testResourceObservation(t *testing.T, deviceID string) {
 }
 
 func GetResourceObservationUri(deviceID, href string) string {
-	return fmt.Sprintf("wss://localhost:%d%s/%s%s", test.HTTP_GW_Port, uri.WSDevices, deviceID, href)
+	return fmt.Sprintf("wss://%v%v/%s%s", config.HTTP_GW_HOST, uri.WSDevices, deviceID, href)
 }
 
 func webSocketConnection(t *testing.T, uri string) *websocket.Conn {

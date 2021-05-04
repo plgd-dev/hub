@@ -116,8 +116,8 @@ func (requestHandler *RequestHandler) ServeWs(w http.ResponseWriter, r *http.Req
 		log.Errorf("unable to upgrade into websocket: %v", err)
 		return err
 	}
-	c.SetReadLimit(requestHandler.config.WebSocketReadLimit)
-	c.SetReadDeadline(time.Now().Add(time.Second * requestHandler.config.WebSocketReadTimeout))
+	c.SetReadLimit(requestHandler.config.APIs.HTTP.WebSocket.ReadLimit)
+	c.SetReadDeadline(time.Now().Add(requestHandler.config.APIs.HTTP.WebSocket.ReadTimeout))
 	var tokenMessage TokenMessage
 	err = c.ReadJSON(&tokenMessage)
 	if err != nil {

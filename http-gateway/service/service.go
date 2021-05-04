@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,29 +14,24 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/certManager"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"go.uber.org/zap"
 )
 
 func logError(err error) { log.Error(err) }
 
 //Server handle HTTP request
 type Server struct {
-	server             *http.Server
-	cfg                *Config
-	requestHandler     *RequestHandler
-	ln                 net.Listener
-	listenCertManager  certManager.CertManager
-	rdConn             *grpc.ClientConn
-	caConn             *grpc.ClientConn
-	raConn             *grpc.ClientConn
-	resourceSubscriber eventbus.Subscriber
+	server         *http.Server
+	config         *Config
+	requestHandler *RequestHandler
+	listener       *listener.Server
 }
 
 func buildWhiteList(uidirectory string, whiteList *[]kitNetHttp.RequestMatcher) filepath.WalkFunc {
@@ -60,65 +53,73 @@ func buildWhiteList(uidirectory string, whiteList *[]kitNetHttp.RequestMatcher) 
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(cfg Config) (*Server, error) {
-	cfg = cfg.checkForDefaults()
-	log.Info(cfg.String())
-
-	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
+func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error) {
+	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create listen cert manager: %v", err)
-	}
-	dialCertManager, err := certManager.NewCertManager(cfg.Dial)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create dial cert manager: %v", err)
-	}
-	listenTLSCfg := listenCertManager.GetServerTLSConfig()
-
-	ln, err := tls.Listen("tcp", cfg.Address, listenTLSCfg)
-	if err != nil {
-		return nil, fmt.Errorf("cannot listen tls and serve: %v", err)
+		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 
-	rdConn, err := grpc.Dial(
-		cfg.ResourceDirectoryAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
-	)
+	listener, err := listener.New(config.APIs.HTTP.Connection, logger)
+	if err != nil {
+		validator.Close()
+		return nil, fmt.Errorf("cannot create grpc server: %w", err)
+	}
+	listener.AddCloseFunc(validator.Close)
+
+	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
-	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
+	listener.AddCloseFunc(func() {
+		err := rdConn.Close()
+		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to resource-directory: %v", err)
+		}
+	})
+	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
 	client := client.New(resourceDirectoryClient)
 
-	pool, err := ants.NewPool(cfg.GoRoutinePoolSize)
+	pool, err := ants.NewPool(config.Clients.Eventbus.GoPoolSize)
 	if err != nil {
+		listener.Close()
 		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
 	}
+	listener.AddCloseFunc(pool.Release)
 
-	resourceSubscriber, err := nats.NewSubscriber(cfg.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	resourceSubscriber, err := subscriber.New(config.Clients.Eventbus.NATS, logger, subscriber.WithGoPool(pool.Submit))
 	if err != nil {
+		listener.Close()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
+	listener.AddCloseFunc(resourceSubscriber.Close)
 
-	raConn, err := grpc.Dial(
-		cfg.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
-	)
+	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger)
 	if err != nil {
+		listener.Close()
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
-	resourceAggregateClient := raClient.New(raConn, resourceSubscriber)
-
-	var caConn *grpc.ClientConn
-	var caClient pbCA.CertificateAuthorityClient
-	if cfg.CertificateAuthorityAddr != "" {
-		caConn, err = grpc.Dial(
-			cfg.CertificateAuthorityAddr,
-			grpc.WithTransportCredentials(credentials.NewTLS(dialCertManager.GetClientTLSConfig())),
-		)
+	listener.AddCloseFunc(func() {
+		err := raConn.Close()
 		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to resource-aggregate: %v", err)
+		}
+	})
+	resourceAggregateClient := raClient.New(raConn.GRPC(), resourceSubscriber)
+
+	var caClient pbCA.CertificateAuthorityClient
+	if config.Clients.CertificateAuthority.Enabled {
+		caConn, err := grpcClient.New(config.Clients.CertificateAuthority.Connection, logger)
+		if err != nil {
+			listener.Close()
 			return nil, fmt.Errorf("cannot connect to certificate authority: %w", err)
 		}
-		caClient = pbCA.NewCertificateAuthorityClient(caConn)
+		listener.AddCloseFunc(func() {
+			err := caConn.Close()
+			if err != nil {
+				logger.Sugar().Errorf("error occurs during close connection to certificate authority: %v", err)
+			}
+		})
+		caClient = pbCA.NewCertificateAuthorityClient(caConn.GRPC())
 	}
 
 	manager, err := NewObservationManager()
@@ -136,25 +137,20 @@ func New(cfg Config) (*Server, error) {
 			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
 		},
 	}
-	if cfg.UI.Enabled {
+	if config.UI.Enabled {
 		whiteList = append(whiteList, kitNetHttp.RequestMatcher{
 			Method: http.MethodGet,
 			URI:    regexp.MustCompile(`(\/[^a]pi\/.*)|(\/a[^p]i\/.*)|(\/ap[^i]\/.*)||(\/api[^/].*)`),
 		})
 	}
-	auth := kitNetHttp.NewInterceptor(cfg.JwksURL, dialCertManager.GetClientTLSConfig(), authRules, whiteList...)
-	requestHandler := NewRequestHandler(client, caClient, &cfg, manager, resourceAggregateClient)
+	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
+	requestHandler := NewRequestHandler(client, caClient, &config, manager, resourceAggregateClient)
 
 	server := Server{
-		server:             NewHTTP(requestHandler, auth),
-		cfg:                &cfg,
-		requestHandler:     requestHandler,
-		ln:                 ln,
-		listenCertManager:  listenCertManager,
-		rdConn:             rdConn,
-		caConn:             caConn,
-		raConn:             raConn,
-		resourceSubscriber: resourceSubscriber,
+		server:         NewHTTP(requestHandler, auth),
+		config:         &config,
+		requestHandler: requestHandler,
+		listener:       listener,
 	}
 
 	return &server, nil
@@ -162,7 +158,7 @@ func New(cfg Config) (*Server, error) {
 
 // Serve starts the service's HTTP server and blocks
 func (s *Server) Serve() error {
-	return s.server.Serve(s.ln)
+	return s.server.Serve(s.listener)
 }
 
 // Shutdown ends serving
@@ -172,14 +168,6 @@ func (s *Server) Shutdown() error {
 		for _, s := range v {
 			s.OnClose()
 		}
-	}
-	s.rdConn.Close()
-	s.raConn.Close()
-	if s.caConn != nil {
-		s.caConn.Close()
-	}
-	if s.listenCertManager != nil {
-		s.listenCertManager.Close()
 	}
 	return s.server.Shutdown(context.Background())
 }
