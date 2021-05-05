@@ -1,0 +1,55 @@
+package test
+
+import (
+	"context"
+	"os"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/plgd-dev/cloud/certificate-authority/service"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/test/config"
+	"github.com/stretchr/testify/require"
+)
+
+func MakeConfig(t *testing.T) service.Config {
+	var cfg service.Config
+	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.CERTIFICATE_AUTHORITY_HOST)
+	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	cfg.Signer.KeyFile = os.Getenv("TEST_ROOT_CA_KEY")
+	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CRT")
+	cfg.Signer.ValidFrom = "now-1h"
+	cfg.Signer.ExpiresIn = time.Hour
+
+	err := cfg.Validate()
+	require.NoError(t, err)
+
+	return cfg
+}
+
+func SetUp(t *testing.T) (TearDown func()) {
+	return New(t, MakeConfig(t))
+}
+
+func New(t *testing.T, cfg service.Config) func() {
+	ctx := context.Background()
+	logger, err := log.NewLogger(cfg.Log)
+	require.NoError(t, err)
+
+	s, err := service.New(ctx, cfg, logger)
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := s.Serve()
+		require.NoError(t, err)
+	}()
+
+	return func() {
+		s.Close()
+		wg.Wait()
+	}
+}

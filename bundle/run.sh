@@ -597,10 +597,37 @@ done
 
 # certificate-authority
 echo "starting certificate-authority"
-ADDRESS=${CERTIFICATE_AUTHORITY_ADDRESS} \
-SIGNER_CERTIFICATE=${CA_POOL_CERT_PATH} \
-SIGNER_PRIVATE_KEY=${CA_POOL_CERT_KEY_PATH} \
-certificate-authority >$LOGS_PATH/certificate-authority.log 2>&1 &
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/certificate-authority.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/certificate-authority.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/certificate-authority.yaml | sort | uniq)
+
+### setup cfgs from env
+cat /configs/certificate-authority.yaml | yq e "\
+  .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
+  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
+  .signer.keyFile = \"${CA_POOL_CERT_KEY_PATH}\" |
+  .signer.certFile = \"${CA_POOL_CERT_PATH}\"
+" - > /data/certificate-authority.yaml
+certificate-authority --config /data/certificate-authority.yaml >$LOGS_PATH/certificate-authority.log 2>&1 &
 status=$?
 certificate_authority_pid=$!
 if [ $status -ne 0 ]; then
