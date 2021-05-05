@@ -59,100 +59,99 @@ docker run -d --network=host \
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `log.debug` | bool | `set to true if you would like to see extra information on logs` | `false` |
+| `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
-### Grpc Connectivity
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `api.grpc.address` | string | `listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
-| `api.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `api.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `api.grpc.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
-
-### Authorization Client for Grpc Connectivity
+### gRPC API
+gRPC API of the Authorization Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `api.grpc.authorization.authority` | string | `endpoint of oauth provider` | `""` |
-| `api.grpc.authorization.audience` | string | `audience of oauth provider` | `""` |
-| `api.grpc.authorization.ownerClaim` | string | `owner claim of oauth provider` | `"sub"` |
-| `api.grpc.authorization.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `api.grpc.authorization.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `api.grpc.authorization.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `api.grpc.authorization.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `api.grpc.authorization.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `api.grpc.authorization.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `api.grpc.address` | string | `Listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
+| `api.grpc.tls.caPool` | string | `File path to the root certificate in PEM format.` |  `""` |
+| `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
+| `api.grpc.authorization.authority` | string | `Endpoint of oauth provider.` | `""` |
+| `api.grpc.authorization.audience` | string | `Audience of oauth provider API.` | `""` |
+| `api.grpc.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
+| `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `api.grpc.authorization.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `api.grpc.authorization.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `api.grpc.authorization.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `api.grpc.authorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.grpc.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Http Connectivity
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `api.http.address` | string | `listen specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
-| `api.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `api.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `api.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `api.http.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
-
-### Authorization Client for Device OAuth Provider
+### HTTP API
+HTTP API of the Authorization Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/uri/uri.go)
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `oauthClients.device.provider` | string | `value which comes from the device during the sign-up ("apn")` | `"generic"` |
-| `oauthClients.device.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
-| `oauthClients.device.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
-| `oauthClients.device.scopes` | string | `Comma separated list of required scopes` | `""` |
-| `oauthClients.device.authorizationURL` | string | `authorization endpoint` | `""` |
-| `oauthClients.device.tokenURL` | string | `token endpoint` | `""` |
-| `oauthClients.device.audience` | string | `audience of oauth provider` | `""` |
-| `oauthClients.device.redirectURL` | string | `redirect url used to obtain device access token` | `""` |
-| `oauthClients.device.responseType` | string | `one of "code/token"` | `"code"` |
-| `oauthClients.device.responseMode` | string | `one of "query/post_form"` | `"post_form"` |
-| `oauthClients.device.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `oauthClients.device.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `oauthClients.device.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `oauthClients.device.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `oauthClients.device.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `oauthClients.device.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `oauthClients.device.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `oauthClients.device.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `oauthClients.device.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `api.http.address` | string | `Listen specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
+| `api.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `api.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.http.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
 
-### Authorization Client for Service OAuth Provider
+### OAuth2.0 Client for Device
+>Configured OAuth2.0 client is used to request an authorization code used for onboarding and exchange it for the token during the [cloud registration](https://plgd.dev/guide/architecture/component-overview.html#coap-gateway).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `oauthClients.client.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
-| `oauthClients.client.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
-| `oauthClients.client.scopes` | string | `Comma separated list of required scopes` | `""` |
-| `oauthClients.client.authorizationURL` | string | `authorization endpoint` | `""` |
-| `oauthClients.client.audience` | string | `audience of oauth provider` | `""` |
-| `oauthClients.client.redirectURL` | string | `redirect url used to obtain device access token` | `""` |
-| `oauthClients.client.responseMode` | string | `one of "query/post_form"` | `"post_form"` |
-| `oauthClients.client.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `oauthClients.client.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `oauthClients.client.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `oauthClients.client.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `oauthClients.client.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `oauthClients.client.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `oauthClients.client.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `oauthClients.client.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `oauthClients.client.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `oauthClients.device.provider` | string | `Value which comes from the device during the sign-up ("apn").` | `"generic"` |
+| `oauthClients.device.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
+| `oauthClients.device.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `oauthClients.device.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `oauthClients.device.authorizationURL` | string | `Authorization endpoint of oauth provider.` | `""` |
+| `oauthClients.device.tokenURL` | string | `Token endpoint of oauth provider.` | `""` |
+| `oauthClients.device.audience` | string | `Audience of oauth provider API.` | `""` |
+| `oauthClients.device.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
+| `oauthClients.device.responseType` | string | `One of "code/token".` | `"code"` |
+| `oauthClients.device.responseMode` | string | `One of "query/post_form".` | `"post_form"` |
+| `oauthClients.device.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `oauthClients.device.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `oauthClients.device.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `oauthClients.device.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `oauthClients.device.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `oauthClients.device.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `oauthClients.device.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `oauthClients.device.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `oauthClients.device.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Storage Client
+### OAuth2.0 Client for UI and SDK
+>Configured OAuth2.0 client is used by the mobile application or SDK to request a token used to authorize all calls they execute against the plgd API Gateways.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.storage.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
-| `clients.storage.mongoDB.database` | string | `name of database` | `"ownersDevices"` |
-| `clients.storage.mongoDB.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `clients.storage.mongoDB.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `clients.storage.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `clients.storage.mongoDB.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `oauthClients.client.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
+| `oauthClients.client.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `oauthClients.client.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `oauthClients.client.authorizationURL` | string | `Authorization endpoint of oauth provider.` | `""` |
+| `oauthClients.client.audience` | string | `Audience of oauth provider API.` | `""` |
+| `oauthClients.client.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
+| `oauthClients.client.responseMode` | string | `One of "query/post_form".` | `"post_form"` |
+| `oauthClients.client.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `oauthClients.client.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `oauthClients.client.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `oauthClients.client.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `oauthClients.client.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `oauthClients.client.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `oauthClients.client.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `oauthClients.client.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `oauthClients.client.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Storage
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.storage.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
+| `clients.storage.mongoDB.database` | string | `Name of database.` | `"ownersDevices"` |
+| `clients.storage.mongoDB.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.storage.mongoDB.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.storage.mongoDB.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.storage.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
 
