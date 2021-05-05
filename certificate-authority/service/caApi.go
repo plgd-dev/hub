@@ -29,33 +29,6 @@ type RequestHandler struct {
 	PrivateKey  crypto.PrivateKey
 }
 
-type ValidFromDecoder func() time.Time
-
-func (d *ValidFromDecoder) Decode(value string) error {
-	if value == "" {
-		*d = func() time.Time {
-			return time.Now().Add(time.Hour * -1)
-		}
-		return nil
-	}
-	_, err := tparse.ParseNow(time.RFC3339, value)
-	if err != nil {
-		return fmt.Errorf("invalid VALID_FROM(%v): %v", value, err)
-	}
-	*d = func() time.Time {
-		t, _ := tparse.ParseNow(time.RFC3339, value)
-		return t
-	}
-	return nil
-}
-
-type SignerConfig struct {
-	Certificate   string           `envconfig:"CERTIFICATE"`
-	PrivateKey    string           `envconfig:"PRIVATE_KEY"`
-	ValidFrom     ValidFromDecoder `envconfig:"VALID_FROM" default:"now"`
-	ValidDuration time.Duration    `envconfig:"VALID_DURATION" default:"87600h"`
-}
-
 func AddHandler(svr *server.Server, cfg SignerConfig) error {
 	handler, err := NewRequestHandlerFromConfig(cfg)
 	if err != nil {
@@ -71,16 +44,19 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 }
 
 func NewRequestHandlerFromConfig(cfg SignerConfig) (*RequestHandler, error) {
-	chainCerts, err := security.LoadX509(cfg.Certificate)
+	chainCerts, err := security.LoadX509(cfg.CertFile)
 	if err != nil {
 		return nil, err
 	}
-	privateKey, err := security.LoadX509PrivateKey(cfg.PrivateKey)
+	privateKey, err := security.LoadX509PrivateKey(cfg.KeyFile)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRequestHandler(cfg.ValidFrom, cfg.ValidDuration, chainCerts, privateKey), nil
+	return NewRequestHandler(func() time.Time {
+		t, _ := tparse.ParseNow(time.RFC3339, cfg.ValidFrom)
+		return t
+	}, cfg.ExpiresIn, chainCerts, privateKey), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.

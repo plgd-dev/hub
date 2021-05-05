@@ -1,0 +1,30 @@
+log:
+  debug: false
+apis:
+  grpc:
+    address: "0.0.0.0:9100"
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/private/cert.crt"
+      clientCertificateRequired: true
+    authorization:
+      authority: ""
+      audience: ""
+      ownerClaim: "sub"
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: "30s"
+        timeout: "10s"
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/private/cert.crt"
+          useSystemCAPool: false
+signer:
+  keyFile: "/secrets/private/rootca.key"
+  certFile: "/secrets/public/rootca.crt"
+  validFrom: "now-1h"
+  expiresIn: "87600h"

@@ -77,6 +77,7 @@ COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/resource-aggregate/con
 COPY --from=build /go/bin/authorization /usr/local/bin/authorization
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/authorization/config.yaml /configs/authorization.yaml
 COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-authority
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/certificate-authority/config.yaml /configs/certificate-authority.yaml
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
