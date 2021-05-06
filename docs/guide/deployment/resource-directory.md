@@ -3,7 +3,7 @@
 ## Docker Image
 
 ```bash
-docker pull plgd/resource-directory:v2next
+docker pull plgd/resource-directory:latest
 ```
 Or by using source
 ```bash
@@ -54,7 +54,7 @@ docker run -d --network=host \
 	--name=resource-directory \
 	-v $(shell pwd)/../.tmp/certs:/data/certs \
 	-v $(shell pwd)/config.yaml:/data/resource-directory.yaml \
-	plgd/resource-directory:v2next --config=/data/resource-directory.yaml
+	plgd/resource-directory:latest --config=/data/resource-directory.yaml
 ```
 
 ## YAML Configuration

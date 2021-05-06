@@ -3,7 +3,7 @@
 ## Docker Image
 
 ```bash
-docker pull plgd/resource-aggregate:v2next
+docker pull plgd/resource-aggregate:latest
 ```
 Or by using source
 ```bash
@@ -54,7 +54,7 @@ docker run -d --network=host \
 	--name=resource-aggregate \
 	-v $(shell pwd)/../.tmp/certs:/data/certs \
 	-v $(shell pwd)/config.yaml:/data/resource-aggregate.yaml \
-	plgd/resource-aggregate:v2next --config=/data/resource-aggregate.yaml
+	plgd/resource-aggregate:latest --config=/data/resource-aggregate.yaml
 ```
 
 ## YAML Configuration

@@ -3,7 +3,7 @@
 ## Docker Image
 
 ```bash
-docker pull plgd/authorization:v2next
+docker pull plgd/authorization:latest
 ```
 Or by using source
 ```bash
@@ -61,7 +61,7 @@ docker run -d --network=host \
 	--name=authorization \
 	-v $(shell pwd)/../.tmp/certs:/data/certs \
 	-v $(shell pwd)/config.yaml:/data/authorization.yaml \
-	plgd/authorization:v2next --config=/data/authorization.yaml
+	plgd/authorization:latest --config=/data/authorization.yaml
 ```
 
 ## YAML Configuration
