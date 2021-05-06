@@ -3,85 +3,64 @@ package service
 import (
 	"context"
 	"crypto/rsa"
-	"crypto/tls"
 	"fmt"
-	"net"
 	"net/http"
 
-	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"go.uber.org/zap"
 )
 
 func logError(err error) { log.Error(err) }
 
 //Server handle HTTP request
-type Server struct {
-	server            *http.Server
-	cfg               *Config
-	requestHandler    *RequestHandler
-	ln                net.Listener
-	listenCertManager certManager.CertManager
+type Service struct {
+	server         *http.Server
+	requestHandler *RequestHandler
+	listener       *listener.Server
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(cfg Config) (*Server, error) {
-	cfg.SetDefaults()
-	err := cfg.Validate()
+func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
+	listener, err := listener.New(config.APIs.HTTP, logger)
 	if err != nil {
-		return nil, err
-	}
-	log.Info(cfg.String())
-
-	listenCertManager, err := certManager.NewCertManager(cfg.Listen)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create listen cert manager: %v", err)
-	}
-	listenTLSCfg := listenCertManager.GetServerTLSConfig()
-
-	ln, err := tls.Listen("tcp", cfg.Address, listenTLSCfg)
-	if err != nil {
-		return nil, fmt.Errorf("cannot listen tls and serve: %v", err)
+		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
 
-	idTokenPrivateKeyI, err := LoadPrivateKey(cfg.IDTokenPrivateKeyPath)
+	idTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.IDTokenKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load private cfg.IDTokenPrivateKeyPath(%v): %v", cfg.IDTokenPrivateKeyPath, err)
+		return nil, fmt.Errorf("cannot load idTokenKeyFile(%v): %v", config.OAuthSigner.IDTokenKeyFile, err)
 	}
 	idTokenPrivateKey, ok := idTokenPrivateKeyI.(*rsa.PrivateKey)
 	if !ok {
-		return nil, fmt.Errorf("cannot invalid type cfg.IDTokenPrivateKeyPath(%T): %v", idTokenPrivateKey, err)
+		return nil, fmt.Errorf("cannot invalid idTokenKeyFile(%T): %v", idTokenPrivateKey, err)
 	}
 
-	accessTokenPrivateKeyI, err := LoadPrivateKey(cfg.AccessTokenKeyPrivateKeyPath)
+	accessTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.AccessTokenKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load private accessTokenPrivateKeyI(%v): %v", cfg.IDTokenPrivateKeyPath, err)
+		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %v", config.OAuthSigner.AccessTokenKeyFile, err)
 	}
 
-	requestHandler, err := NewRequestHandler(&cfg, idTokenPrivateKey, accessTokenPrivateKeyI)
+	requestHandler, err := NewRequestHandler(&config, idTokenPrivateKey, accessTokenPrivateKeyI)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create request handler: %w", err)
 	}
 
-	server := Server{
-		server:            NewHTTP(requestHandler),
-		cfg:               &cfg,
-		requestHandler:    requestHandler,
-		ln:                ln,
-		listenCertManager: listenCertManager,
+	server := Service{
+		server:         NewHTTP(requestHandler),
+		requestHandler: requestHandler,
+		listener:       listener,
 	}
 
 	return &server, nil
 }
 
 // Serve starts the service's HTTP server and blocks
-func (s *Server) Serve() error {
-	return s.server.Serve(s.ln)
+func (s *Service) Serve() error {
+	return s.server.Serve(s.listener)
 }
 
 // Shutdown ends serving
-func (s *Server) Shutdown() error {
-	if s.listenCertManager != nil {
-		s.listenCertManager.Close()
-	}
+func (s *Service) Shutdown() error {
 	return s.server.Shutdown(context.Background())
 }

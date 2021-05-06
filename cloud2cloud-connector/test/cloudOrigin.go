@@ -36,7 +36,7 @@ const cloudConnectormongodbURL = "nats://localhost:34223"
 
 func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	oauthCfg := oauthTest.MakeConfig(t)
-	oauthCfg.Address = OAUTH_HOST
+	oauthCfg.APIs.HTTP.Addr = OAUTH_HOST
 	oauthShutdown := oauthTest.New(t, oauthCfg)
 
 	authCfg := authService.MakeConfig(t)

@@ -79,6 +79,7 @@ COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-autho
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY --from=build-web /web/build /usr/local/var/www
 COPY run.sh /usr/local/bin/run.sh
 COPY nginx /nginx

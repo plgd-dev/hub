@@ -3,8 +3,8 @@ package service
 import (
 	netHttp "net/http"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/log"
 )
 
 func errToJsonRes(err error) map[string]string {

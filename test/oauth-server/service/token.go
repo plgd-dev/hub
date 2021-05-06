@@ -127,7 +127,7 @@ func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Re
 }
 
 func (requestHandler *RequestHandler) getDomain() string {
-	return "https://" + requestHandler.config.Domain
+	return "https://" + requestHandler.config.OAuthSigner.Domain
 }
 
 func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.Request) {
