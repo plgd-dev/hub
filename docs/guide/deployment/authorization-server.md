@@ -37,6 +37,16 @@ Read more detail about how to configure OAuth Provider [here](https://github.com
 See an example of tls config on the followings.
 ```yaml
 ...
+apis:
+  grpc:
+    address: "0.0.0.0:9081"
+    tls:
+      caPool: "/data/certs/rootca.crt"
+      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/http.crt"
+...
+  http:
+    address: "0.0.0.0:9085"
     tls:
       caPool: "/data/certs/rootca.crt"
       keyFile: "/data/certs/http.key"
@@ -143,6 +153,7 @@ HTTP API of the Authorization Service as defined [here](https://github.com/plgd-
 | `oauthClients.client.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Storage
+Plgd cloud uses MongoDB database as owner's device store.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
