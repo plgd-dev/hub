@@ -1,74 +1,158 @@
 # Resource aggregate
 
-## Description
-
-According to CQRS pattern it translates commands to events, store them to DB and publish them to messaging system.
-
 ## Docker Image
 
 ```bash
-docker pull plgd/resource-aggregate:vnext
+docker pull plgd/resource-aggregate:latest
+```
+Or by using source
+```bash
+# Dowonload github source
+git clone https://github.com/plgd-dev/cloud.git 
+
+# Build the source
+cd cloud/ 
+make build
 ```
 
-## API
+## Docker Run
+### How to make certificates
+Before you run docker image of plgd/resource-aggregate, you make sure to execute below script only once. 
+```bash
+# Create certificates on the source
+make certificates 
+```
 
-All requests to service must contains valid access token in [grpc metadata](https://github.com/grpc/grpc-go/blob/master/Documentation/grpc-auth-support.md#oauth2). Any success command creates event and it can create additional snapshot event. The event is stored in DB and published via messaging system.
+### How to get configuration file
+A configuration template is available on [resource-aggregate/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/config.yaml). You can also see configuration file via executing below script.  
+```bash
+# See config file on the source
+cat resource-aggregate/conifg.yaml 
+```
 
-### Commands
+### Edit configuration file 
+You can edit configuration file such as server port, certificates, OAuth provider and so on.
+Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
 
-- publish resource - create resource/republish of the device
-- unpublish resource - unpublish resource from the cloud
-- notify resource changed - set/update content of the resource in the cloud
-- update resource - request to update resource in the device via cloud
-- confirm resource update - response to update resource request
-- retrieve resource - request to retrieve resource from the device via cloud
-- confirm resource retrieve - response to retrieve resource request
-- delete resource - request to delete resource from the device via cloud
-- confirm resource delete - response to delete resource request
+See an example of tls config on the followings.
+```yaml
+...
+apis:
+  grpc:
+    address: "0.0.0.0:9083"
+    tls:
+      caPool: "/data/certs/rootca.crt"
+      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/http.crt"
+...
+```
 
-### Contract
+### Run docker image 
+You can run plgd/resource-aggregate image using certificates and configuration file on the source directory of resource-aggregate.
+```bash
+docker run -d --network=host \
+	--name=resource-aggregate \
+	-v $(shell pwd)/../.tmp/certs:/data/certs \
+	-v $(shell pwd)/config.yaml:/data/resource-aggregate.yaml \
+	plgd/resource-aggregate:latest --config=/data/resource-aggregate.yaml
+```
 
-- [service](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/service.proto)
-- [requets/responses](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/commands.proto)
-- [events](https://github.com/plgd-dev/cloud/blob/master/resource-aggregate/pb/events.proto)
+## YAML Configuration
+### Logging
 
-## Configuration
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
-| Option | ENV variable | Type | Description | Default |
-| ------ | --------- | ----------- | ------- | ------- |
-| `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
-| `-` | `AUTH_SERVER_ADDRESS` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
-| `-` | `SNAPSHOT_THRESHOLD` | int | `number of events to spawn snapshot event` | `128` |
-| `-` | `OCC_MAX_RETRY` | int | `maximum tries to store event to db` | `8` |
-| `-` | `JWKS_URL` | string | `url to get JSON Web Key` | `""` |
-| `-` | `NATS_URL` | string | `url to nats messaging system` | `"nats://localhost:4222"` |
-| `-` | `MONGODB_URI` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
-| `-` | `MONGODB_DATABASE` | string | `name of database` | `"eventstore"` |
-| `-` | `MONGODB_BATCH_SIZE` | int | `maximum number resources in one batch request`  | `16` |
-| `-` | `MONGODB_MAX_POOL_SIZE` | int | `maximum parallel request to DB` | `16` |
-| `-` | `MONGODB_MAX_CONN_IDLE_TIME` | string |  `maximum time of idle connection` | `"240s"` |
-| `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `DIAL_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `DIAL_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `DIAL_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `DIAL_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `DIAL_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `DIAL_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `DIAL_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `DIAL_FILE_CERT_DIR_PATH` | string | `path to directory which contains DIAL_FILE_CERT_KEY_NAME and DIAL_FILE_CERT_NAME` | `""` |
-| `-` | `DIAL_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `DIAL_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_TYPE` | string | `defines how to obtain listen TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `LISTEN_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `LISTEN_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
-| `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
+### gRPC API
+gRPC API of the Resource Aggregate Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `api.grpc.address` | string | `Listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
+| `api.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
+| `api.grpc.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `api.grpc.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
+| `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `api.grpc.authorization.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `api.grpc.authorization.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `api.grpc.authorization.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `api.grpc.authorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.grpc.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Event Bus
+Plgd cloud uses NATS messaging system as a event bus.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
+| `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
+| `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Event Store
+Plgd cloud uses MongoDB database as a event store.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.eventStore.snapshotThreshold` | int | `Tries to create the snapshot event after n events.` | `16` |
+| `clients.eventStore.occMaxRetry` | int | `Limits number of try to store event.` | `8` |
+| `clients.eventStore.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
+| `clients.eventStore.mongoDB.database` | string | `Name of database` | `"eventStore"` |
+| `clients.eventStore.mongoDB.batchSize` | int | `Limits number of queries in one find request.` | `16` |
+| `clients.eventStore.mongoDB.maxPoolSize` | int | `Limits number of connections.` | `16` |
+| `clients.eventStore.mongoDB.maxConnIdleTime` | string | `Close connection when idle time reach the value.` | `240s` |
+| `clients.eventStore.mongoDB.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.eventStore.mongoDB.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.eventStore.mongoDB.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Authorization Server Client
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.authorizationServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
+| `clients.authorizationServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
+| `clients.authorizationServer.grpc.address` | string | `Authoriztion service address.` | `"127.0.0.1:9100"` |
+| `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+
+### OAuth2.0 Service Client
+>Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against the plgd API Gateways.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.authorizationServer.oauth.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
+| `clients.authorizationServer.oauth.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `clients.authorizationServer.oauth.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
+| `clients.authorizationServer.oauth.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `clients.authorizationServer.oauth.verifyServiceTokenFrequency` | string | `Frequency to verify service token.` | `10s` |
+| `clients.authorizationServer.oauth.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `clients.authorizationServer.oauth.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `clients.authorizationServer.oauth.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `clients.authorizationServer.oauth.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `clients.authorizationServer.oauth.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `clients.authorizationServer.oauth.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.authorizationServer.oauth.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.authorizationServer.oauth.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.authorizationServer.oauth.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+::: tip Audience 
+You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
+:::
+
+> Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
