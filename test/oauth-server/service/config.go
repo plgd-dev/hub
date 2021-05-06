@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/kit/config"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/cloud/pkg/config"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/listener"
 )
 
 type AsymmetricKey struct {
-	PrivatePath string
-	PublicPath  string
+	PrivateFile string
+	PublicFile  string
 }
 
 type AccessTokenType string
@@ -86,24 +87,50 @@ var clients = ClientsConfig{
 
 // Config represents application configuration
 type Config struct {
-	Address                      string
-	Listen                       certManager.Config
-	IDTokenPrivateKeyPath        string
-	AccessTokenKeyPrivateKeyPath string
-	Domain                       string
+	Log         log.Config        `yaml:"log" json:"log"`
+	APIs        APIsConfig        `yaml:"apis" json:"apis"`
+	OAuthSigner OAuthSignerConfig `yaml:"oauthSigner" json:"oauthSigner"`
+}
+
+func (c *Config) Validate() error {
+	err := c.APIs.Validate()
+	if err != nil {
+		return fmt.Errorf("apis.%w", err)
+	}
+	err = c.OAuthSigner.Validate()
+	if err != nil {
+		return fmt.Errorf("oauthSigner.%w", err)
+	}
+	return nil
+}
+
+// Config represent application configuration
+type APIsConfig struct {
+	HTTP listener.Config `yaml:"http" json:"http"`
+}
+
+func (c *APIsConfig) Validate() error {
+	err := c.HTTP.Validate()
+	if err != nil {
+		return fmt.Errorf("http.%w", err)
+	}
+	return nil
+}
+
+type OAuthSignerConfig struct {
+	IDTokenKeyFile     string `yaml:"idTokenKeyFile" json:"idTokenKeyFile"`
+	AccessTokenKeyFile string `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
+	Domain             string `yaml:"domain" json:"domain"`
 }
 
 const ClientTest = "test"
 
-func (c *Config) SetDefaults() {
-}
-
-func (c *Config) Validate() error {
-	if c.IDTokenPrivateKeyPath == "" {
-		return fmt.Errorf("idTokenPrivateKeyPath('%v')", c.IDTokenPrivateKeyPath)
+func (c *OAuthSignerConfig) Validate() error {
+	if c.IDTokenKeyFile == "" {
+		return fmt.Errorf("idTokenKeyFile('%v')", c.IDTokenKeyFile)
 	}
-	if c.AccessTokenKeyPrivateKeyPath == "" {
-		return fmt.Errorf("accessTokenKeyPrivateKeyPath('%v')", c.AccessTokenKeyPrivateKeyPath)
+	if c.AccessTokenKeyFile == "" {
+		return fmt.Errorf("accessTokenKeyFile('%v')", c.AccessTokenKeyFile)
 	}
 	if c.Domain == "" {
 		return fmt.Errorf("domain('%v')", c.Domain)

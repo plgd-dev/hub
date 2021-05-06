@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -14,7 +15,7 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/jtacoma/uritemplates"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
@@ -23,13 +24,17 @@ import (
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
-	envconfig.Process("", &cfg)
-	cfg.Address = config.OAUTH_SERVER_HOST
-	cfg.Listen.File.DisableVerifyClientCertificate = true
+	cfg.APIs.HTTP = config.MakeListenerConfig(config.OAUTH_SERVER_HOST)
+	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
 
-	cfg.IDTokenPrivateKeyPath = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
-	cfg.AccessTokenKeyPrivateKeyPath = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")
-	cfg.Domain = config.OAUTH_SERVER_HOST
+	cfg.OAuthSigner.IDTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY")
+	cfg.OAuthSigner.AccessTokenKeyFile = os.Getenv("TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY")
+	cfg.OAuthSigner.Domain = config.OAUTH_SERVER_HOST
+
+	err := cfg.Validate()
+	require.NoError(t, err)
+
+	fmt.Printf("cfg\n%v\n", cfg)
 
 	return cfg
 }
@@ -39,16 +44,21 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 func New(t *testing.T, cfg service.Config) func() {
-	service, err := service.New(cfg)
+	ctx := context.Background()
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
+
+	s, err := service.New(ctx, cfg, logger)
+	require.NoError(t, err)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		service.Serve()
+		s.Serve()
 	}()
 	return func() {
-		service.Shutdown()
+		s.Shutdown()
 		wg.Wait()
 	}
 }

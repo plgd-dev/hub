@@ -240,22 +240,35 @@ done
 
 # oauth-server
 echo "starting oauth-server"
-cat > /data/oauth-server.yaml << EOF
-Address: ${MOCKED_OAUTH_SERVER_ADDRESS}
-Listen:
-  Type: file
-  File:
-    CAPool: ${CA_POOL_CERT_PATH}
-    TLSKeyFileName: ${GRPC_INTERNAL_CERT_KEY_NAME}
-    DirPath: ${INTERNAL_CERT_DIR_PATH}
-    TLSCertFileName: ${GRPC_INTERNAL_CERT_NAME}
-    DisableVerifyClientCertificate: false
-    UseSystemCertPool: true
-IDTokenPrivateKeyPath: ${OAUTH_ID_TOKEN_KEY_PATH}
-AccessTokenKeyPrivateKeyPath: ${OAUTH_ACCESS_TOKEN_KEY_PATH}
-Domain: ${DOMAIN}
-EOF
-oauth-server --config=/data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/oauth-server.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/oauth-server.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
+
+### setup cfg
+cat /configs/oauth-server.yaml | yq e "\
+  .apis.http.address = \"${MOCKED_OAUTH_SERVER_ADDRESS}\" |
+  .oauthSigner.idTokenKeyFile = \"${OAUTH_ID_TOKEN_KEY_PATH}\" |
+  .oauthSigner.accessTokenKeyFile = \"${OAUTH_ACCESS_TOKEN_KEY_PATH}\" |
+  .oauthSigner.domain = \"${DOMAIN}\"
+" - > /data/oauth-server.yaml
+
+oauth-server --config /data/oauth-server.yaml >$LOGS_PATH/oauth-server.log 2>&1 &
 status=$?
 oauth_server_pid=$!
 if [ $status -ne 0 ]; then
