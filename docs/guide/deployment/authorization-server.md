@@ -31,7 +31,7 @@ cat authorization/conifg.yaml
 ```
 
 ### Edit configuration file 
-You can edit configuration file such as server port, certificates, oauth provider and so on.
+You can edit configuration file such as server port, certificates, OAuth provider and so on.
 Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
 
 See an example of tls config on the followings.
@@ -81,8 +81,8 @@ gRPC API of the Authorization Service as defined [here](https://github.com/plgd-
 | `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
-| `api.grpc.authorization.authority` | string | `Endpoint of oauth provider.` | `""` |
-| `api.grpc.authorization.audience` | string | `Audience of oauth provider API.` | `""` |
+| `api.grpc.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.grpc.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
@@ -106,7 +106,7 @@ HTTP API of the Authorization Service as defined [here](https://github.com/plgd-
 | `api.http.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
 
 ### OAuth2.0 Client for Device
->Configured OAuth2.0 client is used to request an authorization code used for onboarding and exchange it for the token during the [cloud registration](https://plgd.dev/guide/architecture/component-overview.html#coap-gateway).
+>Configured OAuth2.0 client is used to request an authorization code used for onboarding and exchange it for the token during the [device registration](https://plgd.dev/guide/architecture/component-overview.html#coap-gateway).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -114,9 +114,9 @@ HTTP API of the Authorization Service as defined [here](https://github.com/plgd-
 | `oauthClients.device.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `oauthClients.device.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
 | `oauthClients.device.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `oauthClients.device.authorizationURL` | string | `Authorization endpoint of oauth provider.` | `""` |
-| `oauthClients.device.tokenURL` | string | `Token endpoint of oauth provider.` | `""` |
-| `oauthClients.device.audience` | string | `Audience of oauth provider API.` | `""` |
+| `oauthClients.device.authorizationURL` | string | `Authorization endpoint of OAuth provider.` | `""` |
+| `oauthClients.device.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
+| `oauthClients.device.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `oauthClients.device.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
 | `oauthClients.device.responseType` | string | `One of "code/token".` | `"code"` |
 | `oauthClients.device.responseMode` | string | `One of "query/post_form".` | `"post_form"` |
@@ -130,6 +130,10 @@ HTTP API of the Authorization Service as defined [here](https://github.com/plgd-
 | `oauthClients.device.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `oauthClients.device.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
+::: tip Audience 
+You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
+:::
+
 ### OAuth2.0 Client for UI and SDK
 >Configured OAuth2.0 client is used by the mobile application or SDK to request a token used to authorize all calls they execute against the plgd API Gateways.
 
@@ -138,8 +142,8 @@ HTTP API of the Authorization Service as defined [here](https://github.com/plgd-
 | `oauthClients.client.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `oauthClients.client.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
 | `oauthClients.client.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `oauthClients.client.authorizationURL` | string | `Authorization endpoint of oauth provider.` | `""` |
-| `oauthClients.client.audience` | string | `Audience of oauth provider API.` | `""` |
+| `oauthClients.client.authorizationURL` | string | `Authorization endpoint of OAuth provider.` | `""` |
+| `oauthClients.client.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `oauthClients.client.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
 | `oauthClients.client.responseMode` | string | `One of "query/post_form".` | `"post_form"` |
 | `oauthClients.client.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
@@ -151,6 +155,10 @@ HTTP API of the Authorization Service as defined [here](https://github.com/plgd-
 | `oauthClients.client.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `oauthClients.client.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `oauthClients.client.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+::: tip Audience 
+You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
+:::
 
 ### Storage
 Plgd cloud uses MongoDB database as owner's device store.

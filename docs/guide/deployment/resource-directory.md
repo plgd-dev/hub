@@ -31,7 +31,7 @@ cat resource-directory/conifg.yaml
 ```
 
 ### Edit configuration file 
-You can edit configuration file such as server port, certificates, oauth provider and so on.
+You can edit configuration file such as server port, certificates, OAuth provider and so on.
 Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
 
 See an example of tls config on the followings.
@@ -74,9 +74,9 @@ gRPC API of the Resource Aggregate Service as defined [here](https://github.com/
 | `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
-| `api.grpc.authorization.authority` | string | `Endpoint of oauth provider.` | `""` |
-| `api.grpc.authorization.audience` | string | `Audience of oauth provider API.` | `""` |
-| `api.grpc.authorization.ownerClaim` | string | `Owner claim of oauth provider.` | `"sub"` |
+| `api.grpc.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `api.grpc.authorization.ownerClaim` | string | `Owner claim of OAuth provider.` | `"sub"` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
 | `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
@@ -98,7 +98,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Storage
+### Event Store
 Plgd cloud uses MongoDB database as a event store.
 
 | Property | Type | Description | Default |
@@ -130,7 +130,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
 | `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
-### OAuth2.0 Client
+### OAuth2.0 Service Client
 >Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against the plgd API Gateways.
 
 | Property | Type | Description | Default |
@@ -138,8 +138,8 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.authorizationServer.oauth.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `clients.authorizationServer.oauth.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
 | `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `clients.authorizationServer.oauth.tokenURL` | string | `Token endpoint of oauth provider.` | `""` |
-| `clients.authorizationServer.oauth.audience` | string | `Audience of oauth provider API.` | `""` |
+| `clients.authorizationServer.oauth.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
+| `clients.authorizationServer.oauth.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `clients.authorizationServer.oauth.verifyServiceTokenFrequency` | string | `Frequency to verify service token.` | `10s` |
 | `clients.authorizationServer.oauth.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `clients.authorizationServer.oauth.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
@@ -150,6 +150,10 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.authorizationServer.oauth.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `clients.authorizationServer.oauth.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `clients.authorizationServer.oauth.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+::: tip Audience 
+You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
+:::
 
 ### Public Configuration
 These configurations are `Coap Cloud Conf` information for device registration to plgd cloud as well as root CA certificate, certificate authority address to get identity certificate for ssl connection to plgd cloud before device registration.
@@ -167,3 +171,4 @@ This will be served by HTTP Gateway API as defined [here](https://github.com/plg
 | `publicConfiguration.cloudAuthorizationProvider` | string | `OAuth authorization provider for onboard device.` | `""` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
+
