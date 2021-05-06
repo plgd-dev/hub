@@ -37,6 +37,9 @@ Read more detail about how to configure OAuth Provider [here](https://github.com
 See an example of tls config on the followings.
 ```yaml
 ...
+apis:
+  grpc:
+    address: "0.0.0.0:9082"
     tls:
       caPool: "/data/certs/rootca.crt"
       keyFile: "/data/certs/http.key"
@@ -59,107 +62,108 @@ docker run -d --network=host \
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `log.debug` | bool | `set to true if you would like to see extra information on logs` | `false` |
+| `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
-### Grpc Connectivity
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `api.grpc.address` | string | `listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
-| `api.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `api.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `api.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `api.grpc.tls.clientCertificateRequired` | bool | `require client certificate` | `true` |
-
-### Authorization Client for Grpc Connectivity
+### gRPC API
+gRPC API of the Resource Aggregate Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `api.grpc.authorization.authority` | string | `endpoint of oauth provider` | `""` |
-| `api.grpc.authorization.audience` | string | `audience of oauth provider` | `""` |
-| `api.grpc.authorization.ownerClaim` | string | `owner claim of oauth provider` | `"sub"` |
-| `api.grpc.authorization.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `api.grpc.authorization.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `api.grpc.authorization.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `api.grpc.authorization.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `api.grpc.authorization.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `api.grpc.authorization.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `api.grpc.authorization.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `api.grpc.address` | string | `Listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
+| `api.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
+| `api.grpc.authorization.authority` | string | `Endpoint of oauth provider.` | `""` |
+| `api.grpc.authorization.audience` | string | `Audience of oauth provider API.` | `""` |
+| `api.grpc.authorization.ownerClaim` | string | `Owner claim of oauth provider.` | `"sub"` |
+| `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `api.grpc.authorization.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `api.grpc.authorization.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `api.grpc.authorization.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `api.grpc.authorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.grpc.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Event Bus Client
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `clients.eventBus.nats.url` | string | `url to nats messaging system` | `"nats://localhost:4222"` |
-| `clients.eventBus.nats.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `clients.eventBus.nats.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `clients.eventBus.nats.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `clients.eventBus.nats.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
-
-### Storage Client
+### Event Bus
+Plgd cloud uses NATS messaging system as a event bus.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.eventStore.cacheExpiration` | string | `expiration time of cached resource in projection` | `1m` |
-| `clients.eventStore.goPoolSize` | int | `number of routines to process events in projection` | `1m` |
-| `clients.eventStore.mongoDB.uri` | string | `uri to mongo database` | `"mongodb://localhost:27017"` |
-| `clients.eventStore.mongoDB.database` | string | `name of database` | `"eventStore"` |
-| `clients.eventStore.mongoDB.batchSize` | int | `limits number of queries in one find request` | `16` |
-| `clients.eventStore.mongoDB.maxPoolSize` | int | `limits number of connections` | `16` |
-| `clients.eventStore.mongoDB.maxConnIdleTime` | string | `close connection when idle time reach the value` | `240s` |
-| `clients.eventStore.mongoDB.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `clients.eventStore.mongoDB.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `clients.eventStore.mongoDB.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
+| `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
+| `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Storage
+Plgd cloud uses MongoDB database as a event store.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.eventStore.cacheExpiration` | string | `Expiration time of cached resource in projection.` | `1m` |
+| `clients.eventStore.goPoolSize` | int | `Number of routines to process events in projection.` | `1m` |
+| `clients.eventStore.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
+| `clients.eventStore.mongoDB.database` | string | `Name of database` | `"eventStore"` |
+| `clients.eventStore.mongoDB.batchSize` | int | `Limits number of queries in one find request.` | `16` |
+| `clients.eventStore.mongoDB.maxPoolSize` | int | `Limits number of connections.` | `16` |
+| `clients.eventStore.mongoDB.maxConnIdleTime` | string | `Close connection when idle time reach the value.` | `240s` |
+| `clients.eventStore.mongoDB.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.eventStore.mongoDB.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.eventStore.mongoDB.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.pullFrequency` | string | `frequency to pull changed user device` | `15s` |
-| `clients.authorizationServer.cacheExpiration` | string | `expiration time of cached user device` | `1m` |
-| `clients.authorizationServer.grpc.address` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
-| `clients.authorizationServer.grpc.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `clients.authorizationServer.grpc.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `clients.authorizationServer.grpc.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.authorizationServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
+| `clients.authorizationServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
+| `clients.authorizationServer.grpc.address` | string | `Authoriztion service address.` | `"127.0.0.1:9100"` |
+| `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 | `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
 | `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
 | `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
-### Authorization Client for OAuth Provider
+### OAuth2.0 Client
+>Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against the plgd API Gateways.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.oauth.clientID` | string | `client id for authentication to get access token/authorization code` | `""` |
-| `clients.authorizationServer.oauth.clientSecret` | string | `client secret for authentication to get access token` |  `""` |
-| `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes` | `""` |
-| `clients.authorizationServer.oauth.tokenURL` | string | `token endpoint` | `""` |
-| `clients.authorizationServer.oauth.audience` | string | `audience of oauth provider` | `""` |
-| `clients.authorizationServer.oauth.verifyServiceTokenFrequency` | string | `frequency to verify service token` | `10s` |
-| `clients.authorizationServer.oauth.http.maxIdleConns` | int | `controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `clients.authorizationServer.oauth.http.maxConnsPerHost` | int | `optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `clients.authorizationServer.oauth.http.maxIdleConnsPerHost` | int | `if non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `clients.authorizationServer.oauth.http.idleConnTimeout` | string | `the maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `clients.authorizationServer.oauth.http.timeout` | string | `a time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `clients.authorizationServer.oauth.http.tls.caPool` | string | `file path to the root certificates in PEM format` |  `""` |
-| `clients.authorizationServer.oauth.http.tls.keyFile` | string | `file name of private key in PEM format` | `""` |
-| `clients.authorizationServer.oauth.http.tls.certFile` | string | `file name of certificate in PEM format` | `""` |
-| `clients.authorizationServer.oauth.http.tls.useSystemCAPool` | bool | `use system certification pool` | `false` |
+| `clients.authorizationServer.oauth.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
+| `clients.authorizationServer.oauth.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `clients.authorizationServer.oauth.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `clients.authorizationServer.oauth.tokenURL` | string | `Token endpoint of oauth provider.` | `""` |
+| `clients.authorizationServer.oauth.audience` | string | `Audience of oauth provider API.` | `""` |
+| `clients.authorizationServer.oauth.verifyServiceTokenFrequency` | string | `Frequency to verify service token.` | `10s` |
+| `clients.authorizationServer.oauth.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `clients.authorizationServer.oauth.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `clients.authorizationServer.oauth.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `clients.authorizationServer.oauth.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `clients.authorizationServer.oauth.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `clients.authorizationServer.oauth.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.authorizationServer.oauth.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.authorizationServer.oauth.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.authorizationServer.oauth.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Public Configuration
+These configurations are `Coap Cloud Conf` information for device registration to plgd cloud as well as root CA certificate, certificate authority address to get identity certificate for ssl connection to plgd cloud before device registration.
+This will be served by HTTP Gateway API as defined [here](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go#L14) and also see [cloud-configuration](https://try.plgd.cloud/.well-known/ocfcloud-configuration).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `publicConfiguration.caPool` | string | `path root CA which was used to sign coap-gw certificate` | `""` |
-| `publicConfiguration.tokenURL` | string | `url where user can get OAuth token via implicit flow` | `""` |
-| `publicConfiguration.authorizationURL` | string | `url where user can get OAuth authorization code for the device` | `""` |
-| `publicConfiguration.ownerClaim` | string | `owner claim of oauth provider` | `"sub"` |
-| `publicConfiguration.signingServerAddress` | string | `address of ceritificate authority for plgd-dev/sdk` | `""` |  
-| `publicConfiguration.cloudID` | string | `cloud id which is stored in coap-gw certificate` | `""` |
-| `publicConfiguration.cloudURL` | string | `cloud url for onboard device` | `""` |
-| `publicConfiguration.cloudAuthorizationProvider` | string | `oauth authorization provider for onboard device` | `""` |
+| `publicConfiguration.caPool` | string | `File path to root CA which was used to sign coap-gw certificate.` | `""` |
+| `publicConfiguration.tokenURL` | string | `URL where user can get OAuth token via implicit flow.` | `""` |
+| `publicConfiguration.authorizationURL` | string | `URL where user can get OAuth authorization code for the device.` | `""` |
+| `publicConfiguration.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
+| `publicConfiguration.signingServerAddress` | string | `Address of ceritificate authority for plgd-dev/sdk.` | `""` |  
+| `publicConfiguration.cloudID` | string | `Cloud ID which is stored in coap-gw certificate.` | `""` |
+| `publicConfiguration.cloudURL` | string | `Cloud URL for onboard device.` | `""` |
+| `publicConfiguration.cloudAuthorizationProvider` | string | `OAuth authorization provider for onboard device.` | `""` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
