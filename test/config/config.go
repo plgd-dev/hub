@@ -130,10 +130,9 @@ func MakeEventsStoreMongoDBConfig() mongodb.Config {
 
 func MakeAuthorizationConfig() validator.Config {
 	return validator.Config{
-		Authority:  "https://" + OAUTH_SERVER_HOST,
-		Audience:   "https://localhost/",
-		OwnerClaim: OWNER_CLAIM,
-		HTTP:       MakeHttpClientConfig(),
+		Authority: "https://" + OAUTH_SERVER_HOST,
+		Audience:  "https://localhost/",
+		HTTP:      MakeHttpClientConfig(),
 	}
 }
 

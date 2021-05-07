@@ -83,7 +83,6 @@ gRPC API of the Authorization Service as defined [here](https://github.com/plgd-
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
 | `api.grpc.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
 | `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
-| `api.grpc.authorization.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
 | `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
@@ -165,6 +164,7 @@ Plgd cloud uses MongoDB database as owner's device store.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
+| `clients.storage.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `clients.storage.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
 | `clients.storage.mongoDB.database` | string | `Name of database.` | `"ownersDevices"` |
 | `clients.storage.mongoDB.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |

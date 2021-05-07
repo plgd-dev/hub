@@ -302,8 +302,8 @@ cat /configs/authorization.yaml | yq e "\
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .apis.http.address = \"${AUTHORIZATION_HTTP_ADDRESS}\" |
+  .clients.storage.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
   .oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
@@ -369,9 +369,9 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
   .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
   .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
@@ -429,9 +429,9 @@ cat /configs/resource-directory.yaml | yq e "\
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
   .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
   .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
@@ -539,7 +539,6 @@ cat /configs/grpc-gateway.yaml | yq e "\
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\"
@@ -593,7 +592,6 @@ cat /configs/http-gateway.yaml | yq e "\
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.http.tls.useSystemCAPool = true |
   .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.http.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -657,7 +655,6 @@ cat /configs/certificate-authority.yaml | yq e "\
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.grpc.authorization.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .signer.keyFile = \"${CA_POOL_CERT_KEY_PATH}\" |
   .signer.certFile = \"${CA_POOL_CERT_PATH}\"
 " - > /data/certificate-authority.yaml

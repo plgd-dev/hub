@@ -23,7 +23,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(NewAuth(validator, config.APIs.GRPC.Authorization.OwnerClaim), logger)
+	opts, err := server.MakeDefaultOptions(NewAuth(validator, config.Clients.AuthServer.OwnerClaim), logger)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)

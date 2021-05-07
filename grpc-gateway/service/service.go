@@ -23,7 +23,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(NewAuth(validator, config.APIs.GRPC.Authorization.OwnerClaim), logger)
+	opts, err := server.MakeDefaultOptions(NewAuth(validator), logger)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
@@ -53,7 +53,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	}, nil
 }
 
-func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx context.Context, method string) (context.Context, error) {
+func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, method string) (context.Context, error) {
 	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
@@ -72,6 +72,6 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 	}
 }
 
-func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator, ownerClaim))
+func NewAuth(validator kitNetGrpc.Validator) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator))
 }

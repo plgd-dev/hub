@@ -101,10 +101,14 @@ func (c *SDKOAuthConfig) Validate() error {
 }
 
 type StorageConfig struct {
-	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+	OwnerClaim string         `yaml:"ownerClaim" json:"ownerClaim"`
+	MongoDB    mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
 }
 
 func (c *StorageConfig) Validate() error {
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
 	err := c.MongoDB.Validate()
 	if err != nil {
 		return fmt.Errorf("mongoDB.%w", err)

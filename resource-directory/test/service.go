@@ -13,33 +13,34 @@ import (
 )
 
 func MakeConfig(t *testing.T) service.Config {
-	var rdCfg service.Config
-	rdCfg.APIs.GRPC = config.MakeGrpcServerConfig(config.RESOURCE_DIRECTORY_HOST)
+	var cfg service.Config
+	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.RESOURCE_DIRECTORY_HOST)
 
-	rdCfg.Clients.AuthServer.CacheExpiration = time.Second
-	rdCfg.Clients.AuthServer.PullFrequency = time.Millisecond * 500
-	rdCfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
-	rdCfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
+	cfg.Clients.AuthServer.CacheExpiration = time.Second
+	cfg.Clients.AuthServer.PullFrequency = time.Millisecond * 500
+	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM
+	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
+	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
 
-	rdCfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
-	rdCfg.Clients.Eventbus.GoPoolSize = 16
+	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
+	cfg.Clients.Eventbus.GoPoolSize = 16
 
-	rdCfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
-	rdCfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
+	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
+	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
 
-	rdCfg.ExposedCloudConfiguration.CAPool = config.CA_POOL
-	rdCfg.ExposedCloudConfiguration.TokenURL = "AccessTokenUrl"
-	rdCfg.ExposedCloudConfiguration.AuthorizationURL = "AuthCodeUrl"
-	rdCfg.ExposedCloudConfiguration.CloudID = "cloudID"
-	rdCfg.ExposedCloudConfiguration.CloudAuthorizationProvider = "plgd"
-	rdCfg.ExposedCloudConfiguration.CloudURL = "CloudUrl"
-	rdCfg.ExposedCloudConfiguration.OwnerClaim = "JwtClaimOwnerId"
-	rdCfg.ExposedCloudConfiguration.SigningServerAddress = "SigningServerAddress"
+	cfg.ExposedCloudConfiguration.CAPool = config.CA_POOL
+	cfg.ExposedCloudConfiguration.TokenURL = "AccessTokenUrl"
+	cfg.ExposedCloudConfiguration.AuthorizationURL = "AuthCodeUrl"
+	cfg.ExposedCloudConfiguration.CloudID = "cloudID"
+	cfg.ExposedCloudConfiguration.CloudAuthorizationProvider = "plgd"
+	cfg.ExposedCloudConfiguration.CloudURL = "CloudUrl"
+	cfg.ExposedCloudConfiguration.OwnerClaim = "JwtClaimOwnerId"
+	cfg.ExposedCloudConfiguration.SigningServerAddress = "SigningServerAddress"
 
-	err := rdCfg.Validate()
+	err := cfg.Validate()
 	require.NoError(t, err)
 
-	return rdCfg
+	return cfg
 }
 
 func SetUp(t *testing.T) (TearDown func()) {

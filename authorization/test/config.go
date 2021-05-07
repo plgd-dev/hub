@@ -28,6 +28,7 @@ func MakeConfig(t *testing.T) service.Config {
 	authCfg.OAuthClients.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
 	authCfg.OAuthClients.SDK.HTTP = config.MakeHttpClientConfig()
 
+	authCfg.Clients.Storage.OwnerClaim = config.OWNER_CLAIM
 	authCfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
 	authCfg.Clients.Storage.MongoDB.TLS = config.MakeTLSClientConfig()
 	authCfg.Clients.Storage.MongoDB.Database = "ownersDevices"

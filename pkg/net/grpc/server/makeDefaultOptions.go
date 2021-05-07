@@ -40,19 +40,38 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger *zap.Logger) ([
 
 }
 
-func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
+type cfg struct {
+	ownerClaim string
+}
+
+type Option func(*cfg)
+
+func WithOwnerClaim(ownerClaim string) Option {
+	return func(c *cfg) {
+		c.ownerClaim = ownerClaim
+	}
+}
+
+func NewAuth(validator kitNetGrpc.Validator, opts ...Option) kitNetGrpc.AuthInterceptors {
 	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
+	var cfg cfg
+	for _, o := range opts {
+		o(&cfg)
+	}
 	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
 			log.Errorf("auth interceptor: %v", err)
 			return ctx, err
 		}
+		if cfg.ownerClaim == "" {
+			return ctx, nil
+		}
 		owner, err := kitNetGrpc.OwnerFromMD(ctx)
 		if err != nil {
-			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
+			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, cfg.ownerClaim)
 			if err == nil {
 				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
 			}

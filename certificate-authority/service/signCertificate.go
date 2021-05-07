@@ -5,7 +5,6 @@ import (
 
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/security/signer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,8 +19,7 @@ func (r *RequestHandler) SignCertificate(ctx context.Context, req *pb.SignCertif
 	if err != nil {
 		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
 	}
-	owner, _ := grpc.OwnerFromMD(ctx)
-	log.Debugf("RequestHandler.SignCertificate owner=%v csr=%v crt=%v", owner, string(req.CertificateSigningRequest), string(cert))
+	log.Debugf("RequestHandler.SignCertificate csr=%v crt=%v", string(req.CertificateSigningRequest), string(cert))
 
 	return &pb.SignCertificateResponse{
 		Certificate: cert,

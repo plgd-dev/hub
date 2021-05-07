@@ -75,6 +75,7 @@ func (c *EventStoreConfig) Validate() error {
 type AuthorizationServerConfig struct {
 	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency" default:"15s"`
 	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration" default:"1m"`
+	OwnerClaim      string           `yaml:"ownerClaim" json:"ownerClaim"`
 	Connection      client.Config    `yaml:"grpc" json:"grpc"`
 	OAuth           client2.ConfigV2 `yaml:"oauth" json:"oauth"`
 }
@@ -85,6 +86,9 @@ func (c *AuthorizationServerConfig) Validate() error {
 	}
 	if c.CacheExpiration <= 0 {
 		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
+	}
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
 	err := c.OAuth.Validate()
 	if err != nil {
