@@ -131,7 +131,7 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 	require.NoError(t, err)
 	req.SetCode(codes.POST)
 	req.SetToken(token)
-	req.SetPath(uri.SecureSignUp)
+	req.SetPath(uri.SignUp)
 	req.SetContentFormat(message.AppOcfCbor)
 	req.SetBody(bytes.NewReader(inputCbor))
 
@@ -165,7 +165,7 @@ func testSignIn(t *testing.T, r service.CoapSignUpResponse, co *tcp.ClientConn) 
 	require.NoError(t, err)
 	req.SetCode(codes.POST)
 	req.SetToken(token)
-	req.SetPath(uri.SecureSignIn)
+	req.SetPath(uri.SignIn)
 	req.SetContentFormat(message.AppOcfCbor)
 	req.SetBody(bytes.NewReader(inputCbor))
 
@@ -340,7 +340,7 @@ func setUp(t *testing.T, withoutTLS ...bool) func() {
 	rdShutdown := rdTest.SetUp(t)
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	if len(withoutTLS) > 0 {
-		coapgwCfg.ListenWithoutTLS = true
+		coapgwCfg.APIs.COAP.TLS.Enabled = false
 	}
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	return func() {

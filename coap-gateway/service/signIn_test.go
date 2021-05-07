@@ -34,7 +34,6 @@ func TestSignInPostHandler(t *testing.T) {
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
 			testPostHandler(t, uri.SignIn, test, co)
-			testPostHandler(t, uri.SecureSignIn, test, co)
 		}
 		t.Run(test.name, tf)
 	}
@@ -60,7 +59,6 @@ func TestSignOutPostHandler(t *testing.T) {
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
 			testPostHandler(t, uri.SignIn, test, co)
-			testPostHandler(t, uri.SecureSignIn, test, co)
 		}
 		t.Run(test.name, tf)
 	}

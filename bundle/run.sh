@@ -483,15 +483,45 @@ done
 
 # coap-gateway-unsecure
 echo "starting coap-gateway-unsecure"
-ADDRESS=${COAP_GATEWAY_UNSECURE_ADDRESS} \
-LOG_MESSAGES=${COAP_GATEWAY_LOG_MESSAGES} \
-EXTERNAL_PORT=${COAP_GATEWAY_UNSECURE_PORT} \
-FQDN=${COAP_GATEWAY_UNSECURE_FQDN} \
-DISABLE_BLOCKWISE_TRANSFER=${COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER} \
-BLOCKWISE_TRANSFER_SZX=${COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX} \
-DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=${COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS} \
-LISTEN_WITHOUT_TLS="true" \
-coap-gateway >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
+## configuration
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/coap-gateway.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/coap-gateway.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/coap-gateway.yaml | sort | uniq)
+
+### setup cfgs from env
+cat /configs/coap-gateway.yaml | yq e "\
+  .log.debug = ${LOG_DEBUG} |
+  .log.dumpCoapMessages = ${COAP_GATEWAY_LOG_MESSAGES} |
+  .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
+  .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
+  .apis.coap.tls.enabled = false |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
+  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
+  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+" - > /data/coap-gateway-unsecure.yaml
+
+coap-gateway --config /data/coap-gateway-unsecure.yaml >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
 status=$?
 coap_gw_unsecure_pid=$!
 if [ $status -ne 0 ]; then
@@ -503,18 +533,27 @@ fi
 
 # coap-gateway-secure
 echo "starting coap-gateway-secure"
-ADDRESS=${COAP_GATEWAY_ADDRESS} \
-LOG_MESSAGES=${COAP_GATEWAY_LOG_MESSAGES} \
-EXTERNAL_PORT=${COAP_GATEWAY_PORT} \
-FQDN=${COAP_GATEWAY_FQDN} \
-LISTEN_FILE_CERT_DIR_PATH=${EXTERNAL_CERT_DIR_PATH} \
-LISTEN_FILE_CERT_NAME=${COAP_GATEWAY_FILE_CERT_NAME} \
-LISTEN_FILE_CERT_KEY_NAME=${COAP_GATEWAY_FILE_CERT_KEY_NAME} \
-LISTEN_FILE_DISABLE_VERIFY_CLIENT_CERTIFICATE=${COAP_GATEWAY_DISABLE_VERIFY_CLIENTS} \
-DISABLE_BLOCKWISE_TRANSFER=${COAP_GATEWAY_DISABLE_BLOCKWISE_TRANSFER} \
-BLOCKWISE_TRANSFER_SZX=${COAP_GATEWAY_BLOCKWISE_TRANSFER_SZX} \
-DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS=${COAP_GATEWAY_DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS} \
-coap-gateway >$LOGS_PATH/coap-gateway.log 2>&1 &
+### setup cfgs from env
+cat /configs/coap-gateway.yaml | yq e "\
+  .log.debug = ${LOG_DEBUG} |
+  .log.dumpCoapMessages =  ${COAP_GATEWAY_LOG_MESSAGES} |
+  .apis.coap.address = \"${COAP_GATEWAY_ADDRESS}\" |
+  .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_PORT}\" |
+  .apis.coap.tls.enabled = true |
+  .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
+  .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
+  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
+  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
+  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
+  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+" - > /data/coap-gateway-secure.yaml
+
+coap-gateway --config /data/coap-gateway-secure.yaml >$LOGS_PATH/coap-gateway.log 2>&1 &
 status=$?
 coap_gw_pid=$!
 if [ $status -ne 0 ]; then

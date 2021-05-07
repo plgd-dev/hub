@@ -37,7 +37,6 @@ func TestSignUpPostHandler(t *testing.T) {
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
 			testPostHandler(t, uri.SignUp, test, co)
-			testPostHandler(t, uri.SecureSignUp, test, co)
 		}
 		t.Run(test.name, tf)
 	}
@@ -65,15 +64,6 @@ func TestSignOffHandler(t *testing.T) {
 		tf := func(t *testing.T) {
 			// delete record for signUp
 			testPostHandler(t, uri.SignUp, test, co)
-		}
-		t.Run(test.name, tf)
-	}
-
-	signUpResp = testSignUp(t, CertIdentity, co)
-	for _, test := range tbl {
-		tf := func(t *testing.T) {
-			// delete record for secureSignUp
-			testPostHandler(t, uri.SecureSignUp, test, co)
 		}
 		t.Run(test.name, tf)
 	}

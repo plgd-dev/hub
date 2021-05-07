@@ -1,38 +1,49 @@
 package service
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
-	"github.com/plgd-dev/cloud/coap-gateway/refImpl"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/coap-gateway/service"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
-func MakeConfig(t *testing.T) refImpl.Config {
-	var gwCfg refImpl.Config
-	err := envconfig.Process("", &gwCfg)
+func MakeConfig(t *testing.T) service.Config {
+	var cfg service.Config
+	cfg.Log.DumpCoapMessages = true
+	cfg.TaskQueue.GoPoolSize = 1600
+	cfg.TaskQueue.Size = 2 * 1024 * 1024
+	cfg.APIs.COAP.Addr = config.GW_HOST
+	cfg.APIs.COAP.ExternalAddress = config.GW_HOST
+	cfg.APIs.COAP.MaxMessageSize = 256 * 1024
+	cfg.APIs.COAP.GoroutineSocketHeartbeat = time.Millisecond * 300
+	cfg.APIs.COAP.KeepAlive.Timeout = time.Second * 20
+	cfg.APIs.COAP.BlockwiseTransfer.Enabled = true
+	cfg.APIs.COAP.BlockwiseTransfer.SZX = "1024"
+	cfg.APIs.COAP.TLS.Embedded = config.MakeTLSServerConfig()
+	cfg.APIs.COAP.TLS.Enabled = true
+	cfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = false
+	cfg.APIs.COAP.TLS.Embedded.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
+	cfg.APIs.COAP.TLS.Embedded.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")
+
+	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
+	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
+	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
+	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
+	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
+
+	err := cfg.Validate()
 	require.NoError(t, err)
-	gwCfg.ListenWithoutTLS = false
-	gwCfg.Service.Addr = testCfg.GW_HOST
-	gwCfg.Service.AuthServerAddr = testCfg.AUTH_HOST
-	gwCfg.Service.ResourceAggregateAddr = testCfg.RESOURCE_AGGREGATE_HOST
 
-	gwCfg.Service.ResourceDirectoryAddr = testCfg.RESOURCE_DIRECTORY_HOST
-	gwCfg.Service.FQDN = "coap-gateway-" + t.Name()
-	gwCfg.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
-	gwCfg.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
-	gwCfg.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
-	gwCfg.Service.HeartBeat = time.Millisecond * 300
+	fmt.Printf("%v\n", cfg)
 
-	gwCfg.Listen.File.TLSCertFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME")
-	gwCfg.Listen.File.TLSKeyFileName = os.Getenv("TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME")
-	gwCfg.Listen.File.DisableVerifyClientCertificate = true
-	gwCfg.Service.LogMessages = true
-	return gwCfg
+	return cfg
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
@@ -40,21 +51,24 @@ func SetUp(t *testing.T) (TearDown func()) {
 }
 
 // New creates test coap-gateway.
-func New(t *testing.T, cfg refImpl.Config) func() {
+func New(t *testing.T, cfg service.Config) func() {
+	ctx := context.Background()
+	logger, err := log.NewLogger(cfg.Log.Embedded)
+	require.NoError(t, err)
 
-	c, err := refImpl.Init(cfg)
+	s, err := service.New(ctx, cfg, logger)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-
 	go func() {
 		defer wg.Done()
-		c.Serve()
+		err := s.Serve()
+		require.NoError(t, err)
 	}()
 
 	return func() {
-		c.Shutdown()
+		s.Close()
 		wg.Wait()
 	}
 }

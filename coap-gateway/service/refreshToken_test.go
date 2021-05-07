@@ -35,7 +35,6 @@ func Test_refreshTokenHandler(t *testing.T) {
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
 			testPostHandler(t, uri.RefreshToken, test, co)
-			testPostHandler(t, uri.SecureRefreshToken, test, co)
 		}
 		t.Run(test.name, tf)
 	}

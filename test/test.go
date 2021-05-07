@@ -34,7 +34,6 @@ import (
 	"github.com/plgd-dev/sdk/schema/acl"
 
 	"github.com/kelseyhightower/envconfig"
-	coapgw "github.com/plgd-dev/cloud/coap-gateway/refImpl"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -48,6 +47,7 @@ import (
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	caService "github.com/plgd-dev/cloud/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
+	coapgw "github.com/plgd-dev/cloud/coap-gateway/service"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -485,7 +485,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 	pool := security.NewDefaultCertPool(nil)
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CRT"))
+	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	require.NoError(t, err)
 	ok := pool.AppendCertsFromPEM(dat)
 	require.True(t, ok)
@@ -493,7 +493,7 @@ func GetRootCertificatePool(t *testing.T) *x509.CertPool {
 }
 
 func GetRootCertificateAuthorities(t *testing.T) []*x509.Certificate {
-	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CRT"))
+	dat, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	require.NoError(t, err)
 	r := make([]*x509.Certificate, 0, 4)
 	for {

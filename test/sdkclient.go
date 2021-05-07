@@ -49,7 +49,7 @@ func NewSDKClient() (*local.Client, error) {
 		return nil, err
 	}
 
-	identityIntermediateCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CRT"))
+	identityIntermediateCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func NewSDKClient() (*local.Client, error) {
 		return nil, err
 	}
 
-	identityTrustedCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CRT"))
+	identityTrustedCA, err := ioutil.ReadFile(os.Getenv("TEST_ROOT_CA_CERT"))
 	if err != nil {
 		return nil, err
 	}

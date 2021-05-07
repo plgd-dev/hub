@@ -36,7 +36,7 @@ func readBody(r io.ReadSeeker) []byte {
 }
 
 func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
-	if !client.server.LogMessages {
+	if !client.server.config.Log.DumpCoapMessages {
 		return
 	}
 	buf := bytes.NewBuffer(make([]byte, 0, 2048))

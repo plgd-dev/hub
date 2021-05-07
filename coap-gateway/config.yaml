@@ -1,0 +1,90 @@
+log:
+  debug: false
+  dumpCoapMessages: true
+apis:
+  coap:
+    address: "0.0.0.0:5684"
+    externalAddress: ""
+    maxMessageSize: 262144
+    goroutineSocketHeartbeat: "4s"
+    keepAlive:
+      timeout: 20s
+    blockwiseTransfer:
+      enabled: true
+      blockSize: "1024"
+    tls:
+      enabled: true
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: true
+clients:
+  eventBus:
+    nats:
+      url: ""
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  authorizationServer:
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+    oauth:
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      tokenURL: ""
+      audience: ""
+      verifyServiceTokenFrequency: 10s
+      http:
+        maxIdleConns: 10
+        maxConnsPerHost: 10
+        maxIdleConnsPerHost: 10
+        idleConnTimeout: 5s
+        timeout: 2s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+  resourceAggregate:
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+    deviceStatusExpiration:
+      enabled: false
+      expiresIn: 0s
+  resourceDirectory:
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+taskQueue:
+  goPoolSize: 1600
+  size: 2097152
+  maxIdleTime: "10m"

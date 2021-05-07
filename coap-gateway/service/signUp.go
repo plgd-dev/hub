@@ -124,7 +124,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 	var accessToken string
 	var userID string
 
-	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.RequestTimeout)
+	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 
 	queries, _ := req.Options.Queries()

@@ -423,8 +423,6 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	defer cancel()
 
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.Service.DeviceStatusExpiration.Enabled = false
-	coapgwCfg.Service.DeviceStatusExpiration.ExpiresIn = time.Millisecond * 50
 
 	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg))
 	defer tearDown()

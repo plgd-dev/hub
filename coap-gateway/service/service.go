@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -15,20 +14,21 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	kitSync "github.com/plgd-dev/kit/sync"
+	"go.uber.org/zap"
 
-	"github.com/plgd-dev/kit/sync/task/queue"
+	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
+	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
@@ -43,47 +43,27 @@ import (
 
 var authCtxKey = "AuthCtx"
 
-//Server a configuration of coapgateway
-type Server struct {
-	FQDN                            string // fully qualified domain name of GW
-	ExternalPort                    uint16 // used to construct oic/res response
-	Addr                            string // Address to listen on, ":COAP" if empty.
-	IsTLSListener                   bool
-	KeepaliveTimeoutConnection      time.Duration
-	KeepaliveOnInactivity           func(cc inactivity.ClientConn)
-	DisableTCPSignalMessageCSM      bool
-	DisablePeerTCPSignalMessageCSMs bool
-	SendErrorTextInResponse         bool
-	RequestTimeout                  time.Duration
-	BlockWiseTransfer               bool
-	BlockWiseTransferSZX            blockwise.SZX
-	ReconnectInterval               time.Duration
-	HeartBeat                       time.Duration
-	MaxMessageSize                  int
-	LogMessages                     bool
+//Service a configuration of coapgateway
+type Service struct {
+	config Config
 
-	raClient *raClient.Client
-	asClient pbAS.AuthorizationServiceClient
-	rdClient pbGRPC.GrpcGatewayClient
-
-	oicPingCache          *cache.Cache
-	oauthMgr              *manager.Manager
-	expirationClientCache *cache.Cache
-
+	KeepaliveOnInactivity   func(cc inactivity.ClientConn)
+	BlockWiseTransferSZX    blockwise.SZX
+	raClient                *raClient.Client
+	asClient                pbAS.AuthorizationServiceClient
+	rdClient                pbGRPC.GrpcGatewayClient
+	oauthMgr                *manager.Manager
+	expirationClientCache   *cache.Cache
 	coapServer              *tcp.Server
 	listener                tcp.Listener
 	authInterceptor         Interceptor
-	asConn                  *grpc.ClientConn
-	rdConn                  *grpc.ClientConn
-	raConn                  *grpc.ClientConn
 	ctx                     context.Context
 	cancel                  context.CancelFunc
 	taskQueue               *queue.Queue
 	userDeviceSubscriptions *kitSync.Map
 	devicesStatusUpdater    *devicesStatusUpdater
-	resourceSubscriber      eventbus.Subscriber
-
-	sigs chan os.Signal
+	resourceSubscriber      *subscriber.Subscriber
+	sigs                    chan os.Signal
 }
 
 type DialCertManager = interface {
@@ -95,19 +75,18 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(config Config, dialCertManager DialCertManager, listenCertManager ListenCertManager) *Server {
+func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
 	p, err := queue.New(config.TaskQueue)
 	if err != nil {
-		log.Fatalf("cannot job queue %v", err)
+		return nil, fmt.Errorf("cannot job queue %w", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, func(v func()) error { return p.Submit(v) }, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	resourceSubscriber, err := subscriber.New(config.Clients.Eventbus.NATS, logger, subscriber.WithGoPool(func(f func()) error { return p.Submit(f) }))
 	if err != nil {
-		log.Fatalf("cannot create eventbus subscriber: %v", err)
+		p.Release()
+		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
-
-	oicPingCache := cache.New(cache.NoExpiration, time.Minute)
-	oicPingCache.OnEvicted(pingOnEvicted)
+	resourceSubscriber.AddCloseFunc(p.Release)
 
 	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
 	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
@@ -122,128 +101,132 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		}
 	})
 
-	dialTLSConfig := dialCertManager.GetClientTLSConfig()
-	oauthMgr, err := manager.NewManagerFromConfiguration(config.OAuth, dialTLSConfig)
+	oauthMgr, err := manager.New(config.Clients.AuthServer.OAuth, logger)
 	if err != nil {
-		log.Fatalf("cannot create oauth manager: %v", err)
+		resourceSubscriber.Close()
+		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
 	}
+	resourceSubscriber.AddCloseFunc(oauthMgr.Close)
 
-	raConn, err := grpc.Dial(
-		config.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
-		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
-	)
+	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
 	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
+		resourceSubscriber.Close()
+		return nil, fmt.Errorf("cannot create connection to resource aggregate: %w", err)
 	}
-	raClient := raClient.New(raConn, resourceSubscriber)
-
-	asConn, err := grpc.Dial(
-		config.AuthServerAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
-		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
-	)
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
-	asClient := pbAS.NewAuthorizationServiceClient(asConn)
-
-	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
-		grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)),
-	)
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
-	var listener tcp.Listener
-	var isTLSListener bool
-	if listenCertManager == nil || reflect.ValueOf(listenCertManager).IsNil() {
-		l, err := net.NewTCPListener("tcp", config.Addr)
+	resourceSubscriber.AddCloseFunc(func() {
+		err := raConn.Close()
 		if err != nil {
-			log.Fatalf("cannot setup tcp for server: %v", err)
+			logger.Sugar().Errorf("error occurs during close connection to resource aggregate: %v", err)
 		}
+	})
+	raClient := raClient.New(raConn.GRPC(), resourceSubscriber)
+
+	asConn, err := grpcClient.New(config.Clients.AuthServer.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	if err != nil {
+		resourceSubscriber.Close()
+		return nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
+	}
+	resourceSubscriber.AddCloseFunc(func() {
+		err := asConn.Close()
+		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to authorization server: %v", err)
+		}
+	})
+	asClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
+
+	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	if err != nil {
+		resourceSubscriber.Close()
+		return nil, fmt.Errorf("cannot create connection to resource directory: %w", err)
+	}
+	resourceSubscriber.AddCloseFunc(func() {
+		err := asConn.Close()
+		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to resource directory: %v", err)
+		}
+	})
+	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
+
+	var listener tcp.Listener
+	if !config.APIs.COAP.TLS.Enabled {
+		l, err := net.NewTCPListener("tcp", config.APIs.COAP.Addr)
+		if err != nil {
+			resourceSubscriber.Close()
+			return nil, fmt.Errorf("cannot create tcp listener: %w", err)
+		}
+		resourceSubscriber.AddCloseFunc(func() {
+			l.Close()
+		})
 		listener = l
 	} else {
-		tlsConfig := listenCertManager.GetServerTLSConfig()
-		l, err := net.NewTLSListener("tcp", config.Addr, tlsConfig)
+		coapsTLS, err := certManagerServer.New(config.APIs.COAP.TLS.Embedded, logger)
 		if err != nil {
-			log.Fatalf("cannot setup tcp-tls for server: %v", err)
+			resourceSubscriber.Close()
+			return nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 		}
+		resourceSubscriber.AddCloseFunc(coapsTLS.Close)
+		l, err := net.NewTLSListener("tcp", config.APIs.COAP.Addr, coapsTLS.GetTLSConfig())
+		if err != nil {
+			resourceSubscriber.Close()
+			return nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
+		}
+		resourceSubscriber.AddCloseFunc(func() {
+			l.Close()
+		})
 		listener = l
-		isTLSListener = true
 	}
-	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn)
 
-	onInactivity := func(cc inactivity.ClientConn) {}
-	if config.KeepaliveEnable {
-		onInactivity = func(cc inactivity.ClientConn) {
-			cc.Close()
-			client, ok := cc.Context().Value(clientKey).(*Client)
-			if ok {
-				deviceID := getDeviceID(client)
-				log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
-			} else {
-				log.Errorf("keep alive was reached fail limit:: closing connection")
-			}
+	onInactivity := func(cc inactivity.ClientConn) {
+		cc.Close()
+		client, ok := cc.Context().Value(clientKey).(*Client)
+		if ok {
+			deviceID := getDeviceID(client)
+			log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
+		} else {
+			log.Errorf("keep alive was reached fail limit:: closing connection")
 		}
 	}
 
-	var blockWiseTransferSZX blockwise.SZX
-	switch strings.ToLower(config.BlockWiseTransferSZX) {
-	case "16":
-		blockWiseTransferSZX = blockwise.SZX16
-	case "32":
-		blockWiseTransferSZX = blockwise.SZX32
-	case "64":
-		blockWiseTransferSZX = blockwise.SZX64
-	case "128":
-		blockWiseTransferSZX = blockwise.SZX128
-	case "256":
-		blockWiseTransferSZX = blockwise.SZX256
-	case "512":
-		blockWiseTransferSZX = blockwise.SZX512
-	case "1024":
-		blockWiseTransferSZX = blockwise.SZX1024
-	case "bert":
-		blockWiseTransferSZX = blockwise.SZXBERT
-	default:
-		log.Fatalf("invalid value BlockWiseTransferSZX %v", config.BlockWiseTransferSZX)
+	blockWiseTransferSZX := blockwise.SZX1024
+	if config.APIs.COAP.BlockwiseTransfer.Enabled {
+		switch strings.ToLower(config.APIs.COAP.BlockwiseTransfer.SZX) {
+		case "16":
+			blockWiseTransferSZX = blockwise.SZX16
+		case "32":
+			blockWiseTransferSZX = blockwise.SZX32
+		case "64":
+			blockWiseTransferSZX = blockwise.SZX64
+		case "128":
+			blockWiseTransferSZX = blockwise.SZX128
+		case "256":
+			blockWiseTransferSZX = blockwise.SZX256
+		case "512":
+			blockWiseTransferSZX = blockwise.SZX512
+		case "1024":
+			blockWiseTransferSZX = blockwise.SZX1024
+		case "bert":
+			blockWiseTransferSZX = blockwise.SZXBERT
+		default:
+			resourceSubscriber.Close()
+			return nil, fmt.Errorf("invalid value BlockWiseTransferSZX %v", config.APIs.COAP.BlockwiseTransfer.SZX)
+		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 
-	s := Server{
-		FQDN:                            config.FQDN,
-		ExternalPort:                    config.ExternalPort,
-		Addr:                            config.Addr,
-		RequestTimeout:                  config.RequestTimeout,
-		DisableTCPSignalMessageCSM:      config.DisableTCPSignalMessageCSM,
-		DisablePeerTCPSignalMessageCSMs: config.DisablePeerTCPSignalMessageCSMs,
-		SendErrorTextInResponse:         config.SendErrorTextInResponse,
-		BlockWiseTransfer:               !config.DisableBlockWiseTransfer,
-		BlockWiseTransferSZX:            blockWiseTransferSZX,
-		ReconnectInterval:               config.ReconnectInterval,
-		HeartBeat:                       config.HeartBeat,
-		MaxMessageSize:                  config.MaxMessageSize,
-		LogMessages:                     config.LogMessages,
-		KeepaliveOnInactivity:           onInactivity,
-		KeepaliveTimeoutConnection:      config.KeepaliveTimeoutConnection,
+	s := Service{
+		config:                config,
+		BlockWiseTransferSZX:  blockWiseTransferSZX,
+		KeepaliveOnInactivity: onInactivity,
 
-		IsTLSListener: isTLSListener,
-		raClient:      raClient,
-		asClient:      asClient,
-		rdClient:      rdClient,
-		asConn:        asConn,
-		rdConn:        rdConn,
-		raConn:        raConn,
-
-		oauthMgr: oauthMgr,
-
+		raClient:              raClient,
+		asClient:              asClient,
+		rdClient:              rdClient,
+		oauthMgr:              oauthMgr,
 		expirationClientCache: expirationClientCache,
-		oicPingCache:          oicPingCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
-		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.DeviceStatusExpiration),
+		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration),
 
 		sigs: make(chan os.Signal, 1),
 
@@ -258,7 +241,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 
 	s.setupCoapServer()
 
-	return &s
+	return &s, nil
 }
 
 func getDeviceID(client *Client) string {
@@ -308,7 +291,7 @@ func (c *userDeviceSubscriptionChannel) pop() *client.DeviceSubscriptions {
 func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
 	var cancelSubscription bool
 	c.store.ReplaceWithFunc(c.userID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
-		if oldLoaded == true {
+		if oldLoaded {
 			oldValue.(*userDeviceSubscriptionChannel).counter--
 			if oldValue.(*userDeviceSubscriptionChannel).counter == 0 {
 				cancelSubscription = true
@@ -327,7 +310,7 @@ func (c *userDeviceSubscriptionChannel) cancel() (wait func(), err error) {
 	return func() {}, nil
 }
 
-func (server *Server) subscribeToDevice(ctx context.Context, userID string, deviceID string, handler *deviceSubscriptionHandlers) (func(context.Context) error, error) {
+func (server *Service) subscribeToDevice(ctx context.Context, userID string, deviceID string, handler *deviceSubscriptionHandlers) (func(context.Context) error, error) {
 	if userID == "" {
 		return nil, fmt.Errorf("subscribeToDevice: invalid userID")
 	}
@@ -378,7 +361,7 @@ func (server *Server) subscribeToDevice(ctx context.Context, userID string, devi
 
 }
 
-func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Server, fnc func(req *mux.Message, client *Client)) {
+func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
 	client, ok := s.Client().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
 		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
@@ -428,7 +411,7 @@ func defaultHandler(req *mux.Message, client *Client) {
 
 const clientKey = "client"
 
-func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
+func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
 	client := newClient(server, coapConn)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
@@ -436,7 +419,7 @@ func (server *Server) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) 
 	})
 }
 
-func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
+func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
@@ -452,7 +435,7 @@ func (server *Server) loggingMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
-func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
+func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
@@ -478,7 +461,7 @@ func (server *Server) authMiddleware(next mux.Handler) mux.Handler {
 	})
 }
 
-func (server *Server) ServiceRequestContext(userID string) (context.Context, error) {
+func (server *Service) ServiceRequestContext(userID string) (context.Context, error) {
 	serviceToken, err := server.oauthMgr.GetToken(server.ctx)
 	if err != nil {
 		return nil, err
@@ -487,7 +470,7 @@ func (server *Server) ServiceRequestContext(userID string) (context.Context, err
 }
 
 //setupCoapServer setup coap server
-func (server *Server) setupCoapServer() {
+func (server *Service) setupCoapServer() {
 	m := mux.NewRouter()
 	m.Use(server.loggingMiddleware, server.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
@@ -499,42 +482,24 @@ func (server *Server) setupCoapServer() {
 	m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signUpHandler)
 	}))
-	m.Handle(uri.SecureSignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, signUpHandler)
-	}))
 	m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, signInHandler)
-	}))
-	m.Handle(uri.SecureSignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signInHandler)
 	}))
 	m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourceDiscoveryHandler)
 	}))
-	m.Handle(uri.ResourcePing, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, resourcePingHandler)
-	}))
 	m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
-		validateCommand(w, r, server, refreshTokenHandler)
-	}))
-	m.Handle(uri.SecureRefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, refreshTokenHandler)
 	}))
 
 	opts := make([]tcp.ServerOption, 0, 8)
-	if server.DisableTCPSignalMessageCSM {
-		opts = append(opts, tcp.WithDisableTCPSignalMessageCSM())
-	}
-	if server.DisablePeerTCPSignalMessageCSMs {
-		opts = append(opts, tcp.WithDisablePeerTCPSignalMessageCSMs())
-	}
-	opts = append(opts, tcp.WithKeepAlive(3, server.KeepaliveTimeoutConnection/3, server.KeepaliveOnInactivity))
+	opts = append(opts, tcp.WithKeepAlive(1, server.config.APIs.COAP.KeepAlive.Timeout, server.KeepaliveOnInactivity))
 	opts = append(opts, tcp.WithOnNewClientConn(server.coapConnOnNew))
-	opts = append(opts, tcp.WithBlockwise(server.BlockWiseTransfer, server.BlockWiseTransferSZX, server.RequestTimeout))
+	opts = append(opts, tcp.WithBlockwise(server.config.APIs.COAP.BlockwiseTransfer.Enabled, server.BlockWiseTransferSZX, server.config.APIs.COAP.KeepAlive.Timeout))
 	opts = append(opts, tcp.WithMux(m))
 	opts = append(opts, tcp.WithContext(server.ctx))
-	opts = append(opts, tcp.WithHeartBeat(server.HeartBeat))
-	opts = append(opts, tcp.WithMaxMessageSize(server.MaxMessageSize))
+	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))
+	opts = append(opts, tcp.WithMaxMessageSize(server.config.APIs.COAP.MaxMessageSize))
 	opts = append(opts, tcp.WithGoPool(func(f func()) error {
 		// we call directly function in connection-goroutine because
 		// pairing request/response cannot be done in taskQueue for a observe resource.
@@ -547,28 +512,24 @@ func (server *Server) setupCoapServer() {
 	server.coapServer = tcp.NewServer(opts...)
 }
 
-func (server *Server) tlsEnabled() bool {
-	return server.IsTLSListener
+func (server *Service) tlsEnabled() bool {
+	return server.config.APIs.COAP.TLS.Enabled
 }
 
-// Serve starts a coapgateway on the configured address in *Server.
-func (server *Server) Serve() error {
+// Serve starts a coapgateway on the configured address in *Service.
+func (server *Service) Serve() error {
 	return server.serveWithHandlingSignal()
 }
 
-func (server *Server) serveWithHandlingSignal() error {
+func (server *Service) serveWithHandlingSignal() error {
 	var wg sync.WaitGroup
 	var err error
 	wg.Add(1)
-	go func(server *Server) {
+	go func(server *Service) {
 		defer wg.Done()
 		err = server.coapServer.Serve(server.listener)
 		server.cancel()
-		server.oauthMgr.Close()
-		server.asConn.Close()
-		server.rdConn.Close()
-		server.raConn.Close()
-		server.listener.Close()
+		server.resourceSubscriber.Close()
 	}(server)
 
 	signal.Notify(server.sigs,
@@ -577,7 +538,6 @@ func (server *Server) serveWithHandlingSignal() error {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 	<-server.sigs
-	server.taskQueue.Release()
 
 	server.coapServer.Stop()
 	wg.Wait()
@@ -586,7 +546,7 @@ func (server *Server) serveWithHandlingSignal() error {
 }
 
 // Shutdown turn off server.
-func (server *Server) Shutdown() error {
+func (server *Service) Close() error {
 	select {
 	case server.sigs <- syscall.SIGTERM:
 	default:

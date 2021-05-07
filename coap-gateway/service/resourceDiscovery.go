@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
@@ -122,7 +121,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 		return
 	}
 
-	discoveryResp, code, err := makeDiscoveryResp(client.server.IsTLSListener, client.server.FQDN+":"+strconv.Itoa(int(client.server.ExternalPort)), getResourceLinksClient)
+	discoveryResp, code, err := makeDiscoveryResp(client.server.tlsEnabled(), client.server.config.APIs.COAP.ExternalAddress, getResourceLinksClient)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcCode2CoapCode(code, coapconv.Retrieve), req.Token)
 		return
