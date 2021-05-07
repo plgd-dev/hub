@@ -85,7 +85,7 @@ const pendingDeviceSubscriptionToken = "pending"
 
 //Client a setup of connection
 type Client struct {
-	server   *Server
+	server   *Service
 	coapConn *tcp.ClientConn
 
 	observedResources     map[string]map[int64]*observedResource // [deviceID][instanceID]
@@ -99,7 +99,7 @@ type Client struct {
 }
 
 //newClient create and initialize client
-func newClient(server *Server, client *tcp.ClientConn) *Client {
+func newClient(server *Service, client *tcp.ClientConn) *Client {
 	return &Client{
 		server:                server,
 		coapConn:              client,
@@ -382,11 +382,10 @@ func (client *Client) CleanUp() *authorizationContext {
 	log.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
 
 	client.server.devicesStatusUpdater.Remove(client)
-	client.server.oicPingCache.Delete(client.remoteAddrString())
 	client.cleanObservedResources()
 	client.cancelResourceSubscriptions(false)
 
-	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.RequestTimeout)
+	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 	client.cancelDeviceSubscriptions(ctx)
 
@@ -401,7 +400,7 @@ func (client *Client) OnClose() {
 
 	if oldAuthCtx.GetDeviceID() != "" {
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
-		ctx, cancel := context.WithTimeout(context.Background(), client.server.RequestTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), client.server.config.APIs.COAP.KeepAlive.Timeout)
 		defer cancel()
 		token, err := client.server.oauthMgr.GetToken(ctx)
 		if err != nil {
@@ -496,7 +495,7 @@ func (client *Client) updateResource(ctx context.Context, event *pb.Event_Resour
 		return nil
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
+	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 	req, err := coapconv.NewCoapResourceUpdateRequest(coapCtx, event)
 	if err != nil {
@@ -578,7 +577,7 @@ func (client *Client) retrieveResource(ctx context.Context, event *pb.Event_Reso
 		return nil
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
+	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 	req, err := coapconv.NewCoapResourceRetrieveRequest(coapCtx, event)
 	if err != nil {
@@ -661,7 +660,7 @@ func (client *Client) deleteResource(ctx context.Context, event *pb.Event_Resour
 		return nil
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
+	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 	req, err := coapconv.NewCoapResourceDeleteRequest(coapCtx, event)
 	if err != nil {
@@ -801,7 +800,7 @@ func (client *Client) createResource(ctx context.Context, event *pb.Event_Resour
 		return nil
 	}
 
-	coapCtx, cancel := context.WithTimeout(ctx, client.server.RequestTimeout)
+	coapCtx, cancel := context.WithTimeout(ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 	req, err := coapconv.NewCoapResourceCreateRequest(coapCtx, event)
 	if err != nil {

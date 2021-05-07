@@ -53,7 +53,7 @@ func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor
 func NewAuthInterceptor() Interceptor {
 	return func(ctx context.Context, code coapCodes.Code, path string) (context.Context, error) {
 		switch path {
-		case uri.RefreshToken, uri.SecureRefreshToken, uri.SignUp, uri.SecureSignUp, uri.SignIn, uri.SecureSignIn, uri.ResourcePing:
+		case uri.RefreshToken, uri.SignUp, uri.SignIn:
 			return ctx, nil
 		}
 		e := ctx.Value(&authCtxKey)

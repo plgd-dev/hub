@@ -67,6 +67,7 @@ RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mon
 RUN apt update
 RUN apt-get install -y mongodb-org-server mongodb-org
 COPY --from=build /go/bin/coap-gateway /usr/local/bin/coap-gateway
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/coap-gateway/config.yaml /configs/coap-gateway.yaml
 COPY --from=build /go/bin/grpc-gateway /usr/local/bin/grpc-gateway
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/grpc-gateway/config.yaml /configs/grpc-gateway.yaml
 COPY --from=build /go/bin/http-gateway /usr/local/bin/http-gateway
@@ -89,6 +90,7 @@ COPY nginx /nginx
 
 # global
 ENV FQDN="localhost"
+ENV LOG_DEBUG=false
 
 # coap-gateway
 ENV COAP_GATEWAY_UNSECURE_PORT=5683

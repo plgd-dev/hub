@@ -18,7 +18,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.CERTIFICATE_AUTHORITY_HOST)
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 	cfg.Signer.KeyFile = os.Getenv("TEST_ROOT_CA_KEY")
-	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CRT")
+	cfg.Signer.CertFile = os.Getenv("TEST_ROOT_CA_CERT")
 	cfg.Signer.ValidFrom = "now-1h"
 	cfg.Signer.ExpiresIn = time.Hour
 

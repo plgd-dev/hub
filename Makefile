@@ -97,12 +97,11 @@ test: env
 		-e LISTEN_FILE_CERT_DIR_PATH=/certs \
 		-e LISTEN_FILE_CERT_NAME=http.crt \
 		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
-		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_CERT_NAME=coap.crt \
-		-e TEST_COAP_GW_OVERWRITE_LISTEN_FILE_KEY_NAME=coap.key \
+		-e TEST_COAP_GW_CERT_FILE=/certs/coap.crt \
+		-e TEST_COAP_GW_KEY_FILE=/certs/coap.key \
 		-e TEST_CLOUD_SID=$(CLOUD_SID) \
-		-e TEST_ROOT_CA_CRT=/certs/root_ca.crt \
+		-e TEST_ROOT_CA_CERT=/certs/root_ca.crt \
         -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
-		-e ACME_DB_DIR=/home/certificate-authority \
 		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
 		cloud-test \
