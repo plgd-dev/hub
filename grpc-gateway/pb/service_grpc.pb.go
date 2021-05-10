@@ -34,6 +34,7 @@ type GrpcGatewayClient interface {
 	DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error)
 	// Create resource at the device.
 	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error)
+	RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error)
 }
 
 type grpcGatewayClient struct {
@@ -216,6 +217,38 @@ func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResour
 	return out, nil
 }
 
+func (c *grpcGatewayClient) RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[4], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrievePendingCommands", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpcGatewayRetrievePendingCommandsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GrpcGateway_RetrievePendingCommandsClient interface {
+	Recv() (*PendingCommand, error)
+	grpc.ClientStream
+}
+
+type grpcGatewayRetrievePendingCommandsClient struct {
+	grpc.ClientStream
+}
+
+func (x *grpcGatewayRetrievePendingCommandsClient) Recv() (*PendingCommand, error) {
+	m := new(PendingCommand)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GrpcGatewayServer is the server API for GrpcGateway service.
 // All implementations must embed UnimplementedGrpcGatewayServer
 // for forward compatibility
@@ -237,6 +270,7 @@ type GrpcGatewayServer interface {
 	DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error)
 	// Create resource at the device.
 	CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error)
+	RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error
 	mustEmbedUnimplementedGrpcGatewayServer()
 }
 
@@ -270,6 +304,9 @@ func (UnimplementedGrpcGatewayServer) DeleteResource(context.Context, *DeleteRes
 }
 func (UnimplementedGrpcGatewayServer) CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateResource not implemented")
+}
+func (UnimplementedGrpcGatewayServer) RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error {
+	return status.Errorf(codes.Unimplemented, "method RetrievePendingCommands not implemented")
 }
 func (UnimplementedGrpcGatewayServer) mustEmbedUnimplementedGrpcGatewayServer() {}
 
@@ -463,6 +500,27 @@ func _GrpcGateway_CreateResource_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GrpcGateway_RetrievePendingCommands_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RetrievePendingCommandsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GrpcGatewayServer).RetrievePendingCommands(m, &grpcGatewayRetrievePendingCommandsServer{stream})
+}
+
+type GrpcGateway_RetrievePendingCommandsServer interface {
+	Send(*PendingCommand) error
+	grpc.ServerStream
+}
+
+type grpcGatewayRetrievePendingCommandsServer struct {
+	grpc.ServerStream
+}
+
+func (x *grpcGatewayRetrievePendingCommandsServer) Send(m *PendingCommand) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.grpcgateway.pb.GrpcGateway",
 	HandlerType: (*GrpcGatewayServer)(nil),
@@ -509,6 +567,11 @@ var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
 			Handler:       _GrpcGateway_SubscribeForEvents_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "RetrievePendingCommands",
+			Handler:       _GrpcGateway_RetrievePendingCommands_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "github.com/plgd-dev/cloud/grpc-gateway/pb/service.proto",

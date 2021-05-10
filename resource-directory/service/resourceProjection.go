@@ -47,16 +47,22 @@ func NewResourceProjection(subscriptions *Subscriptions, updateNotificationConta
 }
 
 func (rp *resourceProjection) cloneLocked() *resourceProjection {
-	resourceUpdatePendings := make([]*events.ResourceUpdatePending, 0, len(rp.resourceUpdatePendings))
-	resourceUpdatePendings = append(resourceUpdatePendings, rp.resourceUpdatePendings...)
 	resourceCreatePendings := make([]*events.ResourceCreatePending, 0, len(rp.resourceCreatePendings))
 	resourceCreatePendings = append(resourceCreatePendings, rp.resourceCreatePendings...)
+	resourceRetrievePendings := make([]*events.ResourceRetrievePending, 0, len(rp.resourceRetrievePendings))
+	resourceRetrievePendings = append(resourceRetrievePendings, rp.resourceRetrievePendings...)
+	resourceUpdatePendings := make([]*events.ResourceUpdatePending, 0, len(rp.resourceUpdatePendings))
+	resourceUpdatePendings = append(resourceUpdatePendings, rp.resourceUpdatePendings...)
+	resourceDeletePendings := make([]*events.ResourceDeletePending, 0, len(rp.resourceDeletePendings))
+	resourceDeletePendings = append(resourceDeletePendings, rp.resourceDeletePendings...)
 	return &resourceProjection{
-		resourceID:             rp.resourceID,
-		content:                rp.content,
-		version:                rp.version,
-		resourceUpdatePendings: resourceUpdatePendings,
-		resourceCreatePendings: resourceCreatePendings,
+		resourceID:               rp.resourceID,
+		content:                  rp.content,
+		version:                  rp.version,
+		resourceUpdatePendings:   resourceUpdatePendings,
+		resourceCreatePendings:   resourceCreatePendings,
+		resourceRetrievePendings: resourceRetrievePendings,
+		resourceDeletePendings:   resourceDeletePendings,
 	}
 }
 

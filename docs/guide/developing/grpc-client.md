@@ -53,10 +53,10 @@ The `SubscribeForEvents` command opens the stream which content is controlled by
 - `filter_by.device_event.{device_id, filter_events}` set to e.g. `RESOURCE_PUBLISHED` to receive **device events**
 - `filter_by.device_event.{resource_id.{device_id, href}, filter_events}` set to e.g. `CONTENT_CHANGED` to receive **resource events**
 
-Frst event returned after the successful subscription is of type `OperationProcessed`. Property `OperationProcessed.error_status.code` contains information if the subscription was successful. If it was successful, property `subscriptionId` is set. All events belonging to single `SubscribeForEvents` request are then identified by this `subscriptionId`.
+First event returned after the successful subscription is of type `OperationProcessed`. Property `OperationProcessed.error_status.code` contains information if the subscription was successful. If it was successful, property `subscriptionId` is set. All events belonging to single `SubscribeForEvents` request are then identified by this `subscriptionId`.
 
 
-If user losts a device _(unregistered / no more shared with the user)_, the client receives an event `SubscriptionCanceled` with corresponding `subcriptionId`.
+If user losts a device _(unregistered / no more shared with the user)_, the client receives an event `SubscriptionCanceled` with corresponding `subscriptionId`.
 
 ### Retrieve Resource from Device
 The `RetrieveResourceFromDevice` retrieves resource content directly from the device - resource shadow value is not returned.
@@ -70,6 +70,17 @@ The `Create Resource` command requests creation of a new resource on a specific 
 
 ### Delete Resource
 The `DeleteResource` command requests device to delete a specific resource. Confirmation message doesn't mean that the resource was deleted. After successful deletion, devices unpublishes it's resource. This information is propagated to client in form of an `RESOURCE_UNPUBLISHED` event.
+
+### Retrieve pending commands
+The `RetrievePendingCommands` command supports various filter options. If all of them are **unset**, all pending commands of all devices user is authorized to use are returned. 
+
+**Example usages of filter options:**
+- to retrieve pending commands of resources identified by their hrefs use `RetrievePendingCommandsRequest.resource_ids_filter` where combinations `deviceID` and `href` is required
+- to retrieve pending commands of certain devices use `RetrievePendingCommandsRequest.device_ids_filter` where ids of these devices needs to be set
+- to retrieve pending commands of a specific type resources use `RetrievePendingCommandsRequest.type_filter`
+- to retrieve pending commands of certain commands use `RetrievePendingCommandsRequest.commands_filter`
+
+To return certain pending commands of binary switch resources hosted by devices with ids `deviceID1` and `deviceID2`, following options shall be set: `RetrievePendingCommandsRequest.device_ids_filter("[deviceID1, deviceID2]") && RetrievePendingCommandsRequest.type_filter([oic.r.switch.binary])`.
 
 #### Contract
 

@@ -35,11 +35,10 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
-	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
+
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
-	rdService "github.com/plgd-dev/cloud/resource-directory/test"
+
 	"github.com/plgd-dev/sdk/local/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,7 +47,10 @@ import (
 	caService "github.com/plgd-dev/cloud/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	coapgw "github.com/plgd-dev/cloud/coap-gateway/service"
+	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
+	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
