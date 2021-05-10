@@ -95,8 +95,8 @@ You can run plgd/resource-aggregate image using certificates and configuration f
 ```bash
 docker run -d --network=host \
 	--name=resource-aggregate \
-	-v $(shell pwd)/.tmp/certs:/data/certs \
-	-v $(shell pwd)/resource-aggregate.yaml:/data/resource-aggregate.yaml \
+	-v $(pwd)/.tmp/certs:/data/certs \
+	-v $(pwd)/resource-aggregate.yaml:/data/resource-aggregate.yaml \
 	plgd/resource-aggregate:latest --config=/data/resource-aggregate.yaml
 ```
 
