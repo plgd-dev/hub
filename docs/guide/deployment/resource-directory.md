@@ -5,36 +5,53 @@
 ```bash
 docker pull plgd/resource-directory:latest
 ```
-Or by using source
-```bash
-# Dowonload github source
-git clone https://github.com/plgd-dev/cloud.git 
-
-# Build the source
-cd cloud/ 
-make build
-```
 
 ## Docker Run
 ### How to make certificates
-Before you run docker image of plgd/resource-directory, you make sure to execute below script only once. 
+Before you run docker image of plgd/resource-directory, you make sure certificates exists on `.tmp/certs` folder.
+If not exists, you can create certificates from plgd/bundle image by following step only once.
 ```bash
-# Create certificates on the source
-make certificates 
+# Create local folder for certificates and run plgd/bundle image to execute shell.
+mkdir -p $(pwd).tmp/certs
+docker run -it \
+	--network=host \
+	-v $(pwd)/.tmp/certs:/certs \
+	-e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
+	--entrypoint /bin/bash \
+	plgd/bundle:latest
+
+# Copy & paste below commands on the bash shell of plgd/bundle container.
+certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
+certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
+certificate-generator --cmd.generateIdentityCertificate=$CLOUD_SID --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
+cat /certs/http.crt > /certs/mongo.key
+cat /certs/http.key >> /certs/mongo.key
+
+# Exit shell.
+exit
+```
+```bash
+# See common certificates for plgd cloud services.
+ls .tmp/certs
+coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
 ```
 
 ### How to get configuration file
-A configuration template is available on [resource-directory/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-directory/config.yaml). You can also see configuration file via executing below script.  
+A configuration template is available on [resource-directory/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-directory/config.yaml).
+You can also see `config.yaml` configuration file on the `resource-directory` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
 ```bash
-# See config file on the source
-cat resource-directory/conifg.yaml 
+# Copy & paste configuration template from the link and save the file named `resource-directory.yaml` on the local folder.
+vi resource-aggregate.yaml
+
+# Or download configuration template.
+curl https://github.com/plgd-dev/cloud/blob/v2/resource-directory/config.yaml --output resource-directory.yaml
 ```
 
 ### Edit configuration file 
 You can edit configuration file such as server port, certificates, OAuth provider and so on.
 Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
 
-See an example of tls config on the followings.
+See an example of address, tls, event bus/store and OAuth config on the followings.
 ```yaml
 ...
 apis:
@@ -45,15 +62,42 @@ apis:
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
 ...
+...
+clients:
+  eventBus:
+    nats:
+      url: "nats://localhost:4222"
+      tls:
+        caPool: "/data/certs/rootca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
+  eventStore:
+    mongoDB:
+      uri: "mongodb://localhost:27017"
+      database: "eventStore"
+      tls:
+        caPool: "/data/certs/rootca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
+  authorizationServer:
+    oauth:
+      clientID: "412dsFf53Sj6$"
+      clientSecret: "235Jgdf65jsd4Shls"
+      scopes: "openid"
+      tokenURL: "https://auth.example.com/oauth/token"
+      audience: "https://api.example.com"
+...
 ```
 
 ### Run docker image 
-You can run plgd/resource-directory image using certificates and configuration file on the source directory of resource-directory.
+You can run plgd/resource-directory image using certificates and configuration file on the folder you made certificates.
 ```bash
 docker run -d --network=host \
 	--name=resource-directory \
-	-v $(shell pwd)/../.tmp/certs:/data/certs \
-	-v $(shell pwd)/config.yaml:/data/resource-directory.yaml \
+	-v $(pwd)/.tmp/certs:/data/certs \
+	-v $(pwd)/resource-directory.yaml:/data/resource-directory.yaml \
 	plgd/resource-directory:latest --config=/data/resource-directory.yaml
 ```
 
