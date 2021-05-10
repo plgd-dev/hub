@@ -111,8 +111,8 @@ gRPC API of the Certificate Authority Service as defined [here](https://github.c
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `signer.keyFile` | string | `File path to the root certificate in PEM format.` |  `""` |
-| `signer.certFile` | string | `File path to the root private key in PEM format.` |  `""` |
+| `signer.keyFile` | string | `File path to the root private key in PEM format.` |  `""` |
+| `signer.certFile` | string | `File path to the root certificate in PEM format.` |  `""` |
 | `signer.validFrom` | string | `The time from when the certificate is valid. (Format: https://github.com/karrick/tparse)` |  `"now-1h"` |
 | `signer.expiresIn` | string | `The time up to which the certificate is valid.` |  `"87600h"` |
 
