@@ -279,7 +279,6 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 }
 
 func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, expectedResources []schema.ResourceLink) {
-	//ctx = kitNetGrpc.CtxWithToken(ctx, provider.UserToken)
 	client, err := c.SubscribeForEvents(ctx)
 	require.NoError(t, err)
 

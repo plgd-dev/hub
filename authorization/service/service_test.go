@@ -23,42 +23,43 @@ const (
 )
 
 func makeConfig(t *testing.T) Config {
-	var authCfg Config
+	var cfg Config
 
-	authCfg.APIs.GRPC.Addr = config.AUTH_HOST
-	authCfg.APIs.GRPC.TLS.CAPool = config.CA_POOL
-	authCfg.APIs.GRPC.TLS.CertFile = config.CERT_FILE
-	authCfg.APIs.GRPC.TLS.KeyFile = config.KEY_FILE
-	authCfg.APIs.GRPC.Authorization = config.MakeAuthorizationConfig()
-	authCfg.APIs.HTTP.TLS.ClientCertificateRequired = true
+	cfg.APIs.GRPC.Addr = config.AUTH_HOST
+	cfg.APIs.GRPC.TLS.CAPool = config.CA_POOL
+	cfg.APIs.GRPC.TLS.CertFile = config.CERT_FILE
+	cfg.APIs.GRPC.TLS.KeyFile = config.KEY_FILE
+	cfg.APIs.GRPC.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.TLS.ClientCertificateRequired = true
 
-	authCfg.APIs.HTTP.Addr = config.AUTH_HTTP_HOST
-	authCfg.APIs.HTTP.TLS.CAPool = config.CA_POOL
-	authCfg.APIs.HTTP.TLS.CertFile = config.CERT_FILE
-	authCfg.APIs.HTTP.TLS.KeyFile = config.KEY_FILE
-	authCfg.APIs.HTTP.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP.Addr = config.AUTH_HTTP_HOST
+	cfg.APIs.HTTP.TLS.CAPool = config.CA_POOL
+	cfg.APIs.HTTP.TLS.CertFile = config.CERT_FILE
+	cfg.APIs.HTTP.TLS.KeyFile = config.KEY_FILE
+	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
 
-	authCfg.OAuthClients.Device.Provider = "plgd"
-	authCfg.OAuthClients.Device.ClientID = oauthService.ClientTest
-	authCfg.OAuthClients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
-	authCfg.OAuthClients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
-	authCfg.OAuthClients.Device.HTTP = config.MakeHttpClientConfig()
+	cfg.OAuthClients.Device.Provider = "plgd"
+	cfg.OAuthClients.Device.ClientID = oauthService.ClientTest
+	cfg.OAuthClients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
+	cfg.OAuthClients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	cfg.OAuthClients.Device.HTTP = config.MakeHttpClientConfig()
 
-	authCfg.OAuthClients.SDK.ClientID = oauthService.ClientTest
-	authCfg.OAuthClients.SDK.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
-	authCfg.OAuthClients.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
-	authCfg.OAuthClients.SDK.HTTP = config.MakeHttpClientConfig()
+	cfg.OAuthClients.SDK.ClientID = oauthService.ClientTest
+	cfg.OAuthClients.SDK.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	cfg.OAuthClients.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
+	cfg.OAuthClients.SDK.HTTP = config.MakeHttpClientConfig()
 
-	authCfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
-	authCfg.Clients.Storage.MongoDB.Database = "ownersDevices"
-	authCfg.Clients.Storage.MongoDB.TLS.CAPool = config.CA_POOL
-	authCfg.Clients.Storage.MongoDB.TLS.CertFile = config.CERT_FILE
-	authCfg.Clients.Storage.MongoDB.TLS.KeyFile = config.KEY_FILE
+	cfg.Clients.Storage.OwnerClaim = "sub"
+	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
+	cfg.Clients.Storage.MongoDB.Database = "ownersDevices"
+	cfg.Clients.Storage.MongoDB.TLS.CAPool = config.CA_POOL
+	cfg.Clients.Storage.MongoDB.TLS.CertFile = config.CERT_FILE
+	cfg.Clients.Storage.MongoDB.TLS.KeyFile = config.KEY_FILE
 
-	err := authCfg.Validate()
+	err := cfg.Validate()
 	require.NoError(t, err)
 
-	return authCfg
+	return cfg
 }
 
 func newTestService(t *testing.T) (*Server, func()) {

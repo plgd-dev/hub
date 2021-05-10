@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,13 +15,13 @@ func (r *RequestHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValues
 	}
 	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), owner)
 	if err != nil {
-		return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
+		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
 	}
 
 	rs := NewResourceShadow(r.resourceProjection, deviceIDs)
 	err = rs.RetrieveResourcesValues(req, srv)
 	if err != nil {
-		return logAndReturnError(err)
+		return log.LogAndReturnError(err)
 	}
 	return nil
 }

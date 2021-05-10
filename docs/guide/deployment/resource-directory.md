@@ -120,7 +120,6 @@ gRPC API of the Resource Aggregate Service as defined [here](https://github.com/
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
 | `api.grpc.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
 | `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
-| `api.grpc.authorization.ownerClaim` | string | `Owner claim of OAuth provider.` | `"sub"` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
 | `api.grpc.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
@@ -136,6 +135,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
+| `clients.eventBus.goPoolSize` | int | `Number of routines to process events in projection.` | `16` |
 | `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
 | `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
 | `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
@@ -148,7 +148,6 @@ Plgd cloud uses MongoDB database as a event store.
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `clients.eventStore.cacheExpiration` | string | `Expiration time of cached resource in projection.` | `1m` |
-| `clients.eventStore.goPoolSize` | int | `Number of routines to process events in projection.` | `1m` |
 | `clients.eventStore.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
 | `clients.eventStore.mongoDB.database` | string | `Name of database` | `"eventStore"` |
 | `clients.eventStore.mongoDB.batchSize` | int | `Limits number of queries in one find request.` | `16` |
@@ -165,6 +164,7 @@ Plgd cloud uses MongoDB database as a event store.
 | ---------- | -------- | -------------- | ------- |
 | `clients.authorizationServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
 | `clients.authorizationServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
+| `clients.authorizationServer.ownerClaim` | string | `Owner claim of OAuth provider.` | `"sub"` |
 | `clients.authorizationServer.grpc.address` | string | `Authoriztion service address.` | `"127.0.0.1:9100"` |
 | `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |

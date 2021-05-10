@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 
+	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -23,7 +23,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(NewAuth(validator, config.Clients.AuthServer.OwnerClaim), logger)
+	opts, err := server.MakeDefaultOptions(NewAuth(validator), logger)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
@@ -43,7 +43,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := AddHandler(ctx, server, config.Clients, config.ExposedCloudConfiguration, logger, pool.Submit); err != nil {
+	if err := AddHandler(ctx, server, config.Clients, logger, pool.Submit); err != nil {
 		server.Close()
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	}, nil
 }
 
-func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx context.Context, method string) (context.Context, error) {
+func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, method string) (context.Context, error) {
 	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
 		return jwt.NewScopeClaims()
 	})
@@ -68,21 +68,10 @@ func makeAuthFunc(validator kitNetGrpc.Validator, ownerClaim string) func(ctx co
 			log.Errorf("auth interceptor %v %v: %v", method, token, err)
 			return ctx, err
 		}
-		owner, err := kitNetGrpc.OwnerFromMD(ctx)
-		if err != nil {
-			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
-			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
-			}
-		}
-		if err != nil {
-			log.Errorf("auth cannot get owner: %v", err)
-			return ctx, err
-		}
-		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
+		return kitNetGrpc.CtxWithToken(ctx, token), nil
 	}
 }
 
-func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
-	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator, ownerClaim))
+func NewAuth(validator kitNetGrpc.Validator) kitNetGrpc.AuthInterceptors {
+	return kitNetGrpc.MakeAuthInterceptors(makeAuthFunc(validator))
 }

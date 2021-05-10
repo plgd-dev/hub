@@ -11,7 +11,6 @@ apis:
     authorization:
       authority: ""
       audience: ""
-      ownerClaim: sub
       http:
         maxIdleConns: 16
         maxConnsPerHost: 32
@@ -25,6 +24,8 @@ apis:
           useSystemCAPool: false
 clients:
   eventBus:
+    # number of routines to process events in projection
+    goPoolSize: 16
     nats:
       url: ""
       tls:
@@ -35,8 +36,6 @@ clients:
   eventStore:
     # expiration time of cached resource in projection
     cacheExpiration: 1m
-    # number of routines to process events in projection
-    goPoolSize: 16
     mongoDB:
       uri: ""
       database: eventStore
@@ -54,6 +53,7 @@ clients:
   authorizationServer:
     pullFrequency: 15s
     cacheExpiration: 1m
+    ownerClaim: sub
     grpc:
       address: ""
       tls:

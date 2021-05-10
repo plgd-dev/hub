@@ -2,24 +2,33 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"sync"
 
-	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 )
+
+type closeFunc []func()
+
+func (s closeFunc) Close() {
+	if len(s) == 0 {
+		return
+	}
+	for _, f := range s {
+		f()
+	}
+}
 
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
@@ -27,11 +36,11 @@ type RequestHandler struct {
 	resourceDirectoryClient pb.GrpcGatewayClient
 
 	resourceAggregateClient *raClient.Client
-	closeFunc               func()
+	closeFunc               closeFunc
 }
 
-func AddHandler(svr *server.Server, config Config, clientTLS *tls.Config) error {
-	handler, err := NewRequestHandlerFromConfig(config, clientTLS)
+func AddHandler(ctx context.Context, svr *server.Server, config ClientsConfig, logger *zap.Logger, goroutinePoolGo func(func()) error) error {
+	handler, err := NewRequestHandlerFromConfig(ctx, config, logger, goroutinePoolGo)
 	if err != nil {
 		return err
 	}
@@ -45,54 +54,53 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(config Config, clientTLS *tls.Config) (*RequestHandler, error) {
-	rdConn, err := grpc.Dial(
-		config.ResourceDirectoryAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
-	}
-	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn)
+func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logger *zap.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+	var closeFunc closeFunc
 
-	pool, err := ants.NewPool(config.GoRoutinePoolSize)
+	resourceSubscriber, err := subscriber.New(config.Eventbus.NATS, logger, subscriber.WithGoPool(goroutinePoolGo))
 	if err != nil {
-		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
-	}
-
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(clientTLS))
-	if err != nil {
+		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
+	closeFunc = append(closeFunc, resourceSubscriber.Close)
 
-	raConn, err := grpc.Dial(
-		config.ResourceAggregateAddr,
-		grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)),
-	)
+	rdConn, err := client.New(config.ResourceDirectory.Connection, logger)
 	if err != nil {
-		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+		closeFunc.Close()
+		return nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
 	}
-	resourceAggregateClient := raClient.New(raConn, resourceSubscriber)
-
-	closeFunc := func() {
-		raConn.Close()
-		rdConn.Close()
-		resourceSubscriber.Close()
+	closeFunc = append(closeFunc, func() {
+		err := rdConn.Close()
+		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to resource-directory: %w", err)
+		}
+	})
+	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
+	raConn, err := client.New(config.ResourceAggregate.Connection, logger)
+	if err != nil {
+		closeFunc.Close()
+		return nil, fmt.Errorf("cannot connect to resource-aggregate: %w", err)
 	}
+	closeFunc = append(closeFunc, func() {
+		err := raConn.Close()
+		if err != nil {
+			logger.Sugar().Errorf("error occurs during close connection to resource-aggregate: %w", err)
+		}
+	})
+	resourceAggregateClient := raClient.New(raConn.GRPC(), resourceSubscriber)
 
-	h := NewRequestHandler(
+	return NewRequestHandler(
 		resourceDirectoryClient,
 		resourceAggregateClient,
 		closeFunc,
-	)
-	return h, nil
+	), nil
 }
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceAggregateClient *raClient.Client,
-	closeFunc func(),
+	closeFunc closeFunc,
 ) *RequestHandler {
 	return &RequestHandler{
 		resourceDirectoryClient: resourceDirectoryClient,
@@ -101,20 +109,12 @@ func NewRequestHandler(
 	}
 }
 
-func logAndReturnError(err error) error {
-	if errors.Is(err, io.EOF) {
-		return err
-	}
-	log.Errorf("%v", err)
-	return err
-}
-
 func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEventsServer) (errRet error) {
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 	rd, err := r.resourceDirectoryClient.SubscribeForEvents(ctx)
 	if err != nil {
-		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err)
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err))
 	}
 	clientErr := make(chan error, 1)
 	var wg sync.WaitGroup
@@ -123,7 +123,7 @@ func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEvent
 		wg.Wait()
 		select {
 		case err := <-clientErr:
-			logAndReturnError(err)
+			log.LogAndReturnError(err)
 			if errRet != nil {
 				errRet = err
 			}
@@ -159,16 +159,16 @@ func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEvent
 			break
 		}
 		if err != nil {
-			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err)
+			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive events: %v", err))
 		}
 		err = srv.Send(resp)
 		if err != nil {
-			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send events: %v", err)
+			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send events: %v", err))
 		}
 	}
 	return nil
 }
 
 func (r *RequestHandler) Close() {
-	r.closeFunc()
+	r.closeFunc.Close()
 }

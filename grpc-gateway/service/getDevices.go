@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -12,7 +13,7 @@ func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 	ctx := srv.Context()
 	rd, err := r.resourceDirectoryClient.GetDevices(ctx, req)
 	if err != nil {
-		return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get devices: %v", err)
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot get devices: %v", err))
 	}
 	for {
 		resp, err := rd.Recv()
@@ -20,11 +21,11 @@ func (r *RequestHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 			break
 		}
 		if err != nil {
-			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive device: %v", err)
+			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot receive device: %v", err))
 		}
 		err = srv.Send(resp)
 		if err != nil {
-			return kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send device: %v", err)
+			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send device: %v", err))
 		}
 	}
 	return nil

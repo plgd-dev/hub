@@ -8,30 +8,31 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func MakeConfig(t *testing.T) service.Config {
-	var raCfg service.Config
+	var cfg service.Config
 
-	raCfg.APIs.GRPC = testCfg.MakeGrpcServerConfig(testCfg.RESOURCE_AGGREGATE_HOST)
+	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.RESOURCE_AGGREGATE_HOST)
 
-	raCfg.Clients.AuthServer.CacheExpiration = time.Second
-	raCfg.Clients.AuthServer.PullFrequency = time.Millisecond * 500
-	raCfg.Clients.AuthServer.Connection = testCfg.MakeGrpcClientConfig(testCfg.AUTH_HOST)
-	raCfg.Clients.AuthServer.OAuth = testCfg.MakeOAuthConfig()
+	cfg.Clients.AuthServer.CacheExpiration = time.Second
+	cfg.Clients.AuthServer.PullFrequency = time.Millisecond * 500
+	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM
+	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
+	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
 
-	raCfg.Clients.Eventbus.NATS = testCfg.MakePublisherConfig()
+	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
 
-	raCfg.Clients.Eventstore.Connection.MongoDB = testCfg.MakeEventsStoreMongoDBConfig()
-	raCfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 8
-	raCfg.Clients.Eventstore.SnapshotThreshold = 16
+	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()
+	cfg.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 8
+	cfg.Clients.Eventstore.SnapshotThreshold = 16
 
-	err := raCfg.Validate()
+	err := cfg.Validate()
 	require.NoError(t, err)
 
-	return raCfg
+	return cfg
 }
 
 func SetUp(t *testing.T) (TearDown func()) {

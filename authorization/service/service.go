@@ -89,7 +89,7 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 	}
 	grpcServer.AddCloseFunc(func() { persistence.Close(ctx) })
 
-	service := NewService(deviceProvider, sdkProvider, persistence, cfg.APIs.GRPC.Authorization.OwnerClaim)
+	service := NewService(deviceProvider, sdkProvider, persistence, cfg.Clients.Storage.OwnerClaim)
 
 	pb.RegisterAuthorizationServiceServer(grpcServer.Server, service)
 
@@ -112,7 +112,7 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 
 // New creates the service's HTTP server.
 func New(ctx context.Context, cfg Config, logger *zap.Logger) (*Server, error) {
-	deviceProvider, err := provider.New(cfg.OAuthClients.Device, logger, cfg.APIs.GRPC.Authorization.OwnerClaim, "query", "offline", "code")
+	deviceProvider, err := provider.New(cfg.OAuthClients.Device, logger, cfg.Clients.Storage.OwnerClaim, "query", "offline", "code")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
@@ -131,7 +131,7 @@ func New(ctx context.Context, cfg Config, logger *zap.Logger) (*Server, error) {
 		sdkProvider.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	opts, err := server.MakeDefaultOptions(NewAuth(validator, cfg.APIs.GRPC.Authorization.OwnerClaim), logger)
+	opts, err := server.MakeDefaultOptions(NewAuth(validator, cfg.Clients.Storage.OwnerClaim), logger)
 	if err != nil {
 		deviceProvider.Close()
 		sdkProvider.Close()
