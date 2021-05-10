@@ -36,7 +36,7 @@ ls .tmp/certs
 coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
 ```
 ### How to get configuration file
-A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). 
+A configuration template is available on [certificate-authority/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/certificate-authority/config.yaml). 
 You can also see `config.yaml` configuration file on the `certificate-authority` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`. 
 ```bash
 # Copy & paste configuration template from the link and save the file named `certificate-authority.yaml` on the local folder.
@@ -85,7 +85,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Authorization Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service_grpc.pb.go#L19).
+gRPC API of the Certificate Authority Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/certificate-authority/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
