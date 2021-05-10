@@ -4,6 +4,7 @@ package ocf.cloud.grpcgateway.pb;
 
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/clientConfiguration.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/devices.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/retrievePendingCommands.proto";
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
@@ -31,4 +32,6 @@ service GrpcGateway {
 
   // Create resource at the device.
   rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse) {}
+
+  rpc RetrievePendingCommands(RetrievePendingCommandsRequest) returns (stream PendingCommand) {}
 }

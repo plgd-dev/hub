@@ -162,5 +162,5 @@ var _StubService_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "github.com/plgd-dev/cloud/pkg/net/grpc/stub.proto",
+	Metadata: "github.com/plgd-dev/cloud/pkg/net/grpc/server/stub.proto",
 }
