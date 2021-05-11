@@ -161,6 +161,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
+| `clients.eventBus.goPoolSize` | int | `Number of routines to process events in projection.` | `16` |
 | `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
 | `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
 | `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
@@ -197,6 +198,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
+| `clients.certificateAuthority.enabled` | bool | `If true, connect to certificate authority.` | `"false"` |
 | `clients.certificateAuthority.grpc.address` | string | `Certificate authority service address.` | `"127.0.0.1:9100"` |
 | `clients.certificateAuthority.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.certificateAuthority.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
