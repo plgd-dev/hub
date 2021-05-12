@@ -1,4 +1,5 @@
-# Authorization server
+# Authorization Server
+Authorization server authorizes users and devices by communicating with OAuth provider (OAuth2.0).
 
 ## Docker Image
 
@@ -23,9 +24,6 @@ docker run -it \
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA 
 certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-certificate-generator --cmd.generateIdentityCertificate=$CLOUD_SID --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-cat /certs/http.crt > /certs/mongo.key
-cat /certs/http.key >> /certs/mongo.key
 
 # Exit shell.
 exit 
@@ -33,7 +31,7 @@ exit
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
+http.crt	http.key	root_ca.crt	root_ca.key
 ```
 ### How to get configuration file
 A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). 
@@ -57,16 +55,24 @@ apis:
   grpc:
     address: "0.0.0.0:9081"
     tls:
-      caPool: "/data/certs/rootca.crt"
+      caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
 ...
   http:
     address: "0.0.0.0:9085"
     tls:
-      caPool: "/data/certs/rootca.crt"
+      caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
+    authorization:
+      authority: "https://auth.example.com/authorize"
+      audience: "https://api.example.com"
+      http:
+        tls:
+          caPool: "/data/certs/root_ca.crt"
+          keyFile: "/data/certs/http.key"
+          certFile: "/data/certs/http.crt"
 ...
 oauthClients:
   device:

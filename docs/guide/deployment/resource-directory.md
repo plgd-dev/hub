@@ -1,4 +1,5 @@
-# Resource directory
+# Resource Directory
+Resource directory exposes resource information published by devices for OCF client to discovery/retrieve from resource shadow.
 
 ## Docker Image
 
@@ -23,9 +24,6 @@ docker run -it \
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
 certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-certificate-generator --cmd.generateIdentityCertificate=$CLOUD_SID --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-cat /certs/http.crt > /certs/mongo.key
-cat /certs/http.key >> /certs/mongo.key
 
 # Exit shell.
 exit
@@ -33,7 +31,7 @@ exit
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
+http.crt	http.key	root_ca.crt	root_ca.key
 ```
 
 ### How to get configuration file
@@ -41,7 +39,7 @@ A configuration template is available on [resource-directory/config.yaml](https:
 You can also see `config.yaml` configuration file on the `resource-directory` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
 ```bash
 # Copy & paste configuration template from the link and save the file named `resource-directory.yaml` on the local folder.
-vi resource-aggregate.yaml
+vi resource-directory.yaml
 
 # Or download configuration template.
 curl https://github.com/plgd-dev/cloud/blob/v2/resource-directory/config.yaml --output resource-directory.yaml
@@ -58,17 +56,24 @@ apis:
   grpc:
     address: "0.0.0.0:9082"
     tls:
-      caPool: "/data/certs/rootca.crt"
+      caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
-...
+    authorization:
+      authority: "https://auth.example.com/authorize"
+      audience: "https://api.example.com"
+      http:
+        tls:
+          caPool: "/data/certs/root_ca.crt"
+          keyFile: "/data/certs/http.key"
+          certFile: "/data/certs/http.crt"
 ...
 clients:
   eventBus:
     nats:
       url: "nats://localhost:4222"
       tls:
-        caPool: "/data/certs/rootca.crt"
+        caPool: "/data/certs/root_ca.crt"
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
@@ -77,11 +82,17 @@ clients:
       uri: "mongodb://localhost:27017"
       database: "eventStore"
       tls:
-        caPool: "/data/certs/rootca.crt"
+        caPool: "/data/certs/root_ca.crt"
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
   authorizationServer:
+    grpc:
+      address: "localhost:9081"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
     oauth:
       clientID: "412dsFf53Sj6$"
       clientSecret: "235Jgdf65jsd4Shls"
@@ -109,7 +120,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Resource Aggregate Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
+gRPC API of the Resource Directory Service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -159,6 +170,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
+Authorization server client configuration to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
