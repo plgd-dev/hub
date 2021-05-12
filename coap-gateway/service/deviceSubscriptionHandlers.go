@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/log"
 )
 
@@ -21,7 +21,7 @@ func NewDeviceSubscriptionHandlers(client *Client, deviceID string) *deviceSubsc
 	}
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
+func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error {
 	h.client.server.taskQueue.Submit(func() {
 		h.mutex.Lock()
 		defer h.mutex.Unlock()
@@ -33,7 +33,7 @@ func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Con
 	return nil
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
+func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error {
 	h.client.server.taskQueue.Submit(func() {
 		h.mutex.Lock()
 		defer h.mutex.Unlock()
@@ -45,7 +45,7 @@ func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.C
 	return nil
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Context, val *pb.Event_ResourceDeletePending) error {
+func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error {
 	h.client.server.taskQueue.Submit(func() {
 		h.mutex.Lock()
 		defer h.mutex.Unlock()
@@ -57,7 +57,7 @@ func (h *deviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Con
 	return nil
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Context, val *pb.Event_ResourceCreatePending) error {
+func (h *deviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error {
 	h.client.server.taskQueue.Submit(func() {
 		h.mutex.Lock()
 		defer h.mutex.Unlock()

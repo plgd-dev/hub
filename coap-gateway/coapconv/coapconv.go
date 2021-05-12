@@ -11,9 +11,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -100,7 +100,7 @@ func MakeMediaType(coapContentFormat int32, contentType string) (message.MediaTy
 	}
 }
 
-func NewCoapResourceUpdateRequest(ctx context.Context, event *pb.Event_ResourceUpdatePending) (*pool.Message, error) {
+func NewCoapResourceUpdateRequest(ctx context.Context, event *events.ResourceUpdatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())
 	if err != nil {
 		return nil, fmt.Errorf("invalid content type for update content: %w", err)
@@ -120,7 +120,7 @@ func NewCoapResourceUpdateRequest(ctx context.Context, event *pb.Event_ResourceU
 	return req, nil
 }
 
-func NewCoapResourceRetrieveRequest(ctx context.Context, event *pb.Event_ResourceRetrievePending) (*pool.Message, error) {
+func NewCoapResourceRetrieveRequest(ctx context.Context, event *events.ResourceRetrievePending) (*pool.Message, error) {
 	req, err := tcp.NewGetRequest(ctx, event.GetResourceId().GetHref())
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func NewCoapResourceRetrieveRequest(ctx context.Context, event *pb.Event_Resourc
 	return req, nil
 }
 
-func NewCoapResourceDeleteRequest(ctx context.Context, event *pb.Event_ResourceDeletePending) (*pool.Message, error) {
+func NewCoapResourceDeleteRequest(ctx context.Context, event *events.ResourceDeletePending) (*pool.Message, error) {
 	req, err := tcp.NewDeleteRequest(ctx, event.GetResourceId().GetHref())
 	if err != nil {
 		return nil, err
@@ -316,7 +316,7 @@ func NewConfirmResourceCreateRequest(resourceID *commands.ResourceId, correlatio
 	}
 }
 
-func NewCoapResourceCreateRequest(ctx context.Context, event *pb.Event_ResourceCreatePending) (*pool.Message, error) {
+func NewCoapResourceCreateRequest(ctx context.Context, event *events.ResourceCreatePending) (*pool.Message, error) {
 	mediaType, err := MakeMediaType(-1, event.GetContent().GetContentType())
 	if err != nil {
 		return nil, fmt.Errorf("invalid content type for create content: %w", err)

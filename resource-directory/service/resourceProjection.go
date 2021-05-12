@@ -73,23 +73,13 @@ func (rp *resourceProjection) Clone() *resourceProjection {
 	return rp.cloneLocked()
 }
 
-func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending *pb.Event_ResourceUpdatePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending *events.ResourceUpdatePending, version uint64) error) error {
 	if len(rp.resourceUpdatePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceUpdatePendingLocked /%v", rp.resourceID)
-	for idx := range rp.resourceUpdatePendings {
-		p := rp.resourceUpdatePendings[idx]
-		updatePending := pb.Event_ResourceUpdatePending{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			ResourceInterface: p.GetResourceInterface(),
-			Content:           pb.RAContent2Content(p.GetContent()),
-			CorrelationId:     p.GetAuditContext().GetCorrelationId(),
-		}
-		err := do(ctx, &updatePending, p.GetEventMetadata().GetVersion())
+	for _, u := range rp.resourceUpdatePendings {
+		err := do(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -99,16 +89,7 @@ func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context,
 
 func (rp *resourceProjection) sendEventResourceUpdated(ctx context.Context, resourcesUpdated []*events.ResourceUpdated) error {
 	for _, u := range resourcesUpdated {
-		updated := pb.Event_ResourceUpdated{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			Content:       pb.RAContent2Content(u.GetContent()),
-			CorrelationId: u.GetAuditContext().GetCorrelationId(),
-			Status:        pb.RAStatus2Status(u.GetStatus()),
-		}
-		err := rp.subscriptions.OnResourceUpdated(ctx, &updated, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceUpdated(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -116,22 +97,13 @@ func (rp *resourceProjection) sendEventResourceUpdated(ctx context.Context, reso
 	return nil
 }
 
-func (rp *resourceProjection) onResourceRetrievePendingLocked(ctx context.Context, do func(ctx context.Context, retrievePending *pb.Event_ResourceRetrievePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceRetrievePendingLocked(ctx context.Context, do func(ctx context.Context, retrievePending *events.ResourceRetrievePending, version uint64) error) error {
 	if len(rp.resourceRetrievePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceRetrievePendingLocked /%v", rp.resourceID)
-	for idx := range rp.resourceRetrievePendings {
-		p := rp.resourceRetrievePendings[idx]
-		retrievePending := pb.Event_ResourceRetrievePending{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			ResourceInterface: p.GetResourceInterface(),
-			CorrelationId:     p.GetAuditContext().GetCorrelationId(),
-		}
-		err := do(ctx, &retrievePending, p.GetEventMetadata().GetVersion())
+	for _, u := range rp.resourceRetrievePendings {
+		err := do(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -139,21 +111,13 @@ func (rp *resourceProjection) onResourceRetrievePendingLocked(ctx context.Contex
 	return nil
 }
 
-func (rp *resourceProjection) onResourceDeletePendingLocked(ctx context.Context, do func(ctx context.Context, deletePending *pb.Event_ResourceDeletePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceDeletePendingLocked(ctx context.Context, do func(ctx context.Context, deletePending *events.ResourceDeletePending, version uint64) error) error {
 	if len(rp.resourceDeletePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceDeletePendingLocked /%v", rp.resourceID)
-	for idx := range rp.resourceDeletePendings {
-		p := rp.resourceDeletePendings[idx]
-		deletePending := pb.Event_ResourceDeletePending{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			CorrelationId: p.GetAuditContext().GetCorrelationId(),
-		}
-		err := do(ctx, &deletePending, p.GetEventMetadata().GetVersion())
+	for _, u := range rp.resourceDeletePendings {
+		err := do(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -161,22 +125,13 @@ func (rp *resourceProjection) onResourceDeletePendingLocked(ctx context.Context,
 	return nil
 }
 
-func (rp *resourceProjection) onResourceCreatePendingLocked(ctx context.Context, do func(ctx context.Context, createPending *pb.Event_ResourceCreatePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceCreatePendingLocked(ctx context.Context, do func(ctx context.Context, createPending *events.ResourceCreatePending, version uint64) error) error {
 	if len(rp.resourceCreatePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceCreatePendingLocked %v", rp.resourceID)
-	for idx := range rp.resourceCreatePendings {
-		p := rp.resourceCreatePendings[idx]
-		createPending := pb.Event_ResourceCreatePending{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			Content:       pb.RAContent2Content(p.GetContent()),
-			CorrelationId: p.GetAuditContext().GetCorrelationId(),
-		}
-		err := do(ctx, &createPending, p.GetEventMetadata().GetVersion())
+	for _, u := range rp.resourceCreatePendings {
+		err := do(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -186,16 +141,7 @@ func (rp *resourceProjection) onResourceCreatePendingLocked(ctx context.Context,
 
 func (rp *resourceProjection) sendEventResourceRetrieved(ctx context.Context, resourcesRetrieved []*events.ResourceRetrieved) error {
 	for _, u := range resourcesRetrieved {
-		retrieved := pb.Event_ResourceRetrieved{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			Content:       pb.RAContent2Content(u.GetContent()),
-			CorrelationId: u.GetAuditContext().GetCorrelationId(),
-			Status:        pb.RAStatus2Status(u.GetStatus()),
-		}
-		err := rp.subscriptions.OnResourceRetrieved(ctx, &retrieved, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceRetrieved(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -205,16 +151,7 @@ func (rp *resourceProjection) sendEventResourceRetrieved(ctx context.Context, re
 
 func (rp *resourceProjection) sendEventResourceDeleted(ctx context.Context, resourceDeleted []*events.ResourceDeleted) error {
 	for _, u := range resourceDeleted {
-		deleted := pb.Event_ResourceDeleted{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			Content:       pb.RAContent2Content(u.GetContent()),
-			CorrelationId: u.GetAuditContext().GetCorrelationId(),
-			Status:        pb.RAStatus2Status(u.GetStatus()),
-		}
-		err := rp.subscriptions.OnResourceDeleted(ctx, &deleted, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceDeleted(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}
@@ -224,16 +161,7 @@ func (rp *resourceProjection) sendEventResourceDeleted(ctx context.Context, reso
 
 func (rp *resourceProjection) sendEventResourceCreated(ctx context.Context, resourceCreated []*events.ResourceCreated) error {
 	for _, u := range resourceCreated {
-		created := pb.Event_ResourceCreated{
-			ResourceId: &commands.ResourceId{
-				DeviceId: rp.resourceID.GetDeviceId(),
-				Href:     rp.resourceID.GetHref(),
-			},
-			Content:       pb.RAContent2Content(u.GetContent()),
-			CorrelationId: u.GetAuditContext().GetCorrelationId(),
-			Status:        pb.RAStatus2Status(u.GetStatus()),
-		}
-		err := rp.subscriptions.OnResourceCreated(ctx, &created, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceCreated(ctx, u, u.GetEventMetadata().GetVersion())
 		if err != nil {
 			return err
 		}

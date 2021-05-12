@@ -3,6 +3,7 @@ syntax = "proto3";
 package ocf.cloud.grpcgateway.pb;
 
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
@@ -127,50 +128,6 @@ message Event {
     Content content = 2;
     Status status = 3;
   }
-  message ResourceUpdatePending {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    Content content = 2;
-    string resource_interface = 3;
-    string correlation_id = 4;
-  }
-  message ResourceUpdated {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    Content content = 2;
-    Status status = 3;
-    string correlation_id = 4;
-  }
-  message ResourceRetrievePending {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    string resource_interface = 2;
-    string correlation_id = 3;
-  }
-  message ResourceRetrieved {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    Content content = 2;
-    Status status = 3;
-    string correlation_id = 4;
-  }
-  message ResourceDeletePending {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    string correlation_id = 2;
-  }
-  message ResourceDeleted {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    Content content = 2;
-    Status status = 3;
-    string correlation_id = 4;
-  }
-  message ResourceCreatePending {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    Content content = 2;
-    string correlation_id = 3;
-  }
-  message ResourceCreated {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    Content content = 2;
-    Status status = 3;
-    string correlation_id = 4;
-  }
   message OperationProcessed {
     message ErrorStatus {
       enum Code {
@@ -199,14 +156,14 @@ message Event {
     ResourceChanged resource_changed = 9;
     OperationProcessed operation_processed = 10;
     SubscriptionCanceled subscription_canceled = 11;
-    ResourceUpdatePending resource_update_pending = 12;
-    ResourceUpdated resource_updated = 13;
-    ResourceRetrievePending resource_retrieve_pending = 14;
-    ResourceRetrieved resource_retrieved = 15;
-    ResourceDeletePending resource_delete_pending = 16;
-    ResourceDeleted resource_deleted = 17;
-    ResourceCreatePending resource_create_pending = 18;
-    ResourceCreated resource_created = 19;
+    ocf.cloud.resourceaggregate.pb.ResourceUpdatePending resource_update_pending = 12;
+    ocf.cloud.resourceaggregate.pb.ResourceUpdated resource_updated = 13;
+    ocf.cloud.resourceaggregate.pb.ResourceRetrievePending resource_retrieve_pending = 14;
+    ocf.cloud.resourceaggregate.pb.ResourceRetrieved resource_retrieved = 15;
+    ocf.cloud.resourceaggregate.pb.ResourceDeletePending resource_delete_pending = 16;
+    ocf.cloud.resourceaggregate.pb.ResourceDeleted resource_deleted = 17;
+    ocf.cloud.resourceaggregate.pb.ResourceCreatePending resource_create_pending = 18;
+    ocf.cloud.resourceaggregate.pb.ResourceCreated resource_created = 19;
   }
 
 }
