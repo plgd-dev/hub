@@ -117,7 +117,7 @@ gRPC API of the Certificate Authority Service as defined [here](https://github.c
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Signer
-
+Signer configuration to issue certificates for devices or mobile application.
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `signer.keyFile` | string | `File path to the signer private key in PEM format.` |  `""` |
