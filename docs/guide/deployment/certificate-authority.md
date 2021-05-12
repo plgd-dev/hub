@@ -1,4 +1,8 @@
 # Certificate authority
+This service is used to sign certificates for devices and [plgd-dev/sdk](https://github.com/plgd-dev/sdk) client.
+
+> During onboarding device via SDK (at first SDK gets OCF identity certificate for self), SDK ask the service to sign CSR (Certificate Signed Request) for the device and when it is success, the service returns certificate chain.
+  e.g. plgd mobile application uses SDK for onboarding the devices as served in [Google Play](https://play.google.com/store/apps/details?id=dev.plgd.client&hl=sk&gl=US), [Apple Store](https://apps.apple.com/sk/app/plgd/id1536315811).
 
 ## Docker Image
 
@@ -23,9 +27,6 @@ docker run -it \
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA 
 certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-certificate-generator --cmd.generateIdentityCertificate=$CLOUD_SID --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-cat /certs/http.crt > /certs/mongo.key
-cat /certs/http.key >> /certs/mongo.key
 
 # Exit shell.
 exit 
@@ -33,7 +34,7 @@ exit
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
+http.crt	http.key	root_ca.crt root_ca.key
 ```
 ### How to get configuration file
 A configuration template is available on [certificate-authority/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/certificate-authority/config.yaml). 
@@ -60,6 +61,14 @@ apis:
       caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
+    authorization:
+      authority: "https://auth.example.com/authorize"
+      audience: "https://api.example.com"
+      http:
+        tls:
+          caPool: "/data/certs/root_ca.crt"
+          keyFile: "/data/certs/http.key"
+          certFile: "/data/certs/http.crt"
 ...
 signer:
   keyFile: "/data/certs/root_ca.key"
