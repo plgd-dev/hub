@@ -10,8 +10,9 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 )
+
+type DecodeFunc = func(interface{}) error
 
 func (requestHandler *RequestHandler) startResourceObservation(w http.ResponseWriter, r *http.Request) {
 	resolver := resourceObservationResolver{requestHandler: requestHandler}
@@ -49,7 +50,7 @@ type resourceObservation struct {
 	subscribeSession
 }
 
-func (d *resourceObservation) Handle(ctx context.Context, body kitNetCoap.DecodeFunc) {
+func (d *resourceObservation) Handle(ctx context.Context, body DecodeFunc) {
 	var evt interface{}
 	if err := body(&evt); err != nil {
 		d.ws.WriteJSON(errToJsonRes(err))

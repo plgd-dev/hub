@@ -4,9 +4,9 @@ import (
 	"errors"
 	netHttp "net/http"
 
+	coapStatus "github.com/plgd-dev/go-coap/v2/message/status"
 	"github.com/plgd-dev/kit/coapconv"
 	"github.com/plgd-dev/kit/grpcconv"
-	coapStatus "github.com/plgd-dev/kit/net/coap/status"
 	grpcCodes "google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
 )

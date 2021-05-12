@@ -9,7 +9,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/net/coap"
 	"google.golang.org/grpc/status"
 )
 
@@ -68,8 +67,8 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		ExpiresIn:    resp.ExpiresIn,
 	}
 
-	accept := coap.GetAccept(req.Options)
-	encode, err := coap.GetEncoder(accept)
+	accept := coapconv.GetAccept(req.Options)
+	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle refresh token for %v: %w", refreshToken.DeviceID, err), coapCodes.InternalServerError, req.Token)
 		return

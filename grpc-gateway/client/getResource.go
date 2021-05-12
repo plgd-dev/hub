@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -35,7 +34,7 @@ func (c *Client) getResource(
 	ctx context.Context,
 	deviceID string,
 	href string,
-	codec kitNetCoap.Codec,
+	codec Codec,
 	response interface{}) error {
 	var resp *pb.ResourceValue
 	err := c.RetrieveResourcesByResourceIDs(ctx, MakeResourceIDCallback(deviceID, href, func(v pb.ResourceValue) {

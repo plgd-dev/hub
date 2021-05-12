@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/net/coap"
 	"github.com/plgd-dev/sdk/schema"
 )
 
@@ -92,14 +92,15 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	}
 
 	for _, resource := range publishedResources {
+
 		err := client.observeResource(req.Context, resource.GetResourceID(), resource.IsObservable(), true)
 		if err != nil {
 			log.Errorf("unable to start observation of %v", resource.GetResourceID(), err)
 		}
 	}
 
-	accept := coap.GetAccept(req.Options)
-	encode, err := coap.GetEncoder(accept)
+	accept := coapconv.GetAccept(req.Options)
+	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("unable to get encoder for accepted type %v requested by device %v: %w", accept, authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return
@@ -179,8 +180,8 @@ type resourceDirectorySelector struct {
 func resourceDirectoryGetSelector(req *mux.Message, client *Client) {
 	var rds resourceDirectorySelector //we want to use sel:0 to prefer cloud RD
 
-	accept := coap.GetAccept(req.Options)
-	encode, err := coap.GetEncoder(accept)
+	accept := coapconv.GetAccept(req.Options)
+	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot get selector: %w", err), coapCodes.InternalServerError, req.Token)
 		return

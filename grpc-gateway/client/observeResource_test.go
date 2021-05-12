@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/plgd-dev/cloud/http-gateway/service"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +54,7 @@ func TestObservingResource(t *testing.T) {
 }
 
 func makeTestObservationHandler() *testObservationHandler {
-	return &testObservationHandler{res: make(chan kitNetCoap.DecodeFunc, 10)}
+	return &testObservationHandler{res: make(chan service.DecodeFunc, 10)}
 }
 
 type OcCon struct {
@@ -62,10 +62,10 @@ type OcCon struct {
 }
 
 type testObservationHandler struct {
-	res chan kitNetCoap.DecodeFunc
+	res chan service.DecodeFunc
 }
 
-func (h *testObservationHandler) Handle(ctx context.Context, body kitNetCoap.DecodeFunc) {
+func (h *testObservationHandler) Handle(ctx context.Context, body service.DecodeFunc) {
 	h.res <- body
 }
 
