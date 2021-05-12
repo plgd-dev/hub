@@ -1,4 +1,5 @@
 # HTTP gateway
+Http gateway exposes REST API for devices, cloud configuration, certificate authority and websockets for events as well as user web UI (i.e. PLGD Dashboard).
 
 ## Docker Image
 
@@ -23,9 +24,6 @@ docker run -it \
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
 certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-certificate-generator --cmd.generateIdentityCertificate=$CLOUD_SID --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-cat /certs/http.crt > /certs/mongo.key
-cat /certs/http.key >> /certs/mongo.key
 
 # Exit shell.
 exit
@@ -33,7 +31,7 @@ exit
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
+http.crt	http.key	root_ca.crt	root_ca.key
 ```
 
 ### How to get configuration file
