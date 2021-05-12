@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 type deviceSubscription struct {
@@ -143,7 +144,7 @@ func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Contex
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending *pb.Event_ResourceUpdatePending, version uint64) error {
+func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending *events.ResourceUpdatePending, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING {
@@ -159,13 +160,13 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceUpdatePending_{
+		Type: &pb.Event_ResourceUpdatePending{
 			ResourceUpdatePending: updatePending,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, updated *pb.Event_ResourceUpdated, version uint64) error {
+func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, updated *events.ResourceUpdated, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED {
@@ -181,13 +182,13 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceUpdated_{
+		Type: &pb.Event_ResourceUpdated{
 			ResourceUpdated: updated,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context, retrievePending *pb.Event_ResourceRetrievePending, version uint64) error {
+func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context, retrievePending *events.ResourceRetrievePending, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING {
@@ -203,13 +204,13 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceRetrievePending_{
+		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: retrievePending,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retrieved *pb.Event_ResourceRetrieved, version uint64) error {
+func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retrieved *events.ResourceRetrieved, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED {
@@ -225,13 +226,13 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceRetrieved_{
+		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: retrieved,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, deletePending *pb.Event_ResourceDeletePending, version uint64) error {
+func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, deletePending *events.ResourceDeletePending, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING {
@@ -247,13 +248,13 @@ func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, 
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceDeletePending_{
+		Type: &pb.Event_ResourceDeletePending{
 			ResourceDeletePending: deletePending,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, deleted *pb.Event_ResourceDeleted, version uint64) error {
+func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, deleted *events.ResourceDeleted, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETED {
@@ -269,13 +270,13 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceDeleted_{
+		Type: &pb.Event_ResourceDeleted{
 			ResourceDeleted: deleted,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfCreatePendingResource(ctx context.Context, createPending *pb.Event_ResourceCreatePending, version uint64) error {
+func (s *deviceSubscription) NotifyOfCreatePendingResource(ctx context.Context, createPending *events.ResourceCreatePending, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING {
@@ -291,13 +292,13 @@ func (s *deviceSubscription) NotifyOfCreatePendingResource(ctx context.Context, 
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceCreatePending_{
+		Type: &pb.Event_ResourceCreatePending{
 			ResourceCreatePending: createPending,
 		},
 	})
 }
 
-func (s *deviceSubscription) NotifyOfCreatedResource(ctx context.Context, created *pb.Event_ResourceCreated, version uint64) error {
+func (s *deviceSubscription) NotifyOfCreatedResource(ctx context.Context, created *events.ResourceCreated, version uint64) error {
 	var found bool
 	for _, f := range s.deviceEvent.GetFilterEvents() {
 		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATED {
@@ -313,7 +314,7 @@ func (s *deviceSubscription) NotifyOfCreatedResource(ctx context.Context, create
 	return s.Send(&pb.Event{
 		Token:          s.Token(),
 		SubscriptionId: s.ID(),
-		Type: &pb.Event_ResourceCreated_{
+		Type: &pb.Event_ResourceCreated{
 			ResourceCreated: created,
 		},
 	})

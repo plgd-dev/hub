@@ -11,6 +11,7 @@ import (
 	kitSync "github.com/plgd-dev/kit/sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 // ResourcePublishedHandler handler of events.
@@ -25,42 +26,42 @@ type ResourceUnpublishedHandler = interface {
 
 // ResourceUpdatePendingHandler handler of events
 type ResourceUpdatePendingHandler = interface {
-	HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error
+	HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error
 }
 
 // ResourceUpdatedHandler handler of events
 type ResourceUpdatedHandler = interface {
-	HandleResourceUpdated(ctx context.Context, val *pb.Event_ResourceUpdated) error
+	HandleResourceUpdated(ctx context.Context, val *events.ResourceUpdated) error
 }
 
 // ResourceRetrievePendingHandler handler of events
 type ResourceRetrievePendingHandler = interface {
-	HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error
+	HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error
 }
 
 // ResourceRetrievedHandler handler of events
 type ResourceRetrievedHandler = interface {
-	HandleResourceRetrieved(ctx context.Context, val *pb.Event_ResourceRetrieved) error
+	HandleResourceRetrieved(ctx context.Context, val *events.ResourceRetrieved) error
 }
 
 // ResourceDeletePendingHandler handler of events
 type ResourceDeletePendingHandler = interface {
-	HandleResourceDeletePending(ctx context.Context, val *pb.Event_ResourceDeletePending) error
+	HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error
 }
 
 // ResourceDeletedHandler handler of events
 type ResourceDeletedHandler = interface {
-	HandleResourceDeleted(ctx context.Context, val *pb.Event_ResourceDeleted) error
+	HandleResourceDeleted(ctx context.Context, val *events.ResourceDeleted) error
 }
 
 // ResourceCreatePendingHandler handler of events
 type ResourceCreatePendingHandler = interface {
-	HandleResourceCreatePending(ctx context.Context, val *pb.Event_ResourceCreatePending) error
+	HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error
 }
 
 // ResourceCreatedHandler handler of events
 type ResourceCreatedHandler = interface {
-	HandleResourceCreated(ctx context.Context, val *pb.Event_ResourceCreated) error
+	HandleResourceCreated(ctx context.Context, val *events.ResourceCreated) error
 }
 
 func NewDeviceSubscriptions(ctx context.Context, gwClient pb.GrpcGatewayClient, errFunc func(err error)) (*DeviceSubscriptions, error) {
@@ -156,56 +157,56 @@ func (s *deviceSub) HandleResourceUnpublished(ctx context.Context, val *pb.Event
 	return s.ResourceUnpublishedHandler.HandleResourceUnpublished(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
+func (s *deviceSub) HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error {
 	if s.ResourceUpdatePendingHandler == nil {
 		return fmt.Errorf("ResourceUpdatePendingHandler in not supported")
 	}
 	return s.ResourceUpdatePendingHandler.HandleResourceUpdatePending(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceUpdated(ctx context.Context, val *pb.Event_ResourceUpdated) error {
+func (s *deviceSub) HandleResourceUpdated(ctx context.Context, val *events.ResourceUpdated) error {
 	if s.ResourceUpdatedHandler == nil {
 		return fmt.Errorf("ResourceUpdatedHandler in not supported")
 	}
 	return s.ResourceUpdatedHandler.HandleResourceUpdated(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
+func (s *deviceSub) HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error {
 	if s.ResourceRetrievePendingHandler == nil {
 		return fmt.Errorf("ResourceRetrievePendingHandler in not supported")
 	}
 	return s.ResourceRetrievePendingHandler.HandleResourceRetrievePending(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceRetrieved(ctx context.Context, val *pb.Event_ResourceRetrieved) error {
+func (s *deviceSub) HandleResourceRetrieved(ctx context.Context, val *events.ResourceRetrieved) error {
 	if s.ResourceRetrievedHandler == nil {
 		return fmt.Errorf("ResourceRetrievedHandler in not supported")
 	}
 	return s.ResourceRetrievedHandler.HandleResourceRetrieved(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceDeletePending(ctx context.Context, val *pb.Event_ResourceDeletePending) error {
+func (s *deviceSub) HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error {
 	if s.ResourceDeletePendingHandler == nil {
 		return fmt.Errorf("ResourceDeletePendingHandler in not supported")
 	}
 	return s.ResourceDeletePendingHandler.HandleResourceDeletePending(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceDeleted(ctx context.Context, val *pb.Event_ResourceDeleted) error {
+func (s *deviceSub) HandleResourceDeleted(ctx context.Context, val *events.ResourceDeleted) error {
 	if s.ResourceDeletedHandler == nil {
 		return fmt.Errorf("ResourceDeletedHandler in not supported")
 	}
 	return s.ResourceDeletedHandler.HandleResourceDeleted(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceCreatePending(ctx context.Context, val *pb.Event_ResourceCreatePending) error {
+func (s *deviceSub) HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error {
 	if s.ResourceCreatePendingHandler == nil {
 		return fmt.Errorf("ResourceCreatePendingHandler in not supported")
 	}
 	return s.ResourceCreatePendingHandler.HandleResourceCreatePending(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceCreated(ctx context.Context, val *pb.Event_ResourceCreated) error {
+func (s *deviceSub) HandleResourceCreated(ctx context.Context, val *events.ResourceCreated) error {
 	if s.ResourceCreatedHandler == nil {
 		return fmt.Errorf("ResourceCreatedHandler in not supported")
 	}

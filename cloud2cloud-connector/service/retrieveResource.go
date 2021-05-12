@@ -11,11 +11,11 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/log"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
@@ -49,7 +49,7 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	return respContentType, respContent.Bytes(), commands.Status_OK, nil
 }
 
-func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateClient, e *pb.Event_ResourceRetrievePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateClient, e *raEvents.ResourceRetrievePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	deviceID := e.GetResourceId().GetDeviceId()
 	href := e.GetResourceId().GetHref()
 	contentType, content, status, err := retrieveDeviceResource(ctx, deviceID, href, linkedAccount, linkedCloud)
@@ -69,7 +69,7 @@ func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateC
 
 	_, err = raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithOwner(ctx, linkedAccount.UserID), &commands.ConfirmResourceRetrieveRequest{
 		ResourceId:    commands.NewResourceID(deviceID, href),
-		CorrelationId: e.GetCorrelationId(),
+		CorrelationId: e.GetAuditContext().GetCorrelationId(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
 			Sequence:     uint64(time.Now().UnixNano()),

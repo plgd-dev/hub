@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 type Subscriber interface {
@@ -340,7 +341,7 @@ func (s *Subscriptions) OnResourceLinksUnpublished(ctx context.Context, deviceID
 	return nil
 }
 
-func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending *pb.Event_ResourceUpdatePending, version uint64) error {
+func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePending *events.ResourceUpdatePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -361,7 +362,7 @@ func (s *Subscriptions) OnResourceUpdatePending(ctx context.Context, updatePendi
 	return nil
 }
 
-func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated *pb.Event_ResourceUpdated, version uint64) error {
+func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated *events.ResourceUpdated, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -382,7 +383,7 @@ func (s *Subscriptions) OnResourceUpdated(ctx context.Context, updated *pb.Event
 	return nil
 }
 
-func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending *pb.Event_ResourceRetrievePending, version uint64) error {
+func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrievePending *events.ResourceRetrievePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -403,7 +404,7 @@ func (s *Subscriptions) OnResourceRetrievePending(ctx context.Context, retrieveP
 	return nil
 }
 
-func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePending *pb.Event_ResourceDeletePending, version uint64) error {
+func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePending *events.ResourceDeletePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -424,7 +425,7 @@ func (s *Subscriptions) OnResourceDeletePending(ctx context.Context, deletePendi
 	return nil
 }
 
-func (s *Subscriptions) OnResourceCreatePending(ctx context.Context, createPending *pb.Event_ResourceCreatePending, version uint64) error {
+func (s *Subscriptions) OnResourceCreatePending(ctx context.Context, createPending *events.ResourceCreatePending, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -445,7 +446,7 @@ func (s *Subscriptions) OnResourceCreatePending(ctx context.Context, createPendi
 	return nil
 }
 
-func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved *pb.Event_ResourceRetrieved, version uint64) error {
+func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved *events.ResourceRetrieved, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -466,7 +467,7 @@ func (s *Subscriptions) OnResourceRetrieved(ctx context.Context, retrieved *pb.E
 	return nil
 }
 
-func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted *pb.Event_ResourceDeleted, version uint64) error {
+func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted *events.ResourceDeleted, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 
@@ -487,7 +488,7 @@ func (s *Subscriptions) OnResourceDeleted(ctx context.Context, deleted *pb.Event
 	return nil
 }
 
-func (s *Subscriptions) OnResourceCreated(ctx context.Context, created *pb.Event_ResourceCreated, version uint64) error {
+func (s *Subscriptions) OnResourceCreated(ctx context.Context, created *events.ResourceCreated, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
 

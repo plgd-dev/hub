@@ -11,23 +11,24 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 	kitSync "github.com/plgd-dev/kit/sync"
 )
 
 type deviceSubscriptionHandlers struct {
-	onResourceUpdatePending   func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error
-	onResourceRetrievePending func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error
+	onResourceUpdatePending   func(ctx context.Context, val *raEvents.ResourceUpdatePending) error
+	onResourceRetrievePending func(ctx context.Context, val *raEvents.ResourceRetrievePending) error
 	onClose                   func()
 	onError                   func(err error)
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
+func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *raEvents.ResourceUpdatePending) error {
 	return h.onResourceUpdatePending(ctx, val)
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
+func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *raEvents.ResourceRetrievePending) error {
 	return h.onResourceRetrievePending(ctx, val)
 }
 
@@ -69,10 +70,10 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 		return nil
 	}
 	h := deviceSubscriptionHandlers{
-		onResourceUpdatePending: func(ctx context.Context, val *pb.Event_ResourceUpdatePending) error {
+		onResourceUpdatePending: func(ctx context.Context, val *raEvents.ResourceUpdatePending) error {
 			return updateResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
 		},
-		onResourceRetrievePending: func(ctx context.Context, val *pb.Event_ResourceRetrievePending) error {
+		onResourceRetrievePending: func(ctx context.Context, val *raEvents.ResourceRetrievePending) error {
 			return retrieveResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
 		},
 		onClose: func() {

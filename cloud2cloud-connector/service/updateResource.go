@@ -12,10 +12,10 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
 )
@@ -63,7 +63,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	return respContentType, respContent.Bytes(), commands.Status_OK, nil
 }
 
-func updateResource(ctx context.Context, raClient raService.ResourceAggregateClient, e *pb.Event_ResourceUpdatePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
+func updateResource(ctx context.Context, raClient raService.ResourceAggregateClient, e *raEvents.ResourceUpdatePending, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	deviceID := e.GetResourceId().GetDeviceId()
 	href := e.GetResourceId().GetHref()
 	contentType, content, status, err := updateDeviceResource(ctx, deviceID, href, e.GetContent().GetContentType(), e.GetContent().GetData(), linkedAccount, linkedCloud)
@@ -86,7 +86,7 @@ func updateResource(ctx context.Context, raClient raService.ResourceAggregateCli
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		CorrelationId: e.GetCorrelationId(),
+		CorrelationId: e.GetAuditContext().GetCorrelationId(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
 			Sequence:     uint64(time.Now().UnixNano()),
