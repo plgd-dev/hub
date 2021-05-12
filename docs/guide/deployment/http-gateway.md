@@ -167,6 +167,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Resource Aggregate Client
+Resource aggregate client configuration to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -180,6 +181,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.resourceAggregate.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Resource Directory Client
+Resource directory client configuration to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -193,6 +195,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.resourceDirectory.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Certificate Authority Client
+Certificate authority client configuration to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
