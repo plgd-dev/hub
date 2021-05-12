@@ -7,7 +7,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
-	coapStatus "github.com/plgd-dev/kit/net/coap/status"
+	coapStatus "github.com/plgd-dev/go-coap/v2/message/status"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

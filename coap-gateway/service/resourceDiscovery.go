@@ -14,7 +14,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/net/coap"
 	"github.com/plgd-dev/sdk/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -133,7 +132,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 	}
 
 	var resp interface{}
-	accept := coap.GetAccept(req.Options)
+	accept := coapconv.GetAccept(req.Options)
 	switch accept {
 	case message.AppOcfCbor:
 		links := make([]schema.ResourceLink, 0, 64)
@@ -145,7 +144,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 		resp = discoveryResp
 	}
 
-	encode, err := coap.GetEncoder(accept)
+	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot marshal discovery response: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
 		return

@@ -5,10 +5,16 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/net/coap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+// Codec encodes/decodes according to the CoAP content format/media type.
+type Codec = interface {
+	ContentFormat() message.MediaType
+	Encode(v interface{}) ([]byte, error)
+	Decode(m *message.Message, v interface{}) error
+}
 
 func ContentTypeToMediaType(contentType string) (message.MediaType, error) {
 	switch contentType {
@@ -25,7 +31,7 @@ func ContentTypeToMediaType(contentType string) (message.MediaType, error) {
 	}
 }
 
-func DecodeContentWithCodec(codec coap.Codec, contentType string, data []byte, response interface{}) error {
+func DecodeContentWithCodec(codec Codec, contentType string, data []byte, response interface{}) error {
 	if response == nil {
 		return nil
 	}

@@ -1,9 +1,5 @@
 package client
 
-import (
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
-)
-
 // WithInterface updates/gets resource with interface directly from a device.
 func WithInterface(resourceInterface string) ResourceInterfaceOption {
 	return ResourceInterfaceOption{
@@ -50,16 +46,16 @@ type GetOption = interface {
 type getOptions struct {
 	resourceInterface string
 	skipShadow        bool
-	codec             kitNetCoap.Codec
+	codec             Codec
 }
 
 type updateOptions struct {
 	resourceInterface string
-	codec             kitNetCoap.Codec
+	codec             Codec
 }
 
 type createOptions struct {
-	codec kitNetCoap.Codec
+	codec Codec
 }
 
 // UpdateOption option definition.
@@ -112,14 +108,14 @@ func (r ResourceTypesOption) applyOnGetDevices(opts getDevicesOptions) getDevice
 	return opts
 }
 
-func WithCodec(codec kitNetCoap.Codec) CodecOption {
+func WithCodec(codec Codec) CodecOption {
 	return CodecOption{
 		codec: codec,
 	}
 }
 
 type CodecOption struct {
-	codec kitNetCoap.Codec
+	codec Codec
 }
 
 func (r CodecOption) applyOnGet(opts getOptions) getOptions {
@@ -148,7 +144,7 @@ func (r CodecOption) applyOnCreate(opts createOptions) createOptions {
 }
 
 type observeOptions struct {
-	codec kitNetCoap.Codec
+	codec Codec
 }
 
 // ObserveOption option definition.
@@ -157,7 +153,7 @@ type ObserveOption = interface {
 }
 
 type deleteOptions struct {
-	codec kitNetCoap.Codec
+	codec Codec
 }
 
 // DeleteOption option definition.

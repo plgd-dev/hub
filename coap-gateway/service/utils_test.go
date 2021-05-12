@@ -18,7 +18,6 @@ import (
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/net/coap"
 
 	"github.com/plgd-dev/kit/security/certManager"
 
@@ -305,9 +304,7 @@ func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn
 		if err != nil {
 			return err
 		}
-		if coap.VerifyIndetityCertificate(certs[0]) != nil {
-			return err
-		}
+
 		return nil
 	}
 

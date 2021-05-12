@@ -5,7 +5,6 @@ import (
 
 	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 )
 
 func (c *Client) getResourceFromDevice(
@@ -13,7 +12,7 @@ func (c *Client) getResourceFromDevice(
 	deviceID string,
 	href string,
 	resourceInterface string,
-	codec kitNetCoap.Codec,
+	codec Codec,
 	response interface{},
 ) error {
 	r := pbGW.RetrieveResourceFromDeviceRequest{

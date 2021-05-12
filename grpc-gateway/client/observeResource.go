@@ -6,7 +6,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	kitNetCoap "github.com/plgd-dev/kit/net/coap"
 	"github.com/plgd-dev/sdk/local/core"
 )
 
@@ -63,7 +62,7 @@ func (c *Client) StopObservingResource(ctx context.Context, observationID string
 
 type observationHandler struct {
 	obs                core.ObservationHandler
-	codec              kitNetCoap.Codec
+	codec              Codec
 	removeSubscription func()
 }
 

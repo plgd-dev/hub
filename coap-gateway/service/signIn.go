@@ -9,6 +9,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
+	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -17,7 +18,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/log"
-	"github.com/plgd-dev/kit/net/coap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -81,8 +81,8 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		expired = time.Now().Add(time.Second * time.Duration(resp.ExpiresIn))
 	}
 
-	accept := coap.GetAccept(req.Options)
-	encode, err := coap.GetEncoder(accept)
+	accept := coapconv.GetAccept(req.Options)
+	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
 		return
@@ -133,21 +133,27 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		newDevice = true
 	case oldAuthCtx.GetDeviceID() != signIn.DeviceID || oldAuthCtx.GetUserID() != signIn.UserID:
 		client.cancelResourceSubscriptions(true)
-		client.cancelDeviceSubscriptions(req.Context)
+		client.closeDeviceSubscriber()
 		newDevice = true
 	}
 
 	if newDevice {
-		h := NewDeviceSubscriptionHandlers(client, signIn.DeviceID)
-		ctx := kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(client.server.ctx, serviceToken.AccessToken), signIn.UserID)
-		cancelSubscription, err := client.server.subscribeToDevice(ctx, signIn.UserID, signIn.DeviceID, h)
+		deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(req.Context, signIn.DeviceID, client.server.rdClient, client.server.resourceSubscriber)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device %v pending subscription: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device subscription for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
 			client.Close()
 			return
 		}
-		if !client.storeDeviceSubscription(cancelSubscription) {
-			cancelSubscription(req.Context)
+		oldDeviceSubscriber := client.replaceDeviceSubscriber(deviceSubscriber)
+		if oldDeviceSubscriber != nil {
+			oldDeviceSubscriber.Close()
+		}
+		h := grpcgwClient.NewDeviceSubscriptionHandlers(client)
+		err = deviceSubscriber.SubscribeToPendingCommands(req.Context, h)
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot register command handler to device subscription for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
 		}
 	}
 	if expired.IsZero() {

@@ -2,14 +2,18 @@ package test
 
 import (
 	"context"
+	"crypto"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
+	"github.com/plgd-dev/kit/security/signer"
 	"github.com/plgd-dev/sdk/local"
+	"github.com/plgd-dev/sdk/local/core"
 )
 
 type testSetupSecureClient struct {
@@ -98,6 +102,8 @@ func NewSDKClient() (*local.Client, error) {
 		mfgCA:   mfgCA,
 		mfgCert: mfgCert,
 		ca:      append(identityTrustedCACert),
+	}, func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
+		return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
 	}, func(err error) { fmt.Print(err) },
 	)
 	if err != nil {

@@ -21,10 +21,10 @@ require (
 	github.com/nats-io/nats.go v1.10.1-0.20201111151633-9e1f4a0d80d8
 	github.com/panjf2000/ants/v2 v2.4.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/go-coap/v2 v2.3.1-0.20210204203130-38a043760811
-	github.com/plgd-dev/kit v0.0.0-20210205135220-6c16c4ac0fd5
-	github.com/plgd-dev/sdk v0.0.0-20201105135357-8507ce8ec280
-	github.com/stretchr/testify v1.6.1
+	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa
+	github.com/plgd-dev/kit v0.0.0-20210517131053-7dfd49bb6277
+	github.com/plgd-dev/sdk v0.0.0-20210517131411-530870e2d96d
+	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasthttp v1.16.0
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/atomic v1.7.0
