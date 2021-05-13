@@ -22,6 +22,22 @@ TCP connection to the OCF Native Cloud is by its nature stateful. The OCF CoAP G
 - OCF CoAP Gateway processes events from Resources, by issuing a proper CoAP request to the device and raising an event with the response
 - OCF CoAP Gateway has to process a waiting request within the configured time, or set the device as offline
 
+### API
+
+CoAP APIs of the Cloud Service are defined in [OCF Device To Cloud Services Specification](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.3.pdf).
+
+- POST /oic/sec/account - sign up the device with authorization code
+- DELETE /oic/sec/account - sign off the device with access token
+- POST /oic/sec/tokenrefresh - refresh access token with refresh token
+- POST /oic/sec/session - sign in the device with access token and with login true
+- POST /oic/sec/session - sign out the device with access token and with login false
+- POST /oic/rd - publish resources from the signed device
+- DELETE /oic/rd - unpublish resources from the signed device
+- GET /oic/res - discover all cloud devices resources from the signed device
+- GET /oic/route/{deviceID}/{href} - get/observe resource of the cloud device from signed device
+- POST /oic/route/{deviceID}/{href} - update resource of the cloud device from signed device
+- DELETE /oic/route/{deviceID}/{href} - delete resource of the cloud device from signed device
+
 ## Docker Image
 
 ```bash
@@ -142,19 +158,7 @@ docker run -d --network=host \
 | `log.dumpCoapMessages` | bool | `Set to true if you would like to dump coap messages on logs.` | `false` |
 
 ### CoAP API
-CoAP API of the Coap Gateway Service as defined in [OCF Device To Cloud Services Specification](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.3.pdf)
-
-- POST /oic/sec/account - sign up the device with authorization code
-- DELETE /oic/sec/account - sign off the device with access token
-- POST /oic/sec/tokenrefresh - refresh access token with refresh token
-- POST /oic/sec/session - sign in the device with access token and with login true
-- POST /oic/sec/session - sign out the device with access token and with login false
-- POST /oic/rd - publish resources from the signed device
-- DELETE /oic/rd - unpublish resources from the signed device
-- GET /oic/res - discover all cloud devices resources from the signed device
-- GET /oic/route/{deviceID}/{href} - get/observe resource of the cloud device from signed device
-- POST /oic/route/{deviceID}/{href} - update resource of the cloud device from signed device
-- DELETE /oic/route/{deviceID}/{href} - delete resource of the cloud device from signed device
+CoAP API of Coap Gateway Service as defined in [uri](https://github.com/plgd-dev/cloud/blob/docs-deployment-grpc-gateway/coap-gateway/uri/uri.go) and [swagger](https://raw.githubusercontent.com/openconnectivityfoundation/cloud-services/master/swagger2.0/oic.wk.rd.swagger.json). 
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -264,57 +268,3 @@ Resource directory client configuration to connect internally.
 | `taskQueue.maxIdleTime` | string | `Sets up the interval time of cleaning up goroutines. Zero means never cleanup.` | `10m` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
-
-## Configuration
-
-| Option | ENV variable | Type | Description | Default |
-| ------ | --------- | ----------- | ------- | ------- |
-| `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:5684"` |
-| `-` | `EXTERNAL_PORT` | string | `used to fill discovery hrefs` | `"0.0.0.0:5684"` |
-| `-` | `FQDN` | string | `used to fill discovery` | `"coapgw.ocf.cloud"` |
-| `-` | `AUTH_SERVER_ADDRESS` | string | `authoriztion server address` | `"127.0.0.1:9100"` |
-| `-` | `RESOURCE_AGGREGATE_ADDRESS` | string | `resource aggregate address` | `"127.0.0.1:9100"` |
-| `-` | `RESOURCE_DIRECTORY_ADDRESS` | string | `resource directory address` | `"127.0.0.1:9100"` |
-| `-` | `REQUEST_TIMEOUT` | string | `wait for update/retrieve resource` | `10s` |
-| `-` | `KEEPALIVE_ENABLE` | bool | `check devices connection` | true |
-| `-` | `KEEPALIVE_TIMEOUT_CONNECTION` | string | `close inactive connection after limit` | `"20s"` |
-| `-` | `DISABLE_BLOCKWISE_TRANSFER` | bool | `disable blockwise transfer` | `false` |
-| `-` | `BLOCKWISE_TRANSFER_SZX` | int | `size of blockwise transfer block` | `1024` |
-| `-` | `DISABLE_TCP_SIGNAL_MESSAGE_CSM` | bool | `disable send CSM when connection was established` | `false` |
-| `-` | `DISABLE_PEER_TCP_SIGNAL_MESSAGE_CSMS` | bool | `disable process peer CSM` | `false` |
-| `-` | `ERROR_IN_RESPONSE` | bool | `send text error message in response` |  `true` |
-| `-` | `SERVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | `url to get service access token via OAUTH client credential flow` | `""` |
-| `-` | `SERVICE_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
-| `-` | `SERVICE_OAUTH_CLIENT_SECRET` | string | `secrest for authentication to get access token` | `""` |
-| `-` | `SERVICE_OAUTH_AUDIENCE` | string | `refer to the resource servers that should accept the token` | `""` |
-| `-` | `HEARTBEAT` | string | `defines check of live service` | `"4s"` |
-| `-` | `MAX_MESSAGE_SIZE` | int | `defines max message size which can be send/receive via coap` | `262144` |
-| `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `DIAL_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `DIAL_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `DIAL_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `DIAL_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `DIAL_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `DIAL_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `DIAL_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `DIAL_FILE_CERT_DIR_PATH` | string | `path to directory which contains DIAL_FILE_CERT_KEY_NAME and DIAL_FILE_CERT_NAME` | `""` |
-| `-` | `DIAL_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `DIAL_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_TYPE` | string | `defines how to obtain listen TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `LISTEN_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `LISTEN_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_ACME_DEVICE_ID` | string | `deviceID for OCF Identity Certificate` | `""` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
-| `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_WITHOUT_TLS` | bool | `listen without TLS` | `false` |
-| `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
-| `-` | `DEVICESTATUSEXPIRATION_ENABLED` | bool | `enable refreshing device online status in short time than sign token expires` | `false` |
-| `-` | `DEVICESTATUSEXPIRATION_EXPIRESIN` | string | `defines interval to refresh device online status` | `24h` |
