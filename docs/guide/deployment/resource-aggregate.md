@@ -187,7 +187,7 @@ Client configurations to internally connect to Authorization Server service.
 | `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### OAuth2.0 Service Client
->Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against the plgd API Gateways.
+>Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against other plgd APIs.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

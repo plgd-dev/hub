@@ -1,5 +1,5 @@
 # Authorization Server
-Authorization Server authorizes users and devices by communicating with OAuth provider abode by OAuth2.0.
+Authorization Server authorizes users and devices interacting with the plgd cloud.
 
 ## Docker Image
 
@@ -175,7 +175,7 @@ You might have one client, but multiple APIs in the OAuth system. What you want 
 :::
 
 ### OAuth2.0 Client for UI and SDK
->Configured OAuth2.0 client is used by the mobile application or SDK to request a token used to authorize all calls they execute against the plgd API Gateways.
+>Configured OAuth2.0 client is used by the mobile application or SDK to request a token used to authorize all calls they execute against other plgd APIs.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
