@@ -122,7 +122,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the gRPC Gateway Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/grpc-gateway/pb/service_grpc.pb.go#L19).
+gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/grpc-gateway/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -156,7 +156,8 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Resource Aggregate Client
-Client configurations to Resource Aggregate to connect internally.
+Client configurations to internally connect to Resource Aggregate service.
+
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -170,7 +171,7 @@ Client configurations to Resource Aggregate to connect internally.
 | `clients.resourceAggregate.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Resource Directory Client
-Client configurations to Resource Directory to connect internally.
+Client configurations to internally connect to Resource Directory service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
