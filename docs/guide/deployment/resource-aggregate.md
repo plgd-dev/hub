@@ -1,4 +1,5 @@
-# Resource aggregate
+# Resource Aggregate
+Resource Aggregate translates commands to events, store them to database and publish them to messaging system.
 
 ## Docker Image
 
@@ -23,9 +24,6 @@ docker run -it \
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
 certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-certificate-generator --cmd.generateIdentityCertificate=$CLOUD_SID --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-cat /certs/http.crt > /certs/mongo.key
-cat /certs/http.key >> /certs/mongo.key
 
 # Exit shell.
 exit
@@ -33,7 +31,7 @@ exit
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
+http.crt	http.key	root_ca.crt	root_ca.key
 ```
 
 ### How to get configuration file
@@ -58,16 +56,24 @@ apis:
   grpc:
     address: "0.0.0.0:9083"
     tls:
-      caPool: "/data/certs/rootca.crt"
+      caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
+    authorization:
+      authority: "https://auth.example.com/authorize"
+      audience: "https://api.example.com"
+      http:
+        tls:
+          caPool: "/data/certs/root_ca.crt"
+          keyFile: "/data/certs/http.key"
+          certFile: "/data/certs/http.crt"
 ...
 clients:
   eventBus:
     nats:
       url: "nats://localhost:4222"
       tls:
-        caPool: "/data/certs/rootca.crt"
+        caPool: "/data/certs/root_ca.crt"
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
@@ -76,11 +82,17 @@ clients:
       uri: "mongodb://localhost:27017"
       database: "eventStore"
       tls:
-        caPool: "/data/certs/rootca.crt"
+        caPool: "/data/certs/root_ca.crt"
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
   authorizationServer:
+    grpc:
+      address: "localhost:9081"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
     oauth:
       clientID: "412dsFf53Sj6$"
       clientSecret: "235Jgdf65jsd4Shls"
@@ -108,7 +120,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Resource Aggregate Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
+gRPC API of the Resource Aggregate service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -158,6 +170,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
+Client configurations to internally connect to Authorization Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -174,7 +187,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### OAuth2.0 Service Client
->Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against the plgd API Gateways.
+>Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against other plgd APIs.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

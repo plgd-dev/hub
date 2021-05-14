@@ -1,1 +1,1 @@
-../docs/guide/architecture/2-resource-aggregate.md
+../docs/guide/deployment/resource-aggregate.md

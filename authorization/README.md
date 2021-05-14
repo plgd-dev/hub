@@ -1,1 +1,1 @@
-../docs/guide/architecture/1-authorization-server.md
+../docs/guide/deployment/authorization-server.md

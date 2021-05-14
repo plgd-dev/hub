@@ -1,4 +1,5 @@
-# Authorization server
+# Authorization Server
+Authorization Server authorizes users and devices interacting with the plgd cloud.
 
 ## Docker Image
 
@@ -23,9 +24,6 @@ docker run -it \
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA 
 certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-certificate-generator --cmd.generateIdentityCertificate=$CLOUD_SID --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
-cat /certs/http.crt > /certs/mongo.key
-cat /certs/http.key >> /certs/mongo.key
 
 # Exit shell.
 exit 
@@ -33,7 +31,7 @@ exit
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-coap.crt	coap.key	http.crt	http.key	mongo.key	root_ca.crt	root_ca.key
+http.crt	http.key	root_ca.crt	root_ca.key
 ```
 ### How to get configuration file
 A configuration template is available on [authorization/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/authorization/config.yaml). 
@@ -57,16 +55,24 @@ apis:
   grpc:
     address: "0.0.0.0:9081"
     tls:
-      caPool: "/data/certs/rootca.crt"
+      caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
 ...
   http:
     address: "0.0.0.0:9085"
     tls:
-      caPool: "/data/certs/rootca.crt"
+      caPool: "/data/certs/root_ca.crt"
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
+    authorization:
+      authority: "https://auth.example.com/authorize"
+      audience: "https://api.example.com"
+      http:
+        tls:
+          caPool: "/data/certs/root_ca.crt"
+          keyFile: "/data/certs/http.key"
+          certFile: "/data/certs/http.crt"
 ...
 oauthClients:
   device:
@@ -107,7 +113,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Authorization Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service_grpc.pb.go#L19).
+gRPC API of the Authorization Server service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -129,7 +135,7 @@ gRPC API of the Authorization Service as defined [here](https://github.com/plgd-
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### HTTP API
-HTTP API of the Authorization Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/uri/uri.go)
+HTTP API of the Authorization Server service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/uri/uri.go)
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -169,7 +175,7 @@ You might have one client, but multiple APIs in the OAuth system. What you want 
 :::
 
 ### OAuth2.0 Client for UI and SDK
->Configured OAuth2.0 client is used by the mobile application or SDK to request a token used to authorize all calls they execute against the plgd API Gateways.
+>Configured OAuth2.0 client is used by the mobile application or SDK to request a token used to authorize all calls they execute against other plgd APIs.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
