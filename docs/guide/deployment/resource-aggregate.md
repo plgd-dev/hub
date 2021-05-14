@@ -170,7 +170,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
-Client configurations to Authorization Server to connect internally.
+Client configurations to internally connect to Authorization Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
