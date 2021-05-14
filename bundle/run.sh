@@ -162,6 +162,165 @@ certificate-generator --cmd.generateIdentityCertificate=$COAP_GATEWAY_CLOUD_ID -
 echo "generating NGINX cert"
 certificate-generator --cmd.generateCertificate --outCert=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --outKey=$EXTERNAL_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --cert.subject.cn="localhost" --cert.san.domain="localhost" --cert.san.ip="0.0.0.0" --cert.san.ip="127.0.0.1" $fqdnSAN --signerCert=$CA_POOL_CERT_PATH --signerKey=$CA_POOL_CERT_KEY_PATH
 
+# copy ceritficates to paths
+## oauth-server
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/oauth-server.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/oauth-server.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
+
+## authorization
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/authorization.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/authorization.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/authorization.yaml | sort | uniq)
+
+## resource-aggregate
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-aggregate.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-aggregate.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggregate.yaml | sort | uniq)
+
+## resource-directory
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-directory.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-directory.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-directory.yaml | sort | uniq)
+
+## coap-gateway
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/coap-gateway.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/coap-gateway.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/coap-gateway.yaml | sort | uniq)
+
+## grpc-gateway
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/grpc-gateway.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/grpc-gateway.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/grpc-gateway.yaml | sort | uniq)
+
+## http-gateway
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/http-gateway.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/http-gateway.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/http-gateway.yaml | sort | uniq)
+
+## certificate-authority
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/certificate-authority.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/certificate-authority.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/certificate-authority.yaml | sort | uniq)
+
 
 mkdir -p ${OAUTH_KEYS_PATH}
 openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
@@ -240,27 +399,8 @@ done
 
 # oauth-server
 echo "starting oauth-server"
-## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/oauth-server.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/oauth-server.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
 
-### setup cfg
+## setup cfg
 cat /configs/oauth-server.yaml | yq e "\
   .apis.http.address = \"${MOCKED_OAUTH_SERVER_ADDRESS}\" |
   .oauthSigner.idTokenKeyFile = \"${OAUTH_ID_TOKEN_KEY_PATH}\" |
@@ -290,26 +430,6 @@ done
     
 # authorization
 ## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/authorization.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/authorization.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/authorization.yaml | sort | uniq)
-
-### setup oauthclients
 cat /configs/authorization.yaml | yq e "\
   .apis.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
@@ -357,26 +477,6 @@ done
 
 # resource-aggregate
 ## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-aggregate.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-aggregate.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggregate.yaml | sort | uniq)
-
-### setup cfgs from env
 cat /configs/resource-aggregate.yaml | yq e "\
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
@@ -417,26 +517,6 @@ done
 
 # resource-directory
 ## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-directory.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-directory.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-directory.yaml | sort | uniq)
-
-### setup cfgs from env
 cat /configs/resource-directory.yaml | yq e "\
   .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
@@ -484,26 +564,6 @@ done
 # coap-gateway-unsecure
 echo "starting coap-gateway-unsecure"
 ## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/coap-gateway.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/coap-gateway.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/coap-gateway.yaml | sort | uniq)
-
-### setup cfgs from env
 cat /configs/coap-gateway.yaml | yq e "\
   .log.debug = ${LOG_DEBUG} |
   .log.dumpCoapMessages = ${COAP_GATEWAY_LOG_MESSAGES} |
@@ -566,26 +626,6 @@ fi
 # grpc-gateway
 echo "starting grpc-gateway"
 ## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/grpc-gateway.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/grpc-gateway.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/grpc-gateway.yaml | sort | uniq)
-
-### setup cfgs from env
 cat /configs/grpc-gateway.yaml | yq e "\
   .apis.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
@@ -619,26 +659,6 @@ done
 
 # http-gateway
 ## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/http-gateway.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/http-gateway.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/http-gateway.yaml | sort | uniq)
-
-### setup cfgs from env
 cat /configs/http-gateway.yaml | yq e "\
   .apis.http.address = \"${HTTP_GATEWAY_ADDRESS}\" |
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
@@ -682,26 +702,6 @@ done
 # certificate-authority
 echo "starting certificate-authority"
 ## configuration
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CA_POOL ${file}
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/certificate-authority.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $CERT_FILE ${file}
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/certificate-authority.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  cp $KEY_FILE ${file}
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/certificate-authority.yaml | sort | uniq)
-
-### setup cfgs from env
 cat /configs/certificate-authority.yaml | yq e "\
   .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
