@@ -167,11 +167,11 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Resource Aggregate Client
-Resource Aggregate's client configurations to connect internally.
+Client configurations to internally connect to Resource Aggregate service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.resourceAggregate.grpc.address` | string | `Resource aggregate service address.` | `"127.0.0.1:9100"` |
+| `clients.resourceAggregate.grpc.address` | string | `Resource Aggregate service address.` | `"127.0.0.1:9100"` |
 | `clients.resourceAggregate.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.resourceAggregate.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `clients.resourceAggregate.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
@@ -181,11 +181,11 @@ Resource Aggregate's client configurations to connect internally.
 | `clients.resourceAggregate.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Resource Directory Client
-Resource Directory's client configurations to connect internally.
+Client configurations to internally connect to Resource Directory service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.resourceDirectory.grpc.address` | string | `Resource directory service address.` | `"127.0.0.1:9100"` |
+| `clients.resourceDirectory.grpc.address` | string | `Resource Directory service address.` | `"127.0.0.1:9100"` |
 | `clients.resourceDirectory.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.resourceDirectory.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `clients.resourceDirectory.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
@@ -195,12 +195,12 @@ Resource Directory's client configurations to connect internally.
 | `clients.resourceDirectory.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Certificate Authority Client
-Certificate Authority's client configurations to connect internally.
+Client configurations to internally connect to Certificate Authority service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.certificateAuthority.enabled` | bool | `If true, connect to certificate authority.` | `"false"` |
-| `clients.certificateAuthority.grpc.address` | string | `Certificate authority service address.` | `"127.0.0.1:9100"` |
+| `clients.certificateAuthority.enabled` | bool | `If true, connect to Certificate Authority.` | `"false"` |
+| `clients.certificateAuthority.grpc.address` | string | `Certificate Authority service address.` | `"127.0.0.1:9100"` |
 | `clients.certificateAuthority.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.certificateAuthority.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `clients.certificateAuthority.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
