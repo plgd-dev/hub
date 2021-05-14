@@ -68,6 +68,13 @@ func (a *authorizationContext) GetDeviceID() string {
 	return ""
 }
 
+func (a *authorizationContext) GetAccessToken() string {
+	if a != nil {
+		return a.AccessToken
+	}
+	return ""
+}
+
 func (a *authorizationContext) IsValid() error {
 	if a == nil {
 		return fmt.Errorf("invalid authorization context")
