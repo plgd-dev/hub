@@ -1,5 +1,5 @@
-# HTTP gateway
-Http gateway exposes REST API for devices, cloud configuration, certificate authority and websockets for events as well as user web UI (i.e. PLGD Dashboard).
+# HTTP Gateway
+HTTP Gateway exposes the client's [REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/v2/http-gateway/swagger.yaml) to manage the user's devices, as well as the Web UI known as [plgd Dashboard](...).
 
 ## Docker Image
 
@@ -131,7 +131,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### HTTP API
-HTTP API of the Http Gateway Service as defined [uri](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go) and [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/v2/http-gateway/swagger.yaml) for REST API.
+APIs of the HTTP Gateway service as defined [uri](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go) and [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/v2/http-gateway/swagger.yaml) for REST API.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -167,7 +167,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Resource Aggregate Client
-Resource aggregate client configuration to connect internally.
+Resource Aggregate's client configurations to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -181,7 +181,7 @@ Resource aggregate client configuration to connect internally.
 | `clients.resourceAggregate.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Resource Directory Client
-Resource directory client configuration to connect internally.
+Resource Directory's client configurations to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -195,7 +195,7 @@ Resource directory client configuration to connect internally.
 | `clients.resourceDirectory.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Certificate Authority Client
-Certificate authority client configuration to connect internally.
+Certificate Authority's client configurations to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -209,12 +209,12 @@ Certificate authority client configuration to connect internally.
 | `clients.certificateAuthority.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
 | `clients.certificateAuthority.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
-### User Web UI
+### Web UI
 These configurations are for `PLGD Dashboard` as described in [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/dashboard.md).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `ui.enabled` | string | `Set to true if you would like to run user web UI.` | `false` |
+| `ui.enabled` | string | `Set to true if you would like to run the web UI.` | `false` |
 | `ui.directory` | string | `Path to default web ui built by nodejs` | `"/usr/local/var/www"` |
 | `ui.oauthClient.domain` | string | `Domain address of OAuth Provider.` | `""` |
 | `ui.oauthClient.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
