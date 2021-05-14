@@ -95,7 +95,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Certificate Authority Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/certificate-authority/pb/service_grpc.pb.go#L19).
+gRPC API of the Certificate Authority service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/certificate-authority/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
