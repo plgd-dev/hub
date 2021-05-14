@@ -1,5 +1,5 @@
 # Authorization Server
-Authorization server authorizes users and devices by communicating with OAuth provider (OAuth2.0).
+Authorization Server authorizes users and devices by communicating with OAuth provider abode by OAuth2.0.
 
 ## Docker Image
 
@@ -113,7 +113,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Authorization Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service_grpc.pb.go#L19).
+gRPC API of the Authorization Server service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -135,7 +135,7 @@ gRPC API of the Authorization Service as defined [here](https://github.com/plgd-
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### HTTP API
-HTTP API of the Authorization Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/uri/uri.go)
+HTTP API of the Authorization Server service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/uri/uri.go)
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

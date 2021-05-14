@@ -1,5 +1,5 @@
 # Resource Directory
-Resource directory exposes resource information published by devices for OCF client to discovery/retrieve from resource shadow.
+Resource Directory keeps and updates in-memory cache of devices which were requested by clients through the plgd gateways.
 
 ## Docker Image
 
@@ -120,7 +120,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Resource Directory Service.
+gRPC API of the Resource Directory service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -170,7 +170,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
-Authorization server client configuration to connect internally.
+Client configurations to Authorization Server to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

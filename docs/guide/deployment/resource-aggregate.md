@@ -1,5 +1,5 @@
 # Resource Aggregate
-Resource aggregate translates commands to events, store them to database and publish them to messaging system.
+Resource Aggregate translates commands to events, store them to database and publish them to messaging system.
 
 ## Docker Image
 
@@ -120,7 +120,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the Resource Aggregate Service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
+gRPC API of the Resource Aggregate service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -170,7 +170,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
-Authorization server client configuration to connect internally.
+Client configurations to Authorization Server to connect internally.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
