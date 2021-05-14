@@ -1,8 +1,9 @@
-# Certificate authority
-This service is used to sign certificates for devices and [plgd-dev/sdk](https://github.com/plgd-dev/sdk) client.
+# Certificate Authority
+This service is used to sign identity certificates for devices and [plgd-dev/sdk](https://github.com/plgd-dev/sdk) client.
 
-> During onboarding device via SDK (at first SDK gets OCF identity certificate for self), SDK ask the service to sign CSR (Certificate Signed Request) for the device and when it is success, the service returns certificate chain.
-  e.g. plgd mobile application uses SDK for onboarding the devices as served in [Google Play](https://play.google.com/store/apps/details?id=dev.plgd.client&hl=sk&gl=US), [Apple Store](https://apps.apple.com/sk/app/plgd/id1536315811).
+> Initialization of the SDK requires an Identity Certificate issued by this service after successful user authorization. The SDK is then able to discover and configure the ownership as described [here](https://openconnectivity.org/specs/OCF_Security_Specification_v2.2.3.pdf#page=37). During this process, a CSR (Certificate Signing Request) is sent to the Certificate Authority which returns device's Identity Certificate.
+>
+>  e.g. plgd mobile application uses SDK for device ownership configuration. Available on both [Google Play](https://play.google.com/store/apps/details?id=dev.plgd.client&hl=sk&gl=US), [Apple Store](https://apps.apple.com/sk/app/plgd/id1536315811).
 
 ## Docker Image
 
@@ -117,7 +118,8 @@ gRPC API of the Certificate Authority Service as defined [here](https://github.c
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Signer
-Signer configuration to issue certificates for devices or mobile application.
+Signer configuration to issue identity certificates for devices or mobile application.
+
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `signer.keyFile` | string | `File path to the signer private key in PEM format.` |  `""` |
