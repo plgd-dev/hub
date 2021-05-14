@@ -1,4 +1,5 @@
 # CoAP Gateway
+CoAP Gateway provides API for devices and clients following the [Open Connectivity Foundation](https://openconnectivity.org/) specification.
 
 OCF Servers / Clients communicate over TCP / UDP using the CoAP application protocol. Communication within the OCF Native Cloud shouldn't be restricted to the CoAP protocol, implementation should allow the use of whatever protocol might be introduced in the future. That's why the gateway is the access point for CoAP over TCP, and further communication is OCF Native Cloud specific.
 
@@ -22,24 +23,7 @@ TCP connection to the OCF Native Cloud is by its nature stateful. The OCF CoAP G
 - OCF CoAP Gateway processes events from Resources, by issuing a proper CoAP request to the device and raising an event with the response
 - OCF CoAP Gateway has to process a waiting request within the configured time, or set the device as offline
 
-### API
-
-CoAP APIs of the Cloud Service are defined in [OCF Device To Cloud Services Specification](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.3.pdf).
-
-- POST /oic/sec/account - sign up the device with authorization code
-- DELETE /oic/sec/account - sign off the device with access token
-- POST /oic/sec/tokenrefresh - refresh access token with refresh token
-- POST /oic/sec/session - sign in the device with access token and with login true
-- POST /oic/sec/session - sign out the device with access token and with login false
-- POST /oic/rd - publish resources from the signed device
-- DELETE /oic/rd - unpublish resources from the signed device
-- GET /oic/res - discover all cloud devices resources from the signed device
-- GET /oic/route/{deviceID}/{href} - get/observe resource of the cloud device from signed device
-- POST /oic/route/{deviceID}/{href} - update resource of the cloud device from signed device
-- DELETE /oic/route/{deviceID}/{href} - delete resource of the cloud device from signed device
-
 ## Docker Image
-
 ```bash
 docker pull plgd/coap-gateway:latest
 ```
@@ -155,15 +139,15 @@ docker run -d --network=host \
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
-| `log.dumpCoapMessages` | bool | `Set to true if you would like to dump coap messages on logs.` | `false` |
+| `log.dumpCoapMessages` | bool | `Set to true if you would like to dump raw messages.` | `false` |
 
 ### CoAP API
-CoAP API of Coap Gateway Service as defined in [uri](https://github.com/plgd-dev/cloud/blob/docs-deployment-grpc-gateway/coap-gateway/uri/uri.go) and [swagger](https://raw.githubusercontent.com/openconnectivityfoundation/cloud-services/master/swagger2.0/oic.wk.rd.swagger.json). 
+CoAP API as specified in the [Open Connectivity Foundation - Device to Cloud Services](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.3.pdf).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `api.coap.address` | string | `Listen specification <host>:<port> for coap client connection.` | `"0.0.0.0:9100"` |
-| `api.coap.externalAddress` | string | `External address including public domain/IP for coap client connection.` | `"0.0.0.0:9100"` |
+| `api.coap.address` | string | `Listen specification <host>:<port> for coap client connection.` | `"0.0.0.0:5684"` |
+| `api.coap.externalAddress` | string | `External address including public domain/IP for coap client connection.` | `"coap-gw.example.com:5684"` |
 | `api.coap.maxMessageSize` | int | `Max message size which can be send/receive via coap.` | `262144` |
 | `api.coap.goroutineSocketHeartbeat` | string | `Interval time to check live service.` | `4s` |
 | `api.coap.keepAlive.timeout` | string | `Time limit to close inactive connection.` | `20s` |
@@ -188,7 +172,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
-Authorization server client configuration to connect internally.
+Client configurations to internally connect to Authorization Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -205,7 +189,7 @@ Authorization server client configuration to connect internally.
 | `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### OAuth2.0 Service Client
->Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against the plgd API Gateways.
+>Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against other plgd APIs.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -230,7 +214,7 @@ You might have one client, but multiple APIs in the OAuth system. What you want 
 :::
 
 ### Resource Aggregate Client
-Resource aggregate client configuration to connect internally.
+Client configurations to internally connect to Resource Aggregate service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -247,7 +231,7 @@ Resource aggregate client configuration to connect internally.
 
 
 ### Resource Directory Client
-Resource directory client configuration to connect internally.
+Client configurations to internally connect to Resource Directory service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

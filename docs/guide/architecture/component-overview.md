@@ -9,6 +9,22 @@ The CoAP gateway acts act as a CoAP Client, communicating with IoT devices - CoA
 ![L3](/img/diagrams/component-coapgateway.svg =600x)
 :::
 
+### APIs
+
+CoAP APIs of the Cloud Service are defined in [OCF Device To Cloud Services Specification](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.3.pdf).
+
+- POST /oic/sec/account - sign up the device with authorization code
+- DELETE /oic/sec/account - sign off the device with access token
+- POST /oic/sec/tokenrefresh - refresh access token with refresh token
+- POST /oic/sec/session - sign in the device with access token and with login true
+- POST /oic/sec/session - sign out the device with access token and with login false
+- POST /oic/rd - publish resources from the signed device
+- DELETE /oic/rd - unpublish resources from the signed device
+- GET /oic/res - discover all cloud devices resources from the signed device
+- GET /oic/route/{deviceID}/{href} - get/observe resource of the cloud device from signed device
+- POST /oic/route/{deviceID}/{href} - update resource of the cloud device from signed device
+- DELETE /oic/route/{deviceID}/{href} - delete resource of the cloud device from signed device
+
 ### Operational flow
 Before a device becomes operational and is able to interact with other devices, it needs to be appropriately onboarded. The first step in onboarding the device is to [configure the ownership (see 5.3.3)](https://openconnectivity.org/specs/OCF_Security_Specification_v2.2.1.pdf#page=38) where the legitimate user that owns/purchases the device uses an Onboarding tool (OBT) and using the OBT uses one of the Owner Transfer Methods (OTMs) to establish ownership. Once ownership is established, the OBT [provisions the device (see 5.3.4)](https://openconnectivity.org/specs/OCF_Security_Specification_v2.2.1.pdf#page=39), at the end of which the device can be [provisioned for the plgd.cloud (see 8.1.2.3)](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.1.pdf#page=32). After successful provisioning, the device should [establish the TLS connection (see 7.2)](https://openconnectivity.org/specs/OCF_Cloud_Security_Specification_v2.2.1.pdf#page=14) using the certificate based credentials.
 
