@@ -122,7 +122,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
-gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/grpc-gateway/pb/service_grpc.pb.go#L19).
+gRPC API of the GRPC Gateway service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/grpc-gateway/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
@@ -157,7 +157,6 @@ Plgd cloud uses NATS messaging system as a event bus.
 
 ### Resource Aggregate Client
 Client configurations to internally connect to Resource Aggregate service.
-
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
