@@ -1,5 +1,5 @@
 # OAuth Server
-OAuth Server acts as an OAuth provider for mock testing to authorizes users and devices interacting with the plgd cloud.
+Mocked OAuth2.0 Server used for automated tests and [bundle container](...)
 
 ## Docker Image
 
