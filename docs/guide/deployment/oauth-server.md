@@ -127,8 +127,8 @@ Signer configuration to issue ID/access tokens of OAuth provider for mock testin
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `oauthSigner.idTokenKeyFile` | string | `File path to private key for ID token in PEM format which is asymetric RSA key because UI only supports RSA.` | `""` |
-| `oauthSigner.accessTokenKeyFile` | string | `File path to private key for access token in PEM format which is ECDSA key.` | `""` |
+| `oauthSigner.idTokenKeyFile` | string | `File path to private key for ID token in PEM format. It is asymetric RSA key because UI only supports RSA.` | `""` |
+| `oauthSigner.accessTokenKeyFile` | string | `File path to private key for access token in PEM format. It can be RSA/ECDSA key but prefered to ECDSA for performance reason.` | `""` |
 | `oauthSigner.domain` | string | `Domain address <host>:<port> for http APIs.` | `""` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
