@@ -35,7 +35,7 @@ clients:
         useSystemCAPool: false
   eventStore:
     # expiration time of cached resource in projection
-    cacheExpiration: 1m
+    cacheExpiration: 20m
     mongoDB:
       uri: ""
       database: eventStore

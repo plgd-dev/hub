@@ -44,19 +44,20 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 }
 
 func (p *Projection) getModels(ctx context.Context, resourceID *commands.ResourceId) ([]eventstore.Model, error) {
-	loaded, err := p.Register(ctx, resourceID.GetDeviceId())
+	created, err := p.Register(ctx, resourceID.GetDeviceId())
 	if err != nil {
 		return nil, fmt.Errorf("cannot register to projection for %v: %w", resourceID, err)
 	}
-	if loaded {
-		p.cache.Set(resourceID.GetDeviceId(), loaded, cache.DefaultExpiration)
+	if created {
+		p.cache.Set(resourceID.GetDeviceId(), created, cache.DefaultExpiration)
 	} else {
+		p.cache.Replace(resourceID.GetDeviceId(), created, cache.DefaultExpiration)
 		defer func(ID string) {
 			p.Unregister(ID)
 		}(resourceID.GetDeviceId())
 	}
 	m := p.Models(resourceID)
-	if !loaded && len(m) == 0 {
+	if !created && len(m) == 0 {
 		err := p.ForceUpdate(ctx, resourceID)
 		if err == nil {
 			m = p.Models(resourceID)

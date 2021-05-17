@@ -158,7 +158,7 @@ Plgd cloud uses MongoDB database as a event store.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.eventStore.cacheExpiration` | string | `Expiration time of cached resource in projection.` | `1m` |
+| `clients.eventStore.cacheExpiration` | string | `Expiration time of cached resource in projection.` | `20m` |
 | `clients.eventStore.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
 | `clients.eventStore.mongoDB.database` | string | `Name of database` | `"eventStore"` |
 | `clients.eventStore.mongoDB.batchSize` | int | `Limits number of queries in one find request.` | `16` |
