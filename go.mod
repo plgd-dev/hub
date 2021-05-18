@@ -9,7 +9,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/snappy v0.0.2
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
