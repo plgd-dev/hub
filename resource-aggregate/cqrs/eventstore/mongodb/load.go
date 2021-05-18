@@ -216,38 +216,27 @@ func (s *EventStore) loadMongoQuery(ctx context.Context, eh eventstore.Handler, 
 	return err
 }
 
-func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQuery) (mongo.Pipeline, *options.AggregateOptions) {
-	opts := options.Aggregate()
+func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQuery) (interface{}, *options.FindOptions) {
+	opts := options.Find()
 	opts.SetAllowDiskUse(true)
-	if len(queries) == 0 {
-		opts.SetHint(groupIDQueryIndex)
-		return mongo.Pipeline{
-			bson.D{
-				{
-					Key: "$match",
-					Value: bson.D{
-						{Key: groupIDKey, Value: groupID}, {Key: isActiveKey, Value: true},
-					},
+	opts.SetProjection(bson.M{
+		groupIDKey:     1,
+		aggregateIDKey: 1,
+		eventsKey: bson.M{
+			"$filter": bson.M{
+				"input": "$" + eventsKey,
+				"as":    eventsKey,
+				"cond": bson.M{
+					string(signOperator_gte): []string{"$$" + eventsKey + "." + versionKey, "$" + latestSnapshotVersionKey},
 				},
 			},
-			bson.D{
-				{
-					Key: "$project",
-					Value: bson.M{
-						groupIDKey:     1,
-						aggregateIDKey: 1,
-						eventsKey: bson.M{
-							"$filter": bson.M{
-								"input": "$" + eventsKey,
-								"as":    eventsKey,
-								"cond": bson.M{
-									string(signOperator_gte): []string{"$$" + eventsKey + "." + versionKey, "$" + latestSnapshotVersionKey},
-								},
-							},
-						},
-					},
-				},
-			}}, opts
+		},
+	})
+	if len(queries) == 0 {
+		opts.SetHint(groupIDQueryIndex)
+		return bson.D{
+			{Key: groupIDKey, Value: groupID}, {Key: isActiveKey, Value: true},
+		}, opts
 	}
 
 	opts.SetHint(groupIDaggregateIDQueryIndex)
@@ -257,33 +246,8 @@ func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQu
 			orQueries = append(orQueries, bson.D{{Key: groupIDKey, Value: groupID}, {Key: aggregateIDKey, Value: q.AggregateID}, {Key: isActiveKey, Value: true}})
 		}
 	}
-	return mongo.Pipeline{
-		bson.D{
-			{
-				Key: "$match",
-				Value: bson.M{
-					"$or": orQueries,
-				},
-			},
-		},
-		bson.D{
-			{
-				Key: "$project",
-				Value: bson.M{
-					groupIDKey:     1,
-					aggregateIDKey: 1,
-					eventsKey: bson.M{
-						"$filter": bson.M{
-							"input": "$" + eventsKey,
-							"as":    eventsKey,
-							"cond": bson.M{
-								string(signOperator_gte): []string{"$$" + eventsKey + "." + versionKey, "$" + latestSnapshotVersionKey},
-							},
-						},
-					},
-				},
-			},
-		},
+	return bson.M{
+		"$or": orQueries,
 	}, opts
 }
 
@@ -292,7 +256,7 @@ func (s *EventStore) loadFromSnapshot(ctx context.Context, groupID string, queri
 	var iter *mongo.Cursor
 	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
 	pipeline, opts := snapshotQueriesToMongoQuery(groupID, queries)
-	iter, err = col.Aggregate(ctx, pipeline, opts)
+	iter, err = col.Find(ctx, pipeline, opts)
 	if err == mongo.ErrNilDocument {
 		return nil
 	}
