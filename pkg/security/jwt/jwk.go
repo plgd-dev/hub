@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -15,7 +16,7 @@ type KeyCache struct {
 	url  string
 	http *http.Client
 	m    sync.Mutex
-	keys *jwk.Set
+	keys jwk.Set
 }
 
 func NewKeyCacheWithHttp(url string, client *http.Client) *KeyCache {
@@ -68,7 +69,7 @@ func (c *KeyCache) LookupKey(token *jwt.Token) (jwk.Key, error) {
 	if c.keys == nil {
 		return nil, fmt.Errorf("empty JWK cache")
 	}
-	for _, key := range c.keys.LookupKeyID(id) {
+	if key, ok := c.keys.LookupKeyID(id); ok {
 		if key.Algorithm() == token.Method.Alg() {
 			return key, nil
 		}
@@ -77,7 +78,10 @@ func (c *KeyCache) LookupKey(token *jwt.Token) (jwk.Key, error) {
 }
 
 func (c *KeyCache) FetchKeys() error {
-	keys, err := jwk.FetchHTTP(c.url, jwk.WithHTTPClient(c.http))
+	ctx, cancel := context.WithTimeout(context.Background(), c.http.Timeout)
+	defer cancel()
+
+	keys, err := jwk.Fetch(ctx, c.url, jwk.WithHTTPClient(c.http))
 	if err != nil {
 		return fmt.Errorf("could not fetch JWK: %w", err)
 	}
