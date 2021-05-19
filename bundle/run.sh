@@ -340,7 +340,18 @@ sed -i "s/REPLACE_AUTHORIZATION_HTTP_PORT/$AUTHORIZATION_HTTP_PORT/g" ${NGINX_PA
 
 # nats
 echo "starting nats-server"
-nats-server --port $NATS_PORT --tls --tlsverify --tlscert=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME --tlskey=$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME --tlscacert=$CA_POOL_CERT_PATH >$LOGS_PATH/nats-server.log 2>&1 &
+cat > /data/nats.config <<EOF
+port: $NATS_PORT
+max_pending: 128Mb
+write_deadline: 10s
+tls: {
+  verify: true
+  cert_file: "$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME"
+  key_file: "$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME"
+  ca_file: "$CA_POOL_CERT_PATH"
+}
+EOF
+nats-server -c /data/nats.config >$LOGS_PATH/nats-server.log 2>&1 &
 status=$?
 nats_server_pid=$!
 if [ $status -ne 0 ]; then

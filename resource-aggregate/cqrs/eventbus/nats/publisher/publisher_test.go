@@ -39,11 +39,7 @@ func TestPublisher(t *testing.T) {
 	assert.NotNil(t, publisher)
 	defer publisher.Close()
 
-	subscriber, err := subscriber.New(subscriber.Config{
-		URL: "nats://localhost:4222",
-		TLS: config.MakeTLSClientConfig(),
-	}, logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal),
-	)
+	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
 	assert.NotNil(t, subscriber)
 	assert.NoError(t, err)
 	defer subscriber.Close()
