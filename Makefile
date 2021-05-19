@@ -85,7 +85,7 @@ test: env
 		-v $(shell pwd)/.tmp/certs:/certs \
 		-v $(shell pwd)/.tmp/home:/home \
 		-v $(shell pwd)/.tmp/privKeys:/privKeys \
-		--user $(shell id -u):$(shell id -g) \
+		-v /var/run/docker.sock:/var/run/docker.sock \
 		-e HOME=/home \
 		-e DIAL_TYPE="file" \
 		-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \

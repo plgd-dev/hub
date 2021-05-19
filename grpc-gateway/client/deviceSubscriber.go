@@ -32,6 +32,7 @@ type Operations interface {
 	UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error
 	DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
+	OnDeviceSubscriberReconnectError(err error)
 }
 
 func NewDeviceSubscriptionHandlers(operations Operations) *DeviceSubscriptionHandlers {
@@ -112,13 +113,6 @@ func (h *DeviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Con
 	return err
 }
 
-type PendingCommandsHandler interface {
-	HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error
-	HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error
-	HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error
-	HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error
-}
-
 type DeviceSubscriber struct {
 	rdClient pbGRPC.GrpcGatewayClient
 	deviceID string
@@ -127,7 +121,8 @@ type DeviceSubscriber struct {
 	observer               eventbus.Observer
 
 	mutex                  sync.Mutex
-	pendingCommandsHandler PendingCommandsHandler
+	pendingCommandsHandler *DeviceSubscriptionHandlers
+	closeFunc              func()
 }
 
 func NewDeviceSubscriber(ctx context.Context, deviceID string, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
@@ -145,18 +140,32 @@ func NewDeviceSubscriber(ctx context.Context, deviceID string, rdClient pbGRPC.G
 		return nil, err
 	}
 	s.observer = observer
+	reconnectID := resourceSubscriber.AddReconnectFunc(func() {
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
+		if s.pendingCommandsHandler == nil {
+			return
+		}
+		err := s.coldStartPendingCommandsLocked(ctx, s.pendingCommandsHandler)
+		if err != nil {
+			s.pendingCommandsHandler.operations.OnDeviceSubscriberReconnectError(err)
+		}
+	})
+	s.closeFunc = func() {
+		resourceSubscriber.RemoveReconnectFunc(reconnectID)
+	}
 	return &s, nil
 }
 
 func (s *DeviceSubscriber) Close() (err error) {
+	s.closeFunc()
 	if s.observer == nil {
 		return nil
 	}
 	return s.observer.Close()
 }
 
-func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h PendingCommandsHandler, ev *pbGRPC.PendingCommand) error {
-
+func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceSubscriptionHandlers, ev *pbGRPC.PendingCommand) error {
 	var sendEvent func(ctx context.Context) error
 	switch {
 	case ev.GetResourceCreatePending() != nil:
@@ -183,9 +192,7 @@ func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h PendingC
 	return sendEvent(ctx)
 }
 
-func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *DeviceSubscriptionHandlers) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (s *DeviceSubscriber) coldStartPendingCommandsLocked(ctx context.Context, h *DeviceSubscriptionHandlers) error {
 	resp, err := s.rdClient.RetrievePendingCommands(ctx, &pbGRPC.RetrievePendingCommandsRequest{
 		DeviceIdsFilter: []string{s.deviceID},
 	})
@@ -208,18 +215,27 @@ func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *De
 			return fmt.Errorf("cannot retrieve pending commands for %v: %w", s.deviceID, iter.Err)
 		}
 	}
-	s.pendingCommandsHandler = h
-
 	return nil
 }
 
-func (s *DeviceSubscriber) getPendingCommandsHandler() PendingCommandsHandler {
+func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *DeviceSubscriptionHandlers) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	err := s.coldStartPendingCommandsLocked(ctx, h)
+	if err != nil {
+		return err
+	}
+	s.pendingCommandsHandler = h
+	return nil
+}
+
+func (s *DeviceSubscriber) getPendingCommandsHandler() *DeviceSubscriptionHandlers {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return s.pendingCommandsHandler
 }
 
-func sendEvent(ctx context.Context, h PendingCommandsHandler, ev eventbus.EventUnmarshaler) error {
+func sendEvent(ctx context.Context, h *DeviceSubscriptionHandlers, ev eventbus.EventUnmarshaler) error {
 	switch ev.EventType() {
 	case (&events.ResourceRetrievePending{}).EventType():
 		var event events.ResourceRetrievePending

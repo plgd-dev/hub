@@ -834,3 +834,10 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 
 	return nil
 }
+
+func (client *Client) OnDeviceSubscriberReconnectError(err error) {
+	auth, _ := client.GetAuthorizationContext()
+	deviceID := auth.GetDeviceID()
+	log.Errorf("error occurs during reconnect device(%v) subscriber: %v", deviceID, err)
+	client.Close()
+}

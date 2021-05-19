@@ -15,7 +15,15 @@ import (
 )
 
 //UnmarshalerFunc unmarshal bytes to pointer of struct.
-type UnmarshalerFunc = func(b []byte, v interface{}) error
+type UnmarshalerFunc = func(s []byte, v interface{}) error
+
+// ReconnectFunc called when reconnect occurs
+type ReconnectFunc func()
+
+type reconnect struct {
+	id uint64
+	f  ReconnectFunc
+}
 
 // Subscriber implements a eventbus.Subscriber interface.
 type Subscriber struct {
@@ -25,10 +33,51 @@ type Subscriber struct {
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
 	closeFunc       []func()
 	pendingLimits   PendingLimitsConfig
+
+	lock        sync.Mutex
+	reconnectId uint64
+	reconnect   []reconnect
 }
 
-func (p *Subscriber) AddCloseFunc(f func()) {
-	p.closeFunc = append(p.closeFunc, f)
+func (s *Subscriber) AddCloseFunc(f func()) {
+	s.closeFunc = append(s.closeFunc, f)
+}
+
+func (s *Subscriber) AddReconnectFunc(f func()) uint64 {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.reconnectId++
+	s.reconnect = append(s.reconnect, reconnect{
+		id: s.reconnectId,
+		f:  f,
+	})
+	return s.reconnectId
+}
+
+func (s *Subscriber) RemoveReconnectFunc(id uint64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for idx := range s.reconnect {
+		if s.reconnect[idx].id == id {
+			s.reconnect = append(s.reconnect[:idx], s.reconnect[idx+1:]...)
+			break
+		}
+	}
+}
+
+func (s *Subscriber) reconnectCopy() []reconnect {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	reconnect := make([]reconnect, len(s.reconnect))
+	copy(reconnect, s.reconnect)
+	return reconnect
+}
+
+func (s *Subscriber) reconnectedHandler(c *nats.Conn) {
+	reconnect := s.reconnectCopy()
+	for idx := range reconnect {
+		reconnect[idx].f()
+	}
 }
 
 //Observer handles events from nats
@@ -115,18 +164,22 @@ func newSubscriber(config Config, eventUnmarshaler UnmarshalerFunc, goroutinePoo
 	if err != nil {
 		return nil, fmt.Errorf("cannot create client: %w", err)
 	}
-	return &Subscriber{
+	s := Subscriber{
 		dataUnmarshaler: eventUnmarshaler,
 		logger:          logger,
 		conn:            conn,
 		goroutinePoolGo: goroutinePoolGo,
 		pendingLimits:   config.PendingLimits,
-	}, nil
+		reconnect:       make([]reconnect, 0, 8),
+	}
+	conn.SetReconnectHandler(s.reconnectedHandler)
+
+	return &s, nil
 }
 
 // Subscribe creates a observer that listen on events from topics.
-func (b *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topics []string, eh eventbus.Handler) (eventbus.Observer, error) {
-	observer := b.newObservation(ctx, subscriptionId, eventbus.NewGoroutinePoolHandler(b.goroutinePoolGo, eh, func(err error) { b.logger.Sugar().Error(err) }))
+func (s *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topics []string, eh eventbus.Handler) (eventbus.Observer, error) {
+	observer := s.newObservation(subscriptionId, eventbus.NewGoroutinePoolHandler(s.goroutinePoolGo, eh, func(err error) { s.logger.Sugar().Error(err) }))
 
 	err := observer.SetTopics(ctx, topics)
 	if err != nil {
@@ -137,25 +190,25 @@ func (b *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topic
 }
 
 // Close closes subscriber.
-func (b *Subscriber) Close() {
-	b.conn.Close()
-	for _, f := range b.closeFunc {
+func (s *Subscriber) Close() {
+	s.conn.Close()
+	for _, f := range s.closeFunc {
 		f()
 	}
 }
 
-func (b *Subscriber) newObservation(ctx context.Context, subscriptionId string, eh eventbus.Handler) *Observer {
+func (s *Subscriber) newObservation(subscriptionId string, eh eventbus.Handler) *Observer {
 	ctx, cancel := context.WithCancel(context.Background())
 	o := &Observer{
-		conn:            b.conn,
-		dataUnmarshaler: b.dataUnmarshaler,
+		conn:            s.conn,
+		dataUnmarshaler: s.dataUnmarshaler,
 		subscriptionId:  subscriptionId,
 		subs:            make(map[string]*nats.Subscription),
 		eventHandler:    eh,
-		logger:          b.logger,
+		logger:          s.logger,
 		ctx:             ctx,
 		cancel:          cancel,
-		pendingLimits:   b.pendingLimits,
+		pendingLimits:   s.pendingLimits,
 	}
 
 	return o
