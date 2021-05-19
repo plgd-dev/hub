@@ -113,6 +113,10 @@ func MakePublisherConfig() publisher.Config {
 func MakeSubscriberConfig() subscriber.Config {
 	return subscriber.Config{
 		URL: NATS_URL,
+		PendingLimits: subscriber.PendingLimitsConfig{
+			MsgLimit:   524288,
+			BytesLimit: 67108864,
+		},
 		TLS: MakeTLSClientConfig(),
 	}
 }

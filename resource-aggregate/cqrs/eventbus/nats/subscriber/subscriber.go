@@ -19,13 +19,12 @@ type UnmarshalerFunc = func(b []byte, v interface{}) error
 
 // Subscriber implements a eventbus.Subscriber interface.
 type Subscriber struct {
-	clientId        string
 	dataUnmarshaler UnmarshalerFunc
 	logger          *zap.Logger
 	conn            *nats.Conn
-	url             string
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
 	closeFunc       []func()
+	pendingLimits   PendingLimitsConfig
 }
 
 func (p *Subscriber) AddCloseFunc(f func()) {
@@ -41,9 +40,9 @@ type Observer struct {
 	conn            *nats.Conn
 	subscriptionId  string
 	subs            map[string]*nats.Subscription
-	ch              chan *nats.Msg
 	ctx             context.Context
 	cancel          context.CancelFunc
+	pendingLimits   PendingLimitsConfig
 }
 
 type options struct {
@@ -97,7 +96,7 @@ func New(config Config, logger *zap.Logger, opts ...Option) (*Subscriber, error)
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
 	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()))
-	s, err := newSubscriber(config.URL, cfg.dataUnmarshaler, cfg.goroutinePoolGo, logger, config.Options...)
+	s, err := newSubscriber(config, cfg.dataUnmarshaler, cfg.goroutinePoolGo, logger, config.Options...)
 	if err != nil {
 		certManager.Close()
 		return nil, err
@@ -107,21 +106,21 @@ func New(config Config, logger *zap.Logger, opts ...Option) (*Subscriber, error)
 }
 
 // NewSubscriber creates a subscriber.
-func newSubscriber(url string, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger *zap.Logger, options ...nats.Option) (*Subscriber, error) {
+func newSubscriber(config Config, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger *zap.Logger, options ...nats.Option) (*Subscriber, error) {
 	if eventUnmarshaler == nil {
 		return nil, fmt.Errorf("invalid eventUnmarshaler")
 	}
 
-	conn, err := nats.Connect(url, options...)
+	conn, err := nats.Connect(config.URL, options...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create client: %w", err)
 	}
-
 	return &Subscriber{
 		dataUnmarshaler: eventUnmarshaler,
 		logger:          logger,
 		conn:            conn,
 		goroutinePoolGo: goroutinePoolGo,
+		pendingLimits:   config.PendingLimits,
 	}, nil
 }
 
@@ -147,7 +146,6 @@ func (b *Subscriber) Close() {
 
 func (b *Subscriber) newObservation(ctx context.Context, subscriptionId string, eh eventbus.Handler) *Observer {
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := make(chan *nats.Msg, 32)
 	o := &Observer{
 		conn:            b.conn,
 		dataUnmarshaler: b.dataUnmarshaler,
@@ -157,26 +155,15 @@ func (b *Subscriber) newObservation(ctx context.Context, subscriptionId string, 
 		logger:          b.logger,
 		ctx:             ctx,
 		cancel:          cancel,
-		ch:              ch,
+		pendingLimits:   b.pendingLimits,
 	}
-	go func() {
-		for {
-			select {
-			case <-o.ctx.Done():
-				return
-			case msg := <-ch:
-				if msg != nil {
-					o.handleMsg(msg)
-				}
-			}
-		}
-	}()
 
 	return o
 }
 
 func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
 	var errors []error
+	var unsetTopics bool
 	for topic, sub := range o.subs {
 		if _, ok := topics[topic]; !ok {
 			err := sub.Unsubscribe()
@@ -184,7 +171,11 @@ func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
 				errors = append(errors, err)
 			}
 			delete(o.subs, topic)
+			unsetTopics = true
 		}
+	}
+	if unsetTopics {
+		o.conn.Flush()
 	}
 	newSubs := make(map[string]bool)
 	for topic := range topics {
@@ -213,13 +204,19 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 	if err != nil {
 		return fmt.Errorf("cannot set topics: %w", err)
 	}
+
 	for topic := range newTopicsForSub {
-		sub, err := o.conn.QueueSubscribeSyncWithChan(topic, o.subscriptionId, o.ch)
+		sub, err := o.conn.QueueSubscribe(topic, o.subscriptionId, o.handleMsg)
 		if err != nil {
 			o.cleanUp(make(map[string]bool))
 			return fmt.Errorf("cannot subscribe to topics: %w", err)
 		}
 		o.subs[topic] = sub
+		err = sub.SetPendingLimits(o.pendingLimits.MsgLimit, o.pendingLimits.BytesLimit)
+		if err != nil {
+			o.cleanUp(make(map[string]bool))
+			return fmt.Errorf("cannot subscribe to topics: %w", err)
+		}
 	}
 
 	if len(newTopicsForSub) > 0 {
@@ -236,10 +233,6 @@ func (o *Observer) Close() error {
 	_, err := o.cleanUp(make(map[string]bool))
 	if err != nil {
 		return fmt.Errorf("cannot close observer: %w", err)
-	}
-	if o.ch != nil {
-		close(o.ch)
-		o.ch = nil
 	}
 	return nil
 }

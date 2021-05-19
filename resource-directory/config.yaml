@@ -28,6 +28,9 @@ clients:
     goPoolSize: 16
     nats:
       url: ""
+      pendingLimits:
+        msgLimit: 524288
+        bytesLimit: 67108864
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
