@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"sort"
-	"syscall"
 	"testing"
 	"time"
 
@@ -64,23 +64,6 @@ var (
 )
 
 func init() {
-	var rLimit syscall.Rlimit
-	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-	if err != nil {
-		fmt.Println("Error Getting Rlimit ", err)
-	}
-	fmt.Println(rLimit)
-	rLimit.Max = 999999
-	rLimit.Cur = 999999
-	err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-	if err != nil {
-		fmt.Println("Error Setting Rlimit ", err)
-	}
-	err = syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-	if err != nil {
-		fmt.Println("Error Getting Rlimit ", err)
-	}
-	fmt.Println("Rlimit Final", rLimit)
 	TestDeviceName = "devsim-" + MustGetHostname()
 	TestDevsimResources = []schema.ResourceLink{
 		{
@@ -777,4 +760,15 @@ func CheckProtobufs(t *testing.T, expected interface{}, actual interface{}, chec
 	v1 := ProtobufToInterface(t, expected)
 	v2 := ProtobufToInterface(t, actual)
 	checkFunc(t, v1, v2)
+}
+
+func NATSSStart(ctx context.Context, t *testing.T) {
+	err := exec.CommandContext(ctx, "docker", "start", "nats").Run()
+	require.NoError(t, err)
+}
+
+func NATSSStop(ctx context.Context, t *testing.T) {
+	err := exec.CommandContext(ctx, "docker", "stop", "nats").Run()
+	require.NoError(t, err)
+
 }
