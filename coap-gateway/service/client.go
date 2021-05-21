@@ -12,6 +12,7 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -20,7 +21,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/kit/log"
 	kitSync "github.com/plgd-dev/kit/sync"
 	"github.com/plgd-dev/sdk/schema"
 )

@@ -14,13 +14,13 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/pkg/log"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/kit/log"
 	"go.uber.org/zap"
 )
 

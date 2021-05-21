@@ -6,12 +6,12 @@ import (
 
 	"google.golang.org/grpc/status"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/codes"
 )
 

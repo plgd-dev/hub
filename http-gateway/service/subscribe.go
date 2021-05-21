@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/cloud/pkg/log"
 )
 
 const (

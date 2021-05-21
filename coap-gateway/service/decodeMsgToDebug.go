@@ -6,10 +6,10 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/log"
 )
 
 func readBody(r io.ReadSeeker) []byte {

@@ -7,9 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/log"
 )
 
 type DecodeFunc = func(interface{}) error

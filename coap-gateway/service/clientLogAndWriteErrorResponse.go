@@ -3,10 +3,10 @@ package service
 import (
 	"bytes"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/kit/log"
 )
 
 func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token message.Token) {

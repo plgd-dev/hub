@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"testing"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -25,10 +25,6 @@ func TestSubscriberReconnect(t *testing.T) {
 	require.NoError(t, err)
 
 	publisher, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
-	require.NoError(t, err)
-	require.NotNil(t, publisher)
-	defer publisher.Close()
-
 	require.NoError(t, err)
 	require.NotNil(t, publisher)
 	defer publisher.Close()
@@ -75,10 +71,10 @@ func TestSubscriberReconnect(t *testing.T) {
 		ch <- true
 	})
 	defer subscriber.RemoveReconnectFunc(reconnectID)
-	err = exec.CommandContext(ctx, "docker", "stop", "nats").Run()
-	require.NoError(t, err)
-	err = exec.CommandContext(ctx, "docker", "start", "nats").Run()
-	require.NoError(t, err)
+
+	test.NATSSStop(ctx, t)
+	test.NATSSStart(ctx, t)
+
 	select {
 	case <-ch:
 	case <-ctx.Done():
