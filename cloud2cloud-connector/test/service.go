@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/refImpl"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,6 +27,7 @@ func MakeConfig(t *testing.T) refImpl.Config {
 	cfg.Listen.File.DisableVerifyClientCertificate = true
 	cfg.Service.PullDevicesInterval = time.Second
 	cfg.Service.ResubscribeInterval = time.Second
+	cfg.Service.Nats = testCfg.MakeSubscriberConfig()
 	return cfg
 }
 

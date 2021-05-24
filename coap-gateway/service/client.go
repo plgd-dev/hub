@@ -841,3 +841,11 @@ func (client *Client) OnDeviceSubscriberReconnectError(err error) {
 	log.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %v", deviceID, err)
 	client.Close()
 }
+
+func (client *Client) GetContext() (context.Context, context.CancelFunc) {
+	authCtx, err := client.GetAuthorizationContext()
+	if err != nil {
+		return client.Context(), func() {}
+	}
+	return kitNetGrpc.CtxWithOwner(client.Context(), authCtx.GetUserID()), func() {}
+}

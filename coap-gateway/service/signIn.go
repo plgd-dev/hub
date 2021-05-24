@@ -139,7 +139,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	if newDevice {
-		deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(req.Context, signIn.DeviceID, func() func() (when time.Time, err error) {
+		deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, signIn.DeviceID, func() func() (when time.Time, err error) {
 			var count uint64
 			maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
 			if maxRand <= 0 {
