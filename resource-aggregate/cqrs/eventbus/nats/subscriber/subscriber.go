@@ -144,7 +144,7 @@ func New(config Config, logger *zap.Logger, opts ...Option) (*Subscriber, error)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
-	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()))
+	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()), nats.MaxReconnects(-1))
 	s, err := newSubscriber(config, cfg.dataUnmarshaler, cfg.goroutinePoolGo, logger, config.Options...)
 	if err != nil {
 		certManager.Close()

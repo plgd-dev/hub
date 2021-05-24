@@ -838,6 +838,6 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 func (client *Client) OnDeviceSubscriberReconnectError(err error) {
 	auth, _ := client.GetAuthorizationContext()
 	deviceID := auth.GetDeviceID()
-	log.Errorf("error occurs during reconnect device(%v) subscriber: %v", deviceID, err)
+	log.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %v", deviceID, err)
 	client.Close()
 }

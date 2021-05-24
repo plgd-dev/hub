@@ -34,7 +34,7 @@ type Operations interface {
 	UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error
 	DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
-	// subscriber is not able to reconnect server and must be closed.
+	// Device subscriber is not able to reconnect the server and client (coap-gw, grpc-gw,...) must close it.
 	OnDeviceSubscriberReconnectError(err error)
 }
 
@@ -75,7 +75,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Con
 
 	err := h.operations.UpdateResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("update resource %v: %w", val, err)
+		return fmt.Errorf("unable to update resource %v: %w", val, err)
 	}
 	return err
 }
@@ -87,7 +87,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.C
 
 	err := h.operations.RetrieveResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("retrieve resource %v: %w", val, err)
+		return fmt.Errorf("unable to retrieve resource %v: %w", val, err)
 	}
 	return err
 }
@@ -99,7 +99,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Con
 
 	err := h.operations.DeleteResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("delete resource %v: %w", val, err)
+		return fmt.Errorf("unable to delete resource %v: %w", val, err)
 	}
 	return err
 }
@@ -111,7 +111,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Con
 
 	err := h.operations.CreateResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("create resource %v: %w", val, err)
+		return fmt.Errorf("unable to create resource %v: %w", val, err)
 	}
 	return err
 }
