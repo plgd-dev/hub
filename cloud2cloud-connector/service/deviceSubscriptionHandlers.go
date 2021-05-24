@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"strings"
+	"math/rand"
 	"sync/atomic"
 	"time"
 
@@ -11,6 +11,8 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
@@ -20,24 +22,32 @@ import (
 type deviceSubscriptionHandlers struct {
 	onResourceUpdatePending   func(ctx context.Context, val *raEvents.ResourceUpdatePending) error
 	onResourceRetrievePending func(ctx context.Context, val *raEvents.ResourceRetrievePending) error
-	onClose                   func()
 	onError                   func(err error)
+	getContext                func() (context.Context, context.CancelFunc)
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Context, val *raEvents.ResourceUpdatePending) error {
-	return h.onResourceUpdatePending(ctx, val)
+func (h deviceSubscriptionHandlers) GetContext() (context.Context, context.CancelFunc) {
+	return h.getContext()
 }
 
-func (h *deviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.Context, val *raEvents.ResourceRetrievePending) error {
-	return h.onResourceRetrievePending(ctx, val)
+func (h deviceSubscriptionHandlers) UpdateResource(ctx context.Context, event *raEvents.ResourceUpdatePending) error {
+	return h.onResourceUpdatePending(ctx, event)
 }
 
-func (h *deviceSubscriptionHandlers) Error(err error) {
+func (h deviceSubscriptionHandlers) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
+	return h.onResourceRetrievePending(ctx, event)
+}
+
+func (h deviceSubscriptionHandlers) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
+	return fmt.Errorf("not supported")
+}
+
+func (h deviceSubscriptionHandlers) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
+	return fmt.Errorf("not supported")
+}
+
+func (h deviceSubscriptionHandlers) OnDeviceSubscriberReconnectError(err error) {
 	h.onError(err)
-}
-
-func (h *deviceSubscriptionHandlers) OnClose() {
-	h.onClose()
 }
 
 type DevicesSubscription struct {
@@ -45,16 +55,18 @@ type DevicesSubscription struct {
 	data              *kitSync.Map // //[deviceID]*deviceSubscription
 	rdClient          pb.GrpcGatewayClient
 	raClient          raService.ResourceAggregateClient
+	subscriber        *subscriber.Subscriber
 	reconnectInterval time.Duration
 }
 
-func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, reconnectInterval time.Duration) *DevicesSubscription {
+func NewDevicesSubscription(ctx context.Context, rdClient pb.GrpcGatewayClient, raClient raService.ResourceAggregateClient, subscriber *subscriber.Subscriber, reconnectInterval time.Duration) *DevicesSubscription {
 	return &DevicesSubscription{
 		data:              kitSync.NewMap(),
 		rdClient:          rdClient,
 		raClient:          raClient,
 		reconnectInterval: reconnectInterval,
 		ctx:               ctx,
+		subscriber:        subscriber,
 	}
 }
 
@@ -69,47 +81,41 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 	if loaded {
 		return nil
 	}
-	h := deviceSubscriptionHandlers{
+	deviceSubscriber, err := grpcClient.NewDeviceSubscriber(func() (context.Context, context.CancelFunc) {
+		return kitNetGrpc.CtxWithOwner(c.ctx, linkedAccount.UserID), func() {}
+	}, deviceID, func() func() (when time.Time, err error) {
+		var count uint64
+		maxRand := c.reconnectInterval / 2
+		if maxRand <= 0 {
+			maxRand = time.Second * 10
+		}
+		return func() (when time.Time, err error) {
+			count++
+			r := rand.Int63n(int64(maxRand) / 2)
+			next := time.Now().Add(c.reconnectInterval + time.Duration(r))
+			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
+			return next, nil
+		}
+	}, c.rdClient, c.subscriber)
+	if err != nil {
+		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
+		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)
+	}
+	h := grpcClient.NewDeviceSubscriptionHandlers(deviceSubscriptionHandlers{
 		onResourceUpdatePending: func(ctx context.Context, val *raEvents.ResourceUpdatePending) error {
 			return updateResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
 		},
 		onResourceRetrievePending: func(ctx context.Context, val *raEvents.ResourceRetrievePending) error {
 			return retrieveResource(ctx, c.raClient, val, linkedAccount, linkedCloud)
 		},
-		onClose: func() {
-			log.Debugf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", deviceID)
-			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
-		},
 		onError: func(err error) {
-			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) ends with error: %v", deviceID, err)
+			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", deviceID)
 			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
-			if !strings.Contains(err.Error(), "transport is closing") {
-				return
-			}
-			for {
-				log.Debugf("reconnect device %v subscription(ResourceUpdatePending, ResourceRetrievePending)")
-				err = c.Add(deviceID, linkedAccount, linkedCloud)
-				if err == nil {
-					return
-				}
-				if !strings.Contains(err.Error(), "connection refused") {
-					log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) cannot reconnect: %v", deviceID, err)
-					return
-				}
-				select {
-				case <-c.ctx.Done():
-					return
-				case <-time.After(c.reconnectInterval):
-				}
-			}
 		},
-	}
-	devSub, err := grpcClient.NewDeviceSubscription(kitNetGrpc.CtxWithOwner(c.ctx, linkedAccount.UserID), deviceID, &h, &h, c.rdClient)
-	if err != nil {
-		c.data.Delete(getKey(linkedAccount.UserID, deviceID))
-		return fmt.Errorf("cannot create device %v pending subscription: %w", deviceID, err)
-	}
-	s.Store(devSub)
+	})
+	deviceSubscriber.SubscribeToPendingCommands(kitNetGrpc.CtxWithOwner(c.ctx, linkedAccount.UserID), h)
+
+	s.Store(deviceSubscriber)
 	return nil
 }
 
@@ -123,14 +129,10 @@ func (c *DevicesSubscription) Delete(userID, deviceID string) error {
 	if s == nil {
 		return nil
 	}
-	sub := s.(*grpcClient.DeviceSubscription)
+	sub := s.(*grpcClient.DeviceSubscriber)
 	if sub == nil {
 		return nil
 	}
-	wait, err := sub.Cancel()
-	if err != nil {
-		return err
-	}
-	wait()
+	sub.Close()
 	return nil
 }

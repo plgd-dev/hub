@@ -21,6 +21,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
@@ -127,9 +128,18 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
+	logger, err := log.NewLogger(log.Config{})
+	if err != nil {
+		log.Fatalf("cannot create logger: %v", err)
+	}
+
+	sub, err := subscriber.New(config.Nats, logger)
+	if err != nil {
+		log.Fatalf("cannot create subscriber: %v", err)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, config.ReconnectInterval)
+	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, sub, config.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize, config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 	subscriptionManager := NewSubscriptionManager(config.EventsURL, asClient, raClient, store, devicesSubscription, config.OAuthCallback, taskProcessor.Trigger, config.ResubscribeInterval)
 	requestHandler := NewRequestHandler(config.OAuthCallback, subscriptionManager, asClient, raClient, store, taskProcessor.Trigger, config.OwnerClaim)

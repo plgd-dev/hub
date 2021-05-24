@@ -120,7 +120,6 @@ type DeviceSubscriber struct {
 	rdClient pbGRPC.GrpcGatewayClient
 	deviceID string
 	done     chan struct{}
-	ctx      context.Context
 
 	pendingCommandsVersion *kitSync.Map
 	observer               eventbus.Observer
@@ -130,11 +129,12 @@ type DeviceSubscriber struct {
 	reconnectChan          chan bool
 	closeFunc              func()
 	factoryRetry           func() RetryFunc
+	getContext             func() (context.Context, context.CancelFunc)
 }
 
 type RetryFunc = func() (when time.Time, err error)
 
-func NewDeviceSubscriber(ctx context.Context, deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
+func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc), deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		return nil, err
@@ -146,9 +146,12 @@ func NewDeviceSubscriber(ctx context.Context, deviceID string, factoryRetry func
 		pendingCommandsVersion: kitSync.NewMap(),
 		reconnectChan:          make(chan bool, 1),
 		done:                   make(chan struct{}),
-		ctx:                    ctx,
 		factoryRetry:           factoryRetry,
+		getContext:             getContext,
 	}
+	ctx, cancel := getContext()
+	defer cancel()
+
 	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetTopics(deviceID), &s)
 	if err != nil {
 		return nil, err
@@ -178,7 +181,8 @@ func (s *DeviceSubscriber) tryReconnectToGRPC() bool {
 	if s.pendingCommandsHandler == nil {
 		return false
 	}
-	err := s.coldStartPendingCommandsLocked(s.ctx, s.pendingCommandsHandler)
+
+	err := s.coldStartPendingCommandsLocked(s.pendingCommandsHandler)
 	if err != nil {
 		var grpcStatus interface{ GRPCStatus() *status.Status }
 		code := codes.Unknown
@@ -264,7 +268,9 @@ func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceS
 	return sendEvent(ctx)
 }
 
-func (s *DeviceSubscriber) coldStartPendingCommandsLocked(ctx context.Context, h *DeviceSubscriptionHandlers) error {
+func (s *DeviceSubscriber) coldStartPendingCommandsLocked(h *DeviceSubscriptionHandlers) error {
+	ctx, cancel := s.getContext()
+	defer cancel()
 	resp, err := s.rdClient.RetrievePendingCommands(ctx, &pbGRPC.RetrievePendingCommandsRequest{
 		DeviceIdsFilter: []string{s.deviceID},
 	})
