@@ -34,7 +34,7 @@ type Operations interface {
 	UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error
 	DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
-	// Device subscriber is not able to reconnect the server and client (coap-gw, grpc-gw,...) must close it.
+	// Fatal error occured during reconnection to the server. Client shall call DeviceSubscriber.Close().
 	OnDeviceSubscriberReconnectError(err error)
 }
 
