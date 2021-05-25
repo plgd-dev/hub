@@ -12,12 +12,12 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/status"
 )
 

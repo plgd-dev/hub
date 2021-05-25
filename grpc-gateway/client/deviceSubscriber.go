@@ -2,8 +2,10 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/gofrs/uuid"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -32,6 +34,8 @@ type Operations interface {
 	UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error
 	DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
+	// Fatal error occured during reconnection to the server. Client shall call DeviceSubscriber.Close().
+	OnDeviceSubscriberReconnectError(err error)
 }
 
 func NewDeviceSubscriptionHandlers(operations Operations) *DeviceSubscriptionHandlers {
@@ -71,7 +75,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceUpdatePending(ctx context.Con
 
 	err := h.operations.UpdateResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("update resource %v: %w", val, err)
+		return fmt.Errorf("unable to update resource %v: %w", val, err)
 	}
 	return err
 }
@@ -83,7 +87,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceRetrievePending(ctx context.C
 
 	err := h.operations.RetrieveResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("retrieve resource %v: %w", val, err)
+		return fmt.Errorf("unable to retrieve resource %v: %w", val, err)
 	}
 	return err
 }
@@ -95,7 +99,7 @@ func (h *DeviceSubscriptionHandlers) HandleResourceDeletePending(ctx context.Con
 
 	err := h.operations.DeleteResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("delete resource %v: %w", val, err)
+		return fmt.Errorf("unable to delete resource %v: %w", val, err)
 	}
 	return err
 }
@@ -107,56 +111,133 @@ func (h *DeviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Con
 
 	err := h.operations.CreateResource(ctx, val)
 	if err != nil {
-		return fmt.Errorf("delete resource %v: %w", val, err)
+		return fmt.Errorf("unable to create resource %v: %w", val, err)
 	}
 	return err
-}
-
-type PendingCommandsHandler interface {
-	HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error
-	HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error
-	HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error
-	HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error
 }
 
 type DeviceSubscriber struct {
 	rdClient pbGRPC.GrpcGatewayClient
 	deviceID string
+	done     chan struct{}
+	ctx      context.Context
 
 	pendingCommandsVersion *kitSync.Map
 	observer               eventbus.Observer
 
 	mutex                  sync.Mutex
-	pendingCommandsHandler PendingCommandsHandler
+	pendingCommandsHandler *DeviceSubscriptionHandlers
+	reconnectChan          chan bool
+	closeFunc              func()
+	factoryRetry           func() RetryFunc
 }
 
-func NewDeviceSubscriber(ctx context.Context, deviceID string, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
+type RetryFunc = func() (when time.Time, err error)
+
+func NewDeviceSubscriber(ctx context.Context, deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		return nil, err
 	}
+
 	s := DeviceSubscriber{
 		deviceID:               deviceID,
 		rdClient:               rdClient,
 		pendingCommandsVersion: kitSync.NewMap(),
+		reconnectChan:          make(chan bool, 1),
+		done:                   make(chan struct{}),
+		ctx:                    ctx,
+		factoryRetry:           factoryRetry,
 	}
 	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetTopics(deviceID), &s)
 	if err != nil {
 		return nil, err
 	}
 	s.observer = observer
+	reconnectID := resourceSubscriber.AddReconnectFunc(s.triggerReconnect)
+	var wg sync.WaitGroup
+	s.closeFunc = func() {
+		wg.Wait()
+		resourceSubscriber.RemoveReconnectFunc(reconnectID)
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
+		s.pendingCommandsHandler = nil
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s.reconnect()
+	}()
 	return &s, nil
 }
 
+func (s *DeviceSubscriber) tryReconnectToGRPC() bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.pendingCommandsHandler == nil {
+		return false
+	}
+	err := s.coldStartPendingCommandsLocked(s.ctx, s.pendingCommandsHandler)
+	if err != nil {
+		var grpcStatus interface{ GRPCStatus() *status.Status }
+		code := codes.Unknown
+		if errors.As(err, &grpcStatus) {
+			code = grpcStatus.GRPCStatus().Code()
+		}
+		if code != codes.Unavailable {
+			s.pendingCommandsHandler.operations.OnDeviceSubscriberReconnectError(err)
+			return false
+		}
+		return false
+	}
+	return true
+}
+
+func (s *DeviceSubscriber) triggerReconnect() {
+	select {
+	case <-s.done:
+	case s.reconnectChan <- true:
+	default:
+	}
+}
+
+func (s *DeviceSubscriber) reconnect() {
+	for {
+		select {
+		case <-s.reconnectChan:
+		case <-s.done:
+			return
+		}
+		nextRetry := s.factoryRetry()
+	LOOP_TRY_RECONNECT_TO_GRPC:
+		for !s.tryReconnectToGRPC() {
+			when, err := nextRetry()
+			if err != nil {
+				s.pendingCommandsHandler.operations.OnDeviceSubscriberReconnectError(err)
+				return
+			}
+			select {
+			case <-s.reconnectChan:
+				break LOOP_TRY_RECONNECT_TO_GRPC
+			case <-s.done:
+				return
+			case <-time.After(time.Until(when)):
+			}
+		}
+	}
+}
+
 func (s *DeviceSubscriber) Close() (err error) {
+	close(s.done)
+	s.closeFunc()
 	if s.observer == nil {
 		return nil
 	}
 	return s.observer.Close()
 }
 
-func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h PendingCommandsHandler, ev *pbGRPC.PendingCommand) error {
-
+func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceSubscriptionHandlers, ev *pbGRPC.PendingCommand) error {
 	var sendEvent func(ctx context.Context) error
 	switch {
 	case ev.GetResourceCreatePending() != nil:
@@ -183,9 +264,7 @@ func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h PendingC
 	return sendEvent(ctx)
 }
 
-func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *DeviceSubscriptionHandlers) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (s *DeviceSubscriber) coldStartPendingCommandsLocked(ctx context.Context, h *DeviceSubscriptionHandlers) error {
 	resp, err := s.rdClient.RetrievePendingCommands(ctx, &pbGRPC.RetrievePendingCommandsRequest{
 		DeviceIdsFilter: []string{s.deviceID},
 	})
@@ -208,18 +287,23 @@ func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *De
 			return fmt.Errorf("cannot retrieve pending commands for %v: %w", s.deviceID, iter.Err)
 		}
 	}
-	s.pendingCommandsHandler = h
-
 	return nil
 }
 
-func (s *DeviceSubscriber) getPendingCommandsHandler() PendingCommandsHandler {
+func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *DeviceSubscriptionHandlers) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.pendingCommandsHandler = h
+	s.triggerReconnect()
+}
+
+func (s *DeviceSubscriber) getPendingCommandsHandler() *DeviceSubscriptionHandlers {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return s.pendingCommandsHandler
 }
 
-func sendEvent(ctx context.Context, h PendingCommandsHandler, ev eventbus.EventUnmarshaler) error {
+func sendEvent(ctx context.Context, h *DeviceSubscriptionHandlers, ev eventbus.EventUnmarshaler) error {
 	switch ev.EventType() {
 	case (&events.ResourceRetrievePending{}).EventType():
 		var event events.ResourceRetrievePending

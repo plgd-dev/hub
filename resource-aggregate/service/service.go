@@ -14,6 +14,7 @@ import (
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
@@ -24,7 +25,6 @@ import (
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
-	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc"
 )
 

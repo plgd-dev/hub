@@ -77,16 +77,19 @@ env: clean certificates nats mongo privateKeys
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
+DIRECTORIES=$(foreach dir,$(shell ls -d ./*/),${dir})
+
 test: env
 	mkdir -p $(shell pwd)/.tmp/home
 	mkdir -p $(shell pwd)/.tmp/home/certificate-authority
-	docker run \
+	for DIRECTORY in $(DIRECTORIES); do \
+        docker run \
+		--rm \
 		--network=host \
 		-v $(shell pwd)/.tmp/certs:/certs \
-		-v $(shell pwd)/.tmp/home:/home \
+		-v $(shell pwd)/.tmp/coverage:/coverage \
 		-v $(shell pwd)/.tmp/privKeys:/privKeys \
-		--user $(shell id -u):$(shell id -g) \
-		-e HOME=/home \
+		-v /var/run/docker.sock:/var/run/docker.sock \
 		-e DIAL_TYPE="file" \
 		-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \
 		-e DIAL_FILE_CERT_DIR_PATH=/certs \
@@ -105,7 +108,8 @@ test: env
 		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
 		cloud-test \
-		go test -timeout=45m -race -p 1 -v ./... -covermode=atomic -coverprofile=/home/coverage.txt
+		go test -timeout=45m -race -p 1 -v $$DIRECTORY... -covermode=atomic -coverprofile=/coverage/`echo $$DIRECTORY | sed -e "s/[\.\/]//g"`.coverage.txt ; \
+    done
 
 build: cloud-build $(SUBDIRS)
 

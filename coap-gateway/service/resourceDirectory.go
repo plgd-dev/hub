@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/sdk/schema"
 )
 

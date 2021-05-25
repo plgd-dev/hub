@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"github.com/plgd-dev/kit/log"
 	kitSync "github.com/plgd-dev/kit/sync"
 )
 

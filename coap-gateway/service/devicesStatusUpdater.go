@@ -7,9 +7,9 @@ import (
 	"time"
 
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/log"
 )
 
 type deviceExpires struct {

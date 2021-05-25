@@ -11,7 +11,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/cloud/pkg/log"
 
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/assert"

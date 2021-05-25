@@ -36,7 +36,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 
 	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/cloud/pkg/log"
 )
 
 var authCtxKey = "AuthCtx"

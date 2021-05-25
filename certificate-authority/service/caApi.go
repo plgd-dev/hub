@@ -9,8 +9,8 @@ import (
 
 	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/cloud/certificate-authority/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/kit/security"
 	"google.golang.org/grpc"
 )

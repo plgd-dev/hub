@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"time"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
@@ -11,13 +12,13 @@ import (
 	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -138,7 +139,20 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	if newDevice {
-		deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(req.Context, signIn.DeviceID, client.server.rdClient, client.server.resourceSubscriber)
+		deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(req.Context, signIn.DeviceID, func() func() (when time.Time, err error) {
+			var count uint64
+			maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
+			if maxRand <= 0 {
+				maxRand = time.Second * 10
+			}
+			return func() (when time.Time, err error) {
+				count++
+				r := rand.Int63n(int64(maxRand) / 2)
+				next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
+				log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, signIn.DeviceID, next)
+				return next, nil
+			}
+		}, client.server.rdClient, client.server.resourceSubscriber)
 		if err != nil {
 			client.logAndWriteErrorResponse(fmt.Errorf("cannot create device subscription for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
 			client.Close()
@@ -149,12 +163,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 			oldDeviceSubscriber.Close()
 		}
 		h := grpcgwClient.NewDeviceSubscriptionHandlers(client)
-		err = deviceSubscriber.SubscribeToPendingCommands(req.Context, h)
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot register command handler to device subscription for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
-			client.Close()
-			return
-		}
+		deviceSubscriber.SubscribeToPendingCommands(req.Context, h)
 	}
 	if expired.IsZero() {
 		client.server.expirationClientCache.Set(signIn.DeviceID, nil, time.Millisecond)
