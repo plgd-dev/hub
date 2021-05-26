@@ -29,6 +29,7 @@ type ResourceAggregateClient interface {
 	ConfirmResourceDelete(ctx context.Context, in *commands.ConfirmResourceDeleteRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceDeleteResponse, error)
 	CreateResource(ctx context.Context, in *commands.CreateResourceRequest, opts ...grpc.CallOption) (*commands.CreateResourceResponse, error)
 	ConfirmResourceCreate(ctx context.Context, in *commands.ConfirmResourceCreateRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceCreateResponse, error)
+	UpdateDeviceCloudStatus(ctx context.Context, in *commands.UpdateDeviceCloudStatusRequest, opts ...grpc.CallOption) (*commands.UpdateDeviceCloudStatusResponse, error)
 }
 
 type resourceAggregateClient struct {
@@ -138,6 +139,15 @@ func (c *resourceAggregateClient) ConfirmResourceCreate(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *resourceAggregateClient) UpdateDeviceCloudStatus(ctx context.Context, in *commands.UpdateDeviceCloudStatusRequest, opts ...grpc.CallOption) (*commands.UpdateDeviceCloudStatusResponse, error) {
+	out := new(commands.UpdateDeviceCloudStatusResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/UpdateDeviceCloudStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceAggregateServer is the server API for ResourceAggregate service.
 // All implementations must embed UnimplementedResourceAggregateServer
 // for forward compatibility
@@ -153,6 +163,7 @@ type ResourceAggregateServer interface {
 	ConfirmResourceDelete(context.Context, *commands.ConfirmResourceDeleteRequest) (*commands.ConfirmResourceDeleteResponse, error)
 	CreateResource(context.Context, *commands.CreateResourceRequest) (*commands.CreateResourceResponse, error)
 	ConfirmResourceCreate(context.Context, *commands.ConfirmResourceCreateRequest) (*commands.ConfirmResourceCreateResponse, error)
+	UpdateDeviceCloudStatus(context.Context, *commands.UpdateDeviceCloudStatusRequest) (*commands.UpdateDeviceCloudStatusResponse, error)
 	mustEmbedUnimplementedResourceAggregateServer()
 }
 
@@ -192,6 +203,9 @@ func (UnimplementedResourceAggregateServer) CreateResource(context.Context, *com
 }
 func (UnimplementedResourceAggregateServer) ConfirmResourceCreate(context.Context, *commands.ConfirmResourceCreateRequest) (*commands.ConfirmResourceCreateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConfirmResourceCreate not implemented")
+}
+func (UnimplementedResourceAggregateServer) UpdateDeviceCloudStatus(context.Context, *commands.UpdateDeviceCloudStatusRequest) (*commands.UpdateDeviceCloudStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceCloudStatus not implemented")
 }
 func (UnimplementedResourceAggregateServer) mustEmbedUnimplementedResourceAggregateServer() {}
 
@@ -404,6 +418,24 @@ func _ResourceAggregate_ConfirmResourceCreate_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceAggregate_UpdateDeviceCloudStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.UpdateDeviceCloudStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceAggregateServer).UpdateDeviceCloudStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/UpdateDeviceCloudStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceAggregateServer).UpdateDeviceCloudStatus(ctx, req.(*commands.UpdateDeviceCloudStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ResourceAggregate_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.resourceaggregate.pb.ResourceAggregate",
 	HandlerType: (*ResourceAggregateServer)(nil),
@@ -451,6 +483,10 @@ var _ResourceAggregate_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConfirmResourceCreate",
 			Handler:    _ResourceAggregate_ConfirmResourceCreate_Handler,
+		},
+		{
+			MethodName: "UpdateDeviceCloudStatus",
+			Handler:    _ResourceAggregate_UpdateDeviceCloudStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

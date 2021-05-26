@@ -385,3 +385,22 @@ message ConfirmResourceCreateResponse {
     AuditContext audit_context = 100;
 }
 
+message OnlineState {
+    bool value = 1;
+    int64 valid_until = 2;
+}
+
+message ResourceObservationsState {
+    bool enabled = 1;
+}
+
+message UpdateDeviceCloudStatusRequest {
+    string device_id = 1;
+    OnlineState set_online = 2;
+    ResourceObservationsState set_resource_observations = 3;
+    CommandMetadata command_metadata = 100;
+}
+
+message UpdateDeviceCloudStatusResponse {
+    AuditContext audit_context = 100;
+}
