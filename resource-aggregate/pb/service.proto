@@ -18,4 +18,5 @@ service ResourceAggregate {
   rpc ConfirmResourceDelete (ConfirmResourceDeleteRequest) returns (ConfirmResourceDeleteResponse) {}
   rpc CreateResource (CreateResourceRequest) returns (CreateResourceResponse) {}
   rpc ConfirmResourceCreate (ConfirmResourceCreateRequest) returns (ConfirmResourceCreateResponse) {}
+  rpc UpdateDeviceCloudStatus (UpdateDeviceCloudStatusRequest) returns (UpdateDeviceCloudStatusResponse) {}
 }
