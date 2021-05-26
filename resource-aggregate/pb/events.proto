@@ -115,6 +115,14 @@ message ResourceStateSnapshotTaken {
     EventMetadata event_metadata = 101;
 }
 
+message DeviceCloudStatusUpdated {
+    string device_id = 1;
+    OnlineState online = 2;
+    ResourceObservationsState resource_observations = 3;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+}
+
 message DeviceCloudStatusSnapshotTaken {
     string device_id = 1;
     OnlineState online = 2;
