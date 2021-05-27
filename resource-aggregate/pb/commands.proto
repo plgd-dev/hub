@@ -396,8 +396,10 @@ message ShadowSynchronizationStatus {
 
 message UpdateDeviceMetadataRequest {
     string device_id = 1;
-    OnlineStatus set_online = 2;
-    ShadowSynchronizationStatus set_shadow_synchronization_status = 3;
+    oneof update {
+        OnlineStatus online = 2;
+        ShadowSynchronizationStatus shadow_synchronization_status = 3;
+    };
     CommandMetadata command_metadata = 100;
 }
 

@@ -117,8 +117,10 @@ message ResourceStateSnapshotTaken {
 
 message DeviceMetadataUpdated {
     string device_id = 1;
-    OnlineStatus online = 2;
-    ShadowSynchronizationStatus shadow_synchronization_status = 3;
+    oneof changed {
+        OnlineStatus online = 2;
+        ShadowSynchronizationStatus shadow_synchronization_status = 3;
+    };
     AuditContext audit_context = 100;
     EventMetadata event_metadata = 101;
 }
