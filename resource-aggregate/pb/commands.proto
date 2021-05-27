@@ -385,22 +385,22 @@ message ConfirmResourceCreateResponse {
     AuditContext audit_context = 100;
 }
 
-message OnlineState {
+message OnlineStatus {
     bool value = 1;
     int64 valid_until = 2;
 }
 
-message ResourceObservationsState {
-    bool enabled = 1;
+message ShadowSynchronizationStatus {
+    bool disabled = 1;
 }
 
-message UpdateDeviceCloudStatusRequest {
+message UpdateDeviceMetadataRequest {
     string device_id = 1;
-    OnlineState set_online = 2;
-    ResourceObservationsState set_resource_observations = 3;
+    OnlineStatus set_online = 2;
+    ShadowSynchronizationStatus set_shadow_synchronization_status = 3;
     CommandMetadata command_metadata = 100;
 }
 
-message UpdateDeviceCloudStatusResponse {
+message UpdateDeviceMetadataResponse {
     AuditContext audit_context = 100;
 }
