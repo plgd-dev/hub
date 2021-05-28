@@ -30,6 +30,10 @@ func ResourceLinksFactoryModel(ctx context.Context) (cqrsAggregate.AggregateMode
 	return raEvents.NewResourceLinksSnapshotTaken(), nil
 }
 
+func DeviceMetadataFactoryModel(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return raEvents.NewDeviceMetadataSnapshotTaken(), nil
+}
+
 // NewAggregate creates new resource aggreate - it must be created for every run command.
 func NewAggregate(resourceID *commands.ResourceId, SnapshotThreshold int, eventstore EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*aggregate, error) {
 	a := &aggregate{
@@ -214,15 +218,14 @@ func validateConfirmResourceDelete(request *commands.ConfirmResourceDeleteReques
 
 func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
 	for _, event := range events {
-		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
-			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupID(), AggregateID: ru.AggregateID(), Version: ru.Version()}}); err != nil {
-				log.Info("unable to remove events up to snapshot for resource: %v", ru.GetResourceId())
-			}
-			break
-		}
-		if ru, ok := event.(*raEvents.ResourceLinksSnapshotTaken); ok {
-			if err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupID(), AggregateID: ru.AggregateID(), Version: ru.Version()}}); err != nil {
-				log.Info("unable to remove events up to snapshot with version('%v') for resource links of deviceId('%v')", ru.Version(), ru.GetDeviceId())
+		if event.IsSnapshot() {
+			err := aggregate.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}})
+			if err != nil {
+				if ru, ok := event.(interface{ GetResourceId() *commands.ResourceId }); ok {
+					log.Info("unable to remove events up to snapshot with version('%v') for resource('%v')", event.Version(), ru.GetResourceId())
+				} else {
+					log.Info("unable to remove events up to snapshot(%v) with version('%v') of deviceId('%v')", event.EventType(), event.Version(), event.GroupID())
+				}
 			}
 			break
 		}

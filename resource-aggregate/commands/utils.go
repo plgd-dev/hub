@@ -2,6 +2,7 @@ package commands
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -69,4 +70,15 @@ func HTTPStatus2Status(s int) Status {
 		return v
 	}
 	return Status_UNKNOWN
+}
+
+// IsOnline evaluate online state
+func (s *OnlineStatus) IsOnline() bool {
+	if !s.Value {
+		return false
+	}
+	if s.ValidUntil <= 0 {
+		return s.Value
+	}
+	return time.Now().Before(time.Unix(0, s.ValidUntil))
 }

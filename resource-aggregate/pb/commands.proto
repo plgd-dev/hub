@@ -406,3 +406,16 @@ message UpdateDeviceMetadataRequest {
 message UpdateDeviceMetadataResponse {
     AuditContext audit_context = 100;
 }
+
+message ConfirmDeviceMetadataUpdateRequest {
+    ResourceId resource_id = 1;
+    string correlation_id = 2;
+    oneof confirm {
+        ShadowSynchronizationStatus shadow_synchronization_status = 3;
+    };
+    CommandMetadata command_metadata = 100;
+}
+
+message ConfirmDeviceMetadataUpdateResponse {
+    AuditContext audit_context = 100;
+}
