@@ -125,6 +125,16 @@ message DeviceMetadataUpdated {
     EventMetadata event_metadata = 101;
 }
 
+message DeviceMetadataPending {
+    ResourceId resource_id = 1;
+    oneof pending {
+        ShadowSynchronizationStatus shadow_synchronization_status = 2;
+    };
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+}
+
+
 message DeviceMetadataSnapshotTaken {
     string device_id = 1;
     OnlineStatus online = 2;
