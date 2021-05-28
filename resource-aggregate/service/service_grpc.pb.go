@@ -30,6 +30,7 @@ type ResourceAggregateClient interface {
 	CreateResource(ctx context.Context, in *commands.CreateResourceRequest, opts ...grpc.CallOption) (*commands.CreateResourceResponse, error)
 	ConfirmResourceCreate(ctx context.Context, in *commands.ConfirmResourceCreateRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceCreateResponse, error)
 	UpdateDeviceMetadata(ctx context.Context, in *commands.UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*commands.UpdateDeviceMetadataResponse, error)
+	ConfirmDeviceMetadataUpdate(ctx context.Context, in *commands.ConfirmDeviceMetadataUpdateRequest, opts ...grpc.CallOption) (*commands.ConfirmDeviceMetadataUpdateResponse, error)
 }
 
 type resourceAggregateClient struct {
@@ -148,6 +149,15 @@ func (c *resourceAggregateClient) UpdateDeviceMetadata(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *resourceAggregateClient) ConfirmDeviceMetadataUpdate(ctx context.Context, in *commands.ConfirmDeviceMetadataUpdateRequest, opts ...grpc.CallOption) (*commands.ConfirmDeviceMetadataUpdateResponse, error) {
+	out := new(commands.ConfirmDeviceMetadataUpdateResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/ConfirmDeviceMetadataUpdate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceAggregateServer is the server API for ResourceAggregate service.
 // All implementations must embed UnimplementedResourceAggregateServer
 // for forward compatibility
@@ -164,6 +174,7 @@ type ResourceAggregateServer interface {
 	CreateResource(context.Context, *commands.CreateResourceRequest) (*commands.CreateResourceResponse, error)
 	ConfirmResourceCreate(context.Context, *commands.ConfirmResourceCreateRequest) (*commands.ConfirmResourceCreateResponse, error)
 	UpdateDeviceMetadata(context.Context, *commands.UpdateDeviceMetadataRequest) (*commands.UpdateDeviceMetadataResponse, error)
+	ConfirmDeviceMetadataUpdate(context.Context, *commands.ConfirmDeviceMetadataUpdateRequest) (*commands.ConfirmDeviceMetadataUpdateResponse, error)
 	mustEmbedUnimplementedResourceAggregateServer()
 }
 
@@ -206,6 +217,9 @@ func (UnimplementedResourceAggregateServer) ConfirmResourceCreate(context.Contex
 }
 func (UnimplementedResourceAggregateServer) UpdateDeviceMetadata(context.Context, *commands.UpdateDeviceMetadataRequest) (*commands.UpdateDeviceMetadataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceMetadata not implemented")
+}
+func (UnimplementedResourceAggregateServer) ConfirmDeviceMetadataUpdate(context.Context, *commands.ConfirmDeviceMetadataUpdateRequest) (*commands.ConfirmDeviceMetadataUpdateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmDeviceMetadataUpdate not implemented")
 }
 func (UnimplementedResourceAggregateServer) mustEmbedUnimplementedResourceAggregateServer() {}
 
@@ -436,6 +450,24 @@ func _ResourceAggregate_UpdateDeviceMetadata_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceAggregate_ConfirmDeviceMetadataUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.ConfirmDeviceMetadataUpdateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceAggregateServer).ConfirmDeviceMetadataUpdate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/ConfirmDeviceMetadataUpdate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceAggregateServer).ConfirmDeviceMetadataUpdate(ctx, req.(*commands.ConfirmDeviceMetadataUpdateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ResourceAggregate_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.resourceaggregate.pb.ResourceAggregate",
 	HandlerType: (*ResourceAggregateServer)(nil),
@@ -487,6 +519,10 @@ var _ResourceAggregate_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateDeviceMetadata",
 			Handler:    _ResourceAggregate_UpdateDeviceMetadata_Handler,
+		},
+		{
+			MethodName: "ConfirmDeviceMetadataUpdate",
+			Handler:    _ResourceAggregate_ConfirmDeviceMetadataUpdate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

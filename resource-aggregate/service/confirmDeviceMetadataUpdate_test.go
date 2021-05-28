@@ -20,17 +20,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func newConnectionStatus(v commands.ConnectionStatus_Status) *commands.ConnectionStatus_Status {
-	return &v
-}
-
-func newBool(v bool) *bool {
-	return &v
-}
-
-func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
+func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
+	deviceID := "dev0"
+	user0 := "user0"
 	type args struct {
-		request *commands.UpdateDeviceMetadataRequest
+		request *commands.ConfirmDeviceMetadataUpdateRequest
 		userID  string
 	}
 
@@ -40,28 +34,28 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 		want    codes.Code
 		wantErr bool
 	}{
-
 		{
-			name: "set online",
+			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", newConnectionStatus(commands.ConnectionStatus_ONLINE), nil),
-				userID:  "user0",
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
+				userID:  user0,
 			},
 			want: codes.OK,
 		},
 		{
-			name: "set shadowSynchronizationDisabled",
+			name: "set shadowSynchronizationDisabled duplicit with same correlationID",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", nil, newBool(true)),
-				userID:  "user0",
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
+				userID:  user0,
 			},
-			want: codes.OK,
+			want:    codes.InvalidArgument,
+			wantErr: true,
 		},
 		{
 			name: "invalid update commands",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", nil, nil),
-				userID:  "user0",
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, nil),
+				userID:  user0,
 			},
 			want:    codes.InvalidArgument,
 			wantErr: true,
@@ -91,12 +85,16 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 	require.NoError(t, err)
 	defer publisher.Close()
 
-	assert.NoError(t, err)
+	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
+	require.NoError(t, err)
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), testMakeUpdateDeviceMetadataRequest(deviceID, nil, newBool(true)))
+	require.NoError(t, err)
+
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			events, err := ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			events, err := ag.ConfirmDeviceMetadataUpdate(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -112,24 +110,24 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
+func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 	deviceID := "dev0"
 	user0 := "user0"
 	type args struct {
-		request *commands.UpdateDeviceMetadataRequest
+		request *commands.ConfirmDeviceMetadataUpdateRequest
 	}
 	test := []struct {
 		name      string
 		args      args
-		want      *commands.UpdateDeviceMetadataResponse
+		want      *commands.ConfirmDeviceMetadataUpdateResponse
 		wantError bool
 	}{
 		{
-			name: "set online",
+			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, newConnectionStatus(commands.ConnectionStatus_ONLINE), nil),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
 			},
-			want: &commands.UpdateDeviceMetadataResponse{
+			want: &commands.ConfirmDeviceMetadataUpdateResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: user0,
 				},
@@ -138,36 +136,21 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, newConnectionStatus(commands.ConnectionStatus_ONLINE), nil),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
 			},
-			want: &commands.UpdateDeviceMetadataResponse{
-				AuditContext: &commands.AuditContext{
-					UserId: user0,
-				},
-			},
-		},
-		{
-			name: "set shadowSynchronizationDisabled",
-			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, nil, newBool(true)),
-			},
-			want: &commands.UpdateDeviceMetadataResponse{
-				AuditContext: &commands.AuditContext{
-					UserId: user0,
-				},
-			},
+			wantError: true,
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, nil, nil),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, nil),
 			},
 			wantError: true,
 		},
 		{
 			name: "empty",
 			args: args{
-				request: &commands.UpdateDeviceMetadataRequest{},
+				request: &commands.ConfirmDeviceMetadataUpdateRequest{},
 			},
 			wantError: true,
 		},
@@ -195,9 +178,12 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
+	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, nil, newBool(true)))
+	require.NoError(t, err)
+
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			response, err := requestHandler.UpdateDeviceMetadata(ctx, tt.args.request)
+			response, err := requestHandler.ConfirmDeviceMetadataUpdate(ctx, tt.args.request)
 			if tt.wantError {
 				require.Error(t, err)
 				return
@@ -211,23 +197,16 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	}
 }
 
-func testMakeUpdateDeviceMetadataRequest(deviceID string, online *commands.ConnectionStatus_Status, shadowSynchronizationDisabled *bool) *commands.UpdateDeviceMetadataRequest {
-	r := commands.UpdateDeviceMetadataRequest{
+func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, shadowSynchronizationDisabled *bool) *commands.ConfirmDeviceMetadataUpdateRequest {
+	r := commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
 	}
-	if online != nil {
-		r.Update = &commands.UpdateDeviceMetadataRequest_Status{
-			Status: &commands.ConnectionStatus{
-				Value: *online,
-			},
-		}
-	}
 	if shadowSynchronizationDisabled != nil {
-		r.Update = &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
+		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronizationStatus{
 			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
 				Disabled: *shadowSynchronizationDisabled,
 			},

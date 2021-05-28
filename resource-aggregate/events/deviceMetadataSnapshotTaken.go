@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const eventTypeDeviceMetadataSnapshotTaken = "ocf.cloud.resourceaggregate.events.devicecloudstatussnapshottaken"
+const eventTypeDeviceMetadataSnapshotTaken = "ocf.cloud.resourceaggregate.events.devicemetadatasnapshottaken"
 
 func (e *DeviceMetadataSnapshotTaken) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
@@ -45,10 +45,21 @@ func (e *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated) error {
 	e.DeviceId = upd.GetDeviceId()
-	if upd.GetOnline() != nil {
-		e.Online = upd.GetOnline()
+	if upd.GetStatus() != nil {
+		e.Status = upd.GetStatus()
 	}
 	if upd.GetShadowSynchronizationStatus() != nil {
+		index := -1
+		for i, event := range e.GetUpdatePendings() {
+			if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
+				index = i
+				break
+			}
+		}
+		if index < 0 {
+			return status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
+		}
+		e.UpdatePendings = append(e.UpdatePendings[:index], e.UpdatePendings[index+1:]...)
 		e.ShadowSynchronizationStatus = upd.GetShadowSynchronizationStatus()
 	}
 	e.EventMetadata = upd.GetEventMetadata()
@@ -58,8 +69,20 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) error {
 	e.DeviceId = s.GetDeviceId()
 	e.ShadowSynchronizationStatus = s.GetShadowSynchronizationStatus()
-	e.Online = s.GetOnline()
+	e.Status = s.GetStatus()
 	e.EventMetadata = s.GetEventMetadata()
+	return nil
+}
+
+func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx context.Context, updatePending *DeviceMetadataUpdatePending) error {
+	for _, event := range e.GetUpdatePendings() {
+		if event.GetAuditContext().GetCorrelationId() == updatePending.GetAuditContext().GetCorrelationId() {
+			return status.Errorf(codes.InvalidArgument, "device metadata update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
+		}
+	}
+	e.DeviceId = updatePending.GetDeviceId()
+	e.EventMetadata = updatePending.GetEventMetadata()
+	e.UpdatePendings = append(e.UpdatePendings, updatePending)
 	return nil
 }
 
@@ -89,6 +112,14 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 			if err := e.HandleDeviceMetadataUpdated(ctx, &s); err != nil {
 				return err
 			}
+		case (&DeviceMetadataUpdatePending{}).EventType():
+			var s DeviceMetadataUpdatePending
+			if err := eu.Unmarshal(&s); err != nil {
+				return status.Errorf(codes.Internal, "%v", err)
+			}
+			if err := e.HandleDeviceMetadataUpdatePending(ctx, &s); err != nil {
+				return err
+			}
 		}
 	}
 	return iter.Err()
@@ -106,32 +137,66 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, "")
+		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
 
-		var v isDeviceMetadataUpdated_Changed
 		switch {
-		case req.GetOnline() != nil:
-			v = &DeviceMetadataUpdated_Online{
-				Online: req.GetOnline(),
+		case req.GetStatus() != nil:
+			// it is expected that the device directly update self status, so we don't need confirm it.
+			ev := DeviceMetadataUpdated{
+				DeviceId: req.GetDeviceId(),
+				Updated: &DeviceMetadataUpdated_Status{
+					Status: req.GetStatus(),
+				},
+				AuditContext:  ac,
+				EventMetadata: em,
 			}
+			err := e.HandleDeviceMetadataUpdated(ctx, &ev)
+			if err != nil {
+				return nil, err
+			}
+			return []eventstore.Event{&ev}, nil
 		case req.GetShadowSynchronizationStatus() != nil:
-			v = &DeviceMetadataUpdated_ShadowSynchronizationStatus{
-				ShadowSynchronizationStatus: req.GetShadowSynchronizationStatus(),
+			ev := DeviceMetadataUpdatePending{
+				DeviceId: req.GetDeviceId(),
+				UpdatePending: &DeviceMetadataUpdatePending_ShadowSynchronizationStatus{
+					ShadowSynchronizationStatus: req.GetShadowSynchronizationStatus(),
+				},
+				AuditContext:  ac,
+				EventMetadata: em,
 			}
+			err := e.HandleDeviceMetadataUpdatePending(ctx, &ev)
+			if err != nil {
+				return nil, err
+			}
+			return []eventstore.Event{&ev}, nil
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unknown update type(%T)", req.GetUpdate())
 		}
-		rlp := DeviceMetadataUpdated{
-			DeviceId:      req.GetDeviceId(),
-			Changed:       v,
-			AuditContext:  ac,
-			EventMetadata: em,
+	case *commands.ConfirmDeviceMetadataUpdateRequest:
+		if req.GetCommandMetadata() == nil {
+			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
-		err := e.HandleDeviceMetadataUpdated(ctx, &rlp)
-		if err != nil {
-			return nil, err
+
+		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+		switch {
+		case req.GetShadowSynchronizationStatus() != nil:
+			ev := DeviceMetadataUpdated{
+				DeviceId: req.GetDeviceId(),
+				Updated: &DeviceMetadataUpdated_ShadowSynchronizationStatus{
+					ShadowSynchronizationStatus: req.GetShadowSynchronizationStatus(),
+				},
+				AuditContext:  ac,
+				EventMetadata: em,
+			}
+			err := e.HandleDeviceMetadataUpdated(ctx, &ev)
+			if err != nil {
+				return nil, err
+			}
+			return []eventstore.Event{&ev}, nil
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unknown confirm type(%T)", req.GetConfirm())
 		}
-		return []eventstore.Event{&rlp}, nil
 	}
 
 	return nil, fmt.Errorf("unknown command")
@@ -142,7 +207,7 @@ func (e *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.E
 	return &DeviceMetadataSnapshotTaken{
 		DeviceId:                    e.GetDeviceId(),
 		EventMetadata:               e.GetEventMetadata(),
-		Online:                      e.GetOnline(),
+		Status:                      e.GetStatus(),
 		ShadowSynchronizationStatus: e.GetShadowSynchronizationStatus(),
 	}, true
 }

@@ -54,7 +54,7 @@ func (e *ResourceStateSnapshotTaken) IsSnapshot() bool {
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
 	for _, event := range e.GetResourceCreatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == createPending.GetAuditContext().GetCorrelationId() {
-			return fmt.Errorf("resource create pending with correlationId('%v') already exist", createPending.GetAuditContext().GetCorrelationId())
+			return status.Errorf(codes.InvalidArgument, "resource create pending with correlationId('%v') already exist", createPending.GetAuditContext().GetCorrelationId())
 		}
 	}
 	e.ResourceId = createPending.GetResourceId()
@@ -67,7 +67,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx contex
 func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
 	for _, event := range e.GetResourceUpdatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == updatePending.GetAuditContext().GetCorrelationId() {
-			return fmt.Errorf("resource update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
+			return status.Errorf(codes.InvalidArgument, "resource update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
 		}
 	}
 	e.ResourceId = updatePending.GetResourceId()
@@ -80,7 +80,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx contex
 func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, retrievePending *ResourceRetrievePending) error {
 	for _, event := range e.GetResourceRetrievePendings() {
 		if event.GetAuditContext().GetCorrelationId() == retrievePending.GetAuditContext().GetCorrelationId() {
-			return fmt.Errorf("resource retrieve pending with correlationId('%v') already exist", retrievePending.GetAuditContext().GetCorrelationId())
+			return status.Errorf(codes.InvalidArgument, "resource retrieve pending with correlationId('%v') already exist", retrievePending.GetAuditContext().GetCorrelationId())
 		}
 	}
 	e.ResourceId = retrievePending.GetResourceId()
@@ -92,7 +92,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx cont
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
 	for _, event := range e.GetResourceDeletePendings() {
 		if event.GetAuditContext().GetCorrelationId() == deletePending.GetAuditContext().GetCorrelationId() {
-			return fmt.Errorf("resource delete pending with correlationId('%v') already exist", deletePending.GetAuditContext().GetCorrelationId())
+			return status.Errorf(codes.InvalidArgument, "resource delete pending with correlationId('%v') already exist", deletePending.GetAuditContext().GetCorrelationId())
 		}
 	}
 	e.ResourceId = deletePending.GetResourceId()
@@ -114,7 +114,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreated(ctx context.Cont
 		}
 	}
 	if index < 0 {
-		return fmt.Errorf("cannot find resource create pending event with correlationId('%v')", created.GetAuditContext().GetCorrelationId())
+		return status.Errorf(codes.InvalidArgument, "cannot find resource create pending event with correlationId('%v')", created.GetAuditContext().GetCorrelationId())
 	}
 	e.ResourceId = created.GetResourceId()
 	e.EventMetadata = created.GetEventMetadata()
@@ -132,7 +132,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdated(ctx context.Cont
 		}
 	}
 	if index < 0 {
-		return fmt.Errorf("cannot find resource update pending event with correlationId('%v')", updated.GetAuditContext().GetCorrelationId())
+		return status.Errorf(codes.InvalidArgument, "cannot find resource update pending event with correlationId('%v')", updated.GetAuditContext().GetCorrelationId())
 	}
 	e.ResourceId = updated.GetResourceId()
 	e.EventMetadata = updated.GetEventMetadata()
@@ -150,7 +150,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrieved(ctx context.Co
 		}
 	}
 	if index < 0 {
-		return fmt.Errorf("cannot find resource retrieve pending event with correlationId('%v')", retrieved.GetAuditContext().GetCorrelationId())
+		return status.Errorf(codes.InvalidArgument, "cannot find resource retrieve pending event with correlationId('%v')", retrieved.GetAuditContext().GetCorrelationId())
 	}
 	e.ResourceId = retrieved.GetResourceId()
 	e.EventMetadata = retrieved.GetEventMetadata()
@@ -191,7 +191,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Cont
 		}
 	}
 	if index < 0 {
-		return fmt.Errorf("cannot find resource delete pending event with correlationId('%v')", deleted.GetAuditContext().GetCorrelationId())
+		return status.Errorf(codes.InvalidArgument, "cannot find resource delete pending event with correlationId('%v')", deleted.GetAuditContext().GetCorrelationId())
 	}
 	e.ResourceId = deleted.GetResourceId()
 	e.EventMetadata = deleted.GetEventMetadata()
