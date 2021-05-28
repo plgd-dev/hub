@@ -5,7 +5,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const eventTypeDeviceCloudStatusUpdated = "ocf.cloud.resourceaggregate.events.devicecloudstatusupdated"
+const eventTypeDeviceMetadataUpdated = "ocf.cloud.resourceaggregate.events.devicemetadataupdated"
 
 func (e *DeviceMetadataUpdated) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
@@ -20,7 +20,7 @@ func (e *DeviceMetadataUpdated) Unmarshal(b []byte) error {
 }
 
 func (e *DeviceMetadataUpdated) EventType() string {
-	return eventTypeDeviceCloudStatusUpdated
+	return eventTypeDeviceMetadataUpdated
 }
 
 func (e *DeviceMetadataUpdated) AggregateID() string {

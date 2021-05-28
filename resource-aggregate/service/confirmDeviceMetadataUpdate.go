@@ -13,26 +13,26 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func validateUpdateDeviceMetadata(request *commands.UpdateDeviceMetadataRequest) error {
+func validateConfirmDeviceMetadataUpdate(request *commands.ConfirmDeviceMetadataUpdateRequest) error {
 	if request.GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}
-	if request.GetStatus() == nil && request.GetShadowSynchronizationStatus() == nil {
-		return status.Errorf(codes.InvalidArgument, "set.onlineStatus and set.shadowSynchronizationStatus are invalid")
+	if request.GetShadowSynchronizationStatus() == nil {
+		return status.Errorf(codes.InvalidArgument, "confirm.shadowSynchronizationStatus are invalid")
 	}
 
 	return nil
 }
 
-func (a *aggregate) UpdateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest) (events []eventstore.Event, err error) {
-	if err = validateUpdateDeviceMetadata(request); err != nil {
+func (a *aggregate) ConfirmDeviceMetadataUpdate(ctx context.Context, request *commands.ConfirmDeviceMetadataUpdateRequest) (events []eventstore.Event, err error) {
+	if err = validateConfirmDeviceMetadataUpdate(request); err != nil {
 		err = fmt.Errorf("invalid update device metadata command: %w", err)
 		return
 	}
 
 	events, err = a.ag.HandleCommand(ctx, request)
 	if err != nil {
-		err = fmt.Errorf("unable to process update device metadata command command: %w", err)
+		err = fmt.Errorf("unable to process confirm device metadata update command: %w", err)
 		return
 	}
 	cleanUpToSnapshot(ctx, a, events)
@@ -40,7 +40,7 @@ func (a *aggregate) UpdateDeviceMetadata(ctx context.Context, request *commands.
 	return
 }
 
-func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest) (*commands.UpdateDeviceMetadataResponse, error) {
+func (r RequestHandler) ConfirmDeviceMetadataUpdate(ctx context.Context, request *commands.ConfirmDeviceMetadataUpdateRequest) (*commands.ConfirmDeviceMetadataUpdateResponse, error) {
 	owner, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
@@ -49,19 +49,19 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 	resID := commands.NewResourceID(request.DeviceId, commands.StatusHref)
 	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
-		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
 	}
 
-	events, err := aggregate.UpdateDeviceMetadata(ctx, request)
+	events, err := aggregate.ConfirmDeviceMetadataUpdate(ctx, request)
 	if err != nil {
-		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
+		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
 	}
 
 	err = PublishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
 		log.Errorf("cannot publish device('%v') metadata events: %v", request.GetDeviceId(), err)
 	}
-	return &commands.UpdateDeviceMetadataResponse{
+	return &commands.ConfirmDeviceMetadataUpdateResponse{
 		AuditContext: commands.NewAuditContext(owner, ""),
 	}, nil
 }

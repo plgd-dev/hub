@@ -187,3 +187,54 @@ deactivate Client
 Server -> Gateway : [PUBLISH] '/light/1'
 
 @enduml
+
+@startuml
+title "Update Device Metadata - Shadow Synchronization Status"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+
+Client -> ResourceAggregate : UpdateDeviceMetadataRequest
+activate Client
+activate ResourceAggregate
+activate Server
+ResourceAggregate -> Client : UpdateDeviceMetadataResponse
+ResourceAggregate --> Bus : DeviceMetadataUpdatePending
+deactivate ResourceAggregate
+Bus --> Gateway : DeviceMetadataUpdatePending
+activate Gateway
+
+Gateway -> ResourceAggregate : ConfirmDeviceMetadataUpdateRequest
+activate ResourceAggregate
+ResourceAggregate -> Gateway : ConfirmDeviceMetadataUpdateResponse
+deactivate Gateway
+ResourceAggregate --> Bus : DeviceMetadataUpdated
+deactivate ResourceAggregate
+Bus --> Client : DeviceMetadataUpdated
+deactivate Client
+deactivate Server
+@enduml
+
+@startuml
+title "Update Device Metadata - Connection status"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+
+activate ResourceAggregate
+activate Server
+activate Gateway
+Server -> Gateway : SignInRequest
+Gateway-> ResourceAggregate : UpdateDeviceMetadataRequest
+ResourceAggregate -> Gateway : UpdateDeviceMetadataResponse
+Gateway -> Server : SignInResponse
+deactivate Gateway
+ResourceAggregate --> Bus : DeviceMetadataUpdatePending
+deactivate ResourceAggregate
+deactivate Server
+@enduml

@@ -19,4 +19,5 @@ service ResourceAggregate {
   rpc CreateResource (CreateResourceRequest) returns (CreateResourceResponse) {}
   rpc ConfirmResourceCreate (ConfirmResourceCreateRequest) returns (ConfirmResourceCreateResponse) {}
   rpc UpdateDeviceMetadata (UpdateDeviceMetadataRequest) returns (UpdateDeviceMetadataResponse) {}
+  rpc ConfirmDeviceMetadataUpdate (ConfirmDeviceMetadataUpdateRequest) returns (ConfirmDeviceMetadataUpdateResponse) {}
 }

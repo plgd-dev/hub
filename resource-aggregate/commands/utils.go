@@ -73,12 +73,12 @@ func HTTPStatus2Status(s int) Status {
 }
 
 // IsOnline evaluate online state
-func (s *OnlineStatus) IsOnline() bool {
-	if !s.Value {
+func (s *ConnectionStatus) IsOnline() bool {
+	if s.Value == ConnectionStatus_OFFLINE {
 		return false
 	}
 	if s.ValidUntil <= 0 {
-		return s.Value
+		return s.Value == ConnectionStatus_ONLINE
 	}
 	return time.Now().Before(time.Unix(0, s.ValidUntil))
 }
