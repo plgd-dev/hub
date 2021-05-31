@@ -1,14 +1,7 @@
 SHELL = /bin/bash
-SERVICE_NAME = $(notdir $(CURDIR))
+SERVICE_NAME = coap-gateway-bootstrapper
 LATEST_TAG ?= vnext
-ifeq ($(strip $(LATEST_TAG)),)
-BUILD_TAG := vnext
-else
-BUILD_TAG := $(LATEST_TAG)
-endif
 VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
-
-SUBDIRS := bootstrapper
 
 default: build
 
@@ -27,13 +20,10 @@ build-servicecontainer:
 
 build: build-servicecontainer
 
-push: build-servicecontainer $(SUBDIRS)
+push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(VERSION_TAG)
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
 
-$(SUBDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS) LATEST_TAG=$(BUILD_TAG)
-
-.PHONY: $(SUBDIRS) build-servicecontainer build push proto/generate
+.PHONY: build-servicecontainer build push proto/generate
