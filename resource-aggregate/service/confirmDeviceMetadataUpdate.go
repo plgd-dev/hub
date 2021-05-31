@@ -17,7 +17,7 @@ func validateConfirmDeviceMetadataUpdate(request *commands.ConfirmDeviceMetadata
 	if request.GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}
-	if request.GetShadowSynchronizationStatus() == nil {
+	if request.GetShadowSynchronization() == nil {
 		return status.Errorf(codes.InvalidArgument, "confirm.shadowSynchronizationStatus are invalid")
 	}
 

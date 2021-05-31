@@ -227,8 +227,8 @@ func testMakeUpdateDeviceMetadataRequest(deviceID string, online *commands.Conne
 		}
 	}
 	if shadowSynchronizationDisabled != nil {
-		r.Update = &commands.UpdateDeviceMetadataRequest_ShadowSynchronizationStatus{
-			ShadowSynchronizationStatus: &commands.ShadowSynchronizationStatus{
+		r.Update = &commands.UpdateDeviceMetadataRequest_ShadowSynchronization{
+			ShadowSynchronization: &commands.ShadowSynchronization{
 				Disabled: *shadowSynchronizationDisabled,
 			},
 		}
