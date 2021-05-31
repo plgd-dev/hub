@@ -385,28 +385,28 @@ message ConfirmResourceCreateResponse {
     AuditContext audit_context = 100;
 }
 
-// Update Device Metadata - Connection status                           
-                                                                                                    
-// ┌──────────┐          ┌───────┐                  ┌──────────────────┐               ┌─────────┐
-// │OCF Server│          │Gateway│                  │Resource Aggregate│               │Event Bus│
-// └──────────┘          └───┬───┘                  └────────┬─────────┘               └─────────┘
-//     ┌┴┐  SignInRequest   ┌┴┐                              ┌┴┐                            │     
-//     │ │ ───────────────> │ │                              │ │                            │     
-//     │ │                  │ │                              │ │                            │     
-//     │ │                  │ │ UpdateDeviceMetadataRequest  │ │                            │     
-//     │ │                  │ │ ────────────────────────────>│ │                            │     
-//     │ │                  │ │                              │ │                            │     
-//     │ │                  │ │ UpdateDeviceMetadataResponse │ │                            │     
-//     │ │                  │ │ <────────────────────────────│ │                            │     
-//     │ │                  └┬┘                              │ │                            │     
-//     │ │  SignInResponse   │                               │ │                            │     
-//     │ │ <─────────────────│                               │ │                            │     
-//     └┬┘                   │                               └┬┘                            │     
-//      │                    │                               │ DeviceMetadataUpdatePending  │     
-//      │                    │                               │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│     
-// ┌──────────┐          ┌───┴───┐                  ┌────────┴─────────┐               ┌─────────┐
-// │OCF Server│          │Gateway│                  │Resource Aggregate│               │Event Bus│
-// └──────────┘          └───────┘                  └──────────────────┘               └─────────┘
+// Update Device Metadata - Connection status                        
+                                                                                               
+// ┌──────────┐          ┌───────┐                  ┌──────────────────┐          ┌─────────┐
+// │OCF Server│          │Gateway│                  │Resource Aggregate│          │Event Bus│
+// └──────────┘          └───┬───┘                  └────────┬─────────┘          └─────────┘
+//     ┌┴┐  SignInRequest   ┌┴┐                              ┌┴┐                       │     
+//     │ │ ───────────────> │ │                              │ │                       │     
+//     │ │                  │ │                              │ │                       │     
+//     │ │                  │ │ UpdateDeviceMetadataRequest  │ │                       │     
+//     │ │                  │ │ ────────────────────────────>│ │                       │     
+//     │ │                  │ │                              │ │                       │     
+//     │ │                  │ │ UpdateDeviceMetadataResponse │ │                       │     
+//     │ │                  │ │ <────────────────────────────│ │                       │     
+//     │ │                  └┬┘                              │ │                       │     
+//     │ │  SignInResponse   │                               │ │                       │     
+//     │ │ <─────────────────│                               │ │                       │     
+//     └┬┘                   │                               └┬┘                       │     
+//      │                    │                               │  DeviceMetadataUpdated  │     
+//      │                    │                               │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│     
+// ┌──────────┐          ┌───┴───┐                  ┌────────┴─────────┐          ┌─────────┐
+// │OCF Server│          │Gateway│                  │Resource Aggregate│          │Event Bus│
+// └──────────┘          └───────┘                  └──────────────────┘          └─────────┘
 
 message ConnectionStatus {
     enum Status {
@@ -448,7 +448,7 @@ message ConnectionStatus {
 // ┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐
 // │OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│
 // └──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘
-message ShadowSynchronizationStatus {
+message ShadowSynchronization {
     bool disabled = 1;
 }
 
@@ -457,7 +457,7 @@ message UpdateDeviceMetadataRequest {
     string correlation_id = 2;
     oneof update {
         ConnectionStatus status = 3;
-        ShadowSynchronizationStatus shadow_synchronization_status = 4;
+        ShadowSynchronization shadow_synchronization = 4;
     };
     CommandMetadata command_metadata = 100;
 }
@@ -470,7 +470,7 @@ message ConfirmDeviceMetadataUpdateRequest {
     string device_id = 1;
     string correlation_id = 2;
     oneof confirm {
-        ShadowSynchronizationStatus shadow_synchronization_status = 3;
+        ShadowSynchronization shadow_synchronization = 3;
     };
     CommandMetadata command_metadata = 100;
 }
