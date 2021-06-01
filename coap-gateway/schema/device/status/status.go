@@ -36,5 +36,5 @@ func (s Status) IsOnline() bool {
 	if s.ValidUntil <= 0 {
 		return s.State == State_Online
 	}
-	return time.Now().Before(time.Unix(s.ValidUntil, 0))
+	return time.Now().UnixNano() < s.ValidUntil
 }

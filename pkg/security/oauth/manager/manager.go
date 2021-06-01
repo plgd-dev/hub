@@ -15,16 +15,16 @@ import (
 
 // Manager holds certificates from filesystem watched for changes
 type Manager struct {
-	mutex             sync.Mutex
-	config            clientcredentials.Config
-	requestTimeout    time.Duration
-	tickFrequency     time.Duration
-	startRefreshToken time.Time
-	token             *oauth2.Token
-	httpClient        *http.Client
-	tokenErr          error
-	doneWg            sync.WaitGroup
-	done              chan struct{}
+	mutex            sync.Mutex
+	config           clientcredentials.Config
+	requestTimeout   time.Duration
+	tickFrequency    time.Duration
+	nextRefreshToken time.Time
+	token            *oauth2.Token
+	httpClient       *http.Client
+	tokenErr         error
+	doneWg           sync.WaitGroup
+	done             chan struct{}
 }
 
 // NewManagerFromConfiguration creates a new oauth manager which refreshing token.
@@ -40,18 +40,19 @@ func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, e
 		Transport: t,
 		Timeout:   config.RequestTimeout,
 	}
-	token, startRefreshToken, err := getToken(cfg, httpClient, config.RequestTimeout)
+	token, nextRefreshToken, err := getToken(cfg, httpClient, config.RequestTimeout)
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("client credential token is refreshed, the next refresh token occurs after %v", nextRefreshToken)
 
 	mgr := &Manager{
-		config:            cfg,
-		token:             token,
-		startRefreshToken: startRefreshToken,
-		requestTimeout:    config.RequestTimeout,
-		httpClient:        httpClient,
-		tickFrequency:     config.TickFrequency,
+		config:           cfg,
+		token:            token,
+		nextRefreshToken: nextRefreshToken,
+		requestTimeout:   config.RequestTimeout,
+		httpClient:       httpClient,
+		tickFrequency:    config.TickFrequency,
 
 		done: make(chan struct{}),
 	}
@@ -78,7 +79,23 @@ func (a *Manager) Close() {
 }
 
 func (a *Manager) shouldRefresh() bool {
-	return time.Now().After(a.startRefreshToken)
+	/*
+		We cannot use time.Now().After(a.nextRefreshToken) because
+		golang using monotonic clock for comparision.
+
+		So if we have 2 times:
+		// update time on PC to future eg: `date MMDDHHMM`
+		t1 := time.Now() eg (2021-06-15T12:00:00)
+		// return back time on PC: `date MMDDHHMM`
+		t2 := time.Now() eg (2021-06-01T12:00:00)
+		and then you call t2.After(t1) - it's return true :)
+
+		more info: https://github.com/golang/go/blob/master/src/time/time.go
+
+		the issue can occurs when pc hibernates.
+	*/
+
+	return time.Now().UnixNano() > a.nextRefreshToken.UnixNano()
 }
 
 func getToken(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout time.Duration) (*oauth2.Token, time.Time, error) {
@@ -88,24 +105,26 @@ func getToken(cfg clientcredentials.Config, httpClient *http.Client, requestTime
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 
 	token, err := cfg.Token(ctx)
-	var startRefreshToken time.Time
+	var nextRefreshToken time.Time
 	if err == nil {
 		now := time.Now()
-		startRefreshToken = now.Add(token.Expiry.Sub(now) * 2 / 3)
+		nextRefreshToken = now.Add(token.Expiry.Sub(now) * 2 / 3)
 	}
-	return token, startRefreshToken, err
+	return token, nextRefreshToken, err
 }
 
 func (a *Manager) refreshToken() {
-	token, startRefreshToken, err := getToken(a.config, a.httpClient, a.requestTimeout)
+	token, nextRefreshToken, err := getToken(a.config, a.httpClient, a.requestTimeout)
 	if err != nil {
 		log.Errorf("cannot refresh token: %v", err)
+	} else {
+		log.Infof("client credential token is refreshed, the next refresh token occurs after %v", nextRefreshToken)
 	}
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.token = token
 	a.tokenErr = err
-	a.startRefreshToken = startRefreshToken
+	a.nextRefreshToken = nextRefreshToken
 }
 
 func (a *Manager) watchToken() {

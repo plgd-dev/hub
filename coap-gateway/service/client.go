@@ -52,6 +52,13 @@ func (a *authCtx) GetDeviceId() string {
 	return ""
 }
 
+func (a *authCtx) GetAccessToken() string {
+	if a != nil {
+		return a.AccessToken
+	}
+	return ""
+}
+
 const pendingDeviceSubscriptionToken = "pending"
 
 //Client a setup of connection
@@ -115,7 +122,7 @@ func (client *Client) cancelResourceSubscription(token string, wantWait bool) (b
 }
 
 func (client *Client) observeResource(ctx context.Context, deviceID, href string, observable, allowDuplicit bool) (err error) {
-	log.Debugf("coap-gw: client.observeResource /%v%v ins %v: observe resource", deviceID, href)
+	log.Debugf("coap-gw: observing resource /%v%v", deviceID, href)
 	instanceID := getInstanceID(href)
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()

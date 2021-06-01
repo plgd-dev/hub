@@ -74,3 +74,32 @@ func TestSignOffHandler(t *testing.T) {
 		t.Run(test.name, tf)
 	}
 }
+
+func TestSignOffWithSignInHandler(t *testing.T) {
+	shutdown := setUp(t)
+	defer shutdown()
+
+	co := testCoapDial(t, testCfg.GW_HOST)
+	if co == nil {
+		return
+	}
+	defer co.Close()
+
+	signUpEl := testEl{"signUp", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "authprovider": "` + oauthTest.NewTestProvider().GetProviderName() + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: "refresh-token", UserID: AuthorizationUserId}, nil}}
+	testPostHandler(t, uri.SignUp, signUpEl, co)
+
+	signInEl := testEl{"signIn", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + AuthorizationUserId + `", "accesstoken":"` + oauthTest.DeviceAccessToken + `", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}}
+	testPostHandler(t, uri.SignIn, signInEl, co)
+
+	tbl := []testEl{
+		{"Deleted", input{coapCodes.DELETE, `{}`, nil}, output{coapCodes.Deleted, nil, nil}},
+	}
+
+	for _, test := range tbl {
+		tf := func(t *testing.T) {
+			// delete record for signUp
+			testPostHandler(t, uri.SignUp, test, co)
+		}
+		t.Run(test.name, tf)
+	}
+}
