@@ -22,7 +22,7 @@ type Manager struct {
 	config                      clientcredentials.Config
 	requestTimeout              time.Duration
 	verifyServiceTokenFrequency time.Duration
-	startRefreshToken           time.Time
+	nextTokenRenewalTime        time.Time
 	token                       *oauth2.Token
 	httpClient                  *http.Client
 	tokenErr                    error
@@ -53,15 +53,16 @@ func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, e
 }
 
 func new(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout, verifyServiceTokenFrequency time.Duration) (*Manager, error) {
-	token, startRefreshToken, err := getToken(cfg, httpClient, requestTimeout)
+	token, nextTokenRenewalTime, err := getToken(cfg, httpClient, requestTimeout)
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("client credential token is refreshed, the next refresh token occurs after %v", nextTokenRenewalTime)
 
 	mgr := &Manager{
 		config:                      cfg,
 		token:                       token,
-		startRefreshToken:           startRefreshToken,
+		nextTokenRenewalTime:        nextTokenRenewalTime,
 		requestTimeout:              requestTimeout,
 		httpClient:                  httpClient,
 		verifyServiceTokenFrequency: verifyServiceTokenFrequency,
@@ -107,7 +108,23 @@ func (a *Manager) Close() {
 }
 
 func (a *Manager) shouldRefresh() bool {
-	return time.Now().After(a.startRefreshToken)
+	/*
+		We cannot use time.Now().After(a.nextTokenRenewalTime ) because
+		golang using monotonic clock for comparision.
+
+		So if we have 2 times:
+		// update time on PC to future eg: `date MMDDHHMM`
+		t1 := time.Now() eg (2021-06-15T12:00:00)
+		// return back time on PC: `date MMDDHHMM`
+		t2 := time.Now() eg (2021-06-01T12:00:00)
+		and then you call t2.After(t1) - it's return true :)
+
+		more info: https://github.com/golang/go/blob/master/src/time/time.go
+
+		the issue can occurs when pc hibernates.
+	*/
+
+	return time.Now().UnixNano() > a.nextTokenRenewalTime.UnixNano()
 }
 
 func getToken(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout time.Duration) (*oauth2.Token, time.Time, error) {
@@ -117,24 +134,26 @@ func getToken(cfg clientcredentials.Config, httpClient *http.Client, requestTime
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 
 	token, err := cfg.Token(ctx)
-	var startRefreshToken time.Time
+	var nextTokenRenewalTime time.Time
 	if err == nil {
 		now := time.Now()
-		startRefreshToken = now.Add(token.Expiry.Sub(now) * 2 / 3)
+		nextTokenRenewalTime = now.Add(token.Expiry.Sub(now) * 2 / 3)
 	}
-	return token, startRefreshToken, err
+	return token, nextTokenRenewalTime, err
 }
 
 func (a *Manager) refreshToken() {
-	token, startRefreshToken, err := getToken(a.config, a.httpClient, a.requestTimeout)
+	token, nextTokenRenewalTime, err := getToken(a.config, a.httpClient, a.requestTimeout)
 	if err != nil {
 		log.Errorf("cannot refresh token: %v", err)
+	} else {
+		log.Infof("client credential token is refreshed, the next refresh token occurs after %v", nextTokenRenewalTime)
 	}
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.token = token
 	a.tokenErr = err
-	a.startRefreshToken = startRefreshToken
+	a.nextTokenRenewalTime = nextTokenRenewalTime
 }
 
 func (a *Manager) watchToken() {

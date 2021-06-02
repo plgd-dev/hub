@@ -83,7 +83,7 @@ func (a *authorizationContext) IsValid() error {
 	if a.AccessToken == "" {
 		return fmt.Errorf("invalid access token")
 	}
-	if !a.Expire.IsZero() && time.Now().After(a.Expire) {
+	if !a.Expire.IsZero() && time.Now().UnixNano() > a.Expire.UnixNano() {
 		return fmt.Errorf("token is expired")
 	}
 	return nil
