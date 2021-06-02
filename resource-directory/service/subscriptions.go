@@ -10,15 +10,10 @@ import (
 
 	"github.com/gofrs/uuid"
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
 
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
@@ -509,49 +504,6 @@ func (s *Subscriptions) OnResourceCreated(ctx context.Context, created *events.R
 	return nil
 }
 
-func (s *Subscriptions) OnDeviceOnline(ctx context.Context, dev DeviceIDVersion) error {
-	s.rwlock.RLock()
-	defer s.rwlock.RUnlock()
-
-	var errors []error
-	for owner, userSubs := range s.devicesSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(owner, dev.deviceID) {
-			continue
-		}
-		for _, sub := range userSubs {
-			if err := sub.NotifyOfOnlineDevice(ctx, []DeviceIDVersion{dev}); err != nil {
-				errors = append(errors, err)
-			}
-		}
-	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot send device online event: %v", errors)
-	}
-
-	return nil
-}
-
-func (s *Subscriptions) OnDeviceOffline(ctx context.Context, dev DeviceIDVersion) error {
-	s.rwlock.RLock()
-	defer s.rwlock.RUnlock()
-
-	var errors []error
-	for owner, userSubs := range s.devicesSubscriptions {
-		if !s.userDevicesManager.IsUserDevice(owner, dev.deviceID) {
-			continue
-		}
-		for _, sub := range userSubs {
-			if err := sub.NotifyOfOfflineDevice(ctx, []DeviceIDVersion{dev}); err != nil {
-				errors = append(errors, err)
-			}
-		}
-	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot send device offline event: %v", errors)
-	}
-	return nil
-}
-
 func (s *Subscriptions) OnResourceContentChanged(ctx context.Context, resourceChanged *pb.Event_ResourceChanged, version uint64) error {
 	s.rwlock.RLock()
 	defer s.rwlock.RUnlock()
@@ -598,29 +550,7 @@ func (s *Subscriptions) CancelResourceSubscriptions(ctx context.Context, deviceI
 	}
 }
 
-func isDeviceOnline(content *commands.Content) (bool, error) {
-	if content == nil {
-		return false, nil
-	}
-	var decoder func(data []byte, v interface{}) error
-	switch content.GetContentType() {
-	case message.AppCBOR.String(), message.AppOcfCbor.String():
-		decoder = cbor.Decode
-	case message.AppJSON.String():
-		decoder = json.Decode
-	}
-	if decoder == nil {
-		return false, fmt.Errorf("decoder not found")
-	}
-	var cloudStatus status.Status
-	err := decoder(content.GetData(), &cloudStatus)
-	if err != nil {
-		return false, err
-	}
-	return cloudStatus.IsOnline(), nil
-}
-
-func (s *Subscriptions) SubscribeForDevicesEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DevicesEventFilter) error {
+func (s *Subscriptions) SubscribeForDevicesEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeToEvents_DevicesEventFilter) error {
 	sub := NewDevicesSubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.InsertDevicesSubscription(ctx, sub)
 	if err != nil {
@@ -635,7 +565,7 @@ func (s *Subscriptions) SubscribeForDevicesEvent(ctx context.Context, owner stri
 	return nil
 }
 
-func (s *Subscriptions) SubscribeForDeviceEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_DeviceEventFilter) error {
+func (s *Subscriptions) SubscribeForDeviceEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeToEvents_DeviceEventFilter) error {
 	sub := NewDeviceSubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.InsertDeviceSubscription(ctx, sub)
 	if err != nil {
@@ -650,7 +580,7 @@ func (s *Subscriptions) SubscribeForDeviceEvent(ctx context.Context, owner strin
 	return nil
 }
 
-func (s *Subscriptions) SubscribeForResourceEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeForEvents_ResourceEventFilter) error {
+func (s *Subscriptions) SubscribeForResourceEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeToEvents_ResourceEventFilter) error {
 	sub := NewResourceSubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.InsertResourceSubscription(ctx, sub)
 	if err != nil {
@@ -674,7 +604,7 @@ func (s *Subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscri
 	return s.Close(subscriptionID, nil)
 }
 
-func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeForEventsServer) error {
+func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeToEventsServer) error {
 	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
@@ -700,7 +630,7 @@ func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 
 	var sendMutex sync.Mutex
 	send := func(e *pb.Event) error {
-		log.Debugf("subscriptions.SubscribeForEvents.send: %v %+v", e.GetSubscriptionId(), e.GetType())
+		log.Debugf("subscriptions.SubscribeToEvents.send: %v %+v", e.GetSubscriptionId(), e.GetType())
 		sendMutex.Lock()
 		defer sendMutex.Unlock()
 		return srv.Send(e)
@@ -709,7 +639,7 @@ func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 	for {
 		subReq, err := srv.Recv()
 		if err == io.EOF {
-			log.Debugf("subscriptions.SubscribeForEvents: cannot receive events for owner %v: %v", owner, err)
+			log.Debugf("subscriptions.SubscribeToEvents: cannot receive events for owner %v: %v", owner, err)
 			break
 		}
 		if err != nil {
@@ -751,13 +681,13 @@ func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 		send(&subRes)
 
 		switch r := subReq.GetFilterBy().(type) {
-		case *pb.SubscribeForEvents_DevicesEvent:
+		case *pb.SubscribeToEvents_DevicesEvent:
 			err = s.SubscribeForDevicesEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DevicesEvent)
-		case *pb.SubscribeForEvents_DeviceEvent:
+		case *pb.SubscribeToEvents_DeviceEvent:
 			err = s.SubscribeForDeviceEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.DeviceEvent)
-		case *pb.SubscribeForEvents_ResourceEvent:
+		case *pb.SubscribeToEvents_ResourceEvent:
 			err = s.SubscribeForResourceEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.ResourceEvent)
-		case *pb.SubscribeForEvents_CancelSubscription_:
+		case *pb.SubscribeToEvents_CancelSubscription_:
 			//handled by cancelation
 			err = nil
 		default:
@@ -776,6 +706,48 @@ func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 			localSubscriptions.Delete(subRes.SubscriptionId)
 			log.Errorf("errors occurs during %T: %v", subReq.GetFilterBy(), err)
 		}
+	}
+	return nil
+}
+
+func (s *Subscriptions) OnDeviceMetadataUpdatePending(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for owner, userSubs := range s.devicesSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, event.GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs {
+			if err := sub.NotifyOfUpdatePendingDeviceMetadata(ctx, event); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send device metadata update pending event: %v", errors)
+	}
+	return nil
+}
+
+func (s *Subscriptions) OnDeviceMetadataUpdated(ctx context.Context, event *events.DeviceMetadataUpdated) error {
+	s.rwlock.RLock()
+	defer s.rwlock.RUnlock()
+
+	var errors []error
+	for owner, userSubs := range s.devicesSubscriptions {
+		if !s.userDevicesManager.IsUserDevice(owner, event.GetDeviceId()) {
+			continue
+		}
+		for _, sub := range userSubs {
+			if err := sub.NotifyOfUpdatedDeviceMetadata(ctx, event); err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("cannot send device metadata updated event: %v", errors)
 	}
 	return nil
 }

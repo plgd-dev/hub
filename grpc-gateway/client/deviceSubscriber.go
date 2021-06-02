@@ -34,6 +34,7 @@ type Operations interface {
 	UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error
 	DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
+	DeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error
 	// Fatal error occured during reconnection to the server. Client shall call DeviceSubscriber.Close().
 	OnDeviceSubscriberReconnectError(err error)
 }
@@ -112,6 +113,18 @@ func (h *DeviceSubscriptionHandlers) HandleResourceCreatePending(ctx context.Con
 	err := h.operations.CreateResource(ctx, val)
 	if err != nil {
 		return fmt.Errorf("unable to create resource %v: %w", val, err)
+	}
+	return err
+}
+
+func (h *DeviceSubscriptionHandlers) HandleDeviceMetadataUpdatePending(ctx context.Context, val *events.DeviceMetadataUpdatePending) error {
+	if !h.wantToProcessEvent(val.AggregateID()+val.EventType(), val.Version()) {
+		return nil
+	}
+
+	err := h.operations.DeviceMetadataUpdate(ctx, val)
+	if err != nil {
+		return fmt.Errorf("unable to update device metadata %v: %w", val, err)
 	}
 	return err
 }
@@ -260,6 +273,10 @@ func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceS
 		sendEvent = func(ctx context.Context) error {
 			return h.HandleResourceDeletePending(ctx, ev.GetResourceDeletePending())
 		}
+	case ev.GetDeviceMetadataUpdatePending() != nil:
+		sendEvent = func(ctx context.Context) error {
+			return h.HandleDeviceMetadataUpdatePending(ctx, ev.GetDeviceMetadataUpdatePending())
+		}
 	}
 	if sendEvent == nil {
 		return nil
@@ -339,6 +356,13 @@ func sendEvent(ctx context.Context, h *DeviceSubscriptionHandlers, ev eventbus.E
 			return fmt.Errorf("cannot unmarshal resource create pending event('%v'): %w", ev, err)
 		}
 		return h.HandleResourceCreatePending(ctx, &event)
+	case (&events.DeviceMetadataUpdatePending{}).EventType():
+		var event events.DeviceMetadataUpdatePending
+		err := ev.Unmarshal(&event)
+		if err != nil {
+			return fmt.Errorf("cannot unmarshal device metadate update pending event('%v'): %w", ev, err)
+		}
+		return h.HandleDeviceMetadataUpdatePending(ctx, &event)
 	}
 	return nil
 }

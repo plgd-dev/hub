@@ -226,3 +226,26 @@ func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResou
 		},
 	)
 }
+
+func MakeDeviceMetadata(deviceID string, status *events.DeviceMetadataUpdated, shadowSynchronization *events.DeviceMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+	e := events.DeviceMetadataSnapshotTaken{
+		DeviceId:              deviceID,
+		Status:                status,
+		ShadowSynchronization: shadowSynchronization,
+		EventMetadata:         eventMetadata,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.DeviceMetadataSnapshotTaken{}).EventType(),
+		commands.MakeStatusResourceUUID(deviceID),
+		e.GetDeviceId(),
+		false,
+		func(v interface{}) error {
+			if x, ok := v.(*events.DeviceMetadataSnapshotTaken); ok {
+				*x = e
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}

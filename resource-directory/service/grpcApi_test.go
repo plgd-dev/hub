@@ -236,10 +236,10 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_SubscribeForEvents(t *testing.T) {
+func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		sub pb.SubscribeForEvents
+		sub pb.SubscribeToEvents
 	}
 	tests := []struct {
 		name string
@@ -249,7 +249,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 		{
 			name: "invalid - invalid type subscription",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
 				},
 			},
@@ -278,12 +278,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 		{
 			name: "devices subscription - registered",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-							FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-								pb.SubscribeForEvents_DevicesEventFilter_REGISTERED, pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED,
+					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
+								pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
 							},
 						},
 					},
@@ -311,14 +311,14 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 			},
 		},
 		{
-			name: "devices subscription - online",
+			name: "devices subscription - device metadata updated",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-							FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-								pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE,
+					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
+								pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED,
 							},
 						},
 					},
@@ -336,9 +336,14 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					Token: "testToken",
 				},
 				{
-					Type: &pb.Event_DeviceOnline_{
-						DeviceOnline: &pb.Event_DeviceOnline{
-							DeviceIds: []string{deviceID},
+					Type: &pb.Event_DeviceMetadataUpdated{
+						DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+							DeviceId: deviceID,
+							Updated: &events.DeviceMetadataUpdated_Status{
+								Status: &commands.ConnectionStatus{
+									Value: commands.ConnectionStatus_ONLINE,
+								},
+							},
 						},
 					},
 					Token: "testToken",
@@ -348,13 +353,13 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 		{
 			name: "device subscription - published",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeForEvents_DeviceEvent{
-						DeviceEvent: &pb.SubscribeForEvents_DeviceEventFilter{
+					FilterBy: &pb.SubscribeToEvents_DeviceEvent{
+						DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
 							DeviceId: deviceID,
-							FilterEvents: []pb.SubscribeForEvents_DeviceEventFilter_Event{
-								pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED,
+							EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
+								pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED,
 							},
 						},
 					},
@@ -394,7 +399,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.SubscribeForEvents(ctx)
+			client, err := c.SubscribeToEvents(ctx)
 			require.NoError(t, err)
 			defer client.CloseSend()
 			var wg sync.WaitGroup
@@ -410,6 +415,13 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					}
 					if w.GetResourcePublished() != nil {
 						w.GetResourcePublished().Links = test.SortResources(w.GetResourcePublished().GetLinks())
+					}
+					if ev.GetDeviceMetadataUpdated() != nil {
+						ev.GetDeviceMetadataUpdated().EventMetadata = nil
+						ev.GetDeviceMetadataUpdated().AuditContext = nil
+						if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
+							ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
+						}
 					}
 					test.CheckProtobufs(t, tt.want, ev, test.RequireToCheckFunc(require.Contains))
 				}
@@ -443,15 +455,15 @@ func TestRequestHandler_Issue270(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	client, err := c.SubscribeForEvents(ctx)
+	client, err := c.SubscribeToEvents(ctx)
 	require.NoError(t, err)
 
-	err = client.Send(&pb.SubscribeForEvents{
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-				FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-					pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE, pb.SubscribeForEvents_DevicesEventFilter_REGISTERED, pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED,
+		FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+			DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+				EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
+					pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
 				},
 			},
 		},
@@ -498,28 +510,6 @@ func TestRequestHandler_Issue270(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOnline_{
-			DeviceOnline: &pb.Event_DeviceOnline{},
-		},
-		Token: "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOffline_{
-			DeviceOffline: &pb.Event_DeviceOffline{},
-		},
-		Token: "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 
 	time.Sleep(time.Second * 10)
@@ -539,11 +529,23 @@ func TestRequestHandler_Issue270(t *testing.T) {
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
+	if ev.GetDeviceMetadataUpdated() != nil {
+		ev.GetDeviceMetadataUpdated().EventMetadata = nil
+		ev.GetDeviceMetadataUpdated().AuditContext = nil
+		if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
+			ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
+		}
+	}
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOnline_{
-			DeviceOnline: &pb.Event_DeviceOnline{
-				DeviceIds: []string{deviceID},
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				DeviceId: deviceID,
+				Updated: &events.DeviceMetadataUpdated_Status{
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
+					},
+				},
 			},
 		},
 		Token: "testToken",
@@ -594,15 +596,15 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 
-	client, err := c.SubscribeForEvents(ctx)
+	client, err := c.SubscribeToEvents(ctx)
 	require.NoError(t, err)
 
-	err = client.Send(&pb.SubscribeForEvents{
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-				FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-					pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE, pb.SubscribeForEvents_DevicesEventFilter_REGISTERED, pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED,
+		FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+			DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+				EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
+					pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
 				},
 			},
 		},
@@ -651,46 +653,41 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
-		if ev.GetDeviceOnline() != nil && len(ev.GetDeviceOnline().GetDeviceIds()) == 0 {
-			continue
+		if ev.GetDeviceMetadataUpdated() != nil && ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID && ev.GetDeviceMetadataUpdated().GetStatus().GetValue() == commands.ConnectionStatus_ONLINE {
+			break
 		}
-		if ev.GetDeviceOffline() != nil && len(ev.GetDeviceOffline().GetDeviceIds()) == 0 {
-			continue
+		continue
+	}
+	if ev.GetDeviceMetadataUpdated() != nil {
+		ev.GetDeviceMetadataUpdated().EventMetadata = nil
+		ev.GetDeviceMetadataUpdated().AuditContext = nil
+		if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
+			ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
 		}
-		if ev.GetDeviceOffline() != nil && len(ev.GetDeviceOffline().GetDeviceIds()) == 1 && ev.GetDeviceOffline().GetDeviceIds()[0] == deviceID {
-			continue
-		}
-		break
 	}
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOnline_{
-			DeviceOnline: &pb.Event_DeviceOnline{
-				DeviceIds: []string{deviceID},
+		Type: &pb.Event_DeviceMetadataUpdated{
+			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+				DeviceId: deviceID,
+				Updated: &events.DeviceMetadataUpdated_Status{
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
+					},
+				},
 			},
 		},
 		Token: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceOffline_{
-			DeviceOffline: &pb.Event_DeviceOffline{},
-		},
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-
-	err = client.Send(&pb.SubscribeForEvents{
-		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_ResourceEvent{
-			ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
+		FilterBy: &pb.SubscribeToEvents_ResourceEvent{
+			ResourceEvent: &pb.SubscribeToEvents_ResourceEventFilter{
 				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-				FilterEvents: []pb.SubscribeForEvents_ResourceEventFilter_Event{
-					pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED,
+				EventsFilter: []pb.SubscribeToEvents_ResourceEventFilter_Event{
+					pb.SubscribeToEvents_ResourceEventFilter_CONTENT_CHANGED,
 				},
 			},
 		},
@@ -735,13 +732,13 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	err = client.Send(&pb.SubscribeForEvents{
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "updatePending + resourceUpdated",
-		FilterBy: &pb.SubscribeForEvents_DeviceEvent{
-			DeviceEvent: &pb.SubscribeForEvents_DeviceEventFilter{
+		FilterBy: &pb.SubscribeToEvents_DeviceEvent{
+			DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
 				DeviceId: deviceID,
-				FilterEvents: []pb.SubscribeForEvents_DeviceEventFilter_Event{
-					pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED,
+				EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
+					pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATED,
 				},
 			},
 		},
@@ -922,13 +919,13 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		}
 	}
 
-	err = client.Send(&pb.SubscribeForEvents{
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "receivePending + resourceReceived",
-		FilterBy: &pb.SubscribeForEvents_DeviceEvent{
-			DeviceEvent: &pb.SubscribeForEvents_DeviceEventFilter{
+		FilterBy: &pb.SubscribeToEvents_DeviceEvent{
+			DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
 				DeviceId: deviceID,
-				FilterEvents: []pb.SubscribeForEvents_DeviceEventFilter_Event{
-					pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED,
+				EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
+					pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVED,
 				},
 			},
 		},
@@ -954,6 +951,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 	})
+	require.NoError(t, err)
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{

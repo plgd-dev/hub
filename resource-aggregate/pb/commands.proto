@@ -469,8 +469,9 @@ message UpdateDeviceMetadataResponse {
 message ConfirmDeviceMetadataUpdateRequest {
     string device_id = 1;
     string correlation_id = 2;
+    Status status = 3;
     oneof confirm {
-        ShadowSynchronization shadow_synchronization = 3;
+        ShadowSynchronization shadow_synchronization = 4;
     };
     CommandMetadata command_metadata = 100;
 }

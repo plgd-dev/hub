@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -89,15 +88,14 @@ func (a *authorizationContext) IsValid() error {
 	return nil
 }
 
-const pendingDeviceSubscriptionToken = "pending"
-
 //Client a setup of connection
 type Client struct {
 	server   *Service
 	coapConn *tcp.ClientConn
 
-	observedResources     map[string]map[int64]*observedResource // [deviceID][instanceID]
-	observedResourcesLock sync.Mutex
+	observedResources         map[string]map[int64]*observedResource // [deviceID][instanceID]
+	observedResourcesLock     sync.Mutex
+	observedResourcesDisabled bool
 
 	resourceSubscriptions *kitSync.Map // [token]
 
@@ -149,26 +147,33 @@ func (client *Client) cancelResourceSubscription(token string, wantWait bool) (b
 	}
 	return true, nil
 }
+func (client *Client) observeResourcesLocked(ctx context.Context, resources []*commands.Resource) {
+	for _, resource := range resources {
+		client.observeResource(ctx, resource.GetResourceID(), resource.IsObservable())
+	}
+}
 
-func (client *Client) observeResource(ctx context.Context, resourceID *commands.ResourceId, observable, allowDuplicit bool) (err error) {
+func (client *Client) observeResources(ctx context.Context, resources []*commands.Resource) {
+	client.observedResourcesLock.Lock()
+	defer client.observedResourcesLock.Unlock()
+
+	client.observeResourcesLocked(ctx, resources)
+}
+
+func (client *Client) observeResource(ctx context.Context, resourceID *commands.ResourceId, observable bool) {
 	log.Debugf("observation of resource %v requested", resourceID)
 	instanceID := getInstanceID(resourceID.GetHref())
 	deviceID := resourceID.GetDeviceId()
 	href := resourceID.GetHref()
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
 	if _, ok := client.observedResources[deviceID]; !ok {
 		client.observedResources[deviceID] = make(map[int64]*observedResource)
 	}
 	if _, ok := client.observedResources[deviceID][instanceID]; ok {
-		if allowDuplicit {
-			return nil
-		}
-		return fmt.Errorf("resource is already already being observed")
+		return
 	}
 	obsRes := observedResource{href: href}
 	client.observedResources[deviceID][instanceID] = &obsRes
-	return client.server.taskQueue.Submit(func() { client.addObservedResourceLocked(ctx, deviceID, observable, &obsRes) })
+	client.addObservedResourceLocked(ctx, deviceID, observable, &obsRes)
 }
 
 func (client *Client) getResourceContent(ctx context.Context, deviceID, href string) {
@@ -323,27 +328,29 @@ func (client *Client) popTrackedObservation(hrefs []string) []*tcp.Observation {
 	return observartions
 }
 
-func (client *Client) popObservedResources() []*tcp.Observation {
-	observartions := make([]*tcp.Observation, 0, 32)
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-	for deviceID, instanceIDs := range client.observedResources {
-		for instanceID := range instanceIDs {
-			obs := client.popObservation(deviceID, instanceID)
-			if obs != nil {
-				observartions = append(observartions, obs)
-			}
-			client.removeResource(deviceID, instanceID)
-		}
-	}
+func (client *Client) popObservedResourcesLocked() map[string]map[int64]*observedResource {
+	observartions := client.observedResources
+	client.observedResources = make(map[string]map[int64]*observedResource)
 	return observartions
 }
 
-// cleanObservedResources remove all device pbRA observation requested by cloud.
-func (client *Client) cleanObservedResources() {
-	for _, obs := range client.popObservedResources() {
-		obs.Cancel(client.coapConn.Context())
+// cleanObservedResourcesLocked remove all device pbRA observation requested by cloud.
+func (client *Client) cleanObservedResourcesLocked() {
+	for _, resources := range client.popObservedResourcesLocked() {
+		for _, obs := range resources {
+			v := obs.PopObservation()
+			if v != nil {
+				v.Cancel(client.coapConn.Context())
+			}
+		}
 	}
+}
+
+// cleanObservedResources remove all device pbRA observation requested by cloud under lock.
+func (client *Client) cleanObservedResources() {
+	client.observedResourcesLock.Lock()
+	defer client.observedResourcesLock.Unlock()
+	client.cleanObservedResourcesLocked()
 }
 
 func (client *Client) cancelResourceSubscriptions(wantWait bool) {
@@ -382,7 +389,9 @@ func (client *Client) CleanUp() *authorizationContext {
 	log.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
 
 	client.server.devicesStatusUpdater.Remove(client)
-	client.cleanObservedResources()
+	client.observedResourcesLock.Lock()
+	defer client.observedResourcesLock.Unlock()
+	client.cleanObservedResourcesLocked()
 	client.cancelResourceSubscriptions(false)
 
 	client.closeDeviceSubscriber()
@@ -405,9 +414,17 @@ func (client *Client) OnClose() {
 			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)
 			return
 		}
-		err = status.SetOffline(kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), oldAuthCtx.GetUserID()), client.server.raClient, oldAuthCtx.GetDeviceID(), &commands.CommandMetadata{
-			Sequence:     client.coapConn.Sequence(),
-			ConnectionId: client.remoteAddrString(),
+		_, err = client.server.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), oldAuthCtx.GetUserID()), &commands.UpdateDeviceMetadataRequest{
+			DeviceId: authCtx.GetDeviceID(),
+			Update: &commands.UpdateDeviceMetadataRequest_Status{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_OFFLINE,
+				},
+			},
+			CommandMetadata: &commands.CommandMetadata{
+				Sequence:     client.coapConn.Sequence(),
+				ConnectionId: client.remoteAddrString(),
+			},
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
@@ -848,4 +865,78 @@ func (client *Client) GetContext() (context.Context, context.CancelFunc) {
 		return client.Context(), func() {}
 	}
 	return kitNetGrpc.CtxWithOwner(client.Context(), authCtx.GetUserID()), func() {}
+}
+
+func (client *Client) sendErrorConfirmDeviceMetadataUpdate(userID string, event *events.DeviceMetadataUpdatePending, errToSend error) {
+	ctx, err := client.server.ServiceRequestContext(userID)
+	if err != nil {
+		log.Errorf("cannot send error via confirm resource create: %v", err)
+		return
+	}
+
+	_, err = client.server.raClient.ConfirmDeviceMetadataUpdate(ctx, &commands.ConfirmDeviceMetadataUpdateRequest{
+		DeviceId:      event.GetDeviceId(),
+		CorrelationId: event.GetAuditContext().GetCorrelationId(),
+		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization{
+			ShadowSynchronization: event.GetShadowSynchronization(),
+		},
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: client.remoteAddrString(),
+			Sequence:     client.coapConn.Sequence(),
+		},
+		Status: commands.Status_UNAUTHORIZED,
+	})
+	if err != nil {
+		log.Errorf("cannot send error via confirm resource create: %v", err)
+	}
+}
+
+func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, disabled bool) {
+	client.observedResourcesLock.Lock()
+	defer client.observedResourcesLock.Unlock()
+	if disabled == client.observedResourcesDisabled {
+		return
+	}
+
+	if disabled {
+		client.observedResourcesDisabled = true
+		client.cleanObservedResourcesLocked()
+	} else {
+		client.observedResourcesDisabled = false
+		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
+	}
+}
+
+func (client *Client) DeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	authCtx, err := client.GetAuthorizationContext()
+	if err != nil {
+		err := fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
+		client.sendErrorConfirmDeviceMetadataUpdate(authCtx.GetUserID(), event, err)
+		client.Close()
+		return err
+	}
+	if event.GetShadowSynchronization() == nil {
+		return nil
+	}
+	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.GetUserID())
+	if err != nil {
+		return err
+	}
+
+	client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization().GetDisabled())
+
+	_, err = client.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
+		DeviceId:      event.GetDeviceId(),
+		CorrelationId: event.GetAuditContext().GetCorrelationId(),
+		Confirm: &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization{
+			ShadowSynchronization: event.GetShadowSynchronization(),
+		},
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: client.remoteAddrString(),
+			Sequence:     client.coapConn.Sequence(),
+		},
+		Status: commands.Status_OK,
+	})
+	return err
+
 }

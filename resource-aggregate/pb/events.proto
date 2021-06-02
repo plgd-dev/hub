@@ -134,11 +134,10 @@ message DeviceMetadataUpdatePending {
     EventMetadata event_metadata = 101;
 }
 
-
 message DeviceMetadataSnapshotTaken {
     string device_id = 1;
-    ConnectionStatus status = 2;
-    ShadowSynchronization shadow_synchronization = 3;
+    DeviceMetadataUpdated status = 2;
+    DeviceMetadataUpdated shadow_synchronization = 3;
     repeated DeviceMetadataUpdatePending update_pendings = 4;
     EventMetadata event_metadata = 101;
 }

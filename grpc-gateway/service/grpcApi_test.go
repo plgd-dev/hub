@@ -12,15 +12,17 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
-func TestRequestHandler_SubscribeForEvents(t *testing.T) {
+func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		sub pb.SubscribeForEvents
+		sub pb.SubscribeToEvents
 	}
 	tests := []struct {
 		name string
@@ -30,7 +32,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 		{
 			name: "invalid - invalid type subscription",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
 				},
 			},
@@ -59,12 +61,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 		{
 			name: "devices subscription - registered",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-							FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-								pb.SubscribeForEvents_DevicesEventFilter_REGISTERED, pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED,
+					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
+								pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
 							},
 						},
 					},
@@ -94,12 +96,12 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 		{
 			name: "devices subscription - online",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-							FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-								pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE,
+					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
+								pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED,
 							},
 						},
 					},
@@ -117,9 +119,14 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					Token: "testToken",
 				},
 				{
-					Type: &pb.Event_DeviceOnline_{
-						DeviceOnline: &pb.Event_DeviceOnline{
-							DeviceIds: []string{deviceID},
+					Type: &pb.Event_DeviceMetadataUpdated{
+						DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
+							DeviceId: deviceID,
+							Updated: &events.DeviceMetadataUpdated_Status{
+								Status: &commands.ConnectionStatus{
+									Value: commands.ConnectionStatus_ONLINE,
+								},
+							},
 						},
 					},
 					Token: "testToken",
@@ -129,13 +136,13 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 		{
 			name: "device subscription - published",
 			args: args{
-				sub: pb.SubscribeForEvents{
+				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeForEvents_DeviceEvent{
-						DeviceEvent: &pb.SubscribeForEvents_DeviceEventFilter{
+					FilterBy: &pb.SubscribeToEvents_DeviceEvent{
+						DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
 							DeviceId: deviceID,
-							FilterEvents: []pb.SubscribeForEvents_DeviceEventFilter_Event{
-								pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED,
+							EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
+								pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED,
 							},
 						},
 					},
@@ -175,7 +182,7 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.SubscribeForEvents(ctx)
+			client, err := c.SubscribeToEvents(ctx)
 			require.NoError(t, err)
 			defer client.CloseSend()
 			var wg sync.WaitGroup
@@ -191,6 +198,13 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 					}
 					if w.GetResourcePublished() != nil {
 						w.GetResourcePublished().Links = test.SortResources(w.GetResourcePublished().GetLinks())
+					}
+					if ev.GetDeviceMetadataUpdated() != nil {
+						ev.GetDeviceMetadataUpdated().EventMetadata = nil
+						ev.GetDeviceMetadataUpdated().AuditContext = nil
+						if ev.GetDeviceMetadataUpdated().GetStatus() != nil {
+							ev.GetDeviceMetadataUpdated().GetStatus().ValidUntil = 0
+						}
 					}
 					test.CheckProtobufs(t, tt.want, ev, test.RequireToCheckFunc(require.Contains))
 				}

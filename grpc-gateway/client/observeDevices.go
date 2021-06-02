@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 type DevicesObservationEvent_type uint8
@@ -30,17 +31,17 @@ type devicesObservation struct {
 	removeSubscription func()
 }
 
-func (o *devicesObservation) HandleDeviceOnline(ctx context.Context, val *pb.Event_DeviceOnline) error {
+func (o *devicesObservation) HandleDeviceMetadataUpdated(ctx context.Context, val *events.DeviceMetadataUpdated) error {
+	if val.GetStatus() == nil {
+		return nil
+	}
+	event := DevicesObservationEvent_OFFLINE
+	if val.GetStatus().IsOnline() {
+		event = DevicesObservationEvent_ONLINE
+	}
 	return o.h.Handle(ctx, DevicesObservationEvent{
-		DeviceIDs: val.GetDeviceIds(),
-		Event:     DevicesObservationEvent_ONLINE,
-	})
-}
-
-func (o *devicesObservation) HandleDeviceOffline(ctx context.Context, val *pb.Event_DeviceOffline) error {
-	return o.h.Handle(ctx, DevicesObservationEvent{
-		DeviceIDs: val.GetDeviceIds(),
-		Event:     DevicesObservationEvent_OFFLINE,
+		DeviceIDs: []string{val.GetDeviceId()},
+		Event:     event,
 	})
 }
 

@@ -110,6 +110,10 @@ func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEv
 		eventHandler = &devicesUnregisteredHandler{
 			h: &devsHandler,
 		}
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		eventHandler = &devicesRegisteredUnregisteredHandler{
+			h: &devsHandler,
+		}
 	default:
 		return nil, fmt.Errorf("createDevicesSubsription: unsupported subscription eventypes %+v", s.data.EventTypes)
 	}

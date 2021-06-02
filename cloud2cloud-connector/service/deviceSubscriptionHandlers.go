@@ -46,6 +46,10 @@ func (h deviceSubscriptionHandlers) CreateResource(ctx context.Context, event *e
 	return fmt.Errorf("not supported")
 }
 
+func (h deviceSubscriptionHandlers) DeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+	return fmt.Errorf("not supported")
+}
+
 func (h deviceSubscriptionHandlers) OnDeviceSubscriberReconnectError(err error) {
 	h.onError(err)
 }

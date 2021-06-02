@@ -16,13 +16,13 @@ import (
 
 type deviceSubscription struct {
 	*subscription
-	deviceEvent *pb.SubscribeForEvents_DeviceEventFilter
+	deviceEvent *pb.SubscribeToEvents_DeviceEventFilter
 
 	isInitializedResourcePublishLock sync.Mutex
 	isInitializedResourcePublish     bool
 }
 
-func NewDeviceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, deviceEvent *pb.SubscribeForEvents_DeviceEventFilter) *deviceSubscription {
+func NewDeviceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, deviceEvent *pb.SubscribeToEvents_DeviceEventFilter) *deviceSubscription {
 	log.Debugf("subscription.NewDeviceSubscription %v", id)
 	defer log.Debugf("subscription.NewDeviceSubscription %v done", id)
 	return &deviceSubscription{
@@ -86,8 +86,8 @@ func (s *deviceSubscription) initializeResourcePublish(isInit bool) bool {
 
 func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED {
 			found = true
 		}
 	}
@@ -117,8 +117,8 @@ func (s *deviceSubscription) NotifyOfPublishedResourceLinks(ctx context.Context,
 
 func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Context, links ResourceLinks) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED {
 			found = true
 		}
 	}
@@ -146,8 +146,8 @@ func (s *deviceSubscription) NotifyOfUnpublishedResourceLinks(ctx context.Contex
 
 func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, updatePending *events.ResourceUpdatePending, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING {
 			found = true
 		}
 	}
@@ -168,8 +168,8 @@ func (s *deviceSubscription) NotifyOfUpdatePendingResource(ctx context.Context, 
 
 func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, updated *events.ResourceUpdated, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATED {
 			found = true
 		}
 	}
@@ -190,8 +190,8 @@ func (s *deviceSubscription) NotifyOfUpdatedResource(ctx context.Context, update
 
 func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context, retrievePending *events.ResourceRetrievePending, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING {
 			found = true
 		}
 	}
@@ -212,8 +212,8 @@ func (s *deviceSubscription) NotifyOfRetrievePendingResource(ctx context.Context
 
 func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retrieved *events.ResourceRetrieved, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVED {
 			found = true
 		}
 	}
@@ -234,8 +234,8 @@ func (s *deviceSubscription) NotifyOfRetrievedResource(ctx context.Context, retr
 
 func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, deletePending *events.ResourceDeletePending, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING {
 			found = true
 		}
 	}
@@ -256,8 +256,8 @@ func (s *deviceSubscription) NotifyOfDeletePendingResource(ctx context.Context, 
 
 func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, deleted *events.ResourceDeleted, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETED {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_DELETED {
 			found = true
 		}
 	}
@@ -278,8 +278,8 @@ func (s *deviceSubscription) NotifyOfDeletedResource(ctx context.Context, delete
 
 func (s *deviceSubscription) NotifyOfCreatePendingResource(ctx context.Context, createPending *events.ResourceCreatePending, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING {
 			found = true
 		}
 	}
@@ -300,8 +300,8 @@ func (s *deviceSubscription) NotifyOfCreatePendingResource(ctx context.Context, 
 
 func (s *deviceSubscription) NotifyOfCreatedResource(ctx context.Context, created *events.ResourceCreated, version uint64) error {
 	var found bool
-	for _, f := range s.deviceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATED {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_CREATED {
 			found = true
 		}
 	}
@@ -427,21 +427,21 @@ func (s *deviceSubscription) Init(ctx context.Context, currentDevices map[string
 		return fmt.Errorf("cannot register to resource projection: %w", err)
 	}
 
-	for _, f := range s.deviceEvent.GetFilterEvents() {
+	for _, f := range s.deviceEvent.GetEventsFilter() {
 		switch f {
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
+		case pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED:
 			err = s.initSendResourcesPublished(ctx)
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
+		case pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED:
 			err = s.initSendResourcesUnpublished(ctx)
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING:
+		case pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING:
 			err = s.initSendResourcesUpdatePending(ctx)
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING:
+		case pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING:
 			err = s.initSendResourcesRetrievePending(ctx)
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING:
+		case pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING:
 			err = s.initSendResourcesDeletePending(ctx)
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING:
+		case pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING:
 			err = s.initSendResourcesCreatePending(ctx)
-		case pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_UPDATED, pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_RETRIEVED:
+		case pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATED, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVED:
 			// do nothing
 		}
 		if err != nil {

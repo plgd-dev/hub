@@ -6,9 +6,9 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/sdk/schema"
 
-	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -90,8 +90,6 @@ func (d Device) ToProto() *pb.Device {
 }
 
 func updateDevice(dev *Device, resource *Resource) error {
-	cloudResourceTypes := make(strings.Set)
-	cloudResourceTypes.Add(deviceStatus.ResourceTypes...)
 	switch {
 	case resource.Resource.GetHref() == "/oic/d":
 		var devContent schema.Device
@@ -103,19 +101,21 @@ func updateDevice(dev *Device, resource *Resource) error {
 		dev.Resource = &devContent
 		dev.Resource.ResourceTypes = resource.Resource.GetResourceTypes()
 		dev.Resource.Interfaces = resource.Resource.GetInterfaces()
-	case cloudResourceTypes.HasOneOf(resource.Resource.GetResourceTypes()...):
-		var cloudStatus deviceStatus.Status
-		err := decodeContent(resource.GetContent(), &cloudStatus)
-		if err != nil {
-			return err
-		}
-		dev.IsOnline = cloudStatus.IsOnline()
-		dev.cloudStateUpdated = true
+		/*
+			case cloudResourceTypes.HasOneOf(resource.Resource.GetResourceTypes()...):
+				var cloudStatus deviceStatus.Status
+				err := decodeContent(resource.GetContent(), &cloudStatus)
+				if err != nil {
+					return err
+				}
+				dev.IsOnline = cloudStatus.IsOnline()
+				dev.cloudStateUpdated = true
+		*/
 	}
 	return nil
 }
 
-func filterDevicesByUserFilters(resources map[string]map[string]*Resource, req *pb.GetDevicesRequest) ([]Device, error) {
+func filterDevicesByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.GetDevicesRequest) ([]Device, error) {
 	devices := make([]Device, 0, len(resources))
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
@@ -141,13 +141,17 @@ func filterDevicesByUserFilters(resources map[string]map[string]*Resource, req *
 		if !hasMatchingType(resourceTypes, typeFilter) {
 			continue
 		}
-		if !device.cloudStateUpdated {
+
+		deviceMetadata, ok := devicesMetadata[deviceID]
+		if !ok {
 			continue
 		}
+		device.IsOnline = deviceMetadata.GetStatus().GetStatus().IsOnline()
 		if hasMatchingStatus(device.IsOnline, req.StatusFilter) {
 			devices = append(devices, device)
 		}
 	}
+
 	return devices, nil
 }
 
@@ -183,7 +187,12 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
 	}
 
-	devices, err := filterDevicesByUserFilters(resources, req)
+	devicesMetadata, err := dd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
+	if err != nil {
+		return status.Errorf(codes.Internal, "cannot get devices metadata device ids: %v", err)
+	}
+
+	devices, err := filterDevicesByUserFilters(resources, devicesMetadata, req)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot filter devices by status: %v", err)
 	}
