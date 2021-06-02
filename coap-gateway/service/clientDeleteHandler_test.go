@@ -79,6 +79,7 @@ func Test_clientDeleteHandler(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
 			req, err := tcp.NewDeleteRequest(ctx, tt.args.path)
+			require.NoError(t, err)
 			resp, err := co.Do(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())

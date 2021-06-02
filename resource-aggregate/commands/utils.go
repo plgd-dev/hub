@@ -81,5 +81,5 @@ func (s *ConnectionStatus) IsOnline() bool {
 		// s.ValidUntil <= 0 means infinite
 		return s.Value == ConnectionStatus_ONLINE
 	}
-	return time.Now().Before(time.Unix(0, s.ValidUntil))
+	return time.Now().UnixNano() < s.ValidUntil
 }
