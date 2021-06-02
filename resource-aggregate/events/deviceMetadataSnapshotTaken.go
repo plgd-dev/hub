@@ -45,10 +45,10 @@ func (e *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated) error {
 	e.DeviceId = upd.GetDeviceId()
-	if upd.GetStatus() != nil {
-		e.Status = upd.GetStatus()
-	}
-	if upd.GetShadowSynchronization() != nil {
+	switch {
+	case upd.GetStatus() != nil:
+		e.Status = upd
+	case upd.GetShadowSynchronization() != nil:
 		index := -1
 		for i, event := range e.GetUpdatePendings() {
 			if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
@@ -60,7 +60,7 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 			return status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
 		}
 		e.UpdatePendings = append(e.UpdatePendings[:index], e.UpdatePendings[index+1:]...)
-		e.ShadowSynchronization = upd.GetShadowSynchronization()
+		e.ShadowSynchronization = upd
 	}
 	e.EventMetadata = upd.GetEventMetadata()
 	return nil

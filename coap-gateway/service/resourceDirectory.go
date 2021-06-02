@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -91,13 +90,9 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	for _, resource := range publishedResources {
-
-		err := client.observeResource(req.Context, resource.GetResourceID(), resource.IsObservable(), true)
-		if err != nil {
-			log.Errorf("unable to start observation of %v", resource.GetResourceID(), err)
-		}
-	}
+	client.server.taskQueue.Submit(func() {
+		client.observeResources(req.Context, publishedResources)
+	})
 
 	accept := coapconv.GetAccept(req.Options)
 	encode, err := coapconv.GetEncoder(accept)

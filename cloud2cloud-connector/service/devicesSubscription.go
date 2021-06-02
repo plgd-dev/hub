@@ -3,14 +3,12 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/patrickmn/go-cache"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 )
@@ -149,16 +147,18 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOnline) error {
 	var errors []error
 	for _, device := range devices {
-		cmdMetadata := commands.CommandMetadata{
-			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
-			Sequence:     header.SequenceNumber,
-		}
-		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
-		err = status.SetOnline(ctx, s.raClient, device.ID, time.Time{}, &cmdMetadata)
+		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+			DeviceId: device.ID,
+			Update: &commands.UpdateDeviceMetadataRequest_Status{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
+				},
+			},
+			CommandMetadata: &commands.CommandMetadata{
+				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
+				Sequence:     header.SequenceNumber,
+			},
+		})
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to online: %w", device.ID, err))
 		}
@@ -174,16 +174,18 @@ func (s *SubscriptionManager) HandleDevicesOnline(ctx context.Context, d subscri
 func (s *SubscriptionManager) HandleDevicesOffline(ctx context.Context, d subscriptionData, header events.EventHeader, devices events.DevicesOffline) error {
 	var errors []error
 	for _, device := range devices {
-		cmdMetadata := commands.CommandMetadata{
-			ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
-			Sequence:     header.SequenceNumber,
-		}
-		err := status.Publish(ctx, s.raClient, device.ID, &cmdMetadata)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
-		err = status.SetOffline(ctx, s.raClient, device.ID, &cmdMetadata)
+		_, err := s.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+			DeviceId: device.ID,
+			Update: &commands.UpdateDeviceMetadataRequest_Status{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_OFFLINE,
+				},
+			},
+			CommandMetadata: &commands.CommandMetadata{
+				ConnectionId: d.linkedAccount.ID + "." + d.subscription.ID,
+				Sequence:     header.SequenceNumber,
+			},
+		})
 		if err != nil {
 			errors = append(errors, fmt.Errorf("cannot set device %v to offline: %w", device.ID, err))
 		}

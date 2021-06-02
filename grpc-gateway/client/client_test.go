@@ -111,7 +111,7 @@ func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResour
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func (h *gatewayHandler) SubscribeForEvents(pb.GrpcGateway_SubscribeForEventsServer) error {
+func (h *gatewayHandler) SubscribeToEvents(pb.GrpcGateway_SubscribeToEventsServer) error {
 	return status.Errorf(codes.Unimplemented, "not implemented")
 }
 

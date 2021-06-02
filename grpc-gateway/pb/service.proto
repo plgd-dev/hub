@@ -5,6 +5,11 @@ package ocf.cloud.grpcgateway.pb;
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/clientConfiguration.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/devices.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/retrievePendingCommands.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/retrieveDevicesMetadata.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/updateDeviceShadowSynchronization.proto";
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
+
+
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
@@ -22,7 +27,7 @@ service GrpcGateway {
   rpc UpdateResource(UpdateResourceRequest) returns (UpdateResourceResponse) {}
 
   // Subscribe to events
-  rpc SubscribeForEvents(stream ocf.cloud.grpcgateway.pb.SubscribeForEvents) returns (stream Event) {}
+  rpc SubscribeToEvents(stream ocf.cloud.grpcgateway.pb.SubscribeToEvents) returns (stream Event) {}
 
   // Get client configuration
   rpc GetClientConfiguration(ClientConfigurationRequest) returns (ClientConfigurationResponse) {}
@@ -33,5 +38,10 @@ service GrpcGateway {
   // Create resource at the device.
   rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse) {}
 
+  // UpdateDeviceShadowSynchronization enables/disables shadow synchronization of device.
+  rpc UpdateDeviceShadowSynchronization(UpdateDeviceShadowSynchronizationRequest) returns (UpdateDeviceShadowSynchronizationResponse) {}
+
   rpc RetrievePendingCommands(RetrievePendingCommandsRequest) returns (stream PendingCommand) {}
+
+  rpc RetrieveDevicesMetadata(RetrieveDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataSnapshotTaken) {}
 }

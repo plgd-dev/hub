@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -75,10 +74,21 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 		validUntil = authCtx.Expire
 	}
 
-	return validUntil, deviceStatus.SetOnline(ctx, client.server.raClient, authCtx.GetDeviceID(), validUntil, &commands.CommandMetadata{
-		Sequence:     client.coapConn.Sequence(),
-		ConnectionId: client.remoteAddrString(),
+	_, err = client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+		DeviceId: authCtx.GetDeviceID(),
+		Update: &commands.UpdateDeviceMetadataRequest_Status{
+			Status: &commands.ConnectionStatus{
+				Value:      commands.ConnectionStatus_ONLINE,
+				ValidUntil: validUntil.UnixNano(),
+			},
+		},
+		CommandMetadata: &commands.CommandMetadata{
+			Sequence:     client.coapConn.Sequence(),
+			ConnectionId: client.remoteAddrString(),
+		},
 	})
+
+	return validUntil, err
 }
 
 func (u *devicesStatusUpdater) getDevicesToUpdate(now time.Time) []*deviceExpires {

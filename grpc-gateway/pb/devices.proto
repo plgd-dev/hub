@@ -59,15 +59,16 @@ message UpdateResourceResponse {
   Status status = 2;
 }
 
-message SubscribeForEvents {
+message SubscribeToEvents {
   message DevicesEventFilter {
     enum Event {
       REGISTERED = 0;
       UNREGISTERED = 1;
-      ONLINE = 2;
-      OFFLINE = 3;
+      DEVICE_METADATA_UPDATED = 4;
+      DEVICE_METADATA_UPDATE_PENDING = 5;
     }
-    repeated Event filter_events = 1;
+    repeated Event events_filter = 1;
+    repeated string device_ids_filter = 2;
   }
   message DeviceEventFilter {
     string device_id = 1;
@@ -83,14 +84,14 @@ message SubscribeForEvents {
       RESOURCE_CREATE_PENDING = 8;
       RESOURCE_CREATED = 9;
     }
-    repeated Event filter_events = 2;
+    repeated Event events_filter = 2;
   }
   message ResourceEventFilter {
     ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
     enum Event {
       CONTENT_CHANGED = 0;
     }
-    repeated Event filter_events = 2;
+    repeated Event events_filter = 2;
   }
   message CancelSubscription {
     string subscription_id = 1;
@@ -101,7 +102,7 @@ message SubscribeForEvents {
     ResourceEventFilter resource_event = 3;
     CancelSubscription cancel_subscription = 5;
   }
-  string token = 101; // for pairing request SubscribeForEvents with Event.OperationProcessed
+  string token = 101; // for pairing request SubscribeToEvents with Event.OperationProcessed
 }
 
 message Event {
@@ -109,12 +110,6 @@ message Event {
     repeated string device_ids = 1;
   }
   message DeviceUnregistered {
-    repeated string device_ids = 1;
-  }
-  message DeviceOnline {
-    repeated string device_ids = 1;
-  }
-  message DeviceOffline {
     repeated string device_ids = 1;
   }
   message ResourcePublished {
@@ -149,8 +144,6 @@ message Event {
   oneof type {
     DeviceRegistered device_registered = 3;
     DeviceUnregistered device_unregistered = 4;
-    DeviceOnline device_online = 5;
-    DeviceOffline device_offline = 6;
     ResourcePublished resource_published = 7;
     ResourceUnpublished resource_unpublished = 8;
     ResourceChanged resource_changed = 9;
@@ -164,6 +157,8 @@ message Event {
     ocf.cloud.resourceaggregate.pb.ResourceDeleted resource_deleted = 17;
     ocf.cloud.resourceaggregate.pb.ResourceCreatePending resource_create_pending = 18;
     ocf.cloud.resourceaggregate.pb.ResourceCreated resource_created = 19;
+    ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdatePending device_metadata_update_pending = 20;
+    ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated device_metadata_updated = 21;
   }
 
 }

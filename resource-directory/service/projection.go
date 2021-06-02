@@ -74,7 +74,7 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 			return nil, err
 		}
 		if len(models) != 1 {
-			return nil, nil
+			continue
 		}
 		resourceLinks := models[0].(*resourceLinksProjection).Clone()
 		devicesResourceLinks[resourceLinks.deviceID] = make(map[string]*commands.Resource)
@@ -87,6 +87,24 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 	}
 
 	return devicesResourceLinks, nil
+}
+
+func (p *Projection) GetDevicesMetadata(ctx context.Context, deviceIDFilter strings.Set) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
+	devicesMetadata := make(map[string]*events.DeviceMetadataSnapshotTaken)
+	for deviceID := range deviceIDFilter {
+		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.StatusHref))
+		if err != nil {
+			return nil, err
+		}
+		if len(models) != 1 {
+			continue
+		}
+		deviceMetadata := models[0].(*deviceMetadataProjection).Clone()
+		deviceID = deviceMetadata.data.GetDeviceId()
+		devicesMetadata[deviceID] = deviceMetadata.data
+	}
+
+	return devicesMetadata, nil
 }
 
 func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set) (map[string]map[string]*Resource, error) {

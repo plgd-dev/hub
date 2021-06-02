@@ -12,10 +12,10 @@ import (
 
 type resourceSubscription struct {
 	*subscription
-	resourceEvent *pb.SubscribeForEvents_ResourceEventFilter
+	resourceEvent *pb.SubscribeToEvents_ResourceEventFilter
 }
 
-func NewResourceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, resourceEvent *pb.SubscribeForEvents_ResourceEventFilter) *resourceSubscription {
+func NewResourceSubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, resourceEvent *pb.SubscribeToEvents_ResourceEventFilter) *resourceSubscription {
 	log.Debugf("subscription.NewResourceSubscription %v %+v", id, resourceEvent.GetResourceId())
 	defer log.Debugf("subscription.NewResourceSubscription %v done", id)
 	return &resourceSubscription{
@@ -64,9 +64,9 @@ func (s *resourceSubscription) Init(ctx context.Context, currentDevices map[stri
 		return nil
 	}
 
-	for _, f := range s.resourceEvent.FilterEvents {
+	for _, f := range s.resourceEvent.EventsFilter {
 		switch f {
-		case pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED:
+		case pb.SubscribeToEvents_ResourceEventFilter_CONTENT_CHANGED:
 			if res.content.GetStatus() == commands.Status_UNKNOWN {
 				continue
 			}
@@ -90,8 +90,8 @@ func (s *resourceSubscription) NotifyOfContentChangedResource(ctx context.Contex
 		return nil
 	}
 	var found bool
-	for _, f := range s.resourceEvent.GetFilterEvents() {
-		if f == pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED {
+	for _, f := range s.resourceEvent.GetEventsFilter() {
+		if f == pb.SubscribeToEvents_ResourceEventFilter_CONTENT_CHANGED {
 			found = true
 		}
 	}

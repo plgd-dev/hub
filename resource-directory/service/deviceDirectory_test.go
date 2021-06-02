@@ -14,7 +14,6 @@ import (
 
 	cbor "github.com/plgd-dev/kit/codec/cbor"
 
-	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -215,27 +214,6 @@ func testMakeDeviceResourceContent(deviceId string) commands.Content {
 	}
 }
 
-func testMakeCloudResourceContent(deviceId string, online bool) commands.Content {
-	state := deviceStatus.State_Online
-	if !online {
-		state = deviceStatus.State_Offline
-	}
-	s := deviceStatus.Status{
-		ResourceTypes: deviceStatus.ResourceTypes,
-		Interfaces:    deviceStatus.Interfaces,
-		State:         state,
-	}
-	d, err := cbor.Encode(s)
-	if err != nil {
-		log.Fatalf("cannot decode content: %v", err)
-	}
-
-	return commands.Content{
-		Data:        d,
-		ContentType: message.AppCBOR.String(),
-	}
-}
-
 func makeTestDeviceResourceContent(deviceId string) ResourceContent {
 	return ResourceContent{
 		Resource: testMakeDeviceResource(deviceId, "/oic/d", []string{"oic.wk.d", "x.test.d"}),
@@ -243,23 +221,31 @@ func makeTestDeviceResourceContent(deviceId string) ResourceContent {
 	}
 }
 
-func makeTestCloudResourceContent(deviceId string, online bool) ResourceContent {
-	return ResourceContent{
-		Resource: testMakeDeviceResource(deviceId, commands.StatusHref, deviceStatus.ResourceTypes),
-		Content:  testMakeCloudResourceContent(deviceId, online),
+func makeTestDeviceConnectionStatus(deviceId string, online bool) *events.DeviceMetadataUpdated {
+	v := commands.ConnectionStatus_OFFLINE
+	if online {
+		v = commands.ConnectionStatus_ONLINE
+	}
+	return &events.DeviceMetadataUpdated{
+		DeviceId: deviceId,
+		Updated: &events.DeviceMetadataUpdated_Status{
+			Status: &commands.ConnectionStatus{
+				Value: v,
+			},
+		},
 	}
 }
 
 var ddResource0 = makeTestDeviceResourceContent("0")
 
 var ddResource1 = makeTestDeviceResourceContent("1")
-var ddResource1Cloud = makeTestCloudResourceContent("1", false)
+var ddResource1Cloud = makeTestDeviceConnectionStatus("1", false)
 
 var ddResource2 = makeTestDeviceResourceContent("2")
-var ddResource2Cloud = makeTestCloudResourceContent("2", true)
+var ddResource2Cloud = makeTestDeviceConnectionStatus("2", true)
 
 var ddResource4 = makeTestDeviceResourceContent("4")
-var ddResource4Cloud = makeTestCloudResourceContent("4", true)
+var ddResource4Cloud = makeTestDeviceConnectionStatus("4", true)
 
 func testCreateResourceDeviceEventstores() (resourceEventStore *mockEventStore.MockEventStore) {
 	resourceEventStore = mockEventStore.NewMockEventStore()
@@ -268,18 +254,17 @@ func testCreateResourceDeviceEventstores() (resourceEventStore *mockEventStore.M
 	resourceEventStore.Append(ddResource0.DeviceId, commands.MakeLinksResourceUUID(ddResource0.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource0.Resource}, ddResource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
 	resourceEventStore.Append(ddResource0.DeviceId, ddResource0.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource0.Resource.GetResourceID(), &ddResource0.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
 
-	resourceEventStore.Append(ddResource1.DeviceId, commands.MakeLinksResourceUUID(ddResource1.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource1.Resource, &ddResource1Cloud.Resource}, ddResource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	resourceEventStore.Append(ddResource1.DeviceId, commands.MakeLinksResourceUUID(ddResource1.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource1.Resource}, ddResource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
 	resourceEventStore.Append(ddResource1.DeviceId, ddResource1.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource1.Resource.GetResourceID(), &ddResource1.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	resourceEventStore.Append(ddResource1Cloud.DeviceId, ddResource1Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource1Cloud.Resource.GetResourceID(), &ddResource1Cloud.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "1")))
+	resourceEventStore.Append(ddResource1Cloud.DeviceId, ddResource1Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource1Cloud.DeviceId, ddResource1Cloud, nil, events.MakeEventMeta("a", 0, 0)))
 
 	//with cloud state - online
-	resourceEventStore.Append(ddResource2.DeviceId, commands.MakeLinksResourceUUID(ddResource2.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource2.Resource, &ddResource2Cloud.Resource}, ddResource2.Resource.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
+	resourceEventStore.Append(ddResource2.DeviceId, commands.MakeLinksResourceUUID(ddResource2.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource2.Resource}, ddResource2.Resource.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
 	resourceEventStore.Append(ddResource2.DeviceId, ddResource2.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource2.Resource.GetResourceID(), &ddResource2.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "0")))
-	resourceEventStore.Append(ddResource2Cloud.DeviceId, ddResource2Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource2Cloud.Resource.GetResourceID(), &ddResource2Cloud.Content, events.MakeEventMeta("a", 0, 0), mockEvents.MakeAuditContext("userId", "1")))
+	resourceEventStore.Append(ddResource2Cloud.DeviceId, ddResource2Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource2Cloud.DeviceId, ddResource2Cloud, nil, events.MakeEventMeta("a", 0, 0)))
 
 	//without device resource
-	resourceEventStore.Append(ddResource4Cloud.DeviceId, commands.MakeLinksResourceUUID(ddResource4.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&ddResource4Cloud.Resource}, ddResource4Cloud.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
-	resourceEventStore.Append(ddResource4Cloud.DeviceId, ddResource4Cloud.Resource.ToUUID(), mockEvents.MakeResourceChangedEvent(ddResource4Cloud.Resource.GetResourceID(), &ddResource4Cloud.Content, events.MakeEventMeta("a", 0, 1), mockEvents.MakeAuditContext("userId", "0")))
+	resourceEventStore.Append(ddResource4Cloud.DeviceId, ddResource4Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource4Cloud.DeviceId, ddResource2Cloud, nil, events.MakeEventMeta("a", 0, 1)))
 
 	return resourceEventStore
 }

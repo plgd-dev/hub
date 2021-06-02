@@ -14,7 +14,6 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
@@ -161,27 +160,33 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 					errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))
 					continue
 				}
-				err = status.Publish(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
-					ConnectionId: linkedAccount.ID,
-					Sequence:     uint64(time.Now().UnixNano()),
-				})
-
-				if err != nil {
-					errors = append(errors, fmt.Errorf("cannot publish cloud status: %v: %w", deviceID, err))
-					continue
-				}
-
 			}
 			delete(registeredDevices, deviceID)
 			if strings.ToLower(dev.Status) == "online" {
-				err = status.SetOnline(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, time.Time{}, &commands.CommandMetadata{
-					ConnectionId: linkedAccount.ID,
-					Sequence:     uint64(time.Now().UnixNano()),
+				_, err = p.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.UpdateDeviceMetadataRequest{
+					DeviceId: deviceID,
+					Update: &commands.UpdateDeviceMetadataRequest_Status{
+						Status: &commands.ConnectionStatus{
+							Value: commands.ConnectionStatus_ONLINE,
+						},
+					},
+					CommandMetadata: &commands.CommandMetadata{
+						ConnectionId: linkedAccount.ID,
+						Sequence:     uint64(time.Now().UnixNano()),
+					},
 				})
 			} else {
-				err = status.SetOffline(kitNetGrpc.CtxWithOwner(ctx, userID), p.raClient, deviceID, &commands.CommandMetadata{
-					ConnectionId: linkedAccount.ID,
-					Sequence:     uint64(time.Now().UnixNano()),
+				_, err = p.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.UpdateDeviceMetadataRequest{
+					DeviceId: deviceID,
+					Update: &commands.UpdateDeviceMetadataRequest_Status{
+						Status: &commands.ConnectionStatus{
+							Value: commands.ConnectionStatus_OFFLINE,
+						},
+					},
+					CommandMetadata: &commands.CommandMetadata{
+						ConnectionId: linkedAccount.ID,
+						Sequence:     uint64(time.Now().UnixNano()),
+					},
 				})
 			}
 			if err != nil {

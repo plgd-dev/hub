@@ -9,7 +9,6 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	deviceStatus "github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -34,7 +33,7 @@ type CoapSignInResp struct {
 	ExpiresIn int64 `json:"expiresin"`
 }
 
-func registerObservationsForPublishedResources(ctx context.Context, client *Client, deviceID string) {
+func (client *Client) registerObservationsForPublishedResourcesLocked(ctx context.Context, deviceID string) {
 	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
 		DeviceIdsFilter: []string{deviceID},
 	})
@@ -45,6 +44,7 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 		log.Errorf("signIn: cannot get resource links for the device %v: %v", deviceID, err)
 		return
 	}
+	resources := make([]*commands.Resource, 0, 8)
 	for {
 		m, err := getResourceLinksClient.Recv()
 		if err == io.EOF {
@@ -58,8 +58,41 @@ func registerObservationsForPublishedResources(ctx context.Context, client *Clie
 			return
 		}
 		resource := m.ToRAProto()
-		client.observeResource(ctx, resource.GetResourceID(), resource.IsObservable(), true)
+		resources = append(resources, &resource)
+
 	}
+	client.observeResourcesLocked(ctx, resources)
+}
+
+func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID string) error {
+	deviceMetadataClient, err := client.server.rdClient.RetrieveDevicesMetadata(ctx, &pb.RetrieveDevicesMetadataRequest{
+		DeviceIdsFilter: []string{deviceID},
+	})
+	if err != nil {
+		if status.Convert(err).Code() == codes.NotFound {
+			return nil
+		}
+		return fmt.Errorf("cannot get device(%v) metdata: %v", deviceID, err)
+	}
+	shadowSynchronizationDisabled := false
+	for {
+		m, err := deviceMetadataClient.Recv()
+		if err == io.EOF {
+			break
+		}
+		if status.Convert(err).Code() == codes.NotFound {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("cannot get device(%v) metdata: %v", deviceID, err)
+		}
+		shadowSynchronizationDisabled = m.GetShadowSynchronization().GetShadowSynchronization().GetDisabled()
+
+	}
+	client.observedResourcesLock.Lock()
+	defer client.observedResourcesLock.Unlock()
+	client.observedResourcesDisabled = shadowSynchronizationDisabled
+	return nil
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
@@ -71,6 +104,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	})
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), req.Token)
+		client.Close()
 		return
 	}
 
@@ -86,11 +120,13 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
+		client.Close()
 		return
 	}
 	out, err := encode(coapResp)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError, req.Token)
+		client.Close()
 		return
 	}
 
@@ -107,10 +143,6 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 	req.Context = kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
-	err = deviceStatus.Publish(req.Context, client.server.raClient, signIn.DeviceID, &commands.CommandMetadata{
-		Sequence:     client.coapConn.Sequence(),
-		ConnectionId: client.remoteAddrString(),
-	})
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign in: cannot publish cloud device status: %w", err), coapCodes.InternalServerError, req.Token)
@@ -136,9 +168,17 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		client.cancelResourceSubscriptions(true)
 		client.closeDeviceSubscriber()
 		newDevice = true
+		client.cleanObservedResources()
 	}
 
 	if newDevice {
+		err := client.loadShadowSynchronization(req.Context, signIn.DeviceID)
+		if err != nil {
+			client.logAndWriteErrorResponse(fmt.Errorf("cannot load shadow synchronization for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError, req.Token)
+			client.Close()
+			return
+		}
+
 		deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, signIn.DeviceID, func() func() (when time.Time, err error) {
 			var count uint64
 			maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
@@ -173,7 +213,14 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
 	// try to register observations to the device for published resources at the cloud.
-	registerObservationsForPublishedResources(req.Context, client, signIn.DeviceID)
+	client.server.taskQueue.Submit(func() {
+		client.observedResourcesLock.Lock()
+		defer client.observedResourcesLock.Unlock()
+		if client.observedResourcesDisabled {
+			return
+		}
+		client.registerObservationsForPublishedResourcesLocked(req.Context, signIn.DeviceID)
+	})
 }
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
@@ -209,9 +256,18 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
 		req.Context = kitNetGrpc.CtxWithOwner(ctx, oldAuthCtx.GetUserID())
-		err = deviceStatus.SetOffline(req.Context, client.server.raClient, oldAuthCtx.GetDeviceID(), &commands.CommandMetadata{
-			Sequence:     client.coapConn.Sequence(),
-			ConnectionId: client.remoteAddrString(),
+
+		_, err = client.server.raClient.UpdateDeviceMetadata(req.Context, &commands.UpdateDeviceMetadataRequest{
+			DeviceId: oldAuthCtx.GetDeviceID(),
+			Update: &commands.UpdateDeviceMetadataRequest_Status{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_OFFLINE,
+				},
+			},
+			CommandMetadata: &commands.CommandMetadata{
+				Sequence:     client.coapConn.Sequence(),
+				ConnectionId: client.remoteAddrString(),
+			},
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
