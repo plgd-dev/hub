@@ -11,7 +11,7 @@ import (
 )
 
 func isExpired(e time.Time) bool {
-	return !e.IsZero() && time.Now().After(e)
+	return !e.IsZero() && e.UnixNano() < time.Now().UnixNano()
 }
 
 func NewAuthInterceptor() kitNetCoap.Interceptor {

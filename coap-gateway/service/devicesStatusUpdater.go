@@ -66,7 +66,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 		return time.Time{}, fmt.Errorf("cannot get service token: %w", err)
 	}
 	ctx := kitNetGrpc.CtxWithUserID(kitNetGrpc.CtxWithToken(client.Context(), serviceToken.AccessToken), authCtx.GetUserID())
-	if authCtx.Expire.Before(validUntil) {
+	if authCtx.Expire.UnixNano() < validUntil.UnixNano() {
 		validUntil = authCtx.Expire
 	}
 
@@ -85,7 +85,7 @@ func (u *devicesStatusUpdater) getDevicesToUpdate(now time.Time) []*deviceExpire
 		case <-d.client.Context().Done():
 			delete(u.devices, key)
 		default:
-			if now.Add(u.deviceStatusValidity / 2).After(d.expires) {
+			if d.expires.UnixNano() < now.Add(u.deviceStatusValidity/2).UnixNano() {
 				res = append(res, d)
 			}
 		}

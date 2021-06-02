@@ -153,6 +153,9 @@ func signOffHandler(s mux.ResponseWriter, req *mux.Message, client *Client) {
 	if deviceID == "" {
 		deviceID = authCurrentCtx.GetDeviceId()
 	}
+	if accessToken == "" {
+		accessToken = authCurrentCtx.GetAccessToken()
+	}
 
 	err := validateSignOff(deviceID, accessToken)
 	if err != nil {
