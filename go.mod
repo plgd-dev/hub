@@ -23,7 +23,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa
 	github.com/plgd-dev/kit v0.0.0-20210517131053-7dfd49bb6277
-	github.com/plgd-dev/sdk v0.0.0-20210517131411-530870e2d96d
+	github.com/plgd-dev/sdk v0.0.0-20210531080443-39f8a08bee53
 	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasthttp v1.24.0
 	go.mongodb.org/mongo-driver v1.5.2

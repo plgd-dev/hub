@@ -4,6 +4,7 @@ package pb
 
 import (
 	context "context"
+	events "github.com/plgd-dev/cloud/resource-aggregate/events"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -27,14 +28,17 @@ type GrpcGatewayClient interface {
 	// Update resource values
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error)
 	// Subscribe to events
-	SubscribeForEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeForEventsClient, error)
+	SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error)
 	// Get client configuration
 	GetClientConfiguration(ctx context.Context, in *ClientConfigurationRequest, opts ...grpc.CallOption) (*ClientConfigurationResponse, error)
 	// Delete resource at the device.
 	DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error)
 	// Create resource at the device.
 	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error)
+	// UpdateDeviceShadowSynchronization enables/disables shadow synchronization of device.
+	UpdateDeviceShadowSynchronization(ctx context.Context, in *UpdateDeviceShadowSynchronizationRequest, opts ...grpc.CallOption) (*UpdateDeviceShadowSynchronizationResponse, error)
 	RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error)
+	RetrieveDevicesMetadata(ctx context.Context, in *RetrieveDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveDevicesMetadataClient, error)
 }
 
 type grpcGatewayClient struct {
@@ -159,30 +163,30 @@ func (c *grpcGatewayClient) UpdateResource(ctx context.Context, in *UpdateResour
 	return out, nil
 }
 
-func (c *grpcGatewayClient) SubscribeForEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeForEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeForEvents", opts...)
+func (c *grpcGatewayClient) SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeToEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpcGatewaySubscribeForEventsClient{stream}
+	x := &grpcGatewaySubscribeToEventsClient{stream}
 	return x, nil
 }
 
-type GrpcGateway_SubscribeForEventsClient interface {
-	Send(*SubscribeForEvents) error
+type GrpcGateway_SubscribeToEventsClient interface {
+	Send(*SubscribeToEvents) error
 	Recv() (*Event, error)
 	grpc.ClientStream
 }
 
-type grpcGatewaySubscribeForEventsClient struct {
+type grpcGatewaySubscribeToEventsClient struct {
 	grpc.ClientStream
 }
 
-func (x *grpcGatewaySubscribeForEventsClient) Send(m *SubscribeForEvents) error {
+func (x *grpcGatewaySubscribeToEventsClient) Send(m *SubscribeToEvents) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *grpcGatewaySubscribeForEventsClient) Recv() (*Event, error) {
+func (x *grpcGatewaySubscribeToEventsClient) Recv() (*Event, error) {
 	m := new(Event)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -211,6 +215,15 @@ func (c *grpcGatewayClient) DeleteResource(ctx context.Context, in *DeleteResour
 func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error) {
 	out := new(CreateResourceResponse)
 	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *grpcGatewayClient) UpdateDeviceShadowSynchronization(ctx context.Context, in *UpdateDeviceShadowSynchronizationRequest, opts ...grpc.CallOption) (*UpdateDeviceShadowSynchronizationResponse, error) {
+	out := new(UpdateDeviceShadowSynchronizationResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceShadowSynchronization", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -249,6 +262,38 @@ func (x *grpcGatewayRetrievePendingCommandsClient) Recv() (*PendingCommand, erro
 	return m, nil
 }
 
+func (c *grpcGatewayClient) RetrieveDevicesMetadata(ctx context.Context, in *RetrieveDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveDevicesMetadataClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[5], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveDevicesMetadata", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpcGatewayRetrieveDevicesMetadataClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GrpcGateway_RetrieveDevicesMetadataClient interface {
+	Recv() (*events.DeviceMetadataSnapshotTaken, error)
+	grpc.ClientStream
+}
+
+type grpcGatewayRetrieveDevicesMetadataClient struct {
+	grpc.ClientStream
+}
+
+func (x *grpcGatewayRetrieveDevicesMetadataClient) Recv() (*events.DeviceMetadataSnapshotTaken, error) {
+	m := new(events.DeviceMetadataSnapshotTaken)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GrpcGatewayServer is the server API for GrpcGateway service.
 // All implementations must embed UnimplementedGrpcGatewayServer
 // for forward compatibility
@@ -263,14 +308,17 @@ type GrpcGatewayServer interface {
 	// Update resource values
 	UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error)
 	// Subscribe to events
-	SubscribeForEvents(GrpcGateway_SubscribeForEventsServer) error
+	SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error
 	// Get client configuration
 	GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error)
 	// Delete resource at the device.
 	DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error)
 	// Create resource at the device.
 	CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error)
+	// UpdateDeviceShadowSynchronization enables/disables shadow synchronization of device.
+	UpdateDeviceShadowSynchronization(context.Context, *UpdateDeviceShadowSynchronizationRequest) (*UpdateDeviceShadowSynchronizationResponse, error)
 	RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error
+	RetrieveDevicesMetadata(*RetrieveDevicesMetadataRequest, GrpcGateway_RetrieveDevicesMetadataServer) error
 	mustEmbedUnimplementedGrpcGatewayServer()
 }
 
@@ -293,8 +341,8 @@ func (UnimplementedGrpcGatewayServer) RetrieveResourcesValues(*RetrieveResources
 func (UnimplementedGrpcGatewayServer) UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateResource not implemented")
 }
-func (UnimplementedGrpcGatewayServer) SubscribeForEvents(GrpcGateway_SubscribeForEventsServer) error {
-	return status.Errorf(codes.Unimplemented, "method SubscribeForEvents not implemented")
+func (UnimplementedGrpcGatewayServer) SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToEvents not implemented")
 }
 func (UnimplementedGrpcGatewayServer) GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClientConfiguration not implemented")
@@ -305,8 +353,14 @@ func (UnimplementedGrpcGatewayServer) DeleteResource(context.Context, *DeleteRes
 func (UnimplementedGrpcGatewayServer) CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateResource not implemented")
 }
+func (UnimplementedGrpcGatewayServer) UpdateDeviceShadowSynchronization(context.Context, *UpdateDeviceShadowSynchronizationRequest) (*UpdateDeviceShadowSynchronizationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceShadowSynchronization not implemented")
+}
 func (UnimplementedGrpcGatewayServer) RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error {
 	return status.Errorf(codes.Unimplemented, "method RetrievePendingCommands not implemented")
+}
+func (UnimplementedGrpcGatewayServer) RetrieveDevicesMetadata(*RetrieveDevicesMetadataRequest, GrpcGateway_RetrieveDevicesMetadataServer) error {
+	return status.Errorf(codes.Unimplemented, "method RetrieveDevicesMetadata not implemented")
 }
 func (UnimplementedGrpcGatewayServer) mustEmbedUnimplementedGrpcGatewayServer() {}
 
@@ -420,26 +474,26 @@ func _GrpcGateway_UpdateResource_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GrpcGateway_SubscribeForEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(GrpcGatewayServer).SubscribeForEvents(&grpcGatewaySubscribeForEventsServer{stream})
+func _GrpcGateway_SubscribeToEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GrpcGatewayServer).SubscribeToEvents(&grpcGatewaySubscribeToEventsServer{stream})
 }
 
-type GrpcGateway_SubscribeForEventsServer interface {
+type GrpcGateway_SubscribeToEventsServer interface {
 	Send(*Event) error
-	Recv() (*SubscribeForEvents, error)
+	Recv() (*SubscribeToEvents, error)
 	grpc.ServerStream
 }
 
-type grpcGatewaySubscribeForEventsServer struct {
+type grpcGatewaySubscribeToEventsServer struct {
 	grpc.ServerStream
 }
 
-func (x *grpcGatewaySubscribeForEventsServer) Send(m *Event) error {
+func (x *grpcGatewaySubscribeToEventsServer) Send(m *Event) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *grpcGatewaySubscribeForEventsServer) Recv() (*SubscribeForEvents, error) {
-	m := new(SubscribeForEvents)
+func (x *grpcGatewaySubscribeToEventsServer) Recv() (*SubscribeToEvents, error) {
+	m := new(SubscribeToEvents)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -500,6 +554,24 @@ func _GrpcGateway_CreateResource_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GrpcGateway_UpdateDeviceShadowSynchronization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDeviceShadowSynchronizationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GrpcGatewayServer).UpdateDeviceShadowSynchronization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceShadowSynchronization",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GrpcGatewayServer).UpdateDeviceShadowSynchronization(ctx, req.(*UpdateDeviceShadowSynchronizationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GrpcGateway_RetrievePendingCommands_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(RetrievePendingCommandsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -518,6 +590,27 @@ type grpcGatewayRetrievePendingCommandsServer struct {
 }
 
 func (x *grpcGatewayRetrievePendingCommandsServer) Send(m *PendingCommand) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _GrpcGateway_RetrieveDevicesMetadata_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RetrieveDevicesMetadataRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GrpcGatewayServer).RetrieveDevicesMetadata(m, &grpcGatewayRetrieveDevicesMetadataServer{stream})
+}
+
+type GrpcGateway_RetrieveDevicesMetadataServer interface {
+	Send(*events.DeviceMetadataSnapshotTaken) error
+	grpc.ServerStream
+}
+
+type grpcGatewayRetrieveDevicesMetadataServer struct {
+	grpc.ServerStream
+}
+
+func (x *grpcGatewayRetrieveDevicesMetadataServer) Send(m *events.DeviceMetadataSnapshotTaken) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -545,6 +638,10 @@ var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
 			MethodName: "CreateResource",
 			Handler:    _GrpcGateway_CreateResource_Handler,
 		},
+		{
+			MethodName: "UpdateDeviceShadowSynchronization",
+			Handler:    _GrpcGateway_UpdateDeviceShadowSynchronization_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -563,14 +660,19 @@ var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "SubscribeForEvents",
-			Handler:       _GrpcGateway_SubscribeForEvents_Handler,
+			StreamName:    "SubscribeToEvents",
+			Handler:       _GrpcGateway_SubscribeToEvents_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
 		{
 			StreamName:    "RetrievePendingCommands",
 			Handler:       _GrpcGateway_RetrievePendingCommands_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "RetrieveDevicesMetadata",
+			Handler:       _GrpcGateway_RetrieveDevicesMetadata_Handler,
 			ServerStreams: true,
 		},
 	},

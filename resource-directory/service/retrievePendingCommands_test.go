@@ -24,7 +24,6 @@ import (
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
-	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
@@ -44,6 +43,8 @@ func (a sortPendingCommand) Less(i, j int) bool {
 			return v.GetResourceUpdatePending().GetResourceId().GetDeviceId() + v.GetResourceUpdatePending().GetResourceId().GetHref()
 		case v.GetResourceDeletePending() != nil:
 			return v.GetResourceDeletePending().GetResourceId().GetDeviceId() + v.GetResourceDeletePending().GetResourceId().GetHref()
+		case v.GetDeviceMetadataUpdatePending() != nil:
+			return v.GetDeviceMetadataUpdatePending().GetDeviceId()
 		}
 		return ""
 	}
@@ -71,6 +72,9 @@ func cmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCo
 		case got[idx].GetResourceDeletePending() != nil:
 			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
 			got[idx].GetResourceDeletePending().EventMetadata = nil
+		case got[idx].GetDeviceMetadataUpdatePending() != nil:
+			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
+			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
 		}
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 	}
@@ -128,6 +132,19 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 				},
 			},
 			want: []*pb.PendingCommand{
+				{
+					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
+						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
+							DeviceId: deviceID,
+							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
+								ShadowSynchronization: &commands.ShadowSynchronization{
+									Disabled: true,
+								},
+							},
+							AuditContext: commands.NewAuditContext("1", ""),
+						},
+					},
+				},
 				{
 					Command: &pb.PendingCommand_ResourceRetrievePending{
 						ResourceRetrievePending: &events.ResourceRetrievePending{
@@ -325,13 +342,36 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "filter device metadata update",
+			args: args{
+				req: &pb.RetrievePendingCommandsRequest{
+					CommandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_DEVICE_METADATA_UPDATE},
+				},
+			},
+			want: []*pb.PendingCommand{
+				{
+					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
+						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
+							DeviceId: deviceID,
+							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
+								ShadowSynchronization: &commands.ShadowSynchronization{
+									Disabled: true,
+								},
+							},
+							AuditContext: commands.NewAuditContext("1", ""),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
 	test.ClearDB(ctx, t)
-	oauthShutdown := oauthService.SetUp(t)
+	oauthShutdown := oauthTest.SetUp(t)
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdService.SetUp(t)
@@ -413,6 +453,17 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 		require.Error(t, err)
 	}
 	delete()
+	updateDeviceMetadata := func() {
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		_, err := c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
+			DeviceId: deviceID,
+			Disabled: true,
+		})
+		// action is done async we don't expect error
+		require.NoError(t, err)
+	}
+	updateDeviceMetadata()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

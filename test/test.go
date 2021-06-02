@@ -35,7 +35,6 @@ import (
 	"github.com/plgd-dev/sdk/schema/acl"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/plgd-dev/cloud/coap-gateway/schema/device/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -112,17 +111,6 @@ func init() {
 		},
 	}
 
-	TestDevsimBackendResources = []schema.ResourceLink{
-		{
-			Href:          commands.StatusHref,
-			ResourceTypes: status.ResourceTypes,
-			Interfaces:    status.Interfaces,
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-			Title: status.Title,
-		},
-	}
 }
 
 func FindResourceLink(href string) schema.ResourceLink {
@@ -282,15 +270,15 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 }
 
 func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, expectedResources []schema.ResourceLink) {
-	client, err := c.SubscribeForEvents(ctx)
+	client, err := c.SubscribeToEvents(ctx)
 	require.NoError(t, err)
 
-	err = client.Send(&pb.SubscribeForEvents{
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-				FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
-					pb.SubscribeForEvents_DevicesEventFilter_ONLINE,
+		FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+			DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+				EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
+					pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED,
 				},
 			},
 		},
@@ -315,23 +303,22 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		var endLoop bool
-		for _, ID := range ev.GetDeviceOnline().GetDeviceIds() {
-			if ID == deviceID {
-				endLoop = true
-			}
+		fmt.Printf("ev %v\n", ev)
+		if ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID && ev.GetDeviceMetadataUpdated().GetStatus().IsOnline() {
+			endLoop = true
 		}
 		if endLoop {
 			break
 		}
 	}
 
-	err = client.Send(&pb.SubscribeForEvents{
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_DeviceEvent{
-			DeviceEvent: &pb.SubscribeForEvents_DeviceEventFilter{
+		FilterBy: &pb.SubscribeToEvents_DeviceEvent{
+			DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
 				DeviceId: deviceID,
-				FilterEvents: []pb.SubscribeForEvents_DeviceEventFilter_Event{
-					pb.SubscribeForEvents_DeviceEventFilter_RESOURCE_PUBLISHED,
+				EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
+					pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED,
 				},
 			},
 		},
@@ -372,10 +359,10 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		}
 	}
 
-	err = client.Send(&pb.SubscribeForEvents{
+	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeForEvents_CancelSubscription_{
-			CancelSubscription: &pb.SubscribeForEvents_CancelSubscription{
+		FilterBy: &pb.SubscribeToEvents_CancelSubscription_{
+			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 				SubscriptionId: subOnPublishedID,
 			},
 		},
@@ -410,16 +397,16 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 	expectedEvents := ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
 	for _, e := range expectedEvents {
-		err = client.Send(&pb.SubscribeForEvents{
+		err = client.Send(&pb.SubscribeToEvents{
 			Token: "testToken",
-			FilterBy: &pb.SubscribeForEvents_ResourceEvent{
-				ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
+			FilterBy: &pb.SubscribeToEvents_ResourceEvent{
+				ResourceEvent: &pb.SubscribeToEvents_ResourceEventFilter{
 					ResourceId: &commands.ResourceId{
 						DeviceId: e.GetResourceChanged().GetResourceId().GetDeviceId(),
 						Href:     e.GetResourceChanged().GetResourceId().GetHref(),
 					},
-					FilterEvents: []pb.SubscribeForEvents_ResourceEventFilter_Event{
-						pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED,
+					EventsFilter: []pb.SubscribeToEvents_ResourceEventFilter_Event{
+						pb.SubscribeToEvents_ResourceEventFilter_CONTENT_CHANGED,
 					},
 				},
 			},
@@ -445,10 +432,10 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		//require.Equal(t, e, ev)
 		require.Equal(t, e.GetResourceChanged().GetStatus(), ev.GetResourceChanged().GetStatus())
 
-		err = client.Send(&pb.SubscribeForEvents{
+		err = client.Send(&pb.SubscribeToEvents{
 			Token: "testToken",
-			FilterBy: &pb.SubscribeForEvents_CancelSubscription_{
-				CancelSubscription: &pb.SubscribeForEvents_CancelSubscription{
+			FilterBy: &pb.SubscribeToEvents_CancelSubscription_{
+				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 					SubscriptionId: ev.GetSubscriptionId(),
 				},
 			},

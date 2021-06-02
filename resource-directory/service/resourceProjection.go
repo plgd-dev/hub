@@ -181,24 +181,6 @@ func (rp *resourceProjection) onResourceChangedLocked(ctx context.Context, do fu
 	}, rp.onResourceChangedVersion)
 }
 
-func (rp *resourceProjection) onCloudStatusChangedLocked(ctx context.Context) error {
-	log.Debugf("onCloudStatusChangedLocked %v", rp.resourceID)
-	online, err := isDeviceOnline(rp.content.GetContent())
-	if err != nil {
-		return err
-	}
-	if online {
-		return rp.subscriptions.OnDeviceOnline(ctx, DeviceIDVersion{
-			deviceID: rp.resourceID.GetDeviceId(),
-			version:  rp.onResourceChangedVersion,
-		})
-	}
-	return rp.subscriptions.OnDeviceOffline(ctx, DeviceIDVersion{
-		deviceID: rp.resourceID.GetDeviceId(),
-		version:  rp.onResourceChangedVersion,
-	})
-}
-
 func (rp *resourceProjection) onResourceUpdatedLocked(ctx context.Context, updateProcessed []*events.ResourceUpdated) error {
 	if len(updateProcessed) == 0 {
 		return nil
@@ -496,12 +478,6 @@ func (rp *resourceProjection) Handle(ctx context.Context, iter eventstore.Iter) 
 	}
 
 	if onResourceContentChanged {
-		if rp.resourceID.GetHref() == commands.StatusHref {
-			if err := rp.onCloudStatusChangedLocked(ctx); err != nil {
-				log.Errorf("cannot make action on cloud status changed: %v", err)
-			}
-		}
-
 		if err := rp.onResourceChangedLocked(ctx, rp.subscriptions.OnResourceContentChanged); err != nil {
 			log.Errorf("%v", err)
 		}

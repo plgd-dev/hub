@@ -46,14 +46,14 @@ The `RetrieveResourcesValues` command supports various filter options. If all of
 To return values of binary switch resources hosted by devices with ids `deviceID1` and `deviceID2`, following options shall be set: `RetrieveResourcesValuesRequest.device_ids_filter("[deviceID1, deviceID2]") && RetrieveResourcesValuesRequest.type_filter([oic.r.switch.binary])`.
 
 ### Subscribe to Events
-The `SubscribeForEvents` command opens the stream which content is controlled by sending messages with filter options.
+The `SubscribeToEvents` command opens the stream which content is controlled by sending messages with filter options.
 
-**To control what will be pushed to the stream, send a `SubscribeForEvents` message with option:**
+**To control what will be pushed to the stream, send a `SubscribeToEvents` message with option:**
 - `filter_by.devices_event.filter_events` set to e.g. `ONLINE` to receive **devices events** which changed their status to `ONLINE`
 - `filter_by.device_event.{device_id, filter_events}` set to e.g. `RESOURCE_PUBLISHED` to receive **device events**
 - `filter_by.device_event.{resource_id.{device_id, href}, filter_events}` set to e.g. `CONTENT_CHANGED` to receive **resource events**
 
-First event returned after the successful subscription is of type `OperationProcessed`. Property `OperationProcessed.error_status.code` contains information if the subscription was successful. If it was successful, property `subscriptionId` is set. All events belonging to single `SubscribeForEvents` request are then identified by this `subscriptionId`.
+First event returned after the successful subscription is of type `OperationProcessed`. Property `OperationProcessed.error_status.code` contains information if the subscription was successful. If it was successful, property `subscriptionId` is set. All events belonging to single `SubscribeToEvents` request are then identified by this `subscriptionId`.
 
 
 If user losts a device _(unregistered / no more shared with the user)_, the client receives an event `SubscriptionCanceled` with corresponding `subscriptionId`.

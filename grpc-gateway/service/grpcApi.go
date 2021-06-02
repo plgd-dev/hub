@@ -109,10 +109,10 @@ func NewRequestHandler(
 	}
 }
 
-func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEventsServer) (errRet error) {
+func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsServer) (errRet error) {
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
-	rd, err := r.resourceDirectoryClient.SubscribeForEvents(ctx)
+	rd, err := r.resourceDirectoryClient.SubscribeToEvents(ctx)
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err))
 	}

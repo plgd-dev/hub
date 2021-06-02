@@ -184,15 +184,18 @@ func NewRequestHandler(
 
 func NewEventStoreModelFactory(subscriptions *Subscriptions, updateNotificationContainer *notification.UpdateNotificationContainer, retrieveNotificationContainer *notification.RetrieveNotificationContainer, deleteNotificationContainer *notification.DeleteNotificationContainer, createNotificationContainer *notification.CreateNotificationContainer) func(context.Context, string, string) (eventstore.Model, error) {
 	return func(ctx context.Context, deviceID, resourceID string) (eventstore.Model, error) {
-		if commands.MakeLinksResourceUUID(deviceID) == resourceID {
+		switch resourceID {
+		case commands.MakeLinksResourceUUID(deviceID):
 			return NewResourceLinksProjection(subscriptions), nil
+		case commands.MakeStatusResourceUUID(deviceID):
+			return NewDeviceMetadataProjection(subscriptions), nil
 		}
 		return NewResourceProjection(subscriptions, updateNotificationContainer, retrieveNotificationContainer, deleteNotificationContainer, createNotificationContainer), nil
 	}
 }
 
-func (r *RequestHandler) SubscribeForEvents(srv pb.GrpcGateway_SubscribeForEventsServer) error {
-	err := r.subscriptions.SubscribeForEvents(r.resourceProjection, srv)
+func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsServer) error {
+	err := r.subscriptions.SubscribeToEvents(r.resourceProjection, srv)
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err))
 	}

@@ -13,6 +13,7 @@ message RetrievePendingCommandsRequest {
       RESOURCE_RETRIEVE = 1;
       RESOURCE_UPDATE = 2;
       RESOURCE_DELETE = 3;
+      DEVICE_METADATA_UPDATE = 4;
     }
     repeated Command commands_filter = 1;
     repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 2;
@@ -26,5 +27,6 @@ message PendingCommand {
         ocf.cloud.resourceaggregate.pb.ResourceRetrievePending resource_retrieve_pending = 2;
         ocf.cloud.resourceaggregate.pb.ResourceUpdatePending resource_update_pending = 3;
         ocf.cloud.resourceaggregate.pb.ResourceDeletePending resource_delete_pending = 4;
+        ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdatePending device_metadata_update_pending = 5;
     }
 }

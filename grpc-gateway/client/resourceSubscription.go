@@ -44,7 +44,7 @@ type ResourceContentChangedHandler = interface {
 
 // ResourceSubscription subscription.
 type ResourceSubscription struct {
-	client                        pb.GrpcGateway_SubscribeForEventsClient
+	client                        pb.GrpcGateway_SubscribeToEventsClient
 	subscriptionID                string
 	closeErrorHandler             SubscriptionHandler
 	resourceContentChangedHandler ResourceContentChangedHandler
@@ -63,25 +63,25 @@ func (c *Client) NewResourceSubscription(ctx context.Context, resourceID *comman
 // JWT token must be stored in context for grpc call.
 func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceId, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*ResourceSubscription, error) {
 	var resourceContentChangedHandler ResourceContentChangedHandler
-	filterEvents := make([]pb.SubscribeForEvents_ResourceEventFilter_Event, 0, 1)
+	filterEvents := make([]pb.SubscribeToEvents_ResourceEventFilter_Event, 0, 1)
 	if v, ok := handle.(ResourceContentChangedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeForEvents_ResourceEventFilter_CONTENT_CHANGED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_ResourceEventFilter_CONTENT_CHANGED)
 		resourceContentChangedHandler = v
 	}
 
 	if resourceContentChangedHandler == nil {
 		return nil, fmt.Errorf("invalid handler - it's supports: ResourceContentChangedHandler")
 	}
-	client, err := gwClient.SubscribeForEvents(ctx)
+	client, err := gwClient.SubscribeToEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	err = client.Send(&pb.SubscribeForEvents{
-		FilterBy: &pb.SubscribeForEvents_ResourceEvent{
-			ResourceEvent: &pb.SubscribeForEvents_ResourceEventFilter{
+	err = client.Send(&pb.SubscribeToEvents{
+		FilterBy: &pb.SubscribeToEvents_ResourceEvent{
+			ResourceEvent: &pb.SubscribeToEvents_ResourceEventFilter{
 				ResourceId:   resourceID,
-				FilterEvents: filterEvents,
+				EventsFilter: filterEvents,
 			},
 		},
 	})

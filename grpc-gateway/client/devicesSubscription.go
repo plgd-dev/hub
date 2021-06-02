@@ -8,16 +8,12 @@ import (
 	"sync/atomic"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-// DeviceOnlineHandler handler of events.
-type DeviceOnlineHandler = interface {
-	HandleDeviceOnline(ctx context.Context, val *pb.Event_DeviceOnline) error
-}
-
-// DeviceOfflineHandler handler of events.
-type DeviceOfflineHandler = interface {
-	HandleDeviceOffline(ctx context.Context, val *pb.Event_DeviceOffline) error
+// DeviceMetadataUpdatedHandler handler of events.
+type DeviceMetadataUpdatedHandler = interface {
+	HandleDeviceMetadataUpdated(ctx context.Context, val *events.DeviceMetadataUpdated) error
 }
 
 // DeviceRegisteredHandler handler of events.
@@ -32,13 +28,12 @@ type DeviceUnregisteredHandler = interface {
 
 // DevicesSubscription subscription.
 type DevicesSubscription struct {
-	client                    pb.GrpcGateway_SubscribeForEventsClient
-	subscriptionID            string
-	deviceOnlineHandler       DeviceOnlineHandler
-	deviceOfflineHandler      DeviceOfflineHandler
-	deviceRegisteredHandler   DeviceRegisteredHandler
-	deviceUnregisteredHandler DeviceUnregisteredHandler
-	closeErrorHandler         SubscriptionHandler
+	client                       pb.GrpcGateway_SubscribeToEventsClient
+	subscriptionID               string
+	deviceMetadataUpdatedHandler DeviceMetadataUpdatedHandler
+	deviceRegisteredHandler      DeviceRegisteredHandler
+	deviceUnregisteredHandler    DeviceUnregisteredHandler
+	closeErrorHandler            SubscriptionHandler
 
 	wait     func()
 	canceled uint32
@@ -53,40 +48,35 @@ func (c *Client) NewDevicesSubscription(ctx context.Context, handle Subscription
 // NewDevicesSubscription creates new devices subscriptions to listen events: device online, device offline, device registered, device unregistered.
 // JWT token must be stored in context for grpc call.
 func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*DevicesSubscription, error) {
-	var deviceOnlineHandler DeviceOnlineHandler
-	var deviceOfflineHandler DeviceOfflineHandler
+	var deviceMetadataUpdatedHandler DeviceMetadataUpdatedHandler
 	var deviceRegisteredHandler DeviceRegisteredHandler
 	var deviceUnregisteredHandler DeviceUnregisteredHandler
-	filterEvents := make([]pb.SubscribeForEvents_DevicesEventFilter_Event, 0, 1)
-	if v, ok := handle.(DeviceOnlineHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeForEvents_DevicesEventFilter_ONLINE)
-		deviceOnlineHandler = v
-	}
-	if v, ok := handle.(DeviceOfflineHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE)
-		deviceOfflineHandler = v
+	filterEvents := make([]pb.SubscribeToEvents_DevicesEventFilter_Event, 0, 1)
+	if v, ok := handle.(DeviceMetadataUpdatedHandler); ok {
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_DevicesEventFilter_Event(pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED))
+		deviceMetadataUpdatedHandler = v
 	}
 	if v, ok := handle.(DeviceRegisteredHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeForEvents_DevicesEventFilter_REGISTERED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_DevicesEventFilter_REGISTERED)
 		deviceRegisteredHandler = v
 	}
 	if v, ok := handle.(DeviceUnregisteredHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED)
 		deviceUnregisteredHandler = v
 	}
 
-	if deviceOnlineHandler == nil && deviceOfflineHandler == nil && deviceRegisteredHandler == nil && deviceUnregisteredHandler == nil {
-		return nil, fmt.Errorf("invalid handler - it's supports: DeviceOnlineHandler, DeviceOfflineHandler, DeviceRegisteredHandler, DeviceUnregisteredHandler")
+	if deviceMetadataUpdatedHandler == nil && deviceRegisteredHandler == nil && deviceUnregisteredHandler == nil {
+		return nil, fmt.Errorf("invalid handler - it's supports: DeviceMetadataUpdatedHandler, DeviceRegisteredHandler, DeviceUnregisteredHandler")
 	}
-	client, err := gwClient.SubscribeForEvents(ctx)
+	client, err := gwClient.SubscribeToEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	err = client.Send(&pb.SubscribeForEvents{
-		FilterBy: &pb.SubscribeForEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
-				FilterEvents: filterEvents,
+	err = client.Send(&pb.SubscribeToEvents{
+		FilterBy: &pb.SubscribeToEvents_DevicesEvent{
+			DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+				EventsFilter: filterEvents,
 			},
 		},
 	})
@@ -107,14 +97,13 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 
 	var wg sync.WaitGroup
 	sub := &DevicesSubscription{
-		client:                    client,
-		closeErrorHandler:         closeErrorHandler,
-		subscriptionID:            ev.GetSubscriptionId(),
-		deviceOnlineHandler:       deviceOnlineHandler,
-		deviceOfflineHandler:      deviceOfflineHandler,
-		deviceRegisteredHandler:   deviceRegisteredHandler,
-		deviceUnregisteredHandler: deviceUnregisteredHandler,
-		wait:                      wg.Wait,
+		client:                       client,
+		closeErrorHandler:            closeErrorHandler,
+		subscriptionID:               ev.GetSubscriptionId(),
+		deviceMetadataUpdatedHandler: deviceMetadataUpdatedHandler,
+		deviceRegisteredHandler:      deviceRegisteredHandler,
+		deviceUnregisteredHandler:    deviceUnregisteredHandler,
+		wait:                         wg.Wait,
 	}
 	wg.Add(1)
 	go func() {
@@ -166,15 +155,8 @@ func (s *DevicesSubscription) runRecv() {
 			return
 		}
 
-		if ct := ev.GetDeviceOnline(); ct != nil {
-			err = s.deviceOnlineHandler.HandleDeviceOnline(s.client.Context(), ct)
-			if err != nil {
-				s.Cancel()
-				s.closeErrorHandler.Error(err)
-				return
-			}
-		} else if ct := ev.GetDeviceOffline(); ct != nil {
-			err = s.deviceOfflineHandler.HandleDeviceOffline(s.client.Context(), ct)
+		if ct := ev.GetDeviceMetadataUpdated(); ct != nil {
+			err = s.deviceMetadataUpdatedHandler.HandleDeviceMetadataUpdated(s.client.Context(), ct)
 			if err != nil {
 				s.Cancel()
 				s.closeErrorHandler.Error(err)

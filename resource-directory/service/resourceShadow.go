@@ -26,10 +26,11 @@ func toResourceValue(resource *Resource) *pb.ResourceValue {
 type commandsFilterBitmask int
 
 const (
-	commandsFilterBitmaskCreate   commandsFilterBitmask = 1
-	commandsFilterBitmaskRetrieve commandsFilterBitmask = 2
-	commandsFilterBitmaskUpdate   commandsFilterBitmask = 4
-	commandsFilterBitmaskDelete   commandsFilterBitmask = 8
+	commandsFilterBitmaskCreate               commandsFilterBitmask = 1
+	commandsFilterBitmaskRetrieve             commandsFilterBitmask = 2
+	commandsFilterBitmaskUpdate               commandsFilterBitmask = 4
+	commandsFilterBitmaskDelete               commandsFilterBitmask = 8
+	commandsFilterBitmaskDeviceMetadataUpdate commandsFilterBitmask = 16
 )
 
 func filterPendingCommandToBitmask(f pb.RetrievePendingCommandsRequest_Command) commandsFilterBitmask {
@@ -43,6 +44,8 @@ func filterPendingCommandToBitmask(f pb.RetrievePendingCommandsRequest_Command) 
 		bitmask |= commandsFilterBitmaskUpdate
 	case pb.RetrievePendingCommandsRequest_RESOURCE_DELETE:
 		bitmask |= commandsFilterBitmaskDelete
+	case pb.RetrievePendingCommandsRequest_DEVICE_METADATA_UPDATE:
+		bitmask |= commandsFilterBitmaskDeviceMetadataUpdate
 	}
 	return bitmask
 }
@@ -50,7 +53,7 @@ func filterPendingCommandToBitmask(f pb.RetrievePendingCommandsRequest_Command) 
 func filterPendingsCommandsToBitmask(commandsFilter []pb.RetrievePendingCommandsRequest_Command) commandsFilterBitmask {
 	bitmask := commandsFilterBitmask(0)
 	if len(commandsFilter) == 0 {
-		bitmask = commandsFilterBitmaskCreate | commandsFilterBitmaskRetrieve | commandsFilterBitmaskUpdate | commandsFilterBitmaskDelete
+		bitmask = commandsFilterBitmaskCreate | commandsFilterBitmaskRetrieve | commandsFilterBitmaskUpdate | commandsFilterBitmaskDelete | commandsFilterBitmaskDeviceMetadataUpdate
 	} else {
 		for _, f := range commandsFilter {
 			bitmask |= filterPendingCommandToBitmask(f)
@@ -169,11 +172,31 @@ func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValue
 }
 
 func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommandsRequest, srv pb.GrpcGateway_RetrievePendingCommandsServer) error {
+	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandsFilter())
+	if filterCmds&commandsFilterBitmaskDeviceMetadataUpdate > 0 && len(req.GetResourceIdsFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
+		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdsFilter())
+		devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
+		if err != nil {
+			return err
+		}
+		for _, deviceMetadata := range devicesMetadata {
+			for _, pendingCmd := range deviceMetadata.GetUpdatePendings() {
+				err = srv.Send(&pb.PendingCommand{
+					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
+						DeviceMetadataUpdatePending: pendingCmd,
+					},
+				})
+				if err != nil {
+					return status.Errorf(codes.Canceled, "cannot send device metadata update pending command %v: %v", pendingCmd, err)
+				}
+			}
+		}
+	}
+
 	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
 	}
-	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandsFilter())
 
 	for _, deviceResources := range resources {
 		for _, resource := range deviceResources {
@@ -183,6 +206,21 @@ func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommand
 					return status.Errorf(codes.Canceled, "cannot send pending command %v: %v", pendingCmd, err)
 				}
 			}
+		}
+	}
+	return nil
+}
+
+func (rd *ResourceShadow) RetrieveDevicesMetadata(req *pb.RetrieveDevicesMetadataRequest, srv pb.GrpcGateway_RetrieveDevicesMetadataServer) error {
+	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
+	devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
+	if err != nil {
+		return err
+	}
+	for _, deviceMetadata := range devicesMetadata {
+		err = srv.Send(deviceMetadata)
+		if err != nil {
+			return status.Errorf(codes.Canceled, "cannot send devices metadata %v: %v", deviceMetadata, err)
 		}
 	}
 	return nil
