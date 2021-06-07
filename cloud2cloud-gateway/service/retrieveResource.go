@@ -5,19 +5,18 @@ import (
 	"fmt"
 	"net/http"
 
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID commands.ResourceId, encoder responseWriterEncoderFunc) (int, error) {
-	allResources, err := rh.RetrieveResourcesValues(ctx, []*commands.ResourceId{&resourceID}, nil)
+	allResources, err := rh.RetrieveResources(ctx, []*commands.ResourceId{&resourceID}, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), err
 	}
 
 	for _, v := range allResources {
-		if v[0].Status != pbGRPC.Status_OK {
+		if v[0].Status != commands.Status_OK {
 			return statusToHttpStatus(v[0].Status), fmt.Errorf("device returns unexpected code %v", v[0].Status)
 		}
 

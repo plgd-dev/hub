@@ -25,7 +25,7 @@ func (r *RequestHandler) RetrieveDevicesMetadata(req *pb.RetrieveDevicesMetadata
 		}
 		err = srv.Send(resp)
 		if err != nil {
-			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send devices metadata: %v", err))
+			return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot send devices metadata('%v'): %v", resp, err))
 		}
 	}
 	return nil

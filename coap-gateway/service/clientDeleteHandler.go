@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -45,7 +43,7 @@ func clientDeleteHandler(req *mux.Message, client *Client) {
 	client.sendResponse(code, req.Token, mediaType, content.Data)
 }
 
-func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*pbGRPC.Content, error) {
+func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, href, userID string) (*commands.Content, error) {
 	deleteCommand, err := coapconv.NewDeleteResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
 		return nil, err
@@ -55,6 +53,9 @@ func clientDeleteResourceHandler(req *mux.Message, client *Client, deviceID, hre
 	if err != nil {
 		return nil, err
 	}
-	resp, err := pb.RAResourceDeletedEventToResponse(deletedCommand)
-	return resp.GetContent(), nil
+	content, err := commands.EventContentToContent(deletedCommand)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
 }

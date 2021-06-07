@@ -68,12 +68,29 @@ type devicesOnlineHandler struct {
 	h *devicesSubsciptionHandler
 }
 
+func isOnline(val *raEvents.DeviceMetadataUpdated) bool {
+	if val.GetStatus() == nil {
+		return false
+	}
+	return val.GetStatus().IsOnline()
+}
+
 func (h *devicesOnlineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
+	if !isOnline(val) {
+		return nil
+	}
 	return h.h.HandleDeviceMetadataUpdated(ctx, val)
 }
 
 type devicesOfflineHandler struct {
 	h *devicesSubsciptionHandler
+}
+
+func (h *devicesOfflineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
+	if isOnline(val) {
+		return nil
+	}
+	return h.h.HandleDeviceMetadataUpdated(ctx, val)
 }
 
 type devicesOnlineOfflineHandler struct {
@@ -117,6 +134,9 @@ type devicesRegisteredOnlineHandler struct {
 }
 
 func (h *devicesRegisteredOnlineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
+	if !isOnline(val) {
+		return nil
+	}
 	return h.h.HandleDeviceMetadataUpdated(ctx, val)
 }
 
@@ -137,6 +157,9 @@ type devicesUnregisteredOnlineHandler struct {
 }
 
 func (h *devicesUnregisteredOnlineHandler) HandleDeviceOnline(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
+	if !isOnline(val) {
+		return nil
+	}
 	return h.h.HandleDeviceMetadataUpdated(ctx, val)
 }
 
@@ -201,5 +224,8 @@ func (h *devicesRegisteredUnregisteredOnlineHandler) HandleDeviceUnregistered(ct
 }
 
 func (h *devicesRegisteredUnregisteredOnlineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
+	if !isOnline(val) {
+		return nil
+	}
 	return h.h.HandleDeviceMetadataUpdated(ctx, val)
 }

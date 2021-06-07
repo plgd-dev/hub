@@ -448,8 +448,10 @@ message ConnectionStatus {
 // ┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐
 // │OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│
 // └──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘
-message ShadowSynchronization {
-    bool disabled = 1;
+enum ShadowSynchronization {
+    UNSET = 0;
+    ENABLED = 1;
+    DISABLED = 2;
 }
 
 message UpdateDeviceMetadataRequest {

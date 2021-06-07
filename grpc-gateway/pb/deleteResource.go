@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"google.golang.org/grpc/peer"
 )
 
@@ -25,16 +24,5 @@ func (req *DeleteResourceRequest) ToRACommand(ctx context.Context) (*commands.De
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,
 		},
-	}, nil
-}
-
-func RAResourceDeletedEventToResponse(e *events.ResourceDeleted) (*DeleteResourceResponse, error) {
-	content, err := EventContentToContent(e)
-	if err != nil {
-		return nil, err
-	}
-	return &DeleteResourceResponse{
-		Content: content,
-		Status:  RAStatus2Status(e.GetStatus()),
 	}, nil
 }

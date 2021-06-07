@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/sdk/schema/maintenance"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,7 +56,7 @@ func (c *Client) updateMaintenanceResource(
 	defer it.Close()
 	var found bool
 	for {
-		var v pb.ResourceLink
+		var v commands.Resource
 		if !it.Next(&v) {
 			break
 		}

@@ -43,33 +43,29 @@ func (e *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 	return true
 }
 
-func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated) error {
+func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) error {
 	e.DeviceId = upd.GetDeviceId()
-	switch {
-	case upd.GetStatus() != nil:
-		e.Status = upd
-	case upd.GetShadowSynchronization() != nil:
-		index := -1
-		for i, event := range e.GetUpdatePendings() {
-			if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
-				index = i
-				break
-			}
+	index := -1
+	for i, event := range e.GetUpdatePendings() {
+		if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
+			index = i
+			break
 		}
-		if index < 0 {
-			return status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
-		}
-		e.UpdatePendings = append(e.UpdatePendings[:index], e.UpdatePendings[index+1:]...)
-		e.ShadowSynchronization = upd
 	}
+	if confirm && index < 0 {
+		return status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
+	}
+	if index >= 0 {
+		e.UpdatePendings = append(e.UpdatePendings[:index], e.UpdatePendings[index+1:]...)
+	}
+	e.DeviceMetadataUpdated = upd
 	e.EventMetadata = upd.GetEventMetadata()
 	return nil
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) error {
 	e.DeviceId = s.GetDeviceId()
-	e.ShadowSynchronization = s.GetShadowSynchronization()
-	e.Status = s.GetStatus()
+	e.DeviceMetadataUpdated = s.GetDeviceMetadataUpdated()
 	e.EventMetadata = s.GetEventMetadata()
 	return nil
 }
@@ -109,7 +105,7 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleDeviceMetadataUpdated(ctx, &s); err != nil {
+			if err := e.HandleDeviceMetadataUpdated(ctx, &s, false); err != nil {
 				return err
 			}
 		case (&DeviceMetadataUpdatePending{}).EventType():
@@ -143,19 +139,18 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		case req.GetStatus() != nil:
 			// it is expected that the device updates the status on its own. no confirmation needed.
 			ev := DeviceMetadataUpdated{
-				DeviceId: req.GetDeviceId(),
-				Updated: &DeviceMetadataUpdated_Status{
-					Status: req.GetStatus(),
-				},
-				AuditContext:  ac,
-				EventMetadata: em,
+				DeviceId:              req.GetDeviceId(),
+				Status:                req.GetStatus(),
+				ShadowSynchronization: e.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+				AuditContext:          ac,
+				EventMetadata:         em,
 			}
-			err := e.HandleDeviceMetadataUpdated(ctx, &ev)
+			err := e.HandleDeviceMetadataUpdated(ctx, &ev, false)
 			if err != nil {
 				return nil, err
 			}
 			return []eventstore.Event{&ev}, nil
-		case req.GetShadowSynchronization() != nil:
+		case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
 			ev := DeviceMetadataUpdatePending{
 				DeviceId: req.GetDeviceId(),
 				UpdatePending: &DeviceMetadataUpdatePending_ShadowSynchronization{
@@ -180,16 +175,15 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
 		switch {
-		case req.GetShadowSynchronization() != nil:
+		case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
 			ev := DeviceMetadataUpdated{
-				DeviceId: req.GetDeviceId(),
-				Updated: &DeviceMetadataUpdated_ShadowSynchronization{
-					ShadowSynchronization: req.GetShadowSynchronization(),
-				},
-				AuditContext:  ac,
-				EventMetadata: em,
+				DeviceId:              req.GetDeviceId(),
+				Status:                e.GetDeviceMetadataUpdated().GetStatus(),
+				ShadowSynchronization: req.GetShadowSynchronization(),
+				AuditContext:          ac,
+				EventMetadata:         em,
 			}
-			err := e.HandleDeviceMetadataUpdated(ctx, &ev)
+			err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
 			if err != nil {
 				return nil, err
 			}
@@ -207,8 +201,7 @@ func (e *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.E
 	return &DeviceMetadataSnapshotTaken{
 		DeviceId:              e.GetDeviceId(),
 		EventMetadata:         e.GetEventMetadata(),
-		Status:                e.GetStatus(),
-		ShadowSynchronization: e.GetShadowSynchronization(),
+		DeviceMetadataUpdated: e.GetDeviceMetadataUpdated(),
 	}, true
 }
 

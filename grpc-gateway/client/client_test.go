@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -82,18 +83,24 @@ func (h *gatewayHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGatewa
 }
 
 func (h *gatewayHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	err := srv.Send(&pb.ResourceLink{Href: "excluded", Types: []string{schema.DeviceResourceType}, DeviceId: h.deviceID})
-	if err != nil {
-		return status.Errorf(status.Convert(err).Code(), "sending failed: %v", err)
-	}
-	err = srv.Send(&pb.ResourceLink{Href: TestHref, Types: []string{"x.com.test.type"}, DeviceId: h.deviceID})
+	err := srv.Send(&events.ResourceLinksPublished{
+		DeviceId: h.deviceID,
+		Resources: []*commands.Resource{
+			{
+				Href: "excluded", ResourceTypes: []string{schema.DeviceResourceType}, DeviceId: h.deviceID,
+			},
+			{
+				Href: TestHref, ResourceTypes: []string{"x.com.test.type"}, DeviceId: h.deviceID,
+			},
+		},
+	})
 	if err != nil {
 		return status.Errorf(status.Convert(err).Code(), "sending failed: %v", err)
 	}
 	return nil
 }
 
-func (h *gatewayHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
+func (h *gatewayHandler) RetrieveResources(req *pb.RetrieveResourcesRequest, srv pb.GrpcGateway_RetrieveResourcesServer) error {
 	err := sendResourceValue(srv, h.deviceID, schema.DeviceResourceType, schema.Device{
 		ID:   h.deviceID,
 		Name: h.deviceName,
@@ -107,7 +114,7 @@ func (h *gatewayHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValues
 	return nil
 }
 
-func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceRequest) (*pb.UpdateResourceResponse, error) {
+func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceRequest) (*events.ResourceUpdated, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
@@ -115,23 +122,25 @@ func (h *gatewayHandler) SubscribeToEvents(pb.GrpcGateway_SubscribeToEventsServe
 	return status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func (h *gatewayHandler) RetrieveResourceFromDevice(context.Context, *pb.RetrieveResourceFromDeviceRequest) (*pb.RetrieveResourceFromDeviceResponse, error) {
+func (h *gatewayHandler) RetrieveResourceFromDevice(context.Context, *pb.RetrieveResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func (h *gatewayHandler) DeleteResource(context.Context, *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
+func (h *gatewayHandler) DeleteResource(context.Context, *pb.DeleteResourceRequest) (*events.ResourceDeleted, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func sendResourceValue(srv pb.GrpcGateway_RetrieveResourcesValuesServer, deviceId, resourceType string, v interface{}) error {
+func sendResourceValue(srv pb.GrpcGateway_RetrieveResourcesServer, deviceId, resourceType string, v interface{}) error {
 	c, err := cbor.Encode(v)
 	if err != nil {
 		return status.Errorf(codes.Internal, "%v", err)
 	}
-	rv := pb.ResourceValue{
-		ResourceId: &commands.ResourceId{DeviceId: deviceId},
-		Types:      []string{resourceType},
-		Content:    &pb.Content{ContentType: message.AppCBOR.String(), Data: c},
+	rv := pb.Resource{
+		Data: &events.ResourceChanged{
+			ResourceId: &commands.ResourceId{DeviceId: deviceId},
+			Content:    &commands.Content{ContentType: message.AppCBOR.String(), Data: c},
+		},
+		Types: []string{resourceType},
 	}
 	err = srv.Send(&rv)
 	if err != nil {

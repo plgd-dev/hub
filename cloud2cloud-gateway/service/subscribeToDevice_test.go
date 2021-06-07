@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	router "github.com/gorilla/mux"
 	"github.com/kelseyhightower/envconfig"
@@ -18,6 +19,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -37,7 +39,7 @@ func TestRequestHandler_SubscribeToDevice(t *testing.T) {
 	wantContentType := message.AppJSON.String()
 	wantContent := true
 	wantEventType := events.EventType_ResourcesPublished
-	wantEventContent := test.ResourceLinksToPb(deviceID, test.TestDevsimResources)
+	wantEventContent := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
 	eventType := events.EventType_ResourcesPublished
 	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/subscriptions"
 	accept := message.AppJSON.String()
@@ -86,14 +88,15 @@ func TestRequestHandler_SubscribeToDevice(t *testing.T) {
 			var v schema.ResourceLinks
 			err = json.Decode(buf, &v)
 			assert.NoError(t, err)
-			links := make([]*pb.ResourceLink, 0, 32)
+			links := make([]*commands.Resource, 0)
 			for _, l := range v {
-				pl := pb.SchemaResourceLinkToProto(l)
+				pl := commands.SchemaResourceLinkToResource(l, time.Time{})
 				pl.Href = "/" + strings.Join(strings.Split(pl.GetHref(), "/")[2:], "/")
-				links = append(links, &pl)
+				links = append(links, pl)
 			}
+			test.CleanUpResourcesArray(links)
 
-			assert.Equal(t, test.SortResources(wantEventContent), test.SortResources(links))
+			assert.Equal(t, wantEventContent, links)
 			w.WriteHeader(http.StatusOK)
 			eventsServer.Close()
 		})).Methods("POST")

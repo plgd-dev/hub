@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ type RetrieveDeviceWithLinksResponse struct {
 	Links []schema.ResourceLink `json:"links,omitempty"`
 }
 
-func toResourceLinks(s []*pb.ResourceLink) []schema.ResourceLink {
+func toResourceLinks(s []*commands.Resource) []schema.ResourceLink {
 	r := make([]schema.ResourceLink, 0, 16)
 	for _, v := range s {
 		r = append(r, v.ToSchema())

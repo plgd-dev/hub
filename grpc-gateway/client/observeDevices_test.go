@@ -32,32 +32,34 @@ func TestObserveDevices(t *testing.T) {
 		c.StopObservingDevices(ctx, id)
 	}()
 
-	res := <-h.res
+	var res client.DevicesObservationEvent
+
+	select {
+	case res = <-h.res:
+	case <-ctx.Done():
+		require.NoError(t, fmt.Errorf("timeout"))
+	}
 	require.Equal(t, client.DevicesObservationEvent{
 		DeviceIDs: []string{deviceID},
 		Event:     client.DevicesObservationEvent_REGISTERED,
 	}, res)
 
-	res = <-h.res
-	require.Equal(t, client.DevicesObservationEvent{
-		DeviceIDs: nil,
-		Event:     client.DevicesObservationEvent_UNREGISTERED,
-	}, res)
-
-	res = <-h.res
+	select {
+	case res = <-h.res:
+	case <-ctx.Done():
+		require.NoError(t, fmt.Errorf("timeout"))
+	}
 	require.Equal(t, client.DevicesObservationEvent{
 		DeviceIDs: []string{deviceID},
 		Event:     client.DevicesObservationEvent_ONLINE,
 	}, res)
 
-	res = <-h.res
-	require.Equal(t, client.DevicesObservationEvent{
-		DeviceIDs: nil,
-		Event:     client.DevicesObservationEvent_OFFLINE,
-	}, res)
-
 	shutdownDevSim()
-	res = <-h.res
+	select {
+	case res = <-h.res:
+	case <-ctx.Done():
+		require.NoError(t, fmt.Errorf("timeout"))
+	}
 	require.True(t, res.Event == client.DevicesObservationEvent_OFFLINE || res.Event == client.DevicesObservationEvent_UNREGISTERED)
 	require.Equal(t, client.DevicesObservationEvent{
 		DeviceIDs: []string{deviceID},

@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -56,14 +55,14 @@ func (requestHandler *RequestHandler) createResource(w http.ResponseWriter, r *h
 		writeError(w, fmt.Errorf("cannot create resource: %w", err))
 		return
 	}
-	resp, err := pb.RAResourceCreatedEventToResponse(createdEvent)
+	content, err := commands.EventContentToContent(createdEvent)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot create resource: %w", err))
 		return
 	}
 
 	var respBody interface{}
-	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, resp.GetContent().GetContentType(), resp.GetContent().GetData(), &respBody)
+	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, content.GetContentType(), content.GetData(), &respBody)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot decode response of created resource: %w", err))
 		return

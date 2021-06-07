@@ -16,12 +16,12 @@ import (
 
 // ResourcePublishedHandler handler of events.
 type ResourcePublishedHandler = interface {
-	HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error
+	HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error
 }
 
 // ResourceUnpublishedHandler handler of events.
 type ResourceUnpublishedHandler = interface {
-	HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error
+	HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error
 }
 
 // ResourceUpdatePendingHandler handler of events
@@ -143,14 +143,14 @@ type deviceSub struct {
 	ResourceCreatedHandler
 }
 
-func (s *deviceSub) HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error {
+func (s *deviceSub) HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error {
 	if s.ResourcePublishedHandler == nil {
 		return fmt.Errorf("ResourcePublishedHandler in not supported")
 	}
 	return s.ResourcePublishedHandler.HandleResourcePublished(ctx, val)
 }
 
-func (s *deviceSub) HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error {
+func (s *deviceSub) HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error {
 	if s.ResourceUnpublishedHandler == nil {
 		return fmt.Errorf("ResourceUnpublishedHandler in not supported")
 	}
@@ -240,45 +240,45 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 	var resourceDeletedHandler ResourceDeletedHandler
 	var resourceCreatePendingHandler ResourceCreatePendingHandler
 	var resourceCreatedHandler ResourceCreatedHandler
-	filterEvents := make([]pb.SubscribeToEvents_DeviceEventFilter_Event, 0, 1)
+	filterEvents := make([]pb.SubscribeToEvents_CreateSubscription_Event, 0, 1)
 	if v, ok := handle.(ResourcePublishedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED)
 		resourcePublishedHandler = v
 	}
 	if v, ok := handle.(ResourceUnpublishedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED)
 		resourceUnpublishedHandler = v
 	}
 	if v, ok := handle.(ResourceUpdatePendingHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING)
 		resourceUpdatePendingHandler = v
 	}
 	if v, ok := handle.(ResourceUpdatedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED)
 		resourceUpdatedHandler = v
 	}
 	if v, ok := handle.(ResourceRetrievePendingHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING)
 		resourceRetrievePendingHandler = v
 	}
 	if v, ok := handle.(ResourceRetrievedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED)
 		resourceRetrievedHandler = v
 	}
 	if v, ok := handle.(ResourceDeletePendingHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_DELETE_PENDING)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING)
 		resourceDeletePendingHandler = v
 	}
 	if v, ok := handle.(ResourceDeletedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_DELETED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETED)
 		resourceDeletedHandler = v
 	}
 	if v, ok := handle.(ResourceCreatePendingHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_CREATE_PENDING)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING)
 		resourceCreatePendingHandler = v
 	}
 	if v, ok := handle.(ResourceCreatedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_CREATED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATED)
 		resourceCreatedHandler = v
 	}
 
@@ -315,10 +315,10 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 	})
 
 	ev, err := s.doOp(ctx, &pb.SubscribeToEvents{
-		FilterBy: &pb.SubscribeToEvents_DeviceEvent{
-			DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
-				DeviceId:     deviceID,
-				EventsFilter: filterEvents,
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				DeviceIdsFilter: []string{deviceID},
+				EventsFilter:    filterEvents,
 			},
 		},
 		Token: token.String(),
@@ -337,7 +337,7 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 			return fmt.Errorf("cannot generate token for cancellation")
 		}
 		_, err = s.doOp(ctx, &pb.SubscribeToEvents{
-			FilterBy: &pb.SubscribeToEvents_CancelSubscription_{
+			Action: &pb.SubscribeToEvents_CancelSubscription_{
 				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 					SubscriptionId: ev.GetSubscriptionId(),
 				},
@@ -375,7 +375,7 @@ func (s *DeviceSubscriptions) Cancel() (wait func(), err error) {
 
 func (s *DeviceSubscriptions) cancelSubscription(subID string) error {
 	return s.send(&pb.SubscribeToEvents{
-		FilterBy: &pb.SubscribeToEvents_CancelSubscription_{
+		Action: &pb.SubscribeToEvents_CancelSubscription_{
 			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 				SubscriptionId: subID,
 			},
@@ -388,7 +388,7 @@ func (s *DeviceSubscriptions) getHandler(ev *pb.Event) *deviceSub {
 	if !ok {
 		s.errFunc(fmt.Errorf("invalid event from subscription - ID: %v, Token: %v, Type %T", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType()))
 		err := s.send(&pb.SubscribeToEvents{
-			FilterBy: &pb.SubscribeToEvents_CancelSubscription_{
+			Action: &pb.SubscribeToEvents_CancelSubscription_{
 				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 					SubscriptionId: ev.GetSubscriptionId(),
 				},

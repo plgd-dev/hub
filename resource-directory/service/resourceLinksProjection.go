@@ -8,69 +8,64 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
-
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 )
 
 type resourceLinksProjection struct {
-	lock      sync.Mutex
-	deviceID  string
-	resources map[string]*commands.Resource
-	version   uint64
-
+	lock          sync.Mutex
+	snapshot      *events.ResourceLinksSnapshotTaken
 	subscriptions *Subscriptions
 }
 
 func NewResourceLinksProjection(subscriptions *Subscriptions) eventstore.Model {
 	return &resourceLinksProjection{
-		resources:     make(map[string]*commands.Resource),
 		subscriptions: subscriptions,
 	}
 }
 
 func (rlp *resourceLinksProjection) Clone() *resourceLinksProjection {
+	var snapshot *events.ResourceLinksSnapshotTaken
 	rlp.lock.Lock()
 	defer rlp.lock.Unlock()
-	resources := make(map[string]*commands.Resource)
-	for href, resource := range rlp.resources {
-		resources[href] = resource
+
+	if rlp.snapshot != nil {
+		s, _ := rlp.snapshot.TakeSnapshot(rlp.snapshot.Version())
+		snapshot = s.(*events.ResourceLinksSnapshotTaken)
 	}
 
 	return &resourceLinksProjection{
-		deviceID:  rlp.deviceID,
-		resources: resources,
-		version:   rlp.version,
+		snapshot: snapshot,
 	}
 }
 
-func (rlp *resourceLinksProjection) InitialNotifyOfPublishedResourceLinks(ctx context.Context, subscription *deviceSubscription) error {
+func (rlp *resourceLinksProjection) InitialNotifyOfPublishedResourceLinks(ctx context.Context, subscription *subscription) error {
 	rlp.lock.Lock()
 	defer rlp.lock.Unlock()
 
-	links := pb.RAResourcesToProto(rlp.resources)
-	return subscription.NotifyOfPublishedResourceLinks(ctx, ResourceLinks{
-		links:   links,
-		version: rlp.version,
-		isInit:  true,
+	resources := make([]*commands.Resource, 0, len(rlp.snapshot.GetResources()))
+	for _, r := range rlp.snapshot.GetResources() {
+		resources = append(resources, r)
+	}
+
+	return subscription.NotifyOfPublishedResourceLinks(ctx, ResourceLinksPublished{
+		data: &events.ResourceLinksPublished{
+			Resources:     resources,
+			DeviceId:      rlp.snapshot.GetDeviceId(),
+			EventMetadata: rlp.snapshot.GetEventMetadata(),
+		},
+		isInit: true,
 	})
 }
 
-func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Context, publishedResources map[string]*commands.Resource) error {
+func (rlp *resourceLinksProjection) onResourcePublishedLocked(ctx context.Context, publishedResources *events.ResourceLinksPublished) error {
 	log.Debugf("resourceLinksProjection.onResourcePublishedLocked %v", publishedResources)
-	links := pb.RAResourcesToProto(publishedResources)
-	return rlp.subscriptions.OnResourceLinksPublished(ctx, rlp.deviceID, ResourceLinks{
-		links:   links,
-		version: rlp.version,
+	return rlp.subscriptions.OnResourceLinksPublished(ctx, ResourceLinksPublished{
+		data: publishedResources,
 	})
 }
 
-func (rlp *resourceLinksProjection) onResourceUnpublishedLocked(ctx context.Context, unpublishedResources map[string]*commands.Resource) error {
+func (rlp *resourceLinksProjection) onResourceUnpublishedLocked(ctx context.Context, unpublishedResources *events.ResourceLinksUnpublished) error {
 	log.Debugf("resourceLinksProjection.onResourceUnpublishedLocked %v", unpublishedResources)
-	links := pb.RAResourcesToProto(unpublishedResources)
-	return rlp.subscriptions.OnResourceLinksUnpublished(ctx, rlp.deviceID, ResourceLinks{
-		links:   links,
-		version: rlp.version,
-	})
+	return rlp.subscriptions.OnResourceLinksUnpublished(ctx, unpublishedResources)
 }
 
 func (rlp *resourceLinksProjection) EventType() string {
@@ -79,8 +74,7 @@ func (rlp *resourceLinksProjection) EventType() string {
 }
 
 func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
-	publishedResources := make(map[string]*commands.Resource)
-	unpublishedResources := make(map[string]*commands.Resource)
+	sendEvents := make([]interface{}, 0, 4)
 	rlp.lock.Lock()
 	defer rlp.lock.Unlock()
 	var anyEventProcessed bool
@@ -91,44 +85,39 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 		}
 		log.Debugf("resourceLinksProjection.Handle deviceID=%v eventype%v version=%v", eu.GroupID(), eu.EventType(), eu.Version())
 		anyEventProcessed = true
-		rlp.version = eu.Version()
+		if rlp.snapshot == nil {
+			rlp.snapshot = events.NewResourceLinksSnapshotTaken()
+		}
+		rlp.snapshot.GetEventMetadata().Version = eu.Version()
 		switch eu.EventType() {
 		case (&events.ResourceLinksSnapshotTaken{}).EventType():
 			var e events.ResourceLinksSnapshotTaken
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-
-			rlp.deviceID = e.GetDeviceId()
-			rlp.resources = e.GetResources()
+			rlp.snapshot = &e
+			sendEvents = append(sendEvents[:0], &e)
 		case (&events.ResourceLinksPublished{}).EventType():
 			var e events.ResourceLinksPublished
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-
-			rlp.deviceID = e.GetDeviceId()
-			for _, res := range e.GetResources() {
-				rlp.resources[res.GetHref()] = res
-				publishedResources[res.GetHref()] = res
-				delete(unpublishedResources, res.GetHref())
+			err := rlp.snapshot.HandleEventResourceLinksPublished(ctx, &e)
+			if err != nil {
+				return err
 			}
+			sendEvents = append(sendEvents, &e)
 		case (&events.ResourceLinksUnpublished{}).EventType():
 			var e events.ResourceLinksUnpublished
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-
-			rlp.deviceID = e.GetDeviceId()
-			if len(rlp.resources) == len(e.GetHrefs()) {
-				rlp.resources = make(map[string]*commands.Resource)
-				publishedResources = make(map[string]*commands.Resource)
-			} else {
-				for _, href := range e.GetHrefs() {
-					unpublishedResources[href] = rlp.resources[href]
-					delete(rlp.resources, href)
-					delete(publishedResources, href)
-				}
+			unpublished, err := rlp.snapshot.HandleEventResourceLinksUnpublished(ctx, &e)
+			if err != nil {
+				return err
+			}
+			if len(unpublished) > 0 {
+				sendEvents = append(sendEvents, &e)
 			}
 		}
 	}
@@ -138,14 +127,17 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 		return nil
 	}
 
-	if len(publishedResources) != 0 {
-		if err := rlp.onResourcePublishedLocked(ctx, publishedResources); err != nil {
-			log.Errorf("%v", err)
-		}
-	}
-	if len(unpublishedResources) != 0 {
-		if err := rlp.onResourceUnpublishedLocked(ctx, unpublishedResources); err != nil {
-			log.Errorf("%v", err)
+	for _, e := range sendEvents {
+		switch v := e.(type) {
+		// TODO handle snapshot
+		case *events.ResourceLinksPublished:
+			if err := rlp.onResourcePublishedLocked(ctx, v); err != nil {
+				log.Errorf("%v", err)
+			}
+		case *events.ResourceLinksUnpublished:
+			if err := rlp.onResourceUnpublishedLocked(ctx, v); err != nil {
+				log.Errorf("%v", err)
+			}
 		}
 	}
 

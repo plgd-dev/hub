@@ -15,6 +15,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
+	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
@@ -138,6 +139,11 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.Log.Embedded.Debug = true
+	coapgwCfg.Log.DumpCoapMessages = true
+	coapgwCfg.APIs.COAP.Addr = "localhost:45684"
+	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -146,7 +152,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, coapgwCfg.APIs.COAP.Addr, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	var listen certManager.Config
@@ -208,4 +214,5 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	} else {
 		require.Empty(t, v)
 	}
+	gwShutdown()
 }

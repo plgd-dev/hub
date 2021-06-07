@@ -7,7 +7,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 
@@ -68,14 +67,14 @@ func (requestHandler *RequestHandler) getResourceFromDevice(w http.ResponseWrite
 		writeError(w, fmt.Errorf("cannot retrieve resource: %w", err))
 		return
 	}
-	resp, err := pb.RAResourceRetrievedEventToResponse(retrievedEvent)
+	content, err := commands.EventContentToContent(retrievedEvent)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot retrieve resource: %w", err))
 		return
 	}
 
 	var respBody interface{}
-	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, resp.GetContent().GetContentType(), resp.GetContent().GetData(), &respBody)
+	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, content.GetContentType(), content.GetData(), &respBody)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot decode response of retrieved resource: %w", err))
 		return

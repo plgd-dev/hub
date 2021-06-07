@@ -6,13 +6,12 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
-	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -27,12 +26,11 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		req pb.DeleteResourceRequest
 	}
 	tests := []struct {
-		name            string
-		args            args
-		want            map[string]interface{}
-		wantContentType string
-		wantErr         bool
-		wantErrCode     codes.Code
+		name        string
+		args        args
+		want        *events.ResourceDeleted
+		wantErr     bool
+		wantErrCode codes.Code
 	}{
 		{
 			name: "/light/2 - MethodNotAllowed",
@@ -41,8 +39,13 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
-			wantErr:     true,
-			wantErrCode: extCodes.MethodNotAllowed,
+			want: &events.ResourceDeleted{
+				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+				Status:     commands.Status_METHOD_NOT_ALLOWED,
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+			},
 		},
 		{
 			name: "invalid Href",
@@ -61,8 +64,13 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
-			wantErr:     true,
-			wantErrCode: codes.PermissionDenied,
+			want: &events.ResourceDeleted{
+				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+				Status:     commands.Status_FORBIDDEN,
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+			},
 		},
 	}
 
@@ -89,12 +97,9 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 				assert.Equal(t, tt.wantErrCode, status.Convert(err).Code())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
-				var d map[string]interface{}
-				err := cbor.Decode(got.GetContent().GetData(), &d)
-				require.NoError(t, err)
-				delete(d, "piid")
-				assert.Equal(t, tt.want, d)
+				got.EventMetadata = nil
+				got.AuditContext = nil
+				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

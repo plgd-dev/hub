@@ -37,7 +37,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 		{
 			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_ENABLED),
 				userID:  user0,
 			},
 			want: codes.OK,
@@ -45,7 +45,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 		{
 			name: "set shadowSynchronizationDisabled duplicit with same correlationID",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_DISABLED),
 				userID:  user0,
 			},
 			want:    codes.InvalidArgument,
@@ -54,7 +54,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 		{
 			name: "invalid update commands",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, nil),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_UNSET),
 				userID:  user0,
 			},
 			want:    codes.InvalidArgument,
@@ -87,7 +87,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), testMakeUpdateDeviceMetadataRequest(deviceID, nil, newBool(true)))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), testMakeUpdateDeviceMetadataRequest(deviceID, nil, commands.ShadowSynchronization_DISABLED))
 	require.NoError(t, err)
 
 	for _, tt := range test {
@@ -125,7 +125,7 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 		{
 			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_DISABLED),
 			},
 			want: &commands.ConfirmDeviceMetadataUpdateResponse{
 				AuditContext: &commands.AuditContext{
@@ -136,14 +136,14 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, newBool(true)),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_DISABLED),
 			},
 			wantError: true,
 		},
 		{
 			name: "invalid",
 			args: args{
-				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, nil),
+				request: testMakeConfirmDeviceMetadataUpdateRequest(deviceID, commands.ShadowSynchronization_UNSET),
 			},
 			wantError: true,
 		},
@@ -178,7 +178,7 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
-	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, nil, newBool(true)))
+	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, nil, commands.ShadowSynchronization_DISABLED))
 	require.NoError(t, err)
 
 	for _, tt := range test {
@@ -197,7 +197,7 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 	}
 }
 
-func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, shadowSynchronizationDisabled *bool) *commands.ConfirmDeviceMetadataUpdateRequest {
+func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, shadowSynchronization commands.ShadowSynchronization) *commands.ConfirmDeviceMetadataUpdateRequest {
 	r := commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
@@ -205,11 +205,9 @@ func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, shadowSynchroni
 			Sequence:     0,
 		},
 	}
-	if shadowSynchronizationDisabled != nil {
+	if shadowSynchronization != commands.ShadowSynchronization_UNSET {
 		r.Confirm = &commands.ConfirmDeviceMetadataUpdateRequest_ShadowSynchronization{
-			ShadowSynchronization: &commands.ShadowSynchronization{
-				Disabled: *shadowSynchronizationDisabled,
-			},
+			ShadowSynchronization: shadowSynchronization,
 		}
 	}
 	return &r

@@ -11,6 +11,7 @@ import (
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -57,35 +58,37 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 	ep = ep + "+tcp://" + serverAddr
 
 	for {
-		link, err := getResourceLinksClient.Recv()
+		snapshot, err := getResourceLinksClient.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, status.Convert(err).Code(), fmt.Errorf("cannot create discovery response: %w", err)
 		}
-		d, ok := deviceRes[link.GetDeviceId()]
+		d, ok := deviceRes[snapshot.GetDeviceId()]
 		if !ok {
 			d = &wkRd{
-				DeviceID: link.GetDeviceId(),
+				DeviceID: snapshot.GetDeviceId(),
 				Links:    make(schema.ResourceLinks, 0, 16),
 			}
-			deviceRes[link.GetDeviceId()] = d
+			deviceRes[snapshot.GetDeviceId()] = d
 		}
-		resource := link.ToSchema()
-		resource.Href = makeHref(resource.DeviceID, resource.Href)
-		//set anchor if it is not set
-		if resource.Anchor == "" {
-			resource.Anchor = "ocf://" + resource.DeviceID
+		links := commands.ResourcesToResourceLinks(snapshot.GetResources())
+		for i := range links {
+			links[i].Href = makeHref(links[i].DeviceID, links[i].Href)
+			links[i].ID = ""
+			if links[i].Anchor == "" {
+				links[i].Anchor = "ocf://" + links[i].DeviceID
+			}
+			//override EndpointInformations to cloud address
+			links[i].Endpoints = []schema.Endpoint{
+				{
+					URI:      ep,
+					Priority: 1,
+				},
+			}
+			d.Links = append(d.Links, links[i])
 		}
-		//override EndpointInformations to cloud address
-		resource.Endpoints = []schema.Endpoint{
-			{
-				URI:      ep,
-				Priority: 1,
-			},
-		}
-		d.Links = append(d.Links, resource)
 	}
 
 	resp := make([]*wkRd, 0, 128)

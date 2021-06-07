@@ -1,17 +1,16 @@
-package pb
+package commands
 
 import (
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb/errdetails"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 )
 
 type EventContent interface {
-	GetContent() *commands.Content
-	GetStatus() commands.Status
+	GetContent() *Content
+	GetStatus() Status
 }
 
 func EventContentToContent(ec EventContent) (*Content, error) {
@@ -27,7 +26,7 @@ func EventContentToContent(ec EventContent) (*Content, error) {
 			ContentType: contentType,
 		}
 	}
-	statusCode := RAStatus2Status(ec.GetStatus()).ToGrpcCode()
+	statusCode := ec.GetStatus().ToGrpcCode()
 	switch statusCode {
 	case codes.OK:
 	case extCodes.Accepted:

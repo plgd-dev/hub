@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	client "github.com/plgd-dev/cloud/grpc-gateway/client"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -38,23 +38,30 @@ func TestObserveDeviceResources(t *testing.T) {
 	select {
 	case res := <-h.res:
 		t.Logf("res %+v\n", res)
+		pub, ok := res.(*events.ResourceLinksPublished)
+		require.True(t, ok)
 		exp := test.ResourceLinkToPublishEvent(deviceID, "", test.GetAllBackendResourceLinks())
-		test.CheckProtobufs(t, test.SortResources(exp.GetResourcePublished().GetLinks()), test.SortResources(res.Links), test.RequireToCheckFunc(require.Equal))
+		test.CheckProtobufs(t, test.CleanUpResourceLinksPublished(exp.GetResourcePublished()), test.CleanUpResourceLinksPublished(pub), test.RequireToCheckFunc(require.Equal))
 	case <-time.After(TestTimeout):
 		t.Error("timeout")
 	}
 }
 
 func makeTestDeviceResourcesObservationHandler() *testDeviceResourcesObservationHandler {
-	return &testDeviceResourcesObservationHandler{res: make(chan client.DeviceResourcesObservationEvent, 100)}
+	return &testDeviceResourcesObservationHandler{res: make(chan interface{}, 100)}
 }
 
 type testDeviceResourcesObservationHandler struct {
-	res chan client.DeviceResourcesObservationEvent
+	res chan interface{}
 }
 
-func (h *testDeviceResourcesObservationHandler) Handle(ctx context.Context, body client.DeviceResourcesObservationEvent) error {
-	h.res <- body
+func (h *testDeviceResourcesObservationHandler) HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error {
+	h.res <- val
+	return nil
+}
+
+func (h *testDeviceResourcesObservationHandler) HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error {
+	h.res <- val
 	return nil
 }
 

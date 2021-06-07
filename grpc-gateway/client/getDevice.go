@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -27,8 +28,8 @@ func (c *Client) GetDevice(
 		return nil, status.Errorf(codes.NotFound, "not found")
 	}
 
-	err = c.GetResourceLinksViaCallback(ctx, []string{deviceID}, nil, func(v *pb.ResourceLink) {
-		deviceDetails.Resources = append(deviceDetails.Resources, v)
+	err = c.GetResourceLinksViaCallback(ctx, []string{deviceID}, nil, func(v *events.ResourceLinksPublished) {
+		deviceDetails.Resources = v.GetResources()
 	})
 	if err != nil {
 		return nil, err

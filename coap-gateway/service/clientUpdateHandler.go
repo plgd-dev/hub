@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -54,7 +52,7 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 	client.sendResponse(code, req.Token, mediaType, content.Data)
 }
 
-func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, error) {
+func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
 	updateCommand, err := coapconv.NewUpdateResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
 		return nil, err
@@ -64,10 +62,10 @@ func clientUpdateDeviceHandler(req *mux.Message, client *Client, deviceID, href 
 	if err != nil {
 		return nil, err
 	}
-	resp, err := pb.RAResourceUpdatedEventToResponse(updatedEvent)
+	content, err := commands.EventContentToContent(updatedEvent)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.GetContent(), nil
+	return content, nil
 }

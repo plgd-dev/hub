@@ -6,6 +6,7 @@ import (
 	"time"
 
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -179,16 +180,16 @@ func TestClient_GetResourceUnavaliable(t *testing.T) {
 			require.NoError(t, err)
 		}()
 		for {
-			var res client.DeviceResourcesObservationEvent
+			var res interface{}
 			select {
 			case res = <-h.res:
 			case <-ctx.Done():
 				require.NoError(t, ctx.Err())
 			}
-			if res.Event == client.DeviceResourcesObservationEvent_ADDED {
+			if v, ok := res.(*events.ResourceLinksPublished); ok {
 				var found bool
-				for _, d := range res.Links {
-					if d.DeviceId == deviceID && d.Href == "/oc/con" {
+				for _, d := range v.GetResources() {
+					if v.GetDeviceId() == deviceID && d.GetHref() == "/oc/con" {
 						found = true
 						break
 					}

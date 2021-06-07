@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (r *RequestHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
+func (r *RequestHandler) RetrieveResources(req *pb.RetrieveResourcesRequest, srv pb.GrpcGateway_RetrieveResourcesServer) error {
 	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
@@ -19,7 +19,7 @@ func (r *RequestHandler) RetrieveResourcesValues(req *pb.RetrieveResourcesValues
 	}
 
 	rs := NewResourceShadow(r.resourceProjection, deviceIDs)
-	err = rs.RetrieveResourcesValues(req, srv)
+	err = rs.RetrieveResources(req, srv)
 	if err != nil {
 		return log.LogAndReturnError(err)
 	}

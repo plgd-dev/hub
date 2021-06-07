@@ -12,10 +12,11 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 
+	"github.com/go-ocf/kit/strings"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 type ApplicationCallback interface {
@@ -142,11 +143,11 @@ func (c *Client) GetDevicesViaCallback(ctx context.Context, deviceIDs, resourceT
 }
 
 // GetResourceLinksViaCallback returns resource links of devices. JWT token must be stored in context for grpc call.
-func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(*pb.ResourceLink)) error {
+func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, resourceTypes []string, callback func(*events.ResourceLinksPublished)) error {
 	it := c.GetResourceLinksIterator(ctx, deviceIDs, resourceTypes...)
 	defer it.Close()
 	for {
-		var v pb.ResourceLink
+		var v events.ResourceLinksPublished
 		if !it.Next(&v) {
 			break
 		}
@@ -157,10 +158,10 @@ func (c *Client) GetResourceLinksViaCallback(ctx context.Context, deviceIDs, res
 
 type TypeCallback struct {
 	Type     string
-	Callback func(pb.ResourceValue)
+	Callback func(*pb.Resource)
 }
 
-func MakeTypeCallback(resourceType string, callback func(pb.ResourceValue)) TypeCallback {
+func MakeTypeCallback(resourceType string, callback func(*pb.Resource)) TypeCallback {
 	return TypeCallback{Type: resourceType, Callback: callback}
 }
 
@@ -170,7 +171,7 @@ func (c *Client) RetrieveResourcesByType(
 	deviceIDs []string,
 	typeCallbacks ...TypeCallback,
 ) error {
-	tc := make(map[string]func(pb.ResourceValue), len(typeCallbacks))
+	tc := make(map[string]func(*pb.Resource), len(typeCallbacks))
 	resourceTypes := make([]string, 0, len(typeCallbacks))
 	for _, c := range typeCallbacks {
 		tc[c.Type] = c.Callback
@@ -181,13 +182,13 @@ func (c *Client) RetrieveResourcesByType(
 	defer it.Close()
 
 	for {
-		var v pb.ResourceValue
+		var v pb.Resource
 		if !it.Next(&v) {
 			break
 		}
 		for _, rt := range resourceTypes {
 			if strings.SliceContains(v.Types, rt) {
-				tc[rt](v)
+				tc[rt](&v)
 				break
 			}
 		}
@@ -260,16 +261,16 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 //	if it.Err != nil {
 //	}
 func (c *Client) RetrieveResourcesIterator(ctx context.Context, resourceIDs []*commands.ResourceId, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
-	r := pb.RetrieveResourcesValuesRequest{ResourceIdsFilter: resourceIDs, DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
-	return kitNetGrpc.NewIterator(c.gateway.RetrieveResourcesValues(ctx, &r))
+	r := pb.RetrieveResourcesRequest{ResourceIdsFilter: resourceIDs, DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
+	return kitNetGrpc.NewIterator(c.gateway.RetrieveResources(ctx, &r))
 }
 
 type ResourceIDCallback struct {
 	ResourceID *commands.ResourceId
-	Callback   func(pb.ResourceValue)
+	Callback   func(*pb.Resource)
 }
 
-func MakeResourceIDCallback(deviceID, href string, callback func(pb.ResourceValue)) ResourceIDCallback {
+func MakeResourceIDCallback(deviceID, href string, callback func(*pb.Resource)) ResourceIDCallback {
 	return ResourceIDCallback{ResourceID: &commands.ResourceId{
 		DeviceId: deviceID,
 		Href:     href,
@@ -281,7 +282,7 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 	ctx context.Context,
 	resourceIDsCallbacks ...ResourceIDCallback,
 ) error {
-	tc := make(map[string]func(pb.ResourceValue), len(resourceIDsCallbacks))
+	tc := make(map[string]func(*pb.Resource), len(resourceIDsCallbacks))
 	resourceIDs := make([]*commands.ResourceId, 0, len(resourceIDsCallbacks))
 	for _, c := range resourceIDsCallbacks {
 		tc[c.ResourceID.GetDeviceId()+c.ResourceID.GetHref()] = c.Callback
@@ -290,14 +291,15 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 
 	it := c.RetrieveResourcesIterator(ctx, resourceIDs, nil)
 	defer it.Close()
-	var v pb.ResourceValue
+
 	for {
+		var v pb.Resource
 		if !it.Next(&v) {
 			break
 		}
-		c, ok := tc[v.GetResourceId().GetDeviceId()+v.GetResourceId().GetHref()]
+		c, ok := tc[v.GetData().GetResourceId().GetDeviceId()+v.GetData().GetResourceId().GetHref()]
 		if ok {
-			c(v)
+			c(&v)
 		}
 	}
 	return it.Err

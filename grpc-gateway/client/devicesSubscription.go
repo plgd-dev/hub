@@ -51,17 +51,17 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	var deviceMetadataUpdatedHandler DeviceMetadataUpdatedHandler
 	var deviceRegisteredHandler DeviceRegisteredHandler
 	var deviceUnregisteredHandler DeviceUnregisteredHandler
-	filterEvents := make([]pb.SubscribeToEvents_DevicesEventFilter_Event, 0, 1)
+	filterEvents := make([]pb.SubscribeToEvents_CreateSubscription_Event, 0, 1)
 	if v, ok := handle.(DeviceMetadataUpdatedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DevicesEventFilter_Event(pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED))
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_Event(pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED))
 		deviceMetadataUpdatedHandler = v
 	}
 	if v, ok := handle.(DeviceRegisteredHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DevicesEventFilter_REGISTERED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_REGISTERED)
 		deviceRegisteredHandler = v
 	}
 	if v, ok := handle.(DeviceUnregisteredHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED)
 		deviceUnregisteredHandler = v
 	}
 
@@ -74,8 +74,8 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	}
 
 	err = client.Send(&pb.SubscribeToEvents{
-		FilterBy: &pb.SubscribeToEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 				EventsFilter: filterEvents,
 			},
 		},

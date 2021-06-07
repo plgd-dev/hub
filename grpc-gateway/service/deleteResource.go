@@ -6,10 +6,11 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 )
 
-func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
+func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResourceRequest) (*events.ResourceDeleted, error) {
 	deleteCommand, err := req.ToRACommand(ctx)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
@@ -18,5 +19,5 @@ func (r *RequestHandler) DeleteResource(ctx context.Context, req *pb.DeleteResou
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
 	}
-	return pb.RAResourceDeletedEventToResponse(deletedEvent)
+	return deletedEvent, err
 }

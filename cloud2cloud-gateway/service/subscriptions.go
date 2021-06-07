@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,8 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 	kitSync "github.com/plgd-dev/kit/sync"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Subscription interface {
@@ -24,6 +27,7 @@ type Subscription interface {
 
 type SubscriptionData struct {
 	incrementSubscriptionSequenceNumber func(ctx context.Context, subscriptionID string) (uint64, error)
+	setInitialized                      func(ctx context.Context, subscriptionID string) error
 	gwClient                            pb.GrpcGatewayClient
 
 	mutex sync.Mutex
@@ -54,6 +58,63 @@ func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEv
 		subData:   s,
 		emitEvent: emitEvent,
 	}
+
+	if !s.data.Initialized {
+		sendEmptyOffline := true
+		sendEmptyOnline := true
+		anyDevice := false
+		client, err := s.gwClient.RetrieveDevicesMetadata(ctx, &pb.RetrieveDevicesMetadataRequest{})
+		if err != nil {
+			return nil, err
+		}
+		for {
+			d, err := client.Recv()
+			if err == io.EOF {
+				break
+			}
+			if status.Convert(err).Code() == codes.NotFound {
+				break
+			}
+			if err != nil {
+				return nil, err
+			}
+			anyDevice = true
+			if d.GetStatus().IsOnline() {
+				sendEmptyOnline = false
+			} else {
+				sendEmptyOffline = false
+			}
+		}
+		if s.data.EventTypes.Has(events.EventType_DevicesRegistered) && !anyDevice {
+			_, err := emitEvent(ctx, events.EventType_DevicesRegistered, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			if err != nil {
+				return nil, err
+			}
+		}
+		if s.data.EventTypes.Has(events.EventType_DevicesUnregistered) {
+			_, err := emitEvent(ctx, events.EventType_DevicesUnregistered, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			if err != nil {
+				return nil, err
+			}
+		}
+		if s.data.EventTypes.Has(events.EventType_DevicesOnline) && sendEmptyOnline {
+			_, err := emitEvent(ctx, events.EventType_DevicesOnline, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			if err != nil {
+				return nil, err
+			}
+		}
+		if s.data.EventTypes.Has(events.EventType_DevicesOffline) && sendEmptyOffline {
+			_, err := emitEvent(ctx, events.EventType_DevicesOffline, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			if err != nil {
+				return nil, err
+			}
+		}
+		err = s.SetInitialized(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	var eventHandler interface{}
 	switch {
 	case s.data.EventTypes.Has(events.EventType_DevicesOnline) && s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
@@ -206,6 +267,10 @@ func (s *SubscriptionData) IncrementSequenceNumber(ctx context.Context) (uint64,
 	return seqNum, nil
 }
 
+func (s *SubscriptionData) SetInitialized(ctx context.Context) error {
+	return s.setInitialized(ctx, s.data.ID)
+}
+
 type closeEventHandler struct {
 	ctx       context.Context
 	emitEvent emitEventFunc
@@ -284,6 +349,7 @@ func (s *SubscriptionManager) storeToSubs(sub store.Subscription) {
 		data:                                sub,
 		incrementSubscriptionSequenceNumber: s.store.IncrementSubscriptionSequenceNumber,
 		gwClient:                            s.gwClient,
+		setInitialized:                      s.store.SetInitialized,
 	}
 	s.subscriptions.LoadOrStore(sub.ID, subData)
 }

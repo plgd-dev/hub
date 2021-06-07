@@ -197,7 +197,7 @@ func NewEventStoreModelFactory(subscriptions *Subscriptions, updateNotificationC
 func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsServer) error {
 	err := r.subscriptions.SubscribeToEvents(r.resourceProjection, srv)
 	if err != nil {
-		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe for events: %v", err))
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot subscribe to events: %v", err))
 	}
 	return nil
 }

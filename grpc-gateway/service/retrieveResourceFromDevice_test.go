@@ -5,8 +5,6 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -14,10 +12,11 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
-	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/go-coap/v2/message"
 )
 
 func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
@@ -26,11 +25,10 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		req pb.RetrieveResourceFromDeviceRequest
 	}
 	tests := []struct {
-		name            string
-		args            args
-		want            map[string]interface{}
-		wantContentType string
-		wantErr         bool
+		name    string
+		args    args
+		want    *events.ResourceRetrieved
+		wantErr bool
 	}{
 		{
 			name: "valid /light/2",
@@ -42,8 +40,17 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 					},
 				},
 			},
-			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"name": "Light", "power": uint64(0), "state": false},
+			want: &events.ResourceRetrieved{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/2",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
+				},
+				Status: commands.Status_OK,
+			},
 		},
 		{
 			name: "valid /oic/d",
@@ -55,8 +62,17 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 					},
 				},
 			},
-			wantContentType: "application/vnd.ocf+cbor",
-			want:            map[string]interface{}{"di": deviceID, "dmv": "ocf.res.1.3.0", "icv": "ocf.2.0.5", "n": test.TestDeviceName},
+			want: &events.ResourceRetrieved{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/oic/d",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
+				},
+				Status: commands.Status_OK,
+			},
 		},
 		{
 			name: "invalid Href",
@@ -95,12 +111,10 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
-				var d map[string]interface{}
-				err := cbor.Decode(got.GetContent().GetData(), &d)
-				require.NoError(t, err)
-				delete(d, "piid")
-				assert.Equal(t, tt.want, d)
+				got.EventMetadata = nil
+				got.AuditContext = nil
+				got.Content.Data = nil
+				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

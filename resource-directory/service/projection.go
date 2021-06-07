@@ -74,8 +74,8 @@ func (p *Projection) getModels(ctx context.Context, resourceID *commands.Resourc
 	return m, nil
 }
 
-func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeFilter strings.Set) (map[string]map[string]*commands.Resource, error) {
-	devicesResourceLinks := make(map[string]map[string]*commands.Resource)
+func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeFilter strings.Set) (map[string]*events.ResourceLinksSnapshotTaken, error) {
+	devicesResourceLinks := make(map[string]*events.ResourceLinksSnapshotTaken)
 	for deviceID := range deviceIDFilter {
 		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.ResourceLinksHref))
 		if err != nil {
@@ -85,12 +85,11 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 			continue
 		}
 		resourceLinks := models[0].(*resourceLinksProjection).Clone()
-		devicesResourceLinks[resourceLinks.deviceID] = make(map[string]*commands.Resource)
-		for href, resource := range resourceLinks.resources {
+		devicesResourceLinks[resourceLinks.snapshot.GetDeviceId()] = resourceLinks.snapshot
+		for href, resource := range resourceLinks.snapshot.GetResources() {
 			if !hasMatchingType(resource.ResourceTypes, typeFilter) {
-				continue
+				delete(resourceLinks.snapshot.Resources, href)
 			}
-			devicesResourceLinks[resourceLinks.deviceID][href] = resource
 		}
 	}
 
@@ -146,7 +145,7 @@ func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter
 		resources[deviceID] = make(map[string]*Resource)
 		if hrefs == nil {
 			// case when client requests all device resources
-			for _, resource := range rl[deviceID] {
+			for _, resource := range rl[deviceID].GetResources() {
 				if hasMatchingType(resource.ResourceTypes, typeFilter) {
 					resources[deviceID][resource.GetHref()] = &Resource{Resource: resource}
 					anyDeviceResourceFound = true
@@ -155,7 +154,7 @@ func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter
 		} else {
 			// case when client requests specific device resource
 			for href := range hrefs {
-				if resource, present := rl[deviceID][href]; present {
+				if resource, present := rl[deviceID].GetResources()[href]; present {
 					if hasMatchingType(resource.ResourceTypes, typeFilter) {
 						resources[deviceID][href] = &Resource{Resource: resource}
 						anyDeviceResourceFound = true

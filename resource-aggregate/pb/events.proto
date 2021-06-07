@@ -117,10 +117,8 @@ message ResourceStateSnapshotTaken {
 
 message DeviceMetadataUpdated {
     string device_id = 1;
-    oneof updated {
-        ConnectionStatus status = 2;
-        ShadowSynchronization shadow_synchronization = 3;
-    };
+    ConnectionStatus status = 2;
+    ShadowSynchronization shadow_synchronization = 3;
     AuditContext audit_context = 100;
     EventMetadata event_metadata = 101;
 }
@@ -136,8 +134,7 @@ message DeviceMetadataUpdatePending {
 
 message DeviceMetadataSnapshotTaken {
     string device_id = 1;
-    DeviceMetadataUpdated status = 2;
-    DeviceMetadataUpdated shadow_synchronization = 3;
-    repeated DeviceMetadataUpdatePending update_pendings = 4;
+    DeviceMetadataUpdated device_metadata_updated = 2;
+    repeated DeviceMetadataUpdatePending update_pendings = 3;
     EventMetadata event_metadata = 101;
 }

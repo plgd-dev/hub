@@ -12,6 +12,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -26,7 +27,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    []*pb.ResourceLink
+		want    []*events.ResourceLinksPublished
 	}{
 		{
 			name: "valid",
@@ -34,7 +35,12 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				req: &pb.GetResourceLinksRequest{},
 			},
 			wantErr: false,
-			want:    test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks())),
+			want: []*events.ResourceLinksPublished{
+				{
+					DeviceId:  deviceID,
+					Resources: test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks()),
+				},
+			},
 		},
 	}
 
@@ -61,16 +67,16 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				links := make([]*pb.ResourceLink, 0, 1)
+				links := make([]*events.ResourceLinksPublished, 0, 1)
 				for {
 					link, err := client.Recv()
 					if err == io.EOF {
 						break
 					}
 					require.NoError(t, err)
-					links = append(links, link)
+					links = append(links, test.CleanUpResourceLinksPublished(link))
 				}
-				test.CheckProtobufs(t, tt.want, test.SortResources(links), test.RequireToCheckFunc(require.Equal))
+				test.CheckProtobufs(t, tt.want, links, test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

@@ -201,3 +201,16 @@ func NewResourceLinksSnapshotTaken() *ResourceLinksSnapshotTaken {
 		EventMetadata: &EventMetadata{},
 	}
 }
+
+func (e *ResourceLinksSnapshotTaken) ToResourceLinksPublished() *ResourceLinksPublished {
+	resources := make([]*commands.Resource, 0, len(e.GetResources()))
+	for _, r := range e.GetResources() {
+		resources = append(resources, r)
+	}
+
+	return &ResourceLinksPublished{
+		DeviceId:      e.GetDeviceId(),
+		EventMetadata: e.GetEventMetadata(),
+		Resources:     resources,
+	}
+}

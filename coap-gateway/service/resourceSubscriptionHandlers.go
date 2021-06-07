@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 type resourceSubscriptionHandlers struct {
-	onChange func(ctx context.Context, val *pb.Event_ResourceChanged) error
+	onChange func(ctx context.Context, val *events.ResourceChanged) error
 	onClose  func()
 	onError  func(err error)
 }
 
-func (h *resourceSubscriptionHandlers) HandleResourceContentChanged(ctx context.Context, val *pb.Event_ResourceChanged) error {
+func (h *resourceSubscriptionHandlers) HandleResourceContentChanged(ctx context.Context, val *events.ResourceChanged) error {
 	return h.onChange(ctx, val)
 }
 

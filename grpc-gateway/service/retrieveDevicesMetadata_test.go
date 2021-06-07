@@ -19,14 +19,13 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
-func cmpDeviceMetadataSnapshotTaken(t *testing.T, want []*events.DeviceMetadataSnapshotTaken, got []*events.DeviceMetadataSnapshotTaken) {
+func cmpDeviceMetadataUpdated(t *testing.T, want []*events.DeviceMetadataUpdated, got []*events.DeviceMetadataUpdated) {
 	require.Len(t, got, len(want))
 	for idx := range want {
 		got[idx].EventMetadata = nil
+		got[idx].AuditContext = nil
 		if got[idx].GetStatus() != nil {
-			got[idx].GetStatus().AuditContext = nil
-			got[idx].GetStatus().EventMetadata = nil
-			got[idx].GetStatus().GetStatus().ValidUntil = 0
+			got[idx].GetStatus().ValidUntil = 0
 		}
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 
@@ -41,7 +40,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*events.DeviceMetadataSnapshotTaken
+		want    []*events.DeviceMetadataUpdated
 		wantErr bool
 	}{
 		{
@@ -49,16 +48,11 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 			args: args{
 				req: pb.RetrieveDevicesMetadataRequest{},
 			},
-			want: []*events.DeviceMetadataSnapshotTaken{
+			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &events.DeviceMetadataUpdated{
-						DeviceId: deviceID,
-						Updated: &events.DeviceMetadataUpdated_Status{
-							Status: &commands.ConnectionStatus{
-								Value: commands.ConnectionStatus_ONLINE,
-							},
-						},
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
 					},
 				},
 			},
@@ -70,16 +64,27 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 					DeviceIdsFilter: []string{deviceID},
 				},
 			},
-			want: []*events.DeviceMetadataSnapshotTaken{
+			want: []*events.DeviceMetadataUpdated{
 				{
 					DeviceId: deviceID,
-					Status: &events.DeviceMetadataUpdated{
-						DeviceId: deviceID,
-						Updated: &events.DeviceMetadataUpdated_Status{
-							Status: &commands.ConnectionStatus{
-								Value: commands.ConnectionStatus_ONLINE,
-							},
-						},
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
+					},
+				},
+			},
+		},
+		{
+			name: "filter one device by type",
+			args: args{
+				req: pb.RetrieveDevicesMetadataRequest{
+					TypeFilter: []string{"oic.wk.d"},
+				},
+			},
+			want: []*events.DeviceMetadataUpdated{
+				{
+					DeviceId: deviceID,
+					Status: &commands.ConnectionStatus{
+						Value: commands.ConnectionStatus_ONLINE,
 					},
 				},
 			},
@@ -91,6 +96,16 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 					DeviceIdsFilter: []string{"abc"},
 				},
 			},
+			wantErr: true,
+		},
+		{
+			name: "unknown type",
+			args: args{
+				req: pb.RetrieveDevicesMetadataRequest{
+					TypeFilter: []string{"unknown"},
+				},
+			},
+			wantErr: true,
 		},
 	}
 
@@ -114,7 +129,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.RetrieveDevicesMetadata(ctx, &tt.args.req)
 			require.NoError(t, err)
-			values := make([]*events.DeviceMetadataSnapshotTaken, 0, 1)
+			values := make([]*events.DeviceMetadataUpdated, 0, 1)
 			for {
 				value, err := client.Recv()
 				if err == io.EOF {
@@ -128,7 +143,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 					values = append(values, value)
 				}
 			}
-			cmpDeviceMetadataSnapshotTaken(t, tt.want, values)
+			cmpDeviceMetadataUpdated(t, tt.want, values)
 		})
 	}
 }

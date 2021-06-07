@@ -13,19 +13,20 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
-func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.ResourceValue) {
+func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 	require.Len(t, got, len(want))
 	for idx := range want {
-		dataWant := want[idx].GetContent().GetData()
-		datagot := got[idx].GetContent().GetData()
-		want[idx].Content.Data = nil
-		got[idx].Content.Data = nil
+		dataWant := want[idx].Data.GetContent().GetData()
+		datagot := got[idx].Data.GetContent().GetData()
+		want[idx].Data.Content.Data = nil
+		got[idx].Data.Content.Data = nil
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 		w := test.DecodeCbor(t, dataWant)
 		g := test.DecodeCbor(t, datagot)
@@ -33,21 +34,21 @@ func cmpResourceValues(t *testing.T, want []*pb.ResourceValue, got []*pb.Resourc
 	}
 }
 
-func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
+func TestRequestHandler_RetrieveResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.RetrieveResourcesValuesRequest
+		req *pb.RetrieveResourcesRequest
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
-		want    []*pb.ResourceValue
+		want    []*pb.Resource
 	}{
 		{
 			name: "valid",
 			args: args{
-				req: &pb.RetrieveResourcesValuesRequest{
+				req: &pb.RetrieveResourcesRequest{
 					ResourceIdsFilter: []*commands.ResourceId{
 						{
 							DeviceId: deviceID,
@@ -56,24 +57,27 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: []*pb.ResourceValue{
+			want: []*pb.Resource{
 				{
-					ResourceId: &commands.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/1",
-					},
 					Types: []string{"core.light"},
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"state": false,
-							"power": uint64(0),
-							"name":  "Light",
-							"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
-							"rt":    []interface{}{"core.light"},
-						}),
+					Data: &events.ResourceChanged{
+						ResourceId: &commands.ResourceId{
+							DeviceId: deviceID,
+							Href:     "/light/1",
+						},
+						Content: &commands.Content{
+							CoapContentFormat: int32(message.AppOcfCbor),
+							ContentType:       message.AppOcfCbor.String(),
+							Data: test.EncodeToCbor(t, map[string]interface{}{
+								"state": false,
+								"power": uint64(0),
+								"name":  "Light",
+								"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
+								"rt":    []interface{}{"core.light"},
+							}),
+						},
+						Status: commands.Status_OK,
 					},
-					Status: pb.Status_OK,
 				},
 			},
 		},
@@ -97,18 +101,20 @@ func TestRequestHandler_RetrieveResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.RetrieveResourcesValues(ctx, tt.args.req)
+			client, err := c.RetrieveResources(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				values := make([]*pb.ResourceValue, 0, 1)
+				values := make([]*pb.Resource, 0, 1)
 				for {
 					value, err := client.Recv()
 					if err == io.EOF {
 						break
 					}
 					require.NoError(t, err)
+					value.Data.AuditContext = nil
+					value.Data.EventMetadata = nil
 					values = append(values, value)
 				}
 				cmpResourceValues(t, tt.want, values)

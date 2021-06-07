@@ -6,9 +6,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/sdk/schema"
 )
 
@@ -53,24 +53,26 @@ type deviceResourcesObservation struct {
 	subscribeSession
 }
 
-func ToDeviceResourcesObservationEvent(e client.DeviceResourcesObservationEvent_type) string {
-	switch e {
-	case client.DeviceResourcesObservationEvent_ADDED:
-		return "added"
-	case client.DeviceResourcesObservationEvent_REMOVED:
-		return "removed"
+func (d *deviceResourcesObservation) HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error {
+	evt := DeviceResourceObservationEvent{
+		Resources: toResourceLinks(val.GetResources()),
+		Event:     "added",
 	}
-	return ""
+	d.Write(evt)
+	return nil
 }
 
-func (d *deviceResourcesObservation) Handle(ctx context.Context, event client.DeviceResourcesObservationEvent) error {
+func (d *deviceResourcesObservation) HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error {
 	links := make([]schema.ResourceLink, 0, 32)
-	for _, l := range event.Links {
-		links = append(links, l.ToSchema())
+	for _, href := range val.GetHrefs() {
+		links = append(links, schema.ResourceLink{
+			DeviceID: val.GetDeviceId(),
+			Href:     href,
+		})
 	}
 	evt := DeviceResourceObservationEvent{
 		Resources: links,
-		Event:     ToDeviceResourcesObservationEvent(event.Event),
+		Event:     "removed",
 	}
 	d.Write(evt)
 	return nil
