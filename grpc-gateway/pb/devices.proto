@@ -29,23 +29,16 @@ message RetrieveResourceFromDeviceRequest {
   string resource_interface = 2;
 }
 
-message RetrieveResourceFromDeviceResponse {
-  Content content = 1;
-  Status status = 2;
-}
-
 // RetrieveResourcesValuesRequest get values from resource-shadow
-message RetrieveResourcesValuesRequest {
+message RetrieveResourcesRequest {
   repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 1;
   repeated string device_ids_filter = 2;
   repeated string type_filter = 3;
 }
 
-message ResourceValue {
-  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-  repeated string types = 2;
-  Content content = 3;
-  Status status = 4;
+message Resource {
+  repeated string types = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceChanged data = 2;
 }
 
 message UpdateResourceRequest {
@@ -54,53 +47,35 @@ message UpdateResourceRequest {
   string resource_interface = 3;
 }
 
-message UpdateResourceResponse {
-  Content content = 1;
-  Status status = 2;
-}
-
 message SubscribeToEvents {
-  message DevicesEventFilter {
+  message CreateSubscription {
     enum Event {
       REGISTERED = 0;
       UNREGISTERED = 1;
       DEVICE_METADATA_UPDATED = 4;
       DEVICE_METADATA_UPDATE_PENDING = 5;
+      RESOURCE_PUBLISHED = 6;
+      RESOURCE_UNPUBLISHED = 7;
+      RESOURCE_UPDATE_PENDING = 8;
+      RESOURCE_UPDATED = 9;
+      RESOURCE_RETRIEVE_PENDING = 10;
+      RESOURCE_RETRIEVED = 11;
+      RESOURCE_DELETE_PENDING = 12;
+      RESOURCE_DELETED = 13;
+      RESOURCE_CREATE_PENDING = 14;
+      RESOURCE_CREATED = 15;
+      RESOURCE_CHANGED = 16;
     }
     repeated Event events_filter = 1;
     repeated string device_ids_filter = 2;
-  }
-  message DeviceEventFilter {
-    string device_id = 1;
-    enum Event {
-      RESOURCE_PUBLISHED = 0;
-      RESOURCE_UNPUBLISHED = 1;
-      RESOURCE_UPDATE_PENDING = 2;
-      RESOURCE_UPDATED = 3;
-      RESOURCE_RETRIEVE_PENDING = 4;
-      RESOURCE_RETRIEVED = 5;
-      RESOURCE_DELETE_PENDING = 6;
-      RESOURCE_DELETED = 7;
-      RESOURCE_CREATE_PENDING = 8;
-      RESOURCE_CREATED = 9;
-    }
-    repeated Event events_filter = 2;
-  }
-  message ResourceEventFilter {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    enum Event {
-      CONTENT_CHANGED = 0;
-    }
-    repeated Event events_filter = 2;
+    repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 3;
   }
   message CancelSubscription {
     string subscription_id = 1;
   }
-  oneof filter_by {
-    DevicesEventFilter devices_event = 1;
-    DeviceEventFilter device_event = 2;
-    ResourceEventFilter resource_event = 3;
-    CancelSubscription cancel_subscription = 5;
+  oneof action {
+    CreateSubscription create_subscription = 1;
+    CancelSubscription cancel_subscription = 2;
   }
   string token = 101; // for pairing request SubscribeToEvents with Event.OperationProcessed
 }
@@ -111,17 +86,6 @@ message Event {
   }
   message DeviceUnregistered {
     repeated string device_ids = 1;
-  }
-  message ResourcePublished {
-    repeated ResourceLink links = 1;
-  }
-  message ResourceUnpublished {
-    repeated ResourceLink links = 2;
-  }
-  message ResourceChanged {
-    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-    Content content = 2;
-    Status status = 3;
   }
   message OperationProcessed {
     message ErrorStatus {
@@ -144,9 +108,9 @@ message Event {
   oneof type {
     DeviceRegistered device_registered = 3;
     DeviceUnregistered device_unregistered = 4;
-    ResourcePublished resource_published = 7;
-    ResourceUnpublished resource_unpublished = 8;
-    ResourceChanged resource_changed = 9;
+    ocf.cloud.resourceaggregate.pb.ResourceLinksPublished resource_published = 7;
+    ocf.cloud.resourceaggregate.pb.ResourceLinksUnpublished resource_unpublished = 8;
+    ocf.cloud.resourceaggregate.pb.ResourceChanged resource_changed = 9;
     OperationProcessed operation_processed = 10;
     SubscriptionCanceled subscription_canceled = 11;
     ocf.cloud.resourceaggregate.pb.ResourceUpdatePending resource_update_pending = 12;
@@ -179,64 +143,16 @@ message Device {
   string protocol_independent_id = 8;
 }
 
-message Policies {
-  int32 bit_flags = 1;
-}
-
-message EndpointInformation {
-    string endpoint = 1;
-    int64 priority = 2;
-}
-
-message ResourceLink {
-  string href = 1;
-  repeated string types = 2;
-  repeated string interfaces = 3;
-  string device_id = 4;
-  // int64 instance_id = 5;
-  string anchor = 6; 
-  Policies policies = 7;
-  string title = 8;
-  repeated string supported_content_types = 9;
-  repeated EndpointInformation endpoint_informations=10;
-}
-
 message Content {
   string content_type = 1;
   bytes data = 2;
-}
-
-enum Status {
-  UNKNOWN = 0;
-  OK = 1;
-  BAD_REQUEST = 2;
-  UNAUTHORIZED = 3;
-  FORBIDDEN = 4;
-  NOT_FOUND = 5;
-  UNAVAILABLE = 6;
-  NOT_IMPLEMENTED = 7;
-  ACCEPTED = 8;
-  ERROR = 9;
-  METHOD_NOT_ALLOWED = 10;
-  CREATED = 11;
 }
 
 message DeleteResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
 }
 
-message DeleteResourceResponse {
-  Content content = 1;
-  Status status = 2;
-}
-
-
 message CreateResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
-}
-
-message CreateResourceResponse {
-  Content content = 1;
-  Status status = 2;
 }

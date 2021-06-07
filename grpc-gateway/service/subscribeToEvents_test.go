@@ -63,10 +63,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			args: args{
 				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
-							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
-								pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
+					Action: &pb.SubscribeToEvents_CreateSubscription_{
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
 						},
 					},
@@ -98,10 +98,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			args: args{
 				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
-							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
-								pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED,
+					Action: &pb.SubscribeToEvents_CreateSubscription_{
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
 						},
 					},
@@ -122,10 +122,8 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					Type: &pb.Event_DeviceMetadataUpdated{
 						DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
-							Updated: &events.DeviceMetadataUpdated_Status{
-								Status: &commands.ConnectionStatus{
-									Value: commands.ConnectionStatus_ONLINE,
-								},
+							Status: &commands.ConnectionStatus{
+								Value: commands.ConnectionStatus_ONLINE,
 							},
 						},
 					},
@@ -138,11 +136,11 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			args: args{
 				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeToEvents_DeviceEvent{
-						DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
-							DeviceId: deviceID,
-							EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
-								pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED,
+					Action: &pb.SubscribeToEvents_CreateSubscription_{
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+							DeviceIdsFilter: []string{deviceID},
+							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
 						},
 					},
@@ -194,10 +192,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					require.NoError(t, err)
 					ev.SubscriptionId = w.SubscriptionId
 					if ev.GetResourcePublished() != nil {
-						ev.GetResourcePublished().Links = test.SortResources(ev.GetResourcePublished().GetLinks())
+						test.CleanUpResourceLinksPublished(ev.GetResourcePublished())
 					}
 					if w.GetResourcePublished() != nil {
-						w.GetResourcePublished().Links = test.SortResources(w.GetResourcePublished().GetLinks())
+						test.CleanUpResourceLinksPublished(w.GetResourcePublished())
 					}
 					if ev.GetDeviceMetadataUpdated() != nil {
 						ev.GetDeviceMetadataUpdated().EventMetadata = nil

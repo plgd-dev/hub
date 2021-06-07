@@ -20,9 +20,8 @@ func TestSignInPostHandler(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
-
 	signUpResp := testSignUp(t, CertIdentity, co)
+	co.Close()
 	tbl := []testEl{
 		{"BadRequest0", input{coapCodes.POST, `{"login": true, "uid": "0", "accesstoken":"` + signUpResp.AccessToken + `" }`, nil}, output{coapCodes.BadRequest, `invalid DeviceId`, nil}},
 		{"BadRequest1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123, "login": true}`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: cbor: cannot unmarshal positive integer`, nil}},
@@ -33,6 +32,11 @@ func TestSignInPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
+			co := testCoapDial(t, testCfg.GW_HOST)
+			if co == nil {
+				return
+			}
+			defer co.Close()
 			testPostHandler(t, uri.SignIn, test, co)
 		}
 		t.Run(test.name, tf)

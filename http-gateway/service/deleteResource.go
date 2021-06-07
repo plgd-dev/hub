@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 
@@ -36,14 +35,14 @@ func (requestHandler *RequestHandler) deleteResource(w http.ResponseWriter, r *h
 		writeError(w, fmt.Errorf("cannot delete resource: %w", err))
 		return
 	}
-	resp, err := pb.RAResourceDeletedEventToResponse(deletedEvent)
+	content, err := commands.EventContentToContent(deletedEvent)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot delete resource: %w", err))
 		return
 	}
 
 	var respBody interface{}
-	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, resp.GetContent().GetContentType(), resp.GetContent().GetData(), &respBody)
+	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, content.GetContentType(), content.GetData(), &respBody)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot decode response of deleted resource: %w", err))
 		return

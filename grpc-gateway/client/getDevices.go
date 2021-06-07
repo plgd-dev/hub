@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 // DeviceDetails describes a device.
@@ -13,7 +14,7 @@ type DeviceDetails struct {
 	// Device basic content(oic.wk.d) of /oic/d resource.
 	Device *pb.Device
 	// Resources list of the device resources.
-	Resources []*pb.ResourceLink
+	Resources []*commands.Resource
 }
 
 // GetDevices retrieves device details from the client.

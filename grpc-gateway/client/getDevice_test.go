@@ -7,6 +7,7 @@ import (
 	"time"
 
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -28,9 +29,12 @@ func (a *testApplication) GetRootCertificateAuthorities() ([]*x509.Certificate, 
 }
 
 func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) client.DeviceDetails {
-	var resources []*pb.ResourceLink
+	var resources []*commands.Resource
 	if withResources {
-		resources = test.SortResources(test.ResourceLinksToPb(deviceID, test.GetAllBackendResourceLinks()))
+		for _, r := range test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks()) {
+			resources = append(resources, r)
+		}
+		resources = test.SortResources(resources)
 	}
 
 	return client.DeviceDetails{
@@ -99,7 +103,7 @@ func TestClient_GetDevice(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			got.Resources = test.SortResources(got.Resources)
+			got.Resources = test.CleanUpResourcesArray(got.Resources)
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))

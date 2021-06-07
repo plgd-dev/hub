@@ -9,101 +9,14 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-func toResourceValue(resource *Resource) *pb.ResourceValue {
-	return &pb.ResourceValue{
-		ResourceId: &commands.ResourceId{
-			Href:     resource.Resource.GetHref(),
-			DeviceId: resource.Resource.GetDeviceId(),
-		},
-		Content: pb.RAContent2Content(resource.GetContent()),
-		Types:   resource.Resource.GetResourceTypes(),
-		Status:  pb.RAStatus2Status(resource.GetStatus()),
+func toResourceValue(resource *Resource) *pb.Resource {
+	return &pb.Resource{
+		Data:  resource.projection.content,
+		Types: resource.Resource.GetResourceTypes(),
 	}
-}
-
-type commandsFilterBitmask int
-
-const (
-	commandsFilterBitmaskCreate               commandsFilterBitmask = 1
-	commandsFilterBitmaskRetrieve             commandsFilterBitmask = 2
-	commandsFilterBitmaskUpdate               commandsFilterBitmask = 4
-	commandsFilterBitmaskDelete               commandsFilterBitmask = 8
-	commandsFilterBitmaskDeviceMetadataUpdate commandsFilterBitmask = 16
-)
-
-func filterPendingCommandToBitmask(f pb.RetrievePendingCommandsRequest_Command) commandsFilterBitmask {
-	bitmask := commandsFilterBitmask(0)
-	switch f {
-	case pb.RetrievePendingCommandsRequest_RESOURCE_CREATE:
-		bitmask |= commandsFilterBitmaskCreate
-	case pb.RetrievePendingCommandsRequest_RESOURCE_RETRIEVE:
-		bitmask |= commandsFilterBitmaskRetrieve
-	case pb.RetrievePendingCommandsRequest_RESOURCE_UPDATE:
-		bitmask |= commandsFilterBitmaskUpdate
-	case pb.RetrievePendingCommandsRequest_RESOURCE_DELETE:
-		bitmask |= commandsFilterBitmaskDelete
-	case pb.RetrievePendingCommandsRequest_DEVICE_METADATA_UPDATE:
-		bitmask |= commandsFilterBitmaskDeviceMetadataUpdate
-	}
-	return bitmask
-}
-
-func filterPendingsCommandsToBitmask(commandsFilter []pb.RetrievePendingCommandsRequest_Command) commandsFilterBitmask {
-	bitmask := commandsFilterBitmask(0)
-	if len(commandsFilter) == 0 {
-		bitmask = commandsFilterBitmaskCreate | commandsFilterBitmaskRetrieve | commandsFilterBitmaskUpdate | commandsFilterBitmaskDelete | commandsFilterBitmaskDeviceMetadataUpdate
-	} else {
-		for _, f := range commandsFilter {
-			bitmask |= filterPendingCommandToBitmask(f)
-		}
-	}
-	return bitmask
-}
-
-func toPendingCommands(resource *Resource, commandsFilter commandsFilterBitmask) []*pb.PendingCommand {
-	if resource.projection == nil {
-		return nil
-	}
-	pendingCmds := make([]*pb.PendingCommand, 0, 32)
-	if commandsFilter&commandsFilterBitmaskCreate > 0 {
-		for _, pendingCmd := range resource.projection.resourceCreatePendings {
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceCreatePending{
-					ResourceCreatePending: pendingCmd,
-				},
-			})
-		}
-	}
-	if commandsFilter&commandsFilterBitmaskRetrieve > 0 {
-		for _, pendingCmd := range resource.projection.resourceRetrievePendings {
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceRetrievePending{
-					ResourceRetrievePending: pendingCmd,
-				},
-			})
-		}
-	}
-	if commandsFilter&commandsFilterBitmaskUpdate > 0 {
-		for _, pendingCmd := range resource.projection.resourceUpdatePendings {
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceUpdatePending{
-					ResourceUpdatePending: pendingCmd,
-				},
-			})
-		}
-	}
-	if commandsFilter&commandsFilterBitmaskDelete > 0 {
-		for _, pendingCmd := range resource.projection.resourceDeletePendings {
-			pendingCmds = append(pendingCmds, &pb.PendingCommand{
-				Command: &pb.PendingCommand_ResourceDeletePending{
-					ResourceDeletePending: pendingCmd,
-				},
-			})
-		}
-	}
-	return pendingCmds
 }
 
 type ResourceShadow struct {
@@ -153,7 +66,7 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 	return resources, err
 }
 
-func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValuesRequest, srv pb.GrpcGateway_RetrieveResourcesValuesServer) error {
+func (rd *ResourceShadow) RetrieveResources(req *pb.RetrieveResourcesRequest, srv pb.GrpcGateway_RetrieveResourcesServer) error {
 	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
@@ -173,7 +86,7 @@ func (rd *ResourceShadow) RetrieveResourcesValues(req *pb.RetrieveResourcesValue
 
 func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommandsRequest, srv pb.GrpcGateway_RetrievePendingCommandsServer) error {
 	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandsFilter())
-	if filterCmds&commandsFilterBitmaskDeviceMetadataUpdate > 0 && len(req.GetResourceIdsFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
+	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdsFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
 		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdsFilter())
 		devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
 		if err != nil {
@@ -211,14 +124,53 @@ func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommand
 	return nil
 }
 
+func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.RetrieveDevicesMetadataRequest) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
+	result := make(map[string]*events.DeviceMetadataSnapshotTaken)
+	typeFilter := make(strings.Set)
+	typeFilter.Add(req.TypeFilter...)
+	for deviceID, resources := range resources {
+		for _, resource := range resources {
+			if !hasMatchingType(resource.Resource.GetResourceTypes(), typeFilter) {
+				continue
+			}
+			d, ok := devicesMetadata[deviceID]
+			if ok {
+				result[deviceID] = d
+			}
+		}
+	}
+
+	return result, nil
+}
+
 func (rd *ResourceShadow) RetrieveDevicesMetadata(req *pb.RetrieveDevicesMetadataRequest, srv pb.GrpcGateway_RetrieveDevicesMetadataServer) error {
 	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
+	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
+	for deviceID := range deviceIDs {
+		resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
+	}
+
+	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIdsFilter, nil)
+	if err != nil {
+		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
+	}
+
 	devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
 	if err != nil {
 		return err
 	}
+
+	devicesMetadata, err = filterMetadataByUserFilters(resources, devicesMetadata, req)
+	if err != nil {
+		return status.Errorf(codes.Internal, "cannot filter devices metadata by type: %v", err)
+	}
+
+	if len(devicesMetadata) == 0 {
+		return status.Errorf(codes.NotFound, "not found")
+	}
+
 	for _, deviceMetadata := range devicesMetadata {
-		err = srv.Send(deviceMetadata)
+		err = srv.Send(deviceMetadata.GetDeviceMetadataUpdated())
 		if err != nil {
 			return status.Errorf(codes.Canceled, "cannot send devices metadata %v: %v", deviceMetadata, err)
 		}

@@ -57,8 +57,9 @@ func (client *Client) registerObservationsForPublishedResourcesLocked(ctx contex
 			log.Errorf("signIn: cannot receive link for the device %v: %v", deviceID, err)
 			return
 		}
-		resource := m.ToRAProto()
-		resources = append(resources, &resource)
+		for _, r := range m.GetResources() {
+			resources = append(resources, r)
+		}
 
 	}
 	client.observeResourcesLocked(ctx, resources)
@@ -74,7 +75,7 @@ func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID st
 		}
 		return fmt.Errorf("cannot get device(%v) metdata: %v", deviceID, err)
 	}
-	shadowSynchronizationDisabled := false
+	shadowSynchronization := commands.ShadowSynchronization_UNSET
 	for {
 		m, err := deviceMetadataClient.Recv()
 		if err == io.EOF {
@@ -86,12 +87,11 @@ func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID st
 		if err != nil {
 			return fmt.Errorf("cannot get device(%v) metdata: %v", deviceID, err)
 		}
-		shadowSynchronizationDisabled = m.GetShadowSynchronization().GetShadowSynchronization().GetDisabled()
-
+		shadowSynchronization = m.GetShadowSynchronization()
 	}
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
-	client.observedResourcesDisabled = shadowSynchronizationDisabled
+	client.shadowSynchronization = shadowSynchronization
 	return nil
 }
 
@@ -216,7 +216,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	client.server.taskQueue.Submit(func() {
 		client.observedResourcesLock.Lock()
 		defer client.observedResourcesLock.Unlock()
-		if client.observedResourcesDisabled {
+		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
 			return
 		}
 		client.registerObservationsForPublishedResourcesLocked(req.Context, signIn.DeviceID)

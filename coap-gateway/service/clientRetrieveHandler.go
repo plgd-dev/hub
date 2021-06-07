@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -52,7 +51,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	var content *pbGRPC.Content
+	var content *commands.Content
 	var code coapCodes.Code
 	resourceInterface := getResourceInterface(req)
 	if resourceInterface == "" {
@@ -83,8 +82,8 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 	client.sendResponse(code, req.Token, mediaType, content.Data)
 }
 
-func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*pbGRPC.Content, coapCodes.Code, error) {
-	retrieveResourcesValuesClient, err := client.server.rdClient.RetrieveResourcesValues(ctx, &pbGRPC.RetrieveResourcesValuesRequest{
+func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
+	RetrieveResourcesClient, err := client.server.rdClient.RetrieveResources(ctx, &pbGRPC.RetrieveResourcesRequest{
 		ResourceIdsFilter: []*commands.ResourceId{
 			{
 				DeviceId: deviceID,
@@ -95,23 +94,23 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	if err != nil {
 		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), err
 	}
-	defer retrieveResourcesValuesClient.CloseSend()
+	defer RetrieveResourcesClient.CloseSend()
 	for {
-		resourceValue, err := retrieveResourcesValuesClient.Recv()
+		resourceValue, err := RetrieveResourcesClient.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), err
 		}
-		if resourceValue.GetResourceId().GetDeviceId() == deviceID && resourceValue.GetResourceId().GetHref() == href && resourceValue.Content != nil {
-			return resourceValue.Content, coapCodes.Content, nil
+		if resourceValue.GetData().GetResourceId().GetDeviceId() == deviceID && resourceValue.GetData().GetResourceId().GetHref() == href && resourceValue.GetData().Content != nil {
+			return resourceValue.GetData().Content, coapCodes.Content, nil
 		}
 	}
 	return nil, coapCodes.NotFound, fmt.Errorf("not found")
 }
 
-func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*pbGRPC.Content, error) {
+func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID, href string) (*commands.Content, error) {
 	retrieveCommand, err := coapconv.NewRetrieveResourceRequest(commands.NewResourceID(deviceID, href), req, client.remoteAddrString())
 	if err != nil {
 		return nil, err
@@ -121,10 +120,10 @@ func clientRetrieveFromDeviceHandler(req *mux.Message, client *Client, deviceID,
 	if err != nil {
 		return nil, err
 	}
-	resp, err := pb.RAResourceRetrievedEventToResponse(retrievedEvent)
+	content, err := commands.EventContentToContent(retrievedEvent)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.GetContent(), nil
+	return content, nil
 }

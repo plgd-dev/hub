@@ -11,7 +11,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -22,9 +21,9 @@ import (
 
 const OCFCreateInterface = "oic.if.create"
 
-func StatusToCoapCode(status pbGRPC.Status, operation Operation) codes.Code {
+func StatusToCoapCode(status commands.Status, operation Operation) codes.Code {
 	switch status {
-	case pbGRPC.Status_OK:
+	case commands.Status_OK:
 		switch operation {
 		case Update:
 			return codes.Changed
@@ -35,21 +34,21 @@ func StatusToCoapCode(status pbGRPC.Status, operation Operation) codes.Code {
 		case Create:
 			return codes.Created
 		}
-	case pbGRPC.Status_CREATED:
+	case commands.Status_CREATED:
 		return codes.Created
-	case pbGRPC.Status_ACCEPTED:
+	case commands.Status_ACCEPTED:
 		return codes.Valid
-	case pbGRPC.Status_BAD_REQUEST:
+	case commands.Status_BAD_REQUEST:
 		return codes.BadRequest
-	case pbGRPC.Status_UNAUTHORIZED:
+	case commands.Status_UNAUTHORIZED:
 		return codes.Unauthorized
-	case pbGRPC.Status_FORBIDDEN:
+	case commands.Status_FORBIDDEN:
 		return codes.Forbidden
-	case pbGRPC.Status_NOT_FOUND:
+	case commands.Status_NOT_FOUND:
 		return codes.NotFound
-	case pbGRPC.Status_UNAVAILABLE:
+	case commands.Status_UNAVAILABLE:
 		return codes.ServiceUnavailable
-	case pbGRPC.Status_NOT_IMPLEMENTED:
+	case commands.Status_NOT_IMPLEMENTED:
 		return codes.NotImplemented
 	}
 	return codes.BadRequest

@@ -10,10 +10,9 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -50,7 +49,7 @@ func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
 
 }
 
-func SendResourceContentToObserver(client *Client, resourceChanged *pb.Event_ResourceChanged, observe uint32, token message.Token) {
+func SendResourceContentToObserver(client *Client, resourceChanged *events.ResourceChanged, observe uint32, token message.Token) {
 	msg := pool.AcquireMessage(client.coapConn.Context())
 	msg.SetCode(coapCodes.Content)
 	msg.SetObserve(observe)
@@ -109,8 +108,8 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 
 	seqNum := uint32(2)
 	h := resourceSubscriptionHandlers{
-		onChange: func(ctx context.Context, resourceChanged *pb.Event_ResourceChanged) error {
-			if resourceChanged.GetStatus() != pbGRPC.Status_OK {
+		onChange: func(ctx context.Context, resourceChanged *events.ResourceChanged) error {
+			if resourceChanged.GetStatus() != commands.Status_OK {
 				client.cancelResourceSubscription(token, false)
 				client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %v", authCtx.GetDeviceID(), deviceID, href, resourceChanged.GetStatus()), coapconv.StatusToCoapCode(resourceChanged.GetStatus(), coapconv.Retrieve), req.Token)
 				return nil

@@ -18,6 +18,7 @@ const hrefKey = "href"
 const sequenceNumberKey = "sequencenumber"
 const deviceIDKey = "deviceid"
 const userIDKey = "userid"
+const initializedKey = "initialized"
 
 var typeQueryIndex = bson.D{
 	{typeKey, 1},
@@ -34,6 +35,11 @@ var typeResourceIDQueryIndex = bson.D{
 	{hrefKey, 1},
 }
 
+var typeInitializedIDQueryIndex = bson.D{
+	{"_id", 1},
+	{initializedKey, 1},
+}
+
 type DBSub struct {
 	ID             string `bson:"_id"`
 	URL            string
@@ -46,6 +52,7 @@ type DBSub struct {
 	SequenceNumber uint64 `bson:"sequencenumber"`
 	UserID         string `bson:"userid"`
 	SigningSecret  string
+	Initialized    bool `bson:"initialized"`
 }
 
 func makeDBSub(sub store.Subscription) DBSub {
@@ -61,6 +68,7 @@ func makeDBSub(sub store.Subscription) DBSub {
 		SequenceNumber: sub.SequenceNumber,
 		UserID:         sub.UserID,
 		SigningSecret:  sub.SigningSecret,
+		Initialized:    sub.Initialized,
 	}
 }
 
@@ -121,6 +129,22 @@ func (s *Store) IncrementSubscriptionSequenceNumber(ctx context.Context, subscri
 		return 0, fmt.Errorf("cannot increment sequence number for subscription: %w", err)
 	}
 	return res, err
+}
+
+func (s *Store) SetInitialized(ctx context.Context, subscriptionID string) error {
+	col := s.client.Database(s.DBName()).Collection(subscriptionsCName)
+
+	if subscriptionID == "" {
+		return fmt.Errorf("cannot set initialized: invalid subscriptionId")
+	}
+
+	opts := &options.UpdateOptions{}
+	opts.SetHint(typeInitializedIDQueryIndex)
+	_, err := col.UpdateOne(ctx, bson.D{{Key: "_id", Value: subscriptionID}, {Key: initializedKey, Value: false}}, bson.M{"$set": bson.M{initializedKey: true}}, opts)
+	if err != nil {
+		return fmt.Errorf("cannot set initialized for %v: %w", subscriptionID, err)
+	}
+	return nil
 }
 
 func (s *Store) PopSubscription(ctx context.Context, subscriptionID string) (sub store.Subscription, err error) {

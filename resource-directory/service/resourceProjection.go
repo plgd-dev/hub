@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 )
 
@@ -73,13 +72,13 @@ func (rp *resourceProjection) Clone() *resourceProjection {
 	return rp.cloneLocked()
 }
 
-func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending *events.ResourceUpdatePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending *events.ResourceUpdatePending) error) error {
 	if len(rp.resourceUpdatePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceUpdatePendingLocked /%v", rp.resourceID)
 	for _, u := range rp.resourceUpdatePendings {
-		err := do(ctx, u, u.GetEventMetadata().GetVersion())
+		err := do(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -89,7 +88,7 @@ func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context,
 
 func (rp *resourceProjection) sendEventResourceUpdated(ctx context.Context, resourcesUpdated []*events.ResourceUpdated) error {
 	for _, u := range resourcesUpdated {
-		err := rp.subscriptions.OnResourceUpdated(ctx, u, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceUpdated(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -97,13 +96,13 @@ func (rp *resourceProjection) sendEventResourceUpdated(ctx context.Context, reso
 	return nil
 }
 
-func (rp *resourceProjection) onResourceRetrievePendingLocked(ctx context.Context, do func(ctx context.Context, retrievePending *events.ResourceRetrievePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceRetrievePendingLocked(ctx context.Context, do func(ctx context.Context, retrievePending *events.ResourceRetrievePending) error) error {
 	if len(rp.resourceRetrievePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceRetrievePendingLocked /%v", rp.resourceID)
 	for _, u := range rp.resourceRetrievePendings {
-		err := do(ctx, u, u.GetEventMetadata().GetVersion())
+		err := do(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -111,13 +110,13 @@ func (rp *resourceProjection) onResourceRetrievePendingLocked(ctx context.Contex
 	return nil
 }
 
-func (rp *resourceProjection) onResourceDeletePendingLocked(ctx context.Context, do func(ctx context.Context, deletePending *events.ResourceDeletePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceDeletePendingLocked(ctx context.Context, do func(ctx context.Context, deletePending *events.ResourceDeletePending) error) error {
 	if len(rp.resourceDeletePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceDeletePendingLocked /%v", rp.resourceID)
 	for _, u := range rp.resourceDeletePendings {
-		err := do(ctx, u, u.GetEventMetadata().GetVersion())
+		err := do(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -125,13 +124,13 @@ func (rp *resourceProjection) onResourceDeletePendingLocked(ctx context.Context,
 	return nil
 }
 
-func (rp *resourceProjection) onResourceCreatePendingLocked(ctx context.Context, do func(ctx context.Context, createPending *events.ResourceCreatePending, version uint64) error) error {
+func (rp *resourceProjection) onResourceCreatePendingLocked(ctx context.Context, do func(ctx context.Context, createPending *events.ResourceCreatePending) error) error {
 	if len(rp.resourceCreatePendings) == 0 {
 		return nil
 	}
 	log.Debugf("onResourceCreatePendingLocked %v", rp.resourceID)
 	for _, u := range rp.resourceCreatePendings {
-		err := do(ctx, u, u.GetEventMetadata().GetVersion())
+		err := do(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -141,7 +140,7 @@ func (rp *resourceProjection) onResourceCreatePendingLocked(ctx context.Context,
 
 func (rp *resourceProjection) sendEventResourceRetrieved(ctx context.Context, resourcesRetrieved []*events.ResourceRetrieved) error {
 	for _, u := range resourcesRetrieved {
-		err := rp.subscriptions.OnResourceRetrieved(ctx, u, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceRetrieved(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -151,7 +150,7 @@ func (rp *resourceProjection) sendEventResourceRetrieved(ctx context.Context, re
 
 func (rp *resourceProjection) sendEventResourceDeleted(ctx context.Context, resourceDeleted []*events.ResourceDeleted) error {
 	for _, u := range resourceDeleted {
-		err := rp.subscriptions.OnResourceDeleted(ctx, u, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceDeleted(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -161,7 +160,7 @@ func (rp *resourceProjection) sendEventResourceDeleted(ctx context.Context, reso
 
 func (rp *resourceProjection) sendEventResourceCreated(ctx context.Context, resourceCreated []*events.ResourceCreated) error {
 	for _, u := range resourceCreated {
-		err := rp.subscriptions.OnResourceCreated(ctx, u, u.GetEventMetadata().GetVersion())
+		err := rp.subscriptions.OnResourceCreated(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -169,16 +168,9 @@ func (rp *resourceProjection) sendEventResourceCreated(ctx context.Context, reso
 	return nil
 }
 
-func (rp *resourceProjection) onResourceChangedLocked(ctx context.Context, do func(ctx context.Context, resourceChanged *pb.Event_ResourceChanged, version uint64) error) error {
+func (rp *resourceProjection) onResourceChangedLocked(ctx context.Context, do func(ctx context.Context, resourceChanged *events.ResourceChanged) error) error {
 	log.Debugf("onResourceChangedLocked %v %v", rp.resourceID, rp.onResourceChangedVersion)
-	return do(ctx, &pb.Event_ResourceChanged{
-		ResourceId: &commands.ResourceId{
-			DeviceId: rp.resourceID.GetDeviceId(),
-			Href:     rp.resourceID.GetHref(),
-		},
-		Content: pb.RAContent2Content(rp.content.GetContent()),
-		Status:  pb.RAStatus2Status(rp.content.GetStatus()),
-	}, rp.onResourceChangedVersion)
+	return do(ctx, rp.content)
 }
 
 func (rp *resourceProjection) onResourceUpdatedLocked(ctx context.Context, updateProcessed []*events.ResourceUpdated) error {

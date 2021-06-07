@@ -30,5 +30,10 @@ func (c *Client) DeleteResource(
 		return fmt.Errorf("cannot delete resource /%v/%v: %w", deviceID, href, err)
 	}
 
-	return DecodeContentWithCodec(cfg.codec, resp.GetContent().GetContentType(), resp.GetContent().GetData(), response)
+	content, err := commands.EventContentToContent(resp)
+	if err != nil {
+		return fmt.Errorf("cannot create resource /%v/%v: %w", deviceID, href, err)
+	}
+
+	return DecodeContentWithCodec(cfg.codec, content.GetContentType(), content.GetData(), response)
 }

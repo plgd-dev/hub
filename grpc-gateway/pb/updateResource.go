@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"google.golang.org/grpc/peer"
 )
 
@@ -31,16 +30,5 @@ func (req *UpdateResourceRequest) ToRACommand(ctx context.Context) (*commands.Up
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,
 		},
-	}, nil
-}
-
-func RAResourceUpdatedEventToResponse(e *events.ResourceUpdated) (*UpdateResourceResponse, error) {
-	content, err := EventContentToContent(e)
-	if err != nil {
-		return nil, err
-	}
-	return &UpdateResourceResponse{
-		Content: content,
-		Status:  RAStatus2Status(e.GetStatus()),
 	}, nil
 }

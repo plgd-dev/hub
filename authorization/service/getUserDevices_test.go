@@ -12,7 +12,7 @@ import (
 )
 
 func TestUserDevicesList(t *testing.T) {
-	srv := newMockRetrieveResourcesValues(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
+	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
 	s, shutdown := newTestService(t)
 	defer shutdown()
 	defer s.cleanUp()
@@ -29,7 +29,7 @@ func TestUserDevicesList(t *testing.T) {
 }
 
 func TestListingMoreDevices(t *testing.T) {
-	srv := newMockRetrieveResourcesValues(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
+	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
 	s, shutdown := newTestService(t)
 	defer shutdown()
 	defer s.cleanUp()
@@ -66,7 +66,7 @@ type mockGetUserDevicesServer struct {
 	grpc.ServerStream
 }
 
-func newMockRetrieveResourcesValues(ctx context.Context) *mockGetUserDevicesServer {
+func newMockRetrieveResources(ctx context.Context) *mockGetUserDevicesServer {
 	return &mockGetUserDevicesServer{
 		ctx: ctx,
 	}

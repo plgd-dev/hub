@@ -3,14 +3,27 @@ package service
 import (
 	"context"
 	"fmt"
-	"hash/crc64"
 	"sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/kit/strings"
+	kitSync "github.com/plgd-dev/kit/sync"
 )
 
+type subscriptionEvent struct {
+	version uint64
+}
+
 type subscription struct {
+	devicesEvent *pb.SubscribeToEvents_CreateSubscription
+
+	isInitialized       sync.Map
+	filteredDeviceIDs   strings.Set
+	filteredResourceIDs strings.Set
+	filteredEvents      filterBitmask
+
 	id     string
 	userID string
 	token  string
@@ -23,14 +36,20 @@ type subscription struct {
 
 	eventVersionsLock sync.Mutex
 	eventVersions     map[string]subscriptionEvent
+
+	isInitializedResource *kitSync.Map
 }
 
-type subscriptionEvent struct {
-	version uint64
-	hash    uint64
-}
-
-func NewSubscription(userID, id, token string, send SendEventFunc, resourceProjection *Projection) *subscription {
+func Newsubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeToEvents_CreateSubscription) *subscription {
+	filteredDeviceIDs := strings.MakeSet(devicesEvent.GetDeviceIdsFilter()...)
+	filteredResourceIDs := strings.MakeSet()
+	if len(devicesEvent.GetResourceIdsFilter()) > 0 {
+		filteredDeviceIDs = strings.MakeSet()
+	}
+	for _, r := range devicesEvent.GetResourceIdsFilter() {
+		filteredResourceIDs.Add(r.ToUUID())
+		filteredDeviceIDs.Add(r.GetDeviceId())
+	}
 	return &subscription{
 		userID:                        userID,
 		id:                            id,
@@ -39,7 +58,149 @@ func NewSubscription(userID, id, token string, send SendEventFunc, resourceProje
 		resourceProjection:            resourceProjection,
 		eventVersions:                 make(map[string]subscriptionEvent),
 		registeredDevicesInProjection: make(map[string]bool),
+		devicesEvent:                  devicesEvent,
+		filteredDeviceIDs:             filteredDeviceIDs,
+		filteredResourceIDs:           filteredResourceIDs,
+		isInitializedResource:         kitSync.NewMap(),
+		filteredEvents:                devicesEventsFilterToBitmask(devicesEvent.GetEventsFilter()),
 	}
+}
+
+func (s *subscription) update(ctx context.Context, currentDevices map[string]bool, init bool) error {
+	filteredDevices := make([]string, 0, 32)
+	for deviceID := range currentDevices {
+		if isFilteredDevice(s.filteredDeviceIDs, deviceID) {
+			_, err := s.RegisterToProjection(ctx, deviceID)
+			if err != nil {
+				log.Errorf("cannot register to resource projection for %v: %v", deviceID, err)
+				continue
+			}
+			filteredDevices = append(filteredDevices, deviceID)
+		}
+
+	}
+
+	if init || len(filteredDevices) > 0 {
+		err := s.NotifyOfRegisteredDevice(ctx, filteredDevices)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := s.initDevices(ctx, filteredDevices)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *subscription) Init(ctx context.Context, currentDevices map[string]bool) error {
+	return s.update(ctx, currentDevices, true)
+}
+
+func (s *subscription) Update(ctx context.Context, addedDevices, removedDevices map[string]bool) error {
+	toSend := make([]string, 0, 32)
+	for deviceID := range removedDevices {
+		devID := deviceID
+		toSend = append(toSend, devID)
+		err := s.UnregisterFromProjection(ctx, deviceID)
+		if err != nil {
+			log.Errorf("cannot unregister resource from projection for %v: %v", deviceID, err)
+		}
+	}
+	if len(toSend) > 0 {
+		err := s.NotifyOfUnregisteredDevice(ctx, toSend)
+		if err != nil {
+			return fmt.Errorf("cannot send device unregistered: %w", err)
+		}
+	}
+	return s.update(ctx, addedDevices, false)
+}
+
+func (s *subscription) initDevices(ctx context.Context, deviceIDs []string) error {
+	var errors []error
+	initFuncs := []func(ctx context.Context, deviceID string) error{
+		s.initNotifyOfDevicesMetadata,
+		s.initSendResourcesPublished,
+		s.initSendResourcesChanged,
+		s.initSendResourcesCreatePending,
+		s.initSendResourcesDeletePending,
+		s.initSendResourcesUpdatePending,
+		s.initSendResourcesRetrievePending,
+	}
+	for _, deviceID := range deviceIDs {
+		for _, f := range initFuncs {
+			err := f(ctx, deviceID)
+			if err != nil {
+				errors = append(errors, err)
+			}
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("%v", errors)
+	}
+	return nil
+}
+
+func isFilteredDevice(filteredDeviceIDs strings.Set, deviceID string) bool {
+	if len(filteredDeviceIDs) == 0 {
+		return true
+	}
+	return filteredDeviceIDs.HasOneOf(deviceID)
+}
+
+func isFilteredResourceIDs(filteredResourceIDs strings.Set, resourceID *commands.ResourceId) bool {
+	if len(filteredResourceIDs) == 0 {
+		return true
+	}
+	return filteredResourceIDs.HasOneOf(resourceID.ToUUID())
+}
+
+func (s *subscription) Filter(resourceID *commands.ResourceId, typeEvent string, version uint64) bool {
+	if _, ok := s.isInitialized.Load(resourceID.GetDeviceId()); !ok {
+		return false
+	}
+	if !isFilteredDevice(s.filteredDeviceIDs, resourceID.GetDeviceId()) {
+		return false
+	}
+	if !isFilteredResourceIDs(s.filteredResourceIDs, resourceID) {
+		return false
+	}
+	return s.filterByVersion(resourceID, typeEvent, version)
+}
+
+type isInitialized struct {
+	sync.Mutex
+	initialized bool
+}
+
+func (s *subscription) initializeResource(resourceID *commands.ResourceId, isInit bool) bool {
+	if isInit {
+		value, _ := s.isInitializedResource.LoadOrStoreWithFunc(resourceID.ToUUID(), func(value interface{}) interface{} {
+			v := value.(*isInitialized)
+			v.Lock()
+			return v
+		}, func() interface{} {
+			var v isInitialized
+			v.Lock()
+			return &v
+		})
+		v := value.(*isInitialized)
+		v.initialized = true
+		defer v.Unlock()
+		return v.initialized
+	}
+	value, ok := s.isInitializedResource.LoadWithFunc(resourceID.ToUUID(), func(value interface{}) interface{} {
+		v := value.(*isInitialized)
+		v.Lock()
+		return v
+	})
+	if ok {
+		v := value.(*isInitialized)
+		defer v.Unlock()
+		return v.initialized
+	}
+	return false
 }
 
 func (s *subscription) UserID() string {
@@ -54,36 +215,23 @@ func (s *subscription) Token() string {
 	return s.token
 }
 
-func CalcHashFromBytes(content []byte) uint64 {
-	if len(content) > 0 {
-		return crc64.Checksum(content, crc64.MakeTable(crc64.ISO))
-	}
-	return 0
-}
-
-func (s *subscription) FilterByVersionAndHash(deviceID, href, typeEvent string, version, hash uint64) bool {
-	resourceID := (&commands.ResourceId{DeviceId: deviceID, Href: href + "." + typeEvent}).ToUUID()
+func (s *subscription) filterByVersion(resourceID *commands.ResourceId, typeEvent string, version uint64) bool {
+	rID := resourceID.ToUUID()
 	s.eventVersionsLock.Lock()
 	defer s.eventVersionsLock.Unlock()
-	v, ok := s.eventVersions[resourceID]
+	v, ok := s.eventVersions[rID]
 	if !ok {
-		s.eventVersions[resourceID] = subscriptionEvent{
+		s.eventVersions[rID] = subscriptionEvent{
 			version: version,
-			hash:    hash,
 		}
-		return false
-	}
-	if v.version >= version {
 		return true
 	}
-	var ret bool
-	if hash != 0 {
-		ret = v.hash == hash
-		v.hash = hash
+	if v.version >= version {
+		return false
 	}
 	v.version = version
-	s.eventVersions[resourceID] = v
-	return ret
+	s.eventVersions[rID] = v
+	return true
 }
 
 func (s *subscription) RegisterToProjection(ctx context.Context, deviceID string) (loaded bool, err error) {

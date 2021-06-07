@@ -19,14 +19,16 @@ func (r *RequestHandler) UpdateDeviceShadowSynchronization(ctx context.Context, 
 	if ok {
 		connectionID = peer.Addr.String()
 	}
+	shadowSynchronization := commands.ShadowSynchronization_DISABLED
+	if req.GetEnabled() {
+		shadowSynchronization = commands.ShadowSynchronization_ENABLED
+	}
 
 	_, err := r.resourceAggregateClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      req.GetDeviceId(),
 		CorrelationId: correlationID.String(),
 		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronization{
-			ShadowSynchronization: &commands.ShadowSynchronization{
-				Disabled: req.GetDisabled(),
-			},
+			ShadowSynchronization: shadowSynchronization,
 		},
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,

@@ -250,14 +250,14 @@ func main() {
 				Href:     *href,
 			})
 		}
-		getClient, err := ocfGW.RetrieveResourcesValues(ctx, &pbGW.RetrieveResourcesValuesRequest{
+		getClient, err := ocfGW.RetrieveResources(ctx, &pbGW.RetrieveResourcesRequest{
 			ResourceIdsFilter: resourceIdsFilter,
 			DeviceIdsFilter:   deviceIdsFilter,
 		})
 		if err != nil {
 			log.Fatalf("cannot retrieve values: %v", err)
 		}
-		resources := make([]*pbGW.ResourceValue, 0, 4)
+		resources := make([]*pbGW.Resource, 0, 4)
 		for {
 			resp, err := getClient.Recv()
 			if err == io.EOF {

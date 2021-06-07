@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/sdk/local/core"
 )
 
@@ -66,7 +66,7 @@ type observationHandler struct {
 	removeSubscription func()
 }
 
-func (o *observationHandler) HandleResourceContentChanged(ctx context.Context, ev *pb.Event_ResourceChanged) error {
+func (o *observationHandler) HandleResourceContentChanged(ctx context.Context, ev *events.ResourceChanged) error {
 	o.obs.Handle(ctx, func(v interface{}) error {
 		return DecodeContentWithCodec(o.codec, ev.GetContent().GetContentType(), ev.GetContent().GetData(), v)
 	})

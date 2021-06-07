@@ -17,14 +17,14 @@ service GrpcGateway {
   // Get all devices
   rpc GetDevices (GetDevicesRequest) returns (stream Device) {}
   // Get resource links of devices.
-  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ResourceLink) {}
+  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ocf.cloud.resourceaggregate.pb.ResourceLinksPublished) {}
 
-  rpc RetrieveResourceFromDevice(RetrieveResourceFromDeviceRequest) returns (RetrieveResourceFromDeviceResponse) {}
+  rpc RetrieveResourceFromDevice(RetrieveResourceFromDeviceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceRetrieved) {}
 
   // Retrieve resources values from resource shadow
-  rpc RetrieveResourcesValues(RetrieveResourcesValuesRequest) returns (stream ResourceValue) {}
+  rpc RetrieveResources(RetrieveResourcesRequest) returns (stream Resource) {}
   // Update resource values
-  rpc UpdateResource(UpdateResourceRequest) returns (UpdateResourceResponse) {}
+  rpc UpdateResource(UpdateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceUpdated) {}
 
   // Subscribe to events
   rpc SubscribeToEvents(stream ocf.cloud.grpcgateway.pb.SubscribeToEvents) returns (stream Event) {}
@@ -33,15 +33,15 @@ service GrpcGateway {
   rpc GetClientConfiguration(ClientConfigurationRequest) returns (ClientConfigurationResponse) {}
 
   // Delete resource at the device.
-  rpc DeleteResource(DeleteResourceRequest) returns (DeleteResourceResponse) {}
+  rpc DeleteResource(DeleteResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceDeleted) {}
 
   // Create resource at the device.
-  rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse) {}
+  rpc CreateResource(CreateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceCreated) {}
 
   // UpdateDeviceShadowSynchronization enables/disables shadow synchronization of device.
   rpc UpdateDeviceShadowSynchronization(UpdateDeviceShadowSynchronizationRequest) returns (UpdateDeviceShadowSynchronizationResponse) {}
 
   rpc RetrievePendingCommands(RetrievePendingCommandsRequest) returns (stream PendingCommand) {}
 
-  rpc RetrieveDevicesMetadata(RetrieveDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataSnapshotTaken) {}
+  rpc RetrieveDevicesMetadata(RetrieveDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated) {}
 }

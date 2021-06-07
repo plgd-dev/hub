@@ -26,16 +26,13 @@ import (
 )
 
 func TestResourceDirectory_GetResourceLinks(t *testing.T) {
-	linkToPtr := func(l *pb.ResourceLink) *pb.ResourceLink {
-		return l
-	}
 	type args struct {
 		request pb.GetResourceLinksRequest
 	}
 	tests := []struct {
 		name     string
 		args     args
-		want     map[string]*pb.ResourceLink
+		want     map[string]*events.ResourceLinksPublished
 		wantCode codes.Code
 		wantErr  bool
 	}{
@@ -46,9 +43,14 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 					DeviceIdsFilter: []string{Resource1.DeviceId},
 				},
 			},
-			want: map[string]*pb.ResourceLink{
-				Resource1.ToUUID(): linkToPtr(pb.RAResourceToProto(&Resource1.Resource)),
-				Resource3.ToUUID(): linkToPtr(pb.RAResourceToProto(&Resource3.Resource)),
+			want: map[string]*events.ResourceLinksPublished{
+				Resource1.DeviceId: {
+					DeviceId: Resource1.DeviceId,
+					Resources: []*commands.Resource{
+						&Resource1.Resource,
+						&Resource3.Resource,
+					},
+				},
 			},
 		},
 	}
@@ -113,7 +115,7 @@ func testCreateEventstore() *mockEventStore.MockEventStore {
 }
 
 type testGrpcGateway_GetResourceLinksServer struct {
-	got map[string]*pb.ResourceLink
+	got map[string]*events.ResourceLinksPublished
 	grpc.ServerStream
 }
 
@@ -121,10 +123,10 @@ func (s *testGrpcGateway_GetResourceLinksServer) Context() context.Context {
 	return context.Background()
 }
 
-func (s *testGrpcGateway_GetResourceLinksServer) Send(d *pb.ResourceLink) error {
+func (s *testGrpcGateway_GetResourceLinksServer) Send(d *events.ResourceLinksPublished) error {
 	if s.got == nil {
-		s.got = make(map[string]*pb.ResourceLink)
+		s.got = make(map[string]*events.ResourceLinksPublished)
 	}
-	s.got[(&commands.ResourceId{DeviceId: d.DeviceId, Href: d.Href}).ToUUID()] = d
+	s.got[d.DeviceId] = test.CleanUpResourceLinksPublished(d)
 	return nil
 }

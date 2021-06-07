@@ -101,16 +101,6 @@ func updateDevice(dev *Device, resource *Resource) error {
 		dev.Resource = &devContent
 		dev.Resource.ResourceTypes = resource.Resource.GetResourceTypes()
 		dev.Resource.Interfaces = resource.Resource.GetInterfaces()
-		/*
-			case cloudResourceTypes.HasOneOf(resource.Resource.GetResourceTypes()...):
-				var cloudStatus deviceStatus.Status
-				err := decodeContent(resource.GetContent(), &cloudStatus)
-				if err != nil {
-					return err
-				}
-				dev.IsOnline = cloudStatus.IsOnline()
-				dev.cloudStateUpdated = true
-		*/
 	}
 	return nil
 }
@@ -146,7 +136,7 @@ func filterDevicesByUserFilters(resources map[string]map[string]*Resource, devic
 		if !ok {
 			continue
 		}
-		device.IsOnline = deviceMetadata.GetStatus().GetStatus().IsOnline()
+		device.IsOnline = deviceMetadata.GetDeviceMetadataUpdated().GetStatus().IsOnline()
 		if hasMatchingStatus(device.IsOnline, req.StatusFilter) {
 			devices = append(devices, device)
 		}

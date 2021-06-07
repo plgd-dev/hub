@@ -13,7 +13,6 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 
 	"github.com/gorilla/websocket"
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/test"
@@ -70,9 +69,9 @@ func readMessage(t *testing.T, conn *websocket.Conn, messages *sync.Map) {
 		var event service.DeviceResourceObservationEvent
 		err = json.Decode(message, &event)
 		require.NoError(t, err)
-		if event.Event == service.ToDeviceResourcesObservationEvent(client.DeviceResourcesObservationEvent_ADDED) {
+		if event.Event == "added" {
 			messages.Store("added", event)
-		} else if event.Event == service.ToDeviceResourcesObservationEvent(client.DeviceResourcesObservationEvent_REMOVED) {
+		} else if event.Event == "removed" {
 			messages.Delete("deleted")
 		}
 	}

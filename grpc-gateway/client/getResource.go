@@ -2,11 +2,13 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
 // GetResourceWithCodec retrieves content of a resource from the client.
@@ -36,9 +38,9 @@ func (c *Client) getResource(
 	href string,
 	codec Codec,
 	response interface{}) error {
-	var resp *pb.ResourceValue
-	err := c.RetrieveResourcesByResourceIDs(ctx, MakeResourceIDCallback(deviceID, href, func(v pb.ResourceValue) {
-		resp = &v
+	var resp *pb.Resource
+	err := c.RetrieveResourcesByResourceIDs(ctx, MakeResourceIDCallback(deviceID, href, func(v *pb.Resource) {
+		resp = v
 	}))
 	if err != nil {
 		return err
@@ -46,11 +48,14 @@ func (c *Client) getResource(
 	if resp == nil {
 		return status.Errorf(codes.NotFound, "not found")
 	}
-	switch resp.GetStatus() {
-	case pb.Status_OK:
-		return DecodeContentWithCodec(codec, resp.GetContent().GetContentType(), resp.GetContent().GetData(), response)
-	case pb.Status_UNKNOWN:
+
+	switch resp.GetData().GetStatus() {
+	case commands.Status_UNKNOWN:
 		return status.Errorf(codes.Unavailable, "content of resource /%v%v is not stored", deviceID, href)
 	}
-	return status.Errorf(resp.GetStatus().ToGrpcCode(), "cannot obtain content of resource /%v%v", deviceID, href)
+	content, err := commands.EventContentToContent(resp.GetData())
+	if err != nil {
+		return fmt.Errorf("cannot retrieve resource /%v%v: %w", deviceID, href, err)
+	}
+	return DecodeContentWithCodec(codec, content.GetContentType(), content.GetData(), response)
 }

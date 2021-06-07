@@ -13,7 +13,7 @@ message Resource {
     string anchor = 5;
     string title = 6;
     repeated string supported_content_types = 7;
-    int32 time_to_live = 8;
+    int64 valid_until = 8;
     Policies policies = 98;
     repeated EndpointInformation endpoint_informations = 99;
 }

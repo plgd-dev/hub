@@ -9,4 +9,5 @@ option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
 message RetrieveDevicesMetadataRequest{
     repeated string device_ids_filter = 1;
+    repeated string type_filter = 2;
 }

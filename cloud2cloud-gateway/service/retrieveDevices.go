@@ -97,7 +97,7 @@ func (rh *RequestHandler) RetrieveDevicesAll(ctx context.Context, w http.Respons
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}
-	reps, err := rh.RetrieveResourcesValues(ctx, nil, nil)
+	reps, err := rh.RetrieveResources(ctx, nil, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve all devices[base]: %w", err)
 	}

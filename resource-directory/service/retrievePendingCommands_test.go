@@ -137,9 +137,7 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
 							DeviceId: deviceID,
 							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: &commands.ShadowSynchronization{
-									Disabled: true,
-								},
+								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
 							},
 							AuditContext: commands.NewAuditContext("1", ""),
 						},
@@ -355,9 +353,7 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
 							DeviceId: deviceID,
 							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: &commands.ShadowSynchronization{
-									Disabled: true,
-								},
+								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
 							},
 							AuditContext: commands.NewAuditContext("1", ""),
 						},
@@ -458,7 +454,7 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 		defer cancel()
 		_, err := c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
 			DeviceId: deviceID,
-			Disabled: true,
+			Enabled:  false,
 		})
 		// action is done async we don't expect error
 		require.NoError(t, err)

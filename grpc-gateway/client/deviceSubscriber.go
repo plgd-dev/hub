@@ -34,7 +34,7 @@ type Operations interface {
 	UpdateResource(ctx context.Context, event *events.ResourceUpdatePending) error
 	DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
-	DeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error
+	UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error
 	// Fatal error occured during reconnection to the server. Client shall call DeviceSubscriber.Close().
 	OnDeviceSubscriberReconnectError(err error)
 }
@@ -122,7 +122,7 @@ func (h *DeviceSubscriptionHandlers) HandleDeviceMetadataUpdatePending(ctx conte
 		return nil
 	}
 
-	err := h.operations.DeviceMetadataUpdate(ctx, val)
+	err := h.operations.UpdateDeviceMetadata(ctx, val)
 	if err != nil {
 		return fmt.Errorf("unable to update device metadata %v: %w", val, err)
 	}

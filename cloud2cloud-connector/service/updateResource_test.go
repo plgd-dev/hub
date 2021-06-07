@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -29,7 +30,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *pb.UpdateResourceResponse
+		want    *raEvents.ResourceUpdated
 		wantErr bool
 	}{
 		{
@@ -45,9 +46,12 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceResponse{
-				Content: &pb.Content{},
-				Status:  pb.Status_OK,
+			want: &raEvents.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
 			},
 		},
 		{
@@ -64,9 +68,12 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceResponse{
-				Content: &pb.Content{},
-				Status:  pb.Status_OK,
+			want: &raEvents.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
 			},
 		},
 		{
@@ -83,9 +90,12 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceResponse{
-				Content: &pb.Content{},
-				Status:  pb.Status_OK,
+			want: &raEvents.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
 			},
 		},
 		{
@@ -101,7 +111,13 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 					},
 				},
 			},
-			wantErr: true,
+			want: &raEvents.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_FORBIDDEN,
+			},
 		},
 		{
 			name: "invalid Href",
@@ -134,9 +150,11 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
+				got.AuditContext = nil
+				got.EventMetadata = nil
 				require.NoError(t, err)
+				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
-			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

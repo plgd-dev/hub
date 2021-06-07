@@ -48,7 +48,7 @@ func getHref(deviceID, href string) string {
 }
 
 func makeResourceLink(resource *commands.Resource) schema.ResourceLink {
-	r := pbGRPC.RAResourceToProto(resource).ToSchema()
+	r := resource.ToSchema()
 	r.Href = getHref(resource.GetDeviceId(), resource.GetHref())
 	r.ID = ""
 	return r
@@ -66,24 +66,24 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter 
 
 	resourceLinks := make(map[string]schema.ResourceLinks)
 	for {
-		resourceLink, err := client.Recv()
+		snapshot, err := client.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, fmt.Errorf("cannot get resource links: %w", err)
 		}
-		if resourceLink.GetHref() == commands.StatusHref {
-			continue
-		}
-		_, ok := resourceLinks[resourceLink.GetDeviceId()]
+		_, ok := resourceLinks[snapshot.GetDeviceId()]
 		if !ok {
-			resourceLinks[resourceLink.GetDeviceId()] = make(schema.ResourceLinks, 0, 32)
+			resourceLinks[snapshot.GetDeviceId()] = make(schema.ResourceLinks, 0, 32)
 		}
-		r := resourceLink.ToSchema()
-		r.Href = getHref(resourceLink.GetDeviceId(), resourceLink.GetHref())
-		r.ID = ""
-		resourceLinks[resourceLink.GetDeviceId()] = append(resourceLinks[resourceLink.GetDeviceId()], r)
+
+		links := commands.ResourcesToResourceLinks(snapshot.GetResources())
+		for i := range links {
+			links[i].Href = getHref(links[i].DeviceID, links[i].Href)
+			links[i].ID = ""
+			resourceLinks[links[i].DeviceID] = append(resourceLinks[links[i].DeviceID], links[i])
+		}
 	}
 	if len(resourceLinks) == 0 {
 		return nil, fmt.Errorf("cannot get resource links: not found")
@@ -92,9 +92,9 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter 
 }
 
 type Representation struct {
-	Href           string        `json:"href"`
-	Representation interface{}   `json:"rep"`
-	Status         pbGRPC.Status `json:"-"`
+	Href           string          `json:"href"`
+	Representation interface{}     `json:"rep"`
+	Status         commands.Status `json:"-"`
 }
 
 type RetrieveDeviceAllResponse struct {
@@ -102,7 +102,7 @@ type RetrieveDeviceAllResponse struct {
 	Links []Representation `json:"links"`
 }
 
-func unmarshalContent(c *pbGRPC.Content) (interface{}, error) {
+func unmarshalContent(c *commands.Content) (interface{}, error) {
 	var m interface{}
 	switch c.GetContentType() {
 	case message.AppCBOR.String(), message.AppOcfCbor.String():
@@ -125,9 +125,9 @@ func unmarshalContent(c *pbGRPC.Content) (interface{}, error) {
 	return m, nil
 }
 
-func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceIdsFilter []*commands.ResourceId, deviceIdsFilter []string) (map[string][]Representation, error) {
+func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdsFilter []*commands.ResourceId, deviceIdsFilter []string) (map[string][]Representation, error) {
 
-	client, err := rh.rdClient.RetrieveResourcesValues(ctx, &pbGRPC.RetrieveResourcesValuesRequest{
+	client, err := rh.rdClient.RetrieveResources(ctx, &pbGRPC.RetrieveResourcesRequest{
 		DeviceIdsFilter:   deviceIdsFilter,
 		ResourceIdsFilter: resourceIdsFilter,
 	})
@@ -146,23 +146,23 @@ func (rh *RequestHandler) RetrieveResourcesValues(ctx context.Context, resourceI
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
 		}
-		if content.GetResourceId().GetHref() == commands.StatusHref {
+		if content.GetData().GetResourceId().GetHref() == commands.StatusHref {
 			continue
 		}
-		rep, err := unmarshalContent(content.GetContent())
+		rep, err := unmarshalContent(content.GetData().GetContent())
 		if err != nil {
 			log.Errorf("cannot retrieve resources values: %v", err)
 			continue
 		}
 
-		_, ok := allResources[content.GetResourceId().GetDeviceId()]
+		_, ok := allResources[content.GetData().GetResourceId().GetDeviceId()]
 		if !ok {
-			allResources[content.GetResourceId().GetDeviceId()] = make([]Representation, 0, 32)
+			allResources[content.GetData().GetResourceId().GetDeviceId()] = make([]Representation, 0, 32)
 		}
-		allResources[content.GetResourceId().GetDeviceId()] = append(allResources[content.GetResourceId().GetDeviceId()], Representation{
-			Href:           getHref(content.GetResourceId().GetDeviceId(), content.GetResourceId().GetHref()),
+		allResources[content.GetData().GetResourceId().GetDeviceId()] = append(allResources[content.GetData().GetResourceId().GetDeviceId()], Representation{
+			Href:           getHref(content.GetData().GetResourceId().GetDeviceId(), content.GetData().GetResourceId().GetHref()),
 			Representation: rep,
-			Status:         content.GetStatus(),
+			Status:         content.GetData().GetStatus(),
 		})
 
 	}
@@ -204,7 +204,7 @@ func (rh *RequestHandler) RetrieveDeviceWithRepresentations(ctx context.Context,
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device(%v) [base]: %w", deviceID, err)
 	}
-	allResources, err := rh.RetrieveResourcesValues(ctx, nil, []string{deviceID})
+	allResources, err := rh.RetrieveResources(ctx, nil, []string{deviceID})
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), fmt.Errorf("cannot retrieve device(%v) [all]: %w", deviceID, err)
 	}

@@ -15,7 +15,7 @@ import (
 
 func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDetails {
 	for key, x := range s {
-		x.Resources = test.SortResources(x.Resources)
+		x.Resources = test.CleanUpResourcesArray(x.Resources)
 		x.Device.ProtocolIndependentId = ""
 		s[key] = x
 	}

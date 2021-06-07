@@ -227,11 +227,10 @@ func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResou
 	)
 }
 
-func MakeDeviceMetadata(deviceID string, status *events.DeviceMetadataUpdated, shadowSynchronization *events.DeviceMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
+func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMetadataUpdated, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {
 	e := events.DeviceMetadataSnapshotTaken{
 		DeviceId:              deviceID,
-		Status:                status,
-		ShadowSynchronization: shadowSynchronization,
+		DeviceMetadataUpdated: deviceMetadataUpdated,
 		EventMetadata:         eventMetadata,
 	}
 	return eventstore.NewLoadedEvent(

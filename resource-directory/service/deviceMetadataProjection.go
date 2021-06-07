@@ -29,8 +29,7 @@ func (p *deviceMetadataProjection) Clone() *deviceMetadataProjection {
 
 	data := &events.DeviceMetadataSnapshotTaken{
 		DeviceId:              p.data.GetDeviceId(),
-		Status:                p.data.GetStatus(),
-		ShadowSynchronization: p.data.GetShadowSynchronization(),
+		DeviceMetadataUpdated: p.data.GetDeviceMetadataUpdated(),
 		UpdatePendings:        p.data.GetUpdatePendings(),
 		EventMetadata:         p.data.GetEventMetadata(),
 	}
@@ -53,20 +52,14 @@ func appendOrdered(a []*events.DeviceMetadataUpdated, ev *events.DeviceMetadataU
 	return append([]*events.DeviceMetadataUpdated{ev}, a...)
 }
 
-func (p *deviceMetadataProjection) InitialNotifyOfDeviceMetadata(ctx context.Context, subscription *devicesSubscription) error {
+func (p *deviceMetadataProjection) InitialNotifyOfDeviceMetadata(ctx context.Context, subscription *subscription) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	var onDeviceMetadataUpdated []*events.DeviceMetadataUpdated
-	onDeviceMetadataUpdated = appendOrdered(onDeviceMetadataUpdated, p.data.GetStatus())
-	onDeviceMetadataUpdated = appendOrdered(onDeviceMetadataUpdated, p.data.GetShadowSynchronization())
-
 	var errors []error
-	for _, r := range onDeviceMetadataUpdated {
-		err := subscription.NotifyOfUpdatedDeviceMetadata(ctx, r)
-		if err != nil {
-			errors = append(errors, err)
-		}
+	err := subscription.NotifyOfUpdatedDeviceMetadata(ctx, p.data.GetDeviceMetadataUpdated())
+	if err != nil {
+		errors = append(errors, err)
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%v", errors)
@@ -89,19 +82,9 @@ func (p *deviceMetadataProjection) onDeviceMetadataUpdatePendingLocked(ctx conte
 	return nil
 }
 
-func (p *deviceMetadataProjection) onDeviceMetadataUpdatedLocked(ctx context.Context, updated []*events.DeviceMetadataUpdated) error {
+func (p *deviceMetadataProjection) onDeviceMetadataUpdatedLocked(ctx context.Context) error {
 	log.Debugf("deviceMetadataProjection.onDeviceMetadataUpdatedLocked %v", p.data)
-	var errors []error
-	for _, u := range updated {
-		err := p.subscriptions.OnDeviceMetadataUpdated(ctx, u)
-		if err != nil {
-			errors = append(errors, err)
-		}
-	}
-	if len(errors) > 0 {
-		return fmt.Errorf("cannot send device metadata updated event: %v", errors)
-	}
-	return nil
+	return p.subscriptions.OnDeviceMetadataUpdated(ctx, p.data.GetDeviceMetadataUpdated())
 }
 
 func (p *deviceMetadataProjection) EventType() string {
@@ -111,7 +94,7 @@ func (p *deviceMetadataProjection) EventType() string {
 
 func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.Iter) error {
 	var onDeviceMetadataUpdatePending bool
-	var onDeviceMetadataUpdated []*events.DeviceMetadataUpdated
+	var onDeviceMetadataUpdated bool
 
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -148,14 +131,7 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 					}
 				}
 			}
-			if p.data.GetShadowSynchronization().GetShadowSynchronization().GetDisabled() != e.GetShadowSynchronization().GetShadowSynchronization().GetDisabled() {
-				onDeviceMetadataUpdated = appendOrdered(onDeviceMetadataUpdated, e.GetShadowSynchronization())
-			}
-			if p.data.GetStatus().GetStatus().GetValidUntil() != e.GetStatus().GetStatus().GetValidUntil() {
-				onDeviceMetadataUpdated = appendOrdered(onDeviceMetadataUpdated, e.GetStatus())
-			} else if p.data.GetStatus().GetStatus().GetValue() != e.GetStatus().GetStatus().GetValue() {
-				onDeviceMetadataUpdated = appendOrdered(onDeviceMetadataUpdated, e.GetStatus())
-			}
+			onDeviceMetadataUpdated = true
 			p.data = &e
 		case (&events.DeviceMetadataUpdatePending{}).EventType():
 			var e events.DeviceMetadataUpdatePending
@@ -172,11 +148,10 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-
 			p.data.DeviceId = e.GetDeviceId()
-			err := p.data.HandleDeviceMetadataUpdated(ctx, &e)
+			err := p.data.HandleDeviceMetadataUpdated(ctx, &e, false)
 			if err == nil {
-				onDeviceMetadataUpdated = appendOrdered(onDeviceMetadataUpdated, &e)
+				onDeviceMetadataUpdated = true
 				onDeviceMetadataUpdatePending = true
 			}
 		}
@@ -193,8 +168,8 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 			log.Errorf("%v", err)
 		}
 	}
-	if len(onDeviceMetadataUpdated) > 0 {
-		if err := p.onDeviceMetadataUpdatedLocked(ctx, onDeviceMetadataUpdated); err != nil {
+	if onDeviceMetadataUpdated {
+		if err := p.onDeviceMetadataUpdatedLocked(ctx); err != nil {
 			log.Errorf("%v", err)
 		}
 	}

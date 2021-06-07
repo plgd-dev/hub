@@ -9,7 +9,7 @@ option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
 message UpdateDeviceShadowSynchronizationRequest{
     string device_id = 1;
-    bool disabled = 2;
+    bool enabled = 2;
 }
 
 message UpdateDeviceShadowSynchronizationResponse{}

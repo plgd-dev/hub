@@ -4,21 +4,12 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-type DeviceResourcesObservationEvent_type uint8
-
-const DeviceResourcesObservationEvent_ADDED DeviceResourcesObservationEvent_type = 0
-const DeviceResourcesObservationEvent_REMOVED DeviceResourcesObservationEvent_type = 1
-
-type DeviceResourcesObservationEvent struct {
-	Links []*pb.ResourceLink
-	Event DeviceResourcesObservationEvent_type
-}
-
 type DeviceResourcesObservationHandler = interface {
-	Handle(ctx context.Context, event DeviceResourcesObservationEvent) error
+	HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error
+	HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error
 	OnClose()
 	Error(err error)
 }
@@ -28,18 +19,12 @@ type deviceResourcesObservation struct {
 	removeSubscription func()
 }
 
-func (o *deviceResourcesObservation) HandleResourcePublished(ctx context.Context, val *pb.Event_ResourcePublished) error {
-	return o.h.Handle(ctx, DeviceResourcesObservationEvent{
-		Links: val.GetLinks(),
-		Event: DeviceResourcesObservationEvent_ADDED,
-	})
+func (o *deviceResourcesObservation) HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error {
+	return o.h.HandleResourcePublished(ctx, val)
 }
 
-func (o *deviceResourcesObservation) HandleResourceUnpublished(ctx context.Context, val *pb.Event_ResourceUnpublished) error {
-	return o.h.Handle(ctx, DeviceResourcesObservationEvent{
-		Links: val.GetLinks(),
-		Event: DeviceResourcesObservationEvent_REMOVED,
-	})
+func (o *deviceResourcesObservation) HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error {
+	return o.h.HandleResourceUnpublished(ctx, val)
 }
 
 func (o *deviceResourcesObservation) OnClose() {

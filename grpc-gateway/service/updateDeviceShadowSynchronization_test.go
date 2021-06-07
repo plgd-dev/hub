@@ -55,7 +55,7 @@ func (f *contentChangedFilter) Handle(ctx context.Context, iter eventbus.Iter) (
 			if err != nil {
 				return err
 			}
-			if ev.GetShadowSynchronization() == nil {
+			if ev.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
 				continue
 			}
 			select {
@@ -115,13 +115,13 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 
 	_, err = c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
 		DeviceId: deviceID,
-		Disabled: true,
+		Enabled:  false,
 	})
 	require.NoError(t, err)
 
 	ev := v.WaitForDeviceMetadataUpdated(time.Second)
 	require.NotEmpty(t, ev)
-	require.True(t, ev.GetShadowSynchronization().GetDisabled())
+	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetShadowSynchronization())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
@@ -157,13 +157,13 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 
 	_, err = c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
 		DeviceId: deviceID,
-		Disabled: false,
+		Enabled:  true,
 	})
 	require.NoError(t, err)
 
 	ev = v.WaitForDeviceMetadataUpdated(time.Second * 5)
 	require.NotEmpty(t, ev)
-	require.False(t, ev.GetShadowSynchronization().GetDisabled())
+	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",

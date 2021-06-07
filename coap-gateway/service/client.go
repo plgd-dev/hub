@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -93,9 +92,9 @@ type Client struct {
 	server   *Service
 	coapConn *tcp.ClientConn
 
-	observedResources         map[string]map[int64]*observedResource // [deviceID][instanceID]
-	observedResourcesLock     sync.Mutex
-	observedResourcesDisabled bool
+	observedResources     map[string]map[int64]*observedResource // [deviceID][instanceID]
+	observedResourcesLock sync.Mutex
+	shadowSynchronization commands.ShadowSynchronization
 
 	resourceSubscriptions *kitSync.Map // [token]
 
@@ -713,7 +712,12 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 }
 
 func (client *Client) publishResourceLinks(ctx context.Context, links schema.ResourceLinks, deviceID string, ttl int32, connectionID string, sequence uint64) ([]*commands.Resource, error) {
-	resources := pbGRPC.SchemaResourceLinksToRAResources(links, ttl)
+	var validUntil time.Time
+	if ttl > 0 {
+		validUntil = time.Now().Add(time.Second * time.Duration(ttl))
+	}
+
+	resources := commands.SchemaResourceLinksToResources(links, validUntil)
 	request := commands.PublishResourceLinksRequest{
 		Resources: resources,
 		DeviceId:  deviceID,
@@ -867,10 +871,10 @@ func (client *Client) GetContext() (context.Context, context.CancelFunc) {
 	return kitNetGrpc.CtxWithOwner(client.Context(), authCtx.GetUserID()), func() {}
 }
 
-func (client *Client) sendErrorConfirmDeviceMetadataUpdate(userID string, event *events.DeviceMetadataUpdatePending, errToSend error) {
+func (client *Client) sendErrorConfirmDeviceMetadataUpdate(userID string, event *events.DeviceMetadataUpdatePending, errToSend error, status commands.Status) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource create: %v", err)
+		log.Errorf("cannot send error via confirm device metadata update: %v", err)
 		return
 	}
 
@@ -884,38 +888,37 @@ func (client *Client) sendErrorConfirmDeviceMetadataUpdate(userID string, event 
 			ConnectionId: client.remoteAddrString(),
 			Sequence:     client.coapConn.Sequence(),
 		},
-		Status: commands.Status_UNAUTHORIZED,
+		Status: status,
 	})
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource create: %v", err)
+		log.Errorf("cannot send error via confirm device metadata update: %v", err)
 	}
 }
 
-func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, disabled bool) {
+func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, shadowSynchronization commands.ShadowSynchronization) {
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
-	if disabled == client.observedResourcesDisabled {
+	if client.shadowSynchronization == shadowSynchronization {
 		return
 	}
 
-	if disabled {
-		client.observedResourcesDisabled = true
+	client.shadowSynchronization = shadowSynchronization
+	if shadowSynchronization == commands.ShadowSynchronization_DISABLED {
 		client.cleanObservedResourcesLocked()
 	} else {
-		client.observedResourcesDisabled = false
 		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
 	}
 }
 
-func (client *Client) DeviceMetadataUpdate(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		err := fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
-		client.sendErrorConfirmDeviceMetadataUpdate(authCtx.GetUserID(), event, err)
+		client.sendErrorConfirmDeviceMetadataUpdate(authCtx.GetUserID(), event, err, commands.Status_UNAUTHORIZED)
 		client.Close()
 		return err
 	}
-	if event.GetShadowSynchronization() == nil {
+	if event.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
 		return nil
 	}
 	sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.GetUserID())
@@ -923,7 +926,7 @@ func (client *Client) DeviceMetadataUpdate(ctx context.Context, event *events.De
 		return err
 	}
 
-	client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization().GetDisabled())
+	client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization())
 
 	_, err = client.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),

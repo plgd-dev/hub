@@ -31,4 +31,5 @@ type Store interface {
 	PopSubscription(ctx context.Context, subscriptionID string) (Subscription, error)
 	LoadSubscriptions(ctx context.Context, query SubscriptionQuery, h SubscriptionHandler) error
 	IncrementSubscriptionSequenceNumber(ctx context.Context, subscriptionID string) (uint64, error)
+	SetInitialized(ctx context.Context, subscriptionID string) error
 }

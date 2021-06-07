@@ -24,4 +24,5 @@ type Subscription struct {
 	SequenceNumber uint64
 	UserID         string
 	SigningSecret  string
+	Initialized    bool // need to send initialize events
 }

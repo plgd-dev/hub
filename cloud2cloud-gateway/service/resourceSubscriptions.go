@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/log"
 )
 
@@ -14,8 +15,8 @@ type resourceSubsciptionHandler struct {
 	emitEvent emitEventFunc
 }
 
-func (h *resourceSubsciptionHandler) HandleResourceContentChanged(ctx context.Context, val *pb.Event_ResourceChanged) error {
-	if val.GetStatus() != pb.Status_OK && val.GetStatus() != pb.Status_UNKNOWN {
+func (h *resourceSubsciptionHandler) HandleResourceContentChanged(ctx context.Context, val *raEvents.ResourceChanged) error {
+	if val.GetStatus() != commands.Status_OK && val.GetStatus() != commands.Status_UNKNOWN {
 		return fmt.Errorf("resourceSubsciptionHandler.HandleResourceContentChanged: cannot emit event for bad status %v of response", val.GetStatus())
 	}
 	rep, err := unmarshalContent(val.GetContent())

@@ -40,7 +40,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *pb.UpdateResourceResponse
+		want    *events.ResourceUpdated
 		wantErr bool
 	}{
 		{
@@ -56,9 +56,12 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceResponse{
-				Content: &pb.Content{},
-				Status:  pb.Status_OK,
+			want: &events.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
 			},
 		},
 		{
@@ -75,9 +78,12 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceResponse{
-				Content: &pb.Content{},
-				Status:  pb.Status_OK,
+			want: &events.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
 			},
 		},
 		{
@@ -94,9 +100,12 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 					},
 				},
 			},
-			want: &pb.UpdateResourceResponse{
-				Content: &pb.Content{},
-				Status:  pb.Status_OK,
+			want: &events.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
 			},
 		},
 		{
@@ -112,7 +121,13 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 					},
 				},
 			},
-			wantErr: true,
+			want: &events.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_FORBIDDEN,
+			},
 		},
 		{
 			name: "invalid Href",
@@ -151,6 +166,8 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
+				got.EventMetadata = nil
+				got.AuditContext = nil
 			}
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
@@ -280,10 +297,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			args: args{
 				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
-							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
-								pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
+					Action: &pb.SubscribeToEvents_CreateSubscription_{
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
 						},
 					},
@@ -315,10 +332,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			args: args{
 				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeToEvents_DevicesEvent{
-						DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
-							EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
-								pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED,
+					Action: &pb.SubscribeToEvents_CreateSubscription_{
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
 						},
 					},
@@ -339,10 +356,8 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					Type: &pb.Event_DeviceMetadataUpdated{
 						DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
-							Updated: &events.DeviceMetadataUpdated_Status{
-								Status: &commands.ConnectionStatus{
-									Value: commands.ConnectionStatus_ONLINE,
-								},
+							Status: &commands.ConnectionStatus{
+								Value: commands.ConnectionStatus_ONLINE,
 							},
 						},
 					},
@@ -355,11 +370,11 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			args: args{
 				sub: pb.SubscribeToEvents{
 					Token: "testToken",
-					FilterBy: &pb.SubscribeToEvents_DeviceEvent{
-						DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
-							DeviceId: deviceID,
-							EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
-								pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_PUBLISHED, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UNPUBLISHED,
+					Action: &pb.SubscribeToEvents_CreateSubscription_{
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+							DeviceIdsFilter: []string{deviceID},
+							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
 						},
 					},
@@ -411,10 +426,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					require.NoError(t, err)
 					ev.SubscriptionId = w.SubscriptionId
 					if ev.GetResourcePublished() != nil {
-						ev.GetResourcePublished().Links = test.SortResources(ev.GetResourcePublished().GetLinks())
+						test.CleanUpResourceLinksPublished(ev.GetResourcePublished())
 					}
 					if w.GetResourcePublished() != nil {
-						w.GetResourcePublished().Links = test.SortResources(w.GetResourcePublished().GetLinks())
+						test.CleanUpResourceLinksPublished(w.GetResourcePublished())
 					}
 					if ev.GetDeviceMetadataUpdated() != nil {
 						ev.GetDeviceMetadataUpdated().EventMetadata = nil
@@ -460,10 +475,10 @@ func TestRequestHandler_Issue270(t *testing.T) {
 
 	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeToEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
-				EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
-					pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
 			},
 		},
@@ -494,17 +509,6 @@ func TestRequestHandler_Issue270(t *testing.T) {
 			DeviceRegistered: &pb.Event_DeviceRegistered{
 				DeviceIds: []string{},
 			},
-		},
-		Token: "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceUnregistered_{
-			DeviceUnregistered: &pb.Event_DeviceUnregistered{},
 		},
 		Token: "testToken",
 	}
@@ -541,10 +545,8 @@ func TestRequestHandler_Issue270(t *testing.T) {
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				DeviceId: deviceID,
-				Updated: &events.DeviceMetadataUpdated_Status{
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
-					},
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
 				},
 			},
 		},
@@ -601,10 +603,10 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeToEvents_DevicesEvent{
-			DevicesEvent: &pb.SubscribeToEvents_DevicesEventFilter{
-				EventsFilter: []pb.SubscribeToEvents_DevicesEventFilter_Event{
-					pb.SubscribeToEvents_DevicesEventFilter_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_DevicesEventFilter_REGISTERED, pb.SubscribeToEvents_DevicesEventFilter_UNREGISTERED,
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
 			},
 		},
@@ -639,17 +641,6 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	ev, err = client.Recv()
-	require.NoError(t, err)
-	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
-		Type: &pb.Event_DeviceUnregistered_{
-			DeviceUnregistered: &pb.Event_DeviceUnregistered{},
-		},
-		Token: "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
@@ -670,10 +661,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				DeviceId: deviceID,
-				Updated: &events.DeviceMetadataUpdated_Status{
-					Status: &commands.ConnectionStatus{
-						Value: commands.ConnectionStatus_ONLINE,
-					},
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
 				},
 			},
 		},
@@ -683,11 +672,11 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	err = client.Send(&pb.SubscribeToEvents{
 		Token: "testToken",
-		FilterBy: &pb.SubscribeToEvents_ResourceEvent{
-			ResourceEvent: &pb.SubscribeToEvents_ResourceEventFilter{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-				EventsFilter: []pb.SubscribeToEvents_ResourceEventFilter_Event{
-					pb.SubscribeToEvents_ResourceEventFilter_CONTENT_CHANGED,
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				ResourceIdsFilter: []*commands.ResourceId{commands.NewResourceID(deviceID, "/light/2")},
+				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
 			},
 		},
@@ -714,18 +703,21 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: subContentChangedID,
-		Type: &pb.Event_ResourceChanged_{
-			ResourceChanged: &pb.Event_ResourceChanged{
+		Type: &pb.Event_ResourceChanged{
+			ResourceChanged: &events.ResourceChanged{
 				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-				Content: &pb.Content{
-					ContentType: message.AppOcfCbor.String(),
+				Content: &commands.Content{
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
 					Data: func() []byte {
 						ret, err := base64.StdEncoding.DecodeString("v2JydJ9qY29yZS5saWdodP9iaWafaW9pYy5pZi5yd29vaWMuaWYuYmFzZWxpbmX/ZXN0YXRl9GVwb3dlcgBkbmFtZWVMaWdodP8=")
 						require.NoError(t, err)
 						return ret
 					}(),
 				},
-				Status: pb.Status_OK,
+				Status:        commands.Status_OK,
+				AuditContext:  ev.GetResourceChanged().GetAuditContext(),
+				EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
 			},
 		},
 		Token: "testToken",
@@ -734,11 +726,11 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	err = client.Send(&pb.SubscribeToEvents{
 		Token: "updatePending + resourceUpdated",
-		FilterBy: &pb.SubscribeToEvents_DeviceEvent{
-			DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
-				DeviceId: deviceID,
-				EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
-					pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_UPDATED,
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				DeviceIdsFilter: []string{deviceID},
+				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 				},
 			},
 		},
@@ -826,14 +818,17 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		case ev.GetResourceChanged() != nil:
 			expectedEvent = &pb.Event{
 				SubscriptionId: subContentChangedID,
-				Type: &pb.Event_ResourceChanged_{
-					ResourceChanged: &pb.Event_ResourceChanged{
+				Type: &pb.Event_ResourceChanged{
+					ResourceChanged: &events.ResourceChanged{
 						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-						Content: &pb.Content{
-							ContentType: message.AppOcfCbor.String(),
-							Data:        []byte("\277estate\364epower\030cdnameeLight\377"),
+						Content: &commands.Content{
+							CoapContentFormat: int32(message.AppOcfCbor),
+							ContentType:       message.AppOcfCbor.String(),
+							Data:              []byte("\277estate\364epower\030cdnameeLight\377"),
 						},
-						Status: pb.Status_OK,
+						Status:        commands.Status_OK,
+						AuditContext:  ev.GetResourceChanged().GetAuditContext(),
+						EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
 					},
 				},
 				Token: "testToken",
@@ -903,14 +898,17 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		case ev.GetResourceChanged() != nil:
 			expectedEvent = &pb.Event{
 				SubscriptionId: subContentChangedID,
-				Type: &pb.Event_ResourceChanged_{
-					ResourceChanged: &pb.Event_ResourceChanged{
+				Type: &pb.Event_ResourceChanged{
+					ResourceChanged: &events.ResourceChanged{
 						ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-						Content: &pb.Content{
-							ContentType: message.AppOcfCbor.String(),
-							Data:        []byte("\277estate\364epower\000dnameeLight\377"),
+						Content: &commands.Content{
+							CoapContentFormat: int32(message.AppOcfCbor),
+							ContentType:       message.AppOcfCbor.String(),
+							Data:              []byte("\277estate\364epower\000dnameeLight\377"),
 						},
-						Status: pb.Status_OK,
+						Status:        commands.Status_OK,
+						AuditContext:  ev.GetResourceChanged().GetAuditContext(),
+						EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
 					},
 				},
 				Token: "testToken",
@@ -921,11 +919,11 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	err = client.Send(&pb.SubscribeToEvents{
 		Token: "receivePending + resourceReceived",
-		FilterBy: &pb.SubscribeToEvents_DeviceEvent{
-			DeviceEvent: &pb.SubscribeToEvents_DeviceEventFilter{
-				DeviceId: deviceID,
-				EventsFilter: []pb.SubscribeToEvents_DeviceEventFilter_Event{
-					pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVE_PENDING, pb.SubscribeToEvents_DeviceEventFilter_RESOURCE_RETRIEVED,
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				DeviceIdsFilter: []string{deviceID},
+				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED,
 				},
 			},
 		},

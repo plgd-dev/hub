@@ -9,6 +9,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 type CloseErrorHandler struct {
@@ -39,7 +40,7 @@ type SubscriptionHandler = interface {
 
 // ResourceContentChangedHandler handler of events.
 type ResourceContentChangedHandler = interface {
-	HandleResourceContentChanged(ctx context.Context, val *pb.Event_ResourceChanged) error
+	HandleResourceContentChanged(ctx context.Context, val *events.ResourceChanged) error
 }
 
 // ResourceSubscription subscription.
@@ -63,9 +64,9 @@ func (c *Client) NewResourceSubscription(ctx context.Context, resourceID *comman
 // JWT token must be stored in context for grpc call.
 func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceId, closeErrorHandler SubscriptionHandler, handle interface{}, gwClient pb.GrpcGatewayClient) (*ResourceSubscription, error) {
 	var resourceContentChangedHandler ResourceContentChangedHandler
-	filterEvents := make([]pb.SubscribeToEvents_ResourceEventFilter_Event, 0, 1)
+	filterEvents := make([]pb.SubscribeToEvents_CreateSubscription_Event, 0, 1)
 	if v, ok := handle.(ResourceContentChangedHandler); ok {
-		filterEvents = append(filterEvents, pb.SubscribeToEvents_ResourceEventFilter_CONTENT_CHANGED)
+		filterEvents = append(filterEvents, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED)
 		resourceContentChangedHandler = v
 	}
 
@@ -78,10 +79,10 @@ func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceI
 	}
 
 	err = client.Send(&pb.SubscribeToEvents{
-		FilterBy: &pb.SubscribeToEvents_ResourceEvent{
-			ResourceEvent: &pb.SubscribeToEvents_ResourceEventFilter{
-				ResourceId:   resourceID,
-				EventsFilter: filterEvents,
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				ResourceIdsFilter: []*commands.ResourceId{resourceID},
+				EventsFilter:      filterEvents,
 			},
 		},
 	})

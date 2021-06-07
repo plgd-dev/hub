@@ -8,43 +8,42 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-func statusToHttpStatus(status pbGRPC.Status) int {
+func statusToHttpStatus(status commands.Status) int {
 	switch status {
-	case pbGRPC.Status_UNKNOWN:
+	case commands.Status_UNKNOWN:
 		return http.StatusBadRequest
-	case pbGRPC.Status_OK:
+	case commands.Status_OK:
 		return http.StatusOK
-	case pbGRPC.Status_BAD_REQUEST:
+	case commands.Status_BAD_REQUEST:
 		return http.StatusBadRequest
-	case pbGRPC.Status_UNAUTHORIZED:
+	case commands.Status_UNAUTHORIZED:
 		return http.StatusUnauthorized
-	case pbGRPC.Status_FORBIDDEN:
+	case commands.Status_FORBIDDEN:
 		return http.StatusForbidden
-	case pbGRPC.Status_NOT_FOUND:
+	case commands.Status_NOT_FOUND:
 		return http.StatusNotFound
-	case pbGRPC.Status_UNAVAILABLE:
+	case commands.Status_UNAVAILABLE:
 		return http.StatusServiceUnavailable
-	case pbGRPC.Status_NOT_IMPLEMENTED:
+	case commands.Status_NOT_IMPLEMENTED:
 		return http.StatusNotImplemented
-	case pbGRPC.Status_ACCEPTED:
+	case commands.Status_ACCEPTED:
 		return http.StatusAccepted
-	case pbGRPC.Status_ERROR:
+	case commands.Status_ERROR:
 		return http.StatusInternalServerError
-	case pbGRPC.Status_METHOD_NOT_ALLOWED:
+	case commands.Status_METHOD_NOT_ALLOWED:
 		return http.StatusMethodNotAllowed
-	case pbGRPC.Status_CREATED:
+	case commands.Status_CREATED:
 		return http.StatusCreated
 	}
 	return http.StatusInternalServerError
 }
 
-func sendResponse(w http.ResponseWriter, processed *pbGRPC.UpdateResourceResponse) (int, error) {
+func sendResponse(w http.ResponseWriter, processed *raEvents.ResourceUpdated) (int, error) {
 	statusCode := statusToHttpStatus(processed.GetStatus())
 	if processed.Content != nil {
 		content, err := unmarshalContent(processed.GetContent())
@@ -116,11 +115,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
 	}
-	resp, err := pb.RAResourceUpdatedEventToResponse(updatedEvent)
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
-	}
-	return sendResponse(w, resp)
+	return sendResponse(w, updatedEvent)
 }
 
 func (rh *RequestHandler) UpdateResource(w http.ResponseWriter, r *http.Request) {
