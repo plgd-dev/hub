@@ -36,7 +36,15 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	if err != nil {
 		return nil, fmt.Errorf("cannot create server: %w", err)
 	}
-	cache := cache.New(expiration, expiration)
+	cleanupInterval := expiration / 30
+	if cleanupInterval < time.Minute {
+		cleanupInterval = expiration
+		if cleanupInterval > time.Minute {
+			cleanupInterval = time.Minute
+		}
+	}
+
+	cache := cache.New(expiration, cleanupInterval)
 	cache.OnEvicted(func(deviceID string, _ interface{}) {
 		projection.Unregister(deviceID)
 	})
