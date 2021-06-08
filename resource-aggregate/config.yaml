@@ -3,6 +3,18 @@ log:
 apis:
   grpc:
     address: "0.0.0.0:9100"
+    enforcementPolicy:
+      minTime: 5s
+      permitWithoutStream: true
+    keepAlive:
+      # 0s - means infinity
+      maxConnectionIdle: 0s
+      # 0s - means infinity
+      maxConnectionAge: 0s
+      # 0s - means infinity
+      maxConnectionAgeGrace: 0s
+      time: 2h
+      timeout: 20s
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"

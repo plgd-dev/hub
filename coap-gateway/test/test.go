@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -40,8 +39,6 @@ func MakeConfig(t *testing.T) service.Config {
 
 	err := cfg.Validate()
 	require.NoError(t, err)
-
-	fmt.Printf("%v\n", cfg)
 
 	return cfg
 }
