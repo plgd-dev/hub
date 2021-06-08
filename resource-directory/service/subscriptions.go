@@ -681,8 +681,7 @@ func (s *Subscriptions) SubscribeForEvents(resourceProjection *Projection, srv p
 	}
 
 	var localSubscriptions sync.Map
-	ctx, cancel := context.WithCancel(srv.Context())
-	defer cancel()
+	ctx := srv.Context()
 
 	defer func() {
 		subs := make([]string, 0, 32)

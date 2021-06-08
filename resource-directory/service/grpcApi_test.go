@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -16,10 +17,12 @@ import (
 
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -418,6 +421,160 @@ func TestRequestHandler_SubscribeForEvents(t *testing.T) {
 	}
 }
 
+func TestRequestHandler_Issue270(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*240)
+	defer cancel()
+
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	rdCfg := rdTest.MakeConfig(t)
+	rdCfg.Clients.AuthServer.PullFrequency = time.Second * 15
+	rdCfg.Clients.AuthServer.CacheExpiration = time.Minute
+
+	grpcgwCfg := grpcgwTest.MakeConfig(t)
+
+	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg), test.WithRDConfig(rdCfg), test.WithGRPCGWConfig(grpcgwCfg))
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+
+	client, err := c.SubscribeForEvents(ctx)
+	require.NoError(t, err)
+
+	err = client.Send(&pb.SubscribeForEvents{
+		Token: "testToken",
+		FilterBy: &pb.SubscribeForEvents_DevicesEvent{
+			DevicesEvent: &pb.SubscribeForEvents_DevicesEventFilter{
+				FilterEvents: []pb.SubscribeForEvents_DevicesEventFilter_Event{
+					pb.SubscribeForEvents_DevicesEventFilter_ONLINE, pb.SubscribeForEvents_DevicesEventFilter_OFFLINE, pb.SubscribeForEvents_DevicesEventFilter_REGISTERED, pb.SubscribeForEvents_DevicesEventFilter_UNREGISTERED,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err := client.Recv()
+	require.NoError(t, err)
+	expectedEvent := &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_OperationProcessed_{
+			OperationProcessed: &pb.Event_OperationProcessed{
+				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+				},
+			},
+		},
+		Token: "testToken",
+	}
+	fmt.Printf("SUBSCRIPTION ID: %v\n", ev.SubscriptionId)
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceRegistered_{
+			DeviceRegistered: &pb.Event_DeviceRegistered{
+				DeviceIds: []string{},
+			},
+		},
+		Token: "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceUnregistered_{
+			DeviceUnregistered: &pb.Event_DeviceUnregistered{},
+		},
+		Token: "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceOnline_{
+			DeviceOnline: &pb.Event_DeviceOnline{},
+		},
+		Token: "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceOffline_{
+			DeviceOffline: &pb.Event_DeviceOffline{},
+		},
+		Token: "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+
+	time.Sleep(time.Second * 10)
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceRegistered_{
+			DeviceRegistered: &pb.Event_DeviceRegistered{
+				DeviceIds: []string{deviceID},
+			},
+		},
+		Token: "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	expectedEvent = &pb.Event{
+		SubscriptionId: ev.SubscriptionId,
+		Type: &pb.Event_DeviceOnline_{
+			DeviceOnline: &pb.Event_DeviceOnline{
+				DeviceIds: []string{deviceID},
+			},
+		},
+		Token: "testToken",
+	}
+	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+
+	shutdownDevSim()
+	run := true
+	for run {
+		ev, err = client.Recv()
+		require.NoError(t, err)
+
+		t.Logf("ev after shutdown: %v\n", ev)
+
+		switch {
+		case ev.GetDeviceUnregistered() != nil:
+			expectedEvent = &pb.Event{
+				SubscriptionId: ev.SubscriptionId,
+				Type: &pb.Event_DeviceUnregistered_{
+					DeviceUnregistered: &pb.Event_DeviceUnregistered{
+						DeviceIds: []string{deviceID},
+					},
+				},
+				Token: "testToken",
+			}
+			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+			run = false
+		}
+	}
+}
+
 func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
@@ -515,8 +672,6 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-
-	time.Sleep(time.Second * 10)
 
 	ev, err = client.Recv()
 	require.NoError(t, err)

@@ -17,6 +17,8 @@ func New(config Config, logger *zap.Logger, opts ...grpc.ServerOption) (*Server,
 
 	v := []grpc.ServerOption{
 		grpc.Creds(credentials.NewTLS(tls.GetTLSConfig())),
+		grpc.KeepaliveEnforcementPolicy(config.EnforcementPolicy.ToGrpc()),
+		grpc.KeepaliveParams(config.KeepAlive.ToGrpc()),
 	}
 	if len(opts) > 0 {
 		v = append(v, opts...)

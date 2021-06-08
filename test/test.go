@@ -49,9 +49,11 @@ import (
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	coapgw "github.com/plgd-dev/cloud/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
-	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	grpcgwConfig "github.com/plgd-dev/cloud/grpc-gateway/service"
+	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
-	rdService "github.com/plgd-dev/cloud/resource-directory/test"
+	rdService "github.com/plgd-dev/cloud/resource-directory/service"
+	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
@@ -177,6 +179,8 @@ func ClearDB(ctx context.Context, t *testing.T) {
 
 type Config struct {
 	COAPGW coapgw.Config
+	RD     rdService.Config
+	GRPCGW grpcgwConfig.Config
 }
 
 func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
@@ -185,11 +189,25 @@ func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
 	}
 }
 
+func WithRDConfig(rd rdService.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.RD = rd
+	}
+}
+
+func WithGRPCGWConfig(grpcCfg grpcgwConfig.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.GRPCGW = grpcCfg
+	}
+}
+
 type SetUpOption = func(cfg *Config)
 
 func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown func()) {
 	config := Config{
 		COAPGW: coapgwTest.MakeConfig(t),
+		RD:     rdTest.MakeConfig(t),
+		GRPCGW: grpcgwTest.MakeConfig(t),
 	}
 
 	for _, o := range opts {
@@ -200,8 +218,8 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 	oauthShutdown := oauthService.SetUp(t)
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
-	rdShutdown := rdService.SetUp(t)
-	grpcShutdown := grpcgwService.SetUp(t)
+	rdShutdown := rdTest.New(t, config.RD)
+	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 	c2cgwShutdown := c2cgwService.SetUp(t)
 	caShutdown := caService.SetUp(t)
 	secureGWShutdown := coapgwTest.New(t, config.COAPGW)

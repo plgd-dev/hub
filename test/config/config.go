@@ -82,6 +82,10 @@ func MakeGrpcServerConfig(address string) grpcServer.Config {
 		Addr:          address,
 		TLS:           MakeTLSServerConfig(),
 		Authorization: MakeAuthorizationConfig(),
+		EnforcementPolicy: grpcServer.EnforcementPolicyConfig{
+			MinTime:             time.Second * 5,
+			PermitWithoutStream: true,
+		},
 	}
 }
 
