@@ -194,7 +194,16 @@ func testMakeDeviceResouceProtobuf(deviceId string, types []string, isOnline boo
 			},
 		},
 		ModelNumber: "ModelNumber." + deviceId,
-		IsOnline:    isOnline,
+		Metadata: &pb.Device_Metadata{
+			Status: &commands.ConnectionStatus{
+				Value: func() commands.ConnectionStatus_Status {
+					if isOnline {
+						return commands.ConnectionStatus_ONLINE
+					}
+					return commands.ConnectionStatus_OFFLINE
+				}(),
+			},
+		},
 	}
 }
 

@@ -70,9 +70,13 @@ func (h *gatewayHandler) GetClientConfiguration(context.Context, *pb.ClientConfi
 
 func (h *gatewayHandler) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) error {
 	v := pb.Device{
-		Id:               h.deviceID,
-		Name:             h.deviceName,
-		IsOnline:         true,
+		Id:   h.deviceID,
+		Name: h.deviceName,
+		Metadata: &pb.Device_Metadata{
+			Status: &commands.ConnectionStatus{
+				Value: commands.ConnectionStatus_ONLINE,
+			},
+		},
 		ManufacturerName: []*pb.LocalizedString{{Value: TestManufacturer, Language: "en"}},
 	}
 	err := srv.Send(&v)

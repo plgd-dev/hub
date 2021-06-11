@@ -76,6 +76,9 @@ func HTTPStatus2Status(s int) Status {
 
 // IsOnline evaluate online state
 func (s *ConnectionStatus) IsOnline() bool {
+	if s == nil {
+		return false
+	}
 	if s.Value == ConnectionStatus_OFFLINE {
 		return false
 	}

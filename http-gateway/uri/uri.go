@@ -9,6 +9,8 @@ const (
 	DeviceIDFilterQueryKey string = "deviceId"
 	TypeFilterQueryKey     string = "type"
 
+	CorrelationIDHeader string = "CorrelationID"
+
 	API string = "/api/v1"
 	// ocfcloud configuration
 	ClientConfiguration = "/.well-known/ocfcloud-configuration"

@@ -105,6 +105,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	// devices
 	r.HandleFunc(uri.Devices, requestHandler.getDevices).Methods(http.MethodGet)
 	r.HandleFunc(uri.Device, requestHandler.getDevice).Methods(http.MethodGet)
+	r.HandleFunc(uri.Device, requestHandler.updateDevice).Methods(http.MethodPut)
 
 	//maintenance
 	r.HandleFunc(uri.DeviceReboot, requestHandler.rebootDevice).Methods(http.MethodPost)

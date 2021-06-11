@@ -25,6 +25,7 @@ import (
 	c2cGwUri "github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
@@ -129,7 +130,11 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
-					IsOnline:   true,
+					Metadata: &pb.Device_Metadata{
+						Status: &commands.ConnectionStatus{
+							Value: commands.ConnectionStatus_ONLINE,
+						},
+					},
 				},
 			},
 		},
@@ -164,6 +169,9 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 					require.NoError(t, err)
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
 					dev.ProtocolIndependentId = ""
+					if dev.GetMetadata().GetStatus() != nil {
+						dev.GetMetadata().GetStatus().ValidUntil = 0
+					}
 					devices = append(devices, dev)
 				}
 				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

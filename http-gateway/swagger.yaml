@@ -68,6 +68,34 @@ paths:
           $ref: '#/components/responses/deviceNotFound'
         500:
           $ref: '#/components/responses/error'
+     put:
+      tags:
+        - Devices
+      summary: Update a device
+      description: |
+        Currently it invokes UPDATE METADATA command to disable/enable shadow synchronization within the resource aggregate, which transparently forwards the request to the device service asynchronously.
+      security:
+        - oauth2:
+          - plgd.devices
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/correlationID'
+      requestBody:
+        description: Update a device request.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceUpdate'
+        required: true
+      responses:
+        204:
+          $ref: '#/components/responses/accepted'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/deviceNotFound'
+        500:
+          $ref: '#/components/responses/error'
   '/api/v1/devices/{deviceId}/{resourcePath}':
     get:
       tags:
@@ -436,8 +464,8 @@ components:
         links:
           type: object
           description: "http://openconnectivityfoundation.github.io/core/swagger2.0/oic.wk.col.swagger.json#definitions/sbaseline/properties/links"
-        status:
-          $ref: '#/components/schemas/DeviceStatus'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
       example:
         device:
           rt: ['x.org.iotivity.device', 'oic.wk.d']
@@ -490,6 +518,33 @@ components:
       enum:
       - online
       - offline
+    ShadowSynchronization:
+      description: Shadow synchronization
+      type: object
+      properties:
+        disabled:
+          description: defines whether resource-shadow synchronize contents of the device resources.
+          type: boolean
+    DeviceMetadata:
+      type: object
+      properties:
+        connectionStatus:
+          description: Connection status
+          type: object
+          properties:
+            value:
+              $ref: '#/components/schemas/DeviceStatus'
+            validUntil:
+              description: defines how long online status is valid.
+              type: number
+        shadowSynchronization:
+          $ref: '#/components/schemas/ShadowSynchronization'
+    DeviceUpdate:
+      description: Device update request
+      type: object
+      properties:
+        shadowSynchronization:
+          $ref: '#/components/schemas/ShadowSynchronization'
   parameters:
     deviceId:
       name: deviceId
@@ -541,6 +596,13 @@ components:
       description: Defines the view or a way how to interact with a resource
       schema:
         type: string
+    correlationID:
+      name: CorrelationID
+      in: header
+      description: Propagate CorrelationID to all commands and events caused by the call
+      schema:
+        type: string
+        format: uuid
   responses:
     ok:
       description: Content is stored in body.

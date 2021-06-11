@@ -3,11 +3,13 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/plgd-dev/sdk/schema"
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
@@ -25,21 +27,47 @@ func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.R
 	jsonResponseWriter(w, mapToDevice(sdkDevice))
 }
 
-type Status string
+type ConnectionStatus struct {
+	Value      string `json:"value"`
+	ValidUntil int64  `json:"validUntil"`
+}
 
-const Status_ONLINE Status = "online"
-const Status_OFFLINE Status = "offline"
-
-func toStatus(isOnline bool) Status {
-	if isOnline {
-		return "online"
+func toConnectionStatus(s *commands.ConnectionStatus) ConnectionStatus {
+	connStatusVal := strings.ToLower(s.GetValue().String())
+	if connStatusVal == "" {
+		connStatusVal = strings.ToLower(commands.ConnectionStatus_OFFLINE.String())
 	}
-	return "offline"
+	return ConnectionStatus{
+		Value:      connStatusVal,
+		ValidUntil: s.GetValidUntil(),
+	}
+}
+
+type ShadowSynchronization struct {
+	Disabled bool `json:"disabled"`
+}
+
+func toShadowSynchronization(s *commands.ShadowSynchronization) ShadowSynchronization {
+	return ShadowSynchronization{
+		Disabled: s.GetDisabled(),
+	}
+}
+
+type Metadata struct {
+	ConnectionStatus      ConnectionStatus      `json:"connectionStatus"`
+	ShadowSynchronization ShadowSynchronization `json:"shadowSynchronization"`
+}
+
+func toMetadata(m *pb.Device_Metadata) Metadata {
+	return Metadata{
+		ConnectionStatus:      toConnectionStatus(m.GetStatus()),
+		ShadowSynchronization: toShadowSynchronization(m.GetShadowSynchronization()),
+	}
 }
 
 type Device struct {
-	Device schema.Device `json:"device"`
-	Status Status        `json:"status"`
+	Device   schema.Device `json:"device"`
+	Metadata Metadata      `json:"metadata"`
 }
 
 type RetrieveDeviceWithLinksResponse struct {
@@ -58,8 +86,8 @@ func toResourceLinks(s []*commands.Resource) []schema.ResourceLink {
 func mapToDevice(d *client.DeviceDetails) RetrieveDeviceWithLinksResponse {
 	return RetrieveDeviceWithLinksResponse{
 		Device: Device{
-			Device: d.Device.ToSchema(),
-			Status: toStatus(d.Device.GetIsOnline()),
+			Device:   d.Device.ToSchema(),
+			Metadata: toMetadata(d.Device.GetMetadata()),
 		},
 		Links: toResourceLinks(d.Resources),
 	}
