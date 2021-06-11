@@ -55,7 +55,7 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdsFilter []stri
 
 		devices = append(devices, Device{
 			Device: device.ToSchema(),
-			Status: toStatus(device.IsOnline),
+			Status: toStatus(device.GetMetadata().GetStatus().IsOnline()),
 		})
 	}
 	if len(devices) == 0 {

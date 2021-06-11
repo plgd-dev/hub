@@ -74,7 +74,7 @@ func decodeContent(content *commands.Content, v interface{}) error {
 type Device struct {
 	ID                string
 	Resource          *schema.Device
-	IsOnline          bool
+	Metadata          *pb.Device_Metadata
 	cloudStateUpdated bool
 }
 
@@ -85,7 +85,7 @@ func (d Device) ToProto() *pb.Device {
 			Id: d.ID,
 		}
 	}
-	r.IsOnline = d.IsOnline
+	r.Metadata = d.Metadata
 	return r
 }
 
@@ -136,8 +136,12 @@ func filterDevicesByUserFilters(resources map[string]map[string]*Resource, devic
 		if !ok {
 			continue
 		}
-		device.IsOnline = deviceMetadata.GetDeviceMetadataUpdated().GetStatus().IsOnline()
-		if hasMatchingStatus(device.IsOnline, req.StatusFilter) {
+		if hasMatchingStatus(deviceMetadata.GetDeviceMetadataUpdated().GetStatus().IsOnline(), req.StatusFilter) {
+			device.Metadata = &pb.Device_Metadata{
+				Status:                deviceMetadata.GetDeviceMetadataUpdated().GetStatus(),
+				ShadowSynchronization: deviceMetadata.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+			}
+
 			devices = append(devices, device)
 		}
 	}
