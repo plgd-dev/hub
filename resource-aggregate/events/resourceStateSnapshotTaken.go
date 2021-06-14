@@ -1,6 +1,7 @@
 package events
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -172,8 +173,27 @@ func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetada
 	return false
 }
 
+func Equal(current, changed *ResourceChanged) bool {
+	if current.Status != changed.Status {
+		return false
+	}
+
+	if current.Content.CoapContentFormat != changed.Content.CoapContentFormat ||
+		current.Content.ContentType != changed.Content.ContentType ||
+		!bytes.Equal(current.Content.Data, changed.Content.Data) {
+		return false
+	}
+
+	if current.AuditContext.UserId != changed.AuditContext.UserId {
+		return false
+	}
+
+	return true
+}
+
 func (e *ResourceStateSnapshotTaken) HandleEventResourceChanged(ctx context.Context, changed *ResourceChanged) (bool, error) {
-	if e.ValidateSequence(changed.GetEventMetadata()) {
+	if e.ValidateSequence(changed.GetEventMetadata()) &&
+		(e.LatestResourceChange == nil || !Equal(e.LatestResourceChange, changed)) {
 		e.ResourceId = changed.GetResourceId()
 		e.EventMetadata = changed.GetEventMetadata()
 		e.LatestResourceChange = changed

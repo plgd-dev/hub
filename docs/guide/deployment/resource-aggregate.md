@@ -1,5 +1,5 @@
 # Resource Aggregate
-Resource Aggregate translates commands to events, store them to database and publish them to messaging system.
+Resource Aggregate translates commands to events, stores them to database and publishes them to messaging system.
 
 ## Docker Image
 
