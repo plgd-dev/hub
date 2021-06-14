@@ -46,7 +46,7 @@ func TestUpdateDevice(t *testing.T) {
 
 	request := service.UpdateDevice{
 		ShadowSynchronization: service.ShadowSynchronization{
-			Disabled: true,
+			Enabled: false,
 		},
 	}
 
@@ -56,12 +56,12 @@ func TestUpdateDevice(t *testing.T) {
 
 	var d service.Device
 	getDevice(t, deviceID, &d)
-	require.True(t, d.Metadata.ShadowSynchronization.Disabled)
-	request.ShadowSynchronization.Disabled = false
+	require.False(t, d.Metadata.ShadowSynchronization.Enabled)
+	request.ShadowSynchronization.Enabled = true
 	UpdateDevice(t, deviceID, uri.Device, "2", request)
 	time.Sleep(time.Second)
 	getDevice(t, deviceID, &d)
-	require.False(t, d.Metadata.ShadowSynchronization.Disabled)
+	require.True(t, d.Metadata.ShadowSynchronization.Enabled)
 }
 
 func UpdateDevice(t *testing.T, deviceID, url, correlationID string, request interface{}) {

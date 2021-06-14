@@ -13,7 +13,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/iancoleman/strcase v0.1.3
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/json-iterator/go v1.1.11
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/kelseyhightower/envconfig v1.4.0

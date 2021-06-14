@@ -1625,8 +1625,8 @@ type Device_Metadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Status                *commands.ConnectionStatus      `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	ShadowSynchronization *commands.ShadowSynchronization `protobuf:"bytes,2,opt,name=shadow_synchronization,json=shadowSynchronization,proto3" json:"shadow_synchronization,omitempty"`
+	Status                *commands.ConnectionStatus     `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	ShadowSynchronization commands.ShadowSynchronization `protobuf:"varint,2,opt,name=shadow_synchronization,json=shadowSynchronization,proto3,enum=ocf.cloud.resourceaggregate.pb.ShadowSynchronization" json:"shadow_synchronization,omitempty"`
 }
 
 func (x *Device_Metadata) Reset() {
@@ -1668,11 +1668,11 @@ func (x *Device_Metadata) GetStatus() *commands.ConnectionStatus {
 	return nil
 }
 
-func (x *Device_Metadata) GetShadowSynchronization() *commands.ShadowSynchronization {
+func (x *Device_Metadata) GetShadowSynchronization() commands.ShadowSynchronization {
 	if x != nil {
 		return x.ShadowSynchronization
 	}
-	return nil
+	return commands.ShadowSynchronization_UNSET
 }
 
 var File_github_com_plgd_dev_cloud_grpc_gateway_pb_devices_proto protoreflect.FileDescriptor
@@ -1995,7 +1995,7 @@ var file_github_com_plgd_dev_cloud_grpc_gateway_pb_devices_proto_rawDesc = []byt
 	0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f,
 	0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12,
 	0x6c, 0x0a, 0x16, 0x73, 0x68, 0x61, 0x64, 0x6f, 0x77, 0x5f, 0x73, 0x79, 0x6e, 0x63, 0x68, 0x72,
-	0x6f, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x6f, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32,
 	0x35, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f,
 	0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62,
 	0x2e, 0x53, 0x68, 0x61, 0x64, 0x6f, 0x77, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69,
@@ -2082,7 +2082,7 @@ var file_github_com_plgd_dev_cloud_grpc_gateway_pb_devices_proto_goTypes = []int
 	(*events.DeviceMetadataUpdatePending)(nil),      // 36: ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdatePending
 	(*events.DeviceMetadataUpdated)(nil),            // 37: ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated
 	(*commands.ConnectionStatus)(nil),               // 38: ocf.cloud.resourceaggregate.pb.ConnectionStatus
-	(*commands.ShadowSynchronization)(nil),          // 39: ocf.cloud.resourceaggregate.pb.ShadowSynchronization
+	(commands.ShadowSynchronization)(0),             // 39: ocf.cloud.resourceaggregate.pb.ShadowSynchronization
 }
 var file_github_com_plgd_dev_cloud_grpc_gateway_pb_devices_proto_depIdxs = []int32{
 	0,  // 0: ocf.cloud.grpcgateway.pb.GetDevicesRequest.status_filter:type_name -> ocf.cloud.grpcgateway.pb.GetDevicesRequest.Status
