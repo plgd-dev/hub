@@ -44,12 +44,17 @@ func toConnectionStatus(s *commands.ConnectionStatus) ConnectionStatus {
 }
 
 type ShadowSynchronization struct {
-	Disabled bool `json:"disabled"`
+	Enabled bool `json:"enabled"`
 }
 
-func toShadowSynchronization(s *commands.ShadowSynchronization) ShadowSynchronization {
+func toShadowSynchronization(s commands.ShadowSynchronization) ShadowSynchronization {
+	enabled := true
+	if s == commands.ShadowSynchronization_DISABLED {
+		enabled = false
+	}
+
 	return ShadowSynchronization{
-		Disabled: s.GetDisabled(),
+		Enabled: enabled,
 	}
 }
 

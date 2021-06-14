@@ -33,12 +33,15 @@ func (requestHandler *RequestHandler) updateDevice(w http.ResponseWriter, r *htt
 		return
 	}
 
+	shadowSynchronization := commands.ShadowSynchronization_ENABLED
+	if !body.ShadowSynchronization.Enabled {
+		shadowSynchronization = commands.ShadowSynchronization_DISABLED
+	}
+
 	_, err := requestHandler.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId: vars[uri.DeviceIDKey],
 		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronization{
-			ShadowSynchronization: &commands.ShadowSynchronization{
-				Disabled: body.ShadowSynchronization.Disabled,
-			},
+			ShadowSynchronization: shadowSynchronization,
 		},
 		CorrelationId: correlationUUID,
 		CommandMetadata: &commands.CommandMetadata{
