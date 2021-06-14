@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	cmV1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
@@ -19,6 +20,7 @@ import (
 	cmInformers "github.com/jetstack/cert-manager/pkg/client/informers/externalversions"
 	cfgLoader "github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/kit/security/generateCertificate"
+	"github.com/thanhpk/randstr"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,16 +35,16 @@ type Configuration struct {
 	IssuerName        string                            `yaml:"issuerName"`
 	CertFileName      string                            `yaml:"certFileName"`
 	KeyFileName       string                            `yaml:"keyFileName"`
-	CAFileName        string                            `yaml:"caFileName"  `
-	IncludeCA         bool                              `yaml:"includeCA"`
+	CAFileName        string                            `yaml:"caFileName"`
 	CertConfiguration generateCertificate.Configuration `yaml:"certConfiguration"`
 }
 
 type Bootstrapper struct {
-	configuration     *Configuration
-	namespace         string
-	kubernetesClient  *kubernetes.Clientset
-	certManagerClient *certManager.Clientset
+	configuration          *Configuration
+	namespace              string
+	certificateRequestName string
+	kubernetesClient       *kubernetes.Clientset
+	certManagerClient      *certManager.Clientset
 }
 
 func main() {
@@ -51,14 +53,15 @@ func main() {
 	bs.initializeClients()
 	csr, pkeyBlock := bs.generateCSR()
 
-	certRequest := cmV1.CertificateRequest{
+	certRequest := &cmV1.CertificateRequest{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      bs.configuration.SecretName,
+			Name:      bs.certificateRequestName,
 			Namespace: bs.namespace,
 		},
 		Spec: cmV1.CertificateRequestSpec{
-			Request: csr,
-			IsCA:    false,
+			Request:  csr,
+			IsCA:     false,
+			Duration: &metaV1.Duration{Duration: bs.configuration.CertConfiguration.ValidFor},
 			IssuerRef: cmMetaV1.ObjectReference{
 				Name: bs.configuration.IssuerName,
 			},
@@ -75,6 +78,7 @@ func main() {
 			certRequest := obj.(*cmV1.CertificateRequest)
 			if bs.isCertificateReady(certRequest) {
 				bs.createSecret(pkeyBlock, certRequest.Status.Certificate, certRequest.Status.CA)
+				bs.cleanupCertificateRequest()
 				close(informerStopCh)
 			}
 		},
@@ -89,7 +93,10 @@ func main() {
 	})
 	go informer.Run(informerStopCh)
 
-	_, err := bs.certManagerClient.CertmanagerV1().CertificateRequests(bs.namespace).Create(context.TODO(), &certRequest, metaV1.CreateOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err := bs.certManagerClient.CertmanagerV1().CertificateRequests(bs.namespace).Create(ctx, certRequest, metaV1.CreateOptions{})
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,6 +116,7 @@ func (bs *Bootstrapper) loadConfiguration() {
 		log.Fatalf("cannot get current namespace: %v", err)
 	}
 	bs.namespace = strings.TrimSuffix(string(namespace), "\n")
+	bs.certificateRequestName = bs.configuration.SecretName + "-" + randstr.String(5, "0123456789abcdefghijklmnopqrstuvwxyz")
 }
 
 func (c *Configuration) Validate() error {
@@ -116,7 +124,7 @@ func (c *Configuration) Validate() error {
 		return fmt.Errorf("cloudID is required")
 	}
 	if _, err := uuid.Parse(c.CloudID); err != nil {
-		return fmt.Errorf("cloudID('%v')", c.CloudID)
+		return fmt.Errorf("cloudID('%v'): %w", c.CloudID, err)
 	}
 	if c.SecretName == "" {
 		return fmt.Errorf("secretName('%v')", c.SecretName)
@@ -163,18 +171,20 @@ func (bs *Bootstrapper) generateCSR() (pkeyPEM []byte, csr []byte) {
 }
 
 func (bs *Bootstrapper) cleanupCertificateRequest() {
-	err := bs.certManagerClient.CertmanagerV1().CertificateRequests(bs.namespace).Delete(context.TODO(), bs.configuration.SecretName, metaV1.DeleteOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := bs.certManagerClient.CertmanagerV1().CertificateRequests(bs.namespace).Delete(ctx, bs.certificateRequestName, metaV1.DeleteOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		log.Fatalf("unable to delete certificate request: %v", err)
 	}
 }
 
 func (bs *Bootstrapper) isCertificateReady(certRequest *cmV1.CertificateRequest) bool {
-	if certRequest.Namespace == bs.namespace && certRequest.Name == bs.configuration.SecretName {
+	if certRequest.Namespace == bs.namespace && certRequest.Name == bs.certificateRequestName {
 		latestStatusIndex := len(certRequest.Status.Conditions) - 1
 		if latestStatusIndex >= 0 {
 			latestStatus := certRequest.Status.Conditions[latestStatusIndex]
-			log.Printf("status of certificate request %v updated: %v", bs.configuration.SecretName, latestStatus)
+			log.Printf("status of certificate request %v updated: %v", bs.certificateRequestName, latestStatus)
 			return latestStatus.Type == cmV1.CertificateRequestConditionReady && latestStatus.Status == cmMetaV1.ConditionTrue
 		}
 	}
@@ -197,21 +207,23 @@ func (bs *Bootstrapper) createSecret(pkeyBlock, cert, ca []byte) {
 			Name: bs.configuration.SecretName,
 		},
 		Data: map[string][]byte{
-			"tls.crt": cert,
-			"tls.key": pkeyBlock,
-			"ca.crt":  ca,
+			bs.configuration.CertFileName: cert,
+			bs.configuration.KeyFileName:  pkeyBlock,
+			bs.configuration.CAFileName:   ca,
 		},
 	}
 
-	_, err = bs.kubernetesClient.CoreV1().Secrets(bs.namespace).Get(context.TODO(), bs.configuration.SecretName, metaV1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	_, err = bs.kubernetesClient.CoreV1().Secrets(bs.namespace).Get(ctx, bs.configuration.SecretName, metaV1.GetOptions{})
 	if errors.IsNotFound(err) {
-		_, err = bs.kubernetesClient.CoreV1().Secrets(bs.namespace).Create(context.TODO(), &secretSpec, metaV1.CreateOptions{})
+		_, err = bs.kubernetesClient.CoreV1().Secrets(bs.namespace).Create(ctx, &secretSpec, metaV1.CreateOptions{})
 		if err != nil {
 			log.Fatalf("unable to create secret: %v", err)
 		}
 		log.Printf("secret %v created", bs.configuration.SecretName)
 	} else if err == nil {
-		_, err = bs.kubernetesClient.CoreV1().Secrets(bs.namespace).Update(context.TODO(), &secretSpec, metaV1.UpdateOptions{})
+		_, err = bs.kubernetesClient.CoreV1().Secrets(bs.namespace).Update(ctx, &secretSpec, metaV1.UpdateOptions{})
 		if err != nil {
 			log.Fatalf("unable to update secret: %v", err)
 		}
