@@ -47,8 +47,9 @@ func Newsubscription(id, userID, token string, send SendEventFunc, resourceProje
 		filteredDeviceIDs = strings.MakeSet()
 	}
 	for _, r := range devicesEvent.GetResourceIdsFilter() {
-		filteredResourceIDs.Add(r.ToUUID())
-		filteredDeviceIDs.Add(r.GetDeviceId())
+		res := commands.ResourceIdFromString(r)
+		filteredResourceIDs.Add(res.ToUUID())
+		filteredDeviceIDs.Add(res.GetDeviceId())
 	}
 	return &subscription{
 		userID:                        userID,

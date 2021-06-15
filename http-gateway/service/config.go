@@ -49,20 +49,23 @@ func (c *APIsConfig) Validate() error {
 }
 
 type HTTPConfig struct {
-	Connection    listener.Config  `yaml:",inline" json:",inline"`
-	WebSocket     WebSocketConfig  `yaml:"webSocket" json:"webSocket"`
+	Connection listener.Config `yaml:",inline" json:",inline"`
+	//WebSocket     WebSocketConfig  `yaml:"webSocket" json:"webSocket"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`
 }
 
 func (c *HTTPConfig) Validate() error {
-	err := c.WebSocket.Validate()
-	if err != nil {
-		return fmt.Errorf("webSocket.%w", err)
-	}
-	err = c.Authorization.Validate()
+	/*
+		err := c.WebSocket.Validate()
+		if err != nil {
+			return fmt.Errorf("webSocket.%w", err)
+		}
+	*/
+	err := c.Authorization.Validate()
 	if err != nil {
 		return fmt.Errorf("authorization.%w", err)
 	}
+
 	return c.Connection.Validate()
 }
 
@@ -82,10 +85,8 @@ func (c *WebSocketConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	Eventbus             EventBusConfig       `yaml:"eventBus" json:"eventBus"`
-	ResourceAggregate    GrpcServerConfig     `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory    GrpcServerConfig     `yaml:"resourceDirectory" json:"resourceDirectory"`
 	CertificateAuthority CertificateAuthority `yaml:"certificateAuthority" json:"certificateAuthority"`
+	GrpcGateway          GrpcServerConfig     `yaml:"grpcGateway" json:"grpcGateway"`
 }
 
 type GrpcServerConfig struct {
@@ -130,22 +131,16 @@ func (c *EventBusConfig) Validate() error {
 }
 
 func (c *ClientsConfig) Validate() error {
-	err := c.ResourceAggregate.Validate()
+	err := c.GrpcGateway.Validate()
 	if err != nil {
 		return fmt.Errorf("resourceAggregate.%w", err)
 	}
-	err = c.ResourceDirectory.Validate()
-	if err != nil {
-		return fmt.Errorf("resourceDirectory.%w", err)
-	}
+
 	err = c.CertificateAuthority.Validate()
 	if err != nil {
 		return fmt.Errorf("certificateAuthority.%w", err)
 	}
-	err = c.Eventbus.Validate()
-	if err != nil {
-		return fmt.Errorf("eventbus.%w", err)
-	}
+
 	return nil
 }
 

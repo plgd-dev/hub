@@ -205,10 +205,9 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 }
 
 func (e *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
-	e.EventMetadata.Version = version
 	return &DeviceMetadataSnapshotTaken{
 		DeviceId:              e.GetDeviceId(),
-		EventMetadata:         e.GetEventMetadata(),
+		EventMetadata:         MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
 		DeviceMetadataUpdated: e.GetDeviceMetadataUpdated(),
 	}, true
 }

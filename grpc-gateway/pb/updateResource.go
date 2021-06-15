@@ -18,8 +18,9 @@ func (req *UpdateResourceRequest) ToRACommand(ctx context.Context) (*commands.Up
 	if ok {
 		connectionID = peer.Addr.String()
 	}
+
 	return &commands.UpdateResourceRequest{
-		ResourceId:        req.GetResourceId(),
+		ResourceId:        commands.ResourceIdFromString(req.GetResourceId()),
 		CorrelationId:     correlationUUID.String(),
 		ResourceInterface: req.GetResourceInterface(),
 		Content: &commands.Content{

@@ -8,12 +8,18 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-ocf/kit v0.0.0-20200728130040-4aebdb6982bc
 	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/gogo/protobuf v1.3.2
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.3
 	github.com/google/go-github v17.0.0+incompatible
+	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.4.0
 	github.com/iancoleman/strcase v0.1.3
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/json-iterator/go v1.1.11
@@ -28,14 +34,17 @@ require (
 	github.com/plgd-dev/kit v0.0.0-20210517131053-7dfd49bb6277
 	github.com/plgd-dev/sdk v0.0.0-20210531080443-39f8a08bee53
 	github.com/stretchr/testify v1.7.0
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802
 	github.com/valyala/fasthttp v1.24.0
 	go.mongodb.org/mongo-driver v1.5.2
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
+	golang.org/x/net v0.0.0-20210502030024-e5908800b52b
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/genproto v0.0.0-20210518161634-ec7691c0a37d
 	google.golang.org/grpc v1.37.1
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/yaml.v2 v2.4.0
 )

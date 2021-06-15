@@ -68,6 +68,7 @@ func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClie
 
 func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, v interface{}) error {
 	client := linkedCloud.GetHTTPClient()
+	defer client.CloseIdleConnections()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err

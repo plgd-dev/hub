@@ -37,7 +37,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "valid",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					ResourceId: commands.NewResourceID(deviceID, "/light/1").ToString(),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -59,7 +59,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			args: args{
 				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -81,7 +81,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			args: args{
 				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -102,7 +102,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "update RO-resource",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -123,7 +123,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
 				},
 			},
 			wantErr: true,

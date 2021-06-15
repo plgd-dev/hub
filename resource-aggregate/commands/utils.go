@@ -2,6 +2,7 @@ package commands
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -109,4 +110,32 @@ func (s Status) ToGrpcCode() codes.Code {
 		return v
 	}
 	return codes.Unknown
+}
+
+func (r *ResourceId) ToString() string {
+	if r == nil {
+		return ""
+	}
+	if r.DeviceId == "" {
+		return ""
+	}
+	if r.Href == "" {
+		return ""
+	}
+	href := r.Href
+	if href[0] != '/' {
+		href = "/" + href
+	}
+	return r.DeviceId + href
+}
+
+func ResourceIdFromString(v string) *ResourceId {
+	val := strings.SplitN(v, "/", 2)
+	if len(val) != 2 {
+		return nil
+	}
+	return &ResourceId{
+		DeviceId: val[0],
+		Href:     "/" + val[1],
+	}
 }

@@ -25,13 +25,14 @@ message GetResourceLinksRequest {
 
 // RetrieveResourceFromDeviceRequest retrieve value from device
 message RetrieveResourceFromDeviceRequest {
-  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+  string resource_id = 1;
   string resource_interface = 2;
 }
 
 // RetrieveResourcesValuesRequest get values from resource-shadow
 message RetrieveResourcesRequest {
-  repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 1;
+  // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
+  repeated string resource_ids_filter = 1;
   repeated string device_ids_filter = 2;
   repeated string type_filter = 3;
 }
@@ -42,7 +43,7 @@ message Resource {
 }
 
 message UpdateResourceRequest {
-  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+  string resource_id = 1;
   Content content = 2;
   string resource_interface = 3;
 }
@@ -68,7 +69,7 @@ message SubscribeToEvents {
     }
     repeated Event events_filter = 1;
     repeated string device_ids_filter = 2;
-    repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 3;
+    repeated string resource_ids_filter = 3;
   }
   message CancelSubscription {
     string subscription_id = 1;
@@ -153,10 +154,10 @@ message Content {
 }
 
 message DeleteResourceRequest {
-  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+  string resource_id = 1;
 }
 
 message CreateResourceRequest {
-  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+  string resource_id = 1;
   Content content = 2;
 }

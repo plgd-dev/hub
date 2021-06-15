@@ -3,18 +3,24 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
+	"net/http"
 	"testing"
 
+	"github.com/google/go-querystring/query"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/http-gateway/service"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -25,28 +31,9 @@ func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 	for idx := range want {
 		dataWant := want[idx].Data.GetContent().GetData()
 		datagot := got[idx].Data.GetContent().GetData()
-		w1 := &pb.Resource{
-			Types: want[idx].GetTypes(),
-			Data: &events.ResourceChanged{
-				ResourceId: want[idx].Data.GetResourceId(),
-				Content: &commands.Content{
-					ContentType: want[idx].Data.GetContent().GetContentType(),
-				},
-				Status: want[idx].Data.GetStatus(),
-			},
-		}
-		w2 := &pb.Resource{
-			Types: got[idx].GetTypes(),
-			Data: &events.ResourceChanged{
-				ResourceId: got[idx].Data.GetResourceId(),
-				Content: &commands.Content{
-					ContentType: got[idx].Data.GetContent().GetContentType(),
-				},
-				Status: got[idx].Data.GetStatus(),
-			},
-		}
-		w2.Data.Content.Data = nil
-		test.CheckProtobufs(t, w1, w2, test.RequireToCheckFunc(require.Equal))
+		want[idx].Data.Content.Data = nil
+		got[idx].Data.Content.Data = nil
+		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 		w := test.DecodeCbor(t, dataWant)
 		g := test.DecodeCbor(t, datagot)
 		require.Equal(t, w, g)
@@ -82,7 +69,8 @@ func TestRequestHandler_RetrieveResources(t *testing.T) {
 							Href:     "/light/1",
 						},
 						Content: &commands.Content{
-							ContentType: message.AppOcfCbor.String(),
+							CoapContentFormat: int32(message.AppOcfCbor),
+							ContentType:       message.AppOcfCbor.String(),
 							Data: test.EncodeToCbor(t, map[string]interface{}{
 								"state": false,
 								"power": uint64(0),
@@ -98,12 +86,17 @@ func TestRequestHandler_RetrieveResources(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	shutdownHttp := New(t, MakeConfig(t))
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -116,22 +109,51 @@ func TestRequestHandler_RetrieveResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.RetrieveResources(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				values := make([]*pb.Resource, 0, 1)
-				for {
-					value, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					values = append(values, value)
-				}
-				cmpResourceValues(t, tt.want, values)
+			type Options struct {
+				TypeFilter        []string `url:"typeFilter,omitempty"`
+				ResourceIdsFilter []string `url:"resourceIdsFilter,omitempty"`
+				DeviceIdsFilter   []string `url:"deviceIdsFilter,omitempty"`
 			}
+			opt := Options{
+				TypeFilter:        tt.args.req.TypeFilter,
+				ResourceIdsFilter: tt.args.req.ResourceIdsFilter,
+				DeviceIdsFilter:   tt.args.req.DeviceIdsFilter,
+			}
+			v, err := query.Values(opt)
+			require.NoError(t, err)
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/api/v1/resources?%v", config.HTTP_GW_HOST, v.Encode()), nil)
+			require.NoError(t, err)
+			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+			trans := http.DefaultTransport.(*http.Transport).Clone()
+			trans.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			c := http.Client{
+				Transport: trans,
+			}
+			resp, err := c.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			marshaler := runtime.JSONPb{}
+			decoder := marshaler.NewDecoder(resp.Body)
+			values := make([]*pb.Resource, 0, 1)
+			for {
+				var value pb.Resource
+				err = service.Unmarshal(resp.StatusCode, decoder, &value)
+				if err == io.EOF {
+					break
+				}
+				if tt.wantErr {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+				value.Data.AuditContext = nil
+				value.Data.EventMetadata = nil
+				values = append(values, &value)
+			}
+			cmpResourceValues(t, tt.want, values)
 		})
 	}
 }

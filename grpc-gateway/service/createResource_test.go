@@ -37,7 +37,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -53,7 +53,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			name: "/oic/d - PermissionDenied",
 			args: args{
 				req: pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{

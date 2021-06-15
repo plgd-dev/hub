@@ -1,17 +1,23 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -20,6 +26,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -92,7 +99,12 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	shutdownHttp := New(t, MakeConfig(t))
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -113,7 +125,37 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NoError(t, err)
 	defer obs.Close()
 
-	_, err = c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
+	updateDeviceShadowSynchronization := func(ctx context.Context, in *pb.UpdateDeviceShadowSynchronizationRequest) (*pb.UpdateDeviceShadowSynchronizationResponse, error) {
+		var m jsonpb.Marshaler
+		data, err := m.MarshalToString(in)
+		require.NoError(t, err)
+
+		request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("https://%v/api/v1/devices/%v/shadowSynchronization", config.HTTP_GW_HOST, in.GetDeviceId()), bytes.NewReader([]byte(data)))
+		require.NoError(t, err)
+		request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+		trans := http.DefaultTransport.(*http.Transport).Clone()
+		trans.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		c := http.Client{
+			Transport: trans,
+		}
+		resp, err := c.Do(request)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		marshaler := runtime.JSONPb{}
+		decoder := marshaler.NewDecoder(resp.Body)
+
+		var got pb.UpdateDeviceShadowSynchronizationResponse
+		err = service.Unmarshal(resp.StatusCode, decoder, &got)
+		if err != nil {
+			return nil, err
+		}
+		return &got, nil
+	}
+
+	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
 		DeviceId: deviceID,
 		Enabled:  false,
 	})
@@ -123,7 +165,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetShadowSynchronization())
 
-	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
 		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
 		Content: &pb.Content{
@@ -132,9 +174,9 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	})
+	}, token)
 	require.NoError(t, err)
-	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
 		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
 		Content: &pb.Content{
@@ -143,13 +185,13 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	})
+	}, token)
 	require.NoError(t, err)
 
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	_, err = c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
+	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
 		DeviceId: deviceID,
 		Enabled:  true,
 	})
@@ -159,7 +201,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NotEmpty(t, ev)
 	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
 
-	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
 		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
 		Content: &pb.Content{
@@ -168,9 +210,9 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	})
+	}, token)
 	require.NoError(t, err)
-	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
 		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
 		Content: &pb.Content{
@@ -179,7 +221,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	})
+	}, token)
 	require.NoError(t, err)
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)

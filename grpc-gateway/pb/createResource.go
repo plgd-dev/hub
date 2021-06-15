@@ -19,7 +19,7 @@ func (req *CreateResourceRequest) ToRACommand(ctx context.Context) (*commands.Cr
 		connectionID = peer.Addr.String()
 	}
 	return &commands.CreateResourceRequest{
-		ResourceId:    req.GetResourceId(),
+		ResourceId:    commands.ResourceIdFromString(req.GetResourceId()),
 		CorrelationId: correlationUUID.String(),
 		Content: &commands.Content{
 			Data:              req.GetContent().GetData(),

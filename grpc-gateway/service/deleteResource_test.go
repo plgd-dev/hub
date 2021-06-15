@@ -36,7 +36,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "/light/2 - MethodNotAllowed",
 			args: args{
 				req: pb.DeleteResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
 				},
 			},
 			want: &events.ResourceDeleted{
@@ -51,7 +51,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.DeleteResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
 				},
 			},
 			wantErr:     true,
@@ -61,7 +61,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			name: "/oic/d - PermissionDenied",
 			args: args{
 				req: pb.DeleteResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
 				},
 			},
 			want: &events.ResourceDeleted{

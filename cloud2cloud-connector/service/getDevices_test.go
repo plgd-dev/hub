@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"testing"
 	"time"
 
@@ -105,6 +106,7 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 		shutdownDevSim()
 		cloud1Conn.Close()
 		cloud1()
+		runtime.GC()
 	}
 }
 

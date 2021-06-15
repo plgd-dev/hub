@@ -675,9 +675,7 @@ cat /configs/http-gateway.yaml | yq e "\
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.http.tls.useSystemCAPool = true |
   .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .clients.certificateAuthority.enabled = true |
   .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
   .ui.enabled = true |

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -13,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type DecodeFunc = func(interface{}) error
 
 func TestObservingResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -54,7 +55,7 @@ func TestObservingResource(t *testing.T) {
 }
 
 func makeTestObservationHandler() *testObservationHandler {
-	return &testObservationHandler{res: make(chan service.DecodeFunc, 10)}
+	return &testObservationHandler{res: make(chan DecodeFunc, 10)}
 }
 
 type OcCon struct {
@@ -62,10 +63,10 @@ type OcCon struct {
 }
 
 type testObservationHandler struct {
-	res chan service.DecodeFunc
+	res chan DecodeFunc
 }
 
-func (h *testObservationHandler) Handle(ctx context.Context, body service.DecodeFunc) {
+func (h *testObservationHandler) Handle(ctx context.Context, body DecodeFunc) {
 	h.res <- body
 }
 

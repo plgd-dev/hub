@@ -29,8 +29,15 @@ proto/generate:
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/retrievePendingCommands.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/retrieveDevicesMetadata.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/updateDeviceShadowSynchronization.proto
-	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(shell pwd)/pb/service.proto
+	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --go-grpc_out=${GOPATH}/src $(shell pwd)/pb/service.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/errdetails/errorDetails.proto
+	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --openapiv2_out=${GOPATH}/src \
+    	--openapiv2_opt logtostderr=true \
+    	$(shell pwd)/pb/service.proto
+	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --grpc-gateway_out ${GOPATH}/src \
+    	--grpc-gateway_opt logtostderr=true \
+    	--grpc-gateway_opt paths=source_relative \
+   		$(shell pwd)/pb/service.proto
 
 .PHONY: build-servicecontainer build push proto/generate
 

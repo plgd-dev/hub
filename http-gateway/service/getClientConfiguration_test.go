@@ -2,44 +2,72 @@ package service_test
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
-	cloudTest "github.com/plgd-dev/cloud/test"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
-	"github.com/plgd-dev/kit/codec/json"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
+
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/http-gateway/service"
+	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
+	"github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/test/config"
+	testCfg "github.com/plgd-dev/cloud/test/config"
 )
 
-func TestGetClientConfiguration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
+func TestRequestHandler_GetClientConfiguration(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantErr bool
+		want    *pb.ClientConfigurationResponse
+	}{
+		{
+			name: "valid",
+			want: rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto(),
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := cloudTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
-	webTearDown := test.SetUp(t)
-	defer webTearDown()
+	shutdownHttp := New(t, MakeConfig(t))
+	defer shutdownHttp()
 
-	var response map[string]interface{}
-	getReq := test.NewRequest("GET", uri.ClientConfiguration, nil).Build()
-	res := test.HTTPDo(t, getReq)
-	defer res.Body.Close()
-	require.Equal(t, http.StatusOK, res.StatusCode)
-	err := json.ReadFrom(res.Body, &response)
-	require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/api/v1/clientConfiguration", config.HTTP_GW_HOST), nil)
+			require.NoError(t, err)
+			trans := http.DefaultTransport.(*http.Transport).Clone()
+			trans.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			c := http.Client{
+				Transport: trans,
+			}
+			resp, err := c.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-	data, err := json.Encode(rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto())
-	require.NoError(t, err)
-	var exp map[string]interface{}
-	err = json.Decode(data, &exp)
-	require.NoError(t, err)
-	require.NotEmpty(t, response["cloud_certificate_authorities"])
-	delete(response, "cloud_certificate_authorities")
-	require.Equal(t, exp, response)
+			marshaler := runtime.JSONPb{}
+			decoder := marshaler.NewDecoder(resp.Body)
+
+			var got pb.ClientConfigurationResponse
+			err = service.Unmarshal(resp.StatusCode, decoder, &got)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NotEmpty(t, got.CloudCertificateAuthorities)
+			got.CloudCertificateAuthorities = ""
+			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
+
+		})
+	}
 }

@@ -51,14 +51,9 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 			name: "filter by resource Id",
 			args: args{
 				req: &pb.RetrieveResourcesRequest{
-					ResourceIdsFilter: []*commands.ResourceId{
-						{
-							DeviceId: Resource1.DeviceId,
-							Href:     Resource1.Href,
-						}, {
-							DeviceId: Resource2.DeviceId,
-							Href:     Resource2.Href,
-						},
+					ResourceIdsFilter: []string{
+						Resource1.ToResourceIDString(),
+						Resource2.ToResourceIDString(),
 					},
 				},
 			},

@@ -29,7 +29,7 @@ func (c *Client) CreateResource(
 		return err
 	}
 	r := pb.CreateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, href),
+		ResourceId: commands.NewResourceID(deviceID, href).ToString(),
 		Content: &pb.Content{
 			Data:        data,
 			ContentType: cfg.codec.ContentFormat().String(),

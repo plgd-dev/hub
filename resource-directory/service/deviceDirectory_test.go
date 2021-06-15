@@ -154,6 +154,10 @@ type ResourceContent struct {
 	commands.Content
 }
 
+func (c ResourceContent) ToResourceIDString() string {
+	return c.GetResourceID().ToString()
+}
+
 type testGeneratePublishEvent struct {
 	version uint64
 	ResourceContent

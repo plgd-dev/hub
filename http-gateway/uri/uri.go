@@ -11,28 +11,14 @@ const (
 
 	CorrelationIDHeader string = "CorrelationID"
 
-	API string = "/api/v1"
+	API   string = "/api/v1"
+	APIWS string = API + "/ws"
+
 	// ocfcloud configuration
 	ClientConfiguration = "/.well-known/ocfcloud-configuration"
 
 	// oauth configuration for ui
 	OAuthConfiguration = "/auth_config.json"
-
-	//devices
-	Devices         = API + "/devices"
-	Device          = Devices + "/{" + DeviceIDKey + "}"
-	DeviceResources = Device + "/"
-
-	//maintenance
-	DeviceReboot       = Device + "/reboot"
-	DeviceFactoryReset = Device + "/factory-reset"
-
-	//ws
-	WS                                = "/ws"
-	WSDevices                         = API + WS + "/devices"
-	WsStartDevicesObservation         = WSDevices
-	WsStartDeviceResourcesObservation = WSDevices + "/{" + DeviceIDKey + "}"
-	WsStartDeviceResourceObservation  = WsStartDeviceResourcesObservation + "/"
 
 	//certificate-authority
 	CertificaAuthority     = API + "/certificate-authority"

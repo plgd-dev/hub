@@ -19,7 +19,7 @@ func (req *DeleteResourceRequest) ToRACommand(ctx context.Context) (*commands.De
 		connectionID = peer.Addr.String()
 	}
 	return &commands.DeleteResourceRequest{
-		ResourceId:    req.GetResourceId(),
+		ResourceId:    commands.ResourceIdFromString(req.GetResourceId()),
 		CorrelationId: correlationUUID.String(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,

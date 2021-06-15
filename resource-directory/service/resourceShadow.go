@@ -31,12 +31,14 @@ func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShad
 	return &ResourceShadow{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter []*commands.ResourceId, deviceIdsFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
+func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter, deviceIdsFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
 	mapTypeFilter := make(strings.Set)
 	mapTypeFilter.Add(typeFilter...)
 
 	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdsFilter))
-	for _, res := range resourceIDsFilter {
+	for _, r := range resourceIDsFilter {
+		res := commands.ResourceIdFromString(r)
+
 		if rd.userDeviceIds.HasOneOf(res.GetDeviceId()) {
 			internalResourceIDsFilter = append(internalResourceIDsFilter, res)
 		}
