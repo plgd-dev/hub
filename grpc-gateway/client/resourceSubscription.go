@@ -81,7 +81,7 @@ func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceI
 	err = client.Send(&pb.SubscribeToEvents{
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				ResourceIdsFilter: []*commands.ResourceId{resourceID},
+				ResourceIdsFilter: []string{resourceID.ToString()},
 				EventsFilter:      filterEvents,
 			},
 		},

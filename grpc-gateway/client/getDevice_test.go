@@ -110,6 +110,7 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Resources = test.CleanUpResourcesArray(got.Resources)
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
+			got.Device.Metadata.Status.ValidUntil = 0
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}

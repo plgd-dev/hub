@@ -1,15 +1,18 @@
 package service_test
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/google/go-querystring/query"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -20,64 +23,65 @@ import (
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/status"
 )
 
-func TestRequestHandler_CreateResource(t *testing.T) {
+func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.CreateResourceRequest
+		req pb.RetrieveResourceFromDeviceRequest
 	}
 	tests := []struct {
-		name        string
-		args        args
-		want        *events.ResourceCreated
-		wantErr     bool
-		wantErrCode codes.Code
+		name    string
+		args    args
+		want    *events.ResourceRetrieved
+		wantErr bool
 	}{
-
+		{
+			name: "valid /light/2",
+			args: args{
+				req: pb.RetrieveResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+				},
+			},
+			want: &events.ResourceRetrieved{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/2",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "valid /oic/d",
+			args: args{
+				req: pb.RetrieveResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+				},
+			},
+			want: &events.ResourceRetrieved{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/oic/d",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: int32(message.AppOcfCbor),
+					ContentType:       message.AppOcfCbor.String(),
+				},
+				Status: commands.Status_OK,
+			},
+		},
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 1,
-						}),
-					},
 				},
 			},
-			wantErr:     true,
-			wantErrCode: codes.NotFound,
-		},
-		{
-			name: "/oic/d - PermissionDenied",
-			args: args{
-				req: pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 1,
-						}),
-					},
-				},
-			},
-			want: &events.ResourceCreated{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
-			wantErrCode: codes.OK,
+			wantErr: true,
 		},
 	}
 
@@ -104,11 +108,15 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var m jsonpb.Marshaler
-			data, err := m.MarshalToString(&tt.args.req)
+			type Options struct {
+				Interface string `url:"resourceInterface,omitempty"`
+			}
+			opt := Options{
+				Interface: tt.args.req.ResourceInterface,
+			}
+			v, err := query.Values(opt)
 			require.NoError(t, err)
-
-			request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("https://%v/api/v1/devices/%v", config.HTTP_GW_HOST, tt.args.req.ResourceId), bytes.NewReader([]byte(data)))
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/api/v1/devices/%v?%v", config.HTTP_GW_HOST, tt.args.req.ResourceId, v.Encode()), nil)
 			require.NoError(t, err)
 			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
 			trans := http.DefaultTransport.(*http.Transport).Clone()
@@ -124,16 +132,15 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 
 			marshaler := runtime.JSONPb{}
 			decoder := marshaler.NewDecoder(resp.Body)
-
-			var got events.ResourceCreated
+			var got events.ResourceRetrieved
 			err = service.Unmarshal(resp.StatusCode, decoder, &got)
 			if tt.wantErr {
 				require.Error(t, err)
-				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())
 			} else {
 				require.NoError(t, err)
 				got.EventMetadata = nil
 				got.AuditContext = nil
+				got.Content.Data = nil
 				test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
 			}
 		})

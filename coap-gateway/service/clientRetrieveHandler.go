@@ -84,11 +84,8 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 
 func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client, deviceID, href string) (*commands.Content, coapCodes.Code, error) {
 	RetrieveResourcesClient, err := client.server.rdClient.RetrieveResources(ctx, &pbGRPC.RetrieveResourcesRequest{
-		ResourceIdsFilter: []*commands.ResourceId{
-			{
-				DeviceId: deviceID,
-				Href:     href,
-			},
+		ResourceIdsFilter: []string{
+			commands.NewResourceID(deviceID, href).ToString(),
 		},
 	})
 	if err != nil {

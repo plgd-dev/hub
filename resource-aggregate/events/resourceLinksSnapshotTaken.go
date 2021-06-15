@@ -213,8 +213,6 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 }
 
 func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
-	e.EventMetadata.Version = version
-
 	// we need to return as new event because `e` is a pointer,
 	// otherwise ResourceLinksSnapshotTaken.Handle override version/resource of snapshot which will be fired to eventbus
 	resources := make(map[string]*commands.Resource)
@@ -223,7 +221,7 @@ func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 	}
 	return &ResourceLinksSnapshotTaken{
 		DeviceId:      e.GetDeviceId(),
-		EventMetadata: e.GetEventMetadata(),
+		EventMetadata: MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
 		Resources:     resources,
 	}, true
 }

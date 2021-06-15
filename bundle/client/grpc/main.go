@@ -148,10 +148,7 @@ func main() {
 	switch {
 	case *delete:
 		resp, err := ocfGW.DeleteResource(ctx, &pbGW.DeleteResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			},
+			ResourceId: commands.NewResourceID(*deviceID, *href).ToString(),
 		})
 		if err != nil {
 			log.Fatalf("cannot delete resource: %v", err)
@@ -167,10 +164,7 @@ func main() {
 			log.Fatalf("cannot read data for update resource: %v", err)
 		}
 		resp, err := ocfGW.UpdateResource(ctx, &pbGW.UpdateResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			},
+			ResourceId: commands.NewResourceID(*deviceID, *href).ToString(),
 			Content: &pbGW.Content{
 				ContentType: message.MediaType(*contentFormat).String(),
 				Data:        data,
@@ -190,10 +184,7 @@ func main() {
 			log.Fatalf("cannot read data for create resource: %v", err)
 		}
 		resp, err := ocfGW.CreateResource(ctx, &pbGW.CreateResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			},
+			ResourceId: commands.NewResourceID(*deviceID, *href).ToString(),
 			Content: &pbGW.Content{
 				ContentType: message.MediaType(*contentFormat).String(),
 				Data:        data,
@@ -243,12 +234,9 @@ func main() {
 		if *deviceID != "" {
 			deviceIdsFilter = append(deviceIdsFilter, *deviceID)
 		}
-		var resourceIdsFilter []*commands.ResourceId
+		var resourceIdsFilter []string
 		if *href != "" {
-			resourceIdsFilter = append(resourceIdsFilter, &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			})
+			resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(*deviceID, *href).ToString())
 		}
 		getClient, err := ocfGW.RetrieveResources(ctx, &pbGW.RetrieveResourcesRequest{
 			ResourceIdsFilter: resourceIdsFilter,

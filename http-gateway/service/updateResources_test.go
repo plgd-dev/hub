@@ -1,23 +1,66 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"fmt"
+	"net/http"
 	"testing"
 
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/http-gateway/service"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
+
+func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token string) (*events.ResourceUpdated, error) {
+	var m jsonpb.Marshaler
+	data, err := m.MarshalToString(req)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("https://%v/api/v1/devices/%v", config.HTTP_GW_HOST, req.ResourceId), bytes.NewReader([]byte(data)))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+	trans := http.DefaultTransport.(*http.Transport).Clone()
+	trans.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	c := http.Client{
+		Transport: trans,
+	}
+	resp, err := c.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	marshaler := runtime.JSONPb{}
+	decoder := marshaler.NewDecoder(resp.Body)
+
+	var got events.ResourceUpdated
+	err = service.Unmarshal(resp.StatusCode, decoder, &got)
+	if err != nil {
+		return nil, err
+	}
+	return &got, nil
+}
 
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -94,10 +137,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				},
 			},
 			want: &events.ResourceUpdated{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/light/1",
-				},
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
@@ -118,10 +158,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				},
 			},
 			want: &events.ResourceUpdated{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/oic/d",
-				},
+				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				Content: &commands.Content{
 					CoapContentFormat: -1,
 				},
@@ -144,7 +181,12 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	shutdownHttp := New(t, MakeConfig(t))
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -157,15 +199,15 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.UpdateResource(ctx, &tt.args.req)
+			got, err := updateResource(ctx, &tt.args.req, token)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				got.AuditContext = nil
-				got.EventMetadata = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				return
 			}
+			require.NoError(t, err)
+			got.AuditContext = nil
+			got.EventMetadata = nil
+			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

@@ -8,9 +8,6 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
-    webSocket:
-      readLimit: 8192
-      readTimeout: 4s
     authorization:
       authority: ""
       audience: ""
@@ -26,31 +23,7 @@ apis:
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
 clients:
-  eventBus:
-    goPoolSize: 16
-    nats:
-      url: ""
-      pendingLimits:
-        msgLimit: 524288
-        bytesLimit: 67108864
-      tls:
-        caPool: "/secrets/public/rootca.crt"
-        keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
-        useSystemCAPool: false
-  resourceAggregate:
-    grpc:
-      address: ""
-      keepAlive:
-        time: 10s
-        timeout: 20s
-        permitWithoutStream: true
-      tls:
-        caPool: "/secrets/public/rootca.crt"
-        keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
-        useSystemCAPool: false
-  resourceDirectory:
+  grpcGateway:
     grpc:
       address: ""
       keepAlive:

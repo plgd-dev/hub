@@ -125,7 +125,7 @@ func unmarshalContent(c *commands.Content) (interface{}, error) {
 	return m, nil
 }
 
-func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdsFilter []*commands.ResourceId, deviceIdsFilter []string) (map[string][]Representation, error) {
+func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdsFilter []string, deviceIdsFilter []string) (map[string][]Representation, error) {
 
 	client, err := rh.rdClient.RetrieveResources(ctx, &pbGRPC.RetrieveResourcesRequest{
 		DeviceIdsFilter:   deviceIdsFilter,

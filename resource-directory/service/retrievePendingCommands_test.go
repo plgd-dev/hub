@@ -95,11 +95,8 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 			name: "retrieve by resourceIdsFilter",
 			args: args{
 				req: &pb.RetrievePendingCommandsRequest{
-					ResourceIdsFilter: []*commands.ResourceId{
-						{
-							DeviceId: deviceID,
-							Href:     "/light/1",
-						},
+					ResourceIdsFilter: []string{
+						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},
 			},
@@ -399,7 +396,7 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -414,10 +411,7 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: deviceID,
-				Href:     "/oic/p",
-			},
+			ResourceId: commands.NewResourceID(deviceID, "/oic/p").ToString(),
 		})
 		require.Error(t, err)
 	}
@@ -426,10 +420,7 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: deviceID,
-				Href:     "/light/1",
-			},
+			ResourceId: commands.NewResourceID(deviceID, "/light/1").ToString(),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
 				Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -444,7 +435,7 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
-			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+			ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
 		})
 		require.Error(t, err)
 	}

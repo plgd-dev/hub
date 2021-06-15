@@ -421,10 +421,9 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			Token: "testToken",
 			Action: &pb.SubscribeToEvents_CreateSubscription_{
 				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdsFilter: []*commands.ResourceId{{
-						DeviceId: e.GetResourceChanged().GetResourceId().GetDeviceId(),
-						Href:     e.GetResourceChanged().GetResourceId().GetHref(),
-					}},
+					ResourceIdsFilter: []string{
+						e.GetResourceChanged().GetResourceId().ToString(),
+					},
 					EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},

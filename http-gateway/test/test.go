@@ -16,7 +16,6 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -26,16 +25,10 @@ const TestTimeout = 20 * time.Second
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
-	cfg.APIs.HTTP.WebSocket.ReadLimit = 8 * 1024
-	cfg.APIs.HTTP.WebSocket.ReadTimeout = time.Second * 4
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 
-	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
-	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
-
-	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
-	cfg.Clients.Eventbus.GoPoolSize = 16
+	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
 
 	err := cfg.Validate()
 	require.NoError(t, err)
@@ -67,15 +60,6 @@ func New(t *testing.T, cfg service.Config) func() {
 		s.Shutdown()
 		wg.Wait()
 	}
-}
-
-func GetTestRebootUri(deviceID string, t *testing.T) string {
-	template, _ := uritemplates.Parse(fmt.Sprintf("https://%v%v", config.HTTP_GW_HOST, uri.DeviceReboot))
-	values := make(map[string]interface{})
-	values[uri.DeviceIDKey] = deviceID
-	u, _ := template.Expand(values)
-	t.Log("Reboot request URI: ", u)
-	return u
 }
 
 func NewRequest(method, url string, body io.Reader) *requestBuilder {
@@ -191,26 +175,4 @@ func CleanUpDeviceRepresentation(v interface{}) interface{} {
 	}
 	d["links"] = links
 	return d
-}
-
-func GetDeviceRepresentation(deviceID string, deviceName string) interface{} {
-	return CleanUpDeviceRepresentation(
-		map[interface{}]interface{}{
-			"device": map[interface{}]interface{}{
-				"di":   deviceID,
-				"dmn":  []interface{}{},
-				"dmno": "",
-				"if":   []interface{}{"oic.if.r", "oic.if.baseline"},
-				"n":    deviceName,
-				"rt":   []interface{}{"oic.d.cloudDevice", "oic.wk.d"}},
-			"links": []interface{}{map[interface{}]interface{}{"di": deviceID, "href": "/light/1", "id": commands.MakeStatusResourceUUID(deviceID), "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"core.light"}}, map[interface{}]interface{}{"di": deviceID, "href": "/light/2", "id": "d72a96bd-449a-51f1-a7d3-71f4ccad8d00", "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"core.light"}}, map[interface{}]interface{}{"di": deviceID, "href": "/oc/con", "id": "b67202b3-6bd7-5f0b-ada0-83b7e985cef4", "if": []interface{}{"oic.if.rw", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.wk.con"}}, map[interface{}]interface{}{"di": deviceID, "href": "/oic/d", "id": "7013279c-4f28-503f-9425-d76ae580c590", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.d.cloudDevice", "oic.wk.d"}}, map[interface{}]interface{}{"di": deviceID, "href": "/oic/p", "id": "d6940aea-d1b5-53dd-a123-838b73b02d10", "if": []interface{}{"oic.if.r", "oic.if.baseline"}, "p": map[interface{}]interface{}{"bm": uint64(3), "port": uint64(0), "sec": false, "x.org.iotivity.tcp": uint64(0), "x.org.iotivity.tls": uint64(0)}, "rt": []interface{}{"oic.wk.p"}}},
-			"metadata": map[interface{}]interface{}{
-				"connectionStatus": map[interface{}]interface{}{
-					"value": "online",
-				},
-				"shadowSynchronization": map[interface{}]interface{}{
-					"disabled": false,
-				},
-			}},
-	)
 }

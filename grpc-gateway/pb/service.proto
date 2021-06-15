@@ -9,39 +9,158 @@ import "github.com/plgd-dev/cloud/grpc-gateway/pb/retrieveDevicesMetadata.proto"
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/updateDeviceShadowSynchronization.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 
+import "google/api/annotations.proto";
+import "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-openapiv2/options/annotations.proto";
 
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "HTTP Gateway API";
+    version: "1.0";
+    description: "";
+    contact: {
+      name: "plgd.dev s.r.o.";
+      url: "https://github.com/plgd-dev/cloud";
+      email: "info@plgd.dev";
+    };
+    license: {
+      name: "Apache License 2.0";
+      url: "https://github.com/plgd-dev/cloud/blob/v2/LICENSE";
+    };
+  };
+  schemes: [ HTTPS ];
+  consumes: "application/json";
+  produces: "application/json";
+};
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+// https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
 
 service GrpcGateway {
   // Get all devices
-  rpc GetDevices (GetDevicesRequest) returns (stream Device) {}
+  rpc GetDevices (GetDevicesRequest) returns (stream Device) {
+    option (google.api.http) = {
+      get: "/api/v1/devices"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Device Directory" ]
+    };
+  }
   // Get resource links of devices.
-  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ocf.cloud.resourceaggregate.pb.ResourceLinksPublished) {}
+  rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ocf.cloud.resourceaggregate.pb.ResourceLinksPublished) {
+    option (google.api.http) = {
+      get: "/api/v1/resourceLinks"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Directory" ]
+    };
+  }
 
-  rpc RetrieveResourceFromDevice(RetrieveResourceFromDeviceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceRetrieved) {}
+  // Retrieve resource from the device.
+  rpc RetrieveResourceFromDevice(RetrieveResourceFromDeviceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceRetrieved) {
+    option (google.api.http) = {
+      get: "/api/v1/devices/{resource_id=*/**}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Device" ]
+    };
+  }
 
-  // Retrieve resources values from resource shadow
-  rpc RetrieveResources(RetrieveResourcesRequest) returns (stream Resource) {}
-  // Update resource values
-  rpc UpdateResource(UpdateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceUpdated) {}
+  // Retrieve resources from the resource shadow.
+  rpc RetrieveResources(RetrieveResourcesRequest) returns (stream Resource) {
+    option (google.api.http) = {
+      get: "/api/v1/resources"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Shadow" ]
+    };
+  }
+  // Update resource at the device.
+  rpc UpdateResource(UpdateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceUpdated) {
+    option (google.api.http) = {
+      put: "/api/v1/devices/{resource_id=*/**}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Device" ]
+    };
+  }
 
   // Subscribe to events
-  rpc SubscribeToEvents(stream ocf.cloud.grpcgateway.pb.SubscribeToEvents) returns (stream Event) {}
+  rpc SubscribeToEvents(stream ocf.cloud.grpcgateway.pb.SubscribeToEvents) returns (stream Event) {
+    option (google.api.http) = {
+      post: "/api/v1/ws/devices/events"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Shadow", "Device Directory", "Resource Directory" ]
+      schemes: [ WSS ];
+    };
+  }
 
   // Get client configuration
-  rpc GetClientConfiguration(ClientConfigurationRequest) returns (ClientConfigurationResponse) {}
+  rpc GetClientConfiguration(ClientConfigurationRequest) returns (ClientConfigurationResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/clientConfiguration"
+      additional_bindings {
+        get: "/.well-known/ocfcloud-configuration"
+      }
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Cloud configuration" ]
+    };
+  }
 
   // Delete resource at the device.
-  rpc DeleteResource(DeleteResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceDeleted) {}
+  rpc DeleteResource(DeleteResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceDeleted) {
+    option (google.api.http) = {
+      delete: "/api/v1/devices/{resource_id=**}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Device" ]
+    };
+  }
 
   // Create resource at the device.
-  rpc CreateResource(CreateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceCreated) {}
+  rpc CreateResource(CreateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceCreated) {
+    option (google.api.http) = {
+      post: "/api/v1/devices/{resource_id=*/**}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Device" ]
+    };
+  }
 
-  // UpdateDeviceShadowSynchronization enables/disables shadow synchronization of device.
-  rpc UpdateDeviceShadowSynchronization(UpdateDeviceShadowSynchronizationRequest) returns (UpdateDeviceShadowSynchronizationResponse) {}
+  // Enables/disables shadow synchronization for device.
+  rpc UpdateDeviceShadowSynchronization(UpdateDeviceShadowSynchronizationRequest) returns (UpdateDeviceShadowSynchronizationResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/devices/{device_id}/shadowSynchronization"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Shadow" ]
+      schemes: [ WSS ];
+    };
+  }
 
-  rpc RetrievePendingCommands(RetrievePendingCommandsRequest) returns (stream PendingCommand) {}
-
-  rpc RetrieveDevicesMetadata(RetrieveDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated) {}
+  // Retrieves pending commands for devices .
+  rpc RetrievePendingCommands(RetrievePendingCommandsRequest) returns (stream PendingCommand) {
+    option (google.api.http) = {
+      get: "/api/v1/devices/pendingCommands"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Directory", "Resource Shadow" ]
+    };
+  }
+ 
+  // Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
+  rpc RetrieveDevicesMetadata(RetrieveDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated) {
+    option (google.api.http) = {
+      get: "/api/v1/devices/metadata"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Shadow" ]
+    };
+  }
 }

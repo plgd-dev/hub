@@ -78,6 +78,7 @@ func NewSubscriptionManager(
 
 func subscribe(ctx context.Context, href, correlationID string, reqBody events.SubscriptionRequest, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (resp events.SubscriptionResponse, err error) {
 	client := linkedCloud.GetHTTPClient()
+	defer client.CloseIdleConnections()
 
 	r, w := io.Pipe()
 
@@ -116,6 +117,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 
 func cancelSubscription(ctx context.Context, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	client := linkedCloud.GetHTTPClient()
+	defer client.CloseIdleConnections()
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), nil)
 	if err != nil {
 		return fmt.Errorf("cannot create delete request: %w", err)

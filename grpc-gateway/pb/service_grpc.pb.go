@@ -23,10 +23,11 @@ type GrpcGatewayClient interface {
 	GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error)
 	// Get resource links of devices.
 	GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error)
+	// Retrieve resource from the device.
 	RetrieveResourceFromDevice(ctx context.Context, in *RetrieveResourceFromDeviceRequest, opts ...grpc.CallOption) (*events.ResourceRetrieved, error)
-	// Retrieve resources values from resource shadow
+	// Retrieve resources from the resource shadow.
 	RetrieveResources(ctx context.Context, in *RetrieveResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesClient, error)
-	// Update resource values
+	// Update resource at the device.
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*events.ResourceUpdated, error)
 	// Subscribe to events
 	SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error)
@@ -36,9 +37,11 @@ type GrpcGatewayClient interface {
 	DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*events.ResourceDeleted, error)
 	// Create resource at the device.
 	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*events.ResourceCreated, error)
-	// UpdateDeviceShadowSynchronization enables/disables shadow synchronization of device.
+	// Enables/disables shadow synchronization for device.
 	UpdateDeviceShadowSynchronization(ctx context.Context, in *UpdateDeviceShadowSynchronizationRequest, opts ...grpc.CallOption) (*UpdateDeviceShadowSynchronizationResponse, error)
+	// Retrieves pending commands for devices .
 	RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error)
+	// Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
 	RetrieveDevicesMetadata(ctx context.Context, in *RetrieveDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveDevicesMetadataClient, error)
 }
 
@@ -303,10 +306,11 @@ type GrpcGatewayServer interface {
 	GetDevices(*GetDevicesRequest, GrpcGateway_GetDevicesServer) error
 	// Get resource links of devices.
 	GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error
+	// Retrieve resource from the device.
 	RetrieveResourceFromDevice(context.Context, *RetrieveResourceFromDeviceRequest) (*events.ResourceRetrieved, error)
-	// Retrieve resources values from resource shadow
+	// Retrieve resources from the resource shadow.
 	RetrieveResources(*RetrieveResourcesRequest, GrpcGateway_RetrieveResourcesServer) error
-	// Update resource values
+	// Update resource at the device.
 	UpdateResource(context.Context, *UpdateResourceRequest) (*events.ResourceUpdated, error)
 	// Subscribe to events
 	SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error
@@ -316,9 +320,11 @@ type GrpcGatewayServer interface {
 	DeleteResource(context.Context, *DeleteResourceRequest) (*events.ResourceDeleted, error)
 	// Create resource at the device.
 	CreateResource(context.Context, *CreateResourceRequest) (*events.ResourceCreated, error)
-	// UpdateDeviceShadowSynchronization enables/disables shadow synchronization of device.
+	// Enables/disables shadow synchronization for device.
 	UpdateDeviceShadowSynchronization(context.Context, *UpdateDeviceShadowSynchronizationRequest) (*UpdateDeviceShadowSynchronizationResponse, error)
+	// Retrieves pending commands for devices .
 	RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error
+	// Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
 	RetrieveDevicesMetadata(*RetrieveDevicesMetadataRequest, GrpcGateway_RetrieveDevicesMetadataServer) error
 	mustEmbedUnimplementedGrpcGatewayServer()
 }

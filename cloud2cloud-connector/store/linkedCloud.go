@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
+	"time"
 
 	"github.com/plgd-dev/cloud/authorization/oauth"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
@@ -91,7 +92,12 @@ func (l LinkedCloud) GetHTTPClient() *http.Client {
 		RootCAs:            pool,
 		InsecureSkipVerify: l.Endpoint.InsecureSkipVerify,
 	}
+	t.MaxIdleConns = 1
+	t.MaxConnsPerHost = 1
+	t.MaxIdleConnsPerHost = 1
+	t.IdleConnTimeout = time.Second
 	return &http.Client{
+		Timeout:   time.Second * 10,
 		Transport: t,
 	}
 }

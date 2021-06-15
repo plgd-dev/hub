@@ -260,7 +260,7 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 //	}
 //	if it.Err != nil {
 //	}
-func (c *Client) RetrieveResourcesIterator(ctx context.Context, resourceIDs []*commands.ResourceId, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
+func (c *Client) RetrieveResourcesIterator(ctx context.Context, resourceIDs []string, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
 	r := pb.RetrieveResourcesRequest{ResourceIdsFilter: resourceIDs, DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
 	return kitNetGrpc.NewIterator(c.gateway.RetrieveResources(ctx, &r))
 }
@@ -283,10 +283,10 @@ func (c *Client) RetrieveResourcesByResourceIDs(
 	resourceIDsCallbacks ...ResourceIDCallback,
 ) error {
 	tc := make(map[string]func(*pb.Resource), len(resourceIDsCallbacks))
-	resourceIDs := make([]*commands.ResourceId, 0, len(resourceIDsCallbacks))
+	resourceIDs := make([]string, 0, len(resourceIDsCallbacks))
 	for _, c := range resourceIDsCallbacks {
 		tc[c.ResourceID.GetDeviceId()+c.ResourceID.GetHref()] = c.Callback
-		resourceIDs = append(resourceIDs, c.ResourceID)
+		resourceIDs = append(resourceIDs, c.ResourceID.ToString())
 	}
 
 	it := c.RetrieveResourcesIterator(ctx, resourceIDs, nil)
