@@ -45,8 +45,30 @@ func (e *ResourceLinksSnapshotTaken) IsSnapshot() bool {
 	return true
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx context.Context, pub *ResourceLinksPublished) error {
-	for _, res := range pub.GetResources() {
+// Examine published resources by the ResourceLinksPublished, compare it with cached resources and
+// return array of new or changed resources.
+func (e *ResourceLinksSnapshotTaken) GetNewPublishedLinks(pub *ResourceLinksPublished) []*commands.Resource {
+
+	if e.GetResources() == nil {
+		return pub.GetResources()
+	}
+
+	published := make([]*commands.Resource, 0, len(pub.GetResources()))
+
+	for _, resPub := range pub.GetResources() {
+		resSnap, ok := e.Resources[resPub.Href]
+		if !ok || !EqualResource(resPub, resSnap) {
+			published = append(published, resPub)
+		}
+	}
+
+	return published
+}
+
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx context.Context, pub *ResourceLinksPublished) ([]*commands.Resource, error) {
+	published := e.GetNewPublishedLinks(pub)
+
+	for _, res := range published {
 		if e.GetResources() == nil {
 			e.Resources = make(map[string]*commands.Resource)
 		}
@@ -54,7 +76,7 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksPublished(ctx conte
 	}
 	e.DeviceId = pub.GetDeviceId()
 	e.EventMetadata = pub.GetEventMetadata()
-	return nil
+	return published, nil
 }
 
 func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx context.Context, upub *ResourceLinksUnpublished) ([]string, error) {
@@ -110,7 +132,7 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceLinksPublished(ctx, &s); err != nil {
+			if _, err := e.HandleEventResourceLinksPublished(ctx, &s); err != nil {
 				return err
 			}
 		case (&ResourceLinksUnpublished{}).EventType():
@@ -146,10 +168,14 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			AuditContext:  ac,
 			EventMetadata: em,
 		}
-		err := e.HandleEventResourceLinksPublished(ctx, &rlp)
+		published, err := e.HandleEventResourceLinksPublished(ctx, &rlp)
 		if err != nil {
 			return nil, err
 		}
+		if len(published) == 0 {
+			return nil, nil
+		}
+		rlp.Resources = published
 		return []eventstore.Event{&rlp}, nil
 	case *commands.UnpublishResourceLinksRequest:
 		if newVersion == 0 {
@@ -170,6 +196,9 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		unpublished, err := e.HandleEventResourceLinksUnpublished(ctx, &rlu)
 		if err != nil {
 			return nil, err
+		}
+		if len(unpublished) == 0 {
+			return nil, nil
 		}
 		rlu.Hrefs = unpublished
 		return []eventstore.Event{&rlu}, nil
