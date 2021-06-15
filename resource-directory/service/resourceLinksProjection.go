@@ -102,11 +102,13 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 			if err := eu.Unmarshal(&e); err != nil {
 				return err
 			}
-			err := rlp.snapshot.HandleEventResourceLinksPublished(ctx, &e)
+			published, err := rlp.snapshot.HandleEventResourceLinksPublished(ctx, &e)
 			if err != nil {
 				return err
 			}
-			sendEvents = append(sendEvents, &e)
+			if len(published) > 0 {
+				sendEvents = append(sendEvents, &e)
+			}
 		case (&events.ResourceLinksUnpublished{}).EventType():
 			var e events.ResourceLinksUnpublished
 			if err := eu.Unmarshal(&e); err != nil {
