@@ -23,9 +23,16 @@ type wkRd struct {
 	TimeToLiveLegacy int                  `json:"lt"`
 }
 
+func makeWkRd() wkRd {
+	return wkRd{
+		TimeToLive:       -1,
+		TimeToLiveLegacy: -1,
+	}
+}
+
 func fixTTL(w wkRd) wkRd {
 	// set time to live properly
-	if w.TimeToLive <= 0 {
+	if w.TimeToLive < 0 {
 		w.TimeToLive = w.TimeToLiveLegacy
 	} else {
 		w.TimeToLiveLegacy = w.TimeToLive
@@ -51,7 +58,7 @@ func validatePublish(w wkRd) error {
 	if len(w.Links) == 0 {
 		return errors.New("empty links")
 	}
-	if w.TimeToLive <= 0 && w.TimeToLiveLegacy <= 0 {
+	if w.TimeToLive < 0 && w.TimeToLiveLegacy < 0 {
 		return errors.New("invalid TimeToLive")
 	}
 
@@ -65,7 +72,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	var w wkRd
+	w := makeWkRd()
 	err = cbor.ReadFrom(req.Body, &w)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("cannot read publish request body received from device %v: %w", authCtx.GetDeviceID(), err), coapCodes.BadRequest, req.Token)

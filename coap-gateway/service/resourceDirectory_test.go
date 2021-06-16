@@ -37,8 +37,10 @@ var tblResourceDirectory = []testEl{
 	{"BadRequest2", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ "abc" ]}`, nil}, output{coapCodes.BadRequest, `cbor: cannot unmarshal`, nil}},
 	{"BadRequest3", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ {} ]}`, nil}, output{coapCodes.BadRequest, `invalid TimeToLive`, nil}},
 	{"BadRequest4", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "href":"" } ]}`, nil}, output{coapCodes.BadRequest, `invalid TimeToLive`, nil}},
-	{"BadRequest5", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}},
-	{"BadRequest6", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}},
+	{"BadRequest5", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ {} ], "ttl":-1}`, nil}, output{coapCodes.BadRequest, `invalid TimeToLive`, nil}},
+	{"BadRequest6", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ {} ], "lt":-1}`, nil}, output{coapCodes.BadRequest, `invalid TimeToLive`, nil}},
+	{"BadRequest7", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}},
+	{"BadRequest8", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "href":"" } ], "ttl":12345}`, nil}, output{coapCodes.BadRequest, `invalid resource href`, nil}},
 	{"Changed0", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "ttl":12345}`, nil},
 		output{coapCodes.Changed, TestWkRD{
 			DeviceID:         CertIdentity,
@@ -77,6 +79,30 @@ var tblResourceDirectory = []testEl{
 				{
 					DeviceID: CertIdentity,
 					Href:     "/c",
+				},
+			},
+		}, nil}},
+	{"Changed3", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "ttl":0}`, nil},
+		output{coapCodes.Changed, TestWkRD{
+			DeviceID:         CertIdentity,
+			TimeToLive:       0,
+			TimeToLiveLegacy: 0,
+			Links: []TestResource{
+				{
+					DeviceID: CertIdentity,
+					Href:     TestAResourceHref,
+				},
+			},
+		}, nil}},
+	{"Changed4", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `" } ], "lt":0}`, nil},
+		output{coapCodes.Changed, TestWkRD{
+			DeviceID:         CertIdentity,
+			TimeToLive:       0,
+			TimeToLiveLegacy: 0,
+			Links: []TestResource{
+				{
+					DeviceID: CertIdentity,
+					Href:     TestAResourceHref,
 				},
 			},
 		}, nil}},
