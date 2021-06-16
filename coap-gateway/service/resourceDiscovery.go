@@ -68,8 +68,10 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 		d, ok := deviceRes[snapshot.GetDeviceId()]
 		if !ok {
 			d = &wkRd{
-				DeviceID: snapshot.GetDeviceId(),
-				Links:    make(schema.ResourceLinks, 0, 16),
+				DeviceID:         snapshot.GetDeviceId(),
+				Links:            make(schema.ResourceLinks, 0, 16),
+				TimeToLive:       -1,
+				TimeToLiveLegacy: -1,
 			}
 			deviceRes[snapshot.GetDeviceId()] = d
 		}
