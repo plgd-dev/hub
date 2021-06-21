@@ -43,7 +43,10 @@ func (e *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 	return true
 }
 
-func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) error {
+func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
+	if e.DeviceMetadataUpdated.Equal(upd) {
+		return false, nil
+	}
 	e.DeviceId = upd.GetDeviceId()
 	index := -1
 	for i, event := range e.GetUpdatePendings() {
@@ -53,14 +56,14 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 		}
 	}
 	if confirm && index < 0 {
-		return status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
+		return false, status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
 	}
 	if index >= 0 {
 		e.UpdatePendings = append(e.UpdatePendings[:index], e.UpdatePendings[index+1:]...)
 	}
 	e.DeviceMetadataUpdated = upd
 	e.EventMetadata = upd.GetEventMetadata()
-	return nil
+	return true, nil
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) error {
@@ -105,7 +108,7 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleDeviceMetadataUpdated(ctx, &s, false); err != nil {
+			if _, err := e.HandleDeviceMetadataUpdated(ctx, &s, false); err != nil {
 				return err
 			}
 		case (&DeviceMetadataUpdatePending{}).EventType():
@@ -145,8 +148,8 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 				AuditContext:          ac,
 				EventMetadata:         em,
 			}
-			err := e.HandleDeviceMetadataUpdated(ctx, &ev, false)
-			if err != nil {
+			ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, false)
+			if !ok {
 				return nil, err
 			}
 			return []eventstore.Event{&ev}, nil
@@ -183,8 +186,8 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 				AuditContext:          ac,
 				EventMetadata:         em,
 			}
-			err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
-			if err != nil {
+			ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
+			if !ok {
 				return nil, err
 			}
 			return []eventstore.Event{&ev}, nil
