@@ -149,8 +149,8 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 				return err
 			}
 			p.data.DeviceId = e.GetDeviceId()
-			err := p.data.HandleDeviceMetadataUpdated(ctx, &e, false)
-			if err == nil {
+			ok, _ := p.data.HandleDeviceMetadataUpdated(ctx, &e, false)
+			if ok {
 				onDeviceMetadataUpdated = true
 				onDeviceMetadataUpdatePending = true
 			}

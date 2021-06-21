@@ -34,3 +34,12 @@ func (e *DeviceMetadataUpdated) GroupID() string {
 func (e *DeviceMetadataUpdated) IsSnapshot() bool {
 	return false
 }
+
+// Check if two DeviceMetadataUpdated events are equal
+func (e *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
+	return e.GetStatus().GetValue() == upd.GetStatus().GetValue() &&
+		e.GetStatus().GetValidUntil() == upd.GetStatus().GetValidUntil() &&
+		e.GetShadowSynchronization() == upd.GetShadowSynchronization() &&
+		e.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&
+		e.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId()
+}
