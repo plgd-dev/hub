@@ -136,5 +136,5 @@ func (s *Server) Serve() error {
 // Shutdown ends serving
 func (s *Server) Shutdown() error {
 	s.cancel()
-	return s.server.Shutdown(context.Background())
+	return s.server.Close()
 }
