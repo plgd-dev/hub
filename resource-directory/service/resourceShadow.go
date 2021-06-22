@@ -3,36 +3,47 @@ package service
 import (
 	"context"
 
-	"github.com/plgd-dev/kit/strings"
+	kitStrings "github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-func toResourceValue(resource *Resource) *pb.Resource {
-	return &pb.Resource{
-		Data:  resource.projection.content,
-		Types: resource.Resource.GetResourceTypes(),
+func toResourceValue(resource *Resource, encoder func(ec *commands.Content) (*commands.Content, error)) (*pb.Resource, error) {
+	content, err := encoder(resource.projection.content.GetContent())
+	if err != nil {
+		return nil, err
 	}
+	data := resource.projection.content.Clone()
+	if data != nil {
+		data.Content = content
+	}
+
+	return &pb.Resource{
+		Data:  data,
+		Types: resource.Resource.GetResourceTypes(),
+	}, nil
 }
 
 type ResourceShadow struct {
 	projection    *Projection
-	userDeviceIds strings.Set
+	userDeviceIds kitStrings.Set
 }
 
 func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShadow {
-	mapDeviceIds := make(strings.Set)
+	mapDeviceIds := make(kitStrings.Set)
 	mapDeviceIds.Add(deviceIds...)
 
 	return &ResourceShadow{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
 func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter, deviceIdsFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
-	mapTypeFilter := make(strings.Set)
+	mapTypeFilter := make(kitStrings.Set)
 	mapTypeFilter.Add(typeFilter...)
 
 	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdsFilter))
@@ -69,6 +80,11 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 }
 
 func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
+	contentEncoder, err := commands.GetContentEncoder(grpc.AcceptContentFromMD(srv.Context()))
+	if err != nil {
+		return err
+	}
+
 	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
@@ -76,7 +92,11 @@ func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcG
 
 	for _, deviceResources := range resources {
 		for _, resource := range deviceResources {
-			val := toResourceValue(resource)
+			val, err := toResourceValue(resource, contentEncoder)
+			if err != nil {
+				log.Errorf("cannot send resource(%+v): %v", val.Data, err)
+				continue
+			}
 			err = srv.Send(val)
 			if err != nil {
 				return status.Errorf(codes.Canceled, "cannot send resource value %v: %v", val, err)
@@ -128,7 +148,7 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 
 func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.GetDevicesMetadataRequest) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
 	result := make(map[string]*events.DeviceMetadataSnapshotTaken)
-	typeFilter := make(strings.Set)
+	typeFilter := make(kitStrings.Set)
 	typeFilter.Add(req.TypeFilter...)
 	for deviceID, resources := range resources {
 		for _, resource := range resources {

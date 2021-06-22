@@ -31,7 +31,8 @@ import (
 func TestRequestHandler_CreateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.CreateResourceRequest
+		req    *pb.CreateResourceRequest
+		accept string
 	}
 	tests := []struct {
 		name        string
@@ -44,7 +45,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -58,9 +59,9 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			wantErrCode: codes.NotFound,
 		},
 		{
-			name: "/oic/d - PermissionDenied",
+			name: "/oic/d - PermissionDenied - without accept",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -69,6 +70,52 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 						}),
 					},
 				},
+			},
+			want: &events.ResourceCreated{
+				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+				Status:     commands.Status_FORBIDDEN,
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+			},
+			wantErrCode: codes.OK,
+		},
+		{
+			name: "/oic/d - PermissionDenied - accept ocf-cbor",
+			args: args{
+				req: &pb.CreateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept: message.AppOcfCbor.String(),
+			},
+			want: &events.ResourceCreated{
+				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+				Status:     commands.Status_FORBIDDEN,
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+			},
+			wantErrCode: codes.OK,
+		},
+		{
+			name: "/oic/d - PermissionDenied - accept json",
+			args: args{
+				req: &pb.CreateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept: message.AppJSON.String(),
 			},
 			want: &events.ResourceCreated{
 				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
@@ -105,9 +152,9 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var m jsonpb.Marshaler
-			data, err := m.MarshalToString(&tt.args.req)
+			data, err := m.MarshalToString(tt.args.req)
 			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Build()
+			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).AcceptContent(tt.args.accept).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

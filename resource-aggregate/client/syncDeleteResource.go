@@ -4,21 +4,25 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"google.golang.org/grpc/codes"
 )
 
 type deleteHandler struct {
 	correlationID string
 	res           chan *events.ResourceDeleted
+	encoder       func(ec *commands.Content) (*commands.Content, error)
 }
 
-func newDeleteHandler(correlationID string) *deleteHandler {
+func newDeleteHandler(correlationID string, encoder func(ec *commands.Content) (*commands.Content, error)) *deleteHandler {
 	return &deleteHandler{
 		correlationID: correlationID,
 		res:           make(chan *events.ResourceDeleted, 1),
+		encoder:       encoder,
 	}
 }
 
@@ -49,13 +53,21 @@ func (h *deleteHandler) recv(ctx context.Context) (*events.ResourceDeleted, erro
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case v := <-h.res:
-		return v, nil
+		var err error
+		if h.encoder != nil {
+			v.Content, err = h.encoder(v.GetContent())
+		}
+		return v, err
 	}
 }
 
 // SyncDeleteResource sends delete resource command to resource aggregate and wait for resource deleted event from eventbus.
 func (c *Client) SyncDeleteResource(ctx context.Context, req *commands.DeleteResourceRequest) (*events.ResourceDeleted, error) {
-	h := newDeleteHandler(req.GetCorrelationId())
+	responseContentEncoder, err := commands.GetContentEncoder(grpc.AcceptContentFromMD(ctx))
+	if err != nil {
+		return nil, grpc.ForwardErrorf(codes.InvalidArgument, "%v", err)
+	}
+	h := newDeleteHandler(req.GetCorrelationId(), responseContentEncoder)
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)

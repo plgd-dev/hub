@@ -26,14 +26,14 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
-func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token string) (*events.ResourceUpdated, error) {
+func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, accept string) (*events.ResourceUpdated, error) {
 	var m jsonpb.Marshaler
 	data, err := m.MarshalToString(req)
 	if err != nil {
 		return nil, err
 	}
 
-	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Build()
+	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).AcceptContent(accept).Build()
 	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
@@ -61,7 +61,8 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token st
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.UpdateResourceRequest
+		req    *pb.UpdateResourceRequest
+		accept string
 	}
 	tests := []struct {
 		name    string
@@ -70,7 +71,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid",
+			name: "valid - without accept",
 			args: args{
 				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
@@ -81,6 +82,56 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						}),
 					},
 				},
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "valid - accept ocf-cbor",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept: message.AppOcfCbor.String(),
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "valid - accept json",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept: message.AppJSON.String(),
 			},
 			want: &events.ResourceUpdated{
 				ResourceId: &commands.ResourceId{
@@ -195,7 +246,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateResource(ctx, tt.args.req, token)
+			got, err := updateResource(ctx, tt.args.req, token, tt.args.accept)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

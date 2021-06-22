@@ -117,6 +117,14 @@ func (c *requestBuilder) AuthToken(token string) *requestBuilder {
 	return c
 }
 
+func (c *requestBuilder) AcceptContent(acceptContent string) *requestBuilder {
+	if acceptContent == "" {
+		return c
+	}
+	c.header["Accept-Content"] = acceptContent
+	return c
+}
+
 func (c *requestBuilder) AddQuery(key string, value ...string) *requestBuilder {
 	c.queryParams[key] = append(c.queryParams[key], value...)
 	return c

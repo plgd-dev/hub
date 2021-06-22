@@ -47,25 +47,33 @@ func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 	sortResources(got)
 
 	for idx := range want {
-		dataWant := want[idx].Data.GetContent().GetData()
-		datagot := got[idx].Data.GetContent().GetData()
+		wantJSON, err := want[idx].Data.GetContent().ToJSON()
+		require.NoError(t, err)
+		dataWant := wantJSON.GetData()
+		gotJSON, err := got[idx].Data.GetContent().ToJSON()
+		require.NoError(t, err)
+		datagot := gotJSON.GetData()
+
 		want[idx].Data.Content.Data = nil
 		got[idx].Data.Content.Data = nil
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
-		w := test.DecodeCbor(t, dataWant)
-		g := test.DecodeCbor(t, datagot)
+
+		w := test.DecodeJson(t, dataWant)
+		g := test.DecodeJson(t, datagot)
 		if gV, ok := g.(map[interface{}]interface{}); ok {
 			delete(gV, "pi")
 			delete(gV, "piid")
 		}
 		require.Equal(t, w, g)
+
 	}
 }
 
 func TestRequestHandler_GetResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.GetResourcesRequest
+		req    *pb.GetResourcesRequest
+		accept string
 	}
 	tests := []struct {
 		name    string
@@ -74,7 +82,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 		want    []*pb.Resource
 	}{
 		{
-			name: "valid",
+			name: "valid - without accept",
 			args: args{
 				req: &pb.GetResourcesRequest{
 					ResourceIdsFilter: []string{
@@ -94,6 +102,74 @@ func TestRequestHandler_GetResources(t *testing.T) {
 							CoapContentFormat: int32(message.AppOcfCbor),
 							ContentType:       message.AppOcfCbor.String(),
 							Data: test.EncodeToCbor(t, map[string]interface{}{
+								"state": false,
+								"power": uint64(0),
+								"name":  "Light",
+								"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
+								"rt":    []interface{}{"core.light"},
+							}),
+						},
+						Status: commands.Status_OK,
+					},
+				},
+			},
+		},
+		{
+			name: "valid - accept ocf-cbor",
+			args: args{
+				req: &pb.GetResourcesRequest{
+					ResourceIdsFilter: []string{
+						commands.NewResourceID(deviceID, "/light/1").ToString(),
+					},
+				},
+				accept: message.AppOcfCbor.String(),
+			},
+			want: []*pb.Resource{
+				{
+					Types: []string{"core.light"},
+					Data: &events.ResourceChanged{
+						ResourceId: &commands.ResourceId{
+							DeviceId: deviceID,
+							Href:     "/light/1",
+						},
+						Content: &commands.Content{
+							CoapContentFormat: int32(message.AppOcfCbor),
+							ContentType:       message.AppOcfCbor.String(),
+							Data: test.EncodeToCbor(t, map[string]interface{}{
+								"state": false,
+								"power": uint64(0),
+								"name":  "Light",
+								"if":    []interface{}{"oic.if.rw", "oic.if.baseline"},
+								"rt":    []interface{}{"core.light"},
+							}),
+						},
+						Status: commands.Status_OK,
+					},
+				},
+			},
+		},
+		{
+			name: "valid - accept json",
+			args: args{
+				req: &pb.GetResourcesRequest{
+					ResourceIdsFilter: []string{
+						commands.NewResourceID(deviceID, "/light/1").ToString(),
+					},
+				},
+				accept: message.AppJSON.String(),
+			},
+			want: []*pb.Resource{
+				{
+					Types: []string{"core.light"},
+					Data: &events.ResourceChanged{
+						ResourceId: &commands.ResourceId{
+							DeviceId: deviceID,
+							Href:     "/light/1",
+						},
+						Content: &commands.Content{
+							CoapContentFormat: int32(message.AppJSON),
+							ContentType:       message.AppJSON.String(),
+							Data: test.EncodeToJson(t, map[string]interface{}{
 								"state": false,
 								"power": uint64(0),
 								"name":  "Light",
@@ -143,7 +219,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodGet, uri.Resources, nil).AuthToken(token).SetQuery(v.Encode()).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.Resources, nil).AuthToken(token).SetQuery(v.Encode()).AcceptContent(tt.args.accept).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

@@ -58,8 +58,12 @@ func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, meth
 		return jwt.NewScopeClaims()
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
+		accept := kitNetGrpc.AcceptContentFromMD(ctx)
 		switch method {
 		case "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration":
+			if accept != "" {
+				return kitNetGrpc.CtxWithAcceptContent(ctx, accept), nil
+			}
 			return ctx, nil
 		}
 		token, _ := kitNetGrpc.TokenFromMD(ctx)
@@ -68,7 +72,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, meth
 			log.Errorf("auth interceptor %v %v: %v", method, token, err)
 			return ctx, err
 		}
-		return kitNetGrpc.CtxWithToken(ctx, token), nil
+		return kitNetGrpc.CtxWithAcceptContent(kitNetGrpc.CtxWithToken(ctx, token), accept), nil
 	}
 }
 

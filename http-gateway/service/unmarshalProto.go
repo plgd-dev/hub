@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -33,7 +32,6 @@ func Unmarshal(code int, decoder Decoder, v protoiface.MessageV1) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("data: %s\n", data)
 
 	if code != http.StatusOK {
 		return UnmarshalError(data)

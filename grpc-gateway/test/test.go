@@ -21,6 +21,7 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.Eventbus.GoPoolSize = 16
+	cfg.Log.Debug = true
 
 	err := cfg.Validate()
 	require.NoError(t, err)

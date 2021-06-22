@@ -39,3 +39,16 @@ func (e *ResourceChanged) IsSnapshot() bool {
 func (e *ResourceChanged) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
+
+func (e *ResourceChanged) Clone() *ResourceChanged {
+	if e == nil {
+		return nil
+	}
+	return &ResourceChanged{
+		ResourceId:    e.GetResourceId(),
+		Content:       e.GetContent(),
+		AuditContext:  e.GetAuditContext(),
+		EventMetadata: e.GetEventMetadata(),
+		Status:        e.GetStatus(),
+	}
+}

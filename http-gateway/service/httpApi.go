@@ -17,6 +17,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/google/uuid"
 	router "github.com/gorilla/mux"
@@ -30,13 +31,104 @@ type RequestHandler struct {
 	mux      *runtime.ServeMux
 }
 
+type jsonPrettyMarshaller struct {
+	*runtime.JSONPb
+}
+
+func newJsonPrettyMarshaller() *jsonPrettyMarshaller {
+	return &jsonPrettyMarshaller{
+		JSONPb: &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				EmitUnpopulated: true,
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		},
+	}
+}
+
+// ContentType always returns "application/json".
+func (*jsonPrettyMarshaller) ContentType(_ interface{}) string {
+	return "application/json-pretty"
+}
+
+func isContent(val map[string]interface{}) bool {
+	_, ok := val["contentType"]
+	if !ok {
+		return false
+	}
+	_, ok = val["data"]
+	if !ok {
+		return false
+	}
+	return true
+}
+
+func modify(v interface{}) {
+	valMap, ok := v.(map[string]interface{})
+	if ok {
+		if isContent(valMap) {
+
+			return
+		}
+		for _, v := range valMap {
+			modify(v)
+		}
+		return
+	}
+	valArr, ok := v.([]interface{})
+	if ok {
+		for _, v := range valArr {
+			modify(v)
+		}
+	}
+}
+
+// Marshal marshals "v" into JSON.
+func (j *jsonPrettyMarshaller) Marshal(orig interface{}) ([]byte, error) {
+	val, ok := orig.(map[string]interface{})
+	if !ok {
+		return j.JSONPb.Marshal(v)
+	}
+	var string contentType
+	var data interface{}
+	for key, v := range val {
+		if key == "contentType" {
+
+		}
+
+		if key == "data" {
+
+		}
+	}
+}
+
 //NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(config *Config, client *client.Client, caClient pbCA.CertificateAuthorityClient) *RequestHandler {
 	return &RequestHandler{
 		client:   client,
 		caClient: caClient,
 		config:   config,
-		mux:      runtime.NewServeMux(),
+		mux: runtime.NewServeMux(
+			runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+				switch strings.ToLower(key) {
+				/*
+					case "accept-content":
+						return grpc.AcceptContentHeaderKey, true
+				*/
+				}
+				return key, false
+			}),
+			runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+				MarshalOptions: protojson.MarshalOptions{
+					EmitUnpopulated: true,
+				},
+				UnmarshalOptions: protojson.UnmarshalOptions{
+					DiscardUnknown: true,
+				},
+			}),
+		),
 	}
 }
 

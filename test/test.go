@@ -594,8 +594,21 @@ func DecodeCbor(t *testing.T, data []byte) interface{} {
 	return v
 }
 
+func DecodeJson(t *testing.T, data []byte) interface{} {
+	var v interface{}
+	err := json.Decode(data, &v)
+	require.NoError(t, err)
+	return v
+}
+
 func EncodeToCbor(t *testing.T, v interface{}) []byte {
 	d, err := cbor.Encode(v)
+	require.NoError(t, err)
+	return d
+}
+
+func EncodeToJson(t *testing.T, v interface{}) []byte {
+	d, err := json.Encode(v)
 	require.NoError(t, err)
 	return d
 }

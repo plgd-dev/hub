@@ -36,6 +36,11 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 // https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
 
+//
+// Headers:
+//   accept-content: for translation content of resources. Supported encodings: "application/json", "application/vnd.ocf+cbor" (optional)
+//   authorization: for OAuth2 token. eg: "bearer JWT-TOKEN"
+
 service GrpcGateway {
   // Get all devices
   rpc GetDevices (GetDevicesRequest) returns (stream Device) {

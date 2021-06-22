@@ -22,7 +22,8 @@ import (
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.UpdateResourceRequest
+		req    *pb.UpdateResourceRequest
+		accept string
 	}
 	tests := []struct {
 		name    string
@@ -31,9 +32,9 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid",
+			name: "valid - without accept",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -55,9 +56,59 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			},
 		},
 		{
+			name: "valid - accept ocf-cbor",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept: message.AppOcfCbor.String(),
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "valid - accept json",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept: message.AppJSON.String(),
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
 			name: "valid with interface",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
@@ -82,7 +133,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "revert update",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
@@ -107,7 +158,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "update RO-resource",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -131,7 +182,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -157,7 +208,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.UpdateResource(ctx, &tt.args.req)
+			ctx := kitNetGrpc.CtxWithAcceptContent(ctx, tt.args.accept)
+			got, err := c.UpdateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
