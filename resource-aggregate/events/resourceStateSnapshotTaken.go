@@ -174,17 +174,17 @@ func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetada
 }
 
 func Equal(current, changed *ResourceChanged) bool {
-	if current.Status != changed.Status {
+	if current.GetStatus() != changed.GetStatus() {
 		return false
 	}
 
-	if current.Content.CoapContentFormat != changed.Content.CoapContentFormat ||
-		current.Content.ContentType != changed.Content.ContentType ||
-		!bytes.Equal(current.Content.Data, changed.Content.Data) {
+	if current.GetContent().GetCoapContentFormat() != changed.GetContent().GetCoapContentFormat() ||
+		current.GetContent().GetContentType() != changed.GetContent().GetContentType() ||
+		!bytes.Equal(current.GetContent().GetData(), changed.GetContent().GetData()) {
 		return false
 	}
 
-	if current.AuditContext.UserId != changed.AuditContext.UserId {
+	if current.GetAuditContext().GetUserId() != changed.GetAuditContext().GetUserId() {
 		return false
 	}
 
