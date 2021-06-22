@@ -37,4 +37,6 @@ type Store interface {
 	InsertLinkedAccount(ctx context.Context, sub LinkedAccount) error
 	RemoveLinkedAccount(ctx context.Context, LinkedAccountId string) error
 	LoadLinkedAccounts(ctx context.Context, query Query, h LinkedAccountHandler) error
+
+	Close(ctx context.Context) error
 }

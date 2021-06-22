@@ -9,7 +9,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"os/exec"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -33,6 +36,15 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
 )
+
+func countOpenFiles() int64 {
+	out, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("lsof -p %v", os.Getpid())).Output()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	lines := strings.Split(string(out), "\n")
+	return int64(len(lines) - 1)
+}
 
 func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
 	cloud1 := test.SetUp(ctx, t)
@@ -107,6 +119,8 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 		cloud1Conn.Close()
 		cloud1()
 		runtime.GC()
+
+		fmt.Printf("NUM FDS used %v\n", countOpenFiles())
 	}
 }
 

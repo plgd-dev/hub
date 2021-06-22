@@ -146,7 +146,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
 	require.NoError(t, err)
 	defer func() {
@@ -159,22 +159,22 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	pc1 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 
 	events, err := ag.PublishResourceLinks(ctx, pc1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
 	ag2, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 	events, err = ag2.PublishResourceLinks(ctx, pc2)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(events))
+	require.NoError(t, err)
+	assert.Empty(t, events)
 
 	ag3, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), 10, eventstore, service.ResourceLinksFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc3 := testMakePublishResourceRequest(deviceID, []string{resourceID, resourceID, resourceID})
 	events, err = ag3.PublishResourceLinks(ctx, pc3)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(events))
+	require.NoError(t, err)
+	assert.Empty(t, events)
 }
 
 func TestAggregateHandleUnpublishResource(t *testing.T) {
@@ -270,9 +270,8 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	assert.NoError(t, err)
 
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(events))
-	assert.Equal(t, []string{}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+	require.NoError(t, err)
+	require.Empty(t, events)
 }
 
 func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
@@ -354,14 +353,17 @@ func testMakeUnpublishResourceRequest(deviceID string, hrefs []string) *commands
 	return &r
 }
 
-func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64) *commands.NotifyResourceChangedRequest {
+func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64, content ...byte) *commands.NotifyResourceChangedRequest {
+	if len(content) == 0 {
+		content = []byte("hello world")
+	}
 	r := commands.NotifyResourceChangedRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
 		Content: &commands.Content{
-			Data: []byte("hello world"),
+			Data: content,
 		},
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: "test",
@@ -576,7 +578,7 @@ func Test_aggregate_HandleNotifyContentChanged(t *testing.T) {
 		{
 			name: "valid - new content",
 			args: args{
-				testMakeNotifyResourceChangedRequest(deviceID, resourceID, 5),
+				testMakeNotifyResourceChangedRequest(deviceID, resourceID, 5, []byte("new content")...),
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,

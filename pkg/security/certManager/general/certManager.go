@@ -83,13 +83,13 @@ func New(config Config, logger *zap.Logger) (*CertManager, error) {
 		return nil, err
 	}
 	if err := c.watcher.Add(filepath.Dir(config.CAPool)); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot watch CAPool directory(%v): %w", filepath.Dir(config.CAPool), err)
 	}
 	if err := c.watcher.Add(filepath.Dir(config.CertFile)); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot watch CertFile directory(%v): %w", filepath.Dir(config.CertFile), err)
 	}
 	if err := c.watcher.Add(filepath.Dir(config.KeyFile)); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot watch KeyFile directory(%v): %w", filepath.Dir(config.CertFile), err)
 	}
 
 	c.doneWg.Add(1)

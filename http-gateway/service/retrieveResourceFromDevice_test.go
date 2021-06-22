@@ -119,6 +119,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/api/v1/devices/%v?%v", config.HTTP_GW_HOST, tt.args.req.ResourceId, v.Encode()), nil)
 			require.NoError(t, err)
 			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+			request.Header.Add("Accept", message.AppJSON.String())
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

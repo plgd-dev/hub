@@ -31,20 +31,20 @@ func Init(config Config) (*service.Server, error) {
 	log.Info(config.String())
 	dialCertManager, err := certManager.NewCertManager(config.Dial)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create dial cert manager %w", err)
+		return nil, fmt.Errorf("cannot create dial cert manager: %w", err)
 	}
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 
 	store, err := storeMongodb.NewStore(context.Background(), config.StoreMongoDB, storeMongodb.WithTLS(dialTLSConfig))
 	if err != nil {
-		return nil, fmt.Errorf("cannot create mongodb store %w", err)
+		return nil, fmt.Errorf("cannot create mongodb store: %w", err)
 	}
 
 	var listenCertManager certManager.CertManager
 	if !config.ListenWithoutTLS {
 		listenCertManager, err = certManager.NewCertManager(config.Listen)
 		if err != nil {
-			return nil, fmt.Errorf("cannot create listen cert manager %w", err)
+			return nil, fmt.Errorf("cannot create listen cert manager: %w", err)
 		}
 	}
 
