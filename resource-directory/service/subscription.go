@@ -17,7 +17,8 @@ type subscriptionEvent struct {
 }
 
 type subscription struct {
-	devicesEvent *pb.SubscribeToEvents_CreateSubscription
+	devicesEvent   *pb.SubscribeToEvents_CreateSubscription
+	contentEncoder commands.ContentEncoderFunc
 
 	isInitialized       sync.Map
 	filteredDeviceIDs   strings.Set

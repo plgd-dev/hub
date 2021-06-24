@@ -8,8 +8,10 @@ import "github.com/plgd-dev/cloud/grpc-gateway/pb/getPendingCommands.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/getDevicesMetadata.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/updateDeviceMetadata.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
 
 import "google/api/annotations.proto";
+import "google/rpc/status.proto";
 import "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-openapiv2/options/annotations.proto";
 
 
@@ -34,12 +36,32 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+
 // https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
+// https://github.com/grpc-ecosystem/grpc-gateway/blob/master/examples/internal/proto/examplepb/a_bit_of_everything.proto
 
 //
 // Headers:
 //   accept-content: for translation content of resources. Supported encodings: "application/json", "application/vnd.ocf+cbor" (optional)
 //   authorization: for OAuth2 token. eg: "bearer JWT-TOKEN"
+
+message HTTPDeviceReponse {
+  message Metadata {
+    ocf.cloud.resourceaggregate.pb.ConnectionStatus status = 1;
+    ocf.cloud.resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2;
+  }
+  string id = 1;
+  repeated string types = 2;
+  string name = 3;
+  Metadata metadata = 4;
+  repeated LocalizedString manufacturer_name = 5;
+  string model_number = 6;
+  repeated string interfaces = 7;
+  string protocol_independent_id = 8;
+
+  google.rpc.Status error = 100;
+}
+
 
 service GrpcGateway {
   // Get all devices

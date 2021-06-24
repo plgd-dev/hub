@@ -107,6 +107,11 @@ func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcG
 }
 
 func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
+	contentEncoder, err := commands.GetContentEncoder(grpc.AcceptContentFromMD(srv.Context()))
+	if err != nil {
+		return err
+	}
+
 	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandsFilter())
 	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdsFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
 		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdsFilter())
@@ -135,7 +140,7 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 
 	for _, deviceResources := range resources {
 		for _, resource := range deviceResources {
-			for _, pendingCmd := range toPendingCommands(resource, filterCmds) {
+			for _, pendingCmd := range toPendingCommands(resource, filterCmds, contentEncoder) {
 				err = srv.Send(pendingCmd)
 				if err != nil {
 					return status.Errorf(codes.Canceled, "cannot send pending command %v: %v", pendingCmd, err)

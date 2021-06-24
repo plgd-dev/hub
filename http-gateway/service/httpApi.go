@@ -86,22 +86,9 @@ func modify(v interface{}) {
 }
 
 // Marshal marshals "v" into JSON.
-func (j *jsonPrettyMarshaller) Marshal(orig interface{}) ([]byte, error) {
-	val, ok := orig.(map[string]interface{})
-	if !ok {
-		return j.JSONPb.Marshal(v)
-	}
-	var string contentType
-	var data interface{}
-	for key, v := range val {
-		if key == "contentType" {
-
-		}
-
-		if key == "data" {
-
-		}
-	}
+func (j *jsonPrettyMarshaller) Marshal(v interface{}) ([]byte, error) {
+	modify(v)
+	return j.JSONPb.Marshal(v)
 }
 
 //NewRequestHandler factory for new RequestHandler
@@ -182,6 +169,33 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 		return true
 	}
 	return false
+}
+
+// Marshaler defines a conversion between byte sequence and gRPC payloads / fields.
+type myMarshaler struct {
+	*runtime.JSONPb
+}
+
+func (m *myMarshaler) Marshal(v interface{}) ([]byte, error) {
+	if data, ok := v.(map[string]interface{}); ok {
+		if result, ok := data["result"]; ok {
+			return m.JSONPb.Marshal(result)
+		}
+	}
+	return m.JSONPb.Marshal(v)
+}
+
+var defaultMarshaler = &runtime.HTTPBodyMarshaler{
+	Marshaler: &myMarshaler{
+		JSONPb: &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				EmitUnpopulated: true,
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		},
+	},
 }
 
 // NewHTTP returns HTTP server

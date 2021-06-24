@@ -39,3 +39,12 @@ func (e *ResourceCreatePending) IsSnapshot() bool {
 func (e *ResourceCreatePending) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
+
+func (e *ResourceCreatePending) Clone() *ResourceCreatePending {
+	return &ResourceCreatePending{
+		ResourceId:    e.GetResourceId(),
+		Content:       e.GetContent(),
+		AuditContext:  e.GetAuditContext(),
+		EventMetadata: e.GetEventMetadata(),
+	}
+}

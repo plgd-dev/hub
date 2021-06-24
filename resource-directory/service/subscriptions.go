@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
@@ -415,7 +416,7 @@ func (s *Subscriptions) OnResourceContentChanged(ctx context.Context, resourceCh
 	return nil
 }
 
-func (s *Subscriptions) SubscribeForDevicesEvent(ctx context.Context, owner string, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeToEvents_CreateSubscription) error {
+func (s *Subscriptions) SubscribeToDevicesEvent(ctx context.Context, owner string, contentEncoder commands.ContentEncoderFunc, resourceProjection *Projection, subscriptionID, token string, send SendEventFunc, req *pb.SubscribeToEvents_CreateSubscription) error {
 	sub := Newsubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.Insertsubscription(ctx, sub)
 	if err != nil {
@@ -441,6 +442,11 @@ func (s *Subscriptions) cancelSubscription(localSubscriptions *sync.Map, subscri
 
 func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb.GrpcGateway_SubscribeToEventsServer) error {
 	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
+	if err != nil {
+		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
+	}
+
+	encoder, err := commands.GetContentEncoder(kitNetGrpc.AcceptContentFromMD(srv.Context()))
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
@@ -517,7 +523,7 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 
 		switch r := subReq.GetAction().(type) {
 		case *pb.SubscribeToEvents_CreateSubscription_:
-			err = s.SubscribeForDevicesEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.CreateSubscription)
+			err = s.SubscribeToDevicesEvent(ctx, owner, encoder, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.CreateSubscription)
 		case *pb.SubscribeToEvents_CancelSubscription_:
 			//handled by cancelation
 			err = nil

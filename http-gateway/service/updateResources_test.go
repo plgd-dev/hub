@@ -71,7 +71,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid - without accept",
+			name: "cbor update - without accept",
 			args: args{
 				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
@@ -95,7 +95,31 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			},
 		},
 		{
-			name: "valid - accept ocf-cbor",
+			name: "json update - without accept",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppJSON.String(),
+						Data: test.EncodeToJson(t, map[string]interface{}{
+							"power": 99,
+						}),
+					},
+				},
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "cbor update - accept ocf-cbor",
 			args: args{
 				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
@@ -120,7 +144,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			},
 		},
 		{
-			name: "valid - accept json",
+			name: "cbor update - accept json",
 			args: args{
 				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
@@ -145,7 +169,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			},
 		},
 		{
-			name: "valid with interface",
+			name: "cbor update with interface",
 			args: args{
 				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",

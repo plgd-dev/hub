@@ -1,6 +1,10 @@
 package service
 
-import "github.com/plgd-dev/cloud/grpc-gateway/pb"
+import (
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+)
 
 type filterBitmask uint64
 
@@ -100,16 +104,23 @@ func devicesEventsFilterToBitmask(commandsFilter []pb.SubscribeToEvents_CreateSu
 	return bitmask
 }
 
-func toPendingCommands(resource *Resource, commandsFilter filterBitmask) []*pb.PendingCommand {
+func toPendingCommands(resource *Resource, commandsFilter filterBitmask, contentEncoder func(ec *commands.Content) (*commands.Content, error)) []*pb.PendingCommand {
 	if resource.projection == nil {
 		return nil
 	}
 	pendingCmds := make([]*pb.PendingCommand, 0, 32)
 	if commandsFilter&filterBitmaskResourceCreatePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceCreatePendings {
+			p := pendingCmd.Clone()
+			content, err := contentEncoder(p.GetContent())
+			if err != nil {
+				log.Errorf("cannot send create pending command (%+v): %v", pendingCmd, err)
+				continue
+			}
+			p.Content = content
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceCreatePending{
-					ResourceCreatePending: pendingCmd,
+					ResourceCreatePending: p,
 				},
 			})
 		}
@@ -125,9 +136,16 @@ func toPendingCommands(resource *Resource, commandsFilter filterBitmask) []*pb.P
 	}
 	if commandsFilter&filterBitmaskResourceUpdatePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceUpdatePendings {
+			p := pendingCmd.Clone()
+			content, err := contentEncoder(p.GetContent())
+			if err != nil {
+				log.Errorf("cannot send update pending command (%+v): %v", pendingCmd, err)
+				continue
+			}
+			p.Content = content
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceUpdatePending{
-					ResourceUpdatePending: pendingCmd,
+					ResourceUpdatePending: p,
 				},
 			})
 		}

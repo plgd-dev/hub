@@ -100,14 +100,16 @@ func EventContentToContent(ec EventContent) (*Content, error) {
 
 const applicationMimeType = "application"
 
-func GetContentEncoder(accept string) (func(ec *Content) (*Content, error), error) {
+type ContentEncoderFunc = func(ec *Content) (*Content, error)
+
+func GetContentEncoder(accept string) (ContentEncoderFunc, error) {
 	a := strings.Split(accept, ",")
 	if len(a) == 0 || (len(a) == 1 && a[0] == "") {
 		return func(c *Content) (*Content, error) {
 			return c, nil
 		}, nil
 	}
-	var encode func(ec *Content) (*Content, error)
+	var encode ContentEncoderFunc
 	for _, v := range a {
 		switch v {
 		case message.AppJSON.String():

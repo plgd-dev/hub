@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -36,6 +37,8 @@ func Unmarshal(code int, decoder Decoder, v protoiface.MessageV1) error {
 	if code != http.StatusOK {
 		return UnmarshalError(data)
 	}
+
+	fmt.Printf("data %s\n", data)
 
 	var item struct {
 		Result json.RawMessage `json:"result"`
