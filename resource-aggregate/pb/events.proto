@@ -9,7 +9,7 @@ option go_package = "github.com/plgd-dev/cloud/resource-aggregate/events;events"
 
 message EventMetadata {
    uint64 version = 1;
-   uint64 timestamp_ms = 2;
+   int64 timestamp = 2;
    string connection_id = 3;
    uint64 sequence = 4;
 }

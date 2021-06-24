@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 
@@ -43,6 +44,10 @@ func (e *ResourceLinksSnapshotTaken) EventType() string {
 
 func (e *ResourceLinksSnapshotTaken) IsSnapshot() bool {
 	return true
+}
+
+func (e *ResourceLinksSnapshotTaken) Timestamp() time.Time {
+	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
 // Examine published resources by the ResourceLinksPublished, compare it with cached resources and

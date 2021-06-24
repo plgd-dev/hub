@@ -1,6 +1,8 @@
 package events
 
 import (
+	"time"
+
 	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
@@ -33,4 +35,8 @@ func (e *DeviceMetadataUpdatePending) GroupID() string {
 
 func (e *DeviceMetadataUpdatePending) IsSnapshot() bool {
 	return false
+}
+
+func (e *DeviceMetadataUpdatePending) Timestamp() time.Time {
+	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }

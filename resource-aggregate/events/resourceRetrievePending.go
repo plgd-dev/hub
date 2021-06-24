@@ -1,6 +1,8 @@
 package events
 
 import (
+	"time"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -32,4 +34,8 @@ func (e *ResourceRetrievePending) GroupID() string {
 
 func (e *ResourceRetrievePending) IsSnapshot() bool {
 	return false
+}
+
+func (e *ResourceRetrievePending) Timestamp() time.Time {
+	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }

@@ -27,6 +27,7 @@ const versionKey = "version"
 const dataKey = "data"
 const eventTypeKey = "eventtype"
 const isSnapshotKey = "issnapshot"
+const timestampKey = "timestamp"
 
 // Document
 const aggregateIDKey = "aggregateid"
@@ -315,6 +316,7 @@ func makeDBEvents(events []eventstore.Event, marshaler MarshalerFunc) ([]bson.M,
 			dataKey:       raw,
 			eventTypeKey:  event.EventType(),
 			isSnapshotKey: event.IsSnapshot(),
+			timestampKey:  event.Timestamp().UnixNano(),
 		})
 	}
 	return dbEvents, nil

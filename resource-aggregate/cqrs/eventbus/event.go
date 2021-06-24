@@ -2,6 +2,7 @@ package eventbus
 
 import (
 	"context"
+	"time"
 )
 
 //Event interface over event created by user.
@@ -11,6 +12,7 @@ type Event = interface {
 	AggregateID() string
 	GroupID() string
 	IsSnapshot() bool
+	Timestamp() time.Time
 }
 
 //EventUnmarshaler provides event.
