@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -50,6 +51,10 @@ func (e *ResourceStateSnapshotTaken) EventType() string {
 
 func (e *ResourceStateSnapshotTaken) IsSnapshot() bool {
 	return true
+}
+
+func (e *ResourceStateSnapshotTaken) Timestamp() time.Time {
+	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {

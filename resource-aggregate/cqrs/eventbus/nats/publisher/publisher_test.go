@@ -53,6 +53,7 @@ type mockEvent struct {
 	AggregateIDI string
 	groupID      string
 	isSnapshot   bool
+	timestamp    int64
 	Data         string
 }
 
@@ -74,6 +75,10 @@ func (e mockEvent) GroupID() string {
 
 func (e mockEvent) IsSnapshot() bool {
 	return e.isSnapshot
+}
+
+func (e mockEvent) Timestamp() time.Time {
+	return time.Unix(0, e.timestamp)
 }
 
 type mockEventHandler struct {

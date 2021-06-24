@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -41,6 +42,10 @@ func (e *DeviceMetadataSnapshotTaken) GroupID() string {
 
 func (e *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 	return true
+}
+
+func (e *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
+	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {

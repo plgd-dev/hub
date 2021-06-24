@@ -80,7 +80,7 @@ var d5res2 = commands.Resource{
 
 func makeEventMeta(connectionID string, sequence, version uint64) *events.EventMetadata {
 	e := events.MakeEventMeta(connectionID, sequence, version)
-	e.TimestampMs = 12345
+	e.Timestamp = 12345
 	return e
 }
 
@@ -310,7 +310,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 					DeviceId: d1res1.DeviceId,
 					EventMetadata: &events.EventMetadata{
 						Version:      3,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 				},
@@ -329,7 +329,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 					DeviceId: d2res1.DeviceId,
 					EventMetadata: &events.EventMetadata{
 						Version:      6,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 				},
@@ -348,7 +348,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 					DeviceId: d3res2.DeviceId,
 					EventMetadata: &events.EventMetadata{
 						Version:      1,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 				},
@@ -365,7 +365,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 					DeviceId:  d4res1.DeviceId,
 					EventMetadata: &events.EventMetadata{
 						Version:      1,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 				},
@@ -382,7 +382,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 					DeviceId:  d5res1.DeviceId,
 					EventMetadata: &events.EventMetadata{
 						Version:      1,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 				},
@@ -445,12 +445,12 @@ func TestResourceStateProjection_Models(t *testing.T) {
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
-							TimestampMs: 12345,
+							Timestamp: 12345,
 						},
 					},
 					EventMetadata: &events.EventMetadata{
 						Version:      4,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 					AuditContext: &commands.AuditContext{
@@ -467,7 +467,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 							},
 							EventMetadata: &events.EventMetadata{
 								Version:      2,
-								TimestampMs:  12345,
+								Timestamp:    12345,
 								ConnectionId: "a",
 							},
 						},
@@ -480,7 +480,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 							},
 							EventMetadata: &events.EventMetadata{
 								Version:      4,
-								TimestampMs:  12345,
+								Timestamp:    12345,
 								ConnectionId: "a",
 							},
 						},
@@ -499,12 +499,12 @@ func TestResourceStateProjection_Models(t *testing.T) {
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
-							TimestampMs: 12345,
+							Timestamp: 12345,
 						},
 					},
 					EventMetadata: &events.EventMetadata{
 						Version:      0,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 				},
@@ -521,12 +521,12 @@ func TestResourceStateProjection_Models(t *testing.T) {
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
-							TimestampMs: 12345,
+							Timestamp: 12345,
 						},
 					},
 					EventMetadata: &events.EventMetadata{
 						Version:      1,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 					AuditContext: &commands.AuditContext{
@@ -543,7 +543,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 							},
 							EventMetadata: &events.EventMetadata{
 								Version:      1,
-								TimestampMs:  12345,
+								Timestamp:    12345,
 								ConnectionId: "a",
 							},
 						},
@@ -563,12 +563,12 @@ func TestResourceStateProjection_Models(t *testing.T) {
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
-							TimestampMs: 12345,
+							Timestamp: 12345,
 						},
 					},
 					EventMetadata: &events.EventMetadata{
 						Version:      5,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 					AuditContext: &commands.AuditContext{
@@ -585,7 +585,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 							},
 							EventMetadata: &events.EventMetadata{
 								Version:      5,
-								TimestampMs:  12345,
+								Timestamp:    12345,
 								ConnectionId: "a",
 							},
 						},
@@ -604,12 +604,12 @@ func TestResourceStateProjection_Models(t *testing.T) {
 					LatestResourceChange: &events.ResourceChanged{
 						Content: &commands.Content{},
 						EventMetadata: &events.EventMetadata{
-							TimestampMs: 12345,
+							Timestamp: 12345,
 						},
 					},
 					EventMetadata: &events.EventMetadata{
 						Version:      2,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 					AuditContext: &commands.AuditContext{
@@ -634,13 +634,13 @@ func TestResourceStateProjection_Models(t *testing.T) {
 						AuditContext: &commands.AuditContext{UserId: "userId", CorrelationId: "2"},
 						EventMetadata: &events.EventMetadata{
 							Version:      3,
-							TimestampMs:  12345,
+							Timestamp:    12345,
 							ConnectionId: "a",
 						},
 					},
 					EventMetadata: &events.EventMetadata{
 						Version:      3,
-						TimestampMs:  12345,
+						Timestamp:    12345,
 						ConnectionId: "a",
 					},
 					AuditContext: &commands.AuditContext{

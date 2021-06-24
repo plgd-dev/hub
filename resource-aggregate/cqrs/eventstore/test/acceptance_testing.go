@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/stretchr/testify/require"
@@ -17,6 +18,7 @@ type mockEvent struct {
 	aggregateID string `bson:"aggregateid"`
 	groupID     string `bson:"groupid"`
 	Data        []byte `bson:"data"`
+	timestamp   int64  `bson:"timestamp"`
 }
 
 func (e mockEvent) Version() uint64 {
@@ -37,6 +39,10 @@ func (e mockEvent) GroupID() string {
 
 func (e mockEvent) IsSnapshot() bool {
 	return e.isSnapshot
+}
+
+func (e mockEvent) Timestamp() time.Time {
+	return time.Unix(0, e.timestamp)
 }
 
 type mockEventHandler struct {

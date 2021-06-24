@@ -1,6 +1,8 @@
 package events
 
 import (
+	"time"
+
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
@@ -33,4 +35,8 @@ func (e *ResourceLinksPublished) GroupID() string {
 
 func (e *ResourceLinksPublished) IsSnapshot() bool {
 	return false
+}
+
+func (e *ResourceLinksPublished) Timestamp() time.Time {
+	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }

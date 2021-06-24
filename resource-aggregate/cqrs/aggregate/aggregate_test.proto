@@ -18,14 +18,14 @@ message Published {
     string device_id = 1;
     string href = 2;
     uint64 event_version = 3;
-    
+    int64 event_timestamp = 4;
 }
 
 message Unpublished {
     string device_id = 1;
     string href = 2;
     uint64 event_version = 3;
-    
+    int64 event_timestamp = 4;
 }
 
 message Snapshot {
@@ -33,4 +33,5 @@ message Snapshot {
     string href = 2;
     bool is_published = 3;
     uint64 event_version = 4;
+    int64 event_timestamp = 5;
 }

@@ -1,8 +1,9 @@
 package events
 
 import (
+	"time"
+
 	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 )
 
 //MakeEventMeta for creating EventMetadata for event.
@@ -11,7 +12,7 @@ func MakeEventMeta(connectionId string, sequence, version uint64) *EventMetadata
 		ConnectionId: connectionId,
 		Sequence:     sequence,
 		Version:      version,
-		TimestampMs:  utils.TimeNowMs(),
+		Timestamp:    time.Now().UnixNano(),
 	}
 }
 
