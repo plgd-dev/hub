@@ -11,6 +11,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // StubServiceClient is the client API for StubService service.
@@ -39,7 +40,7 @@ func (c *stubServiceClient) TestCall(ctx context.Context, in *TestRequest, opts 
 }
 
 func (c *stubServiceClient) TestStream(ctx context.Context, opts ...grpc.CallOption) (StubService_TestStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_StubService_serviceDesc.Streams[0], "/ocf.cloud.test.pb.StubService/TestStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &StubService_ServiceDesc.Streams[0], "/ocf.cloud.test.pb.StubService/TestStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ type UnsafeStubServiceServer interface {
 }
 
 func RegisterStubServiceServer(s grpc.ServiceRegistrar, srv StubServiceServer) {
-	s.RegisterService(&_StubService_serviceDesc, srv)
+	s.RegisterService(&StubService_ServiceDesc, srv)
 }
 
 func _StubService_TestCall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -145,7 +146,10 @@ func (x *stubServiceTestStreamServer) Recv() (*TestRequest, error) {
 	return m, nil
 }
 
-var _StubService_serviceDesc = grpc.ServiceDesc{
+// StubService_ServiceDesc is the grpc.ServiceDesc for StubService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var StubService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.test.pb.StubService",
 	HandlerType: (*StubServiceServer)(nil),
 	Methods: []grpc.MethodDesc{

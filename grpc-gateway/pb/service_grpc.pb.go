@@ -12,6 +12,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // GrpcGatewayClient is the client API for GrpcGateway service.
@@ -50,7 +51,7 @@ func NewGrpcGatewayClient(cc grpc.ClientConnInterface) GrpcGatewayClient {
 }
 
 func (c *grpcGatewayClient) GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[0], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func (x *grpcGatewayGetDevicesClient) Recv() (*Device, error) {
 }
 
 func (c *grpcGatewayClient) GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[1], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +124,7 @@ func (c *grpcGatewayClient) RetrieveResourceFromDevice(ctx context.Context, in *
 }
 
 func (c *grpcGatewayClient) RetrieveResources(ctx context.Context, in *RetrieveResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResources", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResources", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +165,7 @@ func (c *grpcGatewayClient) UpdateResource(ctx context.Context, in *UpdateResour
 }
 
 func (c *grpcGatewayClient) SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeToEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[3], "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeToEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +232,7 @@ func (c *grpcGatewayClient) UpdateDeviceShadowSynchronization(ctx context.Contex
 }
 
 func (c *grpcGatewayClient) RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[4], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrievePendingCommands", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[4], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrievePendingCommands", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +264,7 @@ func (x *grpcGatewayRetrievePendingCommandsClient) Recv() (*PendingCommand, erro
 }
 
 func (c *grpcGatewayClient) RetrieveDevicesMetadata(ctx context.Context, in *RetrieveDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveDevicesMetadataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_GrpcGateway_serviceDesc.Streams[5], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveDevicesMetadata", opts...)
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[5], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveDevicesMetadata", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +373,7 @@ type UnsafeGrpcGatewayServer interface {
 }
 
 func RegisterGrpcGatewayServer(s grpc.ServiceRegistrar, srv GrpcGatewayServer) {
-	s.RegisterService(&_GrpcGateway_serviceDesc, srv)
+	s.RegisterService(&GrpcGateway_ServiceDesc, srv)
 }
 
 func _GrpcGateway_GetDevices_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -614,7 +615,10 @@ func (x *grpcGatewayRetrieveDevicesMetadataServer) Send(m *events.DeviceMetadata
 	return x.ServerStream.SendMsg(m)
 }
 
-var _GrpcGateway_serviceDesc = grpc.ServiceDesc{
+// GrpcGateway_ServiceDesc is the grpc.ServiceDesc for GrpcGateway service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.grpcgateway.pb.GrpcGateway",
 	HandlerType: (*GrpcGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
