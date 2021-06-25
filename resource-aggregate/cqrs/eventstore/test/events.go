@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
@@ -23,6 +24,7 @@ func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID st
 		commands.MakeLinksResourceUUID(e.GetDeviceId()),
 		e.GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksPublished); ok {
 				*x = e
@@ -48,6 +50,7 @@ func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMet
 		commands.MakeLinksResourceUUID(e.GetDeviceId()),
 		e.GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksUnpublished); ok {
 				*x = e
@@ -70,6 +73,7 @@ func MakeResourceLinksSnapshotTaken(resources map[string]*commands.Resource, dev
 		commands.MakeLinksResourceUUID(e.GetDeviceId()),
 		e.GetDeviceId(),
 		true,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksSnapshotTaken); ok {
 				*x = *e
@@ -100,6 +104,7 @@ func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *command
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdatePending); ok {
 				*x = e
@@ -124,6 +129,7 @@ func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdated); ok {
 				*x = e
@@ -147,6 +153,7 @@ func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceChanged); ok {
 				*x = e
@@ -170,6 +177,7 @@ func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterf
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrievePending); ok {
 				*x = e
@@ -194,6 +202,7 @@ func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Stat
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrieved); ok {
 				*x = e
@@ -217,6 +226,7 @@ func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResou
 		e.GetResourceId().ToUUID(),
 		e.GetResourceId().GetDeviceId(),
 		true,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
 				*x = *e
@@ -239,6 +249,7 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 		commands.MakeStatusResourceUUID(deviceID),
 		e.GetDeviceId(),
 		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.DeviceMetadataSnapshotTaken); ok {
 				*x = e

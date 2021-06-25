@@ -11,4 +11,5 @@ message Event {
     string aggregate_id = 4;
     bytes data = 5;
     bool is_snapshot = 6;
+    int64 timestamp = 7;
 }

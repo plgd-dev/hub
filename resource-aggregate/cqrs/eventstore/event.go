@@ -22,6 +22,7 @@ type EventUnmarshaler = interface {
 	AggregateID() string
 	GroupID() string
 	IsSnapshot() bool
+	Timestamp() time.Time
 	Unmarshal(v interface{}) error
 }
 
@@ -42,6 +43,7 @@ type LoadedEvent struct {
 	aggregateID     string
 	groupID         string
 	isSnapshot      bool
+	timestamp       time.Time
 	dataUnmarshaler func(v interface{}) error
 }
 
@@ -51,6 +53,7 @@ func NewLoadedEvent(
 	aggregateID string,
 	groupID string,
 	isSnapshot bool,
+	timestamp time.Time,
 	dataUnmarshaler func(v interface{}) error) LoadedEvent {
 	return LoadedEvent{
 		version:         version,
@@ -58,6 +61,7 @@ func NewLoadedEvent(
 		aggregateID:     aggregateID,
 		groupID:         groupID,
 		isSnapshot:      isSnapshot,
+		timestamp:       timestamp,
 		dataUnmarshaler: dataUnmarshaler,
 	}
 }
@@ -79,4 +83,7 @@ func (e LoadedEvent) Unmarshal(v interface{}) error {
 }
 func (e LoadedEvent) IsSnapshot() bool {
 	return e.isSnapshot
+}
+func (e LoadedEvent) Timestamp() time.Time {
+	return e.timestamp
 }
