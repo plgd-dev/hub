@@ -25,7 +25,7 @@ message GetResourceLinksRequest {
 
 // RetrieveResourceFromDeviceRequest retrieve value from device
 message RetrieveResourceFromDeviceRequest {
-  string resource_id = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
 }
 
@@ -43,7 +43,7 @@ message Resource {
 }
 
 message UpdateResourceRequest {
-  string resource_id = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
   string resource_interface = 3;
 }
@@ -154,10 +154,10 @@ message Content {
 }
 
 message DeleteResourceRequest {
-  string resource_id = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
 }
 
 message CreateResourceRequest {
-  string resource_id = 1;
+  ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
 }

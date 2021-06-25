@@ -88,7 +88,7 @@ func request_GrpcGateway_GetResourceLinks_0(ctx context.Context, marshaler runti
 }
 
 var (
-	filter_GrpcGateway_RetrieveResourceFromDevice_0 = &utilities.DoubleArray{Encoding: map[string]int{"resource_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_GrpcGateway_RetrieveResourceFromDevice_0 = &utilities.DoubleArray{Encoding: map[string]int{"resource_id": 0, "device_id": 1, "href": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3, 4}}
 )
 
 func request_GrpcGateway_RetrieveResourceFromDevice_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -102,14 +102,24 @@ func request_GrpcGateway_RetrieveResourceFromDevice_0(ctx context.Context, marsh
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -135,14 +145,24 @@ func local_request_GrpcGateway_RetrieveResourceFromDevice_0(ctx context.Context,
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -204,14 +224,24 @@ func request_GrpcGateway_UpdateResource_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
 	}
 
 	msg, err := client.UpdateResource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -238,14 +268,24 @@ func local_request_GrpcGateway_UpdateResource_0(ctx context.Context, marshaler r
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
 	}
 
 	msg, err := server.UpdateResource(ctx, &protoReq)
@@ -323,23 +363,9 @@ func local_request_GrpcGateway_GetClientConfiguration_0(ctx context.Context, mar
 
 }
 
-func request_GrpcGateway_GetClientConfiguration_1(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ClientConfigurationRequest
-	var metadata runtime.ServerMetadata
-
-	msg, err := client.GetClientConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_GrpcGateway_GetClientConfiguration_1(ctx context.Context, marshaler runtime.Marshaler, server GrpcGatewayServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ClientConfigurationRequest
-	var metadata runtime.ServerMetadata
-
-	msg, err := server.GetClientConfiguration(ctx, &protoReq)
-	return msg, metadata, err
-
-}
+var (
+	filter_GrpcGateway_DeleteResource_0 = &utilities.DoubleArray{Encoding: map[string]int{"resource_id": 0, "device_id": 1, "href": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3, 4}}
+)
 
 func request_GrpcGateway_DeleteResource_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DeleteResourceRequest
@@ -352,14 +378,31 @@ func request_GrpcGateway_DeleteResource_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_DeleteResource_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.DeleteResource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -378,14 +421,31 @@ func local_request_GrpcGateway_DeleteResource_0(ctx context.Context, marshaler r
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_DeleteResource_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.DeleteResource(ctx, &protoReq)
@@ -412,14 +472,24 @@ func request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
 	}
 
 	msg, err := client.CreateResource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -446,14 +516,24 @@ func local_request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler r
 		_   = err
 	)
 
-	val, ok = pathParams["resource_id"]
+	val, ok = pathParams["resource_id.device_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.device_id")
 	}
 
-	protoReq.ResourceId, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.device_id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.device_id", err)
+	}
+
+	val, ok = pathParams["resource_id.href"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "resource_id.href")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
 	}
 
 	msg, err := server.CreateResource(ctx, &protoReq)
@@ -461,8 +541,8 @@ func local_request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler r
 
 }
 
-func request_GrpcGateway_UpdateDeviceShadowSynchronization_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateDeviceShadowSynchronizationRequest
+func request_GrpcGateway_UpdateDeviceMetadata_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateDeviceMetadataRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -490,13 +570,13 @@ func request_GrpcGateway_UpdateDeviceShadowSynchronization_0(ctx context.Context
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "device_id", err)
 	}
 
-	msg, err := client.UpdateDeviceShadowSynchronization(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.UpdateDeviceMetadata(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_GrpcGateway_UpdateDeviceShadowSynchronization_0(ctx context.Context, marshaler runtime.Marshaler, server GrpcGatewayServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateDeviceShadowSynchronizationRequest
+func local_request_GrpcGateway_UpdateDeviceMetadata_0(ctx context.Context, marshaler runtime.Marshaler, server GrpcGatewayServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateDeviceMetadataRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -524,7 +604,7 @@ func local_request_GrpcGateway_UpdateDeviceShadowSynchronization_0(ctx context.C
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "device_id", err)
 	}
 
-	msg, err := server.UpdateDeviceShadowSynchronization(ctx, &protoReq)
+	msg, err := server.UpdateDeviceMetadata(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -688,29 +768,6 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_GetClientConfiguration_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_GrpcGateway_GetClientConfiguration_1(rctx, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_GrpcGateway_GetClientConfiguration_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("DELETE", pattern_GrpcGateway_DeleteResource_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -757,18 +814,18 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("PUT", pattern_GrpcGateway_UpdateDeviceShadowSynchronization_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_GrpcGateway_UpdateDeviceMetadata_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceShadowSynchronization")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_GrpcGateway_UpdateDeviceShadowSynchronization_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_GrpcGateway_UpdateDeviceMetadata_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -776,7 +833,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_GrpcGateway_UpdateDeviceShadowSynchronization_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_UpdateDeviceMetadata_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -975,26 +1032,6 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_GetClientConfiguration_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_GrpcGateway_GetClientConfiguration_1(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_GrpcGateway_GetClientConfiguration_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("DELETE", pattern_GrpcGateway_DeleteResource_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1035,23 +1072,23 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("PUT", pattern_GrpcGateway_UpdateDeviceShadowSynchronization_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_GrpcGateway_UpdateDeviceMetadata_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceShadowSynchronization")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_GrpcGateway_UpdateDeviceShadowSynchronization_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_GrpcGateway_UpdateDeviceMetadata_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_GrpcGateway_UpdateDeviceShadowSynchronization_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_UpdateDeviceMetadata_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1101,29 +1138,27 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 var (
 	pattern_GrpcGateway_GetDevices_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "devices"}, ""))
 
-	pattern_GrpcGateway_GetResourceLinks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "resourceLinks"}, ""))
+	pattern_GrpcGateway_GetResourceLinks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "resource-links"}, ""))
 
-	pattern_GrpcGateway_RetrieveResourceFromDevice_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 3, 0, 4, 2, 5, 3}, []string{"api", "v1", "devices", "resource_id"}, ""))
+	pattern_GrpcGateway_RetrieveResourceFromDevice_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resources", "resource_id.href"}, ""))
 
 	pattern_GrpcGateway_RetrieveResources_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "resources"}, ""))
 
-	pattern_GrpcGateway_UpdateResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 3, 0, 4, 2, 5, 3}, []string{"api", "v1", "devices", "resource_id"}, ""))
+	pattern_GrpcGateway_UpdateResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resources", "resource_id.href"}, ""))
 
 	pattern_GrpcGateway_SubscribeToEvents_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"api", "v1", "ws", "devices", "events"}, ""))
 
-	pattern_GrpcGateway_GetClientConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "clientConfiguration"}, ""))
+	pattern_GrpcGateway_GetClientConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{".well-known", "ocfcloud-configuration"}, ""))
 
-	pattern_GrpcGateway_GetClientConfiguration_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{".well-known", "ocfcloud-configuration"}, ""))
+	pattern_GrpcGateway_DeleteResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resource-links", "resource_id.href"}, ""))
 
-	pattern_GrpcGateway_DeleteResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 3, 0, 4, 1, 5, 3}, []string{"api", "v1", "devices", "resource_id"}, ""))
+	pattern_GrpcGateway_CreateResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resource-links", "resource_id.href"}, ""))
 
-	pattern_GrpcGateway_CreateResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 3, 0, 4, 2, 5, 3}, []string{"api", "v1", "devices", "resource_id"}, ""))
+	pattern_GrpcGateway_UpdateDeviceMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "devices", "device_id", "metadata"}, ""))
 
-	pattern_GrpcGateway_UpdateDeviceShadowSynchronization_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "devices", "device_id", "shadowSynchronization"}, ""))
+	pattern_GrpcGateway_RetrievePendingCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "pending-commands"}, ""))
 
-	pattern_GrpcGateway_RetrievePendingCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "devices", "pendingCommands"}, ""))
-
-	pattern_GrpcGateway_RetrieveDevicesMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "devices", "metadata"}, ""))
+	pattern_GrpcGateway_RetrieveDevicesMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "devices-metadata"}, ""))
 )
 
 var (
@@ -1141,13 +1176,11 @@ var (
 
 	forward_GrpcGateway_GetClientConfiguration_0 = runtime.ForwardResponseMessage
 
-	forward_GrpcGateway_GetClientConfiguration_1 = runtime.ForwardResponseMessage
-
 	forward_GrpcGateway_DeleteResource_0 = runtime.ForwardResponseMessage
 
 	forward_GrpcGateway_CreateResource_0 = runtime.ForwardResponseMessage
 
-	forward_GrpcGateway_UpdateDeviceShadowSynchronization_0 = runtime.ForwardResponseMessage
+	forward_GrpcGateway_UpdateDeviceMetadata_0 = runtime.ForwardResponseMessage
 
 	forward_GrpcGateway_RetrievePendingCommands_0 = runtime.ForwardResponseStream
 

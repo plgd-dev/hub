@@ -34,7 +34,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
 			want: &events.ResourceRetrieved{
@@ -53,7 +53,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
 			want: &events.ResourceRetrieved{
@@ -72,7 +72,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,

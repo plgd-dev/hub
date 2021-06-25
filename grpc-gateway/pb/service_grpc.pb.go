@@ -38,7 +38,7 @@ type GrpcGatewayClient interface {
 	// Create resource at the device.
 	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*events.ResourceCreated, error)
 	// Enables/disables shadow synchronization for device.
-	UpdateDeviceShadowSynchronization(ctx context.Context, in *UpdateDeviceShadowSynchronizationRequest, opts ...grpc.CallOption) (*UpdateDeviceShadowSynchronizationResponse, error)
+	UpdateDeviceMetadata(ctx context.Context, in *UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*UpdateDeviceMetadataResponse, error)
 	// Retrieves pending commands for devices .
 	RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error)
 	// Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
@@ -225,9 +225,9 @@ func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResour
 	return out, nil
 }
 
-func (c *grpcGatewayClient) UpdateDeviceShadowSynchronization(ctx context.Context, in *UpdateDeviceShadowSynchronizationRequest, opts ...grpc.CallOption) (*UpdateDeviceShadowSynchronizationResponse, error) {
-	out := new(UpdateDeviceShadowSynchronizationResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceShadowSynchronization", in, out, opts...)
+func (c *grpcGatewayClient) UpdateDeviceMetadata(ctx context.Context, in *UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*UpdateDeviceMetadataResponse, error) {
+	out := new(UpdateDeviceMetadataResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ type GrpcGatewayServer interface {
 	// Create resource at the device.
 	CreateResource(context.Context, *CreateResourceRequest) (*events.ResourceCreated, error)
 	// Enables/disables shadow synchronization for device.
-	UpdateDeviceShadowSynchronization(context.Context, *UpdateDeviceShadowSynchronizationRequest) (*UpdateDeviceShadowSynchronizationResponse, error)
+	UpdateDeviceMetadata(context.Context, *UpdateDeviceMetadataRequest) (*UpdateDeviceMetadataResponse, error)
 	// Retrieves pending commands for devices .
 	RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error
 	// Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
@@ -360,8 +360,8 @@ func (UnimplementedGrpcGatewayServer) DeleteResource(context.Context, *DeleteRes
 func (UnimplementedGrpcGatewayServer) CreateResource(context.Context, *CreateResourceRequest) (*events.ResourceCreated, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateResource not implemented")
 }
-func (UnimplementedGrpcGatewayServer) UpdateDeviceShadowSynchronization(context.Context, *UpdateDeviceShadowSynchronizationRequest) (*UpdateDeviceShadowSynchronizationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceShadowSynchronization not implemented")
+func (UnimplementedGrpcGatewayServer) UpdateDeviceMetadata(context.Context, *UpdateDeviceMetadataRequest) (*UpdateDeviceMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceMetadata not implemented")
 }
 func (UnimplementedGrpcGatewayServer) RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error {
 	return status.Errorf(codes.Unimplemented, "method RetrievePendingCommands not implemented")
@@ -561,20 +561,20 @@ func _GrpcGateway_CreateResource_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GrpcGateway_UpdateDeviceShadowSynchronization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateDeviceShadowSynchronizationRequest)
+func _GrpcGateway_UpdateDeviceMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDeviceMetadataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcGatewayServer).UpdateDeviceShadowSynchronization(ctx, in)
+		return srv.(GrpcGatewayServer).UpdateDeviceMetadata(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceShadowSynchronization",
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcGatewayServer).UpdateDeviceShadowSynchronization(ctx, req.(*UpdateDeviceShadowSynchronizationRequest))
+		return srv.(GrpcGatewayServer).UpdateDeviceMetadata(ctx, req.(*UpdateDeviceMetadataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -649,8 +649,8 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GrpcGateway_CreateResource_Handler,
 		},
 		{
-			MethodName: "UpdateDeviceShadowSynchronization",
-			Handler:    _GrpcGateway_UpdateDeviceShadowSynchronization_Handler,
+			MethodName: "UpdateDeviceMetadata",
+			Handler:    _GrpcGateway_UpdateDeviceMetadata_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

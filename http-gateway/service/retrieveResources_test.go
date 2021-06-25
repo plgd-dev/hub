@@ -3,9 +3,9 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"testing"
 
 	"github.com/google/go-querystring/query"
@@ -16,18 +16,36 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
+type sortResourcesByHref []*pb.Resource
+
+func (a sortResourcesByHref) Len() int      { return len(a) }
+func (a sortResourcesByHref) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortResourcesByHref) Less(i, j int) bool {
+	return a[i].GetData().GetResourceId().GetHref() < a[j].GetData().GetResourceId().GetHref()
+}
+
+func sortResources(s []*pb.Resource) []*pb.Resource {
+	v := sortResourcesByHref(s)
+	sort.Sort(v)
+	return v
+}
+
 func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 	require.Len(t, got, len(want))
+	sortResources(want)
+	sortResources(got)
+
 	for idx := range want {
 		dataWant := want[idx].Data.GetContent().GetData()
 		datagot := got[idx].Data.GetContent().GetData()
@@ -36,6 +54,10 @@ func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
 		w := test.DecodeCbor(t, dataWant)
 		g := test.DecodeCbor(t, datagot)
+		if gV, ok := g.(map[interface{}]interface{}); ok {
+			delete(gV, "pi")
+			delete(gV, "piid")
+		}
 		require.Equal(t, w, g)
 	}
 }
@@ -121,9 +143,7 @@ func TestRequestHandler_RetrieveResources(t *testing.T) {
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)
-			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/api/v1/resources?%v", config.HTTP_GW_HOST, v.Encode()), nil)
-			require.NoError(t, err)
-			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+			request := httpgwTest.NewRequest(http.MethodGet, uri.Resources, nil).AuthToken(token).SetQuery(v.Encode()).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

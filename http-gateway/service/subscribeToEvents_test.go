@@ -470,7 +470,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subUpdatedID := ev.SubscriptionId
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -553,7 +553,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		}
 	}
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -663,7 +663,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subReceivedID := ev.SubscriptionId
 
 	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 	})
 	require.NoError(t, err)
 	ev, err = recv()

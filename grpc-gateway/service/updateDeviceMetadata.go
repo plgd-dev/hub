@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-func (r *RequestHandler) UpdateDeviceShadowSynchronization(ctx context.Context, req *pb.UpdateDeviceShadowSynchronizationRequest) (*pb.UpdateDeviceShadowSynchronizationResponse, error) {
+func (r *RequestHandler) UpdateDeviceMetadata(ctx context.Context, req *pb.UpdateDeviceMetadataRequest) (*pb.UpdateDeviceMetadataResponse, error) {
 	correlationID := uuid.New()
 	connectionID := ""
 	peer, ok := peer.FromContext(ctx)
@@ -20,7 +20,7 @@ func (r *RequestHandler) UpdateDeviceShadowSynchronization(ctx context.Context, 
 		connectionID = peer.Addr.String()
 	}
 	shadowSynchronization := commands.ShadowSynchronization_DISABLED
-	if req.GetEnabled() {
+	if req.GetShadowSynchronization() == pb.UpdateDeviceMetadataRequest_ENABLED {
 		shadowSynchronization = commands.ShadowSynchronization_ENABLED
 	}
 
@@ -38,5 +38,5 @@ func (r *RequestHandler) UpdateDeviceShadowSynchronization(ctx context.Context, 
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update shadow synchronization of device %v: %v", req.GetDeviceId(), err))
 	}
-	return &pb.UpdateDeviceShadowSynchronizationResponse{}, nil
+	return &pb.UpdateDeviceMetadataResponse{}, nil
 }

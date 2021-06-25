@@ -27,6 +27,7 @@ type RequestHandler struct {
 	client   *client.Client
 	config   *Config
 	caClient pbCA.CertificateAuthorityClient
+	mux      *runtime.ServeMux
 }
 
 //NewRequestHandler factory for new RequestHandler
@@ -35,6 +36,7 @@ func NewRequestHandler(config *Config, client *client.Client, caClient pbCA.Cert
 		client:   client,
 		caClient: caClient,
 		config:   config,
+		mux:      runtime.NewServeMux(),
 	}
 }
 
@@ -54,8 +56,41 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 type logger struct{}
 
-func (logger) Warnln(v ...interface{})  { fmt.Printf("%v\n", v) }
-func (logger) Debugln(v ...interface{}) { fmt.Printf("%v\n", v) }
+func (logger) Warnln(v ...interface{})  { log.Warnf("%v", v) }
+func (logger) Debugln(v ...interface{}) { log.Debugf("%v\n", v) }
+
+func splitDevicePath(requestURI, prefix string) []string {
+	p := kitHttp.CanonicalHref(requestURI)
+	p = strings.TrimPrefix(p, prefix) // remove core prefix
+	p = strings.TrimLeft(p, "/")
+	return strings.Split(p, "/")
+}
+
+func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool {
+	paths := splitDevicePath(r.RequestURI, uri.Devices)
+	if len(paths) > 2 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
+		if rm.Vars == nil {
+			rm.Vars = make(map[string]string)
+		}
+		rm.Vars[uri.DeviceIDKey] = paths[0]
+		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:len(paths)-1], "/"), "?")[0]
+		return true
+	}
+	return false
+}
+
+func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
+	paths := splitDevicePath(r.RequestURI, uri.Devices)
+	if len(paths) > 2 && paths[1] == uri.ResourcesPathKey {
+		if rm.Vars == nil {
+			rm.Vars = make(map[string]string)
+		}
+		rm.Vars[uri.DeviceIDKey] = paths[0]
+		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:], "/"), "?")[0]
+		return true
+	}
+	return false
+}
 
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) *http.Server {
@@ -69,11 +104,20 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	// certifica authority sign
 	r.HandleFunc(uri.CertificaAuthoritySign, requestHandler.signCertificate).Methods(http.MethodPost)
 
-	mux := runtime.NewServeMux()
-	pb.RegisterGrpcGatewayHandlerClient(context.Background(), mux, requestHandler.client.GrpcGatewayClient())
+	// Aliases
+	r.HandleFunc(uri.AliasDevice, requestHandler.getDevice).Methods(http.MethodGet)
+	r.HandleFunc(uri.AliasDeviceResourceLinks, requestHandler.getDeviceResourceLinks).Methods(http.MethodGet)
+	r.HandleFunc(uri.AliasDeviceResources, requestHandler.getDeviceResources).Methods(http.MethodGet)
+	r.HandleFunc(uri.AliasDevicePendingCommands, requestHandler.getDevicePendingCommands).Methods(http.MethodGet)
 
-	// ws
-	ws := wsproxy.WebsocketProxy(mux, wsproxy.WithRequestMutator(func(incoming, outgoing *http.Request) *http.Request {
+	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.getResourcePendingCommands)
+	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.getResource)
+
+	// register grpc-proxy handler
+	pb.RegisterGrpcGatewayHandlerClient(context.Background(), requestHandler.mux, requestHandler.client.GrpcGatewayClient())
+
+	// ws grpc-proxy
+	ws := wsproxy.WebsocketProxy(requestHandler.mux, wsproxy.WithRequestMutator(func(incoming, outgoing *http.Request) *http.Request {
 		outgoing.Method = http.MethodPost
 		return outgoing
 	}), wsproxy.WithLogger(logger{}))
@@ -81,10 +125,10 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		ws.ServeHTTP(rw, r)
 	})
 
-	// api
-	r.Handle(uri.ClientConfiguration, mux)
+	// api grpc-proxy
+	r.Handle(uri.ClientConfiguration, requestHandler.mux)
 	r.PathPrefix(uri.API + "/").HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		mux.ServeHTTP(rw, r)
+		requestHandler.mux.ServeHTTP(rw, r)
 	})
 
 	// serve www directory

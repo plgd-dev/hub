@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -16,11 +15,12 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -33,11 +33,7 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token st
 		return nil, err
 	}
 
-	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("https://%v/api/v1/devices/%v", config.HTTP_GW_HOST, req.ResourceId), bytes.NewReader([]byte(data)))
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Build()
 	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
@@ -65,7 +61,7 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token st
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.UpdateResourceRequest
+		req *pb.UpdateResourceRequest
 	}
 	tests := []struct {
 		name    string
@@ -76,8 +72,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/1").ToString(),
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -100,9 +96,9 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "valid with interface",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -125,9 +121,9 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "revert update",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -147,8 +143,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "update RO-resource",
 			args: args{
-				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -168,8 +164,8 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,
@@ -199,7 +195,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateResource(ctx, &tt.args.req, token)
+			got, err := updateResource(ctx, tt.args.req, token)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

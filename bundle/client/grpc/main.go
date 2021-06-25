@@ -148,7 +148,7 @@ func main() {
 	switch {
 	case *delete:
 		resp, err := ocfGW.DeleteResource(ctx, &pbGW.DeleteResourceRequest{
-			ResourceId: commands.NewResourceID(*deviceID, *href).ToString(),
+			ResourceId: commands.NewResourceID(*deviceID, *href),
 		})
 		if err != nil {
 			log.Fatalf("cannot delete resource: %v", err)
@@ -164,7 +164,7 @@ func main() {
 			log.Fatalf("cannot read data for update resource: %v", err)
 		}
 		resp, err := ocfGW.UpdateResource(ctx, &pbGW.UpdateResourceRequest{
-			ResourceId: commands.NewResourceID(*deviceID, *href).ToString(),
+			ResourceId: commands.NewResourceID(*deviceID, *href),
 			Content: &pbGW.Content{
 				ContentType: message.MediaType(*contentFormat).String(),
 				Data:        data,
@@ -184,7 +184,7 @@ func main() {
 			log.Fatalf("cannot read data for create resource: %v", err)
 		}
 		resp, err := ocfGW.CreateResource(ctx, &pbGW.CreateResourceRequest{
-			ResourceId: commands.NewResourceID(*deviceID, *href).ToString(),
+			ResourceId: commands.NewResourceID(*deviceID, *href),
 			Content: &pbGW.Content{
 				ContentType: message.MediaType(*contentFormat).String(),
 				Data:        data,

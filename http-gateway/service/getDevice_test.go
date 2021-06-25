@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -15,23 +14,22 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/google/go-querystring/query"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
-func TestRequestHandler_GetDevices(t *testing.T) {
+func TestRequestHandler_GetDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.GetDevicesRequest
+		deviceID string
 	}
 	tests := []struct {
 		name    string
@@ -42,7 +40,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				req: &pb.GetDevicesRequest{},
+				deviceID: deviceID,
 			},
 			want: []*pb.Device{
 				{
@@ -84,27 +82,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			type Options struct {
-				TypeFilter      []string                      `url:"typeFilter,omitempty"`
-				StatusFilter    []pb.GetDevicesRequest_Status `url:"statusFilter,omitempty"`
-				DeviceIdsFilter []string                      `url:"deviceIdsFilter,omitempty"`
-			}
-			opt := Options{
-				TypeFilter:      tt.args.req.TypeFilter,
-				StatusFilter:    tt.args.req.StatusFilter,
-				DeviceIdsFilter: tt.args.req.DeviceIdsFilter,
-			}
-			v, err := query.Values(opt)
-			require.NoError(t, err)
-			url := fmt.Sprintf("https://%v/"+uri.Devices, config.HTTP_GW_HOST)
-			val := v.Encode()
-			if val != "" {
-				url = url + "?" + val
-			}
-
-			request, err := http.NewRequest(http.MethodGet, url, nil)
-			require.NoError(t, err)
-			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevice, nil).DeviceId(deviceID).AuthToken(token).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

@@ -28,7 +28,7 @@ proto/generate:
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/devices.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/retrievePendingCommands.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/retrieveDevicesMetadata.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/updateDeviceShadowSynchronization.proto
+	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/updateDeviceMetadata.proto
 	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --go-grpc_out=${GOPATH}/src $(shell pwd)/pb/service.proto
 	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/errdetails/errorDetails.proto
 	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --openapiv2_out=${GOPATH}/src \

@@ -18,8 +18,13 @@ func (req *CreateResourceRequest) ToRACommand(ctx context.Context) (*commands.Cr
 	if ok {
 		connectionID = peer.Addr.String()
 	}
+	href := req.GetResourceId().GetHref()
+	if len(href) > 0 && href[0] != '/' {
+		href = "/" + href
+	}
+
 	return &commands.CreateResourceRequest{
-		ResourceId:    commands.ResourceIdFromString(req.GetResourceId()),
+		ResourceId:    commands.NewResourceID(req.GetResourceId().GetDeviceId(), href),
 		CorrelationId: correlationUUID.String(),
 		Content: &commands.Content{
 			Data:              req.GetContent().GetData(),

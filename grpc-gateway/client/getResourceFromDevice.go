@@ -17,7 +17,7 @@ func (c *Client) getResourceFromDevice(
 	response interface{},
 ) error {
 	r := pbGW.RetrieveResourceFromDeviceRequest{
-		ResourceId:        commands.NewResourceID(deviceID, href).ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, href),
 		ResourceInterface: resourceInterface,
 	}
 	resp, err := c.gateway.RetrieveResourceFromDevice(ctx, &r)
