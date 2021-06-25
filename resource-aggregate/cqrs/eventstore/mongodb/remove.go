@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
-// RemoveUpToVersion deletes the aggregates events up to a specific version.
+// RemoveUpToVersion deletes the aggregated events up to a specific version.
 func (s *EventStore) RemoveUpToVersion(ctx context.Context, versionQueries []eventstore.VersionQuery) error {
 	normalizedVersionQueries := make(map[string][]eventstore.VersionQuery)
 	for _, query := range versionQueries {

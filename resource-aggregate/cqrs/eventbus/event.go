@@ -22,6 +22,7 @@ type EventUnmarshaler = interface {
 	AggregateID() string
 	GroupID() string
 	IsSnapshot() bool
+	Timestamp() time.Time
 	Unmarshal(v interface{}) error
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
@@ -188,6 +189,7 @@ type eventUnmarshaler struct {
 	aggregateID     string
 	groupID         string
 	isSnapshot      bool
+	timestamp       time.Time
 	dataUnmarshaler func(v interface{}) error
 }
 
@@ -205,6 +207,9 @@ func (e *eventUnmarshaler) GroupID() string {
 }
 func (e *eventUnmarshaler) IsSnapshot() bool {
 	return e.isSnapshot
+}
+func (e *eventUnmarshaler) Timestamp() time.Time {
+	return e.timestamp
 }
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
@@ -225,6 +230,7 @@ func (i *iter) Next(ctx context.Context) (eventbus.EventUnmarshaler, bool) {
 			eventType:       i.e.GetEventType(),
 			groupID:         i.e.GetGroupId(),
 			isSnapshot:      i.e.GetIsSnapshot(),
+			timestamp:       time.Unix(0, i.e.GetTimestamp()),
 			dataUnmarshaler: i.dataUnmarshaler,
 		}, true
 	}

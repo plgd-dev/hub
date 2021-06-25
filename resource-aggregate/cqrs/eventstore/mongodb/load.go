@@ -70,6 +70,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 	version := ev[versionKey].(int64)
 	eventType := ev[eventTypeKey].(string)
 	isSnapshot := ev[isSnapshotKey].(bool)
+	timestamp := ev[timestampKey].(int64)
 	i.logDebugfFunc("mongodb.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v", i.groupID, i.aggregateID, version, eventType)
 	data := ev[dataKey].(primitive.Binary)
 	return eventstore.NewLoadedEvent(
@@ -78,6 +79,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		i.aggregateID,
 		i.groupID,
 		isSnapshot,
+		time.Unix(0, timestamp),
 		func(v interface{}) error {
 			return i.dataUnmarshaler(data.Data, v)
 		}), true
@@ -156,7 +158,7 @@ func versionQueryToMongoQuery(query eventstore.VersionQuery, op signOperator, ma
 	}
 }
 
-// LoadUpToVersion loads aggragates events up to a specific version.
+// LoadUpToVersion loads aggregates events up to a specific version.
 func (s *EventStore) LoadUpToVersion(ctx context.Context, queries []eventstore.VersionQuery, eh eventstore.Handler) error {
 	return s.loadEvents(ctx, queries, eh, signOperator_lt, firstVersionKey)
 }

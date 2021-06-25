@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
@@ -331,6 +332,9 @@ func (e *eventUnmarshaler) GroupID() string {
 }
 func (e *eventUnmarshaler) IsSnapshot() bool {
 	return e.pb.GetIsSnapshot()
+}
+func (e *eventUnmarshaler) Timestamp() time.Time {
+	return time.Unix(0, e.pb.GetTimestamp())
 }
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)
