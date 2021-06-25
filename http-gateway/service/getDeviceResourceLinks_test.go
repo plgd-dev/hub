@@ -3,10 +3,8 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
-	"sync"
 	"testing"
 	"time"
 
@@ -19,63 +17,17 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	test "github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
-func MakeConfig(t *testing.T) service.Config {
-	var cfg service.Config
-
-	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
-	//cfg.APIs.HTTP.WebSocket.ReadLimit = 8 * 1024
-	//cfg.APIs.HTTP.WebSocket.ReadTimeout = time.Second * 4
-	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
-	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
-
-	cfg.Clients.GrpcGateway.Connection = testCfg.MakeGrpcClientConfig(testCfg.GRPC_HOST)
-
-	err := cfg.Validate()
-	require.NoError(t, err)
-
-	fmt.Printf("cfg\n%v\n", cfg.String())
-
-	return cfg
-}
-
-func SetUp(t *testing.T) (TearDown func()) {
-	return New(t, MakeConfig(t))
-}
-
-func New(t *testing.T, cfg service.Config) func() {
-	ctx := context.Background()
-	logger, err := log.NewLogger(cfg.Log)
-	require.NoError(t, err)
-
-	s, err := service.New(ctx, cfg, logger)
-	require.NoError(t, err)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		s.Serve()
-	}()
-
-	return func() {
-		s.Shutdown()
-		wg.Wait()
-	}
-}
-
-func TestRequestHandler_GetResourceLinks(t *testing.T) {
+func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.GetResourceLinksRequest
+		deviceID string
 	}
 	tests := []struct {
 		name    string
@@ -86,7 +38,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				req: &pb.GetResourceLinksRequest{},
+				deviceID: deviceID,
 			},
 			wantErr: false,
 			want: []*events.ResourceLinksPublished{
@@ -120,7 +72,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.ResourceLinks, nil).AuthToken(token).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResourceLinks, nil).DeviceId(deviceID).AuthToken(token).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

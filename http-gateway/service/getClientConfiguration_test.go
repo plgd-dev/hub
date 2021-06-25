@@ -12,6 +12,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
@@ -41,7 +42,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/api/v1/clientConfiguration", config.HTTP_GW_HOST), nil)
+			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/"+uri.ClientConfiguration, config.HTTP_GW_HOST), nil)
 			require.NoError(t, err)
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{

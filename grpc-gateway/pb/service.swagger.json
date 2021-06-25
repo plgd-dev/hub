@@ -31,29 +31,6 @@
     "/.well-known/ocfcloud-configuration": {
       "get": {
         "summary": "Get client configuration",
-        "operationId": "GrpcGateway_GetClientConfiguration2",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbClientConfigurationResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "Cloud configuration"
-        ]
-      }
-    },
-    "/api/v1/clientConfiguration": {
-      "get": {
-        "summary": "Get client configuration",
         "operationId": "GrpcGateway_GetClientConfiguration",
         "responses": {
           "200": {
@@ -70,7 +47,7 @@
           }
         },
         "tags": [
-          "Cloud configuration"
+          "Resource Directory"
         ]
       }
     },
@@ -138,11 +115,11 @@
           }
         ],
         "tags": [
-          "Device Directory"
+          "Resource Directory"
         ]
       }
     },
-    "/api/v1/devices/metadata": {
+    "/api/v1/devices-metadata": {
       "get": {
         "summary": "Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.",
         "operationId": "GrpcGateway_RetrieveDevicesMetadata",
@@ -192,11 +169,221 @@
           }
         ],
         "tags": [
-          "Resource Shadow"
+          "Resource Directory"
         ]
       }
     },
-    "/api/v1/devices/pendingCommands": {
+    "/api/v1/devices/{deviceId}/metadata": {
+      "put": {
+        "summary": "Enables/disables shadow synchronization for device.",
+        "operationId": "GrpcGateway_UpdateDeviceMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cloudgrpcgatewaypbUpdateDeviceMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "shadowSynchronization": {
+                  "$ref": "#/definitions/pbUpdateDeviceMetadataRequestShadowSynchronization"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Device"
+        ]
+      }
+    },
+    "/api/v1/devices/{resourceId.deviceId}/resource-links/{resourceId.href}": {
+      "delete": {
+        "summary": "Delete resource at the device.",
+        "operationId": "GrpcGateway_DeleteResource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbResourceDeleted"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "resourceId.deviceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resourceId.href",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Device"
+        ]
+      },
+      "post": {
+        "summary": "Create resource at the device.",
+        "operationId": "GrpcGateway_CreateResource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbResourceCreated"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "resourceId.deviceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resourceId.href",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cloudgrpcgatewaypbCreateResourceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Device"
+        ]
+      }
+    },
+    "/api/v1/devices/{resourceId.deviceId}/resources/{resourceId.href}": {
+      "get": {
+        "summary": "Retrieve resource from the device.",
+        "operationId": "GrpcGateway_RetrieveResourceFromDevice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbResourceRetrieved"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "resourceId.deviceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resourceId.href",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resourceInterface",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Device"
+        ]
+      },
+      "put": {
+        "summary": "Update resource at the device.",
+        "operationId": "GrpcGateway_UpdateResource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbResourceUpdated"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "resourceId.deviceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "resourceId.href",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cloudgrpcgatewaypbUpdateResourceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Device"
+        ]
+      }
+    },
+    "/api/v1/pending-commands": {
       "get": {
         "summary": "Retrieves pending commands for devices .",
         "operationId": "GrpcGateway_RetrievePendingCommands",
@@ -273,209 +460,11 @@
           }
         ],
         "tags": [
-          "Resource Directory",
-          "Resource Shadow"
+          "Resource Directory"
         ]
       }
     },
-    "/api/v1/devices/{deviceId}/shadowSynchronization": {
-      "put": {
-        "summary": "Enables/disables shadow synchronization for device.",
-        "operationId": "GrpcGateway_UpdateDeviceShadowSynchronization",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbUpdateDeviceShadowSynchronizationResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "deviceId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Resource Shadow"
-        ]
-      }
-    },
-    "/api/v1/devices/{resourceId}": {
-      "get": {
-        "summary": "Retrieve resource from the device.",
-        "operationId": "GrpcGateway_RetrieveResourceFromDevice",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbResourceRetrieved"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "resourceId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "resourceInterface",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "Device"
-        ]
-      },
-      "delete": {
-        "summary": "Delete resource at the device.",
-        "operationId": "GrpcGateway_DeleteResource",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbResourceDeleted"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "resourceId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "Device"
-        ]
-      },
-      "post": {
-        "summary": "Create resource at the device.",
-        "operationId": "GrpcGateway_CreateResource",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbResourceCreated"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "resourceId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "content": {
-                  "$ref": "#/definitions/cloudgrpcgatewaypbContent"
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Device"
-        ]
-      },
-      "put": {
-        "summary": "Update resource at the device.",
-        "operationId": "GrpcGateway_UpdateResource",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbResourceUpdated"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "resourceId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "content": {
-                  "$ref": "#/definitions/cloudgrpcgatewaypbContent"
-                },
-                "resourceInterface": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Device"
-        ]
-      }
-    },
-    "/api/v1/resourceLinks": {
+    "/api/v1/resource-links": {
       "get": {
         "summary": "Get resource links of devices.",
         "operationId": "GrpcGateway_GetResourceLinks",
@@ -590,7 +579,7 @@
           }
         ],
         "tags": [
-          "Resource Shadow"
+          "Resource Directory"
         ]
       }
     },
@@ -633,8 +622,6 @@
           }
         ],
         "tags": [
-          "Resource Shadow",
-          "Device Directory",
           "Resource Directory"
         ]
       }
@@ -648,7 +635,7 @@
           "$ref": "#/definitions/pbConnectionStatus"
         },
         "shadowSynchronization": {
-          "$ref": "#/definitions/pbShadowSynchronization"
+          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
         }
       }
     },
@@ -785,6 +772,17 @@
         }
       }
     },
+    "cloudgrpcgatewaypbCreateResourceRequest": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "content": {
+          "$ref": "#/definitions/cloudgrpcgatewaypbContent"
+        }
+      }
+    },
     "cloudgrpcgatewaypbResource": {
       "type": "object",
       "properties": {
@@ -796,6 +794,23 @@
         },
         "data": {
           "$ref": "#/definitions/pbResourceChanged"
+        }
+      }
+    },
+    "cloudgrpcgatewaypbUpdateDeviceMetadataResponse": {
+      "type": "object"
+    },
+    "cloudgrpcgatewaypbUpdateResourceRequest": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "content": {
+          "$ref": "#/definitions/cloudgrpcgatewaypbContent"
+        },
+        "resourceInterface": {
+          "type": "string"
         }
       }
     },
@@ -1049,7 +1064,7 @@
           "type": "string"
         },
         "shadowSynchronization": {
-          "$ref": "#/definitions/pbShadowSynchronization"
+          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1069,7 +1084,7 @@
           "$ref": "#/definitions/pbConnectionStatus"
         },
         "shadowSynchronization": {
-          "$ref": "#/definitions/pbShadowSynchronization"
+          "$ref": "#/definitions/resourceaggregatepbShadowSynchronization"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1380,16 +1395,6 @@
         }
       }
     },
-    "pbShadowSynchronization": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "ENABLED",
-        "DISABLED"
-      ],
-      "default": "UNSET",
-      "title": "┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───┬───┘                         └────────┬─────────┘               └─────────┘               └──────┘\n    ┌┴┐                   │                                      ┌┴┐            UpdateDeviceMetadataRequest             ┌┴┐  \n    │ │                   │                                      │ │ \u003c──────────────────────────────────────────────────│ │  \n    │ │                   │                                      │ │                            │                       │ │  \n    │ │                   │                                      │ │            UpdateDeviceMetadataResponse            │ │  \n    │ │                   │                                      │ │ ──────────────────────────────────────────────────\u003e│ │  \n    │ │                   │                                      └┬┘                            │                       │ │  \n    │ │                   │                                      │ DeviceMetadataUpdatePending  │                       │ │  \n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │  \n    │ │                   │                                      │                              │                       │ │  \n    │ │                  ┌┴┐                     DeviceMetadataUpdatePending                    │                       │ │  \n    │ │                  │ │ \u003c─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                       │ │  \n    │ │                  │ │                                     │                              │                       │ │  \n    │ │                  │ │ ConfirmDeviceMetadataUpdateRequest  ┌┴┐                            │                       │ │  \n    │ │                  │ │ ───────────────────────────────────\u003e│ │                            │                       │ │  \n    │ │                  └┬┘                                     │ │                            │                       │ │  \n    │ │                   │ConfirmDeviceMetadataUpdateResponse   │ │                            │                       │ │  \n    │ │                   │\u003c──────────────────────────────────── │ │                            │                       │ │  \n    │ │                   │                                      └┬┘                            │                       │ │  \n    │ │                   │                                      │    DeviceMetadataUpdated     │                       │ │  \n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │  \n    └┬┘                   │                                      │                              │                       └┬┘  \n     │                    │                                      │                              │ DeviceMetadataUpdated │    \n     │                    │                                      │                              │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e    \n┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘"
-    },
     "pbSubscribeToEvents": {
       "type": "object",
       "properties": {
@@ -1404,8 +1409,13 @@
         }
       }
     },
-    "pbUpdateDeviceShadowSynchronizationResponse": {
-      "type": "object"
+    "pbUpdateDeviceMetadataRequestShadowSynchronization": {
+      "type": "string",
+      "enum": [
+        "DISABLED",
+        "ENABLED"
+      ],
+      "default": "DISABLED"
     },
     "protobufAny": {
       "type": "object",
@@ -1418,6 +1428,16 @@
           "format": "byte"
         }
       }
+    },
+    "resourceaggregatepbShadowSynchronization": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "ENABLED",
+        "DISABLED"
+      ],
+      "default": "UNSET",
+      "title": "┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───┬───┘                         └────────┬─────────┘               └─────────┘               └──────┘\n    ┌┴┐                   │                                      ┌┴┐            UpdateDeviceMetadataRequest             ┌┴┐  \n    │ │                   │                                      │ │ \u003c──────────────────────────────────────────────────│ │  \n    │ │                   │                                      │ │                            │                       │ │  \n    │ │                   │                                      │ │            UpdateDeviceMetadataResponse            │ │  \n    │ │                   │                                      │ │ ──────────────────────────────────────────────────\u003e│ │  \n    │ │                   │                                      └┬┘                            │                       │ │  \n    │ │                   │                                      │ DeviceMetadataUpdatePending  │                       │ │  \n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │  \n    │ │                   │                                      │                              │                       │ │  \n    │ │                  ┌┴┐                     DeviceMetadataUpdatePending                    │                       │ │  \n    │ │                  │ │ \u003c─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                       │ │  \n    │ │                  │ │                                     │                              │                       │ │  \n    │ │                  │ │ ConfirmDeviceMetadataUpdateRequest  ┌┴┐                            │                       │ │  \n    │ │                  │ │ ───────────────────────────────────\u003e│ │                            │                       │ │  \n    │ │                  └┬┘                                     │ │                            │                       │ │  \n    │ │                   │ConfirmDeviceMetadataUpdateResponse   │ │                            │                       │ │  \n    │ │                   │\u003c──────────────────────────────────── │ │                            │                       │ │  \n    │ │                   │                                      └┬┘                            │                       │ │  \n    │ │                   │                                      │    DeviceMetadataUpdated     │                       │ │  \n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │  \n    └┬┘                   │                                      │                              │                       └┬┘  \n     │                    │                                      │                              │ DeviceMetadataUpdated │    \n     │                    │                                      │                              │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e    \n┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘"
     },
     "resourceaggregatepbStatus": {
       "type": "string",

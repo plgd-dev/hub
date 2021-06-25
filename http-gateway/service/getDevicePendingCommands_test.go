@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
-	"sort"
+	"net/http"
 	"testing"
 	"time"
 
+	"github.com/google/go-querystring/query"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -17,6 +19,9 @@ import (
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -28,59 +33,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
-type sortPendingCommand []*pb.PendingCommand
-
-func (a sortPendingCommand) Len() int      { return len(a) }
-func (a sortPendingCommand) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortPendingCommand) Less(i, j int) bool {
-	toKey := func(v *pb.PendingCommand) string {
-		switch {
-		case v.GetResourceCreatePending() != nil:
-			return v.GetResourceCreatePending().GetResourceId().GetDeviceId() + v.GetResourceCreatePending().GetResourceId().GetHref()
-		case v.GetResourceRetrievePending() != nil:
-			return v.GetResourceRetrievePending().GetResourceId().GetDeviceId() + v.GetResourceRetrievePending().GetResourceId().GetHref()
-		case v.GetResourceUpdatePending() != nil:
-			return v.GetResourceUpdatePending().GetResourceId().GetDeviceId() + v.GetResourceUpdatePending().GetResourceId().GetHref()
-		case v.GetResourceDeletePending() != nil:
-			return v.GetResourceDeletePending().GetResourceId().GetDeviceId() + v.GetResourceDeletePending().GetResourceId().GetHref()
-		case v.GetDeviceMetadataUpdatePending() != nil:
-			return v.GetDeviceMetadataUpdatePending().GetDeviceId()
-		}
-		return ""
-	}
-
-	return toKey(a[i]) < toKey(a[j])
-}
-
-func cmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCommand) {
-	require.Len(t, got, len(want))
-
-	sort.Sort(sortPendingCommand(want))
-	sort.Sort(sortPendingCommand(got))
-
-	for idx := range want {
-		switch {
-		case got[idx].GetResourceCreatePending() != nil:
-			got[idx].GetResourceCreatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceCreatePending().EventMetadata = nil
-		case got[idx].GetResourceRetrievePending() != nil:
-			got[idx].GetResourceRetrievePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceRetrievePending().EventMetadata = nil
-		case got[idx].GetResourceUpdatePending() != nil:
-			got[idx].GetResourceUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceUpdatePending().EventMetadata = nil
-		case got[idx].GetResourceDeletePending() != nil:
-			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceDeletePending().EventMetadata = nil
-		case got[idx].GetDeviceMetadataUpdatePending() != nil:
-			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
-		}
-		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
-	}
-}
-
-func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
+func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
 		req *pb.RetrievePendingCommandsRequest
@@ -91,36 +44,6 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 		wantErr bool
 		want    []*pb.PendingCommand
 	}{
-		{
-			name: "retrieve by resourceIdsFilter",
-			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
-					ResourceIdsFilter: []string{
-						commands.NewResourceID(deviceID, "/light/1").ToString(),
-					},
-				},
-			},
-			want: []*pb.PendingCommand{
-				{
-					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: &events.ResourceUpdatePending{
-							ResourceId: &commands.ResourceId{
-								DeviceId: deviceID,
-								Href:     "/light/1",
-							},
-							Content: &commands.Content{
-								ContentType:       message.AppOcfCbor.String(),
-								CoapContentFormat: -1,
-								Data: test.EncodeToCbor(t, map[string]interface{}{
-									"power": 1,
-								}),
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
-					},
-				},
-			},
-		},
 		{
 			name: "retrieve by deviceIdsFilter",
 			args: args{
@@ -204,7 +127,8 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 			name: "filter retrieve commands",
 			args: args{
 				req: &pb.RetrievePendingCommandsRequest{
-					CommandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_RETRIEVE},
+					DeviceIdsFilter: []string{deviceID},
+					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_RETRIEVE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -225,7 +149,8 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 			name: "filter create commands",
 			args: args{
 				req: &pb.RetrievePendingCommandsRequest{
-					CommandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_CREATE},
+					DeviceIdsFilter: []string{deviceID},
+					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_CREATE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -253,7 +178,8 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 			name: "filter delete commands",
 			args: args{
 				req: &pb.RetrievePendingCommandsRequest{
-					CommandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_DELETE},
+					DeviceIdsFilter: []string{deviceID},
+					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_DELETE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -274,7 +200,8 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 			name: "filter update commands",
 			args: args{
 				req: &pb.RetrievePendingCommandsRequest{
-					CommandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_UPDATE},
+					DeviceIdsFilter: []string{deviceID},
+					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_UPDATE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -302,7 +229,8 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 			name: "filter by type",
 			args: args{
 				req: &pb.RetrievePendingCommandsRequest{
-					TypeFilter: []string{"oic.wk.d"},
+					DeviceIdsFilter: []string{deviceID},
+					TypeFilter:      []string{"oic.wk.d"},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -341,7 +269,8 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 			name: "filter device metadata update",
 			args: args{
 				req: &pb.RetrievePendingCommandsRequest{
-					CommandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_DEVICE_METADATA_UPDATE},
+					DeviceIdsFilter: []string{deviceID},
+					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_DEVICE_METADATA_UPDATE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -379,7 +308,11 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 	defer authShutdown()
 	defer oauthShutdown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	shutdownHttp := New(t, MakeConfig(t))
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -454,22 +387,41 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.RetrievePendingCommands(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				values := make([]*pb.PendingCommand, 0, 1)
-				for {
-					value, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					values = append(values, value)
-				}
-				cmpPendingCmds(t, tt.want, values)
+			type Options struct {
+				TypeFilter     []string                                    `url:"typeFilter,omitempty"`
+				CommandsFilter []pb.RetrievePendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
 			}
+			opt := Options{
+				TypeFilter:     tt.args.req.TypeFilter,
+				CommandsFilter: tt.args.req.CommandsFilter,
+			}
+			v, err := query.Values(opt)
+			require.NoError(t, err)
+			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevicePendingCommands, nil).AuthToken(token).DeviceId(tt.args.req.GetDeviceIdsFilter()[0]).SetQuery(v.Encode()).Build()
+			trans := http.DefaultTransport.(*http.Transport).Clone()
+			trans.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			c := http.Client{
+				Transport: trans,
+			}
+			resp, err := c.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			var values []*pb.PendingCommand
+			marshaler := runtime.JSONPb{}
+			decoder := marshaler.NewDecoder(resp.Body)
+			for {
+				var v pb.PendingCommand
+				err = service.Unmarshal(resp.StatusCode, decoder, &v)
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+				values = append(values, &v)
+			}
+			cmpPendingCmds(t, tt.want, values)
 		})
 	}
 }

@@ -29,7 +29,7 @@ func (c *Client) UpdateResource(
 		return err
 	}
 	r := pb.UpdateResourceRequest{
-		ResourceId:        commands.NewResourceID(deviceID, href).ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, href),
 		ResourceInterface: cfg.resourceInterface,
 		Content: &pb.Content{
 			Data:        data,

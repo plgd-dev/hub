@@ -84,7 +84,7 @@ func (f *contentChangedFilter) WaitForDeviceMetadataUpdated(t time.Duration) *ev
 	}
 }
 
-func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
+func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
@@ -113,9 +113,9 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NoError(t, err)
 	defer obs.Close()
 
-	_, err = c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
-		DeviceId: deviceID,
-		Enabled:  false,
+	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:              deviceID,
+		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
 	})
 	require.NoError(t, err)
 
@@ -125,7 +125,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -136,7 +136,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NoError(t, err)
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -149,9 +149,9 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	_, err = c.UpdateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
-		DeviceId: deviceID,
-		Enabled:  true,
+	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:              deviceID,
+		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
 	})
 	require.NoError(t, err)
 
@@ -161,7 +161,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -172,7 +172,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NoError(t, err)
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{

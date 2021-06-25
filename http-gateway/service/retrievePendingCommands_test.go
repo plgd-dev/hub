@@ -4,10 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
+	"net/http"
 	"sort"
 	"testing"
 	"time"
 
+	"github.com/google/go-querystring/query"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -17,6 +20,9 @@ import (
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -379,7 +385,11 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 	defer authShutdown()
 	defer oauthShutdown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	shutdownHttp := New(t, MakeConfig(t))
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -454,22 +464,45 @@ func TestRequestHandler_RetrievePendingCommands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.RetrievePendingCommands(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				values := make([]*pb.PendingCommand, 0, 1)
-				for {
-					value, err := client.Recv()
-					if err == io.EOF {
-						break
-					}
-					require.NoError(t, err)
-					values = append(values, value)
-				}
-				cmpPendingCmds(t, tt.want, values)
+			type Options struct {
+				TypeFilter        []string                                    `url:"typeFilter,omitempty"`
+				ResourceIdsFilter []string                                    `url:"resourceIdsFilter,omitempty"`
+				DeviceIdsFilter   []string                                    `url:"deviceIdsFilter,omitempty"`
+				CommandsFilter    []pb.RetrievePendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
 			}
+			opt := Options{
+				TypeFilter:        tt.args.req.TypeFilter,
+				ResourceIdsFilter: tt.args.req.ResourceIdsFilter,
+				DeviceIdsFilter:   tt.args.req.DeviceIdsFilter,
+				CommandsFilter:    tt.args.req.CommandsFilter,
+			}
+			v, err := query.Values(opt)
+			require.NoError(t, err)
+			request := httpgwTest.NewRequest(http.MethodGet, uri.PendingCommands, nil).AuthToken(token).SetQuery(v.Encode()).Build()
+			trans := http.DefaultTransport.(*http.Transport).Clone()
+			trans.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			c := http.Client{
+				Transport: trans,
+			}
+			resp, err := c.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			var values []*pb.PendingCommand
+			marshaler := runtime.JSONPb{}
+			decoder := marshaler.NewDecoder(resp.Body)
+			for {
+				var v pb.PendingCommand
+				err = service.Unmarshal(resp.StatusCode, decoder, &v)
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+				values = append(values, &v)
+			}
+			cmpPendingCmds(t, tt.want, values)
 		})
 	}
 }

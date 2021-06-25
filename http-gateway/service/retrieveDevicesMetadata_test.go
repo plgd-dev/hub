@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -16,11 +15,12 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
@@ -148,9 +148,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)
-			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/api/v1/devices/metadata?%v", config.HTTP_GW_HOST, v.Encode()), nil)
-			require.NoError(t, err)
-			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+			request := httpgwTest.NewRequest(http.MethodGet, uri.DevicesMetadata, nil).AuthToken(token).SetQuery(v.Encode()).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

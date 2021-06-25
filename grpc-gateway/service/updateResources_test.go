@@ -34,7 +34,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -59,7 +59,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -84,7 +84,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -108,7 +108,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "update RO-resource",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -132,7 +132,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,

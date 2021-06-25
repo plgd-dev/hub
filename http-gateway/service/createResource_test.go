@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -12,11 +11,12 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -45,7 +45,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -61,7 +61,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			name: "/oic/d - PermissionDenied",
 			args: args{
 				req: pb.CreateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -107,10 +107,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			var m jsonpb.Marshaler
 			data, err := m.MarshalToString(&tt.args.req)
 			require.NoError(t, err)
-
-			request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("https://%v/api/v1/devices/%v", config.HTTP_GW_HOST, tt.args.req.ResourceId), bytes.NewReader([]byte(data)))
-			require.NoError(t, err)
-			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

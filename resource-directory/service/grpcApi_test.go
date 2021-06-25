@@ -47,7 +47,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -69,7 +69,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -91,7 +91,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 			args: args{
 				req: pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -112,7 +112,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 			name: "update RO-resource",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
 						Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -133,7 +133,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,
@@ -190,7 +190,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -200,7 +200,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -210,7 +210,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,
@@ -754,7 +754,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subUpdatedID := ev.SubscriptionId
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -837,7 +837,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		}
 	}
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: func() []byte {
@@ -947,7 +947,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	subReceivedID := ev.SubscriptionId
 
 	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
-		ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 	})
 	require.NoError(t, err)
 	ev, err = client.Recv()

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -69,22 +70,45 @@ func NewRequest(method, url string, body io.Reader) *requestBuilder {
 		uri:         fmt.Sprintf("https://%v%v", config.HTTP_GW_HOST, url),
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
-		queryParams: make(map[string]string),
+		queryParams: make(map[string][]string),
 	}
 	return &b
 }
 
 type requestBuilder struct {
-	method      string
-	body        io.Reader
-	uri         string
-	uriParams   map[string]interface{}
-	header      map[string]string
-	queryParams map[string]string
+	method       string
+	body         io.Reader
+	uri          string
+	uriParams    map[string]interface{}
+	header       map[string]string
+	queryParams  map[string][]string
+	resourceHref string
+	query        string
 }
 
 func (c *requestBuilder) DeviceId(deviceID string) *requestBuilder {
 	c.uriParams[uri.DeviceIDKey] = deviceID
+	return c
+}
+
+func (c *requestBuilder) Shadow(v bool) *requestBuilder {
+	c.AddQuery(uri.ShadowQueryKey, fmt.Sprintf("%v", v))
+	return c
+}
+
+func (c *requestBuilder) ResourceInterface(v string) *requestBuilder {
+	if v == "" {
+		return c
+	}
+	c.AddQuery(uri.InterfaceQueryKey, v)
+	return c
+}
+
+func (c *requestBuilder) ResourceHref(resourceHref string) *requestBuilder {
+	if len(resourceHref) > 0 && resourceHref[0] == '/' {
+		resourceHref = resourceHref[1:]
+	}
+	c.resourceHref = resourceHref
 	return c
 }
 
@@ -93,20 +117,50 @@ func (c *requestBuilder) AuthToken(token string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) AddQuery(key, value string) *requestBuilder {
-	c.queryParams[key] = value
+func (c *requestBuilder) AddQuery(key string, value ...string) *requestBuilder {
+	c.queryParams[key] = append(c.queryParams[key], value...)
+	return c
+}
+
+func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
+	if len(typeFilter) == 0 {
+		return c
+	}
+	c.AddQuery(uri.TypeFilterQueryKey, typeFilter...)
+	return c
+}
+
+func (c *requestBuilder) AddCommandsFilter(commandsFilter []string) *requestBuilder {
+	if len(commandsFilter) == 0 {
+		return c
+	}
+	c.AddQuery(uri.CommandsFilterQueryKey, commandsFilter...)
+	return c
+}
+
+func (c *requestBuilder) SetQuery(value string) *requestBuilder {
+	c.query = value
 	return c
 }
 
 func (c *requestBuilder) Build() *http.Request {
-	tmp, _ := uritemplates.Parse(c.uri)
-	uri, _ := tmp.Expand(c.uriParams)
+	uri := strings.Replace(c.uri, "{"+uri.ResourceHrefKey+"}", c.resourceHref, -1)
+
+	tmp, _ := uritemplates.Parse(uri)
+	uri, _ = tmp.Expand(c.uriParams)
 	url, _ := url.Parse(uri)
 	query := url.Query()
-	for k, v := range c.queryParams {
-		query.Set(k, v)
+	for k, vals := range c.queryParams {
+		for _, v := range vals {
+			query.Add(k, v)
+		}
 	}
-	url.RawQuery = query.Encode()
+	if c.query != "" {
+		url.RawQuery = c.query
+	} else {
+		url.RawQuery = query.Encode()
+	}
+	fmt.Printf("URL %v\n", url.String())
 	request, _ := http.NewRequest(c.method, url.String(), c.body)
 	for k, v := range c.header {
 		request.Header.Add(k, v)

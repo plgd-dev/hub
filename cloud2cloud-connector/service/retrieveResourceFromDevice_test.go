@@ -39,7 +39,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "valid /light/2",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/2").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -49,7 +49,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "valid /oic/d",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
 			wantContentType: "application/vnd.ocf+cbor",
@@ -59,7 +59,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 			name: "invalid Href",
 			args: args{
 				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown").ToString(),
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,

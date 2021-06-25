@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -18,6 +17,8 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/service"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -26,7 +27,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -91,7 +91,7 @@ func (f *contentChangedFilter) WaitForDeviceMetadataUpdated(t time.Duration) *ev
 	}
 }
 
-func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
+func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
@@ -125,14 +125,12 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NoError(t, err)
 	defer obs.Close()
 
-	updateDeviceShadowSynchronization := func(ctx context.Context, in *pb.UpdateDeviceShadowSynchronizationRequest) (*pb.UpdateDeviceShadowSynchronizationResponse, error) {
+	updateDeviceShadowSynchronization := func(ctx context.Context, in *pb.UpdateDeviceMetadataRequest) (*pb.UpdateDeviceMetadataResponse, error) {
 		var m jsonpb.Marshaler
 		data, err := m.MarshalToString(in)
 		require.NoError(t, err)
 
-		request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("https://%v/api/v1/devices/%v/shadowSynchronization", config.HTTP_GW_HOST, in.GetDeviceId()), bytes.NewReader([]byte(data)))
-		require.NoError(t, err)
-		request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+		request := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader([]byte(data))).AuthToken(token).DeviceId(deviceID).Build()
 		trans := http.DefaultTransport.(*http.Transport).Clone()
 		trans.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
@@ -147,7 +145,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 		marshaler := runtime.JSONPb{}
 		decoder := marshaler.NewDecoder(resp.Body)
 
-		var got pb.UpdateDeviceShadowSynchronizationResponse
+		var got pb.UpdateDeviceMetadataResponse
 		err = service.Unmarshal(resp.StatusCode, decoder, &got)
 		if err != nil {
 			return nil, err
@@ -155,9 +153,9 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 		return &got, nil
 	}
 
-	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
-		DeviceId: deviceID,
-		Enabled:  false,
+	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:              deviceID,
+		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
 	})
 	require.NoError(t, err)
 
@@ -167,7 +165,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 
 	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -178,7 +176,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NoError(t, err)
 	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -191,9 +189,9 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceShadowSynchronizationRequest{
-		DeviceId: deviceID,
-		Enabled:  true,
+	_, err = updateDeviceShadowSynchronization(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:              deviceID,
+		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
 	})
 	require.NoError(t, err)
 
@@ -203,7 +201,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 
 	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
@@ -214,7 +212,7 @@ func TestRequestHandler_UpdateDeviceShadowSynchronization(t *testing.T) {
 	require.NoError(t, err)
 	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
-		ResourceId:        commands.NewResourceID(deviceID, "/light/1").ToString(),
+		ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 		Content: &pb.Content{
 			ContentType: message.AppOcfCbor.String(),
 			Data: test.EncodeToCbor(t, map[string]interface{}{
