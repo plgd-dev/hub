@@ -77,9 +77,9 @@ env: clean certificates nats mongo privateKeys
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
-DIRECTORIES:=$(foreach dir,$(shell ls -d ./*/ | grep -v 'tools' | grep -v '.github' | grep -v '.vscode' | grep -v 'bundle' | grep -v 'device-simulator' | grep -v 'docs' ),${dir})
-
 define RUN-TESTS-IN-DIRECTORY
+	echo "Executing tests from $(1) directory"; \
+	START_TIME=$$(date +%s); \
 	docker run \
 	--rm \
 	--network=host \
@@ -105,29 +105,44 @@ define RUN-TESTS-IN-DIRECTORY
 	-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 	-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
 	cloud-test \
-	go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=/coverage/`echo $(1) | sed -e "s/[\.\/]//g"`.coverage.txt ;
+	go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=/coverage/`echo $(1) | sed -e "s/[\.\/]//g"`.coverage.txt ; \
+	EXIT_STATUS=$$? ; \
+	if [ $${EXIT_STATUS} -ne 0 ]; then \
+		exit $${EXIT_STATUS}; \
+	fi ; \
+	STOP_TIME=$$(date +%s) ; \
+	EXECUTION_TIME=$$((STOP_TIME-START_TIME)) ; \
+	echo "" ; \
+	echo "Execution time: $${EXECUTION_TIME} seconds" ; \
+	echo "" ;
 endef
 
+DIRECTORIES:=$(shell ls -d ./*/)
+
 test: env
-	mkdir -p $(shell pwd)/.tmp/home
-	mkdir -p $(shell pwd)/.tmp/home/certificate-authority
-	for DIRECTORY in $(DIRECTORIES); do \
+	@mkdir -p $(shell pwd)/.tmp/home
+	@mkdir -p $(shell pwd)/.tmp/home/certificate-authority
+	@for DIRECTORY in $(DIRECTORIES); do \
+		if ! go list -f '{{.GoFiles}}' $$DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
+			echo "No golang files detected, directory $${DIRECTORY} skipped"; \
+			continue ; \
+		fi ; \
 		$(call RUN-TESTS-IN-DIRECTORY,$$DIRECTORY) \
 	done
 
-# add directory-level targets in the form "test-$(directory)"
-define TESTS-IN-DIRECTORY-RULE
-$(1): env
-	mkdir -p $(shell pwd)/.tmp/home
-	mkdir -p $(shell pwd)/.tmp/home/certificate-authority
-	$(call RUN-TESTS-IN-DIRECTORY,$(2))
+test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 
-.PHONY: $(1)
-endef
+$(test-targets): %: env
+	@mkdir -p $(shell pwd)/.tmp/home
+	@mkdir -p $(shell pwd)/.tmp/home/certificate-authority
+	@readonly TARGET_DIRECTORY=$(patsubst test-%,./%/,$@) ; \
+	if ! go list -f '{{.GoFiles}}' $$TARGET_DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
+		echo "No golang files detected, directory $$TARGET_DIRECTORY skipped"; \
+		exit 0; \
+	fi ; \
+	$(call RUN-TESTS-IN-DIRECTORY,$(patsubst test-%,./%/,$@))
 
-$(foreach dir, $(DIRECTORIES), \
-	$(eval $(call TESTS-IN-DIRECTORY-RULE,test-$(patsubst ./%/,%,$(dir)),$(dir))) \
-)
+.PHONY: $(test-targets)
 
 build: cloud-build $(SUBDIRS)
 
