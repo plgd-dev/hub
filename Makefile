@@ -77,39 +77,57 @@ env: clean certificates nats mongo privateKeys
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
-DIRECTORIES=$(foreach dir,$(shell ls -d ./*/),${dir})
+DIRECTORIES:=$(foreach dir,$(shell ls -d ./*/),${dir})
+
+define RUN-TESTS-IN-DIRECTORY
+	docker run \
+	--rm \
+	--network=host \
+	-v $(shell pwd)/.tmp/certs:/certs \
+	-v $(shell pwd)/.tmp/coverage:/coverage \
+	-v $(shell pwd)/.tmp/privKeys:/privKeys \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-e DIAL_TYPE="file" \
+	-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \
+	-e DIAL_FILE_CERT_DIR_PATH=/certs \
+	-e DIAL_FILE_CERT_NAME=http.crt \
+	-e DIAL_FILE_CERT_KEY_NAME=http.key \
+	-e LISTEN_TYPE="file" \
+	-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
+	-e LISTEN_FILE_CERT_DIR_PATH=/certs \
+	-e LISTEN_FILE_CERT_NAME=http.crt \
+	-e LISTEN_FILE_CERT_KEY_NAME=http.key \
+	-e TEST_COAP_GW_CERT_FILE=/certs/coap.crt \
+	-e TEST_COAP_GW_KEY_FILE=/certs/coap.key \
+	-e TEST_CLOUD_SID=$(CLOUD_SID) \
+	-e TEST_ROOT_CA_CERT=/certs/root_ca.crt \
+	-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
+	-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
+	-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
+	cloud-test \
+	go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=/coverage/`echo $(1) | sed -e "s/[\.\/]//g"`.coverage.txt ;
+endef
 
 test: env
 	mkdir -p $(shell pwd)/.tmp/home
 	mkdir -p $(shell pwd)/.tmp/home/certificate-authority
 	for DIRECTORY in $(DIRECTORIES); do \
-        docker run \
-		--rm \
-		--network=host \
-		-v $(shell pwd)/.tmp/certs:/certs \
-		-v $(shell pwd)/.tmp/coverage:/coverage \
-		-v $(shell pwd)/.tmp/privKeys:/privKeys \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-e DIAL_TYPE="file" \
-		-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \
-		-e DIAL_FILE_CERT_DIR_PATH=/certs \
-		-e DIAL_FILE_CERT_NAME=http.crt \
-		-e DIAL_FILE_CERT_KEY_NAME=http.key \
-		-e LISTEN_TYPE="file" \
-		-e LISTEN_FILE_CA_POOL=/certs/root_ca.crt \
-		-e LISTEN_FILE_CERT_DIR_PATH=/certs \
-		-e LISTEN_FILE_CERT_NAME=http.crt \
-		-e LISTEN_FILE_CERT_KEY_NAME=http.key \
-		-e TEST_COAP_GW_CERT_FILE=/certs/coap.crt \
-		-e TEST_COAP_GW_KEY_FILE=/certs/coap.key \
-		-e TEST_CLOUD_SID=$(CLOUD_SID) \
-		-e TEST_ROOT_CA_CERT=/certs/root_ca.crt \
-        -e TEST_ROOT_CA_KEY=/certs/root_ca.key \
-		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
-		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
-		cloud-test \
-		go test -timeout=45m -race -p 1 -v $$DIRECTORY... -covermode=atomic -coverprofile=/coverage/`echo $$DIRECTORY | sed -e "s/[\.\/]//g"`.coverage.txt ; \
-    done
+		$(call RUN-TESTS-IN-DIRECTORY,$$DIRECTORY) \
+	done
+
+# add directory-level targets in the form "test-$(directory)"
+define TESTS-IN-DIRECTORY-RULE
+$(1): env
+	mkdir -p $(shell pwd)/.tmp/home
+	mkdir -p $(shell pwd)/.tmp/home/certificate-authority
+	$(call RUN-TESTS-IN-DIRECTORY,$(2))
+
+.PHONY: $(1)
+endef
+
+$(foreach dir, $(DIRECTORIES), \
+	$(eval $(call TESTS-IN-DIRECTORY-RULE,test-$(patsubst ./%/,%,$(dir)),$(dir))) \
+)
 
 build: cloud-build $(SUBDIRS)
 
