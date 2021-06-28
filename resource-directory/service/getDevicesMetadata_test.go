@@ -32,10 +32,10 @@ func cmpDeviceMetadataUpdated(t *testing.T, want []*events.DeviceMetadataUpdated
 	}
 }
 
-func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
+func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.RetrieveDevicesMetadataRequest
+		req pb.GetDevicesMetadataRequest
 	}
 	tests := []struct {
 		name    string
@@ -46,7 +46,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 		{
 			name: "all",
 			args: args{
-				req: pb.RetrieveDevicesMetadataRequest{},
+				req: pb.GetDevicesMetadataRequest{},
 			},
 			want: []*events.DeviceMetadataUpdated{
 				{
@@ -60,7 +60,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 		{
 			name: "filter one device",
 			args: args{
-				req: pb.RetrieveDevicesMetadataRequest{
+				req: pb.GetDevicesMetadataRequest{
 					DeviceIdsFilter: []string{deviceID},
 				},
 			},
@@ -76,7 +76,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 		{
 			name: "filter one device by type",
 			args: args{
-				req: pb.RetrieveDevicesMetadataRequest{
+				req: pb.GetDevicesMetadataRequest{
 					TypeFilter: []string{"oic.wk.d"},
 				},
 			},
@@ -92,7 +92,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 		{
 			name: "invalid deviceID",
 			args: args{
-				req: pb.RetrieveDevicesMetadataRequest{
+				req: pb.GetDevicesMetadataRequest{
 					DeviceIdsFilter: []string{"abc"},
 				},
 			},
@@ -101,7 +101,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 		{
 			name: "unknown type",
 			args: args{
-				req: pb.RetrieveDevicesMetadataRequest{
+				req: pb.GetDevicesMetadataRequest{
 					TypeFilter: []string{"unknown"},
 				},
 			},
@@ -127,7 +127,7 @@ func TestRequestHandler_RetrieveDevicesMetadata(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.RetrieveDevicesMetadata(ctx, &tt.args.req)
+			client, err := c.GetDevicesMetadata(ctx, &tt.args.req)
 			require.NoError(t, err)
 			values := make([]*events.DeviceMetadataUpdated, 0, 1)
 			for {

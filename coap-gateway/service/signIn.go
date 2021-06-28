@@ -66,7 +66,7 @@ func (client *Client) registerObservationsForPublishedResourcesLocked(ctx contex
 }
 
 func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID string) error {
-	deviceMetadataClient, err := client.server.rdClient.RetrieveDevicesMetadata(ctx, &pb.RetrieveDevicesMetadataRequest{
+	deviceMetadataClient, err := client.server.rdClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{
 		DeviceIdsFilter: []string{deviceID},
 	})
 	if err != nil {

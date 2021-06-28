@@ -7,7 +7,7 @@ import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
-message RetrievePendingCommandsRequest {
+message GetPendingCommandsRequest {
     enum Command {
       RESOURCE_CREATE = 0;
       RESOURCE_RETRIEVE = 1;

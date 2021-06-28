@@ -23,14 +23,14 @@ message GetResourceLinksRequest {
   repeated string device_ids_filter = 2;
 }
 
-// RetrieveResourceFromDeviceRequest retrieve value from device
-message RetrieveResourceFromDeviceRequest {
+// GetResourceFromDeviceRequest retrieve value from device
+message GetResourceFromDeviceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
 }
 
-// RetrieveResourcesValuesRequest get values from resource-shadow
-message RetrieveResourcesRequest {
+// GetResourcesValuesRequest get values from resource-shadow
+message GetResourcesRequest {
   // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
   repeated string resource_ids_filter = 1;
   repeated string device_ids_filter = 2;

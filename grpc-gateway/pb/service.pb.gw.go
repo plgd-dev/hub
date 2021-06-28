@@ -88,11 +88,11 @@ func request_GrpcGateway_GetResourceLinks_0(ctx context.Context, marshaler runti
 }
 
 var (
-	filter_GrpcGateway_RetrieveResourceFromDevice_0 = &utilities.DoubleArray{Encoding: map[string]int{"resource_id": 0, "device_id": 1, "href": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3, 4}}
+	filter_GrpcGateway_GetResourceFromDevice_0 = &utilities.DoubleArray{Encoding: map[string]int{"resource_id": 0, "device_id": 1, "href": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 2, 3, 4}}
 )
 
-func request_GrpcGateway_RetrieveResourceFromDevice_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RetrieveResourceFromDeviceRequest
+func request_GrpcGateway_GetResourceFromDevice_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetResourceFromDeviceRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -125,17 +125,17 @@ func request_GrpcGateway_RetrieveResourceFromDevice_0(ctx context.Context, marsh
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_RetrieveResourceFromDevice_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_GetResourceFromDevice_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.RetrieveResourceFromDevice(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetResourceFromDevice(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_GrpcGateway_RetrieveResourceFromDevice_0(ctx context.Context, marshaler runtime.Marshaler, server GrpcGatewayServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RetrieveResourceFromDeviceRequest
+func local_request_GrpcGateway_GetResourceFromDevice_0(ctx context.Context, marshaler runtime.Marshaler, server GrpcGatewayServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetResourceFromDeviceRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -168,31 +168,31 @@ func local_request_GrpcGateway_RetrieveResourceFromDevice_0(ctx context.Context,
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_RetrieveResourceFromDevice_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_GetResourceFromDevice_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.RetrieveResourceFromDevice(ctx, &protoReq)
+	msg, err := server.GetResourceFromDevice(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
 var (
-	filter_GrpcGateway_RetrieveResources_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_GrpcGateway_GetResources_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_GrpcGateway_RetrieveResources_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (GrpcGateway_RetrieveResourcesClient, runtime.ServerMetadata, error) {
-	var protoReq RetrieveResourcesRequest
+func request_GrpcGateway_GetResources_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (GrpcGateway_GetResourcesClient, runtime.ServerMetadata, error) {
+	var protoReq GetResourcesRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_RetrieveResources_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_GetResources_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.RetrieveResources(ctx, &protoReq)
+	stream, err := client.GetResources(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -610,21 +610,21 @@ func local_request_GrpcGateway_UpdateDeviceMetadata_0(ctx context.Context, marsh
 }
 
 var (
-	filter_GrpcGateway_RetrievePendingCommands_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_GrpcGateway_GetPendingCommands_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_GrpcGateway_RetrievePendingCommands_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (GrpcGateway_RetrievePendingCommandsClient, runtime.ServerMetadata, error) {
-	var protoReq RetrievePendingCommandsRequest
+func request_GrpcGateway_GetPendingCommands_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (GrpcGateway_GetPendingCommandsClient, runtime.ServerMetadata, error) {
+	var protoReq GetPendingCommandsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_RetrievePendingCommands_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_GetPendingCommands_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.RetrievePendingCommands(ctx, &protoReq)
+	stream, err := client.GetPendingCommands(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -638,21 +638,21 @@ func request_GrpcGateway_RetrievePendingCommands_0(ctx context.Context, marshale
 }
 
 var (
-	filter_GrpcGateway_RetrieveDevicesMetadata_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_GrpcGateway_GetDevicesMetadata_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_GrpcGateway_RetrieveDevicesMetadata_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (GrpcGateway_RetrieveDevicesMetadataClient, runtime.ServerMetadata, error) {
-	var protoReq RetrieveDevicesMetadataRequest
+func request_GrpcGateway_GetDevicesMetadata_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (GrpcGateway_GetDevicesMetadataClient, runtime.ServerMetadata, error) {
+	var protoReq GetDevicesMetadataRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_RetrieveDevicesMetadata_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_GetDevicesMetadata_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.RetrieveDevicesMetadata(ctx, &protoReq)
+	stream, err := client.GetDevicesMetadata(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -685,18 +685,18 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		return
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrieveResourceFromDevice_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetResourceFromDevice_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourceFromDevice")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_GrpcGateway_RetrieveResourceFromDevice_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_GrpcGateway_GetResourceFromDevice_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -704,11 +704,11 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_GrpcGateway_RetrieveResourceFromDevice_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_GetResourceFromDevice_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrieveResources_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetResources_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -837,14 +837,14 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrievePendingCommands_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetPendingCommands_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrieveDevicesMetadata_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetDevicesMetadata_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -932,43 +932,43 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrieveResourceFromDevice_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetResourceFromDevice_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourceFromDevice")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_GrpcGateway_RetrieveResourceFromDevice_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_GrpcGateway_GetResourceFromDevice_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_GrpcGateway_RetrieveResourceFromDevice_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_GetResourceFromDevice_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrieveResources_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetResources_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResources")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResources")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_GrpcGateway_RetrieveResources_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_GrpcGateway_GetResources_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_GrpcGateway_RetrieveResources_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_GetResources_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1092,43 +1092,43 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrievePendingCommands_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetPendingCommands_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrievePendingCommands")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetPendingCommands")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_GrpcGateway_RetrievePendingCommands_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_GrpcGateway_GetPendingCommands_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_GrpcGateway_RetrievePendingCommands_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_GetPendingCommands_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_GrpcGateway_RetrieveDevicesMetadata_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_GrpcGateway_GetDevicesMetadata_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveDevicesMetadata")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevicesMetadata")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_GrpcGateway_RetrieveDevicesMetadata_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_GrpcGateway_GetDevicesMetadata_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_GrpcGateway_RetrieveDevicesMetadata_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_GrpcGateway_GetDevicesMetadata_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1140,9 +1140,9 @@ var (
 
 	pattern_GrpcGateway_GetResourceLinks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "resource-links"}, ""))
 
-	pattern_GrpcGateway_RetrieveResourceFromDevice_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resources", "resource_id.href"}, ""))
+	pattern_GrpcGateway_GetResourceFromDevice_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resources", "resource_id.href"}, ""))
 
-	pattern_GrpcGateway_RetrieveResources_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "resources"}, ""))
+	pattern_GrpcGateway_GetResources_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "resources"}, ""))
 
 	pattern_GrpcGateway_UpdateResource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 3, 0, 4, 1, 5, 5}, []string{"api", "v1", "devices", "resource_id.device_id", "resources", "resource_id.href"}, ""))
 
@@ -1156,9 +1156,9 @@ var (
 
 	pattern_GrpcGateway_UpdateDeviceMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "devices", "device_id", "metadata"}, ""))
 
-	pattern_GrpcGateway_RetrievePendingCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "pending-commands"}, ""))
+	pattern_GrpcGateway_GetPendingCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "pending-commands"}, ""))
 
-	pattern_GrpcGateway_RetrieveDevicesMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "devices-metadata"}, ""))
+	pattern_GrpcGateway_GetDevicesMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "devices-metadata"}, ""))
 )
 
 var (
@@ -1166,9 +1166,9 @@ var (
 
 	forward_GrpcGateway_GetResourceLinks_0 = runtime.ForwardResponseStream
 
-	forward_GrpcGateway_RetrieveResourceFromDevice_0 = runtime.ForwardResponseMessage
+	forward_GrpcGateway_GetResourceFromDevice_0 = runtime.ForwardResponseMessage
 
-	forward_GrpcGateway_RetrieveResources_0 = runtime.ForwardResponseStream
+	forward_GrpcGateway_GetResources_0 = runtime.ForwardResponseStream
 
 	forward_GrpcGateway_UpdateResource_0 = runtime.ForwardResponseMessage
 
@@ -1182,7 +1182,7 @@ var (
 
 	forward_GrpcGateway_UpdateDeviceMetadata_0 = runtime.ForwardResponseMessage
 
-	forward_GrpcGateway_RetrievePendingCommands_0 = runtime.ForwardResponseStream
+	forward_GrpcGateway_GetPendingCommands_0 = runtime.ForwardResponseStream
 
-	forward_GrpcGateway_RetrieveDevicesMetadata_0 = runtime.ForwardResponseStream
+	forward_GrpcGateway_GetDevicesMetadata_0 = runtime.ForwardResponseStream
 )

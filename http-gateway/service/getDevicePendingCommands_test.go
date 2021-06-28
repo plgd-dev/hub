@@ -36,7 +36,7 @@ import (
 func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.RetrievePendingCommandsRequest
+		req *pb.GetPendingCommandsRequest
 	}
 	tests := []struct {
 		name    string
@@ -47,7 +47,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		{
 			name: "retrieve by deviceIdsFilter",
 			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
+				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
 				},
 			},
@@ -126,9 +126,9 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		{
 			name: "filter retrieve commands",
 			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
+				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_RETRIEVE},
+					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -148,9 +148,9 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		{
 			name: "filter create commands",
 			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
+				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_CREATE},
+					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -177,9 +177,9 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		{
 			name: "filter delete commands",
 			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
+				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_DELETE},
+					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -199,9 +199,9 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		{
 			name: "filter update commands",
 			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
+				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_UPDATE},
+					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -228,7 +228,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		{
 			name: "filter by type",
 			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
+				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
 					TypeFilter:      []string{"oic.wk.d"},
 				},
@@ -268,9 +268,9 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		{
 			name: "filter device metadata update",
 			args: args{
-				req: &pb.RetrievePendingCommandsRequest{
+				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_DEVICE_METADATA_UPDATE},
+					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -343,7 +343,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 	retrieve := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
+		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 			ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
 		})
 		require.Error(t, err)
@@ -388,8 +388,8 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				TypeFilter     []string                                    `url:"typeFilter,omitempty"`
-				CommandsFilter []pb.RetrievePendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
+				TypeFilter     []string                               `url:"typeFilter,omitempty"`
+				CommandsFilter []pb.GetPendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
 			}
 			opt := Options{
 				TypeFilter:     tt.args.req.TypeFilter,

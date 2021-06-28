@@ -104,7 +104,7 @@ func (h *gatewayHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 	return nil
 }
 
-func (h *gatewayHandler) RetrieveResources(req *pb.RetrieveResourcesRequest, srv pb.GrpcGateway_RetrieveResourcesServer) error {
+func (h *gatewayHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
 	err := sendResourceValue(srv, h.deviceID, schema.DeviceResourceType, schema.Device{
 		ID:   h.deviceID,
 		Name: h.deviceName,
@@ -126,7 +126,7 @@ func (h *gatewayHandler) SubscribeToEvents(pb.GrpcGateway_SubscribeToEventsServe
 	return status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func (h *gatewayHandler) RetrieveResourceFromDevice(context.Context, *pb.RetrieveResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
+func (h *gatewayHandler) GetResourceFromDevice(context.Context, *pb.GetResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
@@ -134,7 +134,7 @@ func (h *gatewayHandler) DeleteResource(context.Context, *pb.DeleteResourceReque
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func sendResourceValue(srv pb.GrpcGateway_RetrieveResourcesServer, deviceId, resourceType string, v interface{}) error {
+func sendResourceValue(srv pb.GrpcGateway_GetResourcesServer, deviceId, resourceType string, v interface{}) error {
 	c, err := cbor.Encode(v)
 	if err != nil {
 		return status.Errorf(codes.Internal, "%v", err)

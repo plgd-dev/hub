@@ -7,7 +7,7 @@ import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
 
-message RetrieveDevicesMetadataRequest{
+message GetDevicesMetadataRequest{
     repeated string device_ids_filter = 1;
     repeated string type_filter = 2;
 }

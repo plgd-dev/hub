@@ -23,10 +23,10 @@ type GrpcGatewayClient interface {
 	GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error)
 	// Get resource links of devices.
 	GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error)
-	// Retrieve resource from the device.
-	RetrieveResourceFromDevice(ctx context.Context, in *RetrieveResourceFromDeviceRequest, opts ...grpc.CallOption) (*events.ResourceRetrieved, error)
-	// Retrieve resources from the resource shadow.
-	RetrieveResources(ctx context.Context, in *RetrieveResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesClient, error)
+	// Get resource from the device.
+	GetResourceFromDevice(ctx context.Context, in *GetResourceFromDeviceRequest, opts ...grpc.CallOption) (*events.ResourceRetrieved, error)
+	// Get resources from the resource shadow.
+	GetResources(ctx context.Context, in *GetResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourcesClient, error)
 	// Update resource at the device.
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*events.ResourceUpdated, error)
 	// Subscribe to events
@@ -39,10 +39,10 @@ type GrpcGatewayClient interface {
 	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*events.ResourceCreated, error)
 	// Enables/disables shadow synchronization for device.
 	UpdateDeviceMetadata(ctx context.Context, in *UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*UpdateDeviceMetadataResponse, error)
-	// Retrieves pending commands for devices .
-	RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error)
-	// Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
-	RetrieveDevicesMetadata(ctx context.Context, in *RetrieveDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveDevicesMetadataClient, error)
+	// Gets pending commands for devices .
+	GetPendingCommands(ctx context.Context, in *GetPendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_GetPendingCommandsClient, error)
+	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
+	GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error)
 }
 
 type grpcGatewayClient struct {
@@ -117,21 +117,21 @@ func (x *grpcGatewayGetResourceLinksClient) Recv() (*events.ResourceLinksPublish
 	return m, nil
 }
 
-func (c *grpcGatewayClient) RetrieveResourceFromDevice(ctx context.Context, in *RetrieveResourceFromDeviceRequest, opts ...grpc.CallOption) (*events.ResourceRetrieved, error) {
+func (c *grpcGatewayClient) GetResourceFromDevice(ctx context.Context, in *GetResourceFromDeviceRequest, opts ...grpc.CallOption) (*events.ResourceRetrieved, error) {
 	out := new(events.ResourceRetrieved)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourceFromDevice", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *grpcGatewayClient) RetrieveResources(ctx context.Context, in *RetrieveResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveResourcesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResources", opts...)
+func (c *grpcGatewayClient) GetResources(ctx context.Context, in *GetResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourcesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[2], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResources", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpcGatewayRetrieveResourcesClient{stream}
+	x := &grpcGatewayGetResourcesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -141,16 +141,16 @@ func (c *grpcGatewayClient) RetrieveResources(ctx context.Context, in *RetrieveR
 	return x, nil
 }
 
-type GrpcGateway_RetrieveResourcesClient interface {
+type GrpcGateway_GetResourcesClient interface {
 	Recv() (*Resource, error)
 	grpc.ClientStream
 }
 
-type grpcGatewayRetrieveResourcesClient struct {
+type grpcGatewayGetResourcesClient struct {
 	grpc.ClientStream
 }
 
-func (x *grpcGatewayRetrieveResourcesClient) Recv() (*Resource, error) {
+func (x *grpcGatewayGetResourcesClient) Recv() (*Resource, error) {
 	m := new(Resource)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -234,12 +234,12 @@ func (c *grpcGatewayClient) UpdateDeviceMetadata(ctx context.Context, in *Update
 	return out, nil
 }
 
-func (c *grpcGatewayClient) RetrievePendingCommands(ctx context.Context, in *RetrievePendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_RetrievePendingCommandsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[4], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrievePendingCommands", opts...)
+func (c *grpcGatewayClient) GetPendingCommands(ctx context.Context, in *GetPendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_GetPendingCommandsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[4], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetPendingCommands", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpcGatewayRetrievePendingCommandsClient{stream}
+	x := &grpcGatewayGetPendingCommandsClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -249,16 +249,16 @@ func (c *grpcGatewayClient) RetrievePendingCommands(ctx context.Context, in *Ret
 	return x, nil
 }
 
-type GrpcGateway_RetrievePendingCommandsClient interface {
+type GrpcGateway_GetPendingCommandsClient interface {
 	Recv() (*PendingCommand, error)
 	grpc.ClientStream
 }
 
-type grpcGatewayRetrievePendingCommandsClient struct {
+type grpcGatewayGetPendingCommandsClient struct {
 	grpc.ClientStream
 }
 
-func (x *grpcGatewayRetrievePendingCommandsClient) Recv() (*PendingCommand, error) {
+func (x *grpcGatewayGetPendingCommandsClient) Recv() (*PendingCommand, error) {
 	m := new(PendingCommand)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -266,12 +266,12 @@ func (x *grpcGatewayRetrievePendingCommandsClient) Recv() (*PendingCommand, erro
 	return m, nil
 }
 
-func (c *grpcGatewayClient) RetrieveDevicesMetadata(ctx context.Context, in *RetrieveDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_RetrieveDevicesMetadataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[5], "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveDevicesMetadata", opts...)
+func (c *grpcGatewayClient) GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[5], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevicesMetadata", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpcGatewayRetrieveDevicesMetadataClient{stream}
+	x := &grpcGatewayGetDevicesMetadataClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -281,16 +281,16 @@ func (c *grpcGatewayClient) RetrieveDevicesMetadata(ctx context.Context, in *Ret
 	return x, nil
 }
 
-type GrpcGateway_RetrieveDevicesMetadataClient interface {
+type GrpcGateway_GetDevicesMetadataClient interface {
 	Recv() (*events.DeviceMetadataUpdated, error)
 	grpc.ClientStream
 }
 
-type grpcGatewayRetrieveDevicesMetadataClient struct {
+type grpcGatewayGetDevicesMetadataClient struct {
 	grpc.ClientStream
 }
 
-func (x *grpcGatewayRetrieveDevicesMetadataClient) Recv() (*events.DeviceMetadataUpdated, error) {
+func (x *grpcGatewayGetDevicesMetadataClient) Recv() (*events.DeviceMetadataUpdated, error) {
 	m := new(events.DeviceMetadataUpdated)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -306,10 +306,10 @@ type GrpcGatewayServer interface {
 	GetDevices(*GetDevicesRequest, GrpcGateway_GetDevicesServer) error
 	// Get resource links of devices.
 	GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error
-	// Retrieve resource from the device.
-	RetrieveResourceFromDevice(context.Context, *RetrieveResourceFromDeviceRequest) (*events.ResourceRetrieved, error)
-	// Retrieve resources from the resource shadow.
-	RetrieveResources(*RetrieveResourcesRequest, GrpcGateway_RetrieveResourcesServer) error
+	// Get resource from the device.
+	GetResourceFromDevice(context.Context, *GetResourceFromDeviceRequest) (*events.ResourceRetrieved, error)
+	// Get resources from the resource shadow.
+	GetResources(*GetResourcesRequest, GrpcGateway_GetResourcesServer) error
 	// Update resource at the device.
 	UpdateResource(context.Context, *UpdateResourceRequest) (*events.ResourceUpdated, error)
 	// Subscribe to events
@@ -322,10 +322,10 @@ type GrpcGatewayServer interface {
 	CreateResource(context.Context, *CreateResourceRequest) (*events.ResourceCreated, error)
 	// Enables/disables shadow synchronization for device.
 	UpdateDeviceMetadata(context.Context, *UpdateDeviceMetadataRequest) (*UpdateDeviceMetadataResponse, error)
-	// Retrieves pending commands for devices .
-	RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error
-	// Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
-	RetrieveDevicesMetadata(*RetrieveDevicesMetadataRequest, GrpcGateway_RetrieveDevicesMetadataServer) error
+	// Gets pending commands for devices .
+	GetPendingCommands(*GetPendingCommandsRequest, GrpcGateway_GetPendingCommandsServer) error
+	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
+	GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error
 	mustEmbedUnimplementedGrpcGatewayServer()
 }
 
@@ -339,11 +339,11 @@ func (UnimplementedGrpcGatewayServer) GetDevices(*GetDevicesRequest, GrpcGateway
 func (UnimplementedGrpcGatewayServer) GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetResourceLinks not implemented")
 }
-func (UnimplementedGrpcGatewayServer) RetrieveResourceFromDevice(context.Context, *RetrieveResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RetrieveResourceFromDevice not implemented")
+func (UnimplementedGrpcGatewayServer) GetResourceFromDevice(context.Context, *GetResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetResourceFromDevice not implemented")
 }
-func (UnimplementedGrpcGatewayServer) RetrieveResources(*RetrieveResourcesRequest, GrpcGateway_RetrieveResourcesServer) error {
-	return status.Errorf(codes.Unimplemented, "method RetrieveResources not implemented")
+func (UnimplementedGrpcGatewayServer) GetResources(*GetResourcesRequest, GrpcGateway_GetResourcesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetResources not implemented")
 }
 func (UnimplementedGrpcGatewayServer) UpdateResource(context.Context, *UpdateResourceRequest) (*events.ResourceUpdated, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateResource not implemented")
@@ -363,11 +363,11 @@ func (UnimplementedGrpcGatewayServer) CreateResource(context.Context, *CreateRes
 func (UnimplementedGrpcGatewayServer) UpdateDeviceMetadata(context.Context, *UpdateDeviceMetadataRequest) (*UpdateDeviceMetadataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceMetadata not implemented")
 }
-func (UnimplementedGrpcGatewayServer) RetrievePendingCommands(*RetrievePendingCommandsRequest, GrpcGateway_RetrievePendingCommandsServer) error {
-	return status.Errorf(codes.Unimplemented, "method RetrievePendingCommands not implemented")
+func (UnimplementedGrpcGatewayServer) GetPendingCommands(*GetPendingCommandsRequest, GrpcGateway_GetPendingCommandsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetPendingCommands not implemented")
 }
-func (UnimplementedGrpcGatewayServer) RetrieveDevicesMetadata(*RetrieveDevicesMetadataRequest, GrpcGateway_RetrieveDevicesMetadataServer) error {
-	return status.Errorf(codes.Unimplemented, "method RetrieveDevicesMetadata not implemented")
+func (UnimplementedGrpcGatewayServer) GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetDevicesMetadata not implemented")
 }
 func (UnimplementedGrpcGatewayServer) mustEmbedUnimplementedGrpcGatewayServer() {}
 
@@ -424,42 +424,42 @@ func (x *grpcGatewayGetResourceLinksServer) Send(m *events.ResourceLinksPublishe
 	return x.ServerStream.SendMsg(m)
 }
 
-func _GrpcGateway_RetrieveResourceFromDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RetrieveResourceFromDeviceRequest)
+func _GrpcGateway_GetResourceFromDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetResourceFromDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcGatewayServer).RetrieveResourceFromDevice(ctx, in)
+		return srv.(GrpcGatewayServer).GetResourceFromDevice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/RetrieveResourceFromDevice",
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcGatewayServer).RetrieveResourceFromDevice(ctx, req.(*RetrieveResourceFromDeviceRequest))
+		return srv.(GrpcGatewayServer).GetResourceFromDevice(ctx, req.(*GetResourceFromDeviceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GrpcGateway_RetrieveResources_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(RetrieveResourcesRequest)
+func _GrpcGateway_GetResources_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetResourcesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(GrpcGatewayServer).RetrieveResources(m, &grpcGatewayRetrieveResourcesServer{stream})
+	return srv.(GrpcGatewayServer).GetResources(m, &grpcGatewayGetResourcesServer{stream})
 }
 
-type GrpcGateway_RetrieveResourcesServer interface {
+type GrpcGateway_GetResourcesServer interface {
 	Send(*Resource) error
 	grpc.ServerStream
 }
 
-type grpcGatewayRetrieveResourcesServer struct {
+type grpcGatewayGetResourcesServer struct {
 	grpc.ServerStream
 }
 
-func (x *grpcGatewayRetrieveResourcesServer) Send(m *Resource) error {
+func (x *grpcGatewayGetResourcesServer) Send(m *Resource) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -579,45 +579,45 @@ func _GrpcGateway_UpdateDeviceMetadata_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GrpcGateway_RetrievePendingCommands_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(RetrievePendingCommandsRequest)
+func _GrpcGateway_GetPendingCommands_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetPendingCommandsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(GrpcGatewayServer).RetrievePendingCommands(m, &grpcGatewayRetrievePendingCommandsServer{stream})
+	return srv.(GrpcGatewayServer).GetPendingCommands(m, &grpcGatewayGetPendingCommandsServer{stream})
 }
 
-type GrpcGateway_RetrievePendingCommandsServer interface {
+type GrpcGateway_GetPendingCommandsServer interface {
 	Send(*PendingCommand) error
 	grpc.ServerStream
 }
 
-type grpcGatewayRetrievePendingCommandsServer struct {
+type grpcGatewayGetPendingCommandsServer struct {
 	grpc.ServerStream
 }
 
-func (x *grpcGatewayRetrievePendingCommandsServer) Send(m *PendingCommand) error {
+func (x *grpcGatewayGetPendingCommandsServer) Send(m *PendingCommand) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _GrpcGateway_RetrieveDevicesMetadata_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(RetrieveDevicesMetadataRequest)
+func _GrpcGateway_GetDevicesMetadata_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetDevicesMetadataRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(GrpcGatewayServer).RetrieveDevicesMetadata(m, &grpcGatewayRetrieveDevicesMetadataServer{stream})
+	return srv.(GrpcGatewayServer).GetDevicesMetadata(m, &grpcGatewayGetDevicesMetadataServer{stream})
 }
 
-type GrpcGateway_RetrieveDevicesMetadataServer interface {
+type GrpcGateway_GetDevicesMetadataServer interface {
 	Send(*events.DeviceMetadataUpdated) error
 	grpc.ServerStream
 }
 
-type grpcGatewayRetrieveDevicesMetadataServer struct {
+type grpcGatewayGetDevicesMetadataServer struct {
 	grpc.ServerStream
 }
 
-func (x *grpcGatewayRetrieveDevicesMetadataServer) Send(m *events.DeviceMetadataUpdated) error {
+func (x *grpcGatewayGetDevicesMetadataServer) Send(m *events.DeviceMetadataUpdated) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -629,8 +629,8 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GrpcGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "RetrieveResourceFromDevice",
-			Handler:    _GrpcGateway_RetrieveResourceFromDevice_Handler,
+			MethodName: "GetResourceFromDevice",
+			Handler:    _GrpcGateway_GetResourceFromDevice_Handler,
 		},
 		{
 			MethodName: "UpdateResource",
@@ -665,8 +665,8 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "RetrieveResources",
-			Handler:       _GrpcGateway_RetrieveResources_Handler,
+			StreamName:    "GetResources",
+			Handler:       _GrpcGateway_GetResources_Handler,
 			ServerStreams: true,
 		},
 		{
@@ -676,13 +676,13 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "RetrievePendingCommands",
-			Handler:       _GrpcGateway_RetrievePendingCommands_Handler,
+			StreamName:    "GetPendingCommands",
+			Handler:       _GrpcGateway_GetPendingCommands_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "RetrieveDevicesMetadata",
-			Handler:       _GrpcGateway_RetrieveDevicesMetadata_Handler,
+			StreamName:    "GetDevicesMetadata",
+			Handler:       _GrpcGateway_GetDevicesMetadata_Handler,
 			ServerStreams: true,
 		},
 	},

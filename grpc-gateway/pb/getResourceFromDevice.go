@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-func (req *RetrieveResourceFromDeviceRequest) ToRACommand(ctx context.Context) (*commands.RetrieveResourceRequest, error) {
+func (req *GetResourceFromDeviceRequest) ToRACommand(ctx context.Context) (*commands.RetrieveResourceRequest, error) {
 	correlationUUID, err := uuid.NewV4()
 	if err != nil {
 		return nil, err

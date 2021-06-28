@@ -22,24 +22,24 @@ const (
 	filterBitmaskResourcesUnpublished        filterBitmask = 1 << 14
 )
 
-func filterPendingCommandToBitmask(f pb.RetrievePendingCommandsRequest_Command) filterBitmask {
+func filterPendingCommandToBitmask(f pb.GetPendingCommandsRequest_Command) filterBitmask {
 	bitmask := filterBitmask(0)
 	switch f {
-	case pb.RetrievePendingCommandsRequest_RESOURCE_CREATE:
+	case pb.GetPendingCommandsRequest_RESOURCE_CREATE:
 		bitmask |= filterBitmaskResourceCreatePending
-	case pb.RetrievePendingCommandsRequest_RESOURCE_RETRIEVE:
+	case pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE:
 		bitmask |= filterBitmaskResourceRetrievePending
-	case pb.RetrievePendingCommandsRequest_RESOURCE_UPDATE:
+	case pb.GetPendingCommandsRequest_RESOURCE_UPDATE:
 		bitmask |= filterBitmaskResourceUpdatePending
-	case pb.RetrievePendingCommandsRequest_RESOURCE_DELETE:
+	case pb.GetPendingCommandsRequest_RESOURCE_DELETE:
 		bitmask |= filterBitmaskResourceDeletePending
-	case pb.RetrievePendingCommandsRequest_DEVICE_METADATA_UPDATE:
+	case pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE:
 		bitmask |= filterBitmaskDeviceMetadataUpdatePending
 	}
 	return bitmask
 }
 
-func filterPendingsCommandsToBitmask(commandsFilter []pb.RetrievePendingCommandsRequest_Command) filterBitmask {
+func filterPendingsCommandsToBitmask(commandsFilter []pb.GetPendingCommandsRequest_Command) filterBitmask {
 	bitmask := filterBitmask(0)
 	if len(commandsFilter) == 0 {
 		bitmask = filterBitmaskResourceCreatePending | filterBitmaskResourceRetrievePending | filterBitmaskResourceUpdatePending | filterBitmaskResourceDeletePending | filterBitmaskDeviceMetadataUpdatePending

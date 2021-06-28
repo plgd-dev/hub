@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (r *RequestHandler) RetrievePendingCommands(req *pb.RetrievePendingCommandsRequest, srv pb.GrpcGateway_RetrievePendingCommandsServer) error {
+func (r *RequestHandler) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
 	ctx := srv.Context()
-	rd, err := r.resourceDirectoryClient.RetrievePendingCommands(ctx, req)
+	rd, err := r.resourceDirectoryClient.GetPendingCommands(ctx, req)
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve pending commands: %v", err))
 	}
