@@ -4,8 +4,8 @@ package ocf.cloud.grpcgateway.pb;
 
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/clientConfiguration.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/devices.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/retrievePendingCommands.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/retrieveDevicesMetadata.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/getPendingCommands.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/getDevicesMetadata.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/updateDeviceMetadata.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 
@@ -56,8 +56,8 @@ service GrpcGateway {
     };
   }
 
-  // Retrieve resource from the device.
-  rpc RetrieveResourceFromDevice(RetrieveResourceFromDeviceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceRetrieved) {
+  // Get resource from the device.
+  rpc GetResourceFromDevice(GetResourceFromDeviceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceRetrieved) {
     option (google.api.http) = {
       get: "/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"
     };
@@ -66,8 +66,8 @@ service GrpcGateway {
     };
   }
 
-  // Retrieve resources from the resource shadow.
-  rpc RetrieveResources(RetrieveResourcesRequest) returns (stream Resource) {
+  // Get resources from the resource shadow.
+  rpc GetResources(GetResourcesRequest) returns (stream Resource) {
     option (google.api.http) = {
       get: "/api/v1/resources"
     };
@@ -140,8 +140,8 @@ service GrpcGateway {
     };
   }
 
-  // Retrieves pending commands for devices .
-  rpc RetrievePendingCommands(RetrievePendingCommandsRequest) returns (stream PendingCommand) {
+  // Gets pending commands for devices .
+  rpc GetPendingCommands(GetPendingCommandsRequest) returns (stream PendingCommand) {
     option (google.api.http) = {
       get: "/api/v1/pending-commands"
     };
@@ -150,8 +150,8 @@ service GrpcGateway {
     };
   }
  
-  // Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.
-  rpc RetrieveDevicesMetadata(RetrieveDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated) {
+  // Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
+  rpc GetDevicesMetadata(GetDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated) {
     option (google.api.http) = {
       get: "/api/v1/devices-metadata"
     };

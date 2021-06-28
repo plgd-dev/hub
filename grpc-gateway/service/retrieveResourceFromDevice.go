@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (r *RequestHandler) RetrieveResourceFromDevice(ctx context.Context, req *pb.RetrieveResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
+func (r *RequestHandler) GetResourceFromDevice(ctx context.Context, req *pb.GetResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
 	retrieveCommand, err := req.ToRACommand(ctx)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resource: %v", err))

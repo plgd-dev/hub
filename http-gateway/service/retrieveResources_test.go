@@ -62,10 +62,10 @@ func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 	}
 }
 
-func TestRequestHandler_RetrieveResources(t *testing.T) {
+func TestRequestHandler_GetResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.RetrieveResourcesRequest
+		req *pb.GetResourcesRequest
 	}
 	tests := []struct {
 		name    string
@@ -76,7 +76,7 @@ func TestRequestHandler_RetrieveResources(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{
+				req: &pb.GetResourcesRequest{
 					ResourceIdsFilter: []string{
 						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},

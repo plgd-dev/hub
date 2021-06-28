@@ -8,21 +8,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (r *RequestHandler) RetrievePendingCommands(req *pb.RetrievePendingCommandsRequest, srv pb.GrpcGateway_RetrievePendingCommandsServer) error {
+func (r *RequestHandler) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
 	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
 	if err != nil {
 		return kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
 	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), owner)
 	if err != nil {
-		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot retrieve pending commands: %v", err))
+		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot retrieve devices metadata: %v", err))
 	}
 
 	rs := NewResourceShadow(r.resourceProjection, deviceIDs)
-	err = rs.RetrievePendingCommands(req, srv)
+	err = rs.GetDevicesMetadata(req, srv)
 	if err != nil {
 		return log.LogAndReturnError(err)
 	}
 
 	return nil
+
 }

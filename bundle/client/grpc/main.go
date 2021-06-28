@@ -238,7 +238,7 @@ func main() {
 		if *href != "" {
 			resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(*deviceID, *href).ToString())
 		}
-		getClient, err := ocfGW.RetrieveResources(ctx, &pbGW.RetrieveResourcesRequest{
+		getClient, err := ocfGW.GetResources(ctx, &pbGW.GetResourcesRequest{
 			ResourceIdsFilter: resourceIdsFilter,
 			DeviceIdsFilter:   deviceIdsFilter,
 		})

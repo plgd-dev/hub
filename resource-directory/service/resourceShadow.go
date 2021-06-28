@@ -68,7 +68,7 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 	return resources, err
 }
 
-func (rd *ResourceShadow) RetrieveResources(req *pb.RetrieveResourcesRequest, srv pb.GrpcGateway_RetrieveResourcesServer) error {
+func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
 	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (rd *ResourceShadow) RetrieveResources(req *pb.RetrieveResourcesRequest, sr
 	return nil
 }
 
-func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommandsRequest, srv pb.GrpcGateway_RetrievePendingCommandsServer) error {
+func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
 	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandsFilter())
 	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdsFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
 		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdsFilter())
@@ -126,7 +126,7 @@ func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommand
 	return nil
 }
 
-func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.RetrieveDevicesMetadataRequest) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
+func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.GetDevicesMetadataRequest) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
 	result := make(map[string]*events.DeviceMetadataSnapshotTaken)
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
@@ -145,7 +145,7 @@ func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devi
 	return result, nil
 }
 
-func (rd *ResourceShadow) RetrieveDevicesMetadata(req *pb.RetrieveDevicesMetadataRequest, srv pb.GrpcGateway_RetrieveDevicesMetadataServer) error {
+func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
 	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
 	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {

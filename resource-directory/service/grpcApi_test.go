@@ -174,10 +174,10 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
+func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.RetrieveResourceFromDeviceRequest
+		req pb.GetResourceFromDeviceRequest
 	}
 	tests := []struct {
 		name            string
@@ -189,7 +189,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /light/2",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
@@ -199,7 +199,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /oic/d",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
@@ -209,7 +209,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -236,7 +236,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 17; i++ {
-				got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
+				got, err := c.GetResourceFromDevice(ctx, &tt.args.req)
 				if tt.wantErr {
 					require.Error(t, err)
 				} else {
@@ -946,7 +946,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subReceivedID := ev.SubscriptionId
 
-	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
+	_, err = c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 	})
 	require.NoError(t, err)

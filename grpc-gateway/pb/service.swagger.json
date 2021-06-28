@@ -121,8 +121,8 @@
     },
     "/api/v1/devices-metadata": {
       "get": {
-        "summary": "Retrieves metadata of the devices. Is contains online/offline or shadown synchronization status.",
-        "operationId": "GrpcGateway_RetrieveDevicesMetadata",
+        "summary": "Gets metadata of the devices. Is contains online/offline or shadown synchronization status.",
+        "operationId": "GrpcGateway_GetDevicesMetadata",
         "responses": {
           "200": {
             "description": "A successful response.(streaming responses)",
@@ -299,8 +299,8 @@
     },
     "/api/v1/devices/{resourceId.deviceId}/resources/{resourceId.href}": {
       "get": {
-        "summary": "Retrieve resource from the device.",
-        "operationId": "GrpcGateway_RetrieveResourceFromDevice",
+        "summary": "Get resource from the device.",
+        "operationId": "GrpcGateway_GetResourceFromDevice",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -385,8 +385,8 @@
     },
     "/api/v1/pending-commands": {
       "get": {
-        "summary": "Retrieves pending commands for devices .",
-        "operationId": "GrpcGateway_RetrievePendingCommands",
+        "summary": "Gets pending commands for devices .",
+        "operationId": "GrpcGateway_GetPendingCommands",
         "responses": {
           "200": {
             "description": "A successful response.(streaming responses)",
@@ -520,8 +520,8 @@
     },
     "/api/v1/resources": {
       "get": {
-        "summary": "Retrieve resources from the resource shadow.",
-        "operationId": "GrpcGateway_RetrieveResources",
+        "summary": "Get resources from the resource shadow.",
+        "operationId": "GrpcGateway_GetResources",
         "responses": {
           "200": {
             "description": "A successful response.(streaming responses)",
@@ -686,6 +686,17 @@
         }
       }
     },
+    "GetPendingCommandsRequestCommand": {
+      "type": "string",
+      "enum": [
+        "RESOURCE_CREATE",
+        "RESOURCE_RETRIEVE",
+        "RESOURCE_UPDATE",
+        "RESOURCE_DELETE",
+        "DEVICE_METADATA_UPDATE"
+      ],
+      "default": "RESOURCE_CREATE"
+    },
     "OperationProcessedErrorStatus": {
       "type": "object",
       "properties": {
@@ -696,17 +707,6 @@
           "type": "string"
         }
       }
-    },
-    "RetrievePendingCommandsRequestCommand": {
-      "type": "string",
-      "enum": [
-        "RESOURCE_CREATE",
-        "RESOURCE_RETRIEVE",
-        "RESOURCE_UPDATE",
-        "RESOURCE_DELETE",
-        "DEVICE_METADATA_UPDATE"
-      ],
-      "default": "RESOURCE_CREATE"
     },
     "SubscribeToEventsCancelSubscription": {
       "type": "object",
@@ -1113,9 +1113,9 @@
           "type": "string",
           "format": "uint64"
         },
-        "timestampMs": {
+        "timestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "connectionId": {
           "type": "string"

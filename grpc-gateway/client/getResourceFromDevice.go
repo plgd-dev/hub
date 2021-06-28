@@ -16,11 +16,11 @@ func (c *Client) getResourceFromDevice(
 	codec Codec,
 	response interface{},
 ) error {
-	r := pbGW.RetrieveResourceFromDeviceRequest{
+	r := pbGW.GetResourceFromDeviceRequest{
 		ResourceId:        commands.NewResourceID(deviceID, href),
 		ResourceInterface: resourceInterface,
 	}
-	resp, err := c.gateway.RetrieveResourceFromDevice(ctx, &r)
+	resp, err := c.gateway.GetResourceFromDevice(ctx, &r)
 	if err != nil {
 		return fmt.Errorf("cannot retrieve resource from device /%v%v: %w", deviceID, href, err)
 	}

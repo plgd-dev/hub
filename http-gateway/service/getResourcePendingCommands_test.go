@@ -38,7 +38,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 	type args struct {
 		deviceID       string
 		href           string
-		commandsFilter []pb.RetrievePendingCommandsRequest_Command
+		commandsFilter []pb.GetPendingCommandsRequest_Command
 	}
 	tests := []struct {
 		name    string
@@ -89,7 +89,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			args: args{
 				deviceID:       deviceID,
 				href:           "/oic/d",
-				commandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_CREATE},
+				commandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -117,7 +117,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			args: args{
 				deviceID:       deviceID,
 				href:           "/oic/d",
-				commandsFilter: []pb.RetrievePendingCommandsRequest_Command{pb.RetrievePendingCommandsRequest_RESOURCE_DELETE},
+				commandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -189,7 +189,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 	retrieve := func() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
+		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 			ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
 		})
 		require.Error(t, err)
@@ -234,7 +234,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				CommandsFilter []pb.RetrievePendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
+				CommandsFilter []pb.GetPendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
 			}
 			opt := Options{
 				CommandsFilter: tt.args.commandsFilter,

@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (r *RequestHandler) RetrieveDevicesMetadata(req *pb.RetrieveDevicesMetadataRequest, srv pb.GrpcGateway_RetrieveDevicesMetadataServer) error {
+func (r *RequestHandler) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
 	ctx := srv.Context()
-	rd, err := r.resourceDirectoryClient.RetrieveDevicesMetadata(ctx, req)
+	rd, err := r.resourceDirectoryClient.GetDevicesMetadata(ctx, req)
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve devices metadata: %v", err))
 	}

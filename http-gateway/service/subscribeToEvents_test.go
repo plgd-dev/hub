@@ -662,7 +662,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subReceivedID := ev.SubscriptionId
 
-	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
+	_, err = c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 	})
 	require.NoError(t, err)

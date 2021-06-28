@@ -63,7 +63,7 @@ func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEv
 		sendEmptyOffline := true
 		sendEmptyOnline := true
 		anyDevice := false
-		client, err := s.gwClient.RetrieveDevicesMetadata(ctx, &pb.RetrieveDevicesMetadataRequest{})
+		client, err := s.gwClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{})
 		if err != nil {
 			return nil, err
 		}
