@@ -25,6 +25,7 @@ type eventUnmarshaler struct {
 	aggregateID string
 	groupID     string
 	isSnapshot  bool
+	timestamp   int64
 }
 
 func (e *eventUnmarshaler) Version() uint64 {
@@ -41,6 +42,9 @@ func (e *eventUnmarshaler) GroupID() string {
 }
 func (e *eventUnmarshaler) IsSnapshot() bool {
 	return e.isSnapshot
+}
+func (e *eventUnmarshaler) Timestamp() time.Time {
+	return time.Unix(0, e.timestamp)
 }
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return nil
