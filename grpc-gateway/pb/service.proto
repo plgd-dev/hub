@@ -29,8 +29,8 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     };
   };
   schemes: [ HTTPS ];
-  consumes: "application/json";
-  produces: "application/json";
+  consumes: [ "application/json", "application/jsonpb" ];
+  produces: [ "application/json", "application/jsonpb" ];
 };
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";

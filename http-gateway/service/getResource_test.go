@@ -13,7 +13,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -47,6 +46,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 		resourceHref      string
 		shadow            *bool
 		resourceInterface string
+		accept            string
 	}
 	tests := []struct {
 		name    string
@@ -55,10 +55,11 @@ func TestRequestHandler_GetResource(t *testing.T) {
 		want    *events.ResourceChanged
 	}{
 		{
-			name: "get from resource shadow",
+			name: "jsonpb: get from resource shadow",
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/light/1",
+				accept:       uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceChanged{
 				ResourceId: &commands.ResourceId{
@@ -80,11 +81,12 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			},
 		},
 		{
-			name: "get from device with interface",
+			name: "jsonpb: get from device with interface",
 			args: args{
 				deviceID:          deviceID,
 				resourceHref:      "/light/1",
 				resourceInterface: "oic.if.baseline",
+				accept:            uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceChanged{
 				ResourceId: &commands.ResourceId{
@@ -106,11 +108,12 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			},
 		},
 		{
-			name: "get from device with disabled shadow",
+			name: "jsonpb: get from device with disabled shadow",
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/light/1",
 				shadow:       NewBool(false),
+				accept:       uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceChanged{
 				ResourceId: &commands.ResourceId{
@@ -154,7 +157,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).AuthToken(token)
+			req := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).AuthToken(token).Accept(tt.args.accept)
 			if tt.args.shadow != nil {
 				req.Shadow(*tt.args.shadow)
 			}
@@ -175,7 +178,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			values := make([]*events.ResourceChanged, 0, 1)
 			for {
 				var value events.ResourceChanged
-				err = service.Unmarshal(resp.StatusCode, decoder, &value)
+				err = Unmarshal(resp.StatusCode, decoder, &value)
 				if err == io.EOF {
 					break
 				}

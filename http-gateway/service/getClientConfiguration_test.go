@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
@@ -59,7 +58,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 			decoder := marshaler.NewDecoder(resp.Body)
 
 			var got pb.ClientConfigurationResponse
-			err = service.Unmarshal(resp.StatusCode, decoder, &got)
+			err = Unmarshal(resp.StatusCode, decoder, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

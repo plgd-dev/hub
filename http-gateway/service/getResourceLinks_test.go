@@ -137,7 +137,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 			decoder := marshaler.NewDecoder(resp.Body)
 			for {
 				var v events.ResourceLinksPublished
-				err = service.Unmarshal(resp.StatusCode, decoder, &v)
+				err = Unmarshal(resp.StatusCode, decoder, &v)
 				if err == io.EOF {
 					break
 				}

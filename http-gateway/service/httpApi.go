@@ -36,7 +36,10 @@ func NewRequestHandler(config *Config, client *client.Client, caClient pbCA.Cert
 		client:   client,
 		caClient: caClient,
 		config:   config,
-		mux:      runtime.NewServeMux(),
+		mux: runtime.NewServeMux(
+			runtime.WithMarshalerOption(uri.ApplicationJsonPBContentType, newJsonpbMarshaler()),
+			runtime.WithMarshalerOption(runtime.MIMEWildcard, newJsonMarshaler()),
+		),
 	}
 }
 
@@ -119,8 +122,16 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	// ws grpc-proxy
 	ws := wsproxy.WebsocketProxy(requestHandler.mux, wsproxy.WithRequestMutator(func(incoming, outgoing *http.Request) *http.Request {
 		outgoing.Method = http.MethodPost
+		accept := incoming.Header.Get("Accept")
+		if accept != "" {
+			outgoing.Header.Set("Accept", accept)
+		}
+		accept = incoming.URL.Query().Get("accept")
+		if accept != "" {
+			outgoing.Header.Set("Accept", accept)
+		}
 		return outgoing
-	}), wsproxy.WithLogger(logger{}))
+	}))
 	r.PathPrefix(uri.APIWS + "/").HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ws.ServeHTTP(rw, r)
 	})

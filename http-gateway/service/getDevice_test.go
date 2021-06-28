@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -99,7 +98,7 @@ func TestRequestHandler_GetDevice(t *testing.T) {
 			devices := make([]*pb.Device, 0, 1)
 			for {
 				var dev pb.Device
-				err = service.Unmarshal(resp.StatusCode, decoder, &dev)
+				err = Unmarshal(resp.StatusCode, decoder, &dev)
 				if err == io.EOF {
 					break
 				}

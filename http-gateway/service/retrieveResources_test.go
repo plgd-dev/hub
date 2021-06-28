@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -65,7 +64,8 @@ func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 func TestRequestHandler_GetResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.GetResourcesRequest
+		req    *pb.GetResourcesRequest
+		accept string
 	}
 	tests := []struct {
 		name    string
@@ -81,6 +81,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.Resource{
 				{
@@ -143,7 +144,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodGet, uri.Resources, nil).AuthToken(token).SetQuery(v.Encode()).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.Resources, nil).AuthToken(token).Accept(tt.args.accept).SetQuery(v.Encode()).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -160,7 +161,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 			values := make([]*pb.Resource, 0, 1)
 			for {
 				var value pb.Resource
-				err = service.Unmarshal(resp.StatusCode, decoder, &value)
+				err = Unmarshal(resp.StatusCode, decoder, &value)
 				if err == io.EOF {
 					break
 				}

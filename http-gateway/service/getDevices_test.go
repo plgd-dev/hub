@@ -17,7 +17,6 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -121,7 +120,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			devices := make([]*pb.Device, 0, 1)
 			for {
 				var dev pb.Device
-				err = service.Unmarshal(resp.StatusCode, decoder, &dev)
+				err = Unmarshal(resp.StatusCode, decoder, &dev)
 				if err == io.EOF {
 					break
 				}

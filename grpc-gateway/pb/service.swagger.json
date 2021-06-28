@@ -22,10 +22,12 @@
     "https"
   ],
   "consumes": [
-    "application/json"
+    "application/json",
+    "application/jsonpb"
   ],
   "produces": [
-    "application/json"
+    "application/json",
+    "application/jsonpb"
   ],
   "paths": {
     "/.well-known/ocfcloud-configuration": {

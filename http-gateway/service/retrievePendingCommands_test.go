@@ -20,7 +20,6 @@ import (
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -89,7 +88,8 @@ func cmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCo
 func TestRequestHandler_GetPendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.GetPendingCommandsRequest
+		req    *pb.GetPendingCommandsRequest
+		accept string
 	}
 	tests := []struct {
 		name    string
@@ -105,6 +105,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -133,6 +134,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					DeviceIdsFilter: []string{deviceID},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -212,6 +214,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -233,6 +236,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -261,6 +265,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -282,6 +287,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -310,6 +316,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					TypeFilter: []string{"oic.wk.d"},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -349,6 +356,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -478,7 +486,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodGet, uri.PendingCommands, nil).AuthToken(token).SetQuery(v.Encode()).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.PendingCommands, nil).AuthToken(token).Accept(tt.args.accept).SetQuery(v.Encode()).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -495,7 +503,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			decoder := marshaler.NewDecoder(resp.Body)
 			for {
 				var v pb.PendingCommand
-				err = service.Unmarshal(resp.StatusCode, decoder, &v)
+				err = Unmarshal(resp.StatusCode, decoder, &v)
 				if err == io.EOF {
 					break
 				}

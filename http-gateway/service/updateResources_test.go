@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -26,14 +25,14 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
-func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token string) (*events.ResourceUpdated, error) {
+func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, accept string) (*events.ResourceUpdated, error) {
 	var m jsonpb.Marshaler
 	data, err := m.MarshalToString(req)
 	if err != nil {
 		return nil, err
 	}
 
-	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Build()
+	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Accept(accept).Build()
 	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
@@ -51,7 +50,7 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token st
 	decoder := marshaler.NewDecoder(resp.Body)
 
 	var got events.ResourceUpdated
-	err = service.Unmarshal(resp.StatusCode, decoder, &got)
+	err = Unmarshal(resp.StatusCode, decoder, &got)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,8 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token st
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.UpdateResourceRequest
+		req    *pb.UpdateResourceRequest
+		accept string
 	}
 	tests := []struct {
 		name    string
@@ -81,6 +81,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						}),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceUpdated{
 				ResourceId: &commands.ResourceId{
@@ -106,6 +107,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						}),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceUpdated{
 				ResourceId: &commands.ResourceId{
@@ -131,6 +133,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						}),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceUpdated{
 				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
@@ -152,6 +155,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 						}),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceUpdated{
 				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
@@ -167,6 +171,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			wantErr: true,
 		},
@@ -195,7 +200,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateResource(ctx, tt.args.req, token)
+			got, err := updateResource(ctx, tt.args.req, token, tt.args.accept)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

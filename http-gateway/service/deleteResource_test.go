@@ -8,7 +8,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -30,6 +29,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	type args struct {
 		deviceID     string
 		resourceHref string
+		accept       string
 	}
 	tests := []struct {
 		name        string
@@ -43,6 +43,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/light/2",
+				accept:       uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceDeleted{
 				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
@@ -57,6 +58,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/unknown",
+				accept:       uri.ApplicationJsonPBContentType,
 			},
 			wantErr:     true,
 			wantErrCode: codes.NotFound,
@@ -66,6 +68,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/oic/d",
+				accept:       uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceDeleted{
 				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
@@ -99,7 +102,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodDelete, uri.DeviceResourceLink, nil).DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).AuthToken(token).Build()
+			request := httpgwTest.NewRequest(http.MethodDelete, uri.DeviceResourceLink, nil).DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).AuthToken(token).Accept(tt.args.accept).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -115,7 +118,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			decoder := marshaler.NewDecoder(resp.Body)
 
 			var got events.ResourceDeleted
-			err = service.Unmarshal(resp.StatusCode, decoder, &got)
+			err = Unmarshal(resp.StatusCode, decoder, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())

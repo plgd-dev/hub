@@ -15,6 +15,8 @@ const (
 	ResourcesPathKey       = "resources"
 	PendingCommandsPathKey = "pending-commands"
 
+	ApplicationJsonPBContentType = "application/jsonpb"
+
 	API   string = "/api/v1"
 	APIWS string = API + "/ws"
 

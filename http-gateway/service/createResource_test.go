@@ -10,7 +10,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -31,7 +30,8 @@ import (
 func TestRequestHandler_CreateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.CreateResourceRequest
+		req    *pb.CreateResourceRequest
+		accept string
 	}
 	tests := []struct {
 		name        string
@@ -44,7 +44,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -53,6 +53,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 						}),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			wantErr:     true,
 			wantErrCode: codes.NotFound,
@@ -60,7 +61,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -69,6 +70,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 						}),
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: &events.ResourceCreated{
 				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
@@ -105,9 +107,9 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var m jsonpb.Marshaler
-			data, err := m.MarshalToString(&tt.args.req)
+			data, err := m.MarshalToString(tt.args.req)
 			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Build()
+			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Accept(tt.args.accept).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -123,7 +125,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			decoder := marshaler.NewDecoder(resp.Body)
 
 			var got events.ResourceCreated
-			err = service.Unmarshal(resp.StatusCode, decoder, &got)
+			err = Unmarshal(resp.StatusCode, decoder, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())

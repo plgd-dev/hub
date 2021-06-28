@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -89,7 +88,7 @@ func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
 			decoder := marshaler.NewDecoder(resp.Body)
 			for {
 				var v events.ResourceLinksPublished
-				err = service.Unmarshal(resp.StatusCode, decoder, &v)
+				err = Unmarshal(resp.StatusCode, decoder, &v)
 				if err == io.EOF {
 					break
 				}

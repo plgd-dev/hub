@@ -14,7 +14,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/service"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -34,7 +34,8 @@ const TEST_TIMEOUT = time.Second * 30
 func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		sub pb.SubscribeToEvents
+		sub    pb.SubscribeToEvents
+		accept string
 	}
 	tests := []struct {
 		name string
@@ -47,6 +48,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 				sub: pb.SubscribeToEvents{
 					Token: "testToken",
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 
 			want: []*pb.Event{
@@ -118,6 +120,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 						},
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.Event{
 				{
@@ -157,6 +160,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 						},
 					},
 				},
+				accept: uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.Event{
 				{
@@ -207,7 +211,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			d.TLSClientConfig = &tls.Config{
 				RootCAs: test.GetRootCertificatePool(t),
 			}
-			wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/devices/events", config.HTTP_GW_HOST), header)
+			wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/devices/events?accept=%v", config.HTTP_GW_HOST, tt.args.accept), header)
 			require.NoError(t, err)
 			defer wsConn.Close()
 
@@ -226,7 +230,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 				var event pb.Event
 				marshaler := runtime.JSONPb{}
 				decoder := marshaler.NewDecoder(reader)
-				err = service.Unmarshal(http.StatusOK, decoder, &event)
+				err = Unmarshal(http.StatusOK, decoder, &event)
 				return &event, err
 			}
 
@@ -287,6 +291,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	header := make(http.Header)
 	header.Set("Sec-Websocket-Protocol", "Bearer, "+token)
+	header.Set("Accept", uri.ApplicationJsonPBContentType)
 	d := &websocket.Dialer{
 		Proxy:            http.ProxyFromEnvironment,
 		HandshakeTimeout: 45 * time.Second,
@@ -313,7 +318,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		var event pb.Event
 		marshaler := runtime.JSONPb{}
 		decoder := marshaler.NewDecoder(reader)
-		err = service.Unmarshal(http.StatusOK, decoder, &event)
+		err = Unmarshal(http.StatusOK, decoder, &event)
 		return &event, err
 	}
 
