@@ -1,8 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"encoding/base64"
-	"fmt"
+	encodingJson "encoding/json"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -104,6 +105,7 @@ func (j *jsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	if err != nil {
 		return data, err
 	}
+
 	var val interface{}
 	err = json.Decode(data, &val)
 	if err != nil {
@@ -113,11 +115,14 @@ func (j *jsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	if replace {
 		val = newContent
 	}
-	newData, err := json.Encode(val)
+	w := bytes.NewBuffer(make([]byte, 0, len(data)))
+
+	encoder := encodingJson.NewEncoder(w)
+	encoder.SetEscapeHTML(false)
+	err = encoder.Encode(val)
 	if err != nil {
 		return data, nil
 	}
-	fmt.Printf("newData: %s\n", newData)
 
-	return newData, err
+	return w.Bytes(), err
 }
