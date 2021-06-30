@@ -8,6 +8,7 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
@@ -73,13 +74,12 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 	if !u.cfg.Enabled || authCtx.Expire.UnixNano() < validUntil.UnixNano() {
 		validUntil = authCtx.Expire
 	}
-
 	_, err = client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId: authCtx.GetDeviceID(),
 		Update: &commands.UpdateDeviceMetadataRequest_Status{
 			Status: &commands.ConnectionStatus{
 				Value:      commands.ConnectionStatus_ONLINE,
-				ValidUntil: validUntil.UnixNano(),
+				ValidUntil: pkgTime.UnixNano(validUntil),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{

@@ -3,10 +3,11 @@ package events
 import (
 	"time"
 
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"google.golang.org/protobuf/proto"
 )
 
-const eventTypeResourceChanged = "ocf.cloud.resourceaggregate.events.resourcechanged"
+const eventTypeResourceChanged = "resourcechanged"
 
 func (e *ResourceChanged) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
@@ -37,5 +38,5 @@ func (e *ResourceChanged) IsSnapshot() bool {
 }
 
 func (e *ResourceChanged) Timestamp() time.Time {
-	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
+	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }

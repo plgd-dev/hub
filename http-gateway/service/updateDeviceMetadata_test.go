@@ -115,11 +115,11 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
-	s, err := subscriber.New(testCfg.MakeSubscriberConfig(), logger)
+	s, err := subscriber.New(testCfg.MakeSubscriberConfig(), logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	tmp := uuid.New()
 	v := NewContentChangedFilter()
-	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetTopics(deviceID), v)
+	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject(deviceID), v)
 	require.NoError(t, err)
 	defer obs.Close()
 

@@ -19,7 +19,7 @@ func TestSignIn(t *testing.T) {
 	r, err := s.service.SignIn(context.Background(), newSignInRequest())
 	require.NoError(t, err)
 	assert := assert.New(t)
-	assert.True(3595 < r.ExpiresIn && r.ExpiresIn <= 3600)
+	assert.True(0 < r.ValidUntil)
 	_, ok := retrieveDevice(t, s.service.persistence, testDeviceID, testUserID)
 	assert.True(ok)
 }
@@ -35,7 +35,7 @@ func TestPermanentTokensExpiration(t *testing.T) {
 	r, err := s.service.SignIn(context.Background(), newSignInRequest())
 	require.NoError(t, err)
 	assert := assert.New(t)
-	assert.Equal(int64(-1), r.ExpiresIn)
+	assert.Equal(int64(0), r.GetValidUntil())
 }
 
 func TestUnauthorizedDevice(t *testing.T) {

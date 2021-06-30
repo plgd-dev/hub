@@ -7,6 +7,7 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -230,7 +231,7 @@ func (i *iter) Next(ctx context.Context) (eventbus.EventUnmarshaler, bool) {
 			eventType:       i.e.GetEventType(),
 			groupID:         i.e.GetGroupId(),
 			isSnapshot:      i.e.GetIsSnapshot(),
-			timestamp:       time.Unix(0, i.e.GetTimestamp()),
+			timestamp:       pkgTime.Unix(0, i.e.GetTimestamp()),
 			dataUnmarshaler: i.dataUnmarshaler,
 		}, true
 	}

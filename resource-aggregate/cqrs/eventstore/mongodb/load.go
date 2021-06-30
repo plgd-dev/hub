@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
@@ -129,7 +130,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		i.aggregateID,
 		i.groupID,
 		isSnapshot,
-		time.Unix(0, timestamp),
+		pkgTime.Unix(0, timestamp),
 		func(v interface{}) error {
 			return i.dataUnmarshaler(data.Data, v)
 		}), true

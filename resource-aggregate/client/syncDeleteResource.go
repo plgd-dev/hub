@@ -56,7 +56,7 @@ func (h *deleteHandler) recv(ctx context.Context) (*events.ResourceDeleted, erro
 // SyncDeleteResource sends delete resource command to resource aggregate and wait for resource deleted event from eventbus.
 func (c *Client) SyncDeleteResource(ctx context.Context, req *commands.DeleteResourceRequest) (*events.ResourceDeleted, error) {
 	h := newDeleteHandler(req.GetCorrelationId())
-	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
+	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetDeviceSubject(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}

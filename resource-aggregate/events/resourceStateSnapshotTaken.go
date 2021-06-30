@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 
 	"google.golang.org/grpc/codes"
@@ -20,7 +21,7 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 )
 
-const eventTypeResourceStateSnapshotTaken = "ocf.cloud.resourceaggregate.events.resourcestatesnapshottaken"
+const eventTypeResourceStateSnapshotTaken = "resourcestatesnapshottaken"
 
 const errInvalidVersion = "invalid version for events"
 const errInvalidCommandMetadata = "invalid command metadata"
@@ -54,7 +55,7 @@ func (e *ResourceStateSnapshotTaken) IsSnapshot() bool {
 }
 
 func (e *ResourceStateSnapshotTaken) Timestamp() time.Time {
-	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
+	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {

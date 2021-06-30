@@ -64,7 +64,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		AccessToken:  response.AccessToken,
 		UserID:       response.UserId,
 		RefreshToken: response.RefreshToken,
-		ExpiresIn:    response.ExpiresIn,
+		ExpiresIn:    validUntilToExpiresIn(response.GetValidUntil()),
 		RedirectURI:  response.RedirectUri,
 	}
 

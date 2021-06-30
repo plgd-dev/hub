@@ -18,10 +18,10 @@ import (
 )
 
 func TestSubscriber(t *testing.T) {
-	topics := []string{"test_subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test_subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}
+	publishTopics := []string{"test.subscriber.topic0." + uuid.Must(uuid.NewV4()).String(), "test.subscriber.topic1." + uuid.Must(uuid.NewV4()).String()}
+	subscriberTopics := []string{ /*"test.subscriber.topic0.>",*/ "test.subscriber.*.>", "test.subscriber.*.>"}
 
 	timeout := time.Second * 30
-	waitForSubscription := time.Millisecond * 100
 
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
@@ -40,7 +40,7 @@ func TestSubscriber(t *testing.T) {
 	require.NoError(t, err)
 	defer subscriber.Close()
 
-	acceptanceTest(t, context.Background(), timeout, waitForSubscription, topics, publisher, subscriber)
+	acceptanceTest(t, context.Background(), timeout, publishTopics, subscriberTopics, publisher, subscriber)
 }
 
 type mockEvent struct {
@@ -125,10 +125,10 @@ func testWaitForAnyEvent(timeout time.Duration, eh1 *mockEventHandler, eh2 *mock
 	}
 }
 
-func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionId string, topics []string) (*mockEventHandler, eventbus.Observer) {
+func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.Subscriber, subscriptionId string, publishTopics []string) (*mockEventHandler, eventbus.Observer) {
 	t.Log("Subscribe to testNewSubscription")
 	m := newMockEventHandler()
-	ob, err := subscriber.Subscribe(ctx, subscriptionId, topics, m)
+	ob, err := subscriber.Subscribe(ctx, subscriptionId, publishTopics, m)
 	require.NoError(t, err)
 	require.NotNil(t, ob)
 	if ob == nil {
@@ -146,8 +146,8 @@ func testNewSubscription(t *testing.T, ctx context.Context, subscriber eventbus.
 //       publisher := NewPublisher()
 //       subscriber := NewSubscriber()
 //       timeout := time.Second*5
-//       topics := []string{"a", "b"}
-//       eventbus.AcceptanceTest(t, ctx, timeout, topics, publisher, subscriber)
+//       publishTopics := []string{"a", "b"}
+//       eventbus.AcceptanceTest(t, ctx, timeout, publishTopics, publisher, subscriber)
 //   }
 //
 
@@ -156,7 +156,7 @@ type Path struct {
 	GroupId     string
 }
 
-func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, waitForSubscription time.Duration, topics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
+func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, publishTopics, subscribeTopics []string, publisher eventbus.Publisher, subscriber eventbus.Subscriber) {
 	//savedEvents := []Event{}
 	AggregateID1 := "aggregateID1"
 	AggregateID2 := "aggregateID2"
@@ -212,19 +212,17 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 		},
 	}
 
-	require.Equal(t, 2, len(topics))
+	require.Equal(t, 2, len(publishTopics))
 
 	t.Log("Without subscription")
-	err := publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
+	err := publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
 	require.NoError(t, err)
-	time.Sleep(waitForSubscription)
 
 	// Add handlers and observers.
 	t.Log("Subscribe to first topic")
-	m0, ob0 := testNewSubscription(t, ctx, subscriber, "sub-0", topics[0:1])
-	time.Sleep(waitForSubscription)
+	m0, ob0 := testNewSubscription(t, ctx, subscriber, "sub-0", subscribeTopics[0:1])
 
-	err = publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
+	err = publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
 	require.NoError(t, err)
 
 	event0, err := m0.waitForEvent(timeout)
@@ -234,30 +232,28 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	err = ob0.Close()
 	require.NoError(t, err)
 	t.Log("Subscribe more observers")
-	m1, ob1 := testNewSubscription(t, ctx, subscriber, "sub-1", topics[1:2])
+	m1, ob1 := testNewSubscription(t, ctx, subscriber, "sub-1", subscribeTopics[1:2])
 	defer func() {
 		err = ob1.Close()
 		require.NoError(t, err)
 	}()
-	m2, ob2 := testNewSubscription(t, ctx, subscriber, "sub-2", topics[1:2])
+	m2, ob2 := testNewSubscription(t, ctx, subscriber, "sub-2", subscribeTopics[1:2])
 	defer func() {
 		err = ob2.Close()
 		require.NoError(t, err)
 	}()
-	m3, ob3 := testNewSubscription(t, ctx, subscriber, "sub-shared", topics[0:1])
+	m3, ob3 := testNewSubscription(t, ctx, subscriber, "sub-shared", subscribeTopics[0:1])
 	defer func() {
 		err = ob3.Close()
 		require.NoError(t, err)
 	}()
-	m4, ob4 := testNewSubscription(t, ctx, subscriber, "sub-shared", topics[0:1])
+	m4, ob4 := testNewSubscription(t, ctx, subscriber, "sub-shared", subscribeTopics[0:1])
 	defer func() {
 		err = ob4.Close()
 		require.NoError(t, err)
 	}()
 
-	time.Sleep(waitForSubscription)
-
-	err = publisher.Publish(ctx, topics, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[2])
+	err = publisher.Publish(ctx, publishTopics, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[2])
 	require.NoError(t, err)
 
 	event1, err := m1.waitForEvent(timeout)
@@ -273,9 +269,8 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	require.Equal(t, eventsToPublish[2], event3)
 
 	topic := "new_topic_" + uuid.Must(uuid.NewV4()).String()
-	topics = append(topics, topic)
-	err = ob4.SetTopics(ctx, topics)
-	time.Sleep(waitForSubscription)
+	publishTopics = append(publishTopics, topic)
+	err = ob4.SetTopics(ctx, publishTopics)
 	require.NoError(t, err)
 
 	err = publisher.Publish(ctx, []string{topic}, aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[3])

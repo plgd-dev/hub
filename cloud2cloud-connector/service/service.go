@@ -22,6 +22,7 @@ import (
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
@@ -138,7 +139,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create logger: %v", err)
 	}
 
-	sub, err := subscriber.New(config.Nats, logger)
+	sub, err := subscriber.New(config.Nats, logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		log.Fatalf("cannot create subscriber: %v", err)
 	}

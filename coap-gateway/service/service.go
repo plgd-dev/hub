@@ -27,6 +27,7 @@ import (
 	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/net"
@@ -79,7 +80,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 		return nil, fmt.Errorf("cannot job queue %w", err)
 	}
 
-	resourceSubscriber, err := subscriber.New(config.Clients.Eventbus.NATS, logger, subscriber.WithGoPool(func(f func()) error { return p.Submit(f) }))
+	resourceSubscriber, err := subscriber.New(config.Clients.Eventbus.NATS, logger, subscriber.WithGoPool(func(f func()) error { return p.Submit(f) }), subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		p.Release()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)

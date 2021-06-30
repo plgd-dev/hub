@@ -22,7 +22,7 @@ func TestSignUp(t *testing.T) {
 
 	assert.Equal(o.t.AccessToken, r.AccessToken)
 	assert.Equal(o.t.RefreshToken, r.RefreshToken)
-	assert.True(3595 < r.ExpiresIn && r.ExpiresIn <= 3600)
+	assert.True(r.ValidUntil > 0)
 	assert.Equal(o.t.Owner, r.UserId)
 	_, ok := retrieveDevice(t, s.service.persistence, testDeviceID, r.UserId)
 	assert.True(ok)
@@ -63,7 +63,7 @@ func TestPermanentToken(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(o.t.AccessToken, r.AccessToken)
 	assert.Equal(o.t.RefreshToken, r.RefreshToken)
-	assert.Equal(int64(-1), r.ExpiresIn)
+	assert.Equal(int64(0), r.ValidUntil)
 	assert.Equal(o.t.Owner, r.UserId)
 }
 

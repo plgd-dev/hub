@@ -56,7 +56,7 @@ func (h *retrieveHandler) recv(ctx context.Context) (*events.ResourceRetrieved, 
 // SyncRetrieveResource sends retrieve resource command to resource aggregate and wait for resource retrieved event from eventbus.
 func (c *Client) SyncRetrieveResource(ctx context.Context, req *commands.RetrieveResourceRequest) (*events.ResourceRetrieved, error) {
 	h := newRetrieveHandler(req.GetCorrelationId())
-	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetTopics(req.GetResourceId().GetDeviceId()), h)
+	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), utils.GetDeviceSubject(req.GetResourceId().GetDeviceId()), h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}

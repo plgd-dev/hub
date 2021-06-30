@@ -165,7 +165,7 @@ func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc)
 	ctx, cancel := getContext()
 	defer cancel()
 
-	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetTopics(deviceID), &s)
+	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetDeviceSubject(deviceID), &s)
 	if err != nil {
 		return nil, err
 	}

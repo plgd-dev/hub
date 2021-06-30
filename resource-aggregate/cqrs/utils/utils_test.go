@@ -12,7 +12,7 @@ import (
 func TestDummyForCoverage(t *testing.T) {
 	deviceID := "dev"
 
-	utils.GetTopics(deviceID)
+	utils.GetDeviceSubject(deviceID)
 	sequence := uint64(1234)
 	version := uint64(5)
 	connId := "c"

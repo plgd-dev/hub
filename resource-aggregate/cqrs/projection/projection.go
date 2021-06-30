@@ -29,7 +29,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	}
 	return &Projection{
 		cqrsProjection: cqrsProjection,
-		topicManager:   NewTopicManager(utils.GetTopics),
+		topicManager:   NewTopicManager(utils.GetDeviceSubject),
 		refCountMap:    kitSync.NewMap(),
 	}, nil
 }

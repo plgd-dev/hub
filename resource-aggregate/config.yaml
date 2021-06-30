@@ -38,6 +38,7 @@ clients:
   eventBus:
     nats:
       url: ""
+      jetstream: false
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
