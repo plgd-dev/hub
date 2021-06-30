@@ -61,6 +61,15 @@ var groupIDaggregateIDQueryIndex = bson.D{
 	{Key: isActiveKey, Value: 1},
 }
 
+var aggregateIDLatestTimestampQueryIndex = bson.D{
+	{Key: aggregateIDKey, Value: 1},
+	{Key: latestTimestampKey, Value: 1},
+}
+
+var eventsTimestampQueryIndex = bson.D{
+	{Key: eventsKey + "." + timestampKey, Value: 1},
+}
+
 type signOperator string
 
 const (
@@ -190,7 +199,15 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	}
 
 	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
-	err = s.ensureIndex(ctx, col, aggregateIDLastVersionQueryIndex, aggregateIDFirstVersionQueryIndex, groupIDQueryIndex, groupIDaggregateIDQueryIndex)
+	err = s.ensureIndex(ctx,
+		col,
+		aggregateIDLastVersionQueryIndex,
+		aggregateIDFirstVersionQueryIndex,
+		groupIDQueryIndex,
+		groupIDaggregateIDQueryIndex,
+		aggregateIDLatestTimestampQueryIndex,
+		eventsTimestampQueryIndex,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)
 	}
