@@ -54,7 +54,7 @@ func NewMockEventHandler() *mockEventHandler {
 	return &mockEventHandler{events: make(map[string]map[string][]eventstore.Event)}
 }
 
-func (eh *mockEventHandler) SetElement(groupId, aggrageId string, e mockEvent) {
+func (eh *mockEventHandler) SetElement(groupId, aggregateId string, e mockEvent) {
 	var device map[string][]eventstore.Event
 	var ok bool
 
@@ -64,7 +64,7 @@ func (eh *mockEventHandler) SetElement(groupId, aggrageId string, e mockEvent) {
 		device = make(map[string][]eventstore.Event)
 		eh.events[groupId] = device
 	}
-	device[aggrageId] = append(device[aggrageId], e)
+	device[aggregateId] = append(device[aggregateId], e)
 }
 
 func (eh *mockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) error {
@@ -126,42 +126,64 @@ func getEvents(fromVersion uint64, num uint64, firstEventSnapshot bool, groupID 
 	return e
 }
 
+const aggregateID1 = "aggregateID1"
+const aggregateID2 = "aggregateID2"
+const aggregateID3 = "aggregateID3"
+const aggregateID4 = "aggregateID4"
+
+const groupID1 = "deviceId1"
+const groupID2 = "deviceId2"
+const groupID3 = "deviceId3"
+
+func emptySaveFailTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
+	t.Log("try save no events")
+	saveStatus, err := store.Save(ctx, nil)
+	require.Error(t, err)
+	require.Equal(t, eventstore.Fail, saveStatus)
+}
+
+func invalidTimpestampFailTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
+	t.Log("try save descreasing timestamp")
+	timestamp := time.Date(2021, time.April, 1, 13, 37, 00, 0, time.UTC).UnixNano()
+	events := getEvents(0, 2, false, groupID1, aggregateID1, timestamp)
+	mockEvent := events[1].(mockEvent)
+	mockEvent.timestamp = timestamp - 1
+	events[1] = mockEvent
+	saveStatus, err := store.Save(ctx, events...)
+	require.Error(t, err)
+	require.Equal(t, eventstore.Fail, saveStatus)
+}
+
 func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventStore) {
-	AggregateID1 := "aggregateID1"
-	AggregateID2 := "aggregateID2"
-	AggregateID3 := "aggregateID3"
-	AggregateID4 := "aggregateID4"
 	type Path struct {
 		GroupID     string
 		AggregateID string
 	}
 
 	aggregateID1Path := Path{
-		AggregateID: AggregateID1,
-		GroupID:     "deviceId",
+		AggregateID: aggregateID1,
+		GroupID:     groupID1,
 	}
 	aggregateID2Path := Path{
-		AggregateID: AggregateID2,
-		GroupID:     "deviceId",
+		AggregateID: aggregateID2,
+		GroupID:     groupID1,
 	}
 	aggregateID3Path := Path{
-		AggregateID: AggregateID3,
-		GroupID:     "deviceId1",
+		AggregateID: aggregateID3,
+		GroupID:     groupID2,
 	}
 	aggregateID4Path := Path{
-		AggregateID: AggregateID4,
-		GroupID:     "deviceId2",
+		AggregateID: aggregateID4,
+		GroupID:     groupID3,
 	}
 
 	timestamp := time.Date(2021, time.April, 1, 13, 37, 00, 0, time.UTC).UnixNano()
 
-	t.Log("save no events")
-	saveStatus, err := store.Save(ctx, nil)
-	require.Error(t, err)
-	require.Equal(t, eventstore.Fail, saveStatus)
+	emptySaveFailTest(t, ctx, store)
+	invalidTimpestampFailTest(t, ctx, store)
 
 	t.Log("save event, VersionI 0")
-	saveStatus, err = store.Save(ctx, getEvents(0, 6, false, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, timestamp)[0])
+	saveStatus, err := store.Save(ctx, getEvents(0, 6, false, aggregateID1Path.GroupID, aggregateID1Path.AggregateID, timestamp)[0])
 	require.NoError(t, err)
 	require.Equal(t, eventstore.Ok, saveStatus)
 
