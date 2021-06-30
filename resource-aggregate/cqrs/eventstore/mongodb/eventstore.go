@@ -35,6 +35,7 @@ const idKey = "_id"
 const firstVersionKey = "firstversion"
 const latestVersionKey = "latestversion"
 const latestSnapshotVersionKey = "latestsnapshotversion"
+const latestTimestampKey = "latesttimestamp"
 const eventsKey = "events"
 const groupIDKey = "groupid"
 const isActiveKey = "isactive"
@@ -252,7 +253,6 @@ func getLatestSnapshotVersion(events []eventstore.Event) (uint64, error) {
 		}
 	}
 	return latestSnapshotVersion, err
-
 }
 
 func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
@@ -271,6 +271,7 @@ func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, erro
 		latestVersionKey:         events[len(events)-1].Version(),
 		firstVersionKey:          events[0].Version(),
 		latestSnapshotVersionKey: latestSnapshotVersion,
+		latestTimestampKey:       events[len(events)-1].Timestamp().UnixNano(),
 		isActiveKey:              true,
 		eventsKey:                e,
 	}, nil
