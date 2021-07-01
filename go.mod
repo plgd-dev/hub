@@ -23,7 +23,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.4.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa
-	github.com/plgd-dev/kit v0.0.0-20210517131053-7dfd49bb6277
+	github.com/plgd-dev/kit v0.0.0-20210614190235-99984a49de48
 	github.com/plgd-dev/sdk v0.0.0-20210531080443-39f8a08bee53
 	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasthttp v1.24.0
