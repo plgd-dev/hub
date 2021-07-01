@@ -20,7 +20,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx v1.2.0
 	github.com/nats-io/nats.go v1.11.0
-	github.com/panjf2000/ants/v2 v2.4.5
+	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa
 	github.com/plgd-dev/kit v0.0.0-20210517131053-7dfd49bb6277
