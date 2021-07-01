@@ -31,7 +31,7 @@
     "react-scripts": "4.0.3",
     "react-select": "^4.0.2",
     "react-table": "^7.6.3",
-    "react-toastify": "^7.0.3",
+    "react-toastify": "7.0.4",
     "redux": "^4.0.5",
     "redux-batched-actions": "^0.5.0",
     "uuid": "^8.3.2",
