@@ -77,7 +77,7 @@ env: clean certificates nats mongo privateKeys
 	docker build ./device-simulator --network=host -t device-simulator --target service
 	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
-DIRECTORIES:=$(foreach dir,$(shell ls -d ./*/),${dir})
+DIRECTORIES:=$(foreach dir,$(shell ls -d ./*/ | grep -v 'utility'),${dir})
 
 define RUN-TESTS-IN-DIRECTORY
 	docker run \
