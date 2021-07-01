@@ -6,7 +6,7 @@ require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9
-	github.com/go-ocf/kit v0.0.0-20200728130040-4aebdb6982bc
+	github.com/go-ocf/kit 99984a49de48
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/snappy v0.0.3
 	github.com/google/go-github v17.0.0+incompatible
