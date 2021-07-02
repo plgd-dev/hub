@@ -8,16 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -100,7 +98,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	shutdownHttp := testHttp.SetUp(t)
+	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
 	token := oauthTest.GetServiceToken(t)
@@ -126,11 +124,10 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	defer obs.Close()
 
 	updateDeviceShadowSynchronization := func(ctx context.Context, in *pb.UpdateDeviceMetadataRequest) (*pb.UpdateDeviceMetadataResponse, error) {
-		var m jsonpb.Marshaler
-		data, err := m.MarshalToString(in)
+		data, err := protojson.Marshal(in)
 		require.NoError(t, err)
 
-		request := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader([]byte(data))).AuthToken(token).DeviceId(deviceID).Build()
+		request := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader(data)).AuthToken(token).DeviceId(deviceID).Build()
 		trans := http.DefaultTransport.(*http.Transport).Clone()
 		trans.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
@@ -142,11 +139,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
-		marshaler := runtime.JSONPb{}
-		decoder := marshaler.NewDecoder(resp.Body)
-
 		var got pb.UpdateDeviceMetadataResponse
-		err = Unmarshal(resp.StatusCode, decoder, &got)
+		err = Unmarshal(resp.StatusCode, resp.Body, &got)
 		if err != nil {
 			return nil, err
 		}

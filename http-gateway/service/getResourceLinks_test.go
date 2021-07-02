@@ -8,14 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -67,7 +65,7 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	shutdownHttp := testHttp.SetUp(t)
+	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
 	for _, tt := range tests {
@@ -85,11 +83,9 @@ func TestRequestHandler_GetResourceLinks(t *testing.T) {
 			defer resp.Body.Close()
 
 			var links []*events.ResourceLinksPublished
-			marshaler := runtime.JSONPb{}
-			decoder := marshaler.NewDecoder(resp.Body)
 			for {
 				var v events.ResourceLinksPublished
-				err = Unmarshal(resp.StatusCode, decoder, &v)
+				err = Unmarshal(resp.StatusCode, resp.Body, &v)
 				if err == io.EOF {
 					break
 				}

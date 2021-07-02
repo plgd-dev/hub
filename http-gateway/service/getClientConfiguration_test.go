@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
@@ -37,7 +36,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	shutdownHttp := testHttp.SetUp(t)
+	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
 	for _, tt := range tests {
@@ -55,11 +54,8 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			marshaler := runtime.JSONPb{}
-			decoder := marshaler.NewDecoder(resp.Body)
-
 			var got pb.ClientConfigurationResponse
-			err = Unmarshal(resp.StatusCode, decoder, &got)
+			err = Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

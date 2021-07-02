@@ -5,7 +5,6 @@ import (
 	"fmt"
 	netHttp "net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -14,6 +13,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/status"
 	grpcCodes "google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func errToJsonRes(err error) map[string]string {
@@ -39,8 +39,6 @@ func writeError(w netHttp.ResponseWriter, err error) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.ErrToStatus(err))
 
-	var v jsonpb.Marshaler
-
 	var grpcErr grpcErr
 	var s *status.Status
 	if errors.As(err, &grpcErr) {
@@ -59,10 +57,13 @@ func writeError(w netHttp.ResponseWriter, err error) {
 		s = grpcStatus.New(grpcCodes.Unknown, err.Error()).Proto()
 	}
 
-	errStr, err2 := v.MarshalToString(s)
+	v := protojson.MarshalOptions{
+		EmitUnpopulated: true,
+	}
+	errStr, err2 := v.Marshal(s)
 	if err != nil {
 		log.Errorf("cannot marshal grpc error(%v): %v", err, err2)
 		return
 	}
-	fmt.Fprintln(w, errStr)
+	fmt.Fprintln(w, string(errStr))
 }

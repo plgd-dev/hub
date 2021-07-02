@@ -14,7 +14,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -185,7 +185,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	shutdownHttp := testHttp.SetUp(t)
+	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
 	token := oauthTest.GetServiceToken(t)
@@ -229,9 +229,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					return nil, err
 				}
 				var event pb.Event
-				marshaler := runtime.JSONPb{}
-				decoder := marshaler.NewDecoder(reader)
-				err = Unmarshal(http.StatusOK, decoder, &event)
+				err = Unmarshal(http.StatusOK, reader, &event)
 				return &event, err
 			}
 
@@ -279,7 +277,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	token := oauthTest.GetServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	shutdownHttp := testHttp.SetUp(t)
+	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -317,9 +315,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			return nil, err
 		}
 		var event pb.Event
-		marshaler := runtime.JSONPb{}
-		decoder := marshaler.NewDecoder(reader)
-		err = Unmarshal(http.StatusOK, decoder, &event)
+		err = Unmarshal(http.StatusOK, reader, &event)
 		return &event, err
 	}
 

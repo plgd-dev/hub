@@ -7,14 +7,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -212,7 +210,7 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	shutdownHttp := testHttp.SetUp(t)
+	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
 	token := oauthTest.GetServiceToken(t)
@@ -241,12 +239,10 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			marshaler := runtime.JSONPb{}
-			decoder := marshaler.NewDecoder(resp.Body)
 			values := make([]*pb.Resource, 0, 1)
 			for {
 				var value pb.Resource
-				err = Unmarshal(resp.StatusCode, decoder, &value)
+				err = Unmarshal(resp.StatusCode, resp.Body, &value)
 				if err == io.EOF {
 					break
 				}

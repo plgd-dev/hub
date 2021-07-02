@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -21,7 +20,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -394,7 +392,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 	defer authShutdown()
 	defer oauthShutdown()
 
-	shutdownHttp := testHttp.SetUp(t)
+	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
 	token := oauthTest.GetServiceToken(t)
@@ -500,11 +498,9 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			defer resp.Body.Close()
 
 			var values []*pb.PendingCommand
-			marshaler := runtime.JSONPb{}
-			decoder := marshaler.NewDecoder(resp.Body)
 			for {
 				var v pb.PendingCommand
-				err = Unmarshal(resp.StatusCode, decoder, &v)
+				err = Unmarshal(resp.StatusCode, resp.Body, &v)
 				if err == io.EOF {
 					break
 				}

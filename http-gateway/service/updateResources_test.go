@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
@@ -27,8 +26,7 @@ import (
 )
 
 func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, accept string) (*events.ResourceUpdated, error) {
-	var m jsonpb.Marshaler
-	data, err := m.MarshalToString(req)
+	data, err := protojson.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
@@ -47,11 +45,8 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, a
 	}
 	defer resp.Body.Close()
 
-	marshaler := runtime.JSONPb{}
-	decoder := marshaler.NewDecoder(resp.Body)
-
 	var got events.ResourceUpdated
-	err = Unmarshal(resp.StatusCode, decoder, &got)
+	err = Unmarshal(resp.StatusCode, resp.Body, &got)
 	if err != nil {
 		return nil, err
 	}

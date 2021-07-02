@@ -7,7 +7,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gofrs/uuid v4.0.0+incompatible
-	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.1.0

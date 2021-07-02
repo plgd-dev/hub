@@ -1,16 +1,16 @@
 package service_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	grpcStatus "google.golang.org/grpc/status"
-	"google.golang.org/protobuf/runtime/protoiface"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type Decoder = interface {
@@ -19,17 +19,16 @@ type Decoder = interface {
 
 func UnmarshalError(data []byte) error {
 	var s status.Status
-	unmarshaler := jsonpb.Unmarshaler{}
-	err := unmarshaler.Unmarshal(bytes.NewReader(data), &s)
+	err := protojson.Unmarshal(data, &s)
 	if err != nil {
 		return err
 	}
 	return grpcStatus.ErrorProto(&s)
 }
 
-func Unmarshal(code int, decoder Decoder, v protoiface.MessageV1) error {
+func Unmarshal(code int, input io.Reader, v protoreflect.ProtoMessage) error {
 	var data json.RawMessage
-	err := decoder.Decode(&data)
+	err := json.NewDecoder(input).Decode(&data)
 	if err != nil {
 		return err
 	}
@@ -49,8 +48,7 @@ func Unmarshal(code int, decoder Decoder, v protoiface.MessageV1) error {
 		return err
 	}
 	if len(item.Result) == 0 && len(item.Error) == 0 {
-		unmarshaler := jsonpb.Unmarshaler{}
-		err = unmarshaler.Unmarshal(bytes.NewReader(data), v)
+		err := protojson.Unmarshal(data, v)
 		if err != nil {
 			return err
 		}
@@ -59,8 +57,7 @@ func Unmarshal(code int, decoder Decoder, v protoiface.MessageV1) error {
 	if len(item.Error) > 0 {
 		return UnmarshalError(item.Error)
 	}
-	unmarshaler := jsonpb.Unmarshaler{}
-	err = unmarshaler.Unmarshal(bytes.NewReader(item.Result), v)
+	err = protojson.Unmarshal(item.Result, v)
 	if err != nil {
 		return err
 	}
