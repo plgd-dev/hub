@@ -72,22 +72,22 @@ func TestMaintenance(t *testing.T) {
 
 	aggregateID1 := "aggregateID1"
 	tasksToSave := []maintenance.Task{
-		maintenance.Task{
+		{
 			AggregateID: aggregateID1,
 		},
-		maintenance.Task{
+		{
 			AggregateID: aggregateID1,
 			Version:     1,
 		},
-		maintenance.Task{
+		{
 			AggregateID: aggregateID1,
 			Version:     2,
 		},
-		maintenance.Task{
+		{
 			AggregateID: aggregateID1,
 			Version:     3,
 		},
-		maintenance.Task{
+		{
 			AggregateID: aggregateID1,
 			Version:     4,
 		},

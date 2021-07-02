@@ -245,7 +245,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, devic
 
 	setAcl := acl.UpdateRequest{
 		AccessControlList: []acl.AccessControl{
-			acl.AccessControl{
+			{
 				Permission: acl.AllPermissions,
 				Subject: acl.Subject{
 					Subject_Device: &acl.Subject_Device{
