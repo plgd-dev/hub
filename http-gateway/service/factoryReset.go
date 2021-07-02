@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
 )
 
 func (requestHandler *RequestHandler) factoryResetDevice(w http.ResponseWriter, r *http.Request) {

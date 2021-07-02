@@ -179,36 +179,36 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 		}
 	*/
 	eventsToPublish := []mockEvent{
-		mockEvent{
+		{
 			EventTypeI:   "test0",
 			AggregateIDI: AggregateID1,
 		},
-		mockEvent{
+		{
 			VersionI:     1,
 			EventTypeI:   "test1",
 			AggregateIDI: AggregateID1,
 		},
-		mockEvent{
+		{
 			VersionI:     2,
 			EventTypeI:   "test2",
 			AggregateIDI: AggregateID1,
 		},
-		mockEvent{
+		{
 			VersionI:     3,
 			EventTypeI:   "test3",
 			AggregateIDI: AggregateID1,
 		},
-		mockEvent{
+		{
 			VersionI:     4,
 			EventTypeI:   "test4",
 			AggregateIDI: AggregateID1,
 		},
-		mockEvent{
+		{
 			VersionI:     5,
 			EventTypeI:   "test5",
 			AggregateIDI: AggregateID1,
 		},
-		mockEvent{
+		{
 			VersionI:     6,
 			EventTypeI:   "test6",
 			AggregateIDI: AggregateID2,

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
