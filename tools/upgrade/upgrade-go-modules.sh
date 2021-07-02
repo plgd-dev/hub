@@ -4,7 +4,7 @@
 # Helper script to upgrade golang dependencies
 #
 
-# set -e
+set -e
 
 usage() {
 	local readonly EXIT_STATUS=$1
@@ -55,6 +55,8 @@ while getopts "ah-:" optchar; do
 			;;
 	esac
 done
+
+shift $((OPTIND-1))
 
 readonly SCRIPT_PATH=$(cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P)
 readonly CLOUD_PATH=$(realpath "${SCRIPT_PATH}/../..")
