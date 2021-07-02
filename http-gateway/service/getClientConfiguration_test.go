@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"

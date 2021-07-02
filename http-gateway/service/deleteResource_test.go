@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	testHttp "github.com/plgd-dev/cloud/http-gateway/test"

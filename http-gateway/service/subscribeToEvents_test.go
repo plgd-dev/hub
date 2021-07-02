@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
