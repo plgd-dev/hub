@@ -1,0 +1,21 @@
+# Check that only correctly formatted golang code is merged
+name: CheckFormat
+
+on:
+  pull_request:
+    branches:
+      - v2
+
+jobs:
+  format:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # fetch branches and history so `git merge-base` in check-format-on-diff works correctly
+          fetch-depth: 0
+
+      - name: Check formatting
+        shell: bash
+        run: tools/format/check-format-on-diff.sh --simplify --branch origin/${{ github.base_ref }}
