@@ -168,7 +168,8 @@ func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set 
 func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) (err error) {
 	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdsFilter)
 	if len(deviceIDs) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("DeviceDirectory.GetDevices.filterDevices returns empty deviceIDs")
+		return nil
 	}
 
 	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
@@ -192,7 +193,8 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 	}
 
 	if len(devices) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("DeviceDirectory.GetDevices.filterDevicesByUserFilters returns empty devices")
+		return nil
 	}
 
 	for _, device := range devices {

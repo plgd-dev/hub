@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
@@ -36,7 +37,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	shutdownHttp := New(t, MakeConfig(t))
+	shutdownHttp := testHttp.SetUp(t)
 	defer shutdownHttp()
 
 	for _, tt := range tests {

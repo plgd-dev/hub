@@ -1,16 +1,28 @@
 package uri
 
+import "strings"
+
 const (
 	DeviceIDKey     = "deviceId"
 	ResourceHrefKey = "resourceHref"
 
-	InterfaceQueryKey = "resourceInterface"
-	ShadowQueryKey    = "shadow"
+	ResourceInterfaceQueryKey = "resourceInterface"
+	ShadowQueryKey            = "shadow"
+	CommandsFilterQueryKey    = "commandsFilter"
+	TypeFilterQueryKey        = "typeFilter"
+	StatusFilterQueryKey      = "statusFilter"
+	DeviceIdsFilterQueryKey   = "deviceIdsFilter"
+	ResourceIdsFilterQueryKey = "resourceIdsFilter"
+	AcceptQueryKey            = "accept" // for websocket
+
+	AliasInterfaceQueryKey         = "interface"
+	AliasCommandsFilterQueryKey    = "commands"
+	AliasDeviceIdsFilterQueryKey   = "deviceIds"
+	AliasResourceIdsFilterQueryKey = "resourceIds"
+	AliasTypeFilterQueryKey        = "type"
+	AliasStatusFilterQueryKey      = "status"
 
 	CorrelationIDHeader = "CorrelationID"
-
-	CommandsFilterQueryKey = "commandsFilter"
-	TypeFilterQueryKey     = "typeFilter"
 
 	ResourcesPathKey       = "resources"
 	PendingCommandsPathKey = "pending-commands"
@@ -68,3 +80,20 @@ const (
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands == rpc RetrievePendingCommands + resourceIdFilter
 	AliasResourcePendingCommands = AliasDeviceResource + "/" + PendingCommandsPathKey
 )
+
+var QueryCaseInsensitive = map[string]string{
+	strings.ToLower(AliasInterfaceQueryKey):         ResourceInterfaceQueryKey,
+	strings.ToLower(CommandsFilterQueryKey):         CommandsFilterQueryKey,
+	strings.ToLower(DeviceIdsFilterQueryKey):        DeviceIdsFilterQueryKey,
+	strings.ToLower(ResourceIdsFilterQueryKey):      ResourceIdsFilterQueryKey,
+	strings.ToLower(ResourceInterfaceQueryKey):      ResourceInterfaceQueryKey,
+	strings.ToLower(ShadowQueryKey):                 ShadowQueryKey,
+	strings.ToLower(TypeFilterQueryKey):             TypeFilterQueryKey,
+	strings.ToLower(AliasCommandsFilterQueryKey):    CommandsFilterQueryKey,
+	strings.ToLower(AliasDeviceIdsFilterQueryKey):   DeviceIdsFilterQueryKey,
+	strings.ToLower(AliasResourceIdsFilterQueryKey): ResourceIdsFilterQueryKey,
+	strings.ToLower(AliasTypeFilterQueryKey):        TypeFilterQueryKey,
+	strings.ToLower(AcceptQueryKey):                 AcceptQueryKey,
+	strings.ToLower(StatusFilterQueryKey):           StatusFilterQueryKey,
+	strings.ToLower(AliasStatusFilterQueryKey):      StatusFilterQueryKey,
+}

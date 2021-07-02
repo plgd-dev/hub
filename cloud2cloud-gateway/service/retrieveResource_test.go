@@ -83,7 +83,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
-			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): cannot retrieve resources values: rpc error: code = NotFound desc = not found",
+			want:            "cannot retrieve resource: cannot retrieve resource(deviceID: " + deviceID + ", Href: /notFound): rpc error: code = NotFound desc = cannot retrieve resources values: not found",
 		},
 		{
 			name: "invalidAccept",

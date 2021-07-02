@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"net/url"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -57,6 +58,49 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func makeQueryCaseInsensitive(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, err := url.ParseRequestURI(r.RequestURI)
+		if err != nil {
+			log.Errorf("cannot make query case insensitive: %v", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+		queries := u.Query()
+		newQueries := make(url.Values)
+		for key, val := range queries {
+			newKey, ok := uri.QueryCaseInsensitive[strings.ToLower(key)]
+			if ok {
+				newQueries[newKey] = val
+			} else {
+				newQueries[key] = val
+			}
+		}
+		r.URL.RawQuery = newQueries.Encode()
+		r.RequestURI = u.String()
+		next.ServeHTTP(w, r)
+	})
+}
+
+func trailSlashSuffix(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, err := url.ParseRequestURI(r.RequestURI)
+		if err != nil {
+			log.Errorf("cannot trail slash suffix: %v", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+		l := len(u.Path)
+		u.Path = strings.TrimRight(u.Path, "/")
+		if l > 0 && len(u.Path) == 0 {
+			u.Path = "/"
+		}
+		r.RequestURI = u.String()
+		r.URL.Path = u.Path
+		next.ServeHTTP(w, r)
+	})
+}
+
 type logger struct{}
 
 func (logger) Warnln(v ...interface{})  { log.Warnf("%v", v) }
@@ -102,9 +146,10 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
 	}))
-	r.StrictSlash(true)
+	r.Use(makeQueryCaseInsensitive)
+	r.Use(trailSlashSuffix)
 
-	// certifica authority sign
+	// certificate authority sign
 	r.HandleFunc(uri.CertificaAuthoritySign, requestHandler.signCertificate).Methods(http.MethodPost)
 
 	// Aliases
@@ -126,7 +171,11 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		if accept != "" {
 			outgoing.Header.Set("Accept", accept)
 		}
-		accept = incoming.URL.Query().Get("accept")
+		accept = incoming.Header.Get("accept")
+		if accept != "" {
+			outgoing.Header.Set("Accept", accept)
+		}
+		accept = incoming.URL.Query().Get(uri.AcceptQueryKey)
 		if accept != "" {
 			outgoing.Header.Set("Accept", accept)
 		}

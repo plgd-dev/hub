@@ -12,6 +12,8 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/sdk/schema"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -167,7 +169,7 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdsFilt
 
 	}
 	if len(allResources) == 0 {
-		return nil, fmt.Errorf("cannot retrieve resources values: not found")
+		return nil, status.Errorf(codes.NotFound, "cannot retrieve resources values: not found")
 	}
 	return allResources, nil
 }

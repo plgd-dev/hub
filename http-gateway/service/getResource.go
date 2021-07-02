@@ -40,7 +40,7 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 	resourceHref := vars[uri.ResourceHrefKey]
 	resourceID := commands.NewResourceID(deviceID, resourceHref).ToString()
 	shadow := r.URL.Query().Get(uri.ShadowQueryKey)
-	resourceInterface := r.URL.Query().Get(uri.InterfaceQueryKey)
+	resourceInterface := r.URL.Query().Get(uri.ResourceInterfaceQueryKey)
 	if (shadow == "" || strings.ToLower(shadow) == "true") && resourceInterface == "" {
 		requestHandler.getResourceFromShadow(w, r, resourceID)
 		return

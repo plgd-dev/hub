@@ -15,6 +15,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -66,7 +67,7 @@ func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	shutdownHttp := New(t, MakeConfig(t))
+	shutdownHttp := testHttp.SetUp(t)
 	defer shutdownHttp()
 
 	for _, tt := range tests {

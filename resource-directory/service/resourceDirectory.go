@@ -5,6 +5,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/kit/strings"
 )
 
@@ -23,7 +24,8 @@ func NewResourceDirectory(projection *Projection, deviceIds []string) *ResourceD
 func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
 	deviceIDs := filterDevices(rd.userDeviceIds, in.DeviceIdsFilter)
 	if len(deviceIDs) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("ResourceDirectory.GetResourceLinks.filterDevices returns empty deviceIDs")
+		return nil
 	}
 
 	typeFilter := make(strings.Set)
@@ -34,7 +36,8 @@ func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, sr
 		return status.Errorf(codes.Internal, "cannot get resource links %v", err)
 	}
 	if len(resourceLinks) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("ResourceDirectory.GetResourceLinks.projection.GetResourceLinks returns empty resource links")
+		return nil
 	}
 
 	for _, s := range resourceLinks {

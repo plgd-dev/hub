@@ -79,8 +79,7 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 					TypeFilter: []string{"notFound"},
 				},
 			},
-			wantStatusCode: codes.NotFound,
-			wantErr:        true,
+			wantStatusCode: codes.OK,
 		},
 		{
 			name: "project_type_filter",

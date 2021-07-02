@@ -100,7 +100,7 @@ func (c *requestBuilder) ResourceInterface(v string) *requestBuilder {
 	if v == "" {
 		return c
 	}
-	c.AddQuery(uri.InterfaceQueryKey, v)
+	c.AddQuery(uri.ResourceInterfaceQueryKey, v)
 	return c
 }
 

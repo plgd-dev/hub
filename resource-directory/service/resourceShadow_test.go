@@ -43,8 +43,8 @@ func TestResourceShadow_GetResources(t *testing.T) {
 					DeviceIdsFilter: []string{Resource0.DeviceId},
 				},
 			},
-			wantStatusCode: codes.NotFound,
-			wantErr:        true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
 		},
 
 		{

@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -39,7 +40,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 		want    []*pb.Device
 	}{
 		{
-			name: "valid",
+			name: "all devices",
 			args: args{
 				req: &pb.GetDevicesRequest{},
 			},
@@ -57,6 +58,15 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "offline devices",
+			args: args{
+				req: &pb.GetDevicesRequest{
+					StatusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_OFFLINE},
+				},
+			},
+			want: []*pb.Device{},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
@@ -65,7 +75,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	shutdownHttp := New(t, MakeConfig(t))
+	shutdownHttp := testHttp.SetUp(t)
 	defer shutdownHttp()
 
 	token := oauthTest.GetServiceToken(t)
@@ -85,7 +95,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
 				TypeFilter      []string                      `url:"typeFilter,omitempty"`
-				StatusFilter    []pb.GetDevicesRequest_Status `url:"statusFilter,omitempty"`
+				StatusFilter    []pb.GetDevicesRequest_Status `url:"status,omitempty"`
 				DeviceIdsFilter []string                      `url:"deviceIdsFilter,omitempty"`
 			}
 			opt := Options{
@@ -95,7 +105,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)
-			url := fmt.Sprintf("https://%v/"+uri.Devices, config.HTTP_GW_HOST)
+			url := fmt.Sprintf("https://%v/"+uri.Devices+"/", config.HTTP_GW_HOST)
 			val := v.Encode()
 			if val != "" {
 				url = url + "?" + val

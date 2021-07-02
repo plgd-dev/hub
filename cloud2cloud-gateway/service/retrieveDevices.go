@@ -12,6 +12,8 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/sdk/schema"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Status string
@@ -59,7 +61,7 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdsFilter []stri
 		})
 	}
 	if len(devices) == 0 {
-		return nil, fmt.Errorf("cannot get devices: not found")
+		return nil, status.Errorf(codes.NotFound, "cannot get devices: not found")
 	}
 	return devices, nil
 }

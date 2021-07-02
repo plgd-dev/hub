@@ -55,7 +55,7 @@ func TestClient_GetDevices(t *testing.T) {
 				token: oauthTest.GetServiceToken(t),
 				opts:  []client.GetDevicesOption{client.WithResourceTypes("not-found")},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 

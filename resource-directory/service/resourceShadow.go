@@ -8,13 +8,14 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 func toResourceValue(resource *Resource) *pb.Resource {
 	return &pb.Resource{
-		Data:  resource.projection.content,
+		Data:  resource.GetResourceChanged(),
 		Types: resource.Resource.GetResourceTypes(),
 	}
 }
@@ -50,7 +51,7 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 	}
 	if len(internalResourceIDsFilter) == 0 {
 		if len(resourceIDsFilter) > 0 || len(deviceIdsFilter) > 0 {
-			return nil, status.Errorf(codes.NotFound, "resource ids filter doesn't match any resources")
+			return nil, nil
 		}
 		internalResourceIDsFilter = make([]*commands.ResourceId, 0, len(rd.userDeviceIds))
 		for userDeviceID := range rd.userDeviceIds {
@@ -63,7 +64,7 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 		return nil, err
 	}
 	if len(resources) == 0 {
-		return nil, status.Errorf(codes.NotFound, "not found")
+		return nil, nil
 	}
 	return resources, err
 }
@@ -72,6 +73,10 @@ func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcG
 	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
+	}
+	if len(resources) == 0 {
+		log.Debug("ResourceShadow.GetResources.filterResources returns empty resources")
+		return nil
 	}
 
 	for _, deviceResources := range resources {
@@ -111,6 +116,10 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
+	}
+	if len(resources) == 0 {
+		log.Debug("ResourceShadow.GetPendingCommands.filterResources returns empty resources")
+		return nil
 	}
 
 	for _, deviceResources := range resources {
@@ -168,7 +177,8 @@ func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, 
 	}
 
 	if len(devicesMetadata) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("ResourceShadow.GetDevicesMetadata.filterMetadataByUserFilters returns empty devicesMetadata")
+		return nil
 	}
 
 	for _, deviceMetadata := range devicesMetadata {
