@@ -19,6 +19,7 @@ Options:
     -b / --branch       branch name to be used as base for comparison (master if not set)
     -h / --help         show help
     -s / --simplify     tell gofmt to also simplify code
+    -v / --verbose      enable verbose logs
 HELP_USAGE
 
     exit ${EXIT_STATUS}
@@ -26,8 +27,9 @@ HELP_USAGE
 
 BASE_BRANCH=master
 SIMPLIFY=0
+VERBOSE=0
 
-while getopts "b:hs-:" optchar; do
+while getopts "b:hsv-:" optchar; do
     case "${optchar}" in
         -)
             case "${OPTARG}" in
@@ -39,6 +41,9 @@ while getopts "b:hs-:" optchar; do
                     ;;
                 simplify)
                     SIMPLIFY=1
+                    ;;
+                verbose)
+                    VERBOSE=1
                     ;;
                 *)
                     echo "ERROR: Unknown option --${OPTARG}" >&2
@@ -55,6 +60,9 @@ while getopts "b:hs-:" optchar; do
             ;;
         s)
             SIMPLIFY=1
+            ;;
+        v)
+            VERBOSE=1
             ;;
         *)
             echo "ERROR: Unknown option -${OPTARG}" >&2
@@ -74,14 +82,23 @@ fi
 readonly SCRIPT_DIR=$(cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P)
 readonly CLOUD_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
+function log_verbose
+{
+    if [[ ${VERBOSE} -eq 1 ]]; then
+        echo "$@"
+    fi
+}
+
+log_verbose "Changing working directory to ${CLOUD_DIR}"
 cd "${CLOUD_DIR}"
 
 if ! BASE_COMMIT=$(/usr/bin/git merge-base HEAD ${BASE_BRANCH}); then
     echo "ERROR: failed to obtain base commit" >&2
     exit 1
 fi
+log_verbose "Base commit ${BASE_COMMIT}"
 
-if ! CHANGED_FILES_OUTPUT=$(/usr/bin/git diff --diff-filter=ACMR --name-only HEAD ${BASE_COMMIT}); then
+if ! CHANGED_FILES_OUTPUT=$(/usr/bin/git diff --diff-filter=ACMR --name-only ${BASE_COMMIT} HEAD); then
     echo "ERROR: failed to obtain list of changed files" >&2
     exit 1
 fi
@@ -90,14 +107,18 @@ CHANGED_FILES=(${CHANGED_FILES_OUTPUT})
 if [[ ${#CHANGED_FILES[@]} -eq 0 ]]; then
     exit 0
 fi
+log_verbose "Changed files: ${CHANGED_FILES[@]}"
 
 for FILE in "${CHANGED_FILES[@]}"; do
     if [[ "${FILE}" =~ .go$ ]]; then
+        log_verbose "Formating file ${FILE}"
         OPTS=(-w)
         if [[ ${SIMPLIFY} -eq 1 ]]; then
             OPTS+=(-s)
         fi
         gofmt ${OPTS[@]} "${FILE}"
+    else
+        log_verbose "File ${FILE} skipped"
     fi
 done
 
