@@ -85,8 +85,7 @@ func (c *WebSocketConfig) Validate() error {
 }
 
 type ClientsConfig struct {
-	CertificateAuthority CertificateAuthority `yaml:"certificateAuthority" json:"certificateAuthority"`
-	GrpcGateway          GrpcServerConfig     `yaml:"grpcGateway" json:"grpcGateway"`
+	GrpcGateway GrpcServerConfig `yaml:"grpcGateway" json:"grpcGateway"`
 }
 
 type GrpcServerConfig struct {
@@ -94,22 +93,6 @@ type GrpcServerConfig struct {
 }
 
 func (c *GrpcServerConfig) Validate() error {
-	err := c.Connection.Validate()
-	if err != nil {
-		return fmt.Errorf("grpc.%w", err)
-	}
-	return err
-}
-
-type CertificateAuthority struct {
-	Enabled    bool          `json:"enabled" yaml:"enabled"`
-	Connection client.Config `yaml:"grpc" json:"grpc"`
-}
-
-func (c *CertificateAuthority) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
 	err := c.Connection.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)
@@ -134,11 +117,6 @@ func (c *ClientsConfig) Validate() error {
 	err := c.GrpcGateway.Validate()
 	if err != nil {
 		return fmt.Errorf("resourceAggregate.%w", err)
-	}
-
-	err = c.CertificateAuthority.Validate()
-	if err != nil {
-		return fmt.Errorf("certificateAuthority.%w", err)
 	}
 
 	return nil

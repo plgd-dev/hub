@@ -35,19 +35,6 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  certificateAuthority:
-    enabled: false
-    grpc:
-      address: ""
-      keepAlive:
-        time: 10s
-        timeout: 20s
-        permitWithoutStream: true
-      tls:
-        caPool: "/secrets/public/rootca.crt"
-        keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
-        useSystemCAPool: false
 ui:
   enabled: false
   directory: "/usr/local/var/www"

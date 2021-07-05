@@ -676,8 +676,6 @@ cat /configs/http-gateway.yaml | yq e "\
   .apis.http.authorization.http.tls.useSystemCAPool = true |
   .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
-  .clients.certificateAuthority.enabled = true |
-  .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
   .ui.enabled = true |
   .ui.oauthClient.domain = \"${OAUTH_ENDPOINT}\" |
   .ui.oauthClient.clientID = \"${OAUTH_CLIENT_ID}\" |

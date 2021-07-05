@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
@@ -76,22 +75,6 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
 	client := client.New(resourceDirectoryClient)
 
-	var caClient pbCA.CertificateAuthorityClient
-	if config.Clients.CertificateAuthority.Enabled {
-		caConn, err := grpcClient.New(config.Clients.CertificateAuthority.Connection, logger)
-		if err != nil {
-			listener.Close()
-			return nil, fmt.Errorf("cannot connect to certificate authority: %w", err)
-		}
-		listener.AddCloseFunc(func() {
-			err := caConn.Close()
-			if err != nil {
-				logger.Sugar().Errorf("error occurs during close connection to certificate authority: %v", err)
-			}
-		})
-		caClient = pbCA.NewCertificateAuthorityClient(caConn.GRPC())
-	}
-
 	whiteList := []kitNetHttp.RequestMatcher{
 		{
 			Method: http.MethodGet,
@@ -113,7 +96,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error
 		})
 	}
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
-	requestHandler := NewRequestHandler(&config, client, caClient)
+	requestHandler := NewRequestHandler(&config, client)
 
 	server := Server{
 		server:         NewHTTP(requestHandler, auth),
