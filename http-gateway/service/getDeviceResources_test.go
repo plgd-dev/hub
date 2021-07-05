@@ -40,7 +40,7 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			name: "get resource of " + deviceID,
 			args: args{
 				deviceID: deviceID,
-				accept:   uri.ApplicationJsonPBContentType,
+				accept:   uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Resource{
 				{
@@ -154,7 +154,7 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			args: args{
 				deviceID:   deviceID,
 				typeFilter: []string{"oic.wk.d", "oic.wk.p"},
-				accept:     uri.ApplicationJsonPBContentType,
+				accept:     uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Resource{
 				{

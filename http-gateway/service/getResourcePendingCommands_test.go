@@ -50,7 +50,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			args: args{
 				deviceID: deviceID,
 				href:     "/oic/d",
-				accept:   uri.ApplicationJsonPBContentType,
+				accept:   uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -90,7 +90,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 				deviceID:      deviceID,
 				href:          "/oic/d",
 				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
-				accept:        uri.ApplicationJsonPBContentType,
+				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -119,7 +119,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 				deviceID:      deviceID,
 				href:          "/oic/d",
 				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
-				accept:        uri.ApplicationJsonPBContentType,
+				accept:        uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{

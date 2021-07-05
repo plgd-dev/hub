@@ -58,7 +58,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/light/1",
-				accept:       uri.ApplicationJsonPBContentType,
+				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceChanged{
 				ResourceId: &commands.ResourceId{
@@ -85,7 +85,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 				deviceID:          deviceID,
 				resourceHref:      "/light/1",
 				resourceInterface: "oic.if.baseline",
-				accept:            uri.ApplicationJsonPBContentType,
+				accept:            uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceChanged{
 				ResourceId: &commands.ResourceId{
@@ -112,7 +112,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 				deviceID:     deviceID,
 				resourceHref: "/light/1",
 				shadow:       NewBool(false),
-				accept:       uri.ApplicationJsonPBContentType,
+				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceChanged{
 				ResourceId: &commands.ResourceId{

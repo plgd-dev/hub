@@ -49,7 +49,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 				sub: pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 
 			want: []*pb.Event{
@@ -121,7 +121,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 						},
 					},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Event{
 				{
@@ -161,7 +161,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 						},
 					},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Event{
 				{
@@ -290,7 +290,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	header := make(http.Header)
 	header.Set("Sec-Websocket-Protocol", "Bearer, "+token)
-	header.Set("Accept", uri.ApplicationJsonPBContentType)
+	header.Set("Accept", uri.ApplicationProtoJsonContentType)
 	d := &websocket.Dialer{
 		Proxy:            http.ProxyFromEnvironment,
 		HandshakeTimeout: 45 * time.Second,

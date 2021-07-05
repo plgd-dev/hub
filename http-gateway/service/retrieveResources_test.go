@@ -80,7 +80,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Resource{
 				{

@@ -49,7 +49,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 				req: &pb.GetPendingCommandsRequest{
 					DeviceIdFilter: []string{deviceID},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -130,7 +130,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 					DeviceIdFilter: []string{deviceID},
 					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -153,7 +153,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 					DeviceIdFilter: []string{deviceID},
 					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -183,7 +183,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 					DeviceIdFilter: []string{deviceID},
 					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -206,7 +206,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 					DeviceIdFilter: []string{deviceID},
 					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -236,7 +236,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 					DeviceIdFilter: []string{deviceID},
 					TypeFilter:     []string{"oic.wk.d"},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -277,7 +277,7 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 					DeviceIdFilter: []string{deviceID},
 					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept: uri.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{

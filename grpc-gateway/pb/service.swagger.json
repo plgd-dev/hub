@@ -23,11 +23,11 @@
   ],
   "consumes": [
     "application/json",
-    "application/jsonpb"
+    "application/protojson"
   ],
   "produces": [
     "application/json",
-    "application/jsonpb"
+    "application/protojson"
   ],
   "paths": {
     "/.well-known/ocfcloud-configuration": {

@@ -23,14 +23,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestRequestHandler_CreateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req    *pb.CreateResourceRequest
-		accept string
+		req         *pb.CreateResourceRequest
+		accept      string
+		contentType string
 	}
 	tests := []struct {
 		name        string
@@ -52,13 +52,14 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 						}),
 					},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:     true,
 			wantErrCode: codes.NotFound,
 		},
 		{
-			name: "/oic/d - PermissionDenied",
+			name: "/oic/d - PermissionDenied - " + uri.ApplicationProtoJsonContentType,
 			args: args{
 				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
@@ -69,7 +70,32 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 						}),
 					},
 				},
-				accept: uri.ApplicationJsonPBContentType,
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: uri.ApplicationProtoJsonContentType,
+			},
+			want: &events.ResourceCreated{
+				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+				Status:     commands.Status_FORBIDDEN,
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+			},
+			wantErrCode: codes.OK,
+		},
+		{
+			name: "/oic/d - PermissionDenied - " + message.AppJSON.String(),
+			args: args{
+				req: &pb.CreateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: message.AppJSON.String(),
 			},
 			want: &events.ResourceCreated{
 				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
@@ -105,9 +131,9 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := protojson.Marshal(tt.args.req.GetContent())
+			data, err := getContentData(tt.args.req.GetContent(), tt.args.contentType)
 			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Accept(tt.args.accept).Build()
+			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Accept(tt.args.accept).ContentType(tt.args.contentType).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

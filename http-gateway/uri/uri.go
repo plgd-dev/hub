@@ -14,6 +14,7 @@ const (
 	DeviceIdFilterQueryKey    = "deviceIdFilter"
 	ResourceIdFilterQueryKey  = "resourceIdFilter"
 	AcceptQueryKey            = "accept" // for websocket
+	CorrelationIDQueryKey     = "correlationId"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"
@@ -22,12 +23,14 @@ const (
 	AliasTypeFilterQueryKey       = "type"
 	AliasStatusFilterQueryKey     = "status"
 
-	CorrelationIDHeader = "CorrelationID"
+	CorrelationIDHeaderKey = "Correlation-Id"
+	ContentTypeHeaderKey   = "Content-Type"
 
 	ResourcesPathKey       = "resources"
+	ResourceLinksPathKey   = "resource-links"
 	PendingCommandsPathKey = "pending-commands"
 
-	ApplicationJsonPBContentType = "application/jsonpb"
+	ApplicationProtoJsonContentType = "application/protojson"
 
 	API   string = "/api/v1"
 	APIWS string = API + "/ws"
@@ -48,9 +51,9 @@ const (
 	AliasDevice = Devices + "/{" + DeviceIDKey + "}"
 
 	//(GRPC + HTTP) GET /api/v1/resource-links -> rpc GetResourceLinks
-	ResourceLinks = API + "/resource-links"
+	ResourceLinks = API + "/" + ResourceLinksPathKey
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resource-links
-	AliasDeviceResourceLinks = AliasDevice + "/resource-links"
+	AliasDeviceResourceLinks = AliasDevice + "/" + ResourceLinksPathKey
 
 	Resources = API + "/" + ResourcesPathKey
 
@@ -66,7 +69,7 @@ const (
 
 	// (GRPC + HTTP) DELETE /api/v1/devices/{deviceId}/resource-links/{resourceHref} -> rpc DeleteResource
 	// (GRPC + HTTP) CREATE /api/v1/devices/{deviceId}/resource-links/{resourceHref} -> rpc CreateResource
-	DeviceResourceLink = AliasDevice + "/resource-links/{" + ResourceHrefKey + "}"
+	DeviceResourceLink = AliasDeviceResourceLinks + "/{" + ResourceHrefKey + "}"
 
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/ -> rpc RetrieveResources + deviceIdFilter
 	AliasDeviceResources = AliasDevice + "/" + ResourcesPathKey
@@ -96,4 +99,5 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(AcceptQueryKey):                AcceptQueryKey,
 	strings.ToLower(StatusFilterQueryKey):          StatusFilterQueryKey,
 	strings.ToLower(AliasStatusFilterQueryKey):     StatusFilterQueryKey,
+	strings.ToLower(CorrelationIDQueryKey):         CorrelationIDQueryKey,
 }

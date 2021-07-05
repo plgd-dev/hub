@@ -38,7 +38,7 @@ func NewRequestHandler(config *Config, client *client.Client, caClient pbCA.Cert
 		caClient: caClient,
 		config:   config,
 		mux: runtime.NewServeMux(
-			runtime.WithMarshalerOption(uri.ApplicationJsonPBContentType, newJsonpbMarshaler()),
+			runtime.WithMarshalerOption(uri.ApplicationProtoJsonContentType, newJsonpbMarshaler()),
 			runtime.WithMarshalerOption(runtime.MIMEWildcard, newJsonMarshaler()),
 		),
 	}
@@ -54,6 +54,30 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
+}
+
+func correlationIDHeaderToQuery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		correlationID := r.Header.Get(uri.CorrelationIDHeaderKey)
+		if correlationID == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		u, err := url.ParseRequestURI(r.RequestURI)
+		if err != nil {
+			log.Errorf("cannot make query case insensitive: %v", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+		queries := u.Query()
+		qCorrelationID := queries.Get(uri.CorrelationIDQueryKey)
+		if qCorrelationID == "" {
+			queries.Set(uri.CorrelationIDQueryKey, qCorrelationID)
+		}
+		r.URL.RawQuery = queries.Encode()
+		r.RequestURI = u.String()
 		next.ServeHTTP(w, r)
 	})
 }
@@ -139,6 +163,19 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	return false
 }
 
+func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
+	paths := splitDevicePath(r.RequestURI, uri.Devices)
+	if len(paths) > 2 && paths[1] == uri.ResourceLinksPathKey {
+		if rm.Vars == nil {
+			rm.Vars = make(map[string]string)
+		}
+		rm.Vars[uri.DeviceIDKey] = paths[0]
+		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:], "/"), "?")[0]
+		return true
+	}
+	return false
+}
+
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) *http.Server {
 	r0 := router.NewRouter()
@@ -147,6 +184,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
 	}))
 	r0.Use(makeQueryCaseInsensitive)
+	r0.Use(correlationIDHeaderToQuery)
 	r0.Use(trailSlashSuffix)
 	r := router.NewRouter()
 	r0.PathPrefix("/").Handler(r)
@@ -157,8 +195,10 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.HandleFunc(uri.AliasDeviceResources, requestHandler.getDeviceResources).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevicePendingCommands, requestHandler.getDevicePendingCommands).Methods(http.MethodGet)
 
+	r.PathPrefix(uri.Devices).Methods(http.MethodPost).MatcherFunc(resourceLinksMatcher).HandlerFunc(requestHandler.createResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.getResourcePendingCommands)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.getResource)
+	r.PathPrefix(uri.Devices).Methods(http.MethodPut).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.updateResource)
 
 	// register grpc-proxy handler
 	pb.RegisterGrpcGatewayHandlerClient(context.Background(), requestHandler.mux, requestHandler.client.GrpcGatewayClient())

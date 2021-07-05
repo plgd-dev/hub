@@ -42,7 +42,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/light/2",
-				accept:       uri.ApplicationJsonPBContentType,
+				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceDeleted{
 				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
@@ -57,7 +57,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/unknown",
-				accept:       uri.ApplicationJsonPBContentType,
+				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			wantErr:     true,
 			wantErrCode: codes.NotFound,
@@ -67,7 +67,7 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: "/oic/d",
-				accept:       uri.ApplicationJsonPBContentType,
+				accept:       uri.ApplicationProtoJsonContentType,
 			},
 			want: &events.ResourceDeleted{
 				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),

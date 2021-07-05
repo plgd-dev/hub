@@ -166,7 +166,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	}, token, uri.ApplicationJsonPBContentType)
+	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
 	require.NoError(t, err)
 	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
@@ -177,7 +177,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	}, token, uri.ApplicationJsonPBContentType)
+	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
 	require.NoError(t, err)
 
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
@@ -202,7 +202,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 				"power": 2,
 			}),
 		},
-	}, token, uri.ApplicationJsonPBContentType)
+	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
 	require.NoError(t, err)
 	_, err = updateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
@@ -213,7 +213,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 				"power": 0,
 			}),
 		},
-	}, token, uri.ApplicationJsonPBContentType)
+	}, token, uri.ApplicationProtoJsonContentType, uri.ApplicationProtoJsonContentType)
 	require.NoError(t, err)
 
 	evResourceChanged = v.WaitForResourceChanged(time.Second)

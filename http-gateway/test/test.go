@@ -125,6 +125,14 @@ func (c *requestBuilder) Accept(accept string) *requestBuilder {
 	return c
 }
 
+func (c *requestBuilder) ContentType(contentType string) *requestBuilder {
+	if contentType == "" {
+		return c
+	}
+	c.header[uri.ContentTypeHeaderKey] = contentType
+	return c
+}
+
 func (c *requestBuilder) AddQuery(key string, value ...string) *requestBuilder {
 	c.queryParams[key] = append(c.queryParams[key], value...)
 	return c
