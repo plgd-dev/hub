@@ -1,0 +1,17 @@
+# Run static analysis checks
+name: Static Analysis
+
+on:
+  pull_request:
+    branches:
+      - v2
+
+jobs:
+  analysis:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run go vet
+        run: go vet ./... || echo "Go vet detected issues"
