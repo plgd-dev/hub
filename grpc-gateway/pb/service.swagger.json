@@ -886,7 +886,7 @@
         "subscriptionId": {
           "type": "string"
         },
-        "token": {
+        "correlationId": {
           "type": "string"
         },
         "deviceRegistered": {
@@ -1387,7 +1387,7 @@
         "cancelSubscription": {
           "$ref": "#/definitions/SubscribeToEventsCancelSubscription"
         },
-        "token": {
+        "correlationId": {
           "type": "string"
         }
       }

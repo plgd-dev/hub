@@ -78,7 +78,7 @@ message SubscribeToEvents {
     CreateSubscription create_subscription = 1;
     CancelSubscription cancel_subscription = 2;
   }
-  string token = 101; // for pairing request SubscribeToEvents with Event.OperationProcessed
+  string correlation_id = 101; // for pairing request SubscribeToEvents with Event.OperationProcessed
 }
 
 message Event {
@@ -105,7 +105,7 @@ message Event {
   }
 
   string subscription_id = 1; // subscription id provided by grpc
-  string token = 2;
+  string correlation_id = 2;
   oneof type {
     DeviceRegistered device_registered = 3;
     DeviceUnregistered device_unregistered = 4;

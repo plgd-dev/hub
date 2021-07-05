@@ -14,7 +14,7 @@ func (s *subscription) NotifyOfRegisteredDevice(ctx context.Context, deviceIDs [
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
@@ -32,7 +32,7 @@ func (s *subscription) NotifyOfUnregisteredDevice(ctx context.Context, deviceIDs
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceUnregistered_{
 			DeviceUnregistered: &pb.Event_DeviceUnregistered{

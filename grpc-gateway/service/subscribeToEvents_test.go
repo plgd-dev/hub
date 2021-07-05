@@ -33,7 +33,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "invalid - invalid type subscription",
 			args: args{
 				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 
@@ -46,7 +46,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_SubscriptionCanceled_{
@@ -54,7 +54,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							Reason: "not supported",
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
@@ -62,7 +62,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "devices subscription - registered",
 			args: args{
 				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
@@ -81,7 +81,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceRegistered_{
@@ -89,7 +89,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							DeviceIds: []string{deviceID},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
@@ -97,7 +97,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "devices subscription - online",
 			args: args{
 				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
@@ -116,7 +116,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceMetadataUpdated{
@@ -127,7 +127,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
@@ -135,7 +135,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "device subscription - published",
 			args: args{
 				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 							DeviceIdFilter: []string{deviceID},
@@ -155,7 +155,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				test.ResourceLinkToPublishEvent(deviceID, "testToken", test.GetAllBackendResourceLinks()),
 			},

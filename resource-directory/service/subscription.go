@@ -24,9 +24,9 @@ type subscription struct {
 	filteredResourceIDs strings.Set
 	filteredEvents      filterBitmask
 
-	id     string
-	userID string
-	token  string
+	id            string
+	userID        string
+	correlationID string
 
 	resourceProjection *Projection
 	send               SendEventFunc
@@ -40,7 +40,7 @@ type subscription struct {
 	isInitializedResource *kitSync.Map
 }
 
-func Newsubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeToEvents_CreateSubscription) *subscription {
+func Newsubscription(id, userID, correlationID string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeToEvents_CreateSubscription) *subscription {
 	filteredDeviceIDs := strings.MakeSet(devicesEvent.GetDeviceIdFilter()...)
 	filteredResourceIDs := strings.MakeSet()
 	if len(devicesEvent.GetResourceIdFilter()) > 0 {
@@ -54,7 +54,7 @@ func Newsubscription(id, userID, token string, send SendEventFunc, resourceProje
 	return &subscription{
 		userID:                        userID,
 		id:                            id,
-		token:                         token,
+		correlationID:                 correlationID,
 		send:                          send,
 		resourceProjection:            resourceProjection,
 		eventVersions:                 make(map[string]subscriptionEvent),
@@ -212,8 +212,8 @@ func (s *subscription) ID() string {
 	return s.id
 }
 
-func (s *subscription) Token() string {
-	return s.token
+func (s *subscription) CorrelationID() string {
+	return s.correlationID
 }
 
 func (s *subscription) filterByVersion(resourceID *commands.ResourceId, typeEvent string, version uint64) bool {
@@ -275,7 +275,7 @@ func (s *subscription) Close(reason error) error {
 	}
 
 	err = s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_SubscriptionCanceled_{
 			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{

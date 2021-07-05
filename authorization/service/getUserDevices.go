@@ -30,7 +30,7 @@ func logAndReturnError(err error) error {
 
 func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationService_GetUserDevicesServer, createIter func() persistence.Iterator) error {
 	deviceIdFilter := make(map[string]bool)
-	for _, deviceID := range request.GetDeviceIdFilter() {
+	for _, deviceID := range request.GetDeviceIdsFilter() {
 		deviceIdFilter[deviceID] = true
 	}
 	ids := make([]string, 0, 16)
