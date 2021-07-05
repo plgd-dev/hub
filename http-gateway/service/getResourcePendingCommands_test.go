@@ -34,10 +34,10 @@ import (
 func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		deviceID       string
-		href           string
-		commandsFilter []pb.GetPendingCommandsRequest_Command
-		accept         string
+		deviceID      string
+		href          string
+		commandFilter []pb.GetPendingCommandsRequest_Command
+		accept        string
 	}
 	tests := []struct {
 		name    string
@@ -87,10 +87,10 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 		{
 			name: "filter create commands",
 			args: args{
-				deviceID:       deviceID,
-				href:           "/oic/d",
-				commandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
-				accept:         uri.ApplicationJsonPBContentType,
+				deviceID:      deviceID,
+				href:          "/oic/d",
+				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
+				accept:        uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -116,10 +116,10 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 		{
 			name: "filter delete commands",
 			args: args{
-				deviceID:       deviceID,
-				href:           "/oic/d",
-				commandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
-				accept:         uri.ApplicationJsonPBContentType,
+				deviceID:      deviceID,
+				href:          "/oic/d",
+				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
+				accept:        uri.ApplicationJsonPBContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -236,10 +236,10 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				CommandsFilter []pb.GetPendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
+				CommandFilter []pb.GetPendingCommandsRequest_Command `url:"commandFilter,omitempty"`
 			}
 			opt := Options{
-				CommandsFilter: tt.args.commandsFilter,
+				CommandFilter: tt.args.commandFilter,
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)

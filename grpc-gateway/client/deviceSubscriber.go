@@ -289,7 +289,7 @@ func (s *DeviceSubscriber) coldStartPendingCommandsLocked(h *DeviceSubscriptionH
 	ctx, cancel := s.getContext()
 	defer cancel()
 	resp, err := s.rdClient.GetPendingCommands(ctx, &pbGRPC.GetPendingCommandsRequest{
-		DeviceIdsFilter: []string{s.deviceID},
+		DeviceIdFilter: []string{s.deviceID},
 	})
 	iter := grpc.NewIterator(resp, err)
 	for {

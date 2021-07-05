@@ -17,10 +17,10 @@ func (requestHandler *RequestHandler) getResourcePendingCommands(w http.Response
 	resourceID := commands.NewResourceID(deviceID, href).ToString()
 
 	type Options struct {
-		ResourceIdsFilter []string `url:"resourceIdsFilter"`
+		ResourceIdFilter []string `url:"resourceIdFilter"`
 	}
 	opt := Options{
-		ResourceIdsFilter: []string{resourceID},
+		ResourceIdFilter: []string{resourceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {
@@ -29,7 +29,7 @@ func (requestHandler *RequestHandler) getResourcePendingCommands(w http.Response
 	}
 	for key, values := range r.URL.Query() {
 		switch key {
-		case uri.CommandsFilterQueryKey:
+		case uri.CommandFilterQueryKey:
 			for _, v := range values {
 				q.Add(key, v)
 			}

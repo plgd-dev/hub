@@ -93,14 +93,14 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				TypeFilter      []string                      `url:"typeFilter,omitempty"`
-				StatusFilter    []pb.GetDevicesRequest_Status `url:"status,omitempty"`
-				DeviceIdsFilter []string                      `url:"deviceIdsFilter,omitempty"`
+				TypeFilter     []string                      `url:"typeFilter,omitempty"`
+				StatusFilter   []pb.GetDevicesRequest_Status `url:"status,omitempty"`
+				DeviceIdFilter []string                      `url:"deviceIdFilter,omitempty"`
 			}
 			opt := Options{
-				TypeFilter:      tt.args.req.TypeFilter,
-				StatusFilter:    tt.args.req.StatusFilter,
-				DeviceIdsFilter: tt.args.req.DeviceIdsFilter,
+				TypeFilter:     tt.args.req.TypeFilter,
+				StatusFilter:   tt.args.req.StatusFilter,
+				DeviceIdFilter: tt.args.req.DeviceIdFilter,
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)

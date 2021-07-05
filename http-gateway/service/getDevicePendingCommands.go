@@ -14,10 +14,10 @@ func (requestHandler *RequestHandler) getDevicePendingCommands(w http.ResponseWr
 	deviceID := vars[uri.DeviceIDKey]
 
 	type Options struct {
-		DeviceIdsFilter []string `url:"deviceIdsFilter"`
+		DeviceIdFilter []string `url:"deviceIdFilter"`
 	}
 	opt := Options{
-		DeviceIdsFilter: []string{deviceID},
+		DeviceIdFilter: []string{deviceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {
@@ -26,7 +26,7 @@ func (requestHandler *RequestHandler) getDevicePendingCommands(w http.ResponseWr
 	}
 	for key, values := range r.URL.Query() {
 		switch key {
-		case uri.TypeFilterQueryKey, uri.CommandsFilterQueryKey:
+		case uri.TypeFilterQueryKey, uri.CommandFilterQueryKey:
 			for _, v := range values {
 				q.Add(key, v)
 			}

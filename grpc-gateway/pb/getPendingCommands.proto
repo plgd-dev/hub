@@ -15,9 +15,9 @@ message GetPendingCommandsRequest {
       RESOURCE_DELETE = 3;
       DEVICE_METADATA_UPDATE = 4;
     }
-    repeated Command commands_filter = 1;
-    repeated string resource_ids_filter = 2;
-    repeated string device_ids_filter = 3;
+    repeated Command command_filter = 1;
+    repeated string resource_id_filter = 2;
+    repeated string device_id_filter = 3;
     repeated string type_filter = 4;
 }
 

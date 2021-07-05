@@ -35,9 +35,9 @@ type Device struct {
 	Status Status        `json:"status"`
 }
 
-func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdsFilter []string) ([]Device, error) {
+func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []string) ([]Device, error) {
 	getDevicesClient, err := rh.rdClient.GetDevices(ctx, &pbGRPC.GetDevicesRequest{
-		DeviceIdsFilter: deviceIdsFilter,
+		DeviceIdFilter: deviceIdFilter,
 	})
 
 	if err != nil {

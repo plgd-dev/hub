@@ -12,12 +12,12 @@ import (
 )
 
 // hasMatchDeviceID returns true if device id match filter.
-// An empty deviceIdsFilter matches all device ids.
-func hasMatchDeviceID(deviceId string, deviceIdsFilter map[string]bool) bool {
-	if len(deviceIdsFilter) == 0 {
+// An empty deviceIdFilter matches all device ids.
+func hasMatchDeviceID(deviceId string, deviceIdFilter map[string]bool) bool {
+	if len(deviceIdFilter) == 0 {
 		return true
 	}
-	if _, ok := deviceIdsFilter[deviceId]; ok {
+	if _, ok := deviceIdFilter[deviceId]; ok {
 		return true
 	}
 	return false
@@ -29,15 +29,15 @@ func logAndReturnError(err error) error {
 }
 
 func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationService_GetUserDevicesServer, createIter func() persistence.Iterator) error {
-	deviceIdsFilter := make(map[string]bool)
-	for _, deviceID := range request.GetDeviceIdsFilter() {
-		deviceIdsFilter[deviceID] = true
+	deviceIdFilter := make(map[string]bool)
+	for _, deviceID := range request.GetDeviceIdFilter() {
+		deviceIdFilter[deviceID] = true
 	}
 	ids := make([]string, 0, 16)
 	var d persistence.AuthorizedDevice
 	it := createIter()
 	for it.Next(&d) {
-		if hasMatchDeviceID(d.DeviceID, deviceIdsFilter) {
+		if hasMatchDeviceID(d.DeviceID, deviceIdFilter) {
 			ids = append(ids, d.DeviceID)
 		}
 	}

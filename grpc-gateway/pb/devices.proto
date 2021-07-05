@@ -15,12 +15,12 @@ message GetDevicesRequest {
 
   repeated string type_filter = 1;
   repeated Status status_filter = 2;
-  repeated string device_ids_filter = 3;
+  repeated string device_id_filter = 3;
 }
 
 message GetResourceLinksRequest {
   repeated string type_filter = 1;
-  repeated string device_ids_filter = 2;
+  repeated string device_id_filter = 2;
 }
 
 // GetResourceFromDeviceRequest retrieve value from device
@@ -32,8 +32,8 @@ message GetResourceFromDeviceRequest {
 // GetResourcesValuesRequest get values from resource-shadow
 message GetResourcesRequest {
   // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
-  repeated string resource_ids_filter = 1;
-  repeated string device_ids_filter = 2;
+  repeated string resource_id_filter = 1;
+  repeated string device_id_filter = 2;
   repeated string type_filter = 3;
 }
 
@@ -67,9 +67,9 @@ message SubscribeToEvents {
       RESOURCE_CREATED = 15;
       RESOURCE_CHANGED = 16;
     }
-    repeated Event events_filter = 1;
-    repeated string device_ids_filter = 2;
-    repeated string resource_ids_filter = 3;
+    repeated Event event_filter = 1;
+    repeated string device_id_filter = 2;
+    repeated string resource_id_filter = 3;
   }
   message CancelSubscription {
     string subscription_id = 1;

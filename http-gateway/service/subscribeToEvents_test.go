@@ -80,7 +80,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					Token: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
 						},
@@ -115,7 +115,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					Token: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
 						},
@@ -154,8 +154,8 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					Token: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							DeviceIdsFilter: []string{deviceID},
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							DeviceIdFilter: []string{deviceID},
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
 						},
@@ -323,7 +323,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
 			},
@@ -392,8 +392,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				ResourceIdsFilter: []string{commands.NewResourceID(deviceID, "/light/2").ToString()},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				ResourceIdFilter: []string{commands.NewResourceID(deviceID, "/light/2").ToString()},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
 			},
@@ -446,8 +446,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "updatePending + resourceUpdated",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdsFilter: []string{deviceID},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 				},
 			},
@@ -639,8 +639,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		Token: "receivePending + resourceReceived",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdsFilter: []string{deviceID},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED,
 				},
 			},

@@ -1,13 +1,14 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 const streamResponseKey = "result"
@@ -16,14 +17,14 @@ func (requestHandler *RequestHandler) getDeviceResourceLinks(w http.ResponseWrit
 	vars := mux.Vars(r)
 	deviceID := vars[uri.DeviceIDKey]
 	type Options struct {
-		DeviceIdsFilter []string `url:"deviceIdsFilter"`
+		DeviceIdFilter []string `url:"deviceIdFilter"`
 	}
 	opt := Options{
-		DeviceIdsFilter: []string{deviceID},
+		DeviceIdFilter: []string{deviceID},
 	}
 	q, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot get device('%v') resource links: %w", deviceID, err))
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v') resource links: %v", deviceID, err))
 		return
 	}
 	for key, values := range r.URL.Query() {
@@ -40,6 +41,6 @@ func (requestHandler *RequestHandler) getDeviceResourceLinks(w http.ResponseWrit
 	requestHandler.mux.ServeHTTP(rec, r)
 
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
-		writeError(w, fmt.Errorf("cannot get device('%v') resource links: %w", deviceID, err))
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v') resource links: %v", deviceID, err))
 	}, streamResponseKey)
 }

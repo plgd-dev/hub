@@ -49,7 +49,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					ResourceIdsFilter: []string{
+					ResourceIdFilter: []string{
 						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},

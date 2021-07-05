@@ -76,7 +76,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					ResourceIdsFilter: []string{
+					ResourceIdFilter: []string{
 						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},
@@ -132,14 +132,14 @@ func TestRequestHandler_GetResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				TypeFilter        []string `url:"typeFilter,omitempty"`
-				ResourceIdsFilter []string `url:"resourceIdsFilter,omitempty"`
-				DeviceIdsFilter   []string `url:"deviceIdsFilter,omitempty"`
+				TypeFilter       []string `url:"typeFilter,omitempty"`
+				ResourceIdFilter []string `url:"resourceIdFilter,omitempty"`
+				DeviceIdFilter   []string `url:"deviceIdFilter,omitempty"`
 			}
 			opt := Options{
-				TypeFilter:        tt.args.req.TypeFilter,
-				ResourceIdsFilter: tt.args.req.ResourceIdsFilter,
-				DeviceIdsFilter:   tt.args.req.DeviceIdsFilter,
+				TypeFilter:       tt.args.req.TypeFilter,
+				ResourceIdFilter: tt.args.req.ResourceIdFilter,
+				DeviceIdFilter:   tt.args.req.DeviceIdFilter,
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)

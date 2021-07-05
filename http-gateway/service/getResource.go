@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,19 +8,21 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"google.golang.org/grpc/codes"
 )
 
 func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWriter, r *http.Request, resourceID string) {
 	type Options struct {
-		ResourceIdsFilter []string `url:"resourceIdsFilter"`
+		ResourceIdFilter []string `url:"resourceIdFilter"`
 	}
 	opt := Options{
-		ResourceIdsFilter: []string{resourceID},
+		ResourceIdFilter: []string{resourceID},
 	}
 	v, err := query.Values(opt)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot get resource('%v') from shadow: %w", resourceID, err))
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
 		return
 	}
 	r.URL.Path = uri.Resources
@@ -30,7 +31,7 @@ func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWrite
 	requestHandler.mux.ServeHTTP(rec, r)
 
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
-		writeError(w, fmt.Errorf("cannot get resource('%v') from shadow: %w", resourceID, err))
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
 	}, streamResponseKey, "data")
 }
 

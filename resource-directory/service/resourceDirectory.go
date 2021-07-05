@@ -22,7 +22,7 @@ func NewResourceDirectory(projection *Projection, deviceIds []string) *ResourceD
 }
 
 func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	deviceIDs := filterDevices(rd.userDeviceIds, in.DeviceIdsFilter)
+	deviceIDs := filterDevices(rd.userDeviceIds, in.DeviceIdFilter)
 	if len(deviceIDs) == 0 {
 		log.Debug("ResourceDirectory.GetResourceLinks.filterDevices returns empty deviceIDs")
 		return nil

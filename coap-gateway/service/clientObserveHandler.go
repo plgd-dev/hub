@@ -76,8 +76,8 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		userIdsFilter = []string{authCtx.GetUserID()}
 	}
 	getUserDevicesClient, err := client.server.asClient.GetUserDevices(req.Context, &pbAS.GetUserDevicesRequest{
-		UserIdsFilter:   userIdsFilter,
-		DeviceIdsFilter: []string{deviceID},
+		UserIdsFilter:  userIdsFilter,
+		DeviceIdFilter: []string{deviceID},
 	})
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.InternalServerError, req.Token)

@@ -39,12 +39,12 @@ func filterPendingCommandToBitmask(f pb.GetPendingCommandsRequest_Command) filte
 	return bitmask
 }
 
-func filterPendingsCommandsToBitmask(commandsFilter []pb.GetPendingCommandsRequest_Command) filterBitmask {
+func filterPendingsCommandsToBitmask(commandFilter []pb.GetPendingCommandsRequest_Command) filterBitmask {
 	bitmask := filterBitmask(0)
-	if len(commandsFilter) == 0 {
+	if len(commandFilter) == 0 {
 		bitmask = filterBitmaskResourceCreatePending | filterBitmaskResourceRetrievePending | filterBitmaskResourceUpdatePending | filterBitmaskResourceDeletePending | filterBitmaskDeviceMetadataUpdatePending
 	} else {
-		for _, f := range commandsFilter {
+		for _, f := range commandFilter {
 			bitmask |= filterPendingCommandToBitmask(f)
 		}
 	}
@@ -88,24 +88,24 @@ func devicesEventFilterToBitmask(f pb.SubscribeToEvents_CreateSubscription_Event
 	return bitmask
 }
 
-func devicesEventsFilterToBitmask(commandsFilter []pb.SubscribeToEvents_CreateSubscription_Event) filterBitmask {
+func devicesEventsFilterToBitmask(commandFilter []pb.SubscribeToEvents_CreateSubscription_Event) filterBitmask {
 	bitmask := filterBitmask(0)
-	if len(commandsFilter) == 0 {
+	if len(commandFilter) == 0 {
 		bitmask = filterBitmask(0xffffffff)
 	} else {
-		for _, f := range commandsFilter {
+		for _, f := range commandFilter {
 			bitmask |= devicesEventFilterToBitmask(f)
 		}
 	}
 	return bitmask
 }
 
-func toPendingCommands(resource *Resource, commandsFilter filterBitmask) []*pb.PendingCommand {
+func toPendingCommands(resource *Resource, commandFilter filterBitmask) []*pb.PendingCommand {
 	if resource.projection == nil {
 		return nil
 	}
 	pendingCmds := make([]*pb.PendingCommand, 0, 32)
-	if commandsFilter&filterBitmaskResourceCreatePending > 0 {
+	if commandFilter&filterBitmaskResourceCreatePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceCreatePendings {
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceCreatePending{
@@ -114,7 +114,7 @@ func toPendingCommands(resource *Resource, commandsFilter filterBitmask) []*pb.P
 			})
 		}
 	}
-	if commandsFilter&filterBitmaskResourceRetrievePending > 0 {
+	if commandFilter&filterBitmaskResourceRetrievePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceRetrievePendings {
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceRetrievePending{
@@ -123,7 +123,7 @@ func toPendingCommands(resource *Resource, commandsFilter filterBitmask) []*pb.P
 			})
 		}
 	}
-	if commandsFilter&filterBitmaskResourceUpdatePending > 0 {
+	if commandFilter&filterBitmaskResourceUpdatePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceUpdatePendings {
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceUpdatePending{
@@ -132,7 +132,7 @@ func toPendingCommands(resource *Resource, commandsFilter filterBitmask) []*pb.P
 			})
 		}
 	}
-	if commandsFilter&filterBitmaskResourceDeletePending > 0 {
+	if commandFilter&filterBitmaskResourceDeletePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceDeletePendings {
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceDeletePending{

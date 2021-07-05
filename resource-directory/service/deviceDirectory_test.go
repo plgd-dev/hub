@@ -98,7 +98,7 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			name: "project_one_device",
 			args: args{
 				request: pb.GetDevicesRequest{
-					DeviceIdsFilter: []string{ddResource1.Resource.DeviceId},
+					DeviceIdFilter: []string{ddResource1.Resource.DeviceId},
 				},
 			},
 			wantStatusCode: codes.OK,

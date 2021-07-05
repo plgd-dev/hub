@@ -166,18 +166,18 @@ func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set 
 
 // GetDevices provides list state of devices.
 func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) (err error) {
-	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdsFilter)
+	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdFilter)
 	if len(deviceIDs) == 0 {
 		log.Debug("DeviceDirectory.GetDevices.filterDevices returns empty deviceIDs")
 		return nil
 	}
 
-	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
+	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {
-		resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
+		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
-	resources, err := dd.projection.GetResourcesWithLinks(srv.Context(), resourceIdsFilter, nil)
+	resources, err := dd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
 	}

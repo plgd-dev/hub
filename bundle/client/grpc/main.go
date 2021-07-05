@@ -230,17 +230,17 @@ func main() {
 		}
 		fmt.Println(string(d))
 	case *get:
-		var deviceIdsFilter []string
+		var deviceIdFilter []string
 		if *deviceID != "" {
-			deviceIdsFilter = append(deviceIdsFilter, *deviceID)
+			deviceIdFilter = append(deviceIdFilter, *deviceID)
 		}
-		var resourceIdsFilter []string
+		var resourceIdFilter []string
 		if *href != "" {
-			resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(*deviceID, *href).ToString())
+			resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(*deviceID, *href).ToString())
 		}
 		getClient, err := ocfGW.GetResources(ctx, &pbGW.GetResourcesRequest{
-			ResourceIdsFilter: resourceIdsFilter,
-			DeviceIdsFilter:   deviceIdsFilter,
+			ResourceIdFilter: resourceIdFilter,
+			DeviceIdFilter:   deviceIdFilter,
 		})
 		if err != nil {
 			log.Fatalf("cannot retrieve values: %v", err)

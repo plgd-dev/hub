@@ -138,11 +138,11 @@ func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
 	return c
 }
 
-func (c *requestBuilder) AddCommandsFilter(commandsFilter []string) *requestBuilder {
-	if len(commandsFilter) == 0 {
+func (c *requestBuilder) AddCommandsFilter(commandFilter []string) *requestBuilder {
+	if len(commandFilter) == 0 {
 		return c
 	}
-	c.AddQuery(uri.CommandsFilterQueryKey, commandsFilter...)
+	c.AddQuery(uri.CommandFilterQueryKey, commandFilter...)
 	return c
 }
 

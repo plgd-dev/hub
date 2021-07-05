@@ -296,7 +296,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		Token: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 				},
 			},
@@ -335,8 +335,8 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		Token: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdsFilter: []string{deviceID},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED,
 				},
 			},
@@ -421,10 +421,10 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			Token: "testToken",
 			Action: &pb.SubscribeToEvents_CreateSubscription_{
 				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdsFilter: []string{
+					ResourceIdFilter: []string{
 						e.GetResourceChanged().GetResourceId().ToString(),
 					},
-					EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
 				},

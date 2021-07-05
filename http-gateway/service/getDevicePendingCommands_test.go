@@ -44,10 +44,10 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 		want    []*pb.PendingCommand
 	}{
 		{
-			name: "retrieve by deviceIdsFilter",
+			name: "retrieve by deviceIdFilter",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
+					DeviceIdFilter: []string{deviceID},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -127,8 +127,8 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			name: "filter retrieve commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
+					DeviceIdFilter: []string{deviceID},
+					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -150,8 +150,8 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			name: "filter create commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
+					DeviceIdFilter: []string{deviceID},
+					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -180,8 +180,8 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			name: "filter delete commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
+					DeviceIdFilter: []string{deviceID},
+					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -203,8 +203,8 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			name: "filter update commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
+					DeviceIdFilter: []string{deviceID},
+					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -233,8 +233,8 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			name: "filter by type",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
-					TypeFilter:      []string{"oic.wk.d"},
+					DeviceIdFilter: []string{deviceID},
+					TypeFilter:     []string{"oic.wk.d"},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -274,8 +274,8 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			name: "filter device metadata update",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
-					CommandsFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
+					DeviceIdFilter: []string{deviceID},
+					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -394,16 +394,16 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				TypeFilter     []string                               `url:"typeFilter,omitempty"`
-				CommandsFilter []pb.GetPendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
+				TypeFilter    []string                               `url:"typeFilter,omitempty"`
+				CommandFilter []pb.GetPendingCommandsRequest_Command `url:"commandFilter,omitempty"`
 			}
 			opt := Options{
-				TypeFilter:     tt.args.req.TypeFilter,
-				CommandsFilter: tt.args.req.CommandsFilter,
+				TypeFilter:    tt.args.req.TypeFilter,
+				CommandFilter: tt.args.req.CommandFilter,
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevicePendingCommands, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.req.GetDeviceIdsFilter()[0]).SetQuery(v.Encode()).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevicePendingCommands, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.req.GetDeviceIdFilter()[0]).SetQuery(v.Encode()).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

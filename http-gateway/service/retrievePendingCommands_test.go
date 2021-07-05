@@ -97,10 +97,10 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 		want    []*pb.PendingCommand
 	}{
 		{
-			name: "retrieve by resourceIdsFilter",
+			name: "retrieve by resourceIdFilter",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					ResourceIdsFilter: []string{
+					ResourceIdFilter: []string{
 						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},
@@ -128,10 +128,10 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			},
 		},
 		{
-			name: "retrieve by deviceIdsFilter",
+			name: "retrieve by deviceIdFilter",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					DeviceIdsFilter: []string{deviceID},
+					DeviceIdFilter: []string{deviceID},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -211,7 +211,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			name: "filter retrieve commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
+					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -233,7 +233,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			name: "filter create commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
+					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -262,7 +262,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			name: "filter delete commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
+					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -284,7 +284,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			name: "filter update commands",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
+					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_UPDATE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -353,7 +353,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 			name: "filter device metadata update",
 			args: args{
 				req: &pb.GetPendingCommandsRequest{
-					CommandsFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
+					CommandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
 				},
 				accept: uri.ApplicationJsonPBContentType,
 			},
@@ -472,16 +472,16 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				TypeFilter        []string                               `url:"typeFilter,omitempty"`
-				ResourceIdsFilter []string                               `url:"resourceIdsFilter,omitempty"`
-				DeviceIdsFilter   []string                               `url:"deviceIdsFilter,omitempty"`
-				CommandsFilter    []pb.GetPendingCommandsRequest_Command `url:"commandsFilter,omitempty"`
+				TypeFilter       []string                               `url:"typeFilter,omitempty"`
+				ResourceIdFilter []string                               `url:"resourceIdFilter,omitempty"`
+				DeviceIdFilter   []string                               `url:"deviceIdFilter,omitempty"`
+				CommandFilter    []pb.GetPendingCommandsRequest_Command `url:"commandFilter,omitempty"`
 			}
 			opt := Options{
-				TypeFilter:        tt.args.req.TypeFilter,
-				ResourceIdsFilter: tt.args.req.ResourceIdsFilter,
-				DeviceIdsFilter:   tt.args.req.DeviceIdsFilter,
-				CommandsFilter:    tt.args.req.CommandsFilter,
+				TypeFilter:       tt.args.req.TypeFilter,
+				ResourceIdFilter: tt.args.req.ResourceIdFilter,
+				DeviceIdFilter:   tt.args.req.DeviceIdFilter,
+				CommandFilter:    tt.args.req.CommandFilter,
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)

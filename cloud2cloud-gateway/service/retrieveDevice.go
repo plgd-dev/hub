@@ -56,9 +56,9 @@ func makeResourceLink(resource *commands.Resource) schema.ResourceLink {
 	return r
 }
 
-func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter []string) (map[string]schema.ResourceLinks, error) {
+func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter []string) (map[string]schema.ResourceLinks, error) {
 	client, err := rh.rdClient.GetResourceLinks(ctx, &pbGRPC.GetResourceLinksRequest{
-		DeviceIdsFilter: deviceIdsFilter,
+		DeviceIdFilter: deviceIdFilter,
 	})
 
 	if err != nil {
@@ -127,11 +127,11 @@ func unmarshalContent(c *commands.Content) (interface{}, error) {
 	return m, nil
 }
 
-func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdsFilter []string, deviceIdsFilter []string) (map[string][]Representation, error) {
+func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []string, deviceIdFilter []string) (map[string][]Representation, error) {
 
 	client, err := rh.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
-		DeviceIdsFilter:   deviceIdsFilter,
-		ResourceIdsFilter: resourceIdsFilter,
+		DeviceIdFilter:   deviceIdFilter,
+		ResourceIdFilter: resourceIdFilter,
 	})
 
 	if err != nil {

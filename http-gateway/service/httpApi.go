@@ -141,16 +141,15 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 
 // NewHTTP returns HTTP server
 func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) *http.Server {
-	r := router.NewRouter()
-	r.Use(loggingMiddleware)
-	r.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+	r0 := router.NewRouter()
+	r0.Use(loggingMiddleware)
+	r0.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
 	}))
-	r.Use(makeQueryCaseInsensitive)
-	r.Use(trailSlashSuffix)
-
-	// certificate authority sign
-	r.HandleFunc(uri.CertificaAuthoritySign, requestHandler.signCertificate).Methods(http.MethodPost)
+	r0.Use(makeQueryCaseInsensitive)
+	r0.Use(trailSlashSuffix)
+	r := router.NewRouter()
+	r0.PathPrefix("/").Handler(r)
 
 	// Aliases
 	r.HandleFunc(uri.AliasDevice, requestHandler.getDevice).Methods(http.MethodGet)
@@ -211,7 +210,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		}))
 	}
 
-	return &http.Server{Handler: r}
+	return &http.Server{Handler: r0}
 }
 
 func (requestHandler *RequestHandler) makeCtx(r *http.Request) context.Context {

@@ -105,7 +105,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := protojson.Marshal(tt.args.req)
+			data, err := protojson.Marshal(tt.args.req.GetContent())
 			require.NoError(t, err)
 			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Accept(tt.args.accept).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()

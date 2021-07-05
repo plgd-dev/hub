@@ -54,6 +54,13 @@ func TestRequestHandler_GetDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "notFound",
+			args: args{
+				deviceID: "notFound",
+			},
+			wantErr: true,
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
@@ -80,7 +87,7 @@ func TestRequestHandler_GetDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevice, nil).DeviceId(deviceID).AuthToken(token).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDevice+"/", nil).DeviceId(tt.args.deviceID).AuthToken(token).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

@@ -40,7 +40,7 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 			name: "list one device - filter by device Id",
 			args: args{
 				request: pb.GetResourceLinksRequest{
-					DeviceIdsFilter: []string{Resource1.DeviceId},
+					DeviceIdFilter: []string{Resource1.DeviceId},
 				},
 			},
 			want: map[string]*events.ResourceLinksPublished{

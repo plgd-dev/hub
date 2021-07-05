@@ -205,6 +205,10 @@ func request_GrpcGateway_GetResources_0(ctx context.Context, marshaler runtime.M
 
 }
 
+var (
+	filter_GrpcGateway_UpdateResource_0 = &utilities.DoubleArray{Encoding: map[string]int{"content": 0, "resource_id": 1, "device_id": 2, "href": 3}, Base: []int{1, 1, 1, 2, 3, 0, 0, 0}, Check: []int{0, 1, 1, 3, 3, 2, 4, 5}}
+)
+
 func request_GrpcGateway_UpdateResource_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateResourceRequest
 	var metadata runtime.ServerMetadata
@@ -213,7 +217,7 @@ func request_GrpcGateway_UpdateResource_0(ctx context.Context, marshaler runtime
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Content); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -242,6 +246,13 @@ func request_GrpcGateway_UpdateResource_0(ctx context.Context, marshaler runtime
 	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_UpdateResource_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.UpdateResource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -257,7 +268,7 @@ func local_request_GrpcGateway_UpdateResource_0(ctx context.Context, marshaler r
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Content); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -286,6 +297,13 @@ func local_request_GrpcGateway_UpdateResource_0(ctx context.Context, marshaler r
 	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_UpdateResource_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.UpdateResource(ctx, &protoReq)
@@ -453,6 +471,10 @@ func local_request_GrpcGateway_DeleteResource_0(ctx context.Context, marshaler r
 
 }
 
+var (
+	filter_GrpcGateway_CreateResource_0 = &utilities.DoubleArray{Encoding: map[string]int{"content": 0, "resource_id": 1, "device_id": 2, "href": 3}, Base: []int{1, 1, 1, 2, 3, 0, 0, 0}, Check: []int{0, 1, 1, 3, 3, 2, 4, 5}}
+)
+
 func request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq CreateResourceRequest
 	var metadata runtime.ServerMetadata
@@ -461,7 +483,7 @@ func request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler runtime
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Content); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -490,6 +512,13 @@ func request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler runtime
 	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_CreateResource_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.CreateResource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -505,7 +534,7 @@ func local_request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler r
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Content); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -534,6 +563,13 @@ func local_request_GrpcGateway_CreateResource_0(ctx context.Context, marshaler r
 	err = runtime.PopulateFieldFromPath(&protoReq, "resource_id.href", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "resource_id.href", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_CreateResource_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.CreateResource(ctx, &protoReq)

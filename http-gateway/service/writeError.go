@@ -61,7 +61,7 @@ func writeError(w netHttp.ResponseWriter, err error) {
 		EmitUnpopulated: true,
 	}
 	errStr, err2 := v.Marshal(s)
-	if err != nil {
+	if err2 != nil {
 		log.Errorf("cannot marshal grpc error(%v): %v", err, err2)
 		return
 	}

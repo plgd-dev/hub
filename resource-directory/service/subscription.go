@@ -41,12 +41,12 @@ type subscription struct {
 }
 
 func Newsubscription(id, userID, token string, send SendEventFunc, resourceProjection *Projection, devicesEvent *pb.SubscribeToEvents_CreateSubscription) *subscription {
-	filteredDeviceIDs := strings.MakeSet(devicesEvent.GetDeviceIdsFilter()...)
+	filteredDeviceIDs := strings.MakeSet(devicesEvent.GetDeviceIdFilter()...)
 	filteredResourceIDs := strings.MakeSet()
-	if len(devicesEvent.GetResourceIdsFilter()) > 0 {
+	if len(devicesEvent.GetResourceIdFilter()) > 0 {
 		filteredDeviceIDs = strings.MakeSet()
 	}
-	for _, r := range devicesEvent.GetResourceIdsFilter() {
+	for _, r := range devicesEvent.GetResourceIdFilter() {
 		res := commands.ResourceIdFromString(r)
 		filteredResourceIDs.Add(res.ToUUID())
 		filteredDeviceIDs.Add(res.GetDeviceId())
@@ -63,7 +63,7 @@ func Newsubscription(id, userID, token string, send SendEventFunc, resourceProje
 		filteredDeviceIDs:             filteredDeviceIDs,
 		filteredResourceIDs:           filteredResourceIDs,
 		isInitializedResource:         kitSync.NewMap(),
-		filteredEvents:                devicesEventsFilterToBitmask(devicesEvent.GetEventsFilter()),
+		filteredEvents:                devicesEventsFilterToBitmask(devicesEvent.GetEventFilter()),
 	}
 }
 

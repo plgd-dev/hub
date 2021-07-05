@@ -79,7 +79,7 @@ service GrpcGateway {
   rpc UpdateResource(UpdateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceUpdated) {
     option (google.api.http) = {
       put: "/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"
-      body: "*"
+      body: "content"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Device" ]
@@ -122,7 +122,7 @@ service GrpcGateway {
   rpc CreateResource(CreateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceCreated) {
     option (google.api.http) = {
       post: "/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}"
-      body: "*"
+      body: "content"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Device" ]

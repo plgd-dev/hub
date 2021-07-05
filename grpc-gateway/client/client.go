@@ -210,7 +210,7 @@ func (c *Client) GetResourcesByType(
 //	if it.Err != nil {
 //	}
 func (c *Client) GetDevicesIterator(ctx context.Context, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
-	r := pb.GetDevicesRequest{DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
+	r := pb.GetDevicesRequest{DeviceIdFilter: deviceIDs, TypeFilter: resourceTypes}
 	return kitNetGrpc.NewIterator(c.gateway.GetDevices(ctx, &r))
 }
 
@@ -228,7 +228,7 @@ func (c *Client) GetDevicesIterator(ctx context.Context, deviceIDs []string, res
 //	if it.Err != nil {
 //	}
 func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
-	r := pb.GetResourceLinksRequest{DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
+	r := pb.GetResourceLinksRequest{DeviceIdFilter: deviceIDs, TypeFilter: resourceTypes}
 	return kitNetGrpc.NewIterator(c.gateway.GetResourceLinks(ctx, &r))
 }
 
@@ -261,7 +261,7 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 //	if it.Err != nil {
 //	}
 func (c *Client) GetResourcesIterator(ctx context.Context, resourceIDs []string, deviceIDs []string, resourceTypes ...string) *kitNetGrpc.Iterator {
-	r := pb.GetResourcesRequest{ResourceIdsFilter: resourceIDs, DeviceIdsFilter: deviceIDs, TypeFilter: resourceTypes}
+	r := pb.GetResourcesRequest{ResourceIdFilter: resourceIDs, DeviceIdFilter: deviceIDs, TypeFilter: resourceTypes}
 	return kitNetGrpc.NewIterator(c.gateway.GetResources(ctx, &r))
 }
 

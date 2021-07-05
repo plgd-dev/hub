@@ -8,19 +8,19 @@ const (
 
 	ResourceInterfaceQueryKey = "resourceInterface"
 	ShadowQueryKey            = "shadow"
-	CommandsFilterQueryKey    = "commandsFilter"
+	CommandFilterQueryKey     = "commandFilter"
 	TypeFilterQueryKey        = "typeFilter"
 	StatusFilterQueryKey      = "statusFilter"
-	DeviceIdsFilterQueryKey   = "deviceIdsFilter"
-	ResourceIdsFilterQueryKey = "resourceIdsFilter"
+	DeviceIdFilterQueryKey    = "deviceIdFilter"
+	ResourceIdFilterQueryKey  = "resourceIdFilter"
 	AcceptQueryKey            = "accept" // for websocket
 
-	AliasInterfaceQueryKey         = "interface"
-	AliasCommandsFilterQueryKey    = "commands"
-	AliasDeviceIdsFilterQueryKey   = "deviceIds"
-	AliasResourceIdsFilterQueryKey = "resourceIds"
-	AliasTypeFilterQueryKey        = "type"
-	AliasStatusFilterQueryKey      = "status"
+	AliasInterfaceQueryKey        = "interface"
+	AliasCommandFilterQueryKey    = "command"
+	AliasDeviceIdFilterQueryKey   = "deviceId"
+	AliasResourceIdFilterQueryKey = "resourceId"
+	AliasTypeFilterQueryKey       = "type"
+	AliasStatusFilterQueryKey     = "status"
 
 	CorrelationIDHeader = "CorrelationID"
 
@@ -82,18 +82,18 @@ const (
 )
 
 var QueryCaseInsensitive = map[string]string{
-	strings.ToLower(AliasInterfaceQueryKey):         ResourceInterfaceQueryKey,
-	strings.ToLower(CommandsFilterQueryKey):         CommandsFilterQueryKey,
-	strings.ToLower(DeviceIdsFilterQueryKey):        DeviceIdsFilterQueryKey,
-	strings.ToLower(ResourceIdsFilterQueryKey):      ResourceIdsFilterQueryKey,
-	strings.ToLower(ResourceInterfaceQueryKey):      ResourceInterfaceQueryKey,
-	strings.ToLower(ShadowQueryKey):                 ShadowQueryKey,
-	strings.ToLower(TypeFilterQueryKey):             TypeFilterQueryKey,
-	strings.ToLower(AliasCommandsFilterQueryKey):    CommandsFilterQueryKey,
-	strings.ToLower(AliasDeviceIdsFilterQueryKey):   DeviceIdsFilterQueryKey,
-	strings.ToLower(AliasResourceIdsFilterQueryKey): ResourceIdsFilterQueryKey,
-	strings.ToLower(AliasTypeFilterQueryKey):        TypeFilterQueryKey,
-	strings.ToLower(AcceptQueryKey):                 AcceptQueryKey,
-	strings.ToLower(StatusFilterQueryKey):           StatusFilterQueryKey,
-	strings.ToLower(AliasStatusFilterQueryKey):      StatusFilterQueryKey,
+	strings.ToLower(AliasInterfaceQueryKey):        ResourceInterfaceQueryKey,
+	strings.ToLower(CommandFilterQueryKey):         CommandFilterQueryKey,
+	strings.ToLower(DeviceIdFilterQueryKey):        DeviceIdFilterQueryKey,
+	strings.ToLower(ResourceIdFilterQueryKey):      ResourceIdFilterQueryKey,
+	strings.ToLower(ResourceInterfaceQueryKey):     ResourceInterfaceQueryKey,
+	strings.ToLower(ShadowQueryKey):                ShadowQueryKey,
+	strings.ToLower(TypeFilterQueryKey):            TypeFilterQueryKey,
+	strings.ToLower(AliasCommandFilterQueryKey):    CommandFilterQueryKey,
+	strings.ToLower(AliasDeviceIdFilterQueryKey):   DeviceIdFilterQueryKey,
+	strings.ToLower(AliasResourceIdFilterQueryKey): ResourceIdFilterQueryKey,
+	strings.ToLower(AliasTypeFilterQueryKey):       TypeFilterQueryKey,
+	strings.ToLower(AcceptQueryKey):                AcceptQueryKey,
+	strings.ToLower(StatusFilterQueryKey):          StatusFilterQueryKey,
+	strings.ToLower(AliasStatusFilterQueryKey):     StatusFilterQueryKey,
 }

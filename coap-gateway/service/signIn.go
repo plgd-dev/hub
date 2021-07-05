@@ -35,7 +35,7 @@ type CoapSignInResp struct {
 
 func (client *Client) registerObservationsForPublishedResourcesLocked(ctx context.Context, deviceID string) {
 	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
-		DeviceIdsFilter: []string{deviceID},
+		DeviceIdFilter: []string{deviceID},
 	})
 	if err != nil {
 		if status.Convert(err).Code() == codes.NotFound {
@@ -67,7 +67,7 @@ func (client *Client) registerObservationsForPublishedResourcesLocked(ctx contex
 
 func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID string) error {
 	deviceMetadataClient, err := client.server.rdClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{
-		DeviceIdsFilter: []string{deviceID},
+		DeviceIdFilter: []string{deviceID},
 	})
 	if err != nil {
 		if status.Convert(err).Code() == codes.NotFound {

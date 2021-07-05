@@ -623,8 +623,8 @@ type GetUserDevicesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	UserIdsFilter   []string `protobuf:"bytes,1,rep,name=user_ids_filter,json=userIdsFilter,proto3" json:"user_ids_filter,omitempty"`
-	DeviceIdsFilter []string `protobuf:"bytes,2,rep,name=device_ids_filter,json=deviceIdsFilter,proto3" json:"device_ids_filter,omitempty"`
+	UserIdsFilter  []string `protobuf:"bytes,1,rep,name=user_ids_filter,json=userIdsFilter,proto3" json:"user_ids_filter,omitempty"`
+	DeviceIdFilter []string `protobuf:"bytes,2,rep,name=device_ids_filter,json=deviceIdFilter,proto3" json:"device_ids_filter,omitempty"`
 }
 
 func (x *GetUserDevicesRequest) Reset() {
@@ -666,9 +666,9 @@ func (x *GetUserDevicesRequest) GetUserIdsFilter() []string {
 	return nil
 }
 
-func (x *GetUserDevicesRequest) GetDeviceIdsFilter() []string {
+func (x *GetUserDevicesRequest) GetDeviceIdFilter() []string {
 	if x != nil {
-		return x.DeviceIdsFilter
+		return x.DeviceIdFilter
 	}
 	return nil
 }

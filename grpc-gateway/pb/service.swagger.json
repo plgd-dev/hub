@@ -106,7 +106,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "deviceIdsFilter",
+            "name": "deviceIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -150,7 +150,7 @@
         },
         "parameters": [
           {
-            "name": "deviceIdsFilter",
+            "name": "deviceIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -290,7 +290,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbCreateResourceRequest"
+              "$ref": "#/definitions/cloudgrpcgatewaypbContent"
             }
           }
         ],
@@ -376,8 +376,14 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/cloudgrpcgatewaypbUpdateResourceRequest"
+              "$ref": "#/definitions/cloudgrpcgatewaypbContent"
             }
+          },
+          {
+            "name": "resourceInterface",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -414,7 +420,7 @@
         },
         "parameters": [
           {
-            "name": "commandsFilter",
+            "name": "commandFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -431,7 +437,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "resourceIdsFilter",
+            "name": "resourceIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -441,7 +447,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "deviceIdsFilter",
+            "name": "deviceIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -505,7 +511,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "deviceIdsFilter",
+            "name": "deviceIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -549,7 +555,7 @@
         },
         "parameters": [
           {
-            "name": "resourceIdsFilter",
+            "name": "resourceIdFilter",
             "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\".",
             "in": "query",
             "required": false,
@@ -560,7 +566,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "deviceIdsFilter",
+            "name": "deviceIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -721,19 +727,19 @@
     "SubscribeToEventsCreateSubscription": {
       "type": "object",
       "properties": {
-        "eventsFilter": {
+        "eventFilter": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/SubscribeToEventsCreateSubscriptionEvent"
           }
         },
-        "deviceIdsFilter": {
+        "deviceIdFilter": {
           "type": "array",
           "items": {
             "type": "string"
           }
         },
-        "resourceIdsFilter": {
+        "resourceIdFilter": {
           "type": "array",
           "items": {
             "type": "string"
@@ -774,17 +780,6 @@
         }
       }
     },
-    "cloudgrpcgatewaypbCreateResourceRequest": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/pbResourceId"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudgrpcgatewaypbContent"
-        }
-      }
-    },
     "cloudgrpcgatewaypbResource": {
       "type": "object",
       "properties": {
@@ -801,20 +796,6 @@
     },
     "cloudgrpcgatewaypbUpdateDeviceMetadataResponse": {
       "type": "object"
-    },
-    "cloudgrpcgatewaypbUpdateResourceRequest": {
-      "type": "object",
-      "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/pbResourceId"
-        },
-        "content": {
-          "$ref": "#/definitions/cloudgrpcgatewaypbContent"
-        },
-        "resourceInterface": {
-          "type": "string"
-        }
-      }
     },
     "cloudresourceaggregatepbContent": {
       "type": "object",

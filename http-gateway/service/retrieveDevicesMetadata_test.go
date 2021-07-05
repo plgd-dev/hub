@@ -65,7 +65,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 			name: "filter one device",
 			args: args{
 				req: pb.GetDevicesMetadataRequest{
-					DeviceIdsFilter: []string{deviceID},
+					DeviceIdFilter: []string{deviceID},
 				},
 			},
 			want: []*events.DeviceMetadataUpdated{
@@ -97,7 +97,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 			name: "invalid deviceID",
 			args: args{
 				req: pb.GetDevicesMetadataRequest{
-					DeviceIdsFilter: []string{"abc"},
+					DeviceIdFilter: []string{"abc"},
 				},
 			},
 			wantErr: true,
@@ -137,12 +137,12 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			type Options struct {
-				TypeFilter      []string `url:"typeFilter,omitempty"`
-				DeviceIdsFilter []string `url:"deviceIdsFilter,omitempty"`
+				TypeFilter     []string `url:"typeFilter,omitempty"`
+				DeviceIdFilter []string `url:"deviceIdFilter,omitempty"`
 			}
 			opt := Options{
-				TypeFilter:      tt.args.req.TypeFilter,
-				DeviceIdsFilter: tt.args.req.DeviceIdsFilter,
+				TypeFilter:     tt.args.req.TypeFilter,
+				DeviceIdFilter: tt.args.req.DeviceIdFilter,
 			}
 			v, err := query.Values(opt)
 			require.NoError(t, err)

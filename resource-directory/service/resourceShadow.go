@@ -32,11 +32,11 @@ func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShad
 	return &ResourceShadow{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter, deviceIdsFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
+func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter, deviceIdFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
 	mapTypeFilter := make(strings.Set)
 	mapTypeFilter.Add(typeFilter...)
 
-	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdsFilter))
+	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdFilter))
 	for _, r := range resourceIDsFilter {
 		res := commands.ResourceIdFromString(r)
 
@@ -44,13 +44,13 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 			internalResourceIDsFilter = append(internalResourceIDsFilter, res)
 		}
 	}
-	for _, deviceID := range deviceIdsFilter {
+	for _, deviceID := range deviceIdFilter {
 		if rd.userDeviceIds.HasOneOf(deviceID) {
 			internalResourceIDsFilter = append(internalResourceIDsFilter, commands.NewResourceID(deviceID, ""))
 		}
 	}
 	if len(internalResourceIDsFilter) == 0 {
-		if len(resourceIDsFilter) > 0 || len(deviceIdsFilter) > 0 {
+		if len(resourceIDsFilter) > 0 || len(deviceIdFilter) > 0 {
 			return nil, nil
 		}
 		internalResourceIDsFilter = make([]*commands.ResourceId, 0, len(rd.userDeviceIds))
@@ -70,7 +70,7 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 }
 
 func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
-	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
+	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdFilter(), req.GetDeviceIdFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
 	}
@@ -92,9 +92,9 @@ func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcG
 }
 
 func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
-	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandsFilter())
-	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdsFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
-		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdsFilter())
+	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandFilter())
+	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
+		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdFilter())
 		devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
 		if err != nil {
 			return err
@@ -113,7 +113,7 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 		}
 	}
 
-	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
+	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdFilter(), req.GetDeviceIdFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
 	}
@@ -155,13 +155,13 @@ func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devi
 }
 
 func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
-	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
-	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
+	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdFilter)
+	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {
-		resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
+		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
-	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIdsFilter, nil)
+	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
 	}

@@ -40,7 +40,7 @@ func TestResourceShadow_GetResources(t *testing.T) {
 			name: "list unauthorized device",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					DeviceIdsFilter: []string{Resource0.DeviceId},
+					DeviceIdFilter: []string{Resource0.DeviceId},
 				},
 			},
 			wantStatusCode: codes.OK,
@@ -51,7 +51,7 @@ func TestResourceShadow_GetResources(t *testing.T) {
 			name: "filter by resource Id",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					ResourceIdsFilter: []string{
+					ResourceIdFilter: []string{
 						Resource1.ToResourceIDString(),
 						Resource2.ToResourceIDString(),
 					},
@@ -85,7 +85,7 @@ func TestResourceShadow_GetResources(t *testing.T) {
 			name: "filter by device Id",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					DeviceIdsFilter: []string{Resource1.DeviceId},
+					DeviceIdFilter: []string{Resource1.DeviceId},
 				},
 			},
 			want: map[string]*pb.Resource{
@@ -147,8 +147,8 @@ func TestResourceShadow_GetResources(t *testing.T) {
 			name: "filter by device Id and type",
 			args: args{
 				req: &pb.GetResourcesRequest{
-					DeviceIdsFilter: []string{Resource1.DeviceId},
-					TypeFilter:      []string{Resource1.ResourceTypes[0]},
+					DeviceIdFilter: []string{Resource1.DeviceId},
+					TypeFilter:     []string{Resource1.ResourceTypes[0]},
 				},
 			},
 			want: map[string]*pb.Resource{

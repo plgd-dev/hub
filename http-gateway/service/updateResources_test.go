@@ -26,12 +26,12 @@ import (
 )
 
 func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, accept string) (*events.ResourceUpdated, error) {
-	data, err := protojson.Marshal(req)
+	data, err := protojson.Marshal(req.GetContent())
 	if err != nil {
 		return nil, err
 	}
 
-	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Accept(accept).Build()
+	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Accept(accept).ResourceInterface(req.GetResourceInterface()).Build()
 	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
