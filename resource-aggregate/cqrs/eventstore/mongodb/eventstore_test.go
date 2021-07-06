@@ -40,4 +40,8 @@ func TestEventStore(t *testing.T) {
 
 	t.Log("event store with default namespace")
 	test.AcceptanceTest(t, ctx, store)
+
+	t.Log("clearing db")
+	store.Clear(ctx)
+	test.GetEventsTest(t, ctx, store)
 }
