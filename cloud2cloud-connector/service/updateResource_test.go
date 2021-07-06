@@ -25,7 +25,7 @@ import (
 func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.UpdateResourceRequest
+		req *pb.UpdateResourceRequest
 	}
 	tests := []struct {
 		name    string
@@ -36,7 +36,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 		{
 			name: "valid",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -57,7 +57,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 		{
 			name: "valid with interface",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
@@ -79,7 +79,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 		{
 			name: "revert update",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
@@ -101,7 +101,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 		{
 			name: "update RO-resource",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -122,7 +122,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -146,7 +146,7 @@ func testRequestHandler_UpdateResource(t *testing.T, events store.Events) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.UpdateResource(ctx, &tt.args.req)
+			got, err := c.UpdateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

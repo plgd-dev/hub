@@ -167,8 +167,8 @@ func resourceDirectoryUnpublishHandler(req *mux.Message, client *Client) {
 	}
 
 	hrefs := make([]string, 0, len(resources))
-	for _, resource := range resources {
-		hrefs = append(hrefs, resource.Href)
+	for idx := range resources {
+		hrefs = append(hrefs, resources[idx].Href)
 	}
 
 	client.unpublishResourceLinks(req.Context, hrefs)

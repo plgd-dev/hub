@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/sdk/schema"
 )
 
-func publishResource(ctx context.Context, raClient raService.ResourceAggregateClient, userID string, link schema.ResourceLink, cmdMetadata commands.CommandMetadata) error {
+func publishResource(ctx context.Context, raClient raService.ResourceAggregateClient, userID string, link schema.ResourceLink, cmdMetadata *commands.CommandMetadata) error {
 	endpoints := make([]*commands.EndpointInformation, 0, 4)
 	for _, endpoint := range link.GetEndpoints() {
 		endpoints = append(endpoints, &commands.EndpointInformation{
@@ -32,7 +32,7 @@ func publishResource(ctx context.Context, raClient raService.ResourceAggregateCl
 			SupportedContentTypes: link.SupportedContentTypes,
 			EndpointInformations:  endpoints,
 		}},
-		CommandMetadata: &cmdMetadata,
+		CommandMetadata: cmdMetadata,
 	})
 	return err
 }
