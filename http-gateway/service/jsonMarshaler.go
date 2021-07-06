@@ -3,9 +3,9 @@ package service
 import (
 	"bytes"
 	"encoding/base64"
-	encodingJson "encoding/json"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
@@ -117,8 +117,9 @@ func (j *jsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	}
 	w := bytes.NewBuffer(make([]byte, 0, len(data)))
 
-	encoder := encodingJson.NewEncoder(w)
+	encoder := jsoniter.NewEncoder(w)
 	encoder.SetEscapeHTML(false)
+
 	err = encoder.Encode(val)
 	if err != nil {
 		return data, nil

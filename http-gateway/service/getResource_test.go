@@ -54,6 +54,14 @@ func TestRequestHandler_GetResource(t *testing.T) {
 		want    *events.ResourceChanged
 	}{
 		{
+			name: "json: get from resource shadow",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: "/light/1",
+			},
+			wantErr: true,
+		},
+		{
 			name: "jsonpb: get from resource shadow",
 			args: args{
 				deviceID:     deviceID,
