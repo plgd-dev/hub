@@ -26,7 +26,7 @@ import (
 func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.RetrieveResourceFromDeviceRequest
+		req *pb.RetrieveResourceFromDeviceRequest
 	}
 	tests := []struct {
 		name            string
@@ -38,7 +38,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 		{
 			name: "valid /light/2",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
@@ -48,7 +48,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 		{
 			name: "valid /oic/d",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
@@ -58,7 +58,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.RetrieveResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -82,7 +82,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
+			got, err := c.RetrieveResourceFromDevice(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

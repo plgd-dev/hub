@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
-func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID, href, userID string, contentType string, body []byte, cmdMetadata commands.CommandMetadata) error {
+func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID, href, userID string, contentType string, body []byte, cmdMetadata *commands.CommandMetadata) error {
 	coapContentFormat := int32(-1)
 	switch contentType {
 	case message.AppCBOR.String():
@@ -23,7 +23,7 @@ func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggre
 
 	_, err := raClient.NotifyResourceChanged(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.NotifyResourceChangedRequest{
 		ResourceId:      commands.NewResourceID(deviceID, kitHttp.CanonicalHref(href)),
-		CommandMetadata: &cmdMetadata,
+		CommandMetadata: cmdMetadata,
 		Content: &commands.Content{
 			Data:              body,
 			ContentType:       contentType,
