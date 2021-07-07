@@ -16,8 +16,8 @@ type Config struct {
 	MaxConnIdleTime time.Duration `yaml:"maxConnIdleTime" json:"maxConnIdleTime" default:"240s"`
 	TLS             client.Config `yaml:"tls" json:"tls"`
 
-	marshalerFunc   MarshalerFunc   `yaml:"-" json:"-"`
-	unmarshalerFunc UnmarshalerFunc `yaml:"-" json:"-"`
+	marshalerFunc   MarshalerFunc   `yaml:"-"`
+	unmarshalerFunc UnmarshalerFunc `yaml:"-"`
 }
 
 func (c *Config) Validate() error {
