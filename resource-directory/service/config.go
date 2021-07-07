@@ -139,7 +139,7 @@ type PublicConfiguration struct {
 	CloudURL                   string `yaml:"cloudURL" json:"cloudURL"`
 	CloudAuthorizationProvider string `yaml:"cloudAuthorizationProvider" json:"cloudAuthorizationProvider"`
 
-	cloudCertificateAuthorities string `yaml:"-" json:"-"`
+	cloudCertificateAuthorities string `yaml:"-"`
 }
 
 func (c *PublicConfiguration) Validate() error {
