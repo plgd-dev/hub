@@ -50,6 +50,12 @@ func (e *ResourceLinksSnapshotTaken) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *ResourceLinksSnapshotTaken) CopyData(event *ResourceLinksSnapshotTaken) {
+	e.Resources = event.GetResources()
+	e.DeviceId = event.GetDeviceId()
+	e.EventMetadata = event.GetEventMetadata()
+}
+
 // Examine published resources by the ResourceLinksPublished, compare it with cached resources and
 // return array of new or changed resources.
 func (e *ResourceLinksSnapshotTaken) GetNewPublishedLinks(pub *ResourceLinksPublished) []*commands.Resource {

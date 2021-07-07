@@ -40,3 +40,10 @@ func (e *ResourceLinksPublished) IsSnapshot() bool {
 func (e *ResourceLinksPublished) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
+
+func (e *ResourceLinksPublished) CopyData(event *ResourceLinksPublished) {
+	e.Resources = event.GetResources()
+	e.DeviceId = event.GetDeviceId()
+	e.AuditContext = event.GetAuditContext()
+	e.EventMetadata = event.GetEventMetadata()
+}

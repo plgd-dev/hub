@@ -48,6 +48,13 @@ func (e *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTaken) {
+	e.DeviceId = event.GetDeviceId()
+	e.DeviceMetadataUpdated = event.GetDeviceMetadataUpdated()
+	e.UpdatePendings = event.GetUpdatePendings()
+	e.EventMetadata = event.GetEventMetadata()
+}
+
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
 	index := -1
 	for i, event := range e.GetUpdatePendings() {

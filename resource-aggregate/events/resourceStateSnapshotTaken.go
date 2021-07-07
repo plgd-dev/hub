@@ -57,6 +57,17 @@ func (e *ResourceStateSnapshotTaken) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken) {
+	e.ResourceId = event.GetResourceId()
+	e.LatestResourceChange = event.GetLatestResourceChange()
+	e.ResourceCreatePendings = event.GetResourceCreatePendings()
+	e.ResourceRetrievePendings = event.GetResourceRetrievePendings()
+	e.ResourceUpdatePendings = event.GetResourceUpdatePendings()
+	e.ResourceDeletePendings = event.GetResourceDeletePendings()
+	e.AuditContext = event.GetAuditContext()
+	e.EventMetadata = event.GetEventMetadata()
+}
+
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
 	for _, event := range e.GetResourceCreatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == createPending.GetAuditContext().GetCorrelationId() {
