@@ -41,6 +41,14 @@ func (e *DeviceMetadataUpdated) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
+func (e *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {
+	e.DeviceId = event.GetDeviceId()
+	e.Status = event.GetStatus()
+	e.ShadowSynchronization = event.GetShadowSynchronization()
+	e.AuditContext = event.GetAuditContext()
+	e.EventMetadata = event.GetEventMetadata()
+}
+
 // Check if two DeviceMetadataUpdated events are equal
 func (e *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 	return e.GetStatus().GetValue() == upd.GetStatus().GetValue() &&

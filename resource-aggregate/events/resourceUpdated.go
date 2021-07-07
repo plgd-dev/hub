@@ -39,3 +39,11 @@ func (e *ResourceUpdated) IsSnapshot() bool {
 func (e *ResourceUpdated) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
+
+func (e *ResourceUpdated) CopyData(event *ResourceUpdated) {
+	e.ResourceId = event.GetResourceId()
+	e.Status = event.GetStatus()
+	e.Content = event.GetContent()
+	e.AuditContext = event.GetAuditContext()
+	e.EventMetadata = event.GetEventMetadata()
+}

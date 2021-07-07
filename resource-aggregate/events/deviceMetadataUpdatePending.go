@@ -40,3 +40,10 @@ func (e *DeviceMetadataUpdatePending) IsSnapshot() bool {
 func (e *DeviceMetadataUpdatePending) Timestamp() time.Time {
 	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
+
+func (e *DeviceMetadataUpdatePending) CopyData(event *DeviceMetadataUpdatePending) {
+	e.DeviceId = event.GetDeviceId()
+	e.UpdatePending = event.GetUpdatePending()
+	e.AuditContext = event.GetAuditContext()
+	e.EventMetadata = event.GetEventMetadata()
+}

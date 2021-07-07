@@ -27,7 +27,7 @@ func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID st
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksPublished); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -53,7 +53,7 @@ func MakeResourceLinksUnpublishedEvent(hrefs []string, deviceID string, eventMet
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksUnpublished); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -76,7 +76,7 @@ func MakeResourceLinksSnapshotTaken(resources map[string]*commands.Resource, dev
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceLinksSnapshotTaken); ok {
-				*x = *e
+				x.CopyData(e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -107,7 +107,7 @@ func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *command
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdatePending); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -132,7 +132,7 @@ func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceUpdated); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -156,7 +156,7 @@ func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceChanged); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -180,7 +180,7 @@ func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterf
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrievePending); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -205,7 +205,7 @@ func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Stat
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceRetrieved); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -229,7 +229,7 @@ func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResou
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
-				*x = *e
+				x.CopyData(e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
@@ -252,7 +252,7 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
 			if x, ok := v.(*events.DeviceMetadataSnapshotTaken); ok {
-				*x = e
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")
