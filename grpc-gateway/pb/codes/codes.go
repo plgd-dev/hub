@@ -3,6 +3,7 @@ package codes
 import (
 	"net/http"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	codes "google.golang.org/grpc/codes"
 )
 
@@ -26,51 +27,18 @@ var code2string = map[Code]string{
 	Accepted:         "accepted",
 }
 
+var code2httpCode = map[Code]int{
+	Created:          http.StatusCreated,
+	MethodNotAllowed: http.StatusMethodNotAllowed,
+	Accepted:         http.StatusAccepted,
+}
+
 func (c Code) ToHTTPCode() int {
-	switch c {
-	case Code(codes.OK):
-		return http.StatusOK
-	case Code(codes.Canceled):
-		return http.StatusRequestTimeout
-	case Code(codes.Unknown):
-		return http.StatusInternalServerError
-	case Code(codes.InvalidArgument):
-		return http.StatusBadRequest
-	case Code(codes.DeadlineExceeded):
-		return http.StatusGatewayTimeout
-	case Code(codes.NotFound):
-		return http.StatusNotFound
-	case Code(codes.AlreadyExists):
-		return http.StatusConflict
-	case Code(codes.PermissionDenied):
-		return http.StatusForbidden
-	case Code(codes.Unauthenticated):
-		return http.StatusUnauthorized
-	case Code(codes.ResourceExhausted):
-		return http.StatusTooManyRequests
-	case Code(codes.FailedPrecondition):
-		// Note, this deliberately doesn't translate to the similarly named '412 Precondition Failed' HTTP response status.
-		return http.StatusBadRequest
-	case Code(codes.Aborted):
-		return http.StatusConflict
-	case Code(codes.OutOfRange):
-		return http.StatusBadRequest
-	case Code(codes.Unimplemented):
-		return http.StatusNotImplemented
-	case Code(codes.Internal):
-		return http.StatusInternalServerError
-	case Code(codes.Unavailable):
-		return http.StatusServiceUnavailable
-	case Code(codes.DataLoss):
-		return http.StatusInternalServerError
-	case MethodNotAllowed:
-		return http.StatusMethodNotAllowed
-	case Created:
-		return http.StatusCreated
-	case Accepted:
-		return http.StatusAccepted
+	v, ok := code2httpCode[c]
+	if ok {
+		return v
 	}
-	return http.StatusInternalServerError
+	return runtime.HTTPStatusFromCode(codes.Code(c))
 }
 
 func (c Code) String() string {

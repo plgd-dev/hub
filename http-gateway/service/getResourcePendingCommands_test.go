@@ -228,8 +228,7 @@ func TestRequestHandler_GetResourcePendingCommands(t *testing.T) {
 			DeviceId:              deviceID,
 			ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
 		})
-		// action is done async we don't expect error
-		require.NoError(t, err)
+		require.Error(t, err)
 	}
 	updateDeviceMetadata()
 

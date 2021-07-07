@@ -2,31 +2,46 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
-	"net/http/httptest"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	exCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/status"
 )
 
+type errorResponseWrapperWriter struct {
+	http.ResponseWriter
+	code int
+}
+
+func newErrorResponseWrapperWriter(w http.ResponseWriter, code int) *errorResponseWrapperWriter {
+	return &errorResponseWrapperWriter{
+		ResponseWriter: w,
+		code:           code,
+	}
+}
+
+func (w *errorResponseWrapperWriter) WriteHeader(_ int) {
+	w.ResponseWriter.WriteHeader(w.code)
+}
+
+func (w *errorResponseWrapperWriter) Flush() {
+	f, ok := w.ResponseWriter.(http.Flusher)
+	if ok {
+		f.Flush()
+	}
+}
+
 func errorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
+	var customStatus *runtime.HTTPStatusError
+	if errors.As(err, &customStatus) {
+		err = customStatus.Err
+	}
 	s := status.Convert(err)
-	rec := httptest.NewRecorder()
-	code := exCodes.Code(s.Code())
-	switch code {
-	case exCodes.MethodNotAllowed:
-		runtime.DefaultHTTPErrorHandler(ctx, mux, marshaler, rec, r, err)
-	default:
-		runtime.DefaultHTTPErrorHandler(ctx, mux, marshaler, w, r, err)
-		return
+	httpCode := exCodes.Code(s.Code()).ToHTTPCode() // set proper error code because we extended it
+	if customStatus != nil {
+		httpCode = customStatus.HTTPStatus
 	}
-	for k, v := range rec.Header() {
-		w.Header()[k] = v
-	}
-	w.WriteHeader(code.ToHTTPCode())
-	if _, err := w.Write(rec.Body.Bytes()); err != nil {
-		grpclog.Infof("Failed to write response: %v", err)
-	}
+	runtime.DefaultHTTPErrorHandler(ctx, mux, marshaler, newErrorResponseWrapperWriter(w, httpCode), r, err)
 }
