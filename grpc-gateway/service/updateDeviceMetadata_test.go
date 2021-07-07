@@ -26,14 +26,12 @@ import (
 )
 
 type contentChangedFilter struct {
-	resourceChangedCh       chan eventbus.EventUnmarshaler
-	deviceMetadataUpdatedCh chan *events.DeviceMetadataUpdated
+	resourceChangedCh chan eventbus.EventUnmarshaler
 }
 
 func NewContentChangedFilter() *contentChangedFilter {
 	return &contentChangedFilter{
-		resourceChangedCh:       make(chan eventbus.EventUnmarshaler, 2),
-		deviceMetadataUpdatedCh: make(chan *events.DeviceMetadataUpdated, 1),
+		resourceChangedCh: make(chan eventbus.EventUnmarshaler, 2),
 	}
 }
 
@@ -49,35 +47,12 @@ func (f *contentChangedFilter) Handle(ctx context.Context, iter eventbus.Iter) (
 			default:
 			}
 		}
-		if v.EventType() == (&events.DeviceMetadataUpdated{}).EventType() {
-			var ev events.DeviceMetadataUpdated
-			err := v.Unmarshal(&ev)
-			if err != nil {
-				return err
-			}
-			if ev.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {
-				continue
-			}
-			select {
-			case f.deviceMetadataUpdatedCh <- &ev:
-			default:
-			}
-		}
 	}
 }
 
 func (f *contentChangedFilter) WaitForResourceChanged(t time.Duration) eventbus.EventUnmarshaler {
 	select {
 	case v := <-f.resourceChangedCh:
-		return v
-	case <-time.After(t):
-		return nil
-	}
-}
-
-func (f *contentChangedFilter) WaitForDeviceMetadataUpdated(t time.Duration) *events.DeviceMetadataUpdated {
-	select {
-	case v := <-f.deviceMetadataUpdatedCh:
 		return v
 	case <-time.After(t):
 		return nil
@@ -113,15 +88,12 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.NoError(t, err)
 	defer obs.Close()
 
-	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+	ev, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
 		DeviceId:              deviceID,
 		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
 	})
 	require.NoError(t, err)
-
-	ev := v.WaitForDeviceMetadataUpdated(time.Second)
-	require.NotEmpty(t, ev)
-	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetShadowSynchronization())
+	require.Equal(t, commands.ShadowSynchronization_DISABLED, ev.GetData().GetShadowSynchronization())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",
@@ -149,15 +121,13 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	evResourceChanged := v.WaitForResourceChanged(time.Second)
 	require.Empty(t, evResourceChanged)
 
-	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+	ev, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
 		DeviceId:              deviceID,
 		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_ENABLED,
 	})
 	require.NoError(t, err)
 
-	ev = v.WaitForDeviceMetadataUpdated(time.Second * 5)
-	require.NotEmpty(t, ev)
-	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetShadowSynchronization())
+	require.Equal(t, commands.ShadowSynchronization_ENABLED, ev.GetData().GetShadowSynchronization())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: "oic.if.baseline",

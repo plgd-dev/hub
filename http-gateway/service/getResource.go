@@ -32,7 +32,7 @@ func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWrite
 
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
 		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
-	}, streamResponseKey, "data")
+	}, streamResponseKey)
 }
 
 func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http.Request) {

@@ -117,16 +117,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 					},
 				},
 			},
-			want: &events.ResourceUpdated{
-				ResourceId: &commands.ResourceId{
-					DeviceId: deviceID,
-					Href:     "/oic/d",
-				},
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_FORBIDDEN,
-			},
+			wantErr: true,
 		},
 		{
 			name: "invalid Href",
@@ -162,9 +153,10 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				got.AuditContext = nil
-				got.EventMetadata = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
+				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

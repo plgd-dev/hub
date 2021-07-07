@@ -48,7 +48,10 @@ func Unmarshal(code int, input io.Reader, v protoreflect.ProtoMessage) error {
 		return err
 	}
 	if len(item.Result) == 0 && len(item.Error) == 0 {
-		err := protojson.Unmarshal(data, v)
+		u := protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		}
+		err := u.Unmarshal(data, v)
 		if err != nil {
 			return err
 		}
@@ -57,7 +60,10 @@ func Unmarshal(code int, input io.Reader, v protoreflect.ProtoMessage) error {
 	if len(item.Error) > 0 {
 		return UnmarshalError(item.Error)
 	}
-	err = protojson.Unmarshal(item.Result, v)
+	u := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	err = u.Unmarshal(item.Result, v)
 	if err != nil {
 		return err
 	}

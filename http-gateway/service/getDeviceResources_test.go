@@ -202,6 +202,14 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "not found",
+			args: args{
+				deviceID: "notFound",
+				accept:   uri.ApplicationProtoJsonContentType,
+			},
+			wantErr: true,
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
@@ -227,7 +235,7 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResources, nil).DeviceId(deviceID).Accept(tt.args.accept).AddTypeFilter(tt.args.typeFilter).AuthToken(token).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResources, nil).DeviceId(tt.args.deviceID).Accept(tt.args.accept).AddTypeFilter(tt.args.typeFilter).AuthToken(token).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,

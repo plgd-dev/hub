@@ -14,11 +14,9 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 
-	"github.com/google/uuid"
 	router "github.com/gorilla/mux"
 )
 
@@ -35,6 +33,7 @@ func NewRequestHandler(config *Config, client *client.Client) *RequestHandler {
 		client: client,
 		config: config,
 		mux: runtime.NewServeMux(
+			runtime.WithErrorHandler(errorHandler),
 			runtime.WithMarshalerOption(uri.ApplicationProtoJsonContentType, newJsonpbMarshaler()),
 			runtime.WithMarshalerOption(runtime.MIMEWildcard, newJsonMarshaler()),
 		),
@@ -248,29 +247,4 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	}
 
 	return &http.Server{Handler: r0}
-}
-
-func (requestHandler *RequestHandler) makeCtx(r *http.Request) context.Context {
-	token := getAccessToken(r.Header)
-	return kitNetGrpc.CtxWithToken(r.Context(), token)
-}
-
-func getAccessToken(h http.Header) string {
-	accessToken := h.Get("Authorization")
-	if len(accessToken) < 7 {
-		return ""
-	}
-	return accessToken[7:]
-}
-
-func getCorrelationID(h http.Header) string {
-	correlationID := h.Get("Correlation-ID")
-	if correlationID == "" {
-		return uuid.New().String()
-	}
-	return correlationID
-}
-
-func healthCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 }

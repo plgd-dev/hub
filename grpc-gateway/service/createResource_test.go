@@ -62,14 +62,8 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 					},
 				},
 			},
-			want: &events.ResourceCreated{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
-			wantErrCode: codes.OK,
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
 		},
 	}
 
@@ -97,9 +91,10 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())
 			} else {
 				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
+				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

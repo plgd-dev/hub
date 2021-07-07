@@ -27,15 +27,20 @@ func NewBool(v bool) *bool {
 	return &v
 }
 
-func cmpResourceChanged(t *testing.T, want, got *events.ResourceChanged) {
+func cmpResourceRetrieved(t *testing.T, want, got *events.ResourceRetrieved) {
 	dataWant := want.GetContent().GetData()
 	datagot := got.GetContent().GetData()
 	want.Content.Data = nil
 	got.Content.Data = nil
 	test.CheckProtobufs(t, want, got, test.RequireToCheckFunc(require.Equal))
-	w := test.DecodeCbor(t, dataWant)
-	g := test.DecodeCbor(t, datagot)
-	require.Equal(t, w, g)
+
+	if len(dataWant) > 0 {
+		w := test.DecodeCbor(t, dataWant)
+		g := test.DecodeCbor(t, datagot)
+		require.Equal(t, w, g)
+	} else {
+		require.Equal(t, len(dataWant), len(datagot))
+	}
 }
 
 func TestRequestHandler_GetResource(t *testing.T) {
@@ -51,7 +56,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    *events.ResourceChanged
+		want    *events.ResourceRetrieved
 	}{
 		{
 			name: "json: get from resource shadow",
@@ -59,7 +64,14 @@ func TestRequestHandler_GetResource(t *testing.T) {
 				deviceID:     deviceID,
 				resourceHref: "/light/1",
 			},
-			wantErr: true,
+			want: &events.ResourceRetrieved{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{}, // content is encoded as json
+				Status:  commands.Status_OK,
+			},
 		},
 		{
 			name: "jsonpb: get from resource shadow",
@@ -68,7 +80,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 				resourceHref: "/light/1",
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceChanged{
+			want: &events.ResourceRetrieved{
 				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     "/light/1",
@@ -95,7 +107,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 				resourceInterface: "oic.if.baseline",
 				accept:            uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceChanged{
+			want: &events.ResourceRetrieved{
 				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     "/light/1",
@@ -122,7 +134,7 @@ func TestRequestHandler_GetResource(t *testing.T) {
 				shadow:       NewBool(false),
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceChanged{
+			want: &events.ResourceRetrieved{
 				ResourceId: &commands.ResourceId{
 					DeviceId: deviceID,
 					Href:     "/light/1",
@@ -180,9 +192,9 @@ func TestRequestHandler_GetResource(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			values := make([]*events.ResourceChanged, 0, 1)
+			values := make([]*events.ResourceRetrieved, 0, 1)
 			for {
-				var value events.ResourceChanged
+				var value pb.GetResourceFromDeviceResponse
 				err = Unmarshal(resp.StatusCode, resp.Body, &value)
 				if err == io.EOF {
 					break
@@ -192,11 +204,12 @@ func TestRequestHandler_GetResource(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				value.AuditContext = nil
-				value.EventMetadata = nil
-				values = append(values, &value)
+				require.NotEmpty(t, value.GetData())
+				value.GetData().AuditContext = nil
+				value.GetData().EventMetadata = nil
+				values = append(values, value.GetData())
 			}
-			cmpResourceChanged(t, tt.want, values[0])
+			cmpResourceRetrieved(t, tt.want, values[0])
 		})
 	}
 }

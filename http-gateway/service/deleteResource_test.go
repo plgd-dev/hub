@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	exCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
@@ -31,11 +31,12 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		accept       string
 	}
 	tests := []struct {
-		name        string
-		args        args
-		want        *events.ResourceDeleted
-		wantErr     bool
-		wantErrCode codes.Code
+		name         string
+		args         args
+		want         *events.ResourceDeleted
+		wantErr      bool
+		wantErrCode  exCodes.Code
+		wantHTTPCode int
 	}{
 		{
 			name: "/light/2 - MethodNotAllowed",
@@ -44,13 +45,9 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 				resourceHref: "/light/2",
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceDeleted{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-				Status:     commands.Status_METHOD_NOT_ALLOWED,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
+			wantErr:      true,
+			wantErrCode:  exCodes.MethodNotAllowed,
+			wantHTTPCode: http.StatusMethodNotAllowed,
 		},
 		{
 			name: "invalid Href",
@@ -59,8 +56,9 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 				resourceHref: "/unknown",
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
-			wantErr:     true,
-			wantErrCode: codes.NotFound,
+			wantErr:      true,
+			wantErrCode:  exCodes.Code(codes.NotFound),
+			wantHTTPCode: http.StatusNotFound,
 		},
 		{
 			name: "/oic/d - PermissionDenied",
@@ -69,13 +67,9 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 				resourceHref: "/oic/d",
 				accept:       uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceDeleted{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
+			wantErr:      true,
+			wantErrCode:  exCodes.Code(codes.PermissionDenied),
+			wantHTTPCode: http.StatusForbidden,
 		},
 	}
 
@@ -113,11 +107,13 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
+			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
+
 			var got events.ResourceDeleted
 			err = Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
-				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())
+				assert.Equal(t, tt.wantErrCode.String(), exCodes.Code(status.Convert(err).Code()).String())
 			} else {
 				require.NoError(t, err)
 				got.EventMetadata = nil

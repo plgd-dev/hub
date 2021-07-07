@@ -102,10 +102,11 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-				got.Content.Data = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
+				got.GetData().Content.Data = nil
+				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

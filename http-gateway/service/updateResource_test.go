@@ -65,12 +65,12 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, a
 	}
 	defer resp.Body.Close()
 
-	var got events.ResourceUpdated
+	var got pb.UpdateResourceResponse
 	err = Unmarshal(resp.StatusCode, resp.Body, &got)
 	if err != nil {
 		return nil, err
 	}
-	return &got, nil
+	return got.GetData(), nil
 }
 
 func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
@@ -202,13 +202,7 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 				},
 				accept: uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_FORBIDDEN,
-			},
+			wantErr: true,
 		},
 		{
 			name: "invalid Href",

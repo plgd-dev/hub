@@ -55,16 +55,31 @@ func NewAuditContext(userID, correlationId string) *AuditContext {
 }
 
 var http2status = map[int]Status{
-	http.StatusAccepted:         Status_ACCEPTED,
-	http.StatusOK:               Status_OK,
-	http.StatusBadRequest:       Status_BAD_REQUEST,
-	http.StatusNotFound:         Status_NOT_FOUND,
-	http.StatusNotImplemented:   Status_NOT_IMPLEMENTED,
-	http.StatusForbidden:        Status_FORBIDDEN,
-	http.StatusUnauthorized:     Status_UNAUTHORIZED,
-	http.StatusMethodNotAllowed: Status_METHOD_NOT_ALLOWED,
-	http.StatusCreated:          Status_CREATED,
-	http.StatusNoContent:        Status_OK,
+	http.StatusAccepted:           Status_ACCEPTED,
+	http.StatusOK:                 Status_OK,
+	http.StatusBadRequest:         Status_BAD_REQUEST,
+	http.StatusNotFound:           Status_NOT_FOUND,
+	http.StatusNotImplemented:     Status_NOT_IMPLEMENTED,
+	http.StatusForbidden:          Status_FORBIDDEN,
+	http.StatusUnauthorized:       Status_UNAUTHORIZED,
+	http.StatusMethodNotAllowed:   Status_METHOD_NOT_ALLOWED,
+	http.StatusCreated:            Status_CREATED,
+	http.StatusNoContent:          Status_OK,
+	http.StatusServiceUnavailable: Status_UNAVAILABLE,
+}
+
+var status2http = map[Status]int{
+	Status_ACCEPTED:           http.StatusAccepted,
+	Status_OK:                 http.StatusOK,
+	Status_BAD_REQUEST:        http.StatusBadRequest,
+	Status_NOT_FOUND:          http.StatusNotFound,
+	Status_NOT_IMPLEMENTED:    http.StatusNotImplemented,
+	Status_FORBIDDEN:          http.StatusForbidden,
+	Status_UNAUTHORIZED:       http.StatusUnauthorized,
+	Status_METHOD_NOT_ALLOWED: http.StatusMethodNotAllowed,
+	Status_CREATED:            http.StatusCreated,
+	Status_UNAVAILABLE:        http.StatusServiceUnavailable,
+	Status_UNKNOWN:            http.StatusServiceUnavailable,
 }
 
 func HTTPStatus2Status(s int) Status {
@@ -98,10 +113,10 @@ var status2grpcCode = map[Status]codes.Code{
 	Status_NOT_FOUND:          codes.NotFound,
 	Status_UNAVAILABLE:        codes.Unavailable,
 	Status_NOT_IMPLEMENTED:    codes.Unimplemented,
-	Status_ACCEPTED:           extCodes.Accepted,
+	Status_ACCEPTED:           codes.Code(extCodes.Accepted),
 	Status_ERROR:              codes.Internal,
-	Status_METHOD_NOT_ALLOWED: extCodes.MethodNotAllowed,
-	Status_CREATED:            extCodes.Created,
+	Status_METHOD_NOT_ALLOWED: codes.Code(extCodes.MethodNotAllowed),
+	Status_CREATED:            codes.Code(extCodes.Created),
 }
 
 func (s Status) ToGrpcCode() codes.Code {
@@ -110,6 +125,14 @@ func (s Status) ToGrpcCode() codes.Code {
 		return v
 	}
 	return codes.Unknown
+}
+
+func (s Status) ToHTTPCode() int {
+	v, ok := status2http[s]
+	if ok {
+		return v
+	}
+	return http.StatusInternalServerError
 }
 
 func (r *ResourceId) ToString() string {

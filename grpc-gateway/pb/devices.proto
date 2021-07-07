@@ -29,6 +29,10 @@ message GetResourceFromDeviceRequest {
   string resource_interface = 2;
 }
 
+message GetResourceFromDeviceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceRetrieved data = 1;
+}
+
 // GetResourcesValuesRequest get values from resource-shadow
 message GetResourcesRequest {
   // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
@@ -47,6 +51,11 @@ message UpdateResourceRequest {
   Content content = 2;
   string resource_interface = 3;
 }
+
+message UpdateResourceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceUpdated data = 1;
+}
+
 
 message SubscribeToEvents {
   message CreateSubscription {
@@ -157,7 +166,16 @@ message DeleteResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
 }
 
+message DeleteResourceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceDeleted data = 1;
+}
+
 message CreateResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
 }
+
+message CreateResourceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceCreated data = 1;
+}
+

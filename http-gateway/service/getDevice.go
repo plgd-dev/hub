@@ -38,7 +38,6 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid number of responses"))
 		return
 	}
-
 	encoder := jsoniter.NewEncoder(w)
 	var result interface{}
 	result = datas[0]
@@ -54,6 +53,7 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 			break
 		}
 	}
+
 	// copy everything from response recorder
 	// to actual response writer
 	for k, v := range rec.Header() {

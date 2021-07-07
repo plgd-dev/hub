@@ -87,9 +87,9 @@ func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events)
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
+				assert.Equal(t, tt.wantContentType, got.GetData().GetContent().GetContentType())
 				var d map[string]interface{}
-				err := cbor.Decode(got.GetContent().GetData(), &d)
+				err := cbor.Decode(got.GetData().GetContent().GetData(), &d)
 				require.NoError(t, err)
 				delete(d, "piid")
 				assert.Equal(t, tt.want, d)

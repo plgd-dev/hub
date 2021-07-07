@@ -25,10 +25,6 @@ func (c *Client) getResourceFromDevice(
 		return fmt.Errorf("cannot retrieve resource from device /%v%v: %w", deviceID, href, err)
 	}
 
-	content, err := commands.EventContentToContent(resp)
-	if err != nil {
-		return fmt.Errorf("cannot retrieve resource from device /%v%v: %w", deviceID, href, err)
-	}
-
+	content := resp.GetData().GetContent()
 	return DecodeContentWithCodec(codec, content.GetContentType(), content.GetData(), response)
 }

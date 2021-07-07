@@ -24,19 +24,19 @@ type GrpcGatewayClient interface {
 	// Get resource links of devices.
 	GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error)
 	// Get resource from the device.
-	GetResourceFromDevice(ctx context.Context, in *GetResourceFromDeviceRequest, opts ...grpc.CallOption) (*events.ResourceRetrieved, error)
+	GetResourceFromDevice(ctx context.Context, in *GetResourceFromDeviceRequest, opts ...grpc.CallOption) (*GetResourceFromDeviceResponse, error)
 	// Get resources from the resource shadow.
 	GetResources(ctx context.Context, in *GetResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourcesClient, error)
 	// Update resource at the device.
-	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*events.ResourceUpdated, error)
+	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error)
 	// Subscribe to events
 	SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error)
 	// Get client configuration
 	GetClientConfiguration(ctx context.Context, in *ClientConfigurationRequest, opts ...grpc.CallOption) (*ClientConfigurationResponse, error)
 	// Delete resource at the device.
-	DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*events.ResourceDeleted, error)
+	DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error)
 	// Create resource at the device.
-	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*events.ResourceCreated, error)
+	CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error)
 	// Enables/disables shadow synchronization for device.
 	UpdateDeviceMetadata(ctx context.Context, in *UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*UpdateDeviceMetadataResponse, error)
 	// Gets pending commands for devices .
@@ -117,8 +117,8 @@ func (x *grpcGatewayGetResourceLinksClient) Recv() (*events.ResourceLinksPublish
 	return m, nil
 }
 
-func (c *grpcGatewayClient) GetResourceFromDevice(ctx context.Context, in *GetResourceFromDeviceRequest, opts ...grpc.CallOption) (*events.ResourceRetrieved, error) {
-	out := new(events.ResourceRetrieved)
+func (c *grpcGatewayClient) GetResourceFromDevice(ctx context.Context, in *GetResourceFromDeviceRequest, opts ...grpc.CallOption) (*GetResourceFromDeviceResponse, error) {
+	out := new(GetResourceFromDeviceResponse)
 	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -158,8 +158,8 @@ func (x *grpcGatewayGetResourcesClient) Recv() (*Resource, error) {
 	return m, nil
 }
 
-func (c *grpcGatewayClient) UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*events.ResourceUpdated, error) {
-	out := new(events.ResourceUpdated)
+func (c *grpcGatewayClient) UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error) {
+	out := new(UpdateResourceResponse)
 	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResource", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -207,8 +207,8 @@ func (c *grpcGatewayClient) GetClientConfiguration(ctx context.Context, in *Clie
 	return out, nil
 }
 
-func (c *grpcGatewayClient) DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*events.ResourceDeleted, error) {
-	out := new(events.ResourceDeleted)
+func (c *grpcGatewayClient) DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error) {
+	out := new(DeleteResourceResponse)
 	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteResource", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -216,8 +216,8 @@ func (c *grpcGatewayClient) DeleteResource(ctx context.Context, in *DeleteResour
 	return out, nil
 }
 
-func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*events.ResourceCreated, error) {
-	out := new(events.ResourceCreated)
+func (c *grpcGatewayClient) CreateResource(ctx context.Context, in *CreateResourceRequest, opts ...grpc.CallOption) (*CreateResourceResponse, error) {
+	out := new(CreateResourceResponse)
 	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -307,19 +307,19 @@ type GrpcGatewayServer interface {
 	// Get resource links of devices.
 	GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error
 	// Get resource from the device.
-	GetResourceFromDevice(context.Context, *GetResourceFromDeviceRequest) (*events.ResourceRetrieved, error)
+	GetResourceFromDevice(context.Context, *GetResourceFromDeviceRequest) (*GetResourceFromDeviceResponse, error)
 	// Get resources from the resource shadow.
 	GetResources(*GetResourcesRequest, GrpcGateway_GetResourcesServer) error
 	// Update resource at the device.
-	UpdateResource(context.Context, *UpdateResourceRequest) (*events.ResourceUpdated, error)
+	UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error)
 	// Subscribe to events
 	SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error
 	// Get client configuration
 	GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error)
 	// Delete resource at the device.
-	DeleteResource(context.Context, *DeleteResourceRequest) (*events.ResourceDeleted, error)
+	DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error)
 	// Create resource at the device.
-	CreateResource(context.Context, *CreateResourceRequest) (*events.ResourceCreated, error)
+	CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error)
 	// Enables/disables shadow synchronization for device.
 	UpdateDeviceMetadata(context.Context, *UpdateDeviceMetadataRequest) (*UpdateDeviceMetadataResponse, error)
 	// Gets pending commands for devices .
@@ -339,13 +339,13 @@ func (UnimplementedGrpcGatewayServer) GetDevices(*GetDevicesRequest, GrpcGateway
 func (UnimplementedGrpcGatewayServer) GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetResourceLinks not implemented")
 }
-func (UnimplementedGrpcGatewayServer) GetResourceFromDevice(context.Context, *GetResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
+func (UnimplementedGrpcGatewayServer) GetResourceFromDevice(context.Context, *GetResourceFromDeviceRequest) (*GetResourceFromDeviceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetResourceFromDevice not implemented")
 }
 func (UnimplementedGrpcGatewayServer) GetResources(*GetResourcesRequest, GrpcGateway_GetResourcesServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetResources not implemented")
 }
-func (UnimplementedGrpcGatewayServer) UpdateResource(context.Context, *UpdateResourceRequest) (*events.ResourceUpdated, error) {
+func (UnimplementedGrpcGatewayServer) UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateResource not implemented")
 }
 func (UnimplementedGrpcGatewayServer) SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error {
@@ -354,10 +354,10 @@ func (UnimplementedGrpcGatewayServer) SubscribeToEvents(GrpcGateway_SubscribeToE
 func (UnimplementedGrpcGatewayServer) GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClientConfiguration not implemented")
 }
-func (UnimplementedGrpcGatewayServer) DeleteResource(context.Context, *DeleteResourceRequest) (*events.ResourceDeleted, error) {
+func (UnimplementedGrpcGatewayServer) DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteResource not implemented")
 }
-func (UnimplementedGrpcGatewayServer) CreateResource(context.Context, *CreateResourceRequest) (*events.ResourceCreated, error) {
+func (UnimplementedGrpcGatewayServer) CreateResource(context.Context, *CreateResourceRequest) (*CreateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateResource not implemented")
 }
 func (UnimplementedGrpcGatewayServer) UpdateDeviceMetadata(context.Context, *UpdateDeviceMetadataRequest) (*UpdateDeviceMetadataResponse, error) {

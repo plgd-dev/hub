@@ -118,7 +118,7 @@ func (h *gatewayHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGa
 	return nil
 }
 
-func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceRequest) (*events.ResourceUpdated, error) {
+func (h *gatewayHandler) UpdateResourcesValues(context.Context, *pb.UpdateResourceRequest) (*pb.UpdateResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
@@ -126,11 +126,11 @@ func (h *gatewayHandler) SubscribeToEvents(pb.GrpcGateway_SubscribeToEventsServe
 	return status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func (h *gatewayHandler) GetResourceFromDevice(context.Context, *pb.GetResourceFromDeviceRequest) (*events.ResourceRetrieved, error) {
+func (h *gatewayHandler) GetResourceFromDevice(context.Context, *pb.GetResourceFromDeviceRequest) (*pb.GetResourceFromDeviceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func (h *gatewayHandler) DeleteResource(context.Context, *pb.DeleteResourceRequest) (*events.ResourceDeleted, error) {
+func (h *gatewayHandler) DeleteResource(context.Context, *pb.DeleteResourceRequest) (*pb.DeleteResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 

@@ -57,7 +57,7 @@ service GrpcGateway {
   }
 
   // Get resource from the device.
-  rpc GetResourceFromDevice(GetResourceFromDeviceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceRetrieved) {
+  rpc GetResourceFromDevice(GetResourceFromDeviceRequest) returns (GetResourceFromDeviceResponse) {
     option (google.api.http) = {
       get: "/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"
     };
@@ -76,7 +76,7 @@ service GrpcGateway {
     };
   }
   // Update resource at the device.
-  rpc UpdateResource(UpdateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceUpdated) {
+  rpc UpdateResource(UpdateResourceRequest) returns (UpdateResourceResponse) {
     option (google.api.http) = {
       put: "/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"
       body: "content"
@@ -109,7 +109,7 @@ service GrpcGateway {
   }
 
   // Delete resource at the device.
-  rpc DeleteResource(DeleteResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceDeleted) {
+  rpc DeleteResource(DeleteResourceRequest) returns (DeleteResourceResponse) {
     option (google.api.http) = {
       delete: "/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}"
     };
@@ -119,7 +119,7 @@ service GrpcGateway {
   }
 
   // Create resource at the device.
-  rpc CreateResource(CreateResourceRequest) returns (ocf.cloud.resourceaggregate.pb.ResourceCreated) {
+  rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse) {
     option (google.api.http) = {
       post: "/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}"
       body: "content"

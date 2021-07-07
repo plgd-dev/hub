@@ -24,7 +24,7 @@ func (r *RequestHandler) UpdateDeviceMetadata(ctx context.Context, req *pb.Updat
 		shadowSynchronization = commands.ShadowSynchronization_ENABLED
 	}
 
-	_, err := r.resourceAggregateClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+	metadataUpdated, err := r.resourceAggregateClient.SyncUpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      req.GetDeviceId(),
 		CorrelationId: correlationID.String(),
 		Update: &commands.UpdateDeviceMetadataRequest_ShadowSynchronization{
@@ -36,7 +36,9 @@ func (r *RequestHandler) UpdateDeviceMetadata(ctx context.Context, req *pb.Updat
 	})
 
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update shadow synchronization of device %v: %v", req.GetDeviceId(), err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update device('%v') metadata: %v", req.GetDeviceId(), err))
 	}
-	return &pb.UpdateDeviceMetadataResponse{}, nil
+	return &pb.UpdateDeviceMetadataResponse{
+		Data: metadataUpdated,
+	}, nil
 }

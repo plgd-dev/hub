@@ -227,7 +227,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbResourceDeleted"
+              "$ref": "#/definitions/cloudgrpcgatewaypbDeleteResourceResponse"
             }
           },
           "default": {
@@ -262,7 +262,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbResourceCreated"
+              "$ref": "#/definitions/cloudgrpcgatewaypbCreateResourceResponse"
             }
           },
           "default": {
@@ -307,7 +307,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbResourceRetrieved"
+              "$ref": "#/definitions/pbGetResourceFromDeviceResponse"
             }
           },
           "default": {
@@ -348,7 +348,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbResourceUpdated"
+              "$ref": "#/definitions/cloudgrpcgatewaypbUpdateResourceResponse"
             }
           },
           "default": {
@@ -780,6 +780,22 @@
         }
       }
     },
+    "cloudgrpcgatewaypbCreateResourceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceCreated"
+        }
+      }
+    },
+    "cloudgrpcgatewaypbDeleteResourceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceDeleted"
+        }
+      }
+    },
     "cloudgrpcgatewaypbResource": {
       "type": "object",
       "properties": {
@@ -795,7 +811,20 @@
       }
     },
     "cloudgrpcgatewaypbUpdateDeviceMetadataResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        }
+      }
+    },
+    "cloudgrpcgatewaypbUpdateResourceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceUpdated"
+        }
+      }
     },
     "cloudresourceaggregatepbContent": {
       "type": "object",
@@ -1116,6 +1145,14 @@
         "OFFLINE"
       ],
       "default": "ONLINE"
+    },
+    "pbGetResourceFromDeviceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/pbResourceRetrieved"
+        }
+      }
     },
     "pbLocalizedString": {
       "type": "object",

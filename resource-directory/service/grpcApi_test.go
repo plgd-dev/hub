@@ -166,8 +166,9 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
 			}
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
@@ -241,9 +242,9 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 					require.Error(t, err)
 				} else {
 					require.NoError(t, err)
-					assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
+					assert.Equal(t, tt.wantContentType, got.GetData().GetContent().GetContentType())
 					var d map[string]interface{}
-					err := cbor.Decode(got.GetContent().GetData(), &d)
+					err := cbor.Decode(got.GetData().GetContent().GetData(), &d)
 					require.NoError(t, err)
 					delete(d, "piid")
 					assert.Equal(t, tt.want, d)

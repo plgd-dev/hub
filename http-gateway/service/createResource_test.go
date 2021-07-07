@@ -73,14 +73,8 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 				accept:      uri.ApplicationProtoJsonContentType,
 				contentType: uri.ApplicationProtoJsonContentType,
 			},
-			want: &events.ResourceCreated{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
-			wantErrCode: codes.OK,
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
 		},
 		{
 			name: "/oic/d - PermissionDenied - " + message.AppJSON.String(),
@@ -97,14 +91,8 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 				accept:      uri.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 			},
-			want: &events.ResourceCreated{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
-			wantErrCode: codes.OK,
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
 		},
 	}
 
