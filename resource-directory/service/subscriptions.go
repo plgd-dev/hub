@@ -482,7 +482,7 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 		}
 
 		subRes := pb.Event{
-			Token: subReq.Token,
+			CorrelationId: subReq.CorrelationId,
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -517,7 +517,7 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 
 		switch r := subReq.GetAction().(type) {
 		case *pb.SubscribeToEvents_CreateSubscription_:
-			err = s.SubscribeForDevicesEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetToken(), send, r.CreateSubscription)
+			err = s.SubscribeForDevicesEvent(ctx, owner, resourceProjection, subRes.SubscriptionId, subRes.GetCorrelationId(), send, r.CreateSubscription)
 		case *pb.SubscribeToEvents_CancelSubscription_:
 			//handled by cancelation
 			err = nil
@@ -525,7 +525,7 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 			err = fmt.Errorf("not supported")
 			send(&pb.Event{
 				SubscriptionId: subRes.SubscriptionId,
-				Token:          subReq.Token,
+				CorrelationId:  subReq.GetCorrelationId(),
 				Type: &pb.Event_SubscriptionCanceled_{
 					SubscriptionCanceled: &pb.Event_SubscriptionCanceled{
 						Reason: err.Error(),

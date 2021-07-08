@@ -13,6 +13,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -40,7 +41,11 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
-					IsOnline:   true,
+					Metadata: &pb.Device_Metadata{
+						Status: &commands.ConnectionStatus{
+							Value: commands.ConnectionStatus_ONLINE,
+						},
+					},
 				},
 			},
 		},
@@ -78,6 +83,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 					require.NoError(t, err)
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
 					dev.ProtocolIndependentId = ""
+					dev.Metadata.Status.ValidUntil = 0
 					devices = append(devices, dev)
 				}
 				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

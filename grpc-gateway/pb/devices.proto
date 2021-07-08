@@ -15,24 +15,27 @@ message GetDevicesRequest {
 
   repeated string type_filter = 1;
   repeated Status status_filter = 2;
-  repeated string device_ids_filter = 3;
+  repeated string device_id_filter = 3;
 }
 
 message GetResourceLinksRequest {
   repeated string type_filter = 1;
-  repeated string device_ids_filter = 2;
+  repeated string device_id_filter = 2;
 }
 
-// RetrieveResourceFromDeviceRequest retrieve value from device
-message RetrieveResourceFromDeviceRequest {
+message GetResourceFromDeviceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
 }
 
-// RetrieveResourcesValuesRequest get values from resource-shadow
-message RetrieveResourcesRequest {
-  repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 1;
-  repeated string device_ids_filter = 2;
+message GetResourceFromDeviceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceRetrieved data = 1;
+}
+
+message GetResourcesRequest {
+  // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
+  repeated string resource_id_filter = 1;
+  repeated string device_id_filter = 2;
   repeated string type_filter = 3;
 }
 
@@ -46,6 +49,11 @@ message UpdateResourceRequest {
   Content content = 2;
   string resource_interface = 3;
 }
+
+message UpdateResourceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceUpdated data = 1;
+}
+
 
 message SubscribeToEvents {
   message CreateSubscription {
@@ -66,9 +74,9 @@ message SubscribeToEvents {
       RESOURCE_CREATED = 15;
       RESOURCE_CHANGED = 16;
     }
-    repeated Event events_filter = 1;
-    repeated string device_ids_filter = 2;
-    repeated ocf.cloud.resourceaggregate.pb.ResourceId resource_ids_filter = 3;
+    repeated Event event_filter = 1;
+    repeated string device_id_filter = 2;
+    repeated string resource_id_filter = 3;
   }
   message CancelSubscription {
     string subscription_id = 1;
@@ -77,7 +85,7 @@ message SubscribeToEvents {
     CreateSubscription create_subscription = 1;
     CancelSubscription cancel_subscription = 2;
   }
-  string token = 101; // for pairing request SubscribeToEvents with Event.OperationProcessed
+  string correlation_id = 101; // for pairing request SubscribeToEvents with Event.OperationProcessed
 }
 
 message Event {
@@ -104,7 +112,7 @@ message Event {
   }
 
   string subscription_id = 1; // subscription id provided by grpc
-  string token = 2;
+  string correlation_id = 2;
   oneof type {
     DeviceRegistered device_registered = 3;
     DeviceUnregistered device_unregistered = 4;
@@ -133,10 +141,14 @@ message LocalizedString {
 }
 
 message Device {
+  message Metadata {
+    ocf.cloud.resourceaggregate.pb.ConnectionStatus status = 1;
+    ocf.cloud.resourceaggregate.pb.ShadowSynchronization shadow_synchronization = 2;
+  }
   string id = 1;
   repeated string types = 2;
   string name = 3;
-  bool is_online = 4;
+  Metadata metadata = 4;
   repeated LocalizedString manufacturer_name = 5;
   string model_number = 6;
   repeated string interfaces = 7;
@@ -152,7 +164,16 @@ message DeleteResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
 }
 
+message DeleteResourceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceDeleted data = 1;
+}
+
 message CreateResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
 }
+
+message CreateResourceResponse {
+  ocf.cloud.resourceaggregate.pb.ResourceCreated data = 1;
+}
+

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	exCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -39,13 +40,8 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
-			want: &events.ResourceDeleted{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-				Status:     commands.Status_METHOD_NOT_ALLOWED,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
+			wantErr:     true,
+			wantErrCode: codes.Code(exCodes.MethodNotAllowed),
 		},
 		{
 			name: "invalid Href",
@@ -64,13 +60,8 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
-			want: &events.ResourceDeleted{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
 		},
 	}
 
@@ -97,9 +88,10 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 				assert.Equal(t, tt.wantErrCode, status.Convert(err).Code())
 			} else {
 				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
+				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

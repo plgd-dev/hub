@@ -42,10 +42,6 @@ func (c *Client) UpdateResource(
 		return fmt.Errorf("cannot update resource /%v/%v: %w", deviceID, href, err)
 	}
 
-	content, err := commands.EventContentToContent(resp)
-	if err != nil {
-		return fmt.Errorf("cannot update resource /%v/%v: %w", deviceID, href, err)
-	}
-
+	content := resp.GetData().GetContent()
 	return DecodeContentWithCodec(cfg.codec, content.GetContentType(), content.GetData(), response)
 }

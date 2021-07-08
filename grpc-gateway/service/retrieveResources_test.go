@@ -34,10 +34,10 @@ func cmpResourceValues(t *testing.T, want []*pb.Resource, got []*pb.Resource) {
 	}
 }
 
-func TestRequestHandler_RetrieveResources(t *testing.T) {
+func TestRequestHandler_GetResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.RetrieveResourcesRequest
+		req *pb.GetResourcesRequest
 	}
 	tests := []struct {
 		name    string
@@ -48,12 +48,9 @@ func TestRequestHandler_RetrieveResources(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{
-					ResourceIdsFilter: []*commands.ResourceId{
-						{
-							DeviceId: deviceID,
-							Href:     "/light/1",
-						},
+				req: &pb.GetResourcesRequest{
+					ResourceIdFilter: []string{
+						commands.NewResourceID(deviceID, "/light/1").ToString(),
 					},
 				},
 			},
@@ -101,7 +98,7 @@ func TestRequestHandler_RetrieveResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.RetrieveResources(ctx, tt.args.req)
+			client, err := c.GetResources(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

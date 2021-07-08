@@ -17,6 +17,7 @@ func sortDevices(s map[string]*client.DeviceDetails) map[string]*client.DeviceDe
 	for key, x := range s {
 		x.Resources = test.CleanUpResourcesArray(x.Resources)
 		x.Device.ProtocolIndependentId = ""
+		x.Device.Metadata.Status.ValidUntil = 0
 		s[key] = x
 	}
 
@@ -54,7 +55,7 @@ func TestClient_GetDevices(t *testing.T) {
 				token: oauthTest.GetServiceToken(t),
 				opts:  []client.GetDevicesOption{client.WithResourceTypes("not-found")},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 

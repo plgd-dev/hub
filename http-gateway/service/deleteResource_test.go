@@ -3,67 +3,123 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/kit/codec/json"
-
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/test"
+	exCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	cloudTest "github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
-func TestDeleteResource(t *testing.T) {
-	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
+func TestRequestHandler_DeleteResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	type args struct {
+		deviceID     string
+		resourceHref string
+		accept       string
+	}
+	tests := []struct {
+		name         string
+		args         args
+		want         *events.ResourceDeleted
+		wantErr      bool
+		wantErrCode  exCodes.Code
+		wantHTTPCode int
+	}{
+		{
+			name: "/light/2 - MethodNotAllowed",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: "/light/2",
+				accept:       uri.ApplicationProtoJsonContentType,
+			},
+			wantErr:      true,
+			wantErrCode:  exCodes.MethodNotAllowed,
+			wantHTTPCode: http.StatusMethodNotAllowed,
+		},
+		{
+			name: "invalid Href",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: "/unknown",
+				accept:       uri.ApplicationProtoJsonContentType,
+			},
+			wantErr:      true,
+			wantErrCode:  exCodes.Code(codes.NotFound),
+			wantHTTPCode: http.StatusNotFound,
+		},
+		{
+			name: "/oic/d - PermissionDenied",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: "/oic/d",
+				accept:       uri.ApplicationProtoJsonContentType,
+			},
+			wantErr:      true,
+			wantErrCode:  exCodes.Code(codes.PermissionDenied),
+			wantHTTPCode: http.StatusForbidden,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := cloudTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	shutdownHttp := httpgwTest.SetUp(t)
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: cloudTest.GetRootCertificatePool(t),
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
-	deviceID, shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	webTearDown := test.SetUp(t)
-	defer webTearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httpgwTest.NewRequest(http.MethodDelete, uri.DeviceResourceLink, nil).DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).AuthToken(token).Accept(tt.args.accept).Build()
+			trans := http.DefaultTransport.(*http.Transport).Clone()
+			trans.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			c := http.Client{
+				Transport: trans,
+			}
+			resp, err := c.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-	var response interface{}
+			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
-	err = DeleteResource(t, deviceID, uri.Device+"/oic/d", &response, http.StatusForbidden)
-	require.NoError(t, err)
-
-	/*
-		err = DeleteResource(t, deviceID, uri.Device+"/light/1", &response, http.StatusMethodNotAllowed)
-		require.NoError(t, err)
-	*/
-}
-
-func DeleteResource(t *testing.T, deviceID, uri string, response interface{}, statusCode int) error {
-	getReq := test.NewRequest(http.MethodDelete, uri, nil).
-		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
-	res := test.HTTPDo(t, getReq)
-	defer res.Body.Close()
-	require.Equal(t, statusCode, res.StatusCode)
-	b, err := ioutil.ReadAll(res.Body)
-	require.NoError(t, err)
-	if len(b) > 0 {
-		err = json.Decode(b, &response)
-		require.NoError(t, err)
+			var got events.ResourceDeleted
+			err = Unmarshal(resp.StatusCode, resp.Body, &got)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Equal(t, tt.wantErrCode.String(), exCodes.Code(status.Convert(err).Code()).String())
+			} else {
+				require.NoError(t, err)
+				got.EventMetadata = nil
+				got.AuditContext = nil
+				test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
+			}
+		})
 	}
-	return nil
 }

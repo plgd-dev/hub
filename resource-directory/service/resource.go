@@ -12,18 +12,28 @@ type Resource struct {
 	Resource   *commands.Resource
 }
 
+func (r *Resource) GetResourceChanged() *events.ResourceChanged {
+	if r == nil {
+		return nil
+	}
+	if r.projection == nil {
+		return nil
+	}
+	return r.projection.content
+}
+
 func (r *Resource) GetContent() *commands.Content {
 	if r.projection == nil {
 		return nil
 	}
-	return r.projection.content.GetContent()
+	return r.GetResourceChanged().GetContent()
 }
 
 func (r *Resource) GetStatus() commands.Status {
 	if r.projection == nil {
 		return commands.Status_UNAVAILABLE
 	}
-	return r.projection.content.GetStatus()
+	return r.GetResourceChanged().GetStatus()
 }
 
 func (r *Resource) OnResourceUpdatePendingLocked(ctx context.Context, do func(ctx context.Context, updatePending *events.ResourceUpdatePending) error) error {

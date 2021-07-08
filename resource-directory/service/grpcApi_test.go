@@ -18,7 +18,6 @@ import (
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
-	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -32,152 +31,10 @@ import (
 
 const TEST_TIMEOUT = time.Second * 30
 
-func TestRequestHandler_UpdateResource(t *testing.T) {
+func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req *pb.UpdateResourceRequest
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *events.ResourceUpdated
-		wantErr bool
-	}{
-		{
-			name: "valid",
-			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 1,
-						}),
-					},
-				},
-			},
-			want: &events.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_OK,
-			},
-		},
-		{
-			name: "valid with interface",
-			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 2,
-						}),
-					},
-				},
-			},
-			want: &events.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_OK,
-			},
-		},
-		{
-			name: "revert update",
-			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceInterface: "oic.if.baseline",
-					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"power": 0,
-						}),
-					},
-				},
-			},
-			want: &events.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_OK,
-			},
-		},
-		{
-			name: "update RO-resource",
-			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-					Content: &pb.Content{
-						ContentType: message.AppOcfCbor.String(),
-						Data: test.EncodeToCbor(t, map[string]interface{}{
-							"di": "abc",
-						}),
-					},
-				},
-			},
-			want: &events.ResourceUpdated{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-				Status: commands.Status_FORBIDDEN,
-			},
-		},
-		{
-			name: "invalid Href",
-			args: args{
-				req: &pb.UpdateResourceRequest{
-					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
-				},
-			},
-			wantErr: true,
-		},
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
-	defer cancel()
-
-	tearDown := test.SetUp(ctx, t)
-	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
-
-	log.Setup(log.Config{
-		Debug: true,
-	})
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: test.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.UpdateResource(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-			}
-			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
-		})
-	}
-}
-
-func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	type args struct {
-		req *pb.RetrieveResourceFromDeviceRequest
+		req *pb.GetResourceFromDeviceRequest
 	}
 	tests := []struct {
 		name            string
@@ -189,7 +46,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /light/2",
 			args: args{
-				req: &pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
@@ -199,7 +56,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /oic/d",
 			args: args{
-				req: &pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
@@ -209,7 +66,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: &pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -236,14 +93,14 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 17; i++ {
-				got, err := c.RetrieveResourceFromDevice(ctx, tt.args.req)
+				got, err := c.GetResourceFromDevice(ctx, tt.args.req)
 				if tt.wantErr {
 					require.Error(t, err)
 				} else {
 					require.NoError(t, err)
-					assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
+					assert.Equal(t, tt.wantContentType, got.GetData().GetContent().GetContentType())
 					var d map[string]interface{}
-					err := cbor.Decode(got.GetContent().GetData(), &d)
+					err := cbor.Decode(got.GetData().GetContent().GetData(), &d)
 					require.NoError(t, err)
 					delete(d, "piid")
 					assert.Equal(t, tt.want, d)
@@ -267,7 +124,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "invalid - invalid type subscription",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 
@@ -280,7 +137,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_SubscriptionCanceled_{
@@ -288,7 +145,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							Reason: "not supported",
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
@@ -296,10 +153,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "devices subscription - registered",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
 						},
@@ -315,7 +172,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceRegistered_{
@@ -323,7 +180,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							DeviceIds: []string{deviceID},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
@@ -331,10 +188,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "devices subscription - device metadata updated",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
 						},
@@ -350,7 +207,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceMetadataUpdated{
@@ -361,7 +218,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
@@ -369,11 +226,11 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "device subscription - published",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					Token: "testToken",
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							DeviceIdsFilter: []string{deviceID},
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							DeviceIdFilter: []string{deviceID},
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
 						},
@@ -389,7 +246,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				test.ResourceLinkToPublishEvent(deviceID, "testToken", test.GetAllBackendResourceLinks()),
 			},
@@ -474,10 +331,10 @@ func TestRequestHandler_Issue270(t *testing.T) {
 	require.NoError(t, err)
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "testToken",
+		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
 			},
@@ -496,7 +353,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 				},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	fmt.Printf("SUBSCRIPTION ID: %v\n", ev.SubscriptionId)
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
@@ -510,7 +367,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 				DeviceIds: []string{},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
@@ -527,7 +384,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 				DeviceIds: []string{deviceID},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
@@ -550,7 +407,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 				},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
@@ -571,7 +428,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 						DeviceIds: []string{deviceID},
 					},
 				},
-				Token: "testToken",
+				CorrelationId: "testToken",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			run = false
@@ -602,10 +459,10 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	require.NoError(t, err)
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "testToken",
+		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
 			},
@@ -624,7 +481,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
@@ -637,7 +494,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				DeviceIds: []string{deviceID},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
@@ -666,16 +523,16 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "testToken",
+		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				ResourceIdsFilter: []*commands.ResourceId{commands.NewResourceID(deviceID, "/light/2")},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				ResourceIdFilter: []string{commands.NewResourceID(deviceID, "/light/2").ToString()},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
 			},
@@ -694,7 +551,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				},
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subContentChangedID := ev.SubscriptionId
@@ -720,16 +577,16 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
 			},
 		},
-		Token: "testToken",
+		CorrelationId: "testToken",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "updatePending + resourceUpdated",
+		CorrelationId: "updatePending + resourceUpdated",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdsFilter: []string{deviceID},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 				},
 			},
@@ -748,7 +605,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				},
 			},
 		},
-		Token: "updatePending + resourceUpdated",
+		CorrelationId: "updatePending + resourceUpdated",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subUpdatedID := ev.SubscriptionId
@@ -796,7 +653,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 						EventMetadata: ev.GetResourceUpdatePending().GetEventMetadata(),
 					},
 				},
-				Token: "updatePending + resourceUpdated",
+				CorrelationId: "updatePending + resourceUpdated",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			updCorrelationID = ev.GetResourceUpdatePending().GetAuditContext().GetCorrelationId()
@@ -812,7 +669,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 						EventMetadata: ev.GetResourceUpdated().GetEventMetadata(),
 					},
 				},
-				Token: "updatePending + resourceUpdated",
+				CorrelationId: "updatePending + resourceUpdated",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		case ev.GetResourceChanged() != nil:
@@ -831,7 +688,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 						EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
 					},
 				},
-				Token: "testToken",
+				CorrelationId: "testToken",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		}
@@ -876,7 +733,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 						EventMetadata: ev.GetResourceUpdatePending().GetEventMetadata(),
 					},
 				},
-				Token: "updatePending + resourceUpdated",
+				CorrelationId: "updatePending + resourceUpdated",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			updCorrelationID = ev.GetResourceUpdatePending().GetAuditContext().GetCorrelationId()
@@ -892,7 +749,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 						EventMetadata: ev.GetResourceUpdated().GetEventMetadata(),
 					},
 				},
-				Token: "updatePending + resourceUpdated",
+				CorrelationId: "updatePending + resourceUpdated",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		case ev.GetResourceChanged() != nil:
@@ -911,18 +768,18 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 						EventMetadata: ev.GetResourceChanged().GetEventMetadata(),
 					},
 				},
-				Token: "testToken",
+				CorrelationId: "testToken",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		}
 	}
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "receivePending + resourceReceived",
+		CorrelationId: "receivePending + resourceReceived",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdsFilter: []string{deviceID},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED,
 				},
 			},
@@ -941,12 +798,12 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				},
 			},
 		},
-		Token: "receivePending + resourceReceived",
+		CorrelationId: "receivePending + resourceReceived",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	subReceivedID := ev.SubscriptionId
 
-	_, err = c.RetrieveResourceFromDevice(ctx, &pb.RetrieveResourceFromDeviceRequest{
+	_, err = c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 	})
 	require.NoError(t, err)
@@ -961,7 +818,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventMetadata: ev.GetResourceRetrievePending().GetEventMetadata(),
 			},
 		},
-		Token: "receivePending + resourceReceived",
+		CorrelationId: "receivePending + resourceReceived",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 	recvCorrelationID := ev.GetResourceRetrievePending().GetAuditContext().GetCorrelationId()
@@ -983,7 +840,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventMetadata: ev.GetResourceRetrieved().GetEventMetadata(),
 			},
 		},
-		Token: "receivePending + resourceReceived",
+		CorrelationId: "receivePending + resourceReceived",
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
@@ -1005,7 +862,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 						DeviceIds: []string{deviceID},
 					},
 				},
-				Token: "testToken",
+				CorrelationId: "testToken",
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			run = false

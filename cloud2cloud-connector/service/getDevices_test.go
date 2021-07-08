@@ -9,6 +9,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"os/exec"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,12 +29,22 @@ import (
 	c2cGwUri "github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/kit/codec/json"
 )
+
+func countOpenFiles() int64 {
+	out, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("lsof -p %v", os.Getpid())).Output()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	lines := strings.Split(string(out), "\n")
+	return int64(len(lines) - 1)
+}
 
 func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
 	cloud1 := test.SetUp(ctx, t)
@@ -104,6 +118,9 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 		shutdownDevSim()
 		cloud1Conn.Close()
 		cloud1()
+		runtime.GC()
+
+		fmt.Printf("NUM FDS used %v\n", countOpenFiles())
 	}
 }
 
@@ -129,7 +146,11 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 					Id:         deviceID,
 					Name:       test.TestDeviceName,
-					IsOnline:   true,
+					Metadata: &pb.Device_Metadata{
+						Status: &commands.ConnectionStatus{
+							Value: commands.ConnectionStatus_ONLINE,
+						},
+					},
 				},
 			},
 		},
@@ -164,6 +185,9 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 					require.NoError(t, err)
 					assert.NotEmpty(t, dev.ProtocolIndependentId)
 					dev.ProtocolIndependentId = ""
+					if dev.GetMetadata().GetStatus() != nil {
+						dev.GetMetadata().GetStatus().ValidUntil = 0
+					}
 					devices = append(devices, dev)
 				}
 				test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))

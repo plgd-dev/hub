@@ -172,7 +172,7 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			},
 			wantCode:        http.StatusNotFound,
 			wantContentType: "text/plain",
-			want:            "cannot retrieve device: cannot retrieve device(" + DeviceIDNotFound + ") [base]: cannot get devices: rpc error: code = NotFound desc = not found",
+			want:            "cannot retrieve device: cannot retrieve device(" + DeviceIDNotFound + ") [base]: rpc error: code = NotFound desc = cannot get devices: not found",
 		},
 		{
 			name: "invalidAccept",

@@ -27,23 +27,28 @@ import (
 
 //Server handle HTTP request
 type Server struct {
-	server   *http.Server
-	cfg      Config
-	handler  *RequestHandler
-	ln       net.Listener
-	cancel   context.CancelFunc
-	doneWg   *sync.WaitGroup
-	raConn   *grpc.ClientConn
-	authConn *grpc.ClientConn
-	rdConn   *grpc.ClientConn
+	server            *http.Server
+	cfg               Config
+	handler           *RequestHandler
+	ln                net.Listener
+	cancel            context.CancelFunc
+	doneWg            *sync.WaitGroup
+	raConn            *grpc.ClientConn
+	authConn          *grpc.ClientConn
+	rdConn            *grpc.ClientConn
+	dialCertManager   DialCertManager
+	listenCertManager ListenCertManager
+	db                connectorStore.Store
 }
 
 type DialCertManager = interface {
 	GetClientTLSConfig() *tls.Config
+	Close()
 }
 
 type ListenCertManager = interface {
 	GetServerTLSConfig() *tls.Config
+	Close()
 }
 
 func runDevicePulling(ctx context.Context,
@@ -177,15 +182,18 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	},
 	)
 	server := Server{
-		server:   NewHTTP(requestHandler, auth),
-		cfg:      config,
-		handler:  requestHandler,
-		ln:       ln,
-		cancel:   cancel,
-		doneWg:   &wg,
-		raConn:   raConn,
-		rdConn:   rdConn,
-		authConn: authConn,
+		server:            NewHTTP(requestHandler, auth),
+		cfg:               config,
+		handler:           requestHandler,
+		ln:                ln,
+		cancel:            cancel,
+		doneWg:            &wg,
+		raConn:            raConn,
+		rdConn:            rdConn,
+		authConn:          authConn,
+		dialCertManager:   dialCertManager,
+		listenCertManager: listenCertManager,
+		db:                db,
 	}
 
 	return &server
@@ -197,6 +205,11 @@ func (s *Server) Serve() error {
 		s.raConn.Close()
 		s.rdConn.Close()
 		s.authConn.Close()
+		s.dialCertManager.Close()
+		if s.listenCertManager != nil {
+			s.listenCertManager.Close()
+		}
+		s.db.Close(context.Background())
 	}()
 	return s.server.Serve(s.ln)
 }
@@ -205,7 +218,7 @@ func (s *Server) Serve() error {
 func (s *Server) Shutdown() error {
 	s.cancel()
 	s.doneWg.Wait()
-	return s.server.Shutdown(context.Background())
+	return s.server.Close()
 }
 
 var authRules = map[string][]kitNetHttp.AuthArgs{

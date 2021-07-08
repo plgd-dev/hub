@@ -9,8 +9,8 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
-func (rh *RequestHandler) retrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID *commands.ResourceId, encoder responseWriterEncoderFunc) (int, error) {
-	allResources, err := rh.RetrieveResources(ctx, []*commands.ResourceId{resourceID}, nil)
+func (rh *RequestHandler) RetrieveResourceBase(ctx context.Context, w http.ResponseWriter, resourceID *commands.ResourceId, encoder responseWriterEncoderFunc) (int, error) {
+	allResources, err := rh.RetrieveResources(ctx, []string{resourceID.ToString()}, nil)
 	if err != nil {
 		return kitNetHttp.ErrToStatusWithDef(err, http.StatusForbidden), err
 	}
@@ -34,7 +34,7 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 	case ContentQueryBaseValue:
 		deviceID := routeVars[deviceIDKey]
 		href := routeVars[HrefKey]
-		code, err := rh.retrieveResourceBase(ctx, w, &commands.ResourceId{
+		code, err := rh.RetrieveResourceBase(ctx, w, &commands.ResourceId{
 			DeviceId: deviceID, Href: href}, encoder)
 		if err != nil {
 			err = fmt.Errorf("cannot retrieve resource(deviceID: %v, Href: %v): %w", deviceID, href, err)

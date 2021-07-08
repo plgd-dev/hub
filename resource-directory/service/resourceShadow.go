@@ -8,13 +8,14 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 func toResourceValue(resource *Resource) *pb.Resource {
 	return &pb.Resource{
-		Data:  resource.projection.content,
+		Data:  resource.GetResourceChanged(),
 		Types: resource.Resource.GetResourceTypes(),
 	}
 }
@@ -31,24 +32,26 @@ func NewResourceShadow(projection *Projection, deviceIds []string) *ResourceShad
 	return &ResourceShadow{projection: projection, userDeviceIds: mapDeviceIds}
 }
 
-func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter []*commands.ResourceId, deviceIdsFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
+func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter, deviceIdFilter, typeFilter []string) (map[string]map[string]*Resource, error) {
 	mapTypeFilter := make(strings.Set)
 	mapTypeFilter.Add(typeFilter...)
 
-	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdsFilter))
-	for _, res := range resourceIDsFilter {
+	internalResourceIDsFilter := make([]*commands.ResourceId, 0, len(resourceIDsFilter)+len(deviceIdFilter))
+	for _, r := range resourceIDsFilter {
+		res := commands.ResourceIdFromString(r)
+
 		if rd.userDeviceIds.HasOneOf(res.GetDeviceId()) {
 			internalResourceIDsFilter = append(internalResourceIDsFilter, res)
 		}
 	}
-	for _, deviceID := range deviceIdsFilter {
+	for _, deviceID := range deviceIdFilter {
 		if rd.userDeviceIds.HasOneOf(deviceID) {
 			internalResourceIDsFilter = append(internalResourceIDsFilter, commands.NewResourceID(deviceID, ""))
 		}
 	}
 	if len(internalResourceIDsFilter) == 0 {
-		if len(resourceIDsFilter) > 0 || len(deviceIdsFilter) > 0 {
-			return nil, status.Errorf(codes.NotFound, "resource ids filter doesn't match any resources")
+		if len(resourceIDsFilter) > 0 || len(deviceIdFilter) > 0 {
+			return nil, nil
 		}
 		internalResourceIDsFilter = make([]*commands.ResourceId, 0, len(rd.userDeviceIds))
 		for userDeviceID := range rd.userDeviceIds {
@@ -61,15 +64,19 @@ func (rd *ResourceShadow) filterResources(ctx context.Context, resourceIDsFilter
 		return nil, err
 	}
 	if len(resources) == 0 {
-		return nil, status.Errorf(codes.NotFound, "not found")
+		return nil, nil
 	}
 	return resources, err
 }
 
-func (rd *ResourceShadow) RetrieveResources(req *pb.RetrieveResourcesRequest, srv pb.GrpcGateway_RetrieveResourcesServer) error {
-	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
+func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
+	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdFilter(), req.GetDeviceIdFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
+	}
+	if len(resources) == 0 {
+		log.Debug("ResourceShadow.GetResources.filterResources returns empty resources")
+		return nil
 	}
 
 	for _, deviceResources := range resources {
@@ -84,10 +91,10 @@ func (rd *ResourceShadow) RetrieveResources(req *pb.RetrieveResourcesRequest, sr
 	return nil
 }
 
-func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommandsRequest, srv pb.GrpcGateway_RetrievePendingCommandsServer) error {
-	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandsFilter())
-	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdsFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
-		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdsFilter())
+func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
+	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandFilter())
+	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
+		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdFilter())
 		devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
 		if err != nil {
 			return err
@@ -106,9 +113,13 @@ func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommand
 		}
 	}
 
-	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdsFilter(), req.GetDeviceIdsFilter(), req.GetTypeFilter())
+	resources, err := rd.filterResources(srv.Context(), req.GetResourceIdFilter(), req.GetDeviceIdFilter(), req.GetTypeFilter())
 	if err != nil {
 		return err
+	}
+	if len(resources) == 0 {
+		log.Debug("ResourceShadow.GetPendingCommands.filterResources returns empty resources")
+		return nil
 	}
 
 	for _, deviceResources := range resources {
@@ -124,7 +135,7 @@ func (rd *ResourceShadow) RetrievePendingCommands(req *pb.RetrievePendingCommand
 	return nil
 }
 
-func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.RetrieveDevicesMetadataRequest) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
+func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devicesMetadata map[string]*events.DeviceMetadataSnapshotTaken, req *pb.GetDevicesMetadataRequest) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
 	result := make(map[string]*events.DeviceMetadataSnapshotTaken)
 	typeFilter := make(strings.Set)
 	typeFilter.Add(req.TypeFilter...)
@@ -143,14 +154,14 @@ func filterMetadataByUserFilters(resources map[string]map[string]*Resource, devi
 	return result, nil
 }
 
-func (rd *ResourceShadow) RetrieveDevicesMetadata(req *pb.RetrieveDevicesMetadataRequest, srv pb.GrpcGateway_RetrieveDevicesMetadataServer) error {
-	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdsFilter)
-	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
+func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
+	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdFilter)
+	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {
-		resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
+		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
-	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIdsFilter, nil)
+	resources, err := rd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
 	}
@@ -166,7 +177,8 @@ func (rd *ResourceShadow) RetrieveDevicesMetadata(req *pb.RetrieveDevicesMetadat
 	}
 
 	if len(devicesMetadata) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("ResourceShadow.GetDevicesMetadata.filterMetadataByUserFilters returns empty devices metadata")
+		return nil
 	}
 
 	for _, deviceMetadata := range devicesMetadata {

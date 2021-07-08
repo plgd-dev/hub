@@ -26,6 +26,7 @@ func makeHTTPEndpoint(url, deviceID, href string) string {
 
 func updateDeviceResource(ctx context.Context, deviceID, href, contentType string, content []byte, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {
 	client := linkedCloud.GetHTTPClient()
+	defer client.CloseIdleConnections()
 	r, w := io.Pipe()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, makeHTTPEndpoint(linkedCloud.Endpoint.URL, deviceID, href), r)
 	if err != nil {

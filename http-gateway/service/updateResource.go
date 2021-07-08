@@ -1,75 +1,58 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 
-	"github.com/gofrs/uuid"
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
-
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
-
-	"github.com/gorilla/mux"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
+func createContentBody(body io.ReadCloser) (io.ReadCloser, error) {
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
+	}
+
+	req := commands.Content{
+		ContentType:       message.AppJSON.String(),
+		CoapContentFormat: int32(message.AppJSON),
+		Data:              data,
+	}
+	reqData, err := protojson.Marshal(&req)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal to protojson: %w", err)
+	}
+
+	return ioutil.NopCloser(bytes.NewReader(reqData)), nil
+
+}
+
 func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *http.Request) {
-	correlationUUID, err := uuid.NewV4()
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot create correlationID: %w", err))
-		return
-	}
-
-	var body interface{}
-	if err := json.ReadFrom(r.Body, &body); err != nil {
-		writeError(w, fmt.Errorf("invalid json body: %w", err))
-		return
-	}
-
 	vars := mux.Vars(r)
-	interfaceQueryString := r.URL.Query().Get(uri.InterfaceQueryKey)
-	ctx := requestHandler.makeCtx(r)
+	deviceID := vars[uri.DeviceIDKey]
+	href := vars[uri.ResourceHrefKey]
 
-	data, err := cbor.Encode(body)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot encode to cbor: %w", err))
+	contentType := r.Header.Get(uri.ContentTypeHeaderKey)
+	if contentType == uri.ApplicationProtoJsonContentType {
+		requestHandler.mux.ServeHTTP(w, r)
 		return
 	}
 
-	updateCommand := &commands.UpdateResourceRequest{
-		ResourceId:    commands.NewResourceID(vars[uri.DeviceIDKey], vars[uri.HrefKey]),
-		CorrelationId: correlationUUID.String(),
-		Content: &commands.Content{
-			Data:              data,
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: -1,
-		},
-		ResourceInterface: interfaceQueryString,
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: r.RemoteAddr,
-		},
-	}
-
-	updatedEvent, err := requestHandler.raClient.SyncUpdateResource(ctx, updateCommand)
+	newBody, err := createContentBody(r.Body)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot update resource: %w", err))
-		return
-	}
-	content, err := commands.EventContentToContent(updatedEvent)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot update resource: %w", err))
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('%v%v'): %v", deviceID, href, err))
 		return
 	}
 
-	var respBody interface{}
-	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, content.GetContentType(), content.GetData(), &respBody)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot decode response of updated resource: %w", err))
-		return
-	}
-
-	jsonResponseWriter(w, respBody)
+	r.Body = newBody
+	requestHandler.mux.ServeHTTP(w, r)
 }

@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/panjf2000/ants/v2"
-	pbCA "github.com/plgd-dev/cloud/certificate-authority/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
@@ -19,8 +17,6 @@ import (
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
-	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"go.uber.org/zap"
 )
 
@@ -66,7 +62,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error
 	}
 	listener.AddCloseFunc(validator.Close)
 
-	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger)
+	rdConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
@@ -79,58 +75,14 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
 	client := client.New(resourceDirectoryClient)
 
-	pool, err := ants.NewPool(config.Clients.Eventbus.GoPoolSize)
-	if err != nil {
-		listener.Close()
-		return nil, fmt.Errorf("cannot create goroutine pool: %w", err)
-	}
-	listener.AddCloseFunc(pool.Release)
-
-	resourceSubscriber, err := subscriber.New(config.Clients.Eventbus.NATS, logger, subscriber.WithGoPool(pool.Submit))
-	if err != nil {
-		listener.Close()
-		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
-	}
-	listener.AddCloseFunc(resourceSubscriber.Close)
-
-	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger)
-	if err != nil {
-		listener.Close()
-		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
-	}
-	listener.AddCloseFunc(func() {
-		err := raConn.Close()
-		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to resource-aggregate: %v", err)
-		}
-	})
-	resourceAggregateClient := raClient.New(raConn.GRPC(), resourceSubscriber)
-
-	var caClient pbCA.CertificateAuthorityClient
-	if config.Clients.CertificateAuthority.Enabled {
-		caConn, err := grpcClient.New(config.Clients.CertificateAuthority.Connection, logger)
-		if err != nil {
-			listener.Close()
-			return nil, fmt.Errorf("cannot connect to certificate authority: %w", err)
-		}
-		listener.AddCloseFunc(func() {
-			err := caConn.Close()
-			if err != nil {
-				logger.Sugar().Errorf("error occurs during close connection to certificate authority: %v", err)
-			}
-		})
-		caClient = pbCA.NewCertificateAuthorityClient(caConn.GRPC())
-	}
-
-	manager, err := NewObservationManager()
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize new observation manager %v", err)
-	}
-
 	whiteList := []kitNetHttp.RequestMatcher{
 		{
 			Method: http.MethodGet,
-			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.WsStartDevicesObservation) + `.*`),
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.APIWS) + `.*`),
+		},
+		{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta("/api/v1/clientConfiguration")),
 		},
 		{
 			Method: http.MethodGet,
@@ -144,7 +96,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error
 		})
 	}
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
-	requestHandler := NewRequestHandler(client, caClient, &config, manager, resourceAggregateClient)
+	requestHandler := NewRequestHandler(&config, client)
 
 	server := Server{
 		server:         NewHTTP(requestHandler, auth),
@@ -163,12 +115,6 @@ func (s *Server) Serve() error {
 
 // Shutdown ends serving
 func (s *Server) Shutdown() error {
-	observations := s.requestHandler.pop()
-	for _, v := range observations {
-		for _, s := range v {
-			s.OnClose()
-		}
-	}
 	return s.server.Shutdown(context.Background())
 }
 

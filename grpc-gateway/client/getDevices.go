@@ -40,6 +40,9 @@ func (c *Client) GetDevices(
 	if err != nil {
 		return nil, err
 	}
+	if len(devices) == 0 {
+		return nil, nil
+	}
 
 	return devices, nil
 }

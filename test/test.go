@@ -293,10 +293,10 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "testToken",
+		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 				},
 			},
@@ -307,7 +307,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		Token:          "testToken",
+		CorrelationId:  "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -332,11 +332,11 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "testToken",
+		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdsFilter: []string{deviceID},
-				EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+				DeviceIdFilter: []string{deviceID},
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED,
 				},
 			},
@@ -346,7 +346,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		Token: "testToken",
+		CorrelationId: "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -380,7 +380,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 
 	err = client.Send(&pb.SubscribeToEvents{
-		Token: "testToken",
+		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CancelSubscription_{
 			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 				SubscriptionId: subOnPublishedID,
@@ -393,7 +393,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		Token:          "testToken",
+		CorrelationId:  "testToken",
 		Type: &pb.Event_SubscriptionCanceled_{
 			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 		},
@@ -404,7 +404,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		Token:          "testToken",
+		CorrelationId:  "testToken",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -418,14 +418,13 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	expectedEvents := ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
 	for _, e := range expectedEvents {
 		err = client.Send(&pb.SubscribeToEvents{
-			Token: "testToken",
+			CorrelationId: "testToken",
 			Action: &pb.SubscribeToEvents_CreateSubscription_{
 				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdsFilter: []*commands.ResourceId{{
-						DeviceId: e.GetResourceChanged().GetResourceId().GetDeviceId(),
-						Href:     e.GetResourceChanged().GetResourceId().GetHref(),
-					}},
-					EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					ResourceIdFilter: []string{
+						e.GetResourceChanged().GetResourceId().ToString(),
+					},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
 				},
@@ -436,7 +435,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent := &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
-			Token:          "testToken",
+			CorrelationId:  "testToken",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -453,7 +452,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.Equal(t, e.GetResourceChanged().GetStatus(), ev.GetResourceChanged().GetStatus())
 
 		err = client.Send(&pb.SubscribeToEvents{
-			Token: "testToken",
+			CorrelationId: "testToken",
 			Action: &pb.SubscribeToEvents_CancelSubscription_{
 				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 					SubscriptionId: ev.GetSubscriptionId(),
@@ -466,7 +465,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent = &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
-			Token:          "testToken",
+			CorrelationId:  "testToken",
 			Type: &pb.Event_SubscriptionCanceled_{
 				SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 			},
@@ -477,7 +476,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent = &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
-			Token:          "testToken",
+			CorrelationId:  "testToken",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -615,7 +614,7 @@ func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceL
 				Resources: out,
 			},
 		},
-		Token: token,
+		CorrelationId: token,
 	}
 }
 

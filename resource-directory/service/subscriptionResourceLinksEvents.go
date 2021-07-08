@@ -29,7 +29,7 @@ func (s *subscription) NotifyOfPublishedResourceLinks(ctx context.Context, links
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourcePublished{
 			ResourcePublished: links.data,
@@ -48,7 +48,7 @@ func (s *subscription) NotifyOfUnpublishedResourceLinks(ctx context.Context, unp
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUnpublished{
 			ResourceUnpublished: unpublishedResources,

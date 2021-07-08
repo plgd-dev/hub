@@ -45,7 +45,7 @@ func TestClient_DeleteResource(t *testing.T) {
 				href:     "/ligh/1",
 			},
 			wantErr:     true,
-			wantErrCode: extCodes.MethodNotAllowed,
+			wantErrCode: codes.Code(extCodes.MethodNotAllowed),
 		},
 		{
 			name: "/ligh/1 - permission denied",

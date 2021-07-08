@@ -4,115 +4,250 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/kit/codec/json"
-
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	cloudTest "github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
+	testHttp "github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/cbor"
 )
 
-func TestUpdateResource(t *testing.T) {
-	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
-	defer cancel()
-
-	tearDown := cloudTest.SetUp(ctx, t)
-	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
-
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: cloudTest.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
-	deviceID, shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
-	webTearDown := test.SetUp(t)
-	defer webTearDown()
-
-	request := map[string]interface{}{
-		"power": 111,
-	}
-	var response interface{}
-
-	UpdateResource(t, deviceID, uri.Device+"/light/1", request, &response)
-	require.Equal(t, nil, response)
-
-	request["power"] = 0
-	UpdateResource(t, deviceID, uri.Device+"/light/1", request, &response)
-	require.Equal(t, nil, response)
-}
-
-func UpdateResource(t *testing.T, deviceID, uri string, request interface{}, response interface{}) {
-	reqData, err := json.Encode(request)
-	require.NoError(t, err)
-
-	getReq := test.NewRequest("PUT", uri, bytes.NewReader(reqData)).
-		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
-	res := test.HTTPDo(t, getReq)
-	defer res.Body.Close()
-
-	b, err := ioutil.ReadAll(res.Body)
-	require.NoError(t, err)
-	if len(b) > 0 {
-		require.Equal(t, http.StatusOK, res.StatusCode)
-		err = json.Decode(b, &response)
-		require.NoError(t, err)
+func getContentData(content *pb.Content, desiredContentType string) ([]byte, error) {
+	var data []byte
+	var err error
+	if desiredContentType == uri.ApplicationProtoJsonContentType {
+		data, err = protojson.Marshal(content)
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		require.Equal(t, http.StatusNoContent, res.StatusCode)
+		v, err := cbor.ToJSON(content.GetData())
+		if err != nil {
+			return nil, err
+		}
+		data = []byte(v)
 	}
+	return data, err
 }
 
-func TestUpdateResourceInvalidAttribute(t *testing.T) {
-	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
+func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, accept, contentType string) (*events.ResourceUpdated, error) {
+
+	data, err := getContentData(req.GetContent(), contentType)
+	if err != nil {
+		return nil, err
+	}
+
+	request := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader([]byte(data))).DeviceId(req.GetResourceId().GetDeviceId()).ResourceHref(req.GetResourceId().GetHref()).AuthToken(token).Accept(accept).ResourceInterface(req.GetResourceInterface()).ContentType(contentType).Build()
+	trans := http.DefaultTransport.(*http.Transport).Clone()
+	trans.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	c := http.Client{
+		Transport: trans,
+	}
+	resp, err := c.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var got pb.UpdateResourceResponse
+	err = Unmarshal(resp.StatusCode, resp.Body, &got)
+	if err != nil {
+		return nil, err
+	}
+	return got.GetData(), nil
+}
+
+func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	type args struct {
+		req         *pb.UpdateResourceRequest
+		accept      string
+		contentType string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *events.ResourceUpdated
+		wantErr bool
+	}{
+
+		{
+			name: uri.ApplicationProtoJsonContentType,
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: uri.ApplicationProtoJsonContentType,
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: message.AppJSON.String(),
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 102,
+						}),
+					},
+				},
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: message.AppJSON.String(),
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "valid with interface",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceInterface: "oic.if.baseline",
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 2,
+						}),
+					},
+				},
+				accept: uri.ApplicationProtoJsonContentType,
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceID,
+					Href:     "/light/1",
+				},
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "revert update",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceInterface: "oic.if.baseline",
+					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 0,
+						}),
+					},
+				},
+				accept: uri.ApplicationProtoJsonContentType,
+			},
+			want: &events.ResourceUpdated{
+				ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+				Content: &commands.Content{
+					CoapContentFormat: -1,
+				},
+				Status: commands.Status_OK,
+			},
+		},
+		{
+			name: "update RO-resource",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"di": "abc",
+						}),
+					},
+				},
+				accept: uri.ApplicationProtoJsonContentType,
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid Href",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
+				},
+				accept: uri.ApplicationProtoJsonContentType,
+			},
+			wantErr: true,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := cloudTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	shutdownHttp := testHttp.SetUp(t)
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: cloudTest.GetRootCertificatePool(t),
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
-	deviceID, shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
+
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	webTearDown := test.SetUp(t)
-	defer webTearDown()
-
-	request := map[string]interface{}{
-		"power": "Test string",
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := updateResource(ctx, tt.args.req, token, tt.args.accept, tt.args.contentType)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			got.AuditContext = nil
+			got.EventMetadata = nil
+			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
+		})
 	}
-	reqData, err := json.Encode(request)
-	require.NoError(t, err)
-
-	getReq := test.NewRequest("PUT", uri.Device+"/light/1", bytes.NewReader(reqData)).
-		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
-	res := test.HTTPDo(t, getReq)
-	defer res.Body.Close()
-	var response interface{}
-	err = json.ReadFrom(res.Body, &response)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusBadRequest, res.StatusCode)
-	exp := map[interface{}]interface{}{
-		"err": "cannot update resource: rpc error: code = InvalidArgument desc = response from device",
-	}
-	require.Equal(t, exp, response)
 }

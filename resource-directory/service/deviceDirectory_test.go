@@ -65,7 +65,12 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 		},
 		{
-			name:           "project_ONLINE_OFFLINE",
+			name: "project_ONLINE_OFFLINE",
+			args: args{
+				request: &pb.GetDevicesRequest{
+					StatusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_ONLINE, pb.GetDevicesRequest_OFFLINE},
+				},
+			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pb.Device{
 				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
@@ -79,8 +84,7 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 					TypeFilter: []string{"notFound"},
 				},
 			},
-			wantStatusCode: codes.NotFound,
-			wantErr:        true,
+			wantStatusCode: codes.OK,
 		},
 		{
 			name: "project_type_filter",
@@ -99,7 +103,7 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			name: "project_one_device",
 			args: args{
 				request: &pb.GetDevicesRequest{
-					DeviceIdsFilter: []string{ddResource1.Resource.DeviceId},
+					DeviceIdFilter: []string{ddResource1.Resource.DeviceId},
 				},
 			},
 			wantStatusCode: codes.OK,
@@ -154,6 +158,26 @@ type ResourceContent struct {
 	*commands.Content
 }
 
+func (c ResourceContent) ToResourceIDString() string {
+	return c.GetResourceID().ToString()
+}
+
+type testGeneratePublishEvent struct {
+	version uint64
+	ResourceContent
+}
+
+type testGenerateUnpublishEvent struct {
+	version  uint64
+	id       string
+	deviceID string
+}
+
+type testGenerateUnknownEvent struct {
+	version uint64
+	id      string
+}
+
 func testMakeDeviceResource(deviceId string, href string, types []string) *commands.Resource {
 	return &commands.Resource{
 		DeviceId:      deviceId,
@@ -178,7 +202,16 @@ func testMakeDeviceResouceProtobuf(deviceId string, types []string, isOnline boo
 			},
 		},
 		ModelNumber: "ModelNumber." + deviceId,
-		IsOnline:    isOnline,
+		Metadata: &pb.Device_Metadata{
+			Status: &commands.ConnectionStatus{
+				Value: func() commands.ConnectionStatus_Status {
+					if isOnline {
+						return commands.ConnectionStatus_ONLINE
+					}
+					return commands.ConnectionStatus_OFFLINE
+				}(),
+			},
+		},
 	}
 }
 

@@ -2,15 +2,21 @@ package commands
 
 import (
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb/errdetails"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 type EventContent interface {
 	GetContent() *Content
 	GetStatus() Status
+	protoiface.MessageV1
+}
+
+func CheckEventContent(ec EventContent) error {
+	_, err := EventContentToContent(ec)
+	return err
 }
 
 func EventContentToContent(ec EventContent) (*Content, error) {
@@ -29,17 +35,12 @@ func EventContentToContent(ec EventContent) (*Content, error) {
 	statusCode := ec.GetStatus().ToGrpcCode()
 	switch statusCode {
 	case codes.OK:
-	case extCodes.Accepted:
-	case extCodes.Created:
+	case codes.Code(extCodes.Accepted):
+	case codes.Code(extCodes.Created):
 	default:
-		s := status.New(statusCode, "response from device")
+		s := status.New(statusCode, "error response from device")
 		if content != nil {
-			newS, err := s.WithDetails(&errdetails.DeviceError{
-				Content: &errdetails.Content{
-					Data:        content.GetData(),
-					ContentType: content.GetContentType(),
-				},
-			})
+			newS, err := s.WithDetails(ec)
 			if err == nil {
 				s = newS
 			}
