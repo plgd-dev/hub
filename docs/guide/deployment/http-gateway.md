@@ -142,21 +142,6 @@ Client configurations to internally connect to GRPC Gateway service.
 | `clients.grpcGateway.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
 | `clients.grpcGateway.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
-### Certificate Authority Client
-Client configurations to internally connect to Certificate Authority service.
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `clients.certificateAuthority.enabled` | bool | `If true, connect to Certificate Authority.` | `"false"` |
-| `clients.certificateAuthority.grpc.address` | string | `Certificate Authority service address.` | `"127.0.0.1:9100"` |
-| `clients.certificateAuthority.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.certificateAuthority.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.certificateAuthority.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.certificateAuthority.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.certificateAuthority.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.certificateAuthority.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.certificateAuthority.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
-
 ### Web UI
 These configurations are for `PLGD Dashboard` as described in [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/dashboard.md).
 
