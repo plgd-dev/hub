@@ -54,7 +54,6 @@ import (
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/service"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
-	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
@@ -204,7 +203,7 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 	}
 
 	ClearDB(ctx, t)
-	oauthShutdown := oauthService.SetUp(t)
+	oauthShutdown := oauthTest.SetUp(t)
 	authShutdown := authService.SetUp(t)
 	raShutdown := raService.SetUp(t)
 	rdShutdown := rdTest.New(t, config.RD)

@@ -208,7 +208,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 	resp := map[string]interface{}{
 		"access_token":  accessToken,
 		"id_token":      idToken,
-		"expires_in":    int64(accessTokenExpires.Sub(time.Now()).Seconds()),
+		"expires_in":    int64(time.Until(accessTokenExpires).Seconds()),
 		"scope":         "openid profile email",
 		"token_type":    "Bearer",
 		"refresh_token": "refresh-token",
