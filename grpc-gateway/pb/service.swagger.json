@@ -1,10 +1,10 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "HTTP Gateway API",
+    "title": "plgd cloud - HTTP Gateway API",
     "version": "1.0",
     "contact": {
-      "name": "plgd.dev s.r.o.",
+      "name": "plgd.dev",
       "url": "https://github.com/plgd-dev/cloud",
       "email": "info@plgd.dev"
     },
@@ -591,7 +591,7 @@
         ]
       }
     },
-    "/api/v1/ws/devices/events": {
+    "/api/v1/ws/events": {
       "post": {
         "summary": "Subscribe to events",
         "operationId": "GrpcGateway_SubscribeToEvents",

@@ -54,30 +54,6 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func correlationIDHeaderToQuery(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		correlationID := r.Header.Get(uri.CorrelationIDHeaderKey)
-		if correlationID == "" {
-			next.ServeHTTP(w, r)
-			return
-		}
-		u, err := url.ParseRequestURI(r.RequestURI)
-		if err != nil {
-			log.Errorf("cannot make query case insensitive: %v", err)
-			next.ServeHTTP(w, r)
-			return
-		}
-		queries := u.Query()
-		qCorrelationID := queries.Get(uri.CorrelationIDQueryKey)
-		if qCorrelationID == "" {
-			queries.Set(uri.CorrelationIDQueryKey, qCorrelationID)
-		}
-		r.URL.RawQuery = queries.Encode()
-		r.RequestURI = u.String()
-		next.ServeHTTP(w, r)
-	})
-}
-
 func makeQueryCaseInsensitive(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, err := url.ParseRequestURI(r.RequestURI)
@@ -180,7 +156,6 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
 	}))
 	r0.Use(makeQueryCaseInsensitive)
-	r0.Use(correlationIDHeaderToQuery)
 	r0.Use(trailSlashSuffix)
 	r := router.NewRouter()
 	r0.PathPrefix("/").Handler(r)

@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -49,39 +48,17 @@ func (c *APIsConfig) Validate() error {
 }
 
 type HTTPConfig struct {
-	Connection listener.Config `yaml:",inline" json:",inline"`
-	//WebSocket     WebSocketConfig  `yaml:"webSocket" json:"webSocket"`
+	Connection    listener.Config  `yaml:",inline" json:",inline"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`
 }
 
 func (c *HTTPConfig) Validate() error {
-	/*
-		err := c.WebSocket.Validate()
-		if err != nil {
-			return fmt.Errorf("webSocket.%w", err)
-		}
-	*/
 	err := c.Authorization.Validate()
 	if err != nil {
 		return fmt.Errorf("authorization.%w", err)
 	}
 
 	return c.Connection.Validate()
-}
-
-type WebSocketConfig struct {
-	ReadLimit   int64         `yaml:"readLimit" json:"readLimit"`
-	ReadTimeout time.Duration `yaml:"readTimeout" json:"readTimeout"`
-}
-
-func (c *WebSocketConfig) Validate() error {
-	if c.ReadLimit <= 0 {
-		return fmt.Errorf("readLimit('%v')", c.ReadLimit)
-	}
-	if c.ReadTimeout <= 0 {
-		return fmt.Errorf("readTimeout('%v')", c.ReadTimeout)
-	}
-	return nil
 }
 
 type ClientsConfig struct {

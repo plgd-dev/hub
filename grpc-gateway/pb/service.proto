@@ -15,11 +15,11 @@ import "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-openapiv2/options/anno
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
-    title: "HTTP Gateway API";
+    title: "plgd cloud - HTTP Gateway API";
     version: "1.0";
     description: "";
     contact: {
-      name: "plgd.dev s.r.o.";
+      name: "plgd.dev";
       url: "https://github.com/plgd-dev/cloud";
       email: "info@plgd.dev";
     };
@@ -89,7 +89,7 @@ service GrpcGateway {
   // Subscribe to events
   rpc SubscribeToEvents(stream ocf.cloud.grpcgateway.pb.SubscribeToEvents) returns (stream Event) {
     option (google.api.http) = {
-      post: "/api/v1/ws/devices/events"
+      post: "/api/v1/ws/events"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {

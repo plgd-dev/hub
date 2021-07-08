@@ -177,7 +177,7 @@ func (rd *ResourceShadow) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, 
 	}
 
 	if len(devicesMetadata) == 0 {
-		log.Debug("ResourceShadow.GetDevicesMetadata.filterMetadataByUserFilters returns empty devicesMetadata")
+		log.Debug("ResourceShadow.GetDevicesMetadata.filterMetadataByUserFilters returns empty devices metadata")
 		return nil
 	}
 

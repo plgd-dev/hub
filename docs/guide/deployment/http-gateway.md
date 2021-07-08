@@ -78,14 +78,6 @@ clients:
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
 ...
-  certificateAuthority:
-    grpc:
-      address: "localhost:9087"
-      tls:
-        caPool: "/data/certs/root_ca.crt"
-        keyFile: "/data/certs/http.key"
-        certFile: "/data/certs/http.crt"
-...
 ui:
   enabled: true
   directory: "/usr/local/var/www"
@@ -124,8 +116,6 @@ APIs of the HTTP Gateway service as defined [uri](https://github.com/plgd-dev/cl
 | `api.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.http.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
-| `api.http.websocket.readLimit` | int | `The maximum size in bytes for a message read from the peer. If a message exceeds the limit, the connection sends a close message to the peer` | `8192` |
-| `api.http.websocket.readTimeout` | string | `The read deadline on the underlying network connection. A zero value means reads will not time out.` | `4s` |
 | `api.http.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
 | `api.http.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.http.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |

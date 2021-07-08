@@ -212,7 +212,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			d.TLSClientConfig = &tls.Config{
 				RootCAs: test.GetRootCertificatePool(t),
 			}
-			wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/devices/events?accept=%v", config.HTTP_GW_HOST, tt.args.accept), header)
+			wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events?accept=%v", config.HTTP_GW_HOST, tt.args.accept), header)
 			require.NoError(t, err)
 			defer wsConn.Close()
 
@@ -299,7 +299,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	d.TLSClientConfig = &tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	}
-	wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/devices/events", config.HTTP_GW_HOST), header)
+	wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", config.HTTP_GW_HOST), header)
 	require.NoError(t, err)
 
 	send := func(req *pb.SubscribeToEvents) error {

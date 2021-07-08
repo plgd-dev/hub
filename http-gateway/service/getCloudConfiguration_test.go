@@ -18,7 +18,7 @@ import (
 	testCfg "github.com/plgd-dev/cloud/test/config"
 )
 
-func TestRequestHandler_GetClientConfiguration(t *testing.T) {
+func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 	tests := []struct {
 		name    string
 		wantErr bool
@@ -64,7 +64,6 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 			require.NotEmpty(t, got.CloudCertificateAuthorities)
 			got.CloudCertificateAuthorities = ""
 			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
-
 		})
 	}
 }

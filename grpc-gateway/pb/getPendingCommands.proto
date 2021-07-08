@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package ocf.cloud.grpcgateway.pb;
 
-import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 
 option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
