@@ -19,7 +19,7 @@ import (
 
 func TestSubscriber(t *testing.T) {
 	publishTopics := []string{"test.subscriber.topic0." + uuid.Must(uuid.NewV4()).String(), "test.subscriber.topic1." + uuid.Must(uuid.NewV4()).String()}
-	subscriberTopics := []string{ /*"test.subscriber.topic0.>",*/ "test.subscriber.*.>", "test.subscriber.*.>"}
+	subscriberTopics := []string{"test.subscriber.topic0.>", "test.subscriber.*.>"}
 
 	timeout := time.Second * 30
 

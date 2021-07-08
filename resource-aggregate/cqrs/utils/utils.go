@@ -5,12 +5,25 @@ import (
 	"time"
 
 	"github.com/golang/snappy"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
 func GetDeviceSubject(deviceID string) []string {
 	return []string{"events." + deviceID + ".>"}
+}
+
+func GetDeviceMetadataEventSubject(deviceID string, eventType string) []string {
+	return []string{"events." + deviceID + ".metadata." + eventType}
+}
+
+func GetResourceSubject(resourceID *commands.ResourceId) []string {
+	return []string{"events." + resourceID.GetDeviceId() + "." + resourceID.ToUUID() + ".>"}
+}
+
+func GetResourceEventSubject(resourceID *commands.ResourceId, eventType string) []string {
+	return []string{"events." + resourceID.GetDeviceId() + ".resources." + resourceID.ToUUID() + "." + eventType}
 }
 
 func GetPublishSubject(event eventbus.Event) []string {
