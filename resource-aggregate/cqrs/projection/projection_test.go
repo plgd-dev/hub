@@ -5,9 +5,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
@@ -84,8 +82,8 @@ func makeEventMeta(connectionID string, sequence, version uint64) *events.EventM
 	return e
 }
 
-func prepareResourceLinksEventstore(t *testing.T) *mockEventStore.MockEventStore {
-	eventstore := mockEventStore.NewMockEventStore()
+func prepareResourceLinksEventstore(t *testing.T) *mockEvents.MockEventStore {
+	eventstore := mockEvents.NewMockEventStore()
 
 	d1resID := commands.MakeLinksResourceUUID(d1res1.DeviceId)
 	eventstore.Append(d1res1.DeviceId, d1resID, mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{&d1res1}, d1res1.DeviceId, makeEventMeta("a", 0, 0)))
@@ -117,8 +115,8 @@ func prepareResourceLinksEventstore(t *testing.T) *mockEventStore.MockEventStore
 	return eventstore
 }
 
-func prepareResourceStateEventstore(t *testing.T) *mockEventStore.MockEventStore {
-	eventstore := mockEventStore.NewMockEventStore()
+func prepareResourceStateEventstore(t *testing.T) *mockEvents.MockEventStore {
+	eventstore := mockEvents.NewMockEventStore()
 	resourceChangedEventMetadata := makeEventMeta("", 0, 0)
 
 	d1r1 := commands.NewResourceID(d1res1.DeviceId, d1res1.Href)
@@ -292,14 +290,14 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []eventstore.Model
+		want []cqrsEventStore.Model
 	}{
 		{
 			name: "valid dev1",
 			args: args{
 				deviceID: d1res1.DeviceId,
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceLinksSnapshotTaken{
 					Resources: map[string]*commands.Resource{
 						d1res1.Href: &d1res1,
@@ -321,7 +319,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 			args: args{
 				deviceID: d2res1.DeviceId,
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceLinksSnapshotTaken{
 					Resources: map[string]*commands.Resource{
 						d2res1.Href: &d2res1,
@@ -340,7 +338,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 			args: args{
 				deviceID: d3res2.DeviceId,
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceLinksSnapshotTaken{
 					Resources: map[string]*commands.Resource{
 						d3res2.Href: &d3res2,
@@ -359,7 +357,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 			args: args{
 				deviceID: d4res1.DeviceId,
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceLinksSnapshotTaken{
 					Resources: map[string]*commands.Resource{},
 					DeviceId:  d4res1.DeviceId,
@@ -376,7 +374,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 			args: args{
 				deviceID: d5res1.DeviceId,
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceLinksSnapshotTaken{
 					Resources: map[string]*commands.Resource{},
 					DeviceId:  d5res1.DeviceId,
@@ -432,14 +430,14 @@ func TestResourceStateProjection_Models(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []eventstore.Model
+		want []cqrsEventStore.Model
 	}{
 		{
 			name: "valid dev1r1",
 			args: args{
 				resourceID: commands.NewResourceID(d1res1.DeviceId, d1res1.Href),
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceStateSnapshotTaken{
 					ResourceId: commands.NewResourceID(d1res1.DeviceId, d1res1.Href),
 					LatestResourceChange: &events.ResourceChanged{
@@ -493,7 +491,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 			args: args{
 				resourceID: commands.NewResourceID(d1res2.DeviceId, d1res2.Href),
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceStateSnapshotTaken{
 					ResourceId: commands.NewResourceID(d1res2.DeviceId, d1res2.Href),
 					LatestResourceChange: &events.ResourceChanged{
@@ -515,7 +513,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 			args: args{
 				resourceID: commands.NewResourceID(d1res3.DeviceId, d1res3.Href),
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceStateSnapshotTaken{
 					ResourceId: commands.NewResourceID(d1res3.DeviceId, d1res3.Href),
 					LatestResourceChange: &events.ResourceChanged{
@@ -557,7 +555,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 			args: args{
 				resourceID: commands.NewResourceID(d1res4.DeviceId, d1res4.Href),
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceStateSnapshotTaken{
 					ResourceId: commands.NewResourceID(d1res4.DeviceId, d1res4.Href),
 					LatestResourceChange: &events.ResourceChanged{
@@ -598,7 +596,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 			args: args{
 				resourceID: commands.NewResourceID(d2res1.DeviceId, d2res1.Href),
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceStateSnapshotTaken{
 					ResourceId: commands.NewResourceID(d2res1.DeviceId, d2res1.Href),
 					LatestResourceChange: &events.ResourceChanged{
@@ -625,7 +623,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 			args: args{
 				resourceID: commands.NewResourceID(d2res2.DeviceId, d2res2.Href),
 			},
-			want: []eventstore.Model{
+			want: []cqrsEventStore.Model{
 				&events.ResourceStateSnapshotTaken{
 					ResourceId: commands.NewResourceID(d2res2.DeviceId, d2res2.Href),
 					LatestResourceChange: &events.ResourceChanged{

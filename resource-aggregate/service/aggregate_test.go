@@ -219,7 +219,7 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	err = service.PublishEvents(ctx, publisher, deviceID, ag.ResourceID(), events)
 	assert.NoError(t, err)
 
-	events, err = ag.UnpublishResourceLinks(ctx, pc)
+	_, err = ag.UnpublishResourceLinks(ctx, pc)
 	assert.NoError(t, err)
 }
 

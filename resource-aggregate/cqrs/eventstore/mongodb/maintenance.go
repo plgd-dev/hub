@@ -28,7 +28,7 @@ func getID(task maintenance.Task) string {
 
 // Insert stores (or updates) the information about the latest snapshot version per aggregate into the DB
 func (s *EventStore) Insert(ctx context.Context, task maintenance.Task) error {
-	if task.AggregateID == "" || task.Version < 0 {
+	if task.AggregateID == "" {
 		return errors.New("could not insert record - aggregate ID and/or version cannot be empty")
 	}
 

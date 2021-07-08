@@ -36,12 +36,9 @@ type EventStore interface {
 
 //Service handle GRPC request
 type Service struct {
-	server             *server.Server
-	cfg                Config
-	handler            *RequestHandler
-	sigs               chan os.Signal
-	authConn           *grpc.ClientConn
-	userDevicesManager *clientAS.UserDevicesManager
+	server  *server.Server
+	handler *RequestHandler
+	sigs    chan os.Signal
 }
 
 func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
