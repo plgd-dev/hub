@@ -66,7 +66,7 @@ func TestRequestHandler_GetDevices(t *testing.T) {
 	c := pb.NewGrpcGatewayClient(conn)
 
 	log.Setup(log.Config{Debug: true})
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {

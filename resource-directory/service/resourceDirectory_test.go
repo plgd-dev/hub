@@ -11,7 +11,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
@@ -102,8 +101,8 @@ var Resource1 = newResourceContent("1", "/b", []string{"t1", "t2"}, &commands.Co
 var Resource2 = newResourceContent("2", "/c", []string{"t1"}, &commands.Content{Data: []byte("2.c")})
 var Resource3 = newResourceContent("1", "/d", []string{"t3", "t8"}, &commands.Content{Data: []byte("1.d")})
 
-func testCreateEventstore() *mockEventStore.MockEventStore {
-	store := mockEventStore.NewMockEventStore()
+func testCreateEventstore() *mockEvents.MockEventStore {
+	store := mockEvents.NewMockEventStore()
 	store.Append(Resource0.DeviceId, commands.MakeLinksResourceUUID(Resource0.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource0.Resource}, Resource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
 	store.Append(Resource1.DeviceId, commands.MakeLinksResourceUUID(Resource1.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource1.Resource}, Resource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
 	store.Append(Resource2.DeviceId, commands.MakeLinksResourceUUID(Resource2.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{Resource2.Resource}, Resource2.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))

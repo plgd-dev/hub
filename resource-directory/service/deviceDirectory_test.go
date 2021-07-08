@@ -19,7 +19,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	mockEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
@@ -163,22 +162,6 @@ func (c ResourceContent) ToResourceIDString() string {
 	return c.GetResourceID().ToString()
 }
 
-type testGeneratePublishEvent struct {
-	version uint64
-	ResourceContent
-}
-
-type testGenerateUnpublishEvent struct {
-	version  uint64
-	id       string
-	deviceID string
-}
-
-type testGenerateUnknownEvent struct {
-	version uint64
-	id      string
-}
-
 func testMakeDeviceResource(deviceId string, href string, types []string) *commands.Resource {
 	return &commands.Resource{
 		DeviceId:      deviceId,
@@ -263,8 +246,8 @@ var ddResource2Cloud = makeTestDeviceConnectionStatus("2", true)
 var ddResource4 = makeTestDeviceResourceContent("4")
 var ddResource4Cloud = makeTestDeviceConnectionStatus("4", true)
 
-func testCreateResourceDeviceEventstores() (resourceEventStore *mockEventStore.MockEventStore) {
-	resourceEventStore = mockEventStore.NewMockEventStore()
+func testCreateResourceDeviceEventstores() (resourceEventStore *mockEvents.MockEventStore) {
+	resourceEventStore = mockEvents.NewMockEventStore()
 
 	//without cloud state
 	resourceEventStore.Append(ddResource0.DeviceId, commands.MakeLinksResourceUUID(ddResource0.DeviceId), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{ddResource0.Resource}, ddResource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0)))
