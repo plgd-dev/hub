@@ -172,7 +172,7 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 
 	i := iter{
 		hasNext: true,
-		e:       e,
+		e:       &e,
 		dataUnmarshaler: func(v interface{}) error {
 			return o.dataUnmarshaler(e.Data, v)
 		},
@@ -216,7 +216,7 @@ func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 }
 
 type iter struct {
-	e               pb.Event
+	e               *pb.Event
 	dataUnmarshaler func(v interface{}) error
 	hasNext         bool
 }

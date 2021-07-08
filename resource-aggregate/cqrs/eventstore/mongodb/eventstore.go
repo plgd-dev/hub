@@ -35,6 +35,7 @@ const idKey = "_id"
 const firstVersionKey = "firstversion"
 const latestVersionKey = "latestversion"
 const latestSnapshotVersionKey = "latestsnapshotversion"
+const latestTimestampKey = "latesttimestamp"
 const eventsKey = "events"
 const groupIDKey = "groupid"
 const isActiveKey = "isactive"
@@ -58,6 +59,15 @@ var groupIDaggregateIDQueryIndex = bson.D{
 	{Key: groupIDKey, Value: 1},
 	{Key: aggregateIDKey, Value: 1},
 	{Key: isActiveKey, Value: 1},
+}
+
+var aggregateIDLatestTimestampQueryIndex = bson.D{
+	{Key: aggregateIDKey, Value: 1},
+	{Key: latestTimestampKey, Value: 1},
+}
+
+var eventsTimestampQueryIndex = bson.D{
+	{Key: eventsKey + "." + timestampKey, Value: 1},
 }
 
 type signOperator string
@@ -189,7 +199,15 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	}
 
 	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
-	err = s.ensureIndex(ctx, col, aggregateIDLastVersionQueryIndex, aggregateIDFirstVersionQueryIndex, groupIDQueryIndex, groupIDaggregateIDQueryIndex)
+	err = s.ensureIndex(ctx,
+		col,
+		aggregateIDLastVersionQueryIndex,
+		aggregateIDFirstVersionQueryIndex,
+		groupIDQueryIndex,
+		groupIDaggregateIDQueryIndex,
+		aggregateIDLatestTimestampQueryIndex,
+		eventsTimestampQueryIndex,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)
 	}
@@ -252,7 +270,6 @@ func getLatestSnapshotVersion(events []eventstore.Event) (uint64, error) {
 		}
 	}
 	return latestSnapshotVersion, err
-
 }
 
 func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
@@ -271,6 +288,7 @@ func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, erro
 		latestVersionKey:         events[len(events)-1].Version(),
 		firstVersionKey:          events[0].Version(),
 		latestSnapshotVersionKey: latestSnapshotVersion,
+		latestTimestampKey:       events[len(events)-1].Timestamp().UnixNano(),
 		isActiveKey:              true,
 		eventsKey:                e,
 	}, nil

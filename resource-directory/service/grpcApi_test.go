@@ -35,7 +35,7 @@ const TEST_TIMEOUT = time.Second * 30
 func TestRequestHandler_UpdateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.UpdateResourceRequest
+		req *pb.UpdateResourceRequest
 	}
 	tests := []struct {
 		name    string
@@ -46,7 +46,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -67,7 +67,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 		{
 			name: "valid with interface",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
@@ -89,7 +89,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 		{
 			name: "revert update",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceInterface: "oic.if.baseline",
 					ResourceId:        commands.NewResourceID(deviceID, "/light/1"),
 					Content: &pb.Content{
@@ -111,7 +111,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 		{
 			name: "update RO-resource",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -132,7 +132,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.UpdateResourceRequest{
+				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -156,12 +156,12 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.UpdateResource(ctx, &tt.args.req)
+			got, err := c.UpdateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -178,7 +178,7 @@ func TestRequestHandler_UpdateResource(t *testing.T) {
 func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.GetResourceFromDeviceRequest
+		req *pb.GetResourceFromDeviceRequest
 	}
 	tests := []struct {
 		name            string
@@ -190,7 +190,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /light/2",
 			args: args{
-				req: pb.GetResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
@@ -200,7 +200,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /oic/d",
 			args: args{
-				req: pb.GetResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
@@ -210,7 +210,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.GetResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -231,13 +231,13 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 17; i++ {
-				got, err := c.GetResourceFromDevice(ctx, &tt.args.req)
+				got, err := c.GetResourceFromDevice(ctx, tt.args.req)
 				if tt.wantErr {
 					require.Error(t, err)
 				} else {
@@ -257,7 +257,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		sub pb.SubscribeToEvents
+		sub *pb.SubscribeToEvents
 	}
 	tests := []struct {
 		name string
@@ -267,7 +267,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "invalid - invalid type subscription",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 				},
 			},
@@ -296,7 +296,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "devices subscription - registered",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
@@ -331,7 +331,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "devices subscription - device metadata updated",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
@@ -369,7 +369,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "device subscription - published",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
@@ -442,7 +442,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					test.CheckProtobufs(t, tt.want, ev, test.RequireToCheckFunc(require.Contains))
 				}
 			}()
-			err = client.Send(&tt.args.sub)
+			err = client.Send(tt.args.sub)
 			require.NoError(t, err)
 			wg.Wait()
 		})

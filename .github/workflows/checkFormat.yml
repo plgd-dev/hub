@@ -1,5 +1,5 @@
 # Check that only correctly formatted golang code is merged
-name: CheckFormat
+name: Check Format
 
 on:
   pull_request:

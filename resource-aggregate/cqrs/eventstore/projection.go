@@ -270,7 +270,7 @@ func (p *Projection) Project(ctx context.Context, queries []SnapshotQuery) (err 
 	return p.store.LoadFromSnapshot(ctx, queries, p)
 }
 
-// Forget drop projection by query.Verson in Query is ignored.
+// Forget drop projection by query.Version in Query is ignored.
 func (p *Projection) Forget(queries []SnapshotQuery) (err error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()

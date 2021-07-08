@@ -42,7 +42,8 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	opts := options.Update()
 	opts.SetHint(aggregateIDLastVersionQueryIndex)
 	updateSet := bson.M{
-		latestVersionKey: events[len(events)-1].Version(),
+		latestVersionKey:   events[len(events)-1].Version(),
+		latestTimestampKey: events[len(events)-1].Timestamp().UnixNano(),
 	}
 	latestSnapshotVersion, err := getLatestSnapshotVersion(events)
 	if err == nil {
@@ -92,50 +93,76 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	}
 }
 
+// Validate events before saving them in the database
+// Prerequisites that must hold:
+//   1) AggregateID, GroupID and EventType are not empty
+//   2) Version for each event is by 1 greater than the version of the previous event
+//   3) Only the first event can be a snapshot
+//   4) All events have the same AggregateId and GroupID
+//   5) Timestamps are non-zero
+//   6) Timestamps are non-decreasing
+func checkBeforeSave(events ...eventstore.Event) error {
+	if len(events) == 0 || events[0] == nil {
+		return fmt.Errorf("invalid events('%v')", events)
+	}
+	aggregateID := events[0].AggregateID()
+	groupID := events[0].GroupID()
+	version := events[0].Version()
+	timestamp := events[0].Timestamp()
+	for idx, event := range events {
+		if event == nil {
+			return fmt.Errorf("invalid events[%v]('%v')", idx, event)
+		}
+		if event.AggregateID() == "" {
+			return fmt.Errorf("invalid events[%v].AggregateID('%v')", idx, event.AggregateID())
+		}
+		if event.GroupID() == "" {
+			return fmt.Errorf("invalid events[%v].GroupID('%v')", idx, event.GroupID())
+		}
+		if event.EventType() == "" {
+			return fmt.Errorf("invalid events[%v].EventType('%v')", idx, event.EventType())
+		}
+		if event.Timestamp().IsZero() {
+			return fmt.Errorf("invalid zero events[%v].Timestamp", idx)
+		}
+		if idx > 0 {
+			if event.Version() != version+uint64(idx) {
+				return fmt.Errorf("invalid continues ascending events[%v].Version(%v))", idx, event.Version())
+			}
+			if event.IsSnapshot() {
+				return fmt.Errorf("inner snapshot for events[%v] is not supported", idx)
+			}
+			if event.AggregateID() != aggregateID {
+				return fmt.Errorf("invalid events[%v].AggregateID('%v') != events[0].AggregateID('%v')", idx, event.AggregateID(), aggregateID)
+			}
+			if event.GroupID() != groupID {
+				return fmt.Errorf("invalid events[%v].GroupID('%v') != events[0].GroupID('%v')", idx, event.GroupID(), groupID)
+			}
+			// timestamp values must be non-decreasing
+			if timestamp.After(event.Timestamp()) {
+				return fmt.Errorf("invalid decreasing events[%v].Timestamp(%v))", idx, event.Timestamp())
+			}
+			timestamp = event.Timestamp()
+		}
+	}
+	return nil
+}
+
 // Save save events to eventstore.
 // AggregateID, GroupID and EventType are required.
 // All events within one Save operation shall have the same AggregateID and GroupID.
 // Versions shall be unique and ascend continually.
 // Only first event can be a snapshot.
-func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (status eventstore.SaveStatus, err error) {
+func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (eventstore.SaveStatus, error) {
 	s.LogDebugfFunc("mongodb.Evenstore.Save start")
 	t := time.Now()
 	defer func() {
 		s.LogDebugfFunc("mongodb.Evenstore.Save takes %v", time.Since(t))
 	}()
 
-	if len(events) == 0 || events[0] == nil {
-		return eventstore.Fail, fmt.Errorf("invalid events('%v')", events)
-	}
-	aggregateID := events[0].AggregateID()
-	groupID := events[0].GroupID()
-	version := events[0].Version()
-	for idx, event := range events {
-		if event == nil {
-			return eventstore.Fail, fmt.Errorf("invalid events[%v]('%v')", idx, event)
-		}
-		if event.AggregateID() == "" {
-			return eventstore.Fail, fmt.Errorf("invalid events[%v].AggregateID('%v')", idx, event.AggregateID())
-		}
-		if event.GroupID() == "" {
-			return eventstore.Fail, fmt.Errorf("invalid events[%v].GroupID('%v')", idx, event.GroupID())
-		}
-		if event.EventType() == "" {
-			return eventstore.Fail, fmt.Errorf("invalid events[%v].EventType('%v')", idx, event.EventType())
-		}
-		if event.Version() != version+uint64(idx) {
-			return eventstore.Fail, fmt.Errorf("invalid continues ascending events[%v].Version(%v))", idx, event.Version())
-		}
-		if idx > 0 && event.IsSnapshot() {
-			return eventstore.Fail, fmt.Errorf("inner snapshot for events[%v] is not supported", idx)
-		}
-		if event.AggregateID() != aggregateID {
-			return eventstore.Fail, fmt.Errorf("invalid events[%v].AggregateID('%v') != events[0].AggregateID('%v')", idx, event.AggregateID(), aggregateID)
-		}
-		if event.GroupID() != groupID {
-			return eventstore.Fail, fmt.Errorf("invalid events[%v].GroupID('%v') != events[0].GroupID('%v')", idx, event.GroupID(), groupID)
-		}
-
+	err := checkBeforeSave(events...)
+	if err != nil {
+		return eventstore.Fail, err
 	}
 
 	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
@@ -151,6 +178,7 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (stat
 			}
 			return eventstore.Fail, fmt.Errorf("cannot insert first events('%v'): %w", events, err)
 		}
+
 		return eventstore.Ok, nil
 	}
 	/*
@@ -158,9 +186,9 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (stat
 			return s.saveSnapshot(ctx, events)
 		}
 	*/
-	status, err = s.saveEvent(ctx, col, events)
+	status, err := s.saveEvent(ctx, col, events)
 	if err != nil {
-		return
+		return status, err
 	}
 	switch status {
 	case eventstore.SnapshotRequired:
@@ -168,7 +196,7 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (stat
 			return s.saveSnapshot(ctx, events)
 		}
 	}
-	return
+	return status, nil
 }
 
 func (s *EventStore) saveSnapshot(ctx context.Context, events []eventstore.Event) (status eventstore.SaveStatus, err error) {

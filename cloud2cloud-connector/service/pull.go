@@ -102,7 +102,7 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 		link.DeviceID = deviceID
 		href := removeDeviceIDFromHref(link.Href)
 		link.Href = href
-		err := publishResource(ctx, raClient, userID, link, commands.CommandMetadata{
+		err := publishResource(ctx, raClient, userID, link, &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
 			Sequence:     uint64(time.Now().UnixNano()),
 		})
@@ -285,7 +285,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 				userID,
 				"application/json",
 				body,
-				commands.CommandMetadata{
+				&commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
 				},
