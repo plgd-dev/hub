@@ -19,22 +19,11 @@ type AccessTokenType string
 const AccessTokenType_JWT AccessTokenType = "jwt"
 const AccessTokenType_REFERENCE AccessTokenType = "reference"
 
-var accessTokenTypes = map[AccessTokenType]bool{
-	AccessTokenType_JWT:       true,
-	AccessTokenType_REFERENCE: true,
-}
-
 type AllowedGrantType string
 
 const AllowedGrantType_AUTHORIZATION_CODE AllowedGrantType = "authorization_code"
 const AllowedGrantType_CLIENT_CREDENTIALS AllowedGrantType = "client_credentials"
 const AllowedGrantType_PASSWORD AllowedGrantType = "password"
-
-var allowedGrantTypes = map[AllowedGrantType]bool{
-	AllowedGrantType_AUTHORIZATION_CODE: true,
-	AllowedGrantType_CLIENT_CREDENTIALS: true,
-	AllowedGrantType_PASSWORD:           true,
-}
 
 type AllowedGrantTypes []AllowedGrantType
 
