@@ -65,7 +65,12 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 			},
 		},
 		{
-			name:           "project_ONLINE_OFFLINE",
+			name: "project_ONLINE_OFFLINE",
+			args: args{
+				request: &pb.GetDevicesRequest{
+					StatusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_ONLINE, pb.GetDevicesRequest_OFFLINE},
+				},
+			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pb.Device{
 				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
