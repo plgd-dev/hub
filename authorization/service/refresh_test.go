@@ -20,7 +20,7 @@ func TestRefreshToken(t *testing.T) {
 	assert := assert.New(t)
 	assert.NotEmpty(r.AccessToken)
 	assert.Equal("refresh-token", r.RefreshToken)
-	assert.True(r.ExpiresIn > 0)
+	assert.True(r.ValidUntil > 0)
 }
 
 func TestUnauthorizedRefreshToken(t *testing.T) {

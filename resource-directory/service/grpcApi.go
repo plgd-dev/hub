@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"go.uber.org/zap"
 
@@ -104,7 +105,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 	})
 	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
 
-	eventstore, err := mongodb.New(ctx, config.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create resource mongodb eventstore %w", err)
@@ -116,7 +117,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 		}
 	})
 
-	resourceSubscriber, err := subscriber.New(config.Eventbus.NATS, logger, subscriber.WithGoPool(goroutinePoolGo))
+	resourceSubscriber, err := subscriber.New(config.Eventbus.NATS, logger, subscriber.WithGoPool(goroutinePoolGo), subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)

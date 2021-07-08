@@ -16,7 +16,7 @@ type request interface {
 	GetDeviceId() string
 }
 
-func checkReq(tx persistence.PersistenceTx, request request) (expiresInSeconds int64, err error) {
+func checkReq(tx persistence.PersistenceTx, request request) (validUntil int64, err error) {
 	if request.GetUserId() == "" {
 		return -1, status.Errorf(codes.InvalidArgument, "invalid UserId")
 	}
@@ -40,12 +40,12 @@ func checkReq(tx persistence.PersistenceTx, request request) (expiresInSeconds i
 	if d.Owner != request.GetUserId() {
 		return -1, status.Errorf(codes.Unauthenticated, "bad UserId")
 	}
-	expiresIn, ok := ExpiresIn(d.Expiry)
+	validUntil, ok = ValidUntil(d.Expiry)
 	if !ok {
 		return -1, status.Errorf(codes.Unauthenticated, "expired access token")
 	}
 
-	return expiresIn, nil
+	return validUntil, nil
 }
 
 // SignIn verifies device's AccessToken and Expiry required for signing in.
@@ -53,10 +53,10 @@ func (s *Service) SignIn(ctx context.Context, request *pb.SignInRequest) (*pb.Si
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	expiresIn, err := checkReq(tx, request)
+	validUntil, err := checkReq(tx, request)
 	if err != nil {
 		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot sign in: %v", err))
 	}
 
-	return &pb.SignInResponse{ExpiresIn: expiresIn}, nil
+	return &pb.SignInResponse{ValidUntil: validUntil}, nil
 }

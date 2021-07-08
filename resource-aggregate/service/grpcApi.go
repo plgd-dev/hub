@@ -45,7 +45,7 @@ func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.
 func PublishEvents(ctx context.Context, publisher eventbus.Publisher, deviceId, resourceId string, events []eventbus.Event) error {
 	var errors []error
 	for _, event := range events {
-		err := publisher.Publish(ctx, utils.GetTopics(deviceId), deviceId, resourceId, event)
+		err := publisher.Publish(ctx, utils.GetPublishSubject(event), deviceId, resourceId, event)
 		if err != nil {
 			errors = append(errors, err)
 		}

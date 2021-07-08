@@ -8,18 +8,17 @@ import (
 )
 
 func TestNoExpiration(t *testing.T) {
-	s, ok := ExpiresIn(time.Time{})
-	assert.Equal(t, int64(-1), s)
+	s, ok := ValidUntil(time.Time{})
+	assert.Equal(t, int64(0), s)
 	assert.True(t, ok)
 }
 
 func TestExpired(t *testing.T) {
-	_, ok := ExpiresIn(time.Now().Add(-time.Minute))
+	_, ok := ValidUntil(time.Now().Add(-time.Minute))
 	assert.False(t, ok)
 }
 
 func TestExpiresIn(t *testing.T) {
-	s, ok := ExpiresIn(time.Now().Add(time.Minute))
-	assert.True(t, 55 < s && s <= 60)
+	_, ok := ValidUntil(time.Now().Add(time.Minute))
 	assert.True(t, ok)
 }

@@ -3,11 +3,12 @@ package events
 import (
 	"time"
 
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
 
-const eventTypeDeviceMetadataUpdated = "ocf.cloud.resourceaggregate.events.devicemetadataupdated"
+const eventTypeDeviceMetadataUpdated = "devicemetadataupdated"
 
 func (e *DeviceMetadataUpdated) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
@@ -38,7 +39,7 @@ func (e *DeviceMetadataUpdated) IsSnapshot() bool {
 }
 
 func (e *DeviceMetadataUpdated) Timestamp() time.Time {
-	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
+	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
 }
 
 func (e *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {

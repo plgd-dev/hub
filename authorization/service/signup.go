@@ -55,7 +55,7 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot sign up: %v", err.Error()))
 	}
 
-	expiresIn, ok := ExpiresIn(token.Expiry)
+	validUntil, ok := ValidUntil(token.Expiry)
 	if !ok {
 		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: expired access token"))
 	}
@@ -64,7 +64,7 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 		AccessToken:  token.AccessToken,
 		UserId:       token.Owner,
 		RefreshToken: token.RefreshToken,
-		ExpiresIn:    expiresIn,
+		ValidUntil:   validUntil,
 		RedirectUri:  "",
 	}, nil
 }

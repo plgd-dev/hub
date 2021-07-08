@@ -2,15 +2,16 @@ package subscriber
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
@@ -135,7 +136,7 @@ func WithGoPool(goroutinePoolGo eventbus.GoroutinePoolGoFunc) GoroutinePoolGoOpt
 // NewSubscriber create new subscriber with proto unmarshaller.
 func New(config Config, logger *zap.Logger, opts ...Option) (*Subscriber, error) {
 	cfg := options{
-		dataUnmarshaler: utils.Unmarshal,
+		dataUnmarshaler: json.Unmarshal,
 		goroutinePoolGo: nil,
 	}
 	for _, o := range opts {
@@ -334,7 +335,7 @@ func (e *eventUnmarshaler) IsSnapshot() bool {
 	return e.pb.GetIsSnapshot()
 }
 func (e *eventUnmarshaler) Timestamp() time.Time {
-	return time.Unix(0, e.pb.GetTimestamp())
+	return pkgTime.Unix(0, e.pb.GetTimestamp())
 }
 func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 	return e.dataUnmarshaler(v)

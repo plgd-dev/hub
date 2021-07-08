@@ -45,20 +45,24 @@ privateKeys:
 	openssl ecparam -name prime256v1 -genkey -noout -out $(shell pwd)/.tmp/privKeys/accessTokenKey.pem
 
 nats: certificates
+	mkdir -p $(shell pwd)/.tmp/jetstream/cloud
+	mkdir -p $(shell pwd)/.tmp/jetstream/cloud-connector
 	docker run \
 	    -d \
 		--network=host \
 		--name=nats \
 		-v $(shell pwd)/.tmp/certs:/certs \
+		-v $(shell pwd)/.tmp/jetstream/cloud:/data \
 		--user $(shell id -u):$(shell id -g) \
-		nats --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+		nats --jetstream --store_dir /data --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 	docker run \
 	    -d \
 		--network=host \
 		--name=nats-cloud-connector \
 		-v $(shell pwd)/.tmp/certs:/certs \
+		-v $(shell pwd)/.tmp/jetstream/cloud-connector:/data \
 		--user $(shell id -u):$(shell id -g) \
-		nats --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
+		nats --jetstream --store_dir /data --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 
 mongo: certificates
 	mkdir -p $(shell pwd)/.tmp/mongo

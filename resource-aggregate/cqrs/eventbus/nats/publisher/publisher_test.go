@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -19,7 +20,7 @@ import (
 )
 
 func TestPublisher(t *testing.T) {
-	topics := []string{"test_subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test_subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}
+	topics := []string{"test.subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test.subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}
 
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
@@ -30,6 +31,48 @@ func TestPublisher(t *testing.T) {
 	publisher, err := publisher.New(publisher.Config{
 		URL: "nats://localhost:4222",
 		TLS: config.MakeTLSClientConfig(),
+	}, logger, publisher.WithMarshaler(json.Marshal))
+	require.NoError(t, err)
+	assert.NotNil(t, publisher)
+	defer publisher.Close()
+
+	assert.NoError(t, err)
+	assert.NotNil(t, publisher)
+	defer publisher.Close()
+
+	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
+	assert.NotNil(t, subscriber)
+	assert.NoError(t, err)
+	defer subscriber.Close()
+
+	acceptanceTest(t, context.Background(), timeout, waitForSubscription, topics, publisher, subscriber)
+}
+
+func TestPublisherJetStream(t *testing.T) {
+	topics := []string{"test.subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test.subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}
+
+	timeout := time.Second * 30
+	waitForSubscription := time.Millisecond * 100
+
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+
+	cfg := config.MakeTLSClientConfig()
+	conn, err := nats.Connect("nats://localhost:4222", nats.ClientCert(cfg.CertFile, cfg.KeyFile), nats.RootCAs(cfg.CAPool))
+	require.NoError(t, err)
+	defer conn.Close()
+	js, err := conn.JetStream()
+	require.NoError(t, err)
+	s, err := js.AddStream(&nats.StreamConfig{
+		Name:     "TEST",
+		Subjects: []string{"test.>"},
+	})
+	require.NoError(t, err)
+	defer js.DeleteStream(s.Config.Name)
+	publisher, err := publisher.New(publisher.Config{
+		URL:       "nats://localhost:4222",
+		TLS:       config.MakeTLSClientConfig(),
+		JetStream: true,
 	}, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
@@ -275,7 +318,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	assert.NoError(t, err)
 	assert.Equal(t, eventsToPublish[2], event3)
 
-	topic := "new_topic_" + uuid.Must(uuid.NewV4()).String()
+	topic := "test.new_topic_" + uuid.Must(uuid.NewV4()).String()
 	topics = append(topics, topic)
 	err = ob4.SetTopics(ctx, topics)
 	time.Sleep(waitForSubscription)

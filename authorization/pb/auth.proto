@@ -16,7 +16,7 @@ message SignUpResponse {
     string access_token = 1;
     string user_id = 2;
     string refresh_token = 3;
-    int64 expires_in = 4;
+    int64 valid_until = 4;
     string redirect_uri = 5;
 }
 
@@ -40,7 +40,7 @@ message SignInRequest {
 
 // https://github.com/openconnectivityfoundation/security/blob/master/oic.r.session.raml#L39
 message SignInResponse {
-    int64 expires_in = 1;
+    int64 valid_until = 1;
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/oic.r.session.raml #Specification CR needed
@@ -66,7 +66,7 @@ message RefreshTokenRequest {
 message RefreshTokenResponse {
     string access_token = 1;
     string refresh_token = 2;
-    int64 expires_in = 3;
+    int64 valid_until = 3;
 }
 
 message GetUserDevicesRequest {
