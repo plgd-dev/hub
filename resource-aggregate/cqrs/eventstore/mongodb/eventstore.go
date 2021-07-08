@@ -132,6 +132,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger, opts ...Option)
 }
 
 // NewEventStore creates a new EventStore.
+//lint:ignore U1000 Lets keep this for now
 func newEventStore(ctx context.Context, host, dbPrefix string, colPrefix string, batchSize int, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc, opts ...*options.ClientOptions) (*EventStore, error) {
 	newOpts := []*options.ClientOptions{options.Client().ApplyURI("mongodb://" + host)}
 	newOpts = append(newOpts, opts...)
@@ -214,12 +215,6 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	}
 
 	return s, nil
-}
-
-type index struct {
-	Key  map[string]int
-	NS   string
-	Name string
 }
 
 func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {

@@ -63,10 +63,11 @@ func (s *MockEventStore) LoadFromSnapshot(ctx context.Context, queries []eventst
 		queriesInt = s.allModels(queriesInt)
 	} else {
 		for _, query := range queries {
+			stop := false
 			switch {
 			case query.GroupID == "" && query.AggregateID == "":
 				queriesInt = s.allModels(queriesInt)
-				break
+				stop = true
 			case query.GroupID != "" && query.AggregateID == "":
 				if aggregates, ok := s.events[query.GroupID]; ok {
 					for aggrId, events := range aggregates {
@@ -85,6 +86,10 @@ func (s *MockEventStore) LoadFromSnapshot(ctx context.Context, queries []eventst
 						queriesInt[makeModelId(query.GroupID, query.AggregateID)] = eventstore.VersionQuery{AggregateID: query.AggregateID, Version: events[0].Version()}
 					}
 				}
+			}
+
+			if stop {
+				break
 			}
 		}
 	}

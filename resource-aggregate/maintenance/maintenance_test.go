@@ -1,12 +1,7 @@
 package maintenance
 
-import (
-	"fmt"
-
-	"github.com/golang/snappy"
-	"go.mongodb.org/mongo-driver/bson"
-)
-
+// TODO: adapt Maintenance to use
+/*
 type mockEvent struct {
 	VersionI   uint64 `bson:"version"`
 	EventTypeI string `bson:"eventtype"`
@@ -30,8 +25,7 @@ func (e mockEvent) Marshal() ([]byte, error) {
 	return snappy.Encode(dst, src), nil
 }
 
-// TODO: adapt Maintenance to use
-/*
+
 func TestPerformMaintenance(t *testing.T) {
 	ctx := context.Background()
 

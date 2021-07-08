@@ -19,11 +19,9 @@ type UnmarshalerFunc = func(b []byte, v interface{}) error
 
 // Subscriber implements a eventbus.Subscriber interface.
 type Subscriber struct {
-	clientId        string
 	dataUnmarshaler UnmarshalerFunc
 	errFunc         eventbus.ErrFunc
 	conn            *nats.Conn
-	url             string
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
 }
 

@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
@@ -62,7 +61,7 @@ func logAndReturnError(err error) error {
 }
 
 func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID string) (string, error) {
-	owner, err := grpc.OwnerFromMD(ctx)
+	owner, err := kitNetGrpc.OwnerFromMD(ctx)
 	if err != nil {
 		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}

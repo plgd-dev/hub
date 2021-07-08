@@ -25,10 +25,6 @@ func newConnectionStatus(v commands.ConnectionStatus_Status) *commands.Connectio
 	return &v
 }
 
-func newBool(v bool) *bool {
-	return &v
-}
-
 func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 	type args struct {
 		request *commands.UpdateDeviceMetadataRequest

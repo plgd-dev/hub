@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -943,10 +942,6 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		}
 		t.Run(tt.name, tfunc)
 	}
-}
-
-type mockAuthorizationServiceClient struct {
-	pbAS.AuthorizationServiceClient
 }
 
 func mockGetUserDevices(ctx context.Context, userID, deviceID string) (bool, error) {
