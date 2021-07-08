@@ -72,10 +72,9 @@ func decodeContent(content *commands.Content, v interface{}) error {
 }
 
 type Device struct {
-	ID                string
-	Resource          *schema.Device
-	Metadata          *pb.Device_Metadata
-	cloudStateUpdated bool
+	ID       string
+	Resource *schema.Device
+	Metadata *pb.Device_Metadata
 }
 
 func (d Device) ToProto() *pb.Device {
