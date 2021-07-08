@@ -24,7 +24,7 @@ import (
 func TestRequestHandler_CreateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.CreateResourceRequest
+		req *pb.CreateResourceRequest
 	}
 	tests := []struct {
 		name        string
@@ -36,7 +36,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -52,7 +52,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -80,12 +80,12 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.CreateResource(ctx, &tt.args.req)
+			got, err := c.CreateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())

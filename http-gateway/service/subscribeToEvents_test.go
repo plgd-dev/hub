@@ -20,7 +20,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
-	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -35,7 +34,7 @@ const TEST_TIMEOUT = time.Second * 30
 func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		sub    pb.SubscribeToEvents
+		sub    *pb.SubscribeToEvents
 		accept string
 	}
 	tests := []struct {
@@ -46,7 +45,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "invalid - invalid type subscription",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 				},
 				accept: uri.ApplicationProtoJsonContentType,
@@ -76,7 +75,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "devices subscription - registered",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
@@ -111,7 +110,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "devices subscription - online",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
@@ -150,7 +149,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "device subscription - published",
 			args: args{
-				sub: pb.SubscribeToEvents{
+				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
@@ -197,7 +196,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -212,7 +211,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			d.TLSClientConfig = &tls.Config{
 				RootCAs: test.GetRootCertificatePool(t),
 			}
-			wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events?accept=%v", config.HTTP_GW_HOST, tt.args.accept), header)
+			wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events?accept=%v", testCfg.HTTP_GW_HOST, tt.args.accept), header)
 			require.NoError(t, err)
 			defer wsConn.Close()
 
@@ -257,7 +256,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					test.CheckProtobufs(t, tt.want, ev, test.RequireToCheckFunc(require.Contains))
 				}
 			}()
-			err = send(&tt.args.sub)
+			err = send(tt.args.sub)
 			require.NoError(t, err)
 			wg.Wait()
 		})
@@ -299,7 +298,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	d.TLSClientConfig = &tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	}
-	wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", config.HTTP_GW_HOST), header)
+	wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", testCfg.HTTP_GW_HOST), header)
 	require.NoError(t, err)
 
 	send := func(req *pb.SubscribeToEvents) error {
@@ -568,6 +567,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 			}(),
 		},
 	})
+	require.NoError(t, err)
 	for i := 0; i < 3; i++ {
 		ev, err = recv()
 		require.NoError(t, err)

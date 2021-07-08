@@ -39,7 +39,7 @@ func cmpDeviceMetadataUpdated(t *testing.T, want []*events.DeviceMetadataUpdated
 func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.GetDevicesMetadataRequest
+		req *pb.GetDevicesMetadataRequest
 	}
 	tests := []struct {
 		name    string
@@ -50,7 +50,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 		{
 			name: "all",
 			args: args{
-				req: pb.GetDevicesMetadataRequest{},
+				req: &pb.GetDevicesMetadataRequest{},
 			},
 			want: []*events.DeviceMetadataUpdated{
 				{
@@ -64,7 +64,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 		{
 			name: "filter one device",
 			args: args{
-				req: pb.GetDevicesMetadataRequest{
+				req: &pb.GetDevicesMetadataRequest{
 					DeviceIdFilter: []string{deviceID},
 				},
 			},
@@ -80,7 +80,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 		{
 			name: "filter one device by type",
 			args: args{
-				req: pb.GetDevicesMetadataRequest{
+				req: &pb.GetDevicesMetadataRequest{
 					TypeFilter: []string{"oic.wk.d"},
 				},
 			},
@@ -96,7 +96,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 		{
 			name: "invalid deviceID",
 			args: args{
-				req: pb.GetDevicesMetadataRequest{
+				req: &pb.GetDevicesMetadataRequest{
 					DeviceIdFilter: []string{"abc"},
 				},
 			},
@@ -105,7 +105,7 @@ func TestRequestHandler_GetDevicesMetadata(t *testing.T) {
 		{
 			name: "unknown type",
 			args: args{
-				req: pb.GetDevicesMetadataRequest{
+				req: &pb.GetDevicesMetadataRequest{
 					TypeFilter: []string{"unknown"},
 				},
 			},
