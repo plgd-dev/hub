@@ -171,7 +171,7 @@ func (p *TestProvider) HandleAccessToken(ctx *fasthttp.RequestCtx) {
 	}
 	resp := map[string]interface{}{
 		"access_token": token.AccessToken,
-		"expires_in":   int64(token.Expiry.Sub(time.Now()).Seconds()),
+		"expires_in":   int64(time.Until(token.Expiry).Seconds()),
 		"scope":        "openid",
 		"token_type":   "Bearer",
 	}

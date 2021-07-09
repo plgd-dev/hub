@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/authorization/test"
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -32,13 +31,13 @@ func (t *testTrigger) Clone() *testTrigger {
 	defer t.Unlock()
 	a := newTestTrigger()
 	for userID, addedDevices := range t.addedDevices {
-		a.Trigger(nil, userID, addedDevices, nil, nil)
+		a.Trigger(context.TODO(), userID, addedDevices, nil, nil)
 	}
 	for userID, removedDevices := range t.removedDevices {
-		a.Trigger(nil, userID, nil, removedDevices, nil)
+		a.Trigger(context.TODO(), userID, nil, removedDevices, nil)
 	}
 	for userID, allDevices := range t.allDevices {
-		a.Trigger(nil, userID, nil, nil, allDevices)
+		a.Trigger(context.TODO(), userID, nil, nil, allDevices)
 	}
 
 	return a
@@ -95,7 +94,7 @@ func (t *testTrigger) Trigger(ctx context.Context, userID string, addedDevices, 
 func TestAddDeviceAfterRegister(t *testing.T) {
 	trigger := newTestTrigger()
 
-	cfg := test.MakeConfig(t)
+	cfg := authService.MakeConfig(t)
 	cfg.APIs.GRPC.Addr = "localhost:1234"
 
 	oauthShutdown := oauthService.SetUp(t)
@@ -137,6 +136,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
+	require.NoError(t, err)
 
 	time.Sleep(time.Second * 2)
 	require.Equal(t, map[string]map[string]bool{
@@ -155,6 +155,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
+	require.NoError(t, err)
 
 	time.Sleep(time.Second * 2)
 	require.Equal(t, map[string]map[string]bool(nil), trigger.Clone().allDevices)
@@ -170,6 +171,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
+	require.NoError(t, err)
 	time.Sleep(time.Second * 2)
 
 	devs, err = m.GetUserDevices(ctx, t.Name())
@@ -227,7 +229,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 		},
 	}
 
-	cfg := test.MakeConfig(t)
+	cfg := authService.MakeConfig(t)
 	cfg.APIs.GRPC.Addr = "localhost:1234"
 
 	oauthShutdown := oauthService.SetUp(t)
@@ -264,6 +266,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -332,7 +335,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 		},
 	}
 
-	cfg := test.MakeConfig(t)
+	cfg := authService.MakeConfig(t)
 	cfg.APIs.GRPC.Addr = "localhost:1234"
 
 	oauthShutdown := oauthService.SetUp(t)
@@ -369,6 +372,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
