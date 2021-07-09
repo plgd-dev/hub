@@ -7,6 +7,10 @@ BUILD_TAG := vnext
 else
 BUILD_TAG := $(LATEST_TAG)
 endif
+GOPATH ?= $(shell go env GOPATH)
+WORKING_DIRECTORY := $(shell pwd)
+USER_ID := $(shell id -u)
+GROUP_ID := $(shell id -g)
 
 #$(error MY_FLAG=$(BUILD_TAG)AAA)
 
@@ -29,49 +33,49 @@ cloud-test:
 		.
 
 certificates: cloud-test
-	mkdir -p $(shell pwd)/.tmp/certs
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/certs
 	docker run \
 		--network=host \
-		-v $(shell pwd)/.tmp/certs:/certs \
-		--user $(shell id -u):$(shell id -g) \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		--user $(USER_ID):$(GROUP_ID) \
 		cloud-test \
 		/bin/bash -c "cert-tool --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA && cert-tool --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key && cert-tool --cmd.generateIdentityCertificate=$(CLOUD_SID) --outCert=/certs/coap.crt --outKey=/certs/coap.key --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key"
-	cat $(shell pwd)/.tmp/certs/http.crt > $(shell pwd)/.tmp/certs/mongo.key
-	cat $(shell pwd)/.tmp/certs/http.key >> $(shell pwd)/.tmp/certs/mongo.key
+	cat $(WORKING_DIRECTORY)/.tmp/certs/http.crt > $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
+	cat $(WORKING_DIRECTORY)/.tmp/certs/http.key >> $(WORKING_DIRECTORY)/.tmp/certs/mongo.key
 
 privateKeys:
-	mkdir -p $(shell pwd)/.tmp/privKeys
-	openssl genrsa -out $(shell pwd)/.tmp/privKeys/idTokenKey.pem 4096
-	openssl ecparam -name prime256v1 -genkey -noout -out $(shell pwd)/.tmp/privKeys/accessTokenKey.pem
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/privKeys
+	openssl genrsa -out $(WORKING_DIRECTORY)/.tmp/privKeys/idTokenKey.pem 4096
+	openssl ecparam -name prime256v1 -genkey -noout -out $(WORKING_DIRECTORY)/.tmp/privKeys/accessTokenKey.pem
 
 nats: certificates
-	mkdir -p $(shell pwd)/.tmp/jetstream/cloud
-	mkdir -p $(shell pwd)/.tmp/jetstream/cloud-connector
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/jetstream/cloud
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/jetstream/cloud-connector
 	docker run \
 	    -d \
 		--network=host \
 		--name=nats \
-		-v $(shell pwd)/.tmp/certs:/certs \
-		-v $(shell pwd)/.tmp/jetstream/cloud:/data \
-		--user $(shell id -u):$(shell id -g) \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		-v $(WORKING_DIRECTORY)/.tmp/jetstream/cloud:/data \
+		--user $(USER_ID):$(GROUP_ID) \
 		nats --jetstream --store_dir /data --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 	docker run \
 	    -d \
 		--network=host \
 		--name=nats-cloud-connector \
-		-v $(shell pwd)/.tmp/certs:/certs \
-		-v $(shell pwd)/.tmp/jetstream/cloud-connector:/data \
-		--user $(shell id -u):$(shell id -g) \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		-v $(WORKING_DIRECTORY)/.tmp/jetstream/cloud-connector:/data \
+		--user $(USER_ID):$(GROUP_ID) \
 		nats --jetstream --store_dir /data --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 
 mongo: certificates
-	mkdir -p $(shell pwd)/.tmp/mongo
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/mongo
 	docker run \
 	    -d \
 		--network=host \
 		--name=mongo \
-		-v $(shell pwd)/.tmp/mongo:/data/db \
-		-v $(shell pwd)/.tmp/certs:/certs --user $(shell id -u):$(shell id -g) \
+		-v $(WORKING_DIRECTORY)/.tmp/mongo:/data/db \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs --user $(USER_ID):$(GROUP_ID) \
 		mongo --tlsMode requireTLS --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key
 
 env: clean certificates nats mongo privateKeys
@@ -87,9 +91,9 @@ define RUN-TESTS-IN-DIRECTORY
 	docker run \
 	--rm \
 	--network=host \
-	-v $(shell pwd)/.tmp/certs:/certs \
-	-v $(shell pwd)/.tmp/coverage:/coverage \
-	-v $(shell pwd)/.tmp/privKeys:/privKeys \
+	-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+	-v $(WORKING_DIRECTORY)/.tmp/coverage:/coverage \
+	-v $(WORKING_DIRECTORY)/.tmp/privKeys:/privKeys \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-e DIAL_TYPE="file" \
 	-e DIAL_FILE_CA_POOL=/certs/root_ca.crt \
@@ -124,8 +128,8 @@ endef
 DIRECTORIES:=$(shell ls -d ./*/)
 
 test: env
-	@mkdir -p $(shell pwd)/.tmp/home
-	@mkdir -p $(shell pwd)/.tmp/home/certificate-authority
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@for DIRECTORY in $(DIRECTORIES); do \
 		if ! go list -f '{{.GoFiles}}' $$DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
 			echo "No golang files detected, directory $${DIRECTORY} skipped"; \
@@ -137,8 +141,8 @@ test: env
 test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 
 $(test-targets): %: env
-	@mkdir -p $(shell pwd)/.tmp/home
-	@mkdir -p $(shell pwd)/.tmp/home/certificate-authority
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
+	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@readonly TARGET_DIRECTORY=$(patsubst test-%,./%/,$@) ; \
 	if ! go list -f '{{.GoFiles}}' $$TARGET_DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
 		echo "No golang files detected, directory $$TARGET_DIRECTORY skipped"; \
@@ -161,8 +165,8 @@ clean:
 	sudo rm -rf ./.tmp/privateKeys || true
 
 proto/generate: $(SUBDIRS)
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pkg/net/grpc/server/stub.proto
-	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(shell pwd)/pkg/net/grpc/server/stub.proto
+	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
+	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
 push: cloud-build $(SUBDIRS) 
 
 $(SUBDIRS):
