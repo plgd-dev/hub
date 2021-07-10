@@ -727,7 +727,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -757,7 +757,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResource")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResource", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -787,7 +787,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration", runtime.WithHTTPPathPattern("/.well-known/ocfcloud-configuration"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -810,7 +810,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteResource")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteResource", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -833,7 +833,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -856,7 +856,7 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata", runtime.WithHTTPPathPattern("/api/v1/devices/{device_id}/metadata"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -932,7 +932,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevices", runtime.WithHTTPPathPattern("/api/v1/devices"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -952,7 +952,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceLinks", runtime.WithHTTPPathPattern("/api/v1/resource-links"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -972,7 +972,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResourceFromDevice", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -992,7 +992,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResources")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetResources", runtime.WithHTTPPathPattern("/api/v1/resources"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1012,7 +1012,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResource")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateResource", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resources/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1032,7 +1032,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeToEvents")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/SubscribeToEvents", runtime.WithHTTPPathPattern("/api/v1/ws/events"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1052,7 +1052,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration", runtime.WithHTTPPathPattern("/.well-known/ocfcloud-configuration"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1072,7 +1072,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteResource")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteResource", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1092,7 +1092,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CreateResource", runtime.WithHTTPPathPattern("/api/v1/devices/{resource_id.device_id}/resource-links/{resource_id.href=**}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1112,7 +1112,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/UpdateDeviceMetadata", runtime.WithHTTPPathPattern("/api/v1/devices/{device_id}/metadata"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1132,7 +1132,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetPendingCommands")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetPendingCommands", runtime.WithHTTPPathPattern("/api/v1/pending-commands"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1152,7 +1152,7 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevicesMetadata")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevicesMetadata", runtime.WithHTTPPathPattern("/api/v1/devices-metadata"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
