@@ -47,15 +47,19 @@ AnQ1eTGKTGLdAZsV+NnZPL17nit1cbiN2g==
 func TestNew(t *testing.T) {
 	//tmp dir
 	tmpDir, err := ioutil.TempDir("/tmp", "test")
+	require.NoError(t, err)
 	defer deleteTmpDir(tmpDir)
 	//ca
 	caFile, err := ioutil.TempFile(tmpDir, "ca")
+	require.NoError(t, err)
 	caFile.Close()
 
 	crtFile, err := ioutil.TempFile(tmpDir, "crt")
+	require.NoError(t, err)
 	crtFile.Close()
 
 	keyFile, err := ioutil.TempFile(tmpDir, "key")
+	require.NoError(t, err)
 	keyFile.Close()
 
 	config := createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
@@ -69,16 +73,18 @@ func TestNew(t *testing.T) {
 	tlsConfig := mng.GetTLSConfig()
 	require.NotNil(t, tlsConfig.GetClientCertificate)
 	firstCrt, err := tlsConfig.GetClientCertificate(nil)
+	require.NoError(t, err)
 	require.NotNil(t, firstCrt)
 
 	//delete crt/key files
 	deleteTmpCertFiles(t, config)
 	//create new crt/key files
-	config = createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
+	createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
 	tlsConfig = mng.GetTLSConfig()
 
 	require.NotNil(t, tlsConfig.GetClientCertificate)
 	secondCrt, err := tlsConfig.GetClientCertificate(nil)
+	require.NoError(t, err)
 	require.NotNil(t, secondCrt)
 
 	require.Equal(t, firstCrt.Certificate, secondCrt.Certificate)
