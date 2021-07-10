@@ -165,9 +165,9 @@ clean:
 	sudo rm -rf ./.tmp/privateKeys || true
 
 proto/generate: $(SUBDIRS)
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
-	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
-push: cloud-build $(SUBDIRS) 
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
+	protoc -I=. -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/server/stub.proto
+push: cloud-build $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS) LATEST_TAG=$(BUILD_TAG)
