@@ -24,6 +24,7 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 )
 
+/*
 func toJSON(v interface{}) string {
 	d, err := json.Encode(v)
 	if err != nil {
@@ -33,41 +34,40 @@ func toJSON(v interface{}) string {
 }
 
 func decodePayload(resp *pbGW.Content) {
-	/*
-		buf := fmt.Sprint("-------------------COAP-RESPONSE------------------\n",
-			"Code: ", resp.Code(), "\n",
-			"ContentFormat: ", resp.Options(coap.ContentFormat), "\n",
-			"Payload: ",
-		)
-		if mediaType, ok := resp.Option(coap.ContentFormat).(coap.MediaType); ok {
-			switch mediaType {
-			case coap.AppCBOR, coap.AppOcfCbor:
-				var m interface{}
-				err := codec.NewDecoderBytes(resp.Payload(), new(codec.CborHandle)).Decode(&m)
-				bw := new(bytes.Buffer)
-				h := new(codec.JsonHandle)
-				h.BasicHandle.Canonical = true
-				err = codec.NewEncoder(bw, h).Encode(m)
-				if err != nil {
-					buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", m, err)
-				} else {
-					buf = buf + fmt.Sprintf("%v\n", bw.String())
-				}
-			case coap.TextPlain:
-				buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-			case coap.AppJSON:
-				buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-			case coap.AppXML:
-				buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-			default:
-				buf = buf + fmt.Sprintf("%v\n", resp.Payload())
+	buf := fmt.Sprint("-------------------COAP-RESPONSE------------------\n",
+		"Code: ", resp.Code(), "\n",
+		"ContentFormat: ", resp.Options(coap.ContentFormat), "\n",
+		"Payload: ",
+	)
+	if mediaType, ok := resp.Option(coap.ContentFormat).(coap.MediaType); ok {
+		switch mediaType {
+		case coap.AppCBOR, coap.AppOcfCbor:
+			var m interface{}
+			err := codec.NewDecoderBytes(resp.Payload(), new(codec.CborHandle)).Decode(&m)
+			bw := new(bytes.Buffer)
+			h := new(codec.JsonHandle)
+			h.BasicHandle.Canonical = true
+			err = codec.NewEncoder(bw, h).Encode(m)
+			if err != nil {
+				buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", m, err)
+			} else {
+				buf = buf + fmt.Sprintf("%v\n", bw.String())
 			}
-		} else {
+		case coap.TextPlain:
+			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
+		case coap.AppJSON:
+			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
+		case coap.AppXML:
+			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
+		default:
 			buf = buf + fmt.Sprintf("%v\n", resp.Payload())
 		}
-		log.Printf(buf)
-	*/
+	} else {
+		buf = buf + fmt.Sprintf("%v\n", resp.Payload())
+	}
+	log.Printf(buf)
 }
+*/
 
 func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	reqBody := map[string]string{

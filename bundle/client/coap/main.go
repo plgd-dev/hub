@@ -14,7 +14,6 @@ import (
 	"syscall"
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/plgd-dev/kit/net"
@@ -102,7 +101,7 @@ func decodePayload(resp *pool.Message) {
 		bufr, err := ioutil.ReadAll(resp.Body())
 		if err != nil {
 			buf = buf + fmt.Sprintf("cannot read body: %v", err)
-			log.Printf(buf)
+			log.Print(buf)
 			return
 		}
 		switch mt {
@@ -124,7 +123,7 @@ func decodePayload(resp *pool.Message) {
 			buf = buf + fmt.Sprintf("%v\n", bufr)
 		}
 	}
-	log.Printf(buf)
+	log.Print(buf)
 }
 
 func main() {
@@ -209,7 +208,10 @@ func main() {
 		decodePayload(resp)
 	case *update:
 		b := bytes.NewBuffer(make([]byte, 0, 124))
-		b.ReadFrom(os.Stdin)
+		_, err := b.ReadFrom(os.Stdin)
+		if err != nil {
+			log.Fatalf("cannot update resource: %v", err)
+		}
 		resp, err := co.Post(context.Background(), *href, message.MediaType(*contentFormat), bytes.NewReader(b.Bytes()))
 		if err != nil {
 			log.Fatalf("cannot update resource: %v", err)
@@ -217,8 +219,11 @@ func main() {
 		decodePayload(resp)
 	case *create:
 		b := bytes.NewBuffer(make([]byte, 0, 124))
-		b.ReadFrom(os.Stdin)
-		req, err := tcp.NewPostRequest(context.Background(), *href, message.MediaType(*contentFormat), os.Stdin)
+		_, err := b.ReadFrom(os.Stdin)
+		if err != nil {
+			log.Fatalf("cannot update resource: %v", err)
+		}
+		req, err := coap.NewPostRequest(context.Background(), *href, message.MediaType(*contentFormat), os.Stdin)
 		if err != nil {
 			log.Fatalf("cannot create resource: %v", err)
 		}
@@ -235,7 +240,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("cannot observe resource: %v", err)
 		}
-		defer obs.Cancel(context.Background())
+		defer func() {
+			err := obs.Cancel(context.Background())
+			if err != nil {
+				fmt.Printf("failed to cancel observation: %v", err)
+			}
+		}()
 
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
