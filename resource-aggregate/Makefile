@@ -26,12 +26,12 @@ push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/commands.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/events.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/resources.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/cqrs/aggregate/aggregate_test.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/cqrs/eventbus/pb/eventbus.proto
-	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/service.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/commands.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/events.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/resources.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/cqrs/aggregate/aggregate_test.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/cqrs/eventbus/pb/eventbus.proto
+	protoc -I=. -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
 
 .PHONY: build-servicecontainer build push clean proto/generate
 

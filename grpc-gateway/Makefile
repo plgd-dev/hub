@@ -25,17 +25,20 @@ push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(VERSION_TAG)
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
+GOOGLEAPIS_MODULE_PATH := $(shell find $(GOPATH)/pkg/mod/github.com/googleapis -mindepth 1 -maxdepth 1 -iname 'googleapi*' -print -quit)
+GRPCGATEWAY_MODULE_PATH := $(shell go list -m -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/v2 | head -1)
+
 proto/generate:
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/clientConfiguration.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/devices.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/getPendingCommands.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/getDevicesMetadata.proto
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/updateDeviceMetadata.proto
-	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --go-grpc_out=${GOPATH}/src $(WORKING_DIRECTORY)/pb/service.proto
-	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --openapiv2_out=${GOPATH}/src \
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/clientConfiguration.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/devices.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/getPendingCommands.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/getDevicesMetadata.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/updateDeviceMetadata.proto
+	protoc -I=. -I=$(GOPATH)/src -I=$(GOOGLEAPIS_MODULE_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
+	protoc -I=. -I=$(GOPATH)/src -I=$(GOOGLEAPIS_MODULE_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --openapiv2_out=$(GOPATH)/src \
 		--openapiv2_opt logtostderr=true \
 		$(WORKING_DIRECTORY)/pb/service.proto
-	protoc -I=. -I=${GOPATH}/src -I=${GOPATH}/src/github.com/googleapis/googleapis -I=${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway --grpc-gateway_out ${GOPATH}/src \
+	protoc -I=. -I=$(GOPATH)/src -I=$(GOOGLEAPIS_MODULE_PATH) -I=$(GRPCGATEWAY_MODULE_PATH) --grpc-gateway_out $(GOPATH)/src \
 		--grpc-gateway_opt logtostderr=true \
 		--grpc-gateway_opt paths=source_relative \
 		$(WORKING_DIRECTORY)/pb/service.proto
