@@ -8,6 +8,9 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+    webSocket:
+      streamBodyLimit: 262144
+      pingFrequency: 10s
     authorization:
       authority: ""
       audience: ""

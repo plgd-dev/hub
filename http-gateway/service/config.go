@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -47,17 +48,36 @@ func (c *APIsConfig) Validate() error {
 	return nil
 }
 
+type WebSocketConfig struct {
+	StreamBodyLimit int           `yaml:"streamBodyLimit" json:"streamBodyLimit"`
+	PingFrequency   time.Duration `yaml:"pingFrequency" json:"pingFrequency"`
+}
+
+func (c *WebSocketConfig) Validate() error {
+	if c.StreamBodyLimit <= 0 {
+		return fmt.Errorf("streamBodyLimit('%v')", c.StreamBodyLimit)
+	}
+	if c.PingFrequency <= 0 {
+		return fmt.Errorf("pingFrequency('%v')", c.PingFrequency)
+	}
+	return nil
+}
+
 type HTTPConfig struct {
 	Connection    listener.Config  `yaml:",inline" json:",inline"`
+	WebSocket     WebSocketConfig  `yaml:"webSocket" json:"webSocket"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`
 }
 
 func (c *HTTPConfig) Validate() error {
-	err := c.Authorization.Validate()
+	err := c.WebSocket.Validate()
+	if err != nil {
+		return fmt.Errorf("webSocket.%w", err)
+	}
+	err = c.Authorization.Validate()
 	if err != nil {
 		return fmt.Errorf("authorization.%w", err)
 	}
-
 	return c.Connection.Validate()
 }
 
