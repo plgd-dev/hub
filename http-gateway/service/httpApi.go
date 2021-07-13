@@ -175,22 +175,25 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	pb.RegisterGrpcGatewayHandlerClient(context.Background(), requestHandler.mux, requestHandler.client.GrpcGatewayClient())
 
 	// ws grpc-proxy
-	ws := wsproxy.WebsocketProxy(requestHandler.mux, wsproxy.WithRequestMutator(func(incoming, outgoing *http.Request) *http.Request {
-		outgoing.Method = http.MethodPost
-		accept := incoming.Header.Get("Accept")
-		if accept != "" {
-			outgoing.Header.Set("Accept", accept)
-		}
-		accept = incoming.Header.Get("accept")
-		if accept != "" {
-			outgoing.Header.Set("Accept", accept)
-		}
-		accept = incoming.URL.Query().Get(uri.AcceptQueryKey)
-		if accept != "" {
-			outgoing.Header.Set("Accept", accept)
-		}
-		return outgoing
-	}))
+	ws := wsproxy.WebsocketProxy(requestHandler.mux,
+		wsproxy.WithMaxRespBodyBufferSize(requestHandler.config.APIs.HTTP.WebSocket.StreamBodyLimit),
+		wsproxy.WithPingControl(requestHandler.config.APIs.HTTP.WebSocket.PingFrequency),
+		wsproxy.WithRequestMutator(func(incoming, outgoing *http.Request) *http.Request {
+			outgoing.Method = http.MethodPost
+			accept := incoming.Header.Get("Accept")
+			if accept != "" {
+				outgoing.Header.Set("Accept", accept)
+			}
+			accept = incoming.Header.Get("accept")
+			if accept != "" {
+				outgoing.Header.Set("Accept", accept)
+			}
+			accept = incoming.URL.Query().Get(uri.AcceptQueryKey)
+			if accept != "" {
+				outgoing.Header.Set("Accept", accept)
+			}
+			return outgoing
+		}))
 	r.PathPrefix(uri.APIWS + "/").HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ws.ServeHTTP(rw, r)
 	})
