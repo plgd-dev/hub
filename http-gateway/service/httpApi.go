@@ -15,7 +15,9 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+
+	//	"github.com/tmc/grpc-websocket-proxy/wsproxy"
+	"github.com/plgd-dev/cloud/http-gateway/grpc-websocket-proxy/wsproxy"
 
 	router "github.com/gorilla/mux"
 )
