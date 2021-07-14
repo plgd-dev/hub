@@ -9,7 +9,7 @@ import (
 )
 
 func (rh *RequestHandler) deleteLinkedCloud(w http.ResponseWriter, r *http.Request) (int, error) {
-	linkedCloudID, _ := mux.Vars(r)[cloudIDKey]
+	linkedCloudID := mux.Vars(r)[cloudIDKey]
 	cloud, err := rh.store.PullOutCloud(r.Context(), linkedCloudID)
 	if err != nil {
 		return http.StatusBadRequest, err

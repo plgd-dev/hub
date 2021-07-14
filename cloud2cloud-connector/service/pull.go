@@ -36,7 +36,6 @@ type pullDevicesHandler struct {
 	asClient            pbAS.AuthorizationServiceClient
 	raClient            raService.ResourceAggregateClient
 	devicesSubscription *DevicesSubscription
-	linkedClouds        map[string]store.LinkedCloud
 	subscriptionManager *SubscriptionManager
 	oauthCallback       string
 	triggerTask         func(Task)

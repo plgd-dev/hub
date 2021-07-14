@@ -117,11 +117,7 @@ func (i *linkedCloudIterator) Next(ctx context.Context, s *store.LinkedCloud) bo
 		return false
 	}
 	err := i.iter.Decode(s)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 func (i *linkedCloudIterator) Err() error {

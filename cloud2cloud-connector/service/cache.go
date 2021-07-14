@@ -353,7 +353,6 @@ func (d *CloudData) DumpTasks() []Task {
 type Cache struct {
 	clouds            *kitSync.Map
 	subscriptionsByID *kitSync.Map
-	db                store.Store
 }
 
 func NewCache() *Cache {

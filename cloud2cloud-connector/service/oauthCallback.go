@@ -8,12 +8,10 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	"golang.org/x/oauth2"
 )
 
 func (rh *RequestHandler) HandleLinkedAccount(ctx context.Context, linkedCloud store.LinkedCloud, authCode string) (store.Token, error) {
-	var oauth oauth2.Config
-	oauth = linkedCloud.OAuth.ToOAuth2()
+	oauth := linkedCloud.OAuth.ToOAuth2()
 	ctx = linkedCloud.CtxWithHTTPClient(ctx)
 	token, err := oauth.Exchange(ctx, authCode)
 	if err != nil {

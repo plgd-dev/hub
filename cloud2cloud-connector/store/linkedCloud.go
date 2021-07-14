@@ -32,10 +32,7 @@ func (e Events) NeedPullDevices() bool {
 	for _, v := range e.Devices {
 		delete(set, v)
 	}
-	if len(set) != 0 {
-		return true
-	}
-	return false
+	return len(set) != 0
 }
 
 func (e Events) NeedPullDevice() bool {
@@ -54,10 +51,7 @@ func (e Events) NeedPullResources() bool {
 	for _, v := range e.Resource {
 		delete(set, v)
 	}
-	if len(set) != 0 {
-		return true
-	}
-	return false
+	return len(set) != 0
 }
 
 type Endpoint struct {

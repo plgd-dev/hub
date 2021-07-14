@@ -1,12 +1,10 @@
 package events
 
 import (
-	"compress/gzip"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -118,23 +116,6 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 		ContentEncoding: contentEncoding,
 		AcceptEncoding:  acceptEncoding,
 	}, nil
-}
-
-func getContentEncoder(ct string, decoder func(w io.Reader, v interface{}) error) (func(w io.Reader, v interface{}) error, error) {
-	switch ct {
-	case "gzip":
-		return func(w io.Reader, v interface{}) error {
-			reader, err := gzip.NewReader(w)
-			if err != nil {
-				return fmt.Errorf("cannot create gzip reader: %w", err)
-			}
-			return decoder(reader, v)
-		}, nil
-	case "":
-		return decoder, nil
-	default:
-		return nil, fmt.Errorf("content encoder %v not found", ct)
-	}
 }
 
 func (h EventHeader) GetContentDecoder() (func(w []byte, v interface{}) error, error) {
