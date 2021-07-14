@@ -12,7 +12,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/log"
@@ -34,19 +33,19 @@ func (h deviceSubscriptionHandlers) UpdateResource(ctx context.Context, event *r
 	return h.onResourceUpdatePending(ctx, event)
 }
 
-func (h deviceSubscriptionHandlers) RetrieveResource(ctx context.Context, event *events.ResourceRetrievePending) error {
+func (h deviceSubscriptionHandlers) RetrieveResource(ctx context.Context, event *raEvents.ResourceRetrievePending) error {
 	return h.onResourceRetrievePending(ctx, event)
 }
 
-func (h deviceSubscriptionHandlers) DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error {
+func (h deviceSubscriptionHandlers) DeleteResource(ctx context.Context, event *raEvents.ResourceDeletePending) error {
 	return fmt.Errorf("not supported")
 }
 
-func (h deviceSubscriptionHandlers) CreateResource(ctx context.Context, event *events.ResourceCreatePending) error {
+func (h deviceSubscriptionHandlers) CreateResource(ctx context.Context, event *raEvents.ResourceCreatePending) error {
 	return fmt.Errorf("not supported")
 }
 
-func (h deviceSubscriptionHandlers) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
+func (h deviceSubscriptionHandlers) UpdateDeviceMetadata(ctx context.Context, event *raEvents.DeviceMetadataUpdatePending) error {
 	return fmt.Errorf("not supported")
 }
 

@@ -5,10 +5,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -72,26 +70,6 @@ func NewStoreWithSession(ctx context.Context, client *mongo.Client, dbPrefix str
 	}
 
 	return s, nil
-}
-
-func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
-	for _, keys := range indexes {
-		opts := &options.IndexOptions{}
-		opts.SetBackground(false)
-		index := mongo.IndexModel{
-			Keys:    keys,
-			Options: opts,
-		}
-		_, err := col.Indexes().CreateOne(ctx, index)
-		if err != nil {
-			if strings.HasPrefix(err.Error(), "(IndexKeySpecsConflict)") {
-				//index already exist, just skip error and continue
-				continue
-			}
-			return fmt.Errorf("cannot ensure indexes for eventstore: %w", err)
-		}
-	}
-	return nil
 }
 
 // DBName returns db name

@@ -67,13 +67,8 @@ func runDevicePulling(ctx context.Context,
 	if err != nil {
 		log.Errorf("cannot pull devices: %v", err)
 	}
-	select {
-	case <-ctx.Done():
-		if ctx.Err() == context.Canceled {
-			return false
-		}
-	}
-	return true
+	<-ctx.Done()
+	return ctx.Err() != context.Canceled
 }
 
 //New create new Server with provided store and bus

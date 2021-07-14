@@ -32,7 +32,8 @@ var JWKS_URL = "https://" + OAUTH_HOST + uri.JWKs
 
 const cloudConnectorDB = "cloudConnectorDB"
 const cloudConnectorNatsURL = "nats://localhost:34222"
-const cloudConnectormongodbURL = "nats://localhost:34223"
+
+// const cloudConnectormongodbURL = "nats://localhost:34223"
 
 func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	oauthCfg := oauthTest.MakeConfig(t)

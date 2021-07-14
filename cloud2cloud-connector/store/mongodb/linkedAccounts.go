@@ -114,11 +114,7 @@ func (i *iterator) Next(ctx context.Context, s *store.LinkedAccount) bool {
 	}
 
 	err := i.iter.Decode(s)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 func (i *iterator) Err() error {
