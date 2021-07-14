@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	netHttp "net/http"
 	"strconv"
 	"time"
@@ -21,7 +20,7 @@ type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, 
 type emitEventFunc func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
 
 func createEmitEventFunc(tls *tls.Config, timeout time.Duration) emitEventFunc {
-	trans := http.DefaultTransport.(*http.Transport).Clone()
+	trans := netHttp.DefaultTransport.(*netHttp.Transport).Clone()
 	trans.TLSClientConfig = tls
 	client := netHttp.Client{
 		Transport: trans,
@@ -41,7 +40,7 @@ func createEmitEventFunc(tls *tls.Config, timeout time.Duration) emitEventFunc {
 
 		r, w := io.Pipe()
 
-		req, err := netHttp.NewRequestWithContext(ctx, http.MethodPost, s.URL, r)
+		req, err := netHttp.NewRequestWithContext(ctx, netHttp.MethodPost, s.URL, r)
 		if err != nil {
 			return false, fmt.Errorf("cannot create post request: %w", err)
 		}

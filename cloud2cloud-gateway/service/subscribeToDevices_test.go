@@ -58,7 +58,7 @@ func TestRequestHandler_SubscribeToDevices(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	var listen certManager.Config
@@ -152,7 +152,7 @@ func TestRequestHandler_SubscribeToDevicesOffline(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 	defer conn.Close()
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, coapgwCfg.APIs.COAP.Addr, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, coapgwCfg.APIs.COAP.Addr, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	var listen certManager.Config

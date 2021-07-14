@@ -130,7 +130,7 @@ func (ed *eventsProcessor) push(events []Event) bool {
 	ed.lock.Lock()
 	defer ed.lock.Unlock()
 	ed.queue = append(ed.queue, events...)
-	if ed.isProcessed == false {
+	if !ed.isProcessed {
 		ed.isProcessed = true
 		return true
 	}

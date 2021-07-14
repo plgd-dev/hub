@@ -72,7 +72,7 @@ func getContentQueryValue(u *url.URL) string {
 		return ContentQueryDefault
 	}
 
-	c, _ := m[ContentQuery]
+	c := m[ContentQuery]
 	if len(c) != 1 {
 		return ContentQueryDefault
 	}
