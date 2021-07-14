@@ -58,9 +58,7 @@ func (client *Client) registerObservationsForPublishedResourcesLocked(ctx contex
 			log.Errorf("signIn: cannot receive link for the device %v: %v", deviceID, err)
 			return
 		}
-		for _, r := range m.GetResources() {
-			resources = append(resources, r)
-		}
+		resources = append(resources, m.GetResources()...)
 
 	}
 	client.observeResourcesLocked(ctx, resources)

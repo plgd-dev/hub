@@ -78,6 +78,7 @@ func Test_clientRetrieveHandler(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 			defer cancel()
 			req, err := tcp.NewGetRequest(ctx, tt.args.path)
+			assert.NoError(t, err)
 			if tt.args.query != "" {
 				req.SetOptionString(message.URIQuery, tt.args.query)
 			}
