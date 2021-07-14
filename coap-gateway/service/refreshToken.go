@@ -43,7 +43,7 @@ func validUntilToExpiresIn(v int64) int64 {
 		return -1
 	}
 	validUntil := time.Unix(0, v)
-	return int64(validUntil.Sub(time.Now()).Seconds())
+	return int64(time.Until(validUntil).Seconds())
 }
 
 func refreshTokenPostHandler(req *mux.Message, client *Client) {

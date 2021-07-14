@@ -26,16 +26,6 @@ type CoapSignUpResponse struct {
 	RedirectURI  string `json:"redirecturi"`
 }
 
-func validateSignUp(req CoapSignUpRequest) error {
-	if req.DeviceID == "" {
-		return fmt.Errorf("cannot sign up to auth server: invalid deviceID")
-	}
-	if req.AuthorizationCode == "" {
-		return fmt.Errorf("cannot sign up to auth server: invalid authorizationCode")
-	}
-	return nil
-}
-
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpPostHandler(r *mux.Message, client *Client) {
 	var signUp CoapSignUpRequest

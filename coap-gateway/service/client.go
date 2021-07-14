@@ -9,14 +9,12 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
-	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitSync "github.com/plgd-dev/kit/sync"
@@ -100,7 +98,7 @@ type Client struct {
 
 	mutex            sync.Mutex
 	authCtx          *authorizationContext
-	deviceSubscriber *grpcgwClient.DeviceSubscriber
+	deviceSubscriber *grpcClient.DeviceSubscriber
 }
 
 //newClient create and initialize client
@@ -192,7 +190,7 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 			log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
 			client.Close()
 		}
-		if resp.Code() == coapCodes.NotFound {
+		if resp.Code() == codes.NotFound {
 			client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href})
 		}
 	})
@@ -213,7 +211,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 					log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
 					client.Close()
 				}
-				if req.Code() == coapCodes.NotFound {
+				if req.Code() == codes.NotFound {
 					client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
 				}
 			})
@@ -368,7 +366,7 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 	}
 }
 
-func (client *Client) replaceDeviceSubscriber(deviceSubscriber *grpcgwClient.DeviceSubscriber) *grpcgwClient.DeviceSubscriber {
+func (client *Client) replaceDeviceSubscriber(deviceSubscriber *grpcClient.DeviceSubscriber) *grpcClient.DeviceSubscriber {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	c := client.deviceSubscriber
@@ -494,7 +492,7 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 	}
 	if event.GetResourceId().GetHref() == commands.StatusHref {
 		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(coapCodes.MethodNotAllowed)
+		msg.SetCode(codes.MethodNotAllowed)
 		msg.SetSequence(client.coapConn.Sequence())
 		defer pool.ReleaseMessage(msg)
 		sendConfirmCtx, err := client.server.ServiceRequestContext(authCtx.GetUserID())
@@ -529,7 +527,7 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 
 	decodeMsgToDebug(client, resp, "RESOURCE-UPDATE-RESPONSE")
 
-	if resp.Code() == coapCodes.NotFound {
+	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
@@ -575,7 +573,7 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 
 	if event.GetResourceId().GetHref() == commands.StatusHref {
 		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(coapCodes.Content)
+		msg.SetCode(codes.Content)
 		msg.SetSequence(client.coapConn.Sequence())
 		defer pool.ReleaseMessage(msg)
 
@@ -611,7 +609,7 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 
 	decodeMsgToDebug(client, resp, "RESOURCE-RETRIEVE-RESPONSE")
 
-	if resp.Code() == coapCodes.NotFound {
+	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
@@ -658,7 +656,7 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 
 	if event.GetResourceId().GetHref() == commands.StatusHref {
 		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(coapCodes.Forbidden)
+		msg.SetCode(codes.Forbidden)
 		msg.SetSequence(client.coapConn.Sequence())
 		defer pool.ReleaseMessage(msg)
 
@@ -694,7 +692,7 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 
 	decodeMsgToDebug(client, resp, "RESOURCE-DELETE-RESPONSE")
 
-	if resp.Code() == coapCodes.NotFound {
+	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
@@ -803,7 +801,7 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 
 	if event.GetResourceId().GetHref() == commands.StatusHref {
 		msg := pool.AcquireMessage(ctx)
-		msg.SetCode(coapCodes.Forbidden)
+		msg.SetCode(codes.Forbidden)
 		msg.SetSequence(client.coapConn.Sequence())
 		defer pool.ReleaseMessage(msg)
 
@@ -839,7 +837,7 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 
 	decodeMsgToDebug(client, resp, "RESOURCE-CREATE-RESPONSE")
 
-	if resp.Code() == coapCodes.NotFound {
+	if resp.Code() == codes.NotFound {
 		client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{event.GetResourceId().GetHref()})
 	}
 
