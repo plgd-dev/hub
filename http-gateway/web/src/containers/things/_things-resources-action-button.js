@@ -8,7 +8,7 @@ import { messages as t } from './things-i18n'
 export const ThingsResourcesActionButton = ({
   disabled,
   href,
-  di,
+  deviceId,
   interfaces,
   onCreate,
   onUpdate,
@@ -30,7 +30,7 @@ export const ThingsResourcesActionButton = ({
           hidden: !canCreateResource(interfaces),
         },
         {
-          onClick: () => onUpdate({ di, href }),
+          onClick: () => onUpdate({ deviceId, href }),
           label: _(t.update),
           icon: 'fa-pen',
         },
@@ -49,7 +49,7 @@ export const ThingsResourcesActionButton = ({
 ThingsResourcesActionButton.propTypes = {
   disabled: PropTypes.bool.isRequired,
   href: PropTypes.string.isRequired,
-  di: PropTypes.string.isRequired,
+  deviceId: PropTypes.string.isRequired,
   onCreate: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,

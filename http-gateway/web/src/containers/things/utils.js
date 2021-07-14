@@ -13,7 +13,7 @@ import { messages as t } from './things-i18n'
 
 // Returns the extension for resources API for the selected interface
 export const interfaceGetParam = currentInterface =>
-  currentInterface ? `?interface=${currentInterface}` : ''
+  currentInterface ? `?resourceInterface=${currentInterface}` : ''
 
 // Return true if a resource contains the oic.if.create interface, meaning a new resource can be created from this resource
 export const canCreateResource = interfaces =>
@@ -21,12 +21,12 @@ export const canCreateResource = interfaces =>
 
 // Returns true if a device has a resource oic.wk.con which holds the device name property
 export const canChangeDeviceName = links =>
-  links.findIndex(link => link.rt.includes(knownResourceTypes.OIC_WK_CON)) !==
+  links.findIndex(link => link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON)) !==
   -1
 
 // Returns the href for the resource which can do a device name change
 export const getDeviceChangeResourceHref = links =>
-  links.find(link => link.rt.includes(knownResourceTypes.OIC_WK_CON))?.href
+  links.find(link => link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON))?.href
 
 // Handle the errors occured during resource update
 export const handleUpdateResourceErrors = (error, isOnline, _) => {
@@ -103,15 +103,21 @@ export const handleDeleteResourceErrors = (error, isOnline, _) => {
 
 // Updates the device data with an object of { deviceId, status } which came from the WS events.
 export const updateThingsDataStatus = (data, { deviceId, status }) => {
-  return data?.map(d => {
-    if (d.device.di === deviceId) {
+  return data?.map(device => {
+    if (device.id === deviceId) {
       return {
-        ...d,
-        status,
+        ...device,
+        metadata: {
+          ...device.metadata,
+          status: {
+            ...device.metadata.status,
+            value: status,
+          },
+        },
       }
     }
 
-    return d
+    return device
   })
 }
 

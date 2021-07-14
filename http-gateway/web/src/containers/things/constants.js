@@ -1,12 +1,13 @@
 export const thingsStatuses = {
-  ONLINE: 'online',
-  OFFLINE: 'offline',
-  REGISTERED: 'registered',
-  UNREGISTERED: 'unregistered',
+  ONLINE: 'ONLINE',
+  OFFLINE: 'OFFLINE',
+  REGISTERED: 'REGISTERED',
+  UNREGISTERED: 'UNREGISTERED',
 }
 
 export const thingsApiEndpoints = {
   THINGS: '/api/v1/devices',
+  THINGS_RESOURCES: '/api/v1/resource-links',
   THINGS_WS: '/api/v1/ws/devices',
 }
 

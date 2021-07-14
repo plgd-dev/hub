@@ -41,6 +41,14 @@ export const messages = defineMessages({
     id: 'things.thingNotFoundMessage',
     defaultMessage: 'Thing with ID "{id}" does not exist.',
   },
+  thingResourcesNotFound: {
+    id: 'things.thingResourcesNotFound',
+    defaultMessage: 'Thing resources not found',
+  },
+  thingResourcesNotFoundMessage: {
+    id: 'things.thingResourcesNotFoundMessage',
+    defaultMessage: 'Thing resources for device with ID "{id}" does not exist.',
+  },
   location: {
     id: 'things.location',
     defaultMessage: 'Location',

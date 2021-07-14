@@ -15,7 +15,7 @@ import { messages as t } from './things-i18n'
 
 export const ThingsDetails = memo(({ data, loading }) => {
   const { formatMessage: _ } = useIntl()
-  const deviceStatus = data?.status
+  const deviceStatus = data?.metadata?.status?.value
   const isOnline = thingsStatuses.ONLINE === deviceStatus
   const isUnregistered = thingsStatuses.UNREGISTERED === deviceStatus
   const LabelWithLoading = p =>
@@ -32,11 +32,11 @@ export const ThingsDetails = memo(({ data, loading }) => {
     <Row>
       <Col>
         <LabelWithLoading title="ID">
-          {getValue(data?.device?.di)}
+          {getValue(data?.id)}
         </LabelWithLoading>
         <LabelWithLoading title={_(t.types)}>
           <div className="align-items-end badges-box-vertical">
-            {data?.device?.rt?.map?.(type => (
+            {data?.types?.map?.(type => (
               <Badge key={type}>{type}</Badge>
             )) || '-'}
           </div>

@@ -1,19 +1,34 @@
 import { useEffect } from 'react'
 
-import { WSManager } from './ws-manager'
+import { deviceStatusListener } from '@/containers/things/websockets'
+import { WebSocketEventClient } from './websocket-event-client'
+import { eventFilters } from './websocket-event-constants'
 
-import { thingsWSClient } from '@/containers/things/websockets'
+let initialized = false
 
 export const InitServices = () => {
   useEffect(() => {
     // Register the default WS instances
-    if (!WSManager.isInitialized) {
-      WSManager.addWsClient(thingsWSClient)
-      WSManager.registerWSClients()
+    WebSocketEventClient._connect()
+    WebSocketEventClient.onOpen = () => {
+      if (!initialized) {
+        WebSocketEventClient.subscribe(
+          {
+            eventFilter: [
+              eventFilters.DEVICE_METADATA_UPDATED,
+              eventFilters.REGISTERED,
+              eventFilters.UNREGISTERED,
+            ],
+          },
+          'device-status',
+          deviceStatusListener
+        )
+      }
+      initialized = true
     }
 
     return () => {
-      // WSManager.unregisterWSClients()
+      WebSocketEventClient.unsubscribe('device-status')
     }
   }, [])
 

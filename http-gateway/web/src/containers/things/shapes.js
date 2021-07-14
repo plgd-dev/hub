@@ -11,12 +11,33 @@ export const thingResourceShape = PropTypes.shape({
   if: PropTypes.arrayOf(PropTypes.string),
 })
 
-export const thingShape = PropTypes.shape({
-  device: PropTypes.shape({
-    rt: PropTypes.arrayOf(PropTypes.string),
-    di: PropTypes.string,
-    n: PropTypes.string,
+export const thingsResourceLinkShape = PropTypes.shape({
+  href: PropTypes.string,
+  deviceId: PropTypes.string,
+  resourceTypes: PropTypes.arrayOf(PropTypes.string),
+  interfaces: PropTypes.arrayOf(PropTypes.string),
+  anchor: PropTypes.string,
+  title: PropTypes.string,
+  supportedContents: PropTypes.arrayOf(PropTypes.string),
+  validUntil: PropTypes.string,
+  policies: PropTypes.shape({
+    bigFlags: PropTypes.number,
   }),
-  status: PropTypes.oneOf([ONLINE, OFFLINE, REGISTERED, UNREGISTERED]),
-  links: PropTypes.arrayOf(thingResourceShape),
+  endpointInformations: PropTypes.arrayOf(
+    PropTypes.shape({
+      endpoint: PropTypes.string,
+      priority: PropTypes.string,
+    })
+  ),
+})
+
+export const thingShape = PropTypes.shape({
+  id: PropTypes.string,
+  types: PropTypes.arrayOf(PropTypes.string),
+  name: PropTypes.string,
+  metadata: PropTypes.shape({
+    status: PropTypes.shape({
+      value: PropTypes.oneOf([ONLINE, OFFLINE, REGISTERED, UNREGISTERED]),
+    }),
+  }),
 })

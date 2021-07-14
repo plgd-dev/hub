@@ -1,6 +1,6 @@
 import debounce from 'lodash/debounce'
 
-import { useApi } from '@/common/hooks'
+import { useApi, useStreamApi } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
 import { useEmitter } from '@/common/hooks'
 
@@ -18,7 +18,7 @@ export const useThingsList = () => {
   const { httpGatewayAddress } = useAppConfig()
 
   // Fetch the data
-  const { data, updateData, ...rest } = useApi(
+  const { data, updateData, ...rest } = useStreamApi(
     `${httpGatewayAddress}${thingsApiEndpoints.THINGS}`
   )
 
@@ -46,24 +46,46 @@ export const useThingDetails = deviceId => {
     `${THINGS_STATUS_WS_KEY}.${deviceId}`,
     debounce(({ status }) => {
       if (data) {
-        updateData({ ...data, status })
+        updateData({
+          ...data,
+          metadata: {
+            ...data.metadata,
+            status: {
+              ...data.metadata.status,
+              value: status,
+            },
+          },
+        })
       }
     }, 300)
   )
 
-  // Update the resources (links) when a WS event is emitted
+  return { data, updateData, ...rest }
+}
+
+export const useThingsResources = deviceId => {
+  const { httpGatewayAddress } = useAppConfig()
+
+  // Fetch the data
+  const { data, updateData, ...rest } = useStreamApi(
+    `${httpGatewayAddress}${
+      thingsApiEndpoints.THINGS_RESOURCES
+    }?device_id_filter=${deviceId}`
+  )
+
   useEmitter(
     getResourceRegistrationNotificationKey(deviceId),
     ({ event, resource }) => {
-      if (data) {
+      if (data?.[0]?.resources) {
+        const resources = data[0].resources // get the first set of resources from an array, since it came from a stream of data
         let updatedLinks = []
 
         if (event === resourceEventTypes.ADDED) {
           const linkExists =
-            data.links.findIndex(link => link.href === resource.href) !== -1
+            resources.findIndex(link => link.href === resource.href) !== -1
           if (linkExists) {
             // Already exists, update
-            updatedLinks = data.links.map(link => {
+            updatedLinks = resources.map(link => {
               if (link.href === resource.href) {
                 return resource
               }
@@ -71,16 +93,13 @@ export const useThingDetails = deviceId => {
               return link
             })
           } else {
-            updatedLinks = data.links.concat(resource)
+            updatedLinks = resources.concat(resource)
           }
         } else {
-          updatedLinks = data.links.filter(link => link.href !== resource.href)
+          updatedLinks = resources.filter(link => link.href !== resource.href)
         }
 
-        updateData({
-          ...data,
-          links: updatedLinks,
-        })
+        updateData([{ ...data[0], resources: updatedLinks }])
       }
     }
   )
