@@ -19,27 +19,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
-func toEndpoint(s *commands.EndpointInformation) schema.Endpoint {
-	return schema.Endpoint{
-		URI:      s.GetEndpoint(),
-		Priority: uint64(s.GetPriority()),
-	}
-}
-
-func toEndpoints(s []*commands.EndpointInformation) []schema.Endpoint {
-	r := make([]schema.Endpoint, 0, 16)
-	for _, v := range s {
-		r = append(r, toEndpoint(v))
-	}
-	return r
-}
-
-func toPolicy(s *commands.Policies) *schema.Policy {
-	return &schema.Policy{
-		BitMask: schema.BitMask(s.GetBitFlags()),
-	}
-}
-
 type RetrieveDeviceWithLinksResponse struct {
 	Device
 	Links []schema.ResourceLink `json:"links"`
@@ -47,13 +26,6 @@ type RetrieveDeviceWithLinksResponse struct {
 
 func getHref(deviceID, href string) string {
 	return "/" + deviceID + href
-}
-
-func makeResourceLink(resource *commands.Resource) schema.ResourceLink {
-	r := resource.ToSchema()
-	r.Href = getHref(resource.GetDeviceId(), resource.GetHref())
-	r.ID = ""
-	return r
 }
 
 func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter []string) (map[string]schema.ResourceLinks, error) {

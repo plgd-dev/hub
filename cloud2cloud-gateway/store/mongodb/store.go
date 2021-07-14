@@ -81,7 +81,6 @@ func NewStoreWithSession(ctx context.Context, client *mongo.Client, dbPrefix str
 func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
 	for _, keys := range indexes {
 		opts := &options.IndexOptions{}
-		opts.SetBackground(false)
 		index := mongo.IndexModel{
 			Keys:    keys,
 			Options: opts,

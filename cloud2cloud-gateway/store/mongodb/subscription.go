@@ -17,7 +17,6 @@ const typeKey = "type"
 const hrefKey = "href"
 const sequenceNumberKey = "sequencenumber"
 const deviceIDKey = "deviceid"
-const userIDKey = "userid"
 const initializedKey = "initialized"
 
 var typeQueryIndex = bson.D{
