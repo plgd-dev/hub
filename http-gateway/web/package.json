@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@auth0/auth0-react": "^1.2.0",
+    "@auth0/auth0-react": "1.6.0",
     "@babel/cli": "^7.12.10",
     "@craco/craco": "^6.0.0",
     "@reduxjs/toolkit": "^1.5.0",
