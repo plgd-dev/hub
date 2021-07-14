@@ -2,7 +2,6 @@ package client_test
 
 import (
 	"context"
-	"crypto/x509"
 	"testing"
 	"time"
 
@@ -20,20 +19,10 @@ import (
 const TestTimeout = time.Second * 20
 const DeviceSimulatorIdNotFound = "00000000-0000-0000-0000-000000000111"
 
-type testApplication struct {
-	cas []*x509.Certificate
-}
-
-func (a *testApplication) GetRootCertificateAuthorities() ([]*x509.Certificate, error) {
-	return a.cas, nil
-}
-
 func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) client.DeviceDetails {
 	var resources []*commands.Resource
 	if withResources {
-		for _, r := range test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks()) {
-			resources = append(resources, r)
-		}
+		resources = append(resources, test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks())...)
 		resources = test.SortResources(resources)
 	}
 
@@ -94,7 +83,7 @@ func TestClient_GetDevice(t *testing.T) {
 	c := NewTestClient(t)
 	defer c.Close(context.Background())
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
