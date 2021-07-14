@@ -99,11 +99,6 @@ func trailSlashSuffix(next http.Handler) http.Handler {
 	})
 }
 
-type logger struct{}
-
-func (logger) Warnln(v ...interface{})  { log.Warnf("%v", v) }
-func (logger) Debugln(v ...interface{}) { log.Debugf("%v\n", v) }
-
 func splitDevicePath(requestURI, prefix string) []string {
 	p := kitHttp.CanonicalHref(requestURI)
 	p = strings.TrimPrefix(p, prefix) // remove core prefix
