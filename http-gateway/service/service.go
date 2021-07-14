@@ -4,15 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/pkg/log"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
@@ -20,32 +16,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func logError(err error) { log.Error(err) }
-
 //Server handle HTTP request
 type Server struct {
 	server         *http.Server
 	config         *Config
 	requestHandler *RequestHandler
 	listener       *listener.Server
-}
-
-func buildWhiteList(uidirectory string, whiteList *[]kitNetHttp.RequestMatcher) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		path = strings.TrimLeft(path, uidirectory)
-		log.Debugf("white listed path: %v", path)
-		*whiteList = append(*whiteList, kitNetHttp.RequestMatcher{
-			Method: http.MethodGet,
-			URI:    regexp.MustCompile(regexp.QuoteMeta(path)),
-		})
-		return nil
-	}
 }
 
 // New parses configuration and creates new Server with provided store and bus
