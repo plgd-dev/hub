@@ -27,12 +27,13 @@ require (
 	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210623123453-ab9c0385aa13
 	github.com/plgd-dev/kit v0.0.0-20210614190235-99984a49de48
 	github.com/plgd-dev/sdk v0.0.0-20210701062445-8d30e4be45e2
+	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.7.0
-	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802
 	github.com/valyala/fasthttp v1.28.0
 	go.mongodb.org/mongo-driver v1.5.4
 	go.uber.org/atomic v1.8.0
 	go.uber.org/zap v1.18.1
+	golang.org/x/net v0.0.0-20210510120150-4163338589ed
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/genproto v0.0.0-20210707164411-8c882eb9abba
