@@ -23,4 +23,4 @@ jobs:
           # https://github.com/actions/setup-go/issues/14
           export PATH=${PATH}:`go env GOPATH`/bin
           go get honnef.co/go/tools/cmd/staticcheck@latest
-          staticcheck ./... || echo "Staticcheck detected issues"
+          staticcheck ./...
