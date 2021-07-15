@@ -40,6 +40,7 @@ export const ThingsDetailsHeader = ({
               eventFilters.RESOURCE_PUBLISHED,
               eventFilters.RESOURCE_UNPUBLISHED,
             ],
+            deviceIdFilter: [deviceId],
           },
           resourceRegistrationObservationWSKey,
           deviceResourceRegistrationListener({

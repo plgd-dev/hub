@@ -153,12 +153,11 @@ export const ThingsDetailsPage = () => {
     setLoadingResource(true)
 
     try {
-      const {
-        data: { rts: supportedTypes },
-      } = await getThingsResourcesApi({
+      const { data } = await getThingsResourcesApi({
         deviceId: id,
         href,
       })
+      const supportedTypes = data?.data?.content?.rts || []
 
       if (isMounted.current) {
         setLoadingResource(false)

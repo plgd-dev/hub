@@ -46,7 +46,8 @@ export const ThingsResourcesModalNotifications = ({
       // Register the WS
       WebSocketEventClient.subscribe(
         {
-          eventFilter: [eventFilters.RESOURCE_UPDATED],
+          eventFilter: [eventFilters.RESOURCE_CHANGED],
+          resourceIdFilter: [`${deviceId}${href}`]
         },
         resourceUpdateObservationWSKey,
         deviceResourceUpdateListener({ deviceId, href, deviceName })

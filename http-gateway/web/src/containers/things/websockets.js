@@ -161,15 +161,15 @@ export const deviceResourceUpdateListener = ({
   deviceId,
   href,
   deviceName,
-}) => ({ resourceUpdated }) => {
-  if (resourceUpdated) {
+}) => ({ resourceChanged }) => {
+  if (resourceChanged) {
     const eventKey = getResourceUpdateNotificationKey(deviceId, href)
     const notificationsEnabled = isNotificationActive(eventKey)(
       store.getState()
     )
 
     // Emit an event: things.resource.update.{deviceId}.{href}
-    Emitter.emit(`${eventKey}`, resourceUpdated.content)
+    Emitter.emit(`${eventKey}`, resourceChanged.content)
 
     if (notificationsEnabled) {
       // Show toast
