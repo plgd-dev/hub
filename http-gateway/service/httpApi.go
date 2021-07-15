@@ -211,7 +211,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 				r.URL.Path = "/"
 				fs.ServeHTTP(c, r)
 			}
-			for k, v := range c.HeaderMap {
+			for k, v := range c.Header() {
 				w.Header().Set(k, strings.Join(v, ""))
 			}
 			w.WriteHeader(c.Code)

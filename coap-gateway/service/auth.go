@@ -16,7 +16,12 @@ type ClaimsFunc = func(ctx context.Context, code codes.Code, path string) Claims
 type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
 
 const bearerKey = "bearer"
-const authorizationKey = "authorization"
+
+type key int
+
+const (
+	authorizationKey key = 0
+)
 
 func CtxWithToken(ctx context.Context, token string) context.Context {
 	return context.WithValue(ctx, authorizationKey, fmt.Sprintf("%s %s", bearerKey, token))

@@ -19,7 +19,12 @@ type Validator interface {
 }
 
 const bearerKey = "bearer"
-const authorizationKey = "authorization"
+
+type key int
+
+const (
+	authorizationKey key = 0
+)
 
 func CtxWithToken(ctx context.Context, token string) context.Context {
 	if !strings.HasPrefix(strings.ToLower(token), bearerKey+" ") {
