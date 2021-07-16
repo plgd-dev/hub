@@ -43,6 +43,8 @@ export const fetchApi = async (url, options = {}) => {
         return resolve(response)
       })
       .catch(error => {
+        clearTimeout(deadlineTimer)
+
         // A middleware for checking if the error was caused by cancellation of the request, if so, throw a DeadlineExceeded error
         if (axios.isCancel(error)) {
           return reject(new Error('DeadlineExceeded'))

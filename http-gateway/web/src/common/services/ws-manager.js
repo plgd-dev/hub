@@ -1,6 +1,7 @@
 import { getAppMode } from '@/common/utils'
 import { WebSocketClient } from './websocket-client'
 
+// eslint-disable-next-line no-unused-vars
 class _WSManager {
   constructor() {
     // Object containing the list of websocket clients which are about to be registered (or are already registered).
@@ -117,7 +118,7 @@ class _WSManager {
         const {
           api,
           listener,
-          // delayMessage = this.defaultDelayMessageTimeMs,
+          delayMessage = this.defaultDelayMessageTimeMs,
           onOpen = null,
           onError = null,
         } = this.wsClientList[id]
@@ -130,7 +131,7 @@ class _WSManager {
 
         // Connect to the WS and Register listeners
         if (this.ws[id] && listener) {
-          // this.ws[id].connect(delayMessage)
+          this.ws[id].connect(delayMessage)
           this.ws[id].onMessage = listener
 
           // Reconnect on close after "this.reconnectTimeMs" seconds
@@ -146,7 +147,7 @@ class _WSManager {
               // After a close event, try to reconnect
               setTimeout(() => {
                 if (this.ws[id]) {
-                  // this.ws[id].connect(this.defaultDelayMessageTimeMs)
+                  this.ws[id].connect(this.defaultDelayMessageTimeMs)
                 }
               }, this.reconnectTimeMs)
 
@@ -202,5 +203,3 @@ class _WSManager {
     })
   }
 }
-
-export const WSManager = new _WSManager()

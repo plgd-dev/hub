@@ -34,14 +34,12 @@ export const streamApi = async (url, options = {}) => {
             reader.read().then(({ done, value }) => {
               // If there is no more data to read
               if (done) {
-                // console.log('done', done)
                 controller.close()
                 return
               }
               // Get the data and send it to the browser via the controller
               controller.enqueue(value)
               // Check chunks by logging to the console
-              // console.log(done, value)
               push()
             })
           }
@@ -57,7 +55,7 @@ export const streamApi = async (url, options = {}) => {
       }).text()
     })
     .then(result => {
-      // Do things with result
+      // Parse the result to an array of objects
       return { data: parseStreamedData(result) }
     })
 }

@@ -331,7 +331,7 @@ export const ThingsDetailsPage = () => {
       }
       header={
         <ThingsDetailsHeader
-          deviceId={data?.id}
+          deviceId={id}
           deviceName={deviceName}
           isUnregistered={isUnregistered}
         />
