@@ -41,6 +41,12 @@ $margin_size: 5px;
     color: $error_100;
     border-color: $error_50;
   }
+
+  &.orange {
+    background-color: $warning_50;
+    color: $warning_100;
+    border-color: $warning_50;
+  }
 }
 
 .badges-box-vertical {

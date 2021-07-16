@@ -221,12 +221,12 @@ export const WebSocketEventClient = new _WebSocketEventClient(
 )
 
 /*
-const ws = new WebSocketClient('wss://...')
+const WebSocketEventClient = new _WebSocketEventClient('/api/v1/ws/events')
 
-const handler = data => update.redux()
-const handler2 = data => update2.redux()
+const handler = data => {}
+const handler2 = data => {}
 
-const id = ws.subscribe({
+const id = WebSocketEventClient.subscribe({
   "eventFilter": [
     "REGISTERED"
   ],
@@ -238,7 +238,7 @@ const id = ws.subscribe({
   ]
 }, 'id-123456789', handler)
 
-ws.unsubscribe('id-123456789')
+WebSocketEventClient.unsubscribe('id-123456789')
 
 --------- On Open subscriptions ----------
 let initialized = false

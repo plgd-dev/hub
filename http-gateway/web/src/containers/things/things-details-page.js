@@ -21,18 +21,22 @@ import {
   defaultNewResource,
   resourceModalTypes,
   NO_DEVICE_NAME,
+  shadowSynchronizationStates,
 } from './constants'
 import {
   handleCreateResourceErrors,
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
   handleDeleteResourceErrors,
+  handleShadowSynchronizationErrors,
+  shadowSynchronizationEnabled,
 } from './utils'
 import {
   getThingsResourcesApi,
   updateThingsResourceApi,
   createThingsResourceApi,
   deleteThingsResourceApi,
+  updateThingShadowSynchronizationApi,
 } from './rest'
 import { useThingDetails, useThingsResources } from './hooks'
 import { messages as t } from './things-i18n'
@@ -40,6 +44,7 @@ import { messages as t } from './things-i18n'
 export const ThingsDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
   const { id, href } = useParams()
+  const [shadowSyncLoading, setShadowSyncLoading] = useState(false)
   const [resourceModalData, setResourceModalData] = useState(null)
   const [loadingResource, setLoadingResource] = useState(false)
   const [savingResource, setSavingResource] = useState(false)
@@ -52,6 +57,9 @@ export const ThingsDetailsPage = () => {
     error: resourcesError,
   } = useThingsResources(id)
 
+  const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(
+    data?.metadata?.shadowSynchronization
+  )
   const resources = resourcesData?.[0]?.resources || []
 
   // Open the resource modal when href is present
@@ -293,11 +301,34 @@ export const ThingsDetailsPage = () => {
     })
   }
 
+  // Handler for setting the shadow synchronization on a device
+  const setShadowSynchronization = async () => {
+    setShadowSyncLoading(true)
+
+    try {
+      const setSync = isShadowSynchronizationEnabled
+        ? shadowSynchronizationStates.DISABLED
+        : shadowSynchronizationStates.ENABLED
+      await updateThingShadowSynchronizationApi(id, setSync)
+
+      if (isMounted.current) {
+        setShadowSyncLoading(false)
+      }
+    } catch (error) {
+      if (error && isMounted.current) {
+        handleShadowSynchronizationErrors(error, isOnline, _)
+        setShadowSyncLoading(false)
+      }
+    }
+  }
+
   return (
     <Layout
       title={`${deviceName ? deviceName + ' | ' : ''}${_(menuT.things)}`}
       breadcrumbs={breadcrumbs}
-      loading={loading || (!resourceModalData && loadingResource)}
+      loading={
+        loading || (!resourceModalData && loadingResource) || shadowSyncLoading
+      }
       header={
         <ThingsDetailsHeader
           deviceId={data?.id}
@@ -320,7 +351,12 @@ export const ThingsDetailsPage = () => {
         deviceId={id}
         links={resources}
       />
-      <ThingsDetails data={data} loading={loading} />
+      <ThingsDetails
+        data={data}
+        loading={loading}
+        shadowSyncLoading={shadowSyncLoading}
+        setShadowSynchronization={setShadowSynchronization}
+      />
 
       <ThingsResources
         data={resources}
@@ -329,6 +365,7 @@ export const ThingsDetailsPage = () => {
         onDelete={openDeleteModal}
         deviceStatus={deviceStatus}
         loading={loadingResource}
+        deviceId={id}
       />
 
       <ThingsResourcesModal

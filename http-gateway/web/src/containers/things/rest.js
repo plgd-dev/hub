@@ -86,3 +86,20 @@ export const deleteThingsResourceApi = ({ deviceId, href }) => {
     { method: 'DELETE' }
   )
 }
+
+/**
+ * Update the shadowSynchronization of one Thing Rest Api endpoint
+ * @param {*} deviceId
+ * @param {*} shadowSynchronization
+ */
+export const updateThingShadowSynchronizationApi = (
+  deviceId,
+  shadowSynchronization
+) => {
+  return fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      thingsApiEndpoints.THINGS
+    }/${deviceId}/metadata`,
+    { method: 'PUT', body: { shadowSynchronization } }
+  )
+}

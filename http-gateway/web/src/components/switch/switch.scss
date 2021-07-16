@@ -31,6 +31,23 @@ $mainVal: 16px;
     background-color: $light_100;
   }
 
+  &.text-left {
+    .custom-control-label {
+      padding-left: 0;
+      padding-right: $index + 12px;
+      
+      &:before {
+        left: auto;
+        right: 0;
+      }
+
+      &:after {
+        left: auto;
+        right: 13px;
+      }
+    }
+  }
+
   .custom-control-input:checked ~ .custom-control-label::after {
     transform: translateX($mainVal - 4px);
   }

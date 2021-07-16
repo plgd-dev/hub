@@ -13,6 +13,7 @@ import {
   NO_DEVICE_NAME,
 } from './constants'
 import { thingShape } from './shapes'
+import { shadowSynchronizationEnabled } from './utils'
 import { messages as t } from './things-i18n'
 
 const { ONLINE, UNREGISTERED } = thingsStatuses
@@ -40,6 +41,19 @@ export const ThingsList = ({ data }) => {
         accessor: 'id',
         Cell: ({ value }) => {
           return <span className="no-wrap-text">{value}</span>
+        },
+      },
+      {
+        Header: _(t.shadowSynchronization),
+        accessor: 'metadata.shadowSynchronization',
+        style: { width: '180px' },
+        Cell: ({ value }) => {
+          const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(value)
+          return (
+            <Badge className={isShadowSynchronizationEnabled ? 'green' : 'red'}>
+              {isShadowSynchronizationEnabled ? _(t.enabled) : _(t.disabled)}
+            </Badge>
+          )
         },
       },
       {

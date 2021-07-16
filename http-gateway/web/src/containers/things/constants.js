@@ -42,6 +42,12 @@ export const knownResourceTypes = {
   OIC_WK_CON: 'oic.wk.con', // contains device name
 }
 
+export const shadowSynchronizationStates = {
+  UNSET: 'UNSET',
+  ENABLED: 'ENABLED',
+  DISABLED: 'DISABLED',
+}
+
 export const defaultNewResource = {
   rt: [],
   if: [knownInterfaces.OIC_IF_A, knownInterfaces.OIC_IF_BASELINE],

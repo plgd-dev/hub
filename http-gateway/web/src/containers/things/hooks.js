@@ -22,10 +22,10 @@ export const useThingsList = () => {
     `${httpGatewayAddress}${thingsApiEndpoints.THINGS}`
   )
 
-  // Update the status list when a WS event is emitted
+  // Update the metadata when a WS event is emitted
   useEmitter(THINGS_STATUS_WS_KEY, newDeviceStatus => {
     if (data) {
-      // Update the data with the current device status
+      // Update the data with the current device status and shadowSynchronization
       updateData(updateThingsDataStatus(data, newDeviceStatus))
     }
   })
@@ -41,15 +41,16 @@ export const useThingDetails = deviceId => {
     `${httpGatewayAddress}${thingsApiEndpoints.THINGS}/${deviceId}`
   )
 
-  // Update the status when a WS event is emitted
+  // Update the metadata when a WS event is emitted
   useEmitter(
     `${THINGS_STATUS_WS_KEY}.${deviceId}`,
-    debounce(({ status }) => {
+    debounce(({ status, shadowSynchronization }) => {
       if (data) {
         updateData({
           ...data,
           metadata: {
             ...data.metadata,
+            shadowSynchronization,
             status: {
               ...data.metadata.status,
               value: status,
