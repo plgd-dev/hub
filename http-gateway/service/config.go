@@ -48,6 +48,21 @@ func (c *APIsConfig) Validate() error {
 	return nil
 }
 
+type WebSocketConfig struct {
+	StreamBodyLimit int           `yaml:"streamBodyLimit" json:"streamBodyLimit"`
+	PingFrequency   time.Duration `yaml:"pingFrequency" json:"pingFrequency"`
+}
+
+func (c *WebSocketConfig) Validate() error {
+	if c.StreamBodyLimit <= 0 {
+		return fmt.Errorf("streamBodyLimit('%v')", c.StreamBodyLimit)
+	}
+	if c.PingFrequency <= 0 {
+		return fmt.Errorf("pingFrequency('%v')", c.PingFrequency)
+	}
+	return nil
+}
+
 type HTTPConfig struct {
 	Connection    listener.Config  `yaml:",inline" json:",inline"`
 	WebSocket     WebSocketConfig  `yaml:"webSocket" json:"webSocket"`
@@ -66,26 +81,8 @@ func (c *HTTPConfig) Validate() error {
 	return c.Connection.Validate()
 }
 
-type WebSocketConfig struct {
-	ReadLimit   int64         `yaml:"readLimit" json:"readLimit"`
-	ReadTimeout time.Duration `yaml:"readTimeout" json:"readTimeout"`
-}
-
-func (c *WebSocketConfig) Validate() error {
-	if c.ReadLimit <= 0 {
-		return fmt.Errorf("readLimit('%v')", c.ReadLimit)
-	}
-	if c.ReadTimeout <= 0 {
-		return fmt.Errorf("readTimeout('%v')", c.ReadTimeout)
-	}
-	return nil
-}
-
 type ClientsConfig struct {
-	Eventbus             EventBusConfig       `yaml:"eventBus" json:"eventBus"`
-	ResourceAggregate    GrpcServerConfig     `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory    GrpcServerConfig     `yaml:"resourceDirectory" json:"resourceDirectory"`
-	CertificateAuthority CertificateAuthority `yaml:"certificateAuthority" json:"certificateAuthority"`
+	GrpcGateway GrpcServerConfig `yaml:"grpcGateway" json:"grpcGateway"`
 }
 
 type GrpcServerConfig struct {
@@ -93,22 +90,6 @@ type GrpcServerConfig struct {
 }
 
 func (c *GrpcServerConfig) Validate() error {
-	err := c.Connection.Validate()
-	if err != nil {
-		return fmt.Errorf("grpc.%w", err)
-	}
-	return err
-}
-
-type CertificateAuthority struct {
-	Enabled    bool          `json:"enabled" yaml:"enabled"`
-	Connection client.Config `yaml:"grpc" json:"grpc"`
-}
-
-func (c *CertificateAuthority) Validate() error {
-	if !c.Enabled {
-		return nil
-	}
 	err := c.Connection.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)
@@ -130,22 +111,11 @@ func (c *EventBusConfig) Validate() error {
 }
 
 func (c *ClientsConfig) Validate() error {
-	err := c.ResourceAggregate.Validate()
+	err := c.GrpcGateway.Validate()
 	if err != nil {
 		return fmt.Errorf("resourceAggregate.%w", err)
 	}
-	err = c.ResourceDirectory.Validate()
-	if err != nil {
-		return fmt.Errorf("resourceDirectory.%w", err)
-	}
-	err = c.CertificateAuthority.Validate()
-	if err != nil {
-		return fmt.Errorf("certificateAuthority.%w", err)
-	}
-	err = c.Eventbus.Validate()
-	if err != nil {
-		return fmt.Errorf("eventbus.%w", err)
-	}
+
 	return nil
 }
 

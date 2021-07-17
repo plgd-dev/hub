@@ -19,10 +19,10 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 )
 
-func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
+func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.RetrieveResourceFromDeviceRequest
+		req *pb.GetResourceFromDeviceRequest
 	}
 	tests := []struct {
 		name    string
@@ -33,11 +33,8 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /light/2",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &commands.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/light/2",
-					},
+				req: &pb.GetResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
 			want: &events.ResourceRetrieved{
@@ -55,11 +52,8 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "valid /oic/d",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &commands.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/oic/d",
-					},
+				req: &pb.GetResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
 			want: &events.ResourceRetrieved{
@@ -77,11 +71,8 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
-					ResourceId: &commands.ResourceId{
-						DeviceId: deviceID,
-						Href:     "/unknown",
-					},
+				req: &pb.GetResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
 			wantErr: true,
@@ -101,20 +92,21 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
+			got, err := c.GetResourceFromDevice(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-				got.Content.Data = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
+				got.GetData().Content.Data = nil
+				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

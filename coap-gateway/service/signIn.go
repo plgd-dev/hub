@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -35,7 +36,7 @@ type CoapSignInResp struct {
 
 func (client *Client) registerObservationsForPublishedResourcesLocked(ctx context.Context, deviceID string) {
 	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
-		DeviceIdsFilter: []string{deviceID},
+		DeviceIdFilter: []string{deviceID},
 	})
 	if err != nil {
 		if status.Convert(err).Code() == codes.NotFound {
@@ -66,8 +67,8 @@ func (client *Client) registerObservationsForPublishedResourcesLocked(ctx contex
 }
 
 func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID string) error {
-	deviceMetadataClient, err := client.server.rdClient.RetrieveDevicesMetadata(ctx, &pb.RetrieveDevicesMetadataRequest{
-		DeviceIdsFilter: []string{deviceID},
+	deviceMetadataClient, err := client.server.rdClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{
+		DeviceIdFilter: []string{deviceID},
 	})
 	if err != nil {
 		if status.Convert(err).Code() == codes.NotFound {
@@ -108,13 +109,12 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
+	expiresIn := validUntilToExpiresIn(resp.GetValidUntil())
 	coapResp := CoapSignInResp{
-		ExpiresIn: resp.ExpiresIn,
+		ExpiresIn: expiresIn,
 	}
-	var expired time.Time
-	if resp.ExpiresIn > 0 {
-		expired = time.Now().Add(time.Second * time.Duration(resp.ExpiresIn))
-	}
+
+	expired := pkgTime.Unix(0, resp.ValidUntil)
 
 	accept := coapconv.GetAccept(req.Options)
 	encode, err := coapconv.GetEncoder(accept)
@@ -208,7 +208,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	if expired.IsZero() {
 		client.server.expirationClientCache.Set(signIn.DeviceID, nil, time.Millisecond)
 	} else {
-		client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(resp.ExpiresIn))
+		client.server.expirationClientCache.Set(signIn.DeviceID, client, time.Second*time.Duration(expiresIn))
 	}
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 

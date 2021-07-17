@@ -12,31 +12,12 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/sdk/schema"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
-
-func toEndpoint(s *commands.EndpointInformation) schema.Endpoint {
-	return schema.Endpoint{
-		URI:      s.GetEndpoint(),
-		Priority: uint64(s.GetPriority()),
-	}
-}
-
-func toEndpoints(s []*commands.EndpointInformation) []schema.Endpoint {
-	r := make([]schema.Endpoint, 0, 16)
-	for _, v := range s {
-		r = append(r, toEndpoint(v))
-	}
-	return r
-}
-
-func toPolicy(s *commands.Policies) *schema.Policy {
-	return &schema.Policy{
-		BitMask: schema.BitMask(s.GetBitFlags()),
-	}
-}
 
 type RetrieveDeviceWithLinksResponse struct {
 	Device
@@ -47,16 +28,9 @@ func getHref(deviceID, href string) string {
 	return "/" + deviceID + href
 }
 
-func makeResourceLink(resource *commands.Resource) schema.ResourceLink {
-	r := resource.ToSchema()
-	r.Href = getHref(resource.GetDeviceId(), resource.GetHref())
-	r.ID = ""
-	return r
-}
-
-func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdsFilter []string) (map[string]schema.ResourceLinks, error) {
+func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter []string) (map[string]schema.ResourceLinks, error) {
 	client, err := rh.rdClient.GetResourceLinks(ctx, &pbGRPC.GetResourceLinksRequest{
-		DeviceIdsFilter: deviceIdsFilter,
+		DeviceIdFilter: deviceIdFilter,
 	})
 
 	if err != nil {
@@ -125,11 +99,11 @@ func unmarshalContent(c *commands.Content) (interface{}, error) {
 	return m, nil
 }
 
-func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdsFilter []*commands.ResourceId, deviceIdsFilter []string) (map[string][]Representation, error) {
+func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []string, deviceIdFilter []string) (map[string][]Representation, error) {
 
-	client, err := rh.rdClient.RetrieveResources(ctx, &pbGRPC.RetrieveResourcesRequest{
-		DeviceIdsFilter:   deviceIdsFilter,
-		ResourceIdsFilter: resourceIdsFilter,
+	client, err := rh.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
+		DeviceIdFilter:   deviceIdFilter,
+		ResourceIdFilter: resourceIdFilter,
 	})
 
 	if err != nil {
@@ -167,7 +141,7 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdsFilt
 
 	}
 	if len(allResources) == 0 {
-		return nil, fmt.Errorf("cannot retrieve resources values: not found")
+		return nil, status.Errorf(codes.NotFound, "cannot retrieve resources values: not found")
 	}
 	return allResources, nil
 }

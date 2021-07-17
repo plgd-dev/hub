@@ -17,27 +17,26 @@ const typeKey = "type"
 const hrefKey = "href"
 const sequenceNumberKey = "sequencenumber"
 const deviceIDKey = "deviceid"
-const userIDKey = "userid"
 const initializedKey = "initialized"
 
 var typeQueryIndex = bson.D{
-	{typeKey, 1},
+	{Key: typeKey, Value: 1},
 }
 
 var typeDeviceIDQueryIndex = bson.D{
-	{typeKey, 1},
-	{deviceIDKey, 1},
+	{Key: typeKey, Value: 1},
+	{Key: deviceIDKey, Value: 1},
 }
 
 var typeResourceIDQueryIndex = bson.D{
-	{typeKey, 1},
-	{deviceIDKey, 1},
-	{hrefKey, 1},
+	{Key: typeKey, Value: 1},
+	{Key: deviceIDKey, Value: 1},
+	{Key: hrefKey, Value: 1},
 }
 
 var typeInitializedIDQueryIndex = bson.D{
-	{"_id", 1},
-	{initializedKey, 1},
+	{Key: "_id", Value: 1},
+	{Key: initializedKey, Value: 1},
 }
 
 type DBSub struct {

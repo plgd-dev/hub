@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	"github.com/stretchr/testify/assert"
@@ -90,19 +90,19 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -195,19 +195,19 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -267,19 +267,19 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -350,19 +350,19 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -428,19 +428,19 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -507,19 +507,19 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -585,19 +585,19 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -667,19 +667,19 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -745,19 +745,19 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -827,19 +827,19 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -905,19 +905,19 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -942,10 +942,6 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		}
 		t.Run(tt.name, tfunc)
 	}
-}
-
-type mockAuthorizationServiceClient struct {
-	pbAS.AuthorizationServiceClient
 }
 
 func mockGetUserDevices(ctx context.Context, userID, deviceID string) (bool, error) {

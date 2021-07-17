@@ -5,10 +5,35 @@ import (
 	"time"
 
 	"github.com/golang/snappy"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-func GetTopics(deviceID string) []string {
-	return []string{"events-" + deviceID + "-resource-aggregate"}
+func GetDeviceSubject(deviceID string) []string {
+	return []string{"events." + deviceID + ".>"}
+}
+
+func GetDeviceMetadataEventSubject(deviceID string, eventType string) []string {
+	return []string{"events." + deviceID + ".metadata." + eventType}
+}
+
+func GetResourceSubject(resourceID *commands.ResourceId) []string {
+	return []string{"events." + resourceID.GetDeviceId() + "." + resourceID.ToUUID() + ".>"}
+}
+
+func GetResourceEventSubject(resourceID *commands.ResourceId, eventType string) []string {
+	return []string{"events." + resourceID.GetDeviceId() + ".resources." + resourceID.ToUUID() + "." + eventType}
+}
+
+func GetPublishSubject(event eventbus.Event) []string {
+	switch event.EventType() {
+	case (&events.ResourceLinksPublished{}).EventType(), (&events.ResourceLinksUnpublished{}).EventType(), (&events.ResourceLinksSnapshotTaken{}).EventType():
+		return []string{"events." + event.GroupID() + ".resource-links." + event.EventType()}
+	case (&events.DeviceMetadataUpdatePending{}).EventType(), (&events.DeviceMetadataUpdated{}).EventType(), (&events.DeviceMetadataSnapshotTaken{}).EventType():
+		return []string{"events." + event.GroupID() + ".metadata." + event.EventType()}
+	}
+	return []string{"events." + event.GroupID() + ".resources." + event.AggregateID() + "." + event.EventType()}
 }
 
 func TimeNowMs() uint64 {

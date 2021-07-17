@@ -3,10 +3,11 @@ package commands
 import (
 	"time"
 
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/sdk/schema"
 )
 
-func (e EndpointInformation) ToSchema() schema.Endpoint {
+func (e *EndpointInformation) ToSchema() schema.Endpoint {
 	return schema.Endpoint{
 		URI:      e.GetEndpoint(),
 		Priority: uint64(e.GetPriority()),
@@ -90,7 +91,7 @@ func SchemaResourceLinkToResource(link schema.ResourceLink, validUntil time.Time
 		Anchor:                link.Anchor,
 		Title:                 link.Title,
 		SupportedContentTypes: link.SupportedContentTypes,
-		ValidUntil:            validUntil.UnixNano(),
+		ValidUntil:            pkgTime.UnixNano(validUntil),
 		Policies:              SchemaPolicyToRAPolicies(link.Policy),
 		EndpointInformations:  SchemaEndpointsToRAEndpointInformations(link.Endpoints),
 	}

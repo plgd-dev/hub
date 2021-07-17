@@ -110,7 +110,7 @@ func (s *subscription) NotifyOfUpdatePendingResource(ctx context.Context, update
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdatePending{
 			ResourceUpdatePending: updatePending,
@@ -126,7 +126,7 @@ func (s *subscription) NotifyOfUpdatedResource(ctx context.Context, updated *eve
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceUpdated{
 			ResourceUpdated: updated,
@@ -142,7 +142,7 @@ func (s *subscription) NotifyOfRetrievePendingResource(ctx context.Context, retr
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: retrievePending,
@@ -158,7 +158,7 @@ func (s *subscription) NotifyOfRetrievedResource(ctx context.Context, retrieved 
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceRetrieved{
 			ResourceRetrieved: retrieved,
@@ -174,7 +174,7 @@ func (s *subscription) NotifyOfDeletePendingResource(ctx context.Context, delete
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeletePending{
 			ResourceDeletePending: deletePending,
@@ -190,7 +190,7 @@ func (s *subscription) NotifyOfDeletedResource(ctx context.Context, deleted *eve
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceDeleted{
 			ResourceDeleted: deleted,
@@ -206,7 +206,7 @@ func (s *subscription) NotifyOfCreatePendingResource(ctx context.Context, create
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceCreatePending{
 			ResourceCreatePending: createPending,
@@ -222,7 +222,7 @@ func (s *subscription) NotifyOfCreatedResource(ctx context.Context, created *eve
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceCreated{
 			ResourceCreated: created,
@@ -238,7 +238,7 @@ func (s *subscription) NotifyOfResourceChanged(ctx context.Context, resourceChan
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_ResourceChanged{
 			ResourceChanged: resourceChanged,

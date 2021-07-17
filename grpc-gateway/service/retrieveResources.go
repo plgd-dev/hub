@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (r *RequestHandler) RetrieveResources(req *pb.RetrieveResourcesRequest, srv pb.GrpcGateway_RetrieveResourcesServer) error {
+func (r *RequestHandler) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcGateway_GetResourcesServer) error {
 	ctx := srv.Context()
-	rd, err := r.resourceDirectoryClient.RetrieveResources(ctx, req)
+	rd, err := r.resourceDirectoryClient.GetResources(ctx, req)
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot retrieve resources values: %v", err))
 	}

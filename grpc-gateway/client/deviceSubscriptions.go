@@ -95,8 +95,8 @@ func (s *DeviceSubscriptions) send(req *pb.SubscribeToEvents) error {
 
 func (s *DeviceSubscriptions) doOp(ctx context.Context, req *pb.SubscribeToEvents) (*pb.Event, error) {
 	subscriptionIDChan := make(chan *pb.Event, 1)
-	s.processedOperations.Store(req.GetToken(), subscriptionIDChan)
-	defer s.processedOperations.Delete(req.GetToken())
+	s.processedOperations.Store(req.GetCorrelationId(), subscriptionIDChan)
+	defer s.processedOperations.Delete(req.GetCorrelationId())
 
 	err := s.send(req)
 	if err != nil {
@@ -317,11 +317,11 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 	ev, err := s.doOp(ctx, &pb.SubscribeToEvents{
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdsFilter: []string{deviceID},
-				EventsFilter:    filterEvents,
+				DeviceIdFilter: []string{deviceID},
+				EventFilter:    filterEvents,
 			},
 		},
-		Token: token.String(),
+		CorrelationId: token.String(),
 	})
 	if err != nil {
 		return nil, err
@@ -342,7 +342,7 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 					SubscriptionId: ev.GetSubscriptionId(),
 				},
 			},
-			Token: cancelToken.String(),
+			CorrelationId: cancelToken.String(),
 		})
 		s.handlers.Delete(token.String())
 		return err
@@ -384,9 +384,9 @@ func (s *DeviceSubscriptions) cancelSubscription(subID string) error {
 }
 
 func (s *DeviceSubscriptions) getHandler(ev *pb.Event) *deviceSub {
-	ha, ok := s.handlers.Load(ev.GetToken())
+	ha, ok := s.handlers.Load(ev.GetCorrelationId())
 	if !ok {
-		s.errFunc(fmt.Errorf("invalid event from subscription - ID: %v, Token: %v, Type %T", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType()))
+		s.errFunc(fmt.Errorf("invalid event from subscription - ID: %v, CorrelationId: %v, Type %T", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType()))
 		err := s.send(&pb.SubscribeToEvents{
 			Action: &pb.SubscribeToEvents_CancelSubscription_{
 				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
@@ -395,7 +395,7 @@ func (s *DeviceSubscriptions) getHandler(ev *pb.Event) *deviceSub {
 			},
 		})
 		if err != nil {
-			s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+			s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 		}
 		return nil
 	}
@@ -429,7 +429,7 @@ func (s *DeviceSubscriptions) runRecv() {
 		cancel := ev.GetSubscriptionCanceled()
 		if cancel != nil {
 			reason := cancel.GetReason()
-			h, ok := s.handlers.PullOut(ev.GetToken())
+			h, ok := s.handlers.PullOut(ev.GetCorrelationId())
 			if !ok {
 				continue
 			}
@@ -443,14 +443,14 @@ func (s *DeviceSubscriptions) runRecv() {
 		}
 		operationProcessed := ev.GetOperationProcessed()
 		if operationProcessed != nil {
-			opChan, ok := s.processedOperations.Load(ev.GetToken())
+			opChan, ok := s.processedOperations.Load(ev.GetCorrelationId())
 			if !ok {
 				continue
 			}
 			select {
 			case opChan.(chan *pb.Event) <- ev:
 			default:
-				s.errFunc(fmt.Errorf("cannot send operation processed - ID: %v, Token: %v, Type %T: channel is exhausted", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType()))
+				s.errFunc(fmt.Errorf("cannot send operation processed - ID: %v, CorrelationId: %v, Type %T: channel is exhausted", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType()))
 			}
 			continue
 		}
@@ -466,7 +466,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceUnpublished(); ct != nil {
 			err = h.HandleResourceUnpublished(s.client.Context(), ct)
@@ -475,7 +475,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceUpdatePending(); ct != nil {
 			err = h.HandleResourceUpdatePending(s.client.Context(), ct)
@@ -484,7 +484,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceUpdated(); ct != nil {
 			err = h.HandleResourceUpdated(s.client.Context(), ct)
@@ -493,7 +493,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceRetrievePending(); ct != nil {
 			err = h.HandleResourceRetrievePending(s.client.Context(), ct)
@@ -502,7 +502,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceRetrieved(); ct != nil {
 			err = h.HandleResourceRetrieved(s.client.Context(), ct)
@@ -511,7 +511,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceDeletePending(); ct != nil {
 			err = h.HandleResourceDeletePending(s.client.Context(), ct)
@@ -520,7 +520,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceDeleted(); ct != nil {
 			err = h.HandleResourceDeleted(s.client.Context(), ct)
@@ -529,7 +529,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceCreatePending(); ct != nil {
 			err = h.HandleResourceCreatePending(s.client.Context(), ct)
@@ -538,7 +538,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else if ct := ev.GetResourceCreated(); ct != nil {
 			err = h.HandleResourceCreated(s.client.Context(), ct)
@@ -547,10 +547,10 @@ func (s *DeviceSubscriptions) runRecv() {
 			}
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		} else {
-			h, ok := s.handlers.PullOut(ev.GetToken())
+			h, ok := s.handlers.PullOut(ev.GetCorrelationId())
 			if !ok {
 				continue
 			}
@@ -558,7 +558,7 @@ func (s *DeviceSubscriptions) runRecv() {
 			ha.Error(fmt.Errorf("unknown event %T occurs on recv device events: %+v", ev, ev))
 			err := s.cancelSubscription(ev.GetSubscriptionId())
 			if err != nil {
-				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, Token: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetToken(), ev.GetType(), err))
+				s.errFunc(fmt.Errorf("cannot cancel subscription - ID: %v, CorrelationId: %v, Type %T: %w", ev.GetSubscriptionId(), ev.GetCorrelationId(), ev.GetType(), err))
 			}
 		}
 	}

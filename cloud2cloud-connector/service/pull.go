@@ -36,7 +36,6 @@ type pullDevicesHandler struct {
 	asClient            pbAS.AuthorizationServiceClient
 	raClient            raService.ResourceAggregateClient
 	devicesSubscription *DevicesSubscription
-	linkedClouds        map[string]store.LinkedCloud
 	subscriptionManager *SubscriptionManager
 	oauthCallback       string
 	triggerTask         func(Task)
@@ -68,6 +67,7 @@ func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClie
 
 func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, v interface{}) error {
 	client := linkedCloud.GetHTTPClient()
+	defer client.CloseIdleConnections()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 		link.DeviceID = deviceID
 		href := removeDeviceIDFromHref(link.Href)
 		link.Href = href
-		err := publishResource(ctx, raClient, userID, link, commands.CommandMetadata{
+		err := publishResource(ctx, raClient, userID, link, &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
 			Sequence:     uint64(time.Now().UnixNano()),
 		})
@@ -284,7 +284,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 				userID,
 				"application/json",
 				body,
-				commands.CommandMetadata{
+				&commands.CommandMetadata{
 					ConnectionId: linkedAccount.ID,
 					Sequence:     uint64(time.Now().UnixNano()),
 				},

@@ -40,10 +40,14 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 	return client.DeviceDetails{
 		ID: deviceID,
 		Device: &pb.Device{
-			Id:         deviceID,
-			Name:       deviceName,
-			Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
-			IsOnline:   true,
+			Id:    deviceID,
+			Name:  deviceName,
+			Types: []string{"oic.d.cloudDevice", "oic.wk.d"},
+			Metadata: &pb.Device_Metadata{
+				Status: &commands.ConnectionStatus{
+					Value: commands.ConnectionStatus_ONLINE,
+				},
+			},
 			Interfaces: []string{"oic.if.r", "oic.if.baseline"},
 		},
 		Resources: resources,
@@ -106,6 +110,7 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Resources = test.CleanUpResourcesArray(got.Resources)
 			require.NotEmpty(t, got.Device.GetProtocolIndependentId())
 			got.Device.ProtocolIndependentId = ""
+			got.Device.Metadata.Status.ValidUntil = 0
 			test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 		})
 	}

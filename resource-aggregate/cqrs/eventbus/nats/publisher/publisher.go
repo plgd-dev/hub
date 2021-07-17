@@ -2,6 +2,7 @@ package publisher
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
@@ -22,6 +22,7 @@ type Publisher struct {
 	dataMarshaler MarshalerFunc
 	conn          *nats.Conn
 	closeFunc     []func()
+	publish       func(subj string, data []byte) error
 }
 
 func (p *Publisher) AddCloseFunc(f func()) {
@@ -53,7 +54,7 @@ func WithMarshaler(dataMarshaler MarshalerFunc) MarshalerOpt {
 // New creates new publisher with proto marshaller.
 func New(config Config, logger *zap.Logger, opts ...Option) (*Publisher, error) {
 	cfg := options{
-		dataMarshaler: utils.Marshal,
+		dataMarshaler: json.Marshal,
 	}
 	for _, o := range opts {
 		o.apply(&cfg)
@@ -64,7 +65,7 @@ func New(config Config, logger *zap.Logger, opts ...Option) (*Publisher, error) 
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
 	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()))
-	p, err := newPublisher(config.URL, cfg.dataMarshaler, config.Options...)
+	p, err := newPublisher(config.URL, config.JetStream, cfg.dataMarshaler, config.Options...)
 	if err != nil {
 		certManager.Close()
 		return nil, err
@@ -74,15 +75,28 @@ func New(config Config, logger *zap.Logger, opts ...Option) (*Publisher, error) 
 }
 
 // NewPublisher creates a publisher.
-func newPublisher(url string, eventMarshaler MarshalerFunc, options ...nats.Option) (*Publisher, error) {
+func newPublisher(url string, jetstream bool, eventMarshaler MarshalerFunc, options ...nats.Option) (*Publisher, error) {
 	conn, err := nats.Connect(url, options...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to server: %w", err)
+	}
+	publish := conn.Publish
+	if jetstream {
+		js, err := conn.JetStream()
+		if err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("cannot get jetstream context: %w", err)
+		}
+		publish = func(subj string, data []byte) error {
+			_, err := js.Publish(subj, data)
+			return err
+		}
 	}
 
 	return &Publisher{
 		dataMarshaler: eventMarshaler,
 		conn:          conn,
+		publish:       publish,
 	}, nil
 }
 
@@ -108,15 +122,17 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 
 	var errors []error
 	for _, t := range topics {
-		err := p.conn.Publish(t, eData)
+		err := p.publish(t, eData)
 		if err != nil {
 			errors = append(errors, err)
 		}
 	}
+
 	err = p.conn.Flush()
 	if err != nil {
 		errors = append(errors, err)
 	}
+
 	if len(errors) > 0 {
 		return fmt.Errorf("cannot publish events: %v", errors)
 	}

@@ -70,33 +70,9 @@ apis:
           certFile: "/data/certs/http.crt"
 ...
 clients:
-  eventBus:
-    nats:
-      url: "nats://localhost:4222"
-      tls:
-        caPool: "/data/certs/root_ca.crt"
-        keyFile: "/data/certs/http.key"
-        certFile: "/data/certs/http.crt"
-...
-  resourceAggregate:
+  grpcGateway:
     grpc:
       address: "localhost:9083"
-      tls:
-        caPool: "/data/certs/root_ca.crt"
-        keyFile: "/data/certs/http.key"
-        certFile: "/data/certs/http.crt"
-...
-  resourceDirectory:
-    grpc:
-      address: "localhost:9082"
-      tls:
-        caPool: "/data/certs/root_ca.crt"
-        keyFile: "/data/certs/http.key"
-        certFile: "/data/certs/http.crt"
-...
-  certificateAuthority:
-    grpc:
-      address: "localhost:9087"
       tls:
         caPool: "/data/certs/root_ca.crt"
         keyFile: "/data/certs/http.key"
@@ -140,8 +116,8 @@ APIs of the HTTP Gateway service as defined [uri](https://github.com/plgd-dev/cl
 | `api.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.http.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
-| `api.http.websocket.readLimit` | int | `The maximum size in bytes for a message read from the peer. If a message exceeds the limit, the connection sends a close message to the peer` | `8192` |
-| `api.http.websocket.readTimeout` | string | `The read deadline on the underlying network connection. A zero value means reads will not time out.` | `4s` |
+| `api.http.websocket.streamBodyLimit` | int | `Limit a size for the buffer used while reading the grpc stream.` | `262144` |
+| `api.http.websocket.pingFrequency` | string | `Ping frequency specifies the ping interval between pings.` | `10s` |
 | `api.http.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
 | `api.http.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.http.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
@@ -154,62 +130,19 @@ APIs of the HTTP Gateway service as defined [uri](https://github.com/plgd-dev/cl
 | `api.http.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.http.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-### Event Bus
-Plgd cloud uses NATS messaging system as a event bus.
+### GRPC Gateway Client
+Client configurations to internally connect to GRPC Gateway service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.eventBus.goPoolSize` | int | `Number of routines to process events in projection.` | `16` |
-| `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
-| `clients.eventBus.nats.pendingLimits.msgLimit` | int | `Limit number of messages in queue. -1 means unlimited` | `524288` |
-| `clients.eventBus.nats.pendingLimits.bytesLimit` | int | `Limit buffer size of queue. -1 means unlimited` | `67108864` |
-| `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
-| `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
-| `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
-| `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-
-### Resource Aggregate Client
-Client configurations to internally connect to Resource Aggregate service.
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `clients.resourceAggregate.grpc.address` | string | `Resource Aggregate service address.` | `"127.0.0.1:9100"` |
-| `clients.resourceAggregate.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.resourceAggregate.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.resourceAggregate.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.resourceAggregate.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.resourceAggregate.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.resourceAggregate.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.resourceAggregate.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
-
-### Resource Directory Client
-Client configurations to internally connect to Resource Directory service.
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `clients.resourceDirectory.grpc.address` | string | `Resource Directory service address.` | `"127.0.0.1:9100"` |
-| `clients.resourceDirectory.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.resourceDirectory.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.resourceDirectory.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.resourceDirectory.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.resourceDirectory.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.resourceDirectory.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.resourceDirectory.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
-
-### Certificate Authority Client
-Client configurations to internally connect to Certificate Authority service.
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `clients.certificateAuthority.enabled` | bool | `If true, connect to Certificate Authority.` | `"false"` |
-| `clients.certificateAuthority.grpc.address` | string | `Certificate Authority service address.` | `"127.0.0.1:9100"` |
-| `clients.certificateAuthority.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `clients.certificateAuthority.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `clients.certificateAuthority.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `clients.certificateAuthority.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `clients.certificateAuthority.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
-| `clients.certificateAuthority.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
-| `clients.certificateAuthority.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+| `clients.grpcGateway.grpc.address` | string | `GRPC Gateway service address.` | `"127.0.0.1:9100"` |
+| `clients.grpcGateway.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.grpcGateway.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.grpcGateway.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.grpcGateway.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.grpcGateway.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.grpcGateway.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.grpcGateway.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Web UI
 These configurations are for `PLGD Dashboard` as described in [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/dashboard.md).

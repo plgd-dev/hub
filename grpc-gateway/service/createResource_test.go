@@ -24,7 +24,7 @@ import (
 func TestRequestHandler_CreateResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.CreateResourceRequest
+		req *pb.CreateResourceRequest
 	}
 	tests := []struct {
 		name        string
@@ -36,7 +36,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -52,7 +52,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				req: pb.CreateResourceRequest{
+				req: &pb.CreateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -62,14 +62,8 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 					},
 				},
 			},
-			want: &events.ResourceCreated{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
-			wantErrCode: codes.OK,
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
 		},
 	}
 
@@ -86,20 +80,21 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.CreateResource(ctx, &tt.args.req)
+			got, err := c.CreateResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())
 			} else {
 				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
+				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

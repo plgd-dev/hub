@@ -35,8 +35,8 @@ func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 
 func cleanUpToSnapshot(ctx context.Context, t *testing.T, store *mongodb.EventStore, evs []eventstore.Event) {
 	for _, event := range evs {
-		if ru, ok := event.(*events.ResourceStateSnapshotTaken); ok {
-			if err := store.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: ru.GroupID(), AggregateID: ru.AggregateID(), Version: ru.Version()}}); err != nil {
+		if event.IsSnapshot() {
+			if err := store.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}}); err != nil {
 				require.NoError(t, err)
 			}
 			fmt.Printf("snapshot at version %v\n", event.Version())
@@ -75,7 +75,7 @@ func Test_parallelRequest(t *testing.T) {
 	var anyError atomic.Bool
 	for i := 0; i < numParallel; i++ {
 		wg.Add(1)
-		go func() {
+		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < 100000; j++ {
 				if anyError.Load() {
@@ -84,7 +84,7 @@ func Test_parallelRequest(t *testing.T) {
 				commandContentChanged := commands.NotifyResourceChangedRequest{
 					ResourceId: commands.NewResourceID(deviceID, href),
 					Content: &commands.Content{
-						Data:        []byte("hello world"),
+						Data:        []byte("hello world" + fmt.Sprintf("%v.%v", id, j)),
 						ContentType: "text",
 					},
 					CommandMetadata: &commands.CommandMetadata{
@@ -101,7 +101,7 @@ func Test_parallelRequest(t *testing.T) {
 				}
 				cleanUpToSnapshot(ctx, t, store, events)
 			}
-		}()
+		}(i)
 	}
 	wg.Wait()
 }

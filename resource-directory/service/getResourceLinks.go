@@ -11,7 +11,7 @@ import (
 func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
 	owner, err := kitNetGrpc.OwnerFromMD(srv.Context())
 	if err != nil {
-		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.NotFound, "cannot get resource links: %v", err))
+		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot get resource links: %v", err))
 	}
 	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), owner)
 	if err != nil {

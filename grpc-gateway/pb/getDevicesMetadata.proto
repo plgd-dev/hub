@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package ocf.cloud.grpcgateway.pb;
+
+option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+
+message GetDevicesMetadataRequest{
+    repeated string device_id_filter = 1;
+    repeated string type_filter = 2;
+}

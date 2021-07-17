@@ -4,68 +4,146 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/kit/codec/json"
-
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/http-gateway/test"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	cloudTest "github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
-func TestCreateResource(t *testing.T) {
-	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
+func TestRequestHandler_CreateResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	type args struct {
+		req         *pb.CreateResourceRequest
+		accept      string
+		contentType string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		want        *events.ResourceCreated
+		wantErr     bool
+		wantErrCode codes.Code
+	}{
+
+		{
+			name: "invalid Href",
+			args: args{
+				req: &pb.CreateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: uri.ApplicationProtoJsonContentType,
+			},
+			wantErr:     true,
+			wantErrCode: codes.NotFound,
+		},
+		{
+			name: "/oic/d - PermissionDenied - " + uri.ApplicationProtoJsonContentType,
+			args: args{
+				req: &pb.CreateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: uri.ApplicationProtoJsonContentType,
+			},
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
+		},
+		{
+			name: "/oic/d - PermissionDenied - " + message.AppJSON.String(),
+			args: args{
+				req: &pb.CreateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+				},
+				accept:      uri.ApplicationProtoJsonContentType,
+				contentType: message.AppJSON.String(),
+			},
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := cloudTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	shutdownHttp := httpgwTest.SetUp(t)
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: cloudTest.GetRootCertificatePool(t),
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
-	deviceID, shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	webTearDown := test.SetUp(t)
-	defer webTearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := getContentData(tt.args.req.GetContent(), tt.args.contentType)
+			require.NoError(t, err)
+			request := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader([]byte(data))).DeviceId(tt.args.req.GetResourceId().GetDeviceId()).ResourceHref(tt.args.req.GetResourceId().GetHref()).AuthToken(token).Accept(tt.args.accept).ContentType(tt.args.contentType).Build()
+			trans := http.DefaultTransport.(*http.Transport).Clone()
+			trans.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			c := http.Client{
+				Transport: trans,
+			}
+			resp, err := c.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-	request := map[string]interface{}{
-		"power": 111,
-	}
-	var response interface{}
-
-	CreateResource(t, deviceID, uri.Device+"/oic/d", request, &response, http.StatusForbidden)
-	require.Equal(t, nil, response)
-}
-
-func CreateResource(t *testing.T, deviceID, uri string, request interface{}, response interface{}, statusCode int) {
-	reqData, err := json.Encode(request)
-	require.NoError(t, err)
-
-	getReq := test.NewRequest(http.MethodPost, uri, bytes.NewReader(reqData)).
-		DeviceId(deviceID).AuthToken(oauthTest.GetServiceToken(t)).Build()
-	res := test.HTTPDo(t, getReq)
-	defer res.Body.Close()
-
-	require.Equal(t, statusCode, res.StatusCode)
-	if http.StatusOK == res.StatusCode {
-		b, err := ioutil.ReadAll(res.Body)
-		require.NoError(t, err)
-		err = json.Decode(b, &response)
-		require.NoError(t, err)
+			var got events.ResourceCreated
+			err = Unmarshal(resp.StatusCode, resp.Body, &got)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())
+			} else {
+				require.NoError(t, err)
+				got.EventMetadata = nil
+				got.AuditContext = nil
+				test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
+			}
+		})
 	}
 }

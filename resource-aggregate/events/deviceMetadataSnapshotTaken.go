@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
@@ -14,7 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const eventTypeDeviceMetadataSnapshotTaken = "ocf.cloud.resourceaggregate.events.devicemetadatasnapshottaken"
+const eventTypeDeviceMetadataSnapshotTaken = "devicemetadatasnapshottaken"
 
 func (e *DeviceMetadataSnapshotTaken) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
@@ -45,14 +46,17 @@ func (e *DeviceMetadataSnapshotTaken) IsSnapshot() bool {
 }
 
 func (e *DeviceMetadataSnapshotTaken) Timestamp() time.Time {
-	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
+	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+}
+
+func (e *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTaken) {
+	e.DeviceId = event.GetDeviceId()
+	e.DeviceMetadataUpdated = event.GetDeviceMetadataUpdated()
+	e.UpdatePendings = event.GetUpdatePendings()
+	e.EventMetadata = event.GetEventMetadata()
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
-	if e.DeviceMetadataUpdated.Equal(upd) {
-		return false, nil
-	}
-	e.DeviceId = upd.GetDeviceId()
 	index := -1
 	for i, event := range e.GetUpdatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == upd.GetAuditContext().GetCorrelationId() {
@@ -63,6 +67,10 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	if confirm && index < 0 {
 		return false, status.Errorf(codes.InvalidArgument, "cannot find shadow synchronization status update pending event with correlationId('%v')", upd.GetAuditContext().GetCorrelationId())
 	}
+	if e.DeviceMetadataUpdated.Equal(upd) {
+		return false, nil
+	}
+	e.DeviceId = upd.GetDeviceId()
 	if index >= 0 {
 		e.UpdatePendings = append(e.UpdatePendings[:index], e.UpdatePendings[index+1:]...)
 	}
@@ -205,10 +213,9 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 }
 
 func (e *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
-	e.EventMetadata.Version = version
 	return &DeviceMetadataSnapshotTaken{
 		DeviceId:              e.GetDeviceId(),
-		EventMetadata:         e.GetEventMetadata(),
+		EventMetadata:         MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
 		DeviceMetadataUpdated: e.GetDeviceMetadataUpdated(),
 	}, true
 }

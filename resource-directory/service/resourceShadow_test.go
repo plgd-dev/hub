@@ -12,6 +12,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/resource-directory/service"
@@ -24,9 +25,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestResourceShadow_RetrieveResources(t *testing.T) {
+func TestResourceShadow_GetResources(t *testing.T) {
 	type args struct {
-		req *pb.RetrieveResourcesRequest
+		req *pb.GetResourcesRequest
 	}
 	tests := []struct {
 		name           string
@@ -39,26 +40,21 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 		{
 			name: "list unauthorized device",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{
-					DeviceIdsFilter: []string{Resource0.DeviceId},
+				req: &pb.GetResourcesRequest{
+					DeviceIdFilter: []string{Resource0.DeviceId},
 				},
 			},
-			wantStatusCode: codes.NotFound,
-			wantErr:        true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
 		},
 
 		{
 			name: "filter by resource Id",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{
-					ResourceIdsFilter: []*commands.ResourceId{
-						{
-							DeviceId: Resource1.DeviceId,
-							Href:     Resource1.Href,
-						}, {
-							DeviceId: Resource2.DeviceId,
-							Href:     Resource2.Href,
-						},
+				req: &pb.GetResourcesRequest{
+					ResourceIdFilter: []string{
+						Resource1.ToResourceIDString(),
+						Resource2.ToResourceIDString(),
 					},
 				},
 			},
@@ -69,7 +65,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource1.DeviceId,
 							Href:     Resource1.Href,
 						},
-						Content: &Resource1.Content,
+						Content: Resource1.Content,
 					},
 					Types: Resource1.ResourceTypes,
 				},
@@ -79,7 +75,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource2.DeviceId,
 							Href:     Resource2.Href,
 						},
-						Content: &Resource2.Content,
+						Content: Resource2.Content,
 					},
 					Types: Resource2.ResourceTypes,
 				},
@@ -89,8 +85,8 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 		{
 			name: "filter by device Id",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{
-					DeviceIdsFilter: []string{Resource1.DeviceId},
+				req: &pb.GetResourcesRequest{
+					DeviceIdFilter: []string{Resource1.DeviceId},
 				},
 			},
 			want: map[string]*pb.Resource{
@@ -100,7 +96,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource1.DeviceId,
 							Href:     Resource1.Href,
 						},
-						Content: &Resource1.Content,
+						Content: Resource1.Content,
 					},
 					Types: Resource1.ResourceTypes,
 				},
@@ -110,7 +106,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource3.DeviceId,
 							Href:     Resource3.Href,
 						},
-						Content: &Resource3.Content,
+						Content: Resource3.Content,
 					},
 					Types: Resource3.ResourceTypes,
 				},
@@ -120,7 +116,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 		{
 			name: "filter by type",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{
+				req: &pb.GetResourcesRequest{
 					TypeFilter: []string{Resource2.ResourceTypes[0]},
 				},
 			},
@@ -131,7 +127,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource1.DeviceId,
 							Href:     Resource1.Href,
 						},
-						Content: &Resource1.Content,
+						Content: Resource1.Content,
 					},
 					Types: Resource1.ResourceTypes,
 				},
@@ -141,7 +137,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource2.DeviceId,
 							Href:     Resource2.Href,
 						},
-						Content: &Resource2.Content,
+						Content: Resource2.Content,
 					},
 					Types: Resource2.ResourceTypes,
 				},
@@ -151,9 +147,9 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 		{
 			name: "filter by device Id and type",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{
-					DeviceIdsFilter: []string{Resource1.DeviceId},
-					TypeFilter:      []string{Resource1.ResourceTypes[0]},
+				req: &pb.GetResourcesRequest{
+					DeviceIdFilter: []string{Resource1.DeviceId},
+					TypeFilter:     []string{Resource1.ResourceTypes[0]},
 				},
 			},
 			want: map[string]*pb.Resource{
@@ -163,7 +159,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource1.DeviceId,
 							Href:     Resource1.Href,
 						},
-						Content: &Resource1.Content,
+						Content: Resource1.Content,
 					},
 					Types: Resource1.ResourceTypes,
 				},
@@ -173,7 +169,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 		{
 			name: "list all resources of user",
 			args: args{
-				req: &pb.RetrieveResourcesRequest{},
+				req: &pb.GetResourcesRequest{},
 			},
 			want: map[string]*pb.Resource{
 				Resource1.Href: {
@@ -182,7 +178,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource1.DeviceId,
 							Href:     Resource1.Href,
 						},
-						Content: &Resource1.Content,
+						Content: Resource1.Content,
 					},
 					Types: Resource1.ResourceTypes,
 				},
@@ -192,7 +188,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource2.DeviceId,
 							Href:     Resource2.Href,
 						},
-						Content: &Resource2.Content,
+						Content: Resource2.Content,
 					},
 					Types: Resource2.ResourceTypes,
 				},
@@ -202,7 +198,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 							DeviceId: Resource3.DeviceId,
 							Href:     Resource3.Href,
 						},
-						Content: &Resource3.Content,
+						Content: Resource3.Content,
 					},
 					Types: Resource3.ResourceTypes,
 				},
@@ -213,7 +209,7 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 	require.NoError(t, err)
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	resourceSubscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(pool.Submit))
+	resourceSubscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 
@@ -231,8 +227,8 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fmt.Println(tt.name)
-			var s testGrpcGateway_RetrieveResourcesServer
-			err := rd.RetrieveResources(tt.args.req, &s)
+			var s testGrpcGateway_GetResourcesServer
+			err := rd.GetResources(tt.args.req, &s)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -245,16 +241,16 @@ func TestResourceShadow_RetrieveResources(t *testing.T) {
 	}
 }
 
-type testGrpcGateway_RetrieveResourcesServer struct {
+type testGrpcGateway_GetResourcesServer struct {
 	got map[string]*pb.Resource
 	grpc.ServerStream
 }
 
-func (s *testGrpcGateway_RetrieveResourcesServer) Context() context.Context {
+func (s *testGrpcGateway_GetResourcesServer) Context() context.Context {
 	return context.Background()
 }
 
-func (s *testGrpcGateway_RetrieveResourcesServer) Send(d *pb.Resource) error {
+func (s *testGrpcGateway_GetResourcesServer) Send(d *pb.Resource) error {
 	if s.got == nil {
 		s.got = make(map[string]*pb.Resource)
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	exCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -23,7 +24,7 @@ import (
 func TestRequestHandler_DeleteResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.DeleteResourceRequest
+		req *pb.DeleteResourceRequest
 	}
 	tests := []struct {
 		name        string
@@ -35,22 +36,17 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		{
 			name: "/light/2 - MethodNotAllowed",
 			args: args{
-				req: pb.DeleteResourceRequest{
+				req: &pb.DeleteResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
-			want: &events.ResourceDeleted{
-				ResourceId: commands.NewResourceID(deviceID, "/light/2"),
-				Status:     commands.Status_METHOD_NOT_ALLOWED,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
+			wantErr:     true,
+			wantErrCode: codes.Code(exCodes.MethodNotAllowed),
 		},
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.DeleteResourceRequest{
+				req: &pb.DeleteResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -60,17 +56,12 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				req: pb.DeleteResourceRequest{
+				req: &pb.DeleteResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
-			want: &events.ResourceDeleted{
-				ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
-				Status:     commands.Status_FORBIDDEN,
-				Content: &commands.Content{
-					CoapContentFormat: -1,
-				},
-			},
+			wantErr:     true,
+			wantErrCode: codes.PermissionDenied,
 		},
 	}
 
@@ -86,20 +77,21 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.DeleteResource(ctx, &tt.args.req)
+			got, err := c.DeleteResource(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode, status.Convert(err).Code())
 			} else {
 				require.NoError(t, err)
-				got.EventMetadata = nil
-				got.AuditContext = nil
-				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
+				require.NotEmpty(t, got.GetData())
+				got.GetData().EventMetadata = nil
+				got.GetData().AuditContext = nil
+				test.CheckProtobufs(t, tt.want, got.GetData(), test.RequireToCheckFunc(require.Equal))
 			}
 		})
 	}

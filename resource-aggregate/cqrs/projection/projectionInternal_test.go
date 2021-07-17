@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,7 @@ func TestProjection(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	publisher, err := publisher.New(config.MakePublisherConfig(), logger)
+	publisher, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer publisher.Close()
@@ -61,6 +62,7 @@ func TestProjection(t *testing.T) {
 	subscriber, err := subscriber.New(config.MakeSubscriberConfig(),
 		logger,
 		subscriber.WithGoPool(pool.Submit),
+		subscriber.WithUnmarshaler(utils.Unmarshal),
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, subscriber)

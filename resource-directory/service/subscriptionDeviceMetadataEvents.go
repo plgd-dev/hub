@@ -29,7 +29,7 @@ func (s *subscription) NotifyOfUpdatePendingDeviceMetadata(ctx context.Context, 
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceMetadataUpdatePending{
 			DeviceMetadataUpdatePending: event,
@@ -45,7 +45,7 @@ func (s *subscription) NotifyOfUpdatedDeviceMetadata(ctx context.Context, event 
 		return nil
 	}
 	return s.Send(&pb.Event{
-		Token:          s.Token(),
+		CorrelationId:  s.CorrelationID(),
 		SubscriptionId: s.ID(),
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: event,

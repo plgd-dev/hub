@@ -9,6 +9,7 @@ export OAUTH_KEYS_PATH="/data/oauth/keys"
 export LOGS_PATH="/data/log"
 export MONGO_PATH="/data/db"
 export NGINX_PATH="/data/nginx"
+export JETSTREAM_PATH="/data/jetstream"
 
 export SERVICE_OWNER_CLAIM=${OWNER_CLAIM}
 export DEVICE_OWNER_CLAIM=${OWNER_CLAIM}
@@ -351,6 +352,19 @@ tls: {
   ca_file: "$CA_POOL_CERT_PATH"
 }
 EOF
+# Enable jetstream
+if [ "${JETSTREAM}" = "true" ]; then
+  cat >> /data/nats.config <<EOF
+jetstream: {
+  store_dir: "$JETSTREAM_PATH"
+  // 1GB
+    max_memory_store: 1073741824
+
+  // 10GB
+  max_file_store: 10737418240
+}
+EOF
+fi
 nats-server -c /data/nats.config >$LOGS_PATH/nats-server.log 2>&1 &
 status=$?
 nats_server_pid=$!
@@ -359,6 +373,22 @@ if [ $status -ne 0 ]; then
   sync
   cat $LOGS_PATH/nats-server.log
   exit $status
+fi
+
+# waiting for nats. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if nc -z localhost $NATS_PORT; then
+    break
+  fi
+  echo "Try to reconnect to nats(${NATS_HOST}) $i"
+  sleep 1
+done
+
+if [ "${JETSTREAM}" = "true" ]; then
+  echo "Setup streaming at nats"
+  nats --tlscert="$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_NAME" --tlskey="$DIAL_FILE_CERT_DIR_PATH/$DIAL_FILE_CERT_KEY_NAME" --tlsca="$CA_POOL_CERT_PATH" str add EVENTS --config /configs/jetstream.json
 fi
 
 # mongo
@@ -495,6 +525,7 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.eventStore.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.jetstream = ${JETSTREAM} |
   .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
   .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
@@ -675,11 +706,7 @@ cat /configs/http-gateway.yaml | yq e "\
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.http.tls.useSystemCAPool = true |
   .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
-  .clients.certificateAuthority.enabled = true |
-  .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
+  .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .ui.enabled = true |
   .ui.oauthClient.domain = \"${OAUTH_ENDPOINT}\" |
   .ui.oauthClient.clientID = \"${OAUTH_CLIENT_ID}\" |

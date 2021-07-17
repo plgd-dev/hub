@@ -3,10 +3,11 @@ package events
 import (
 	"time"
 
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"google.golang.org/protobuf/proto"
 )
 
-const eventTypeResourceRetrievePending = "ocf.cloud.resourceaggregate.events.resourceretrievepending"
+const eventTypeResourceRetrievePending = "resourceretrievepending"
 
 func (e *ResourceRetrievePending) Version() uint64 {
 	return e.GetEventMetadata().GetVersion()
@@ -37,5 +38,12 @@ func (e *ResourceRetrievePending) IsSnapshot() bool {
 }
 
 func (e *ResourceRetrievePending) Timestamp() time.Time {
-	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
+	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+}
+
+func (e *ResourceRetrievePending) CopyData(event *ResourceRetrievePending) {
+	e.ResourceId = event.GetResourceId()
+	e.ResourceInterface = event.GetResourceInterface()
+	e.AuditContext = event.GetAuditContext()
+	e.EventMetadata = event.GetEventMetadata()
 }

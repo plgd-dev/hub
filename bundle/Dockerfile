@@ -49,10 +49,15 @@ RUN cd $GOPATH/pkg/mod/github.com/plgd-dev/kit* && go build -ldflags "-linkmode 
 
 #nats
 WORKDIR $root_directory
-RUN curl -L https://github.com/nats-io/nats-server/releases/download/v2.1.9/nats-server-v2.1.9-linux-amd64.zip -o ./nats-server.zip
+RUN curl -L https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-amd64.zip -o ./nats-server.zip
 RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server
+
+RUN curl -L https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-amd64.zip -o ./nats.zip
+RUN mkdir -p ./nats
+RUN unzip ./nats.zip -d ./nats
+RUN cp ./nats/*/nats /go/bin/nats
 
 FROM node:12 AS build-web
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/http-gateway/web /web
@@ -60,7 +65,7 @@ RUN cd /web && npm install && npm run build
 
 FROM ubuntu:20.04 as service
 RUN apt update
-RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates
+RUN apt install -y wget gnupg iproute2 systemctl openssl nginx ca-certificates netcat
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
@@ -82,6 +87,8 @@ COPY --from=build /go/bin/certificate-authority /usr/local/bin/certificate-autho
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/certificate-authority/config.yaml /configs/certificate-authority.yaml
 COPY --from=build /go/bin/certificate-generator /usr/local/bin/certificate-generator
 COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
+COPY --from=build /go/bin/nats /usr/local/bin/nats
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/bundle/jetstream.json /configs/jetstream.json
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY --from=build-web /web/build /usr/local/var/www
@@ -91,6 +98,7 @@ COPY nginx /nginx
 # global
 ENV FQDN="localhost"
 ENV LOG_DEBUG=false
+ENV JETSTREAM=false
 
 # coap-gateway
 ENV COAP_GATEWAY_UNSECURE_PORT=5683

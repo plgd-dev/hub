@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,7 +17,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
-const eventTypeResourceLinksSnapshotTaken = "ocf.cloud.resourceaggregate.events.resourcelinkssnapshottaken"
+const eventTypeResourceLinksSnapshotTaken = "resourcelinkssnapshottaken"
 
 func (e *ResourceLinksSnapshotTaken) AggregateID() string {
 	return commands.MakeLinksResourceUUID(e.GetDeviceId())
@@ -47,7 +48,13 @@ func (e *ResourceLinksSnapshotTaken) IsSnapshot() bool {
 }
 
 func (e *ResourceLinksSnapshotTaken) Timestamp() time.Time {
-	return time.Unix(0, e.GetEventMetadata().GetTimestamp())
+	return pkgTime.Unix(0, e.GetEventMetadata().GetTimestamp())
+}
+
+func (e *ResourceLinksSnapshotTaken) CopyData(event *ResourceLinksSnapshotTaken) {
+	e.Resources = event.GetResources()
+	e.DeviceId = event.GetDeviceId()
+	e.EventMetadata = event.GetEventMetadata()
 }
 
 // Examine published resources by the ResourceLinksPublished, compare it with cached resources and
@@ -213,8 +220,6 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 }
 
 func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {
-	e.EventMetadata.Version = version
-
 	// we need to return as new event because `e` is a pointer,
 	// otherwise ResourceLinksSnapshotTaken.Handle override version/resource of snapshot which will be fired to eventbus
 	resources := make(map[string]*commands.Resource)
@@ -223,7 +228,7 @@ func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 	}
 	return &ResourceLinksSnapshotTaken{
 		DeviceId:      e.GetDeviceId(),
-		EventMetadata: e.GetEventMetadata(),
+		EventMetadata: MakeEventMeta(e.GetEventMetadata().GetConnectionId(), e.GetEventMetadata().GetSequence(), version),
 		Resources:     resources,
 	}, true
 }

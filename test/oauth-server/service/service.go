@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
 	"go.uber.org/zap"
 )
-
-func logError(err error) { log.Error(err) }
 
 //Server handle HTTP request
 type Service struct {

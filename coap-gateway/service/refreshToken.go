@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
@@ -37,6 +38,14 @@ func validateRefreshToken(req CoapRefreshTokenReq) error {
 	return nil
 }
 
+func validUntilToExpiresIn(v int64) int64 {
+	if v == 0 {
+		return -1
+	}
+	validUntil := time.Unix(0, v)
+	return int64(validUntil.Sub(time.Now()).Seconds())
+}
+
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	var refreshToken CoapRefreshTokenReq
 	err := cbor.ReadFrom(req.Body, &refreshToken)
@@ -64,7 +73,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	coapResp := CoapRefreshTokenResp{
 		RefreshToken: resp.RefreshToken,
 		AccessToken:  resp.AccessToken,
-		ExpiresIn:    resp.ExpiresIn,
+		ExpiresIn:    validUntilToExpiresIn(resp.GetValidUntil()),
 	}
 
 	accept := coapconv.GetAccept(req.Options)

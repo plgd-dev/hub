@@ -21,7 +21,7 @@ import (
 )
 
 func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, error) {
-	deviceIdsFilter := make([]string, 0, 4)
+	deviceIdFilter := make([]string, 0, 4)
 	typeFilter := make([]string, 0, 4)
 
 	queries, _ := msg.Options.Queries()
@@ -31,7 +31,7 @@ func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, 
 			return nil, fmt.Errorf("cannot parse list devices query: %w", err)
 		}
 		if di := values.Get("di"); di != "" {
-			deviceIdsFilter = append(deviceIdsFilter, di)
+			deviceIdFilter = append(deviceIdFilter, di)
 		}
 
 		if rt := values.Get("rt"); rt != "" {
@@ -40,8 +40,8 @@ func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, 
 	}
 
 	return &pbGRPC.GetResourceLinksRequest{
-		DeviceIdsFilter: deviceIdsFilter,
-		TypeFilter:      typeFilter,
+		DeviceIdFilter: deviceIdFilter,
+		TypeFilter:     typeFilter,
 	}, nil
 }
 

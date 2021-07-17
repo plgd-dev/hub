@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -16,8 +17,8 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 )
 
 const eventCName = "events"
@@ -103,8 +104,8 @@ func (s *EventStore) AddCloseFunc(f func()) {
 }
 
 func New(ctx context.Context, config Config, logger *zap.Logger, opts ...Option) (*EventStore, error) {
-	config.marshalerFunc = utils.Marshal
-	config.unmarshalerFunc = utils.Unmarshal
+	config.marshalerFunc = json.Marshal
+	config.unmarshalerFunc = json.Unmarshal
 	for _, o := range opts {
 		o.apply(&config)
 	}
@@ -131,6 +132,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger, opts ...Option)
 }
 
 // NewEventStore creates a new EventStore.
+//lint:ignore U1000 Lets keep this for now
 func newEventStore(ctx context.Context, host, dbPrefix string, colPrefix string, batchSize int, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc, opts ...*options.ClientOptions) (*EventStore, error) {
 	newOpts := []*options.ClientOptions{options.Client().ApplyURI("mongodb://" + host)}
 	newOpts = append(newOpts, opts...)
@@ -213,12 +215,6 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 	}
 
 	return s, nil
-}
-
-type index struct {
-	Key  map[string]int
-	NS   string
-	Name string
 }
 
 func (s *EventStore) ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
@@ -334,7 +330,7 @@ func makeDBEvents(events []eventstore.Event, marshaler MarshalerFunc) ([]bson.M,
 			dataKey:       raw,
 			eventTypeKey:  event.EventType(),
 			isSnapshotKey: event.IsSnapshot(),
-			timestampKey:  event.Timestamp().UnixNano(),
+			timestampKey:  pkgTime.UnixNano(event.Timestamp()),
 		})
 	}
 	return dbEvents, nil

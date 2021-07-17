@@ -39,19 +39,6 @@ func (p *deviceMetadataProjection) Clone() *deviceMetadataProjection {
 	}
 }
 
-func appendOrdered(a []*events.DeviceMetadataUpdated, ev *events.DeviceMetadataUpdated) []*events.DeviceMetadataUpdated {
-	if ev == nil {
-		return a
-	}
-	if len(a) == 0 {
-		return []*events.DeviceMetadataUpdated{ev}
-	}
-	if a[0].GetEventMetadata().GetVersion() < ev.GetEventMetadata().GetVersion() {
-		return append(a, ev)
-	}
-	return append([]*events.DeviceMetadataUpdated{ev}, a...)
-}
-
 func (p *deviceMetadataProjection) InitialNotifyOfDeviceMetadata(ctx context.Context, subscription *subscription) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()

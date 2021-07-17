@@ -29,7 +29,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
 
 	cfg.ExposedCloudConfiguration.CAPool = config.CA_POOL
-	cfg.ExposedCloudConfiguration.TokenURL = "AccessTokenUrl"
+	cfg.ExposedCloudConfiguration.TokenURL = "https://localhost/oauth/token?client_id=test&audience=test"
 	cfg.ExposedCloudConfiguration.AuthorizationURL = "AuthCodeUrl"
 	cfg.ExposedCloudConfiguration.CloudID = "cloudID"
 	cfg.ExposedCloudConfiguration.CloudAuthorizationProvider = "plgd"

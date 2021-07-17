@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
@@ -45,7 +44,7 @@ func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.
 func PublishEvents(ctx context.Context, publisher eventbus.Publisher, deviceId, resourceId string, events []eventbus.Event) error {
 	var errors []error
 	for _, event := range events {
-		err := publisher.Publish(ctx, utils.GetTopics(deviceId), deviceId, resourceId, event)
+		err := publisher.Publish(ctx, utils.GetPublishSubject(event), deviceId, resourceId, event)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -62,7 +61,7 @@ func logAndReturnError(err error) error {
 }
 
 func (r RequestHandler) validateAccessToDevice(ctx context.Context, deviceID string) (string, error) {
-	owner, err := grpc.OwnerFromMD(ctx)
+	owner, err := kitNetGrpc.OwnerFromMD(ctx)
 	if err != nil {
 		return "", kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid owner: %v", err)
 	}

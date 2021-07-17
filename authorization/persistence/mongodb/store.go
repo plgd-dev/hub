@@ -17,12 +17,12 @@ import (
 const userDevicesCName = "userdevices"
 
 var userDeviceQueryIndex = bson.D{
-	{ownerKey, 1},
-	{deviceIDKey, 1},
+	{Key: ownerKey, Value: 1},
+	{Key: deviceIDKey, Value: 1},
 }
 
 var userDevicesQueryIndex = bson.D{
-	{ownerKey, 1},
+	{Key: ownerKey, Value: 1},
 }
 
 // Store implements an Store for MongoDB.
@@ -83,7 +83,6 @@ func NewStoreWithSession(ctx context.Context, client *mongo.Client, dbPrefix str
 func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
 	for _, keys := range indexes {
 		opts := &options.IndexOptions{}
-		opts.SetBackground(false)
 		index := mongo.IndexModel{
 			Keys:    keys,
 			Options: opts,

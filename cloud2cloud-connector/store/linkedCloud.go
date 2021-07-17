@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
+	"time"
 
 	"github.com/plgd-dev/cloud/authorization/oauth"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
@@ -31,10 +32,7 @@ func (e Events) NeedPullDevices() bool {
 	for _, v := range e.Devices {
 		delete(set, v)
 	}
-	if len(set) != 0 {
-		return true
-	}
-	return false
+	return len(set) != 0
 }
 
 func (e Events) NeedPullDevice() bool {
@@ -53,10 +51,7 @@ func (e Events) NeedPullResources() bool {
 	for _, v := range e.Resource {
 		delete(set, v)
 	}
-	if len(set) != 0 {
-		return true
-	}
-	return false
+	return len(set) != 0
 }
 
 type Endpoint struct {
@@ -91,7 +86,12 @@ func (l LinkedCloud) GetHTTPClient() *http.Client {
 		RootCAs:            pool,
 		InsecureSkipVerify: l.Endpoint.InsecureSkipVerify,
 	}
+	t.MaxIdleConns = 1
+	t.MaxConnsPerHost = 1
+	t.MaxIdleConnsPerHost = 1
+	t.IdleConnTimeout = time.Second
 	return &http.Client{
+		Timeout:   time.Second * 10,
 		Transport: t,
 	}
 }

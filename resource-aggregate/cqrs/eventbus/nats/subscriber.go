@@ -7,6 +7,7 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -18,11 +19,9 @@ type UnmarshalerFunc = func(b []byte, v interface{}) error
 
 // Subscriber implements a eventbus.Subscriber interface.
 type Subscriber struct {
-	clientId        string
 	dataUnmarshaler UnmarshalerFunc
 	errFunc         eventbus.ErrFunc
 	conn            *nats.Conn
-	url             string
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
 }
 
@@ -172,7 +171,7 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 
 	i := iter{
 		hasNext: true,
-		e:       e,
+		e:       &e,
 		dataUnmarshaler: func(v interface{}) error {
 			return o.dataUnmarshaler(e.Data, v)
 		},
@@ -216,7 +215,7 @@ func (e *eventUnmarshaler) Unmarshal(v interface{}) error {
 }
 
 type iter struct {
-	e               pb.Event
+	e               *pb.Event
 	dataUnmarshaler func(v interface{}) error
 	hasNext         bool
 }
@@ -230,7 +229,7 @@ func (i *iter) Next(ctx context.Context) (eventbus.EventUnmarshaler, bool) {
 			eventType:       i.e.GetEventType(),
 			groupID:         i.e.GetGroupId(),
 			isSnapshot:      i.e.GetIsSnapshot(),
-			timestamp:       time.Unix(0, i.e.GetTimestamp()),
+			timestamp:       pkgTime.Unix(0, i.e.GetTimestamp()),
 			dataUnmarshaler: i.dataUnmarshaler,
 		}, true
 	}

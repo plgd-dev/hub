@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 )
@@ -226,23 +225,6 @@ func cleanUpToSnapshot(ctx context.Context, aggregate *aggregate, events []event
 				} else {
 					log.Info("unable to remove events up to snapshot(%v) with version('%v') of deviceId('%v')", event.EventType(), event.Version(), event.GroupID())
 				}
-			}
-			break
-		}
-	}
-}
-
-func insertMaintenanceDbRecord(ctx context.Context, aggregate *aggregate, events []eventstore.Event) {
-	for _, event := range events {
-		if ru, ok := event.(*raEvents.ResourceStateSnapshotTaken); ok {
-			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateID(), Version: ru.Version()}); err != nil {
-				log.Info("unable to insert the snapshot information into the maintenance db")
-			}
-			break
-		}
-		if ru, ok := event.(*raEvents.ResourceLinksSnapshotTaken); ok {
-			if err := aggregate.eventstore.Insert(ctx, maintenance.Task{AggregateID: ru.AggregateID(), Version: ru.Version()}); err != nil {
-				log.Info("unable to insert the snapshot information into the maintenance db")
 			}
 			break
 		}

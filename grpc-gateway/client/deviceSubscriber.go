@@ -165,7 +165,7 @@ func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc)
 	ctx, cancel := getContext()
 	defer cancel()
 
-	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetTopics(deviceID), &s)
+	observer, err := resourceSubscriber.Subscribe(ctx, uuid.String(), utils.GetDeviceSubject(deviceID), &s)
 	if err != nil {
 		return nil, err
 	}
@@ -288,8 +288,8 @@ func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceS
 func (s *DeviceSubscriber) coldStartPendingCommandsLocked(h *DeviceSubscriptionHandlers) error {
 	ctx, cancel := s.getContext()
 	defer cancel()
-	resp, err := s.rdClient.RetrievePendingCommands(ctx, &pbGRPC.RetrievePendingCommandsRequest{
-		DeviceIdsFilter: []string{s.deviceID},
+	resp, err := s.rdClient.GetPendingCommands(ctx, &pbGRPC.GetPendingCommandsRequest{
+		DeviceIdFilter: []string{s.deviceID},
 	})
 	iter := grpc.NewIterator(resp, err)
 	for {

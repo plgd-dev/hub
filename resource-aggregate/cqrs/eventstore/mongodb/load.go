@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 )
 
@@ -24,6 +25,7 @@ type iterator struct {
 	events      bson.A
 	groupID     string
 	aggregateID string
+	err         error
 }
 
 func NewIterator(iter *mongo.Cursor, queryResolver *queryResolver, dataUnmarshaler UnmarshalerFunc, logDebugfFunc LogDebugfFunc) *iterator {
@@ -35,27 +37,61 @@ func NewIterator(iter *mongo.Cursor, queryResolver *queryResolver, dataUnmarshal
 	}
 }
 
+func (i *iterator) parseDocument() bool {
+	var doc bson.M
+	i.err = i.iter.Decode(&doc)
+	if i.err != nil {
+		return false
+	}
+	var ok bool
+	i.events, ok = doc[eventsKey].(bson.A)
+	if !ok {
+		i.err = fmt.Errorf("invalid data, %v is not an array", eventsKey)
+		return false
+	}
+	if len(i.events) == 0 {
+		i.err = fmt.Errorf("invalid data, no events found")
+		return false
+	}
+	i.groupID, ok = doc[groupIDKey].(string)
+	if !ok {
+		i.err = fmt.Errorf("invalid data, %v is not a string", groupIDKey)
+		return false
+	}
+	i.aggregateID, ok = doc[aggregateIDKey].(string)
+	if !ok {
+		i.err = fmt.Errorf("invalid data, %v is not a string", aggregateIDKey)
+		return false
+	}
+
+	return true
+}
+
 func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
+	var ev bson.M
+	var version int64
+	var ok bool
 	for {
 		if i.idx >= len(i.events) {
 			if !i.iter.Next(ctx) {
 				return nil, false
 			}
 			i.idx = 0
-			var doc bson.M
-			err := i.iter.Decode(&doc)
-			if err != nil {
+			ok = i.parseDocument()
+			if !ok {
 				return nil, false
 			}
-			i.events = doc[eventsKey].(bson.A)
-			if len(i.events) == 0 {
-				return nil, false
-			}
-			i.groupID = doc[groupIDKey].(string)
-			i.aggregateID = doc[aggregateIDKey].(string)
 		}
-		ev := i.events[i.idx].(bson.M)
-		version := ev[versionKey].(int64)
+		ev, ok = i.events[i.idx].(bson.M)
+		if !ok {
+			i.err = fmt.Errorf("invalid data, event %v is not a BSON document", i.idx)
+			return nil, false
+		}
+		version, ok = ev[versionKey].(int64)
+		if !ok {
+			i.err = fmt.Errorf("invalid data, '%v' of event %v is not an int64", versionKey, i.idx)
+			return nil, false
+		}
 		if i.queryResolver == nil {
 			break
 		}
@@ -65,27 +101,45 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		}
 		break
 	}
-	ev := i.events[i.idx].(bson.M)
+	eventType, ok := ev[eventTypeKey].(string)
+	if !ok {
+		i.err = fmt.Errorf("invalid data, '%v' of event %v is not a string", eventTypeKey, i.idx)
+		return nil, false
+	}
+	isSnapshot, ok := ev[isSnapshotKey].(bool)
+	if !ok {
+		i.err = fmt.Errorf("invalid data, '%v' of event %v is not a bool", isSnapshotKey, i.idx)
+		return nil, false
+	}
+	timestamp, ok := ev[timestampKey].(int64)
+	if !ok {
+		i.err = fmt.Errorf("invalid data, '%v' of event %v is not an int64", timestampKey, i.idx)
+		return nil, false
+	}
+	i.logDebugfFunc("mongodb.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v, Timestamp %v",
+		i.groupID, i.aggregateID, version, eventType, timestamp)
+	data, ok := ev[dataKey].(primitive.Binary)
+	if !ok {
+		i.err = fmt.Errorf("invalid data, '%v' of event %v is not a BSON binary data", dataKey, i.idx)
+		return nil, false
+	}
 	i.idx++
-	version := ev[versionKey].(int64)
-	eventType := ev[eventTypeKey].(string)
-	isSnapshot := ev[isSnapshotKey].(bool)
-	timestamp := ev[timestampKey].(int64)
-	i.logDebugfFunc("mongodb.iterator.next: GroupId %v: AggregateId %v: Version %v, EvenType %v", i.groupID, i.aggregateID, version, eventType)
-	data := ev[dataKey].(primitive.Binary)
 	return eventstore.NewLoadedEvent(
 		uint64(version),
 		eventType,
 		i.aggregateID,
 		i.groupID,
 		isSnapshot,
-		time.Unix(0, timestamp),
+		pkgTime.Unix(0, timestamp),
 		func(v interface{}) error {
 			return i.dataUnmarshaler(data.Data, v)
 		}), true
 }
 
 func (i *iterator) Err() error {
+	if i.err != nil {
+		return i.err
+	}
 	return i.iter.Err()
 }
 

@@ -12,6 +12,7 @@ import (
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	"github.com/stretchr/testify/assert"
@@ -21,10 +22,6 @@ import (
 )
 
 func newConnectionStatus(v commands.ConnectionStatus_Status) *commands.ConnectionStatus_Status {
-	return &v
-}
-
-func newBool(v bool) *bool {
 	return &v
 }
 
@@ -75,19 +72,19 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 	fmt.Printf("%v\n", cfg.String())
 
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 
@@ -177,19 +174,19 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	ctx := kitNetGrpc.CtxWithIncomingOwner(kitNetGrpc.CtxWithIncomingToken(context.Background(), "b"), user0)
 	logger, err := log.NewLogger(config.Log)
 	require.NoError(t, err)
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
 	assert.NoError(t, err)
-	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer publisher.Close()
 

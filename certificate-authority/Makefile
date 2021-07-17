@@ -2,6 +2,8 @@ SHELL = /bin/bash
 SERVICE_NAME = $(notdir $(CURDIR))
 LATEST_TAG ?= vnext
 VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
+GOPATH ?= $(shell go env GOPATH)
+WORKING_DIRECTORY := $(shell pwd)
 
 default: build
 
@@ -24,8 +26,8 @@ push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
-	protoc -I=. -I=${GOPATH}/src --go_out=${GOPATH}/src $(shell pwd)/pb/cert.proto
-	protoc -I=. -I=${GOPATH}/src --go-grpc_out=${GOPATH}/src $(shell pwd)/pb/service.proto
+	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/cert.proto
+	protoc -I=. -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
 
 .PHONY: build-servicecontainer build push proto/generate
 

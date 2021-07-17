@@ -1,91 +1,51 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 
-	"github.com/gofrs/uuid"
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-
+	"github.com/google/go-querystring/query"
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"google.golang.org/grpc/codes"
 )
+
+func (requestHandler *RequestHandler) getResourceFromShadow(w http.ResponseWriter, r *http.Request, resourceID string) {
+	type Options struct {
+		ResourceIdFilter []string `url:"resourceIdFilter"`
+	}
+	opt := Options{
+		ResourceIdFilter: []string{resourceID},
+	}
+	v, err := query.Values(opt)
+	if err != nil {
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
+		return
+	}
+	r.URL.Path = uri.Resources
+	r.URL.RawQuery = v.Encode()
+	rec := httptest.NewRecorder()
+	requestHandler.mux.ServeHTTP(rec, r)
+
+	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from shadow: %v", resourceID, err))
+	}, streamResponseKey)
+}
 
 func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
-	Href := parseHref(vars[uri.HrefKey])
-	interfaceQueryKeyString := r.URL.Query().Get(uri.InterfaceQueryKey)
-	skipShadowQueryString := r.URL.Query().Get(uri.SkipShadowQueryKey)
-	var getResourceFromDevice bool
-	if interfaceQueryKeyString != "" {
-		getResourceFromDevice = true
-	}
-	if skipShadowQueryString == "1" || strings.ToLower(skipShadowQueryString) == "true" {
-		getResourceFromDevice = true
-	}
-	if getResourceFromDevice {
-		requestHandler.getResourceFromDevice(w, r, interfaceQueryKeyString)
+	deviceID := vars[uri.DeviceIDKey]
+	resourceHref := vars[uri.ResourceHrefKey]
+	resourceID := commands.NewResourceID(deviceID, resourceHref).ToString()
+	shadow := r.URL.Query().Get(uri.ShadowQueryKey)
+	resourceInterface := r.URL.Query().Get(uri.ResourceInterfaceQueryKey)
+	if (shadow == "" || strings.ToLower(shadow) == "true") && resourceInterface == "" {
+		requestHandler.getResourceFromShadow(w, r, resourceID)
 		return
 	}
 
-	ctx := requestHandler.makeCtx(r)
-	var rep interface{}
-	err := requestHandler.client.GetResource(ctx, vars[uri.DeviceIDKey], Href, &rep)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot get resource: %w", err))
-		return
-	}
-
-	jsonResponseWriter(w, rep)
-}
-
-func (requestHandler *RequestHandler) getResourceFromDevice(w http.ResponseWriter, r *http.Request, resourceInterface string) {
-	correlationUUID, err := uuid.NewV4()
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot create correlationID: %w", err))
-		return
-	}
-
-	vars := mux.Vars(r)
-	ctx := requestHandler.makeCtx(r)
-
-	retrieveCommand := &commands.RetrieveResourceRequest{
-		ResourceId:    commands.NewResourceID(vars[uri.DeviceIDKey], vars[uri.HrefKey]),
-		CorrelationId: correlationUUID.String(),
-
-		ResourceInterface: resourceInterface,
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: r.RemoteAddr,
-		},
-	}
-
-	retrievedEvent, err := requestHandler.raClient.SyncRetrieveResource(ctx, retrieveCommand)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot retrieve resource: %w", err))
-		return
-	}
-	content, err := commands.EventContentToContent(retrievedEvent)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot retrieve resource: %w", err))
-		return
-	}
-
-	var respBody interface{}
-	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, content.GetContentType(), content.GetData(), &respBody)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot decode response of retrieved resource: %w", err))
-		return
-	}
-
-	jsonResponseWriter(w, respBody)
-}
-
-func parseHref(linkQueryHref string) string {
-	if idx := strings.IndexByte(linkQueryHref, '?'); idx >= 0 {
-		return linkQueryHref[:idx]
-	}
-	return linkQueryHref
+	requestHandler.mux.ServeHTTP(w, r)
 }

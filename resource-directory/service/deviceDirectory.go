@@ -72,10 +72,9 @@ func decodeContent(content *commands.Content, v interface{}) error {
 }
 
 type Device struct {
-	ID                string
-	Resource          *schema.Device
-	IsOnline          bool
-	cloudStateUpdated bool
+	ID       string
+	Resource *schema.Device
+	Metadata *pb.Device_Metadata
 }
 
 func (d Device) ToProto() *pb.Device {
@@ -85,7 +84,7 @@ func (d Device) ToProto() *pb.Device {
 			Id: d.ID,
 		}
 	}
-	r.IsOnline = d.IsOnline
+	r.Metadata = d.Metadata
 	return r
 }
 
@@ -136,8 +135,12 @@ func filterDevicesByUserFilters(resources map[string]map[string]*Resource, devic
 		if !ok {
 			continue
 		}
-		device.IsOnline = deviceMetadata.GetDeviceMetadataUpdated().GetStatus().IsOnline()
-		if hasMatchingStatus(device.IsOnline, req.StatusFilter) {
+		if hasMatchingStatus(deviceMetadata.GetDeviceMetadataUpdated().GetStatus().IsOnline(), req.StatusFilter) {
+			device.Metadata = &pb.Device_Metadata{
+				Status:                deviceMetadata.GetDeviceMetadataUpdated().GetStatus(),
+				ShadowSynchronization: deviceMetadata.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+			}
+
 			devices = append(devices, device)
 		}
 	}
@@ -162,17 +165,18 @@ func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set 
 
 // GetDevices provides list state of devices.
 func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) (err error) {
-	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdsFilter)
+	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdFilter)
 	if len(deviceIDs) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("DeviceDirectory.GetDevices.filterDevices returns empty deviceIDs")
+		return nil
 	}
 
-	resourceIdsFilter := make([]*commands.ResourceId, 0, 64)
+	resourceIdFilter := make([]*commands.ResourceId, 0, 64)
 	for deviceID := range deviceIDs {
-		resourceIdsFilter = append(resourceIdsFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
+		resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(deviceID, "/oic/d"), commands.NewResourceID(deviceID, commands.StatusHref))
 	}
 
-	resources, err := dd.projection.GetResourcesWithLinks(srv.Context(), resourceIdsFilter, nil)
+	resources, err := dd.projection.GetResourcesWithLinks(srv.Context(), resourceIdFilter, nil)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot get resources by device ids: %v", err)
 	}
@@ -188,7 +192,8 @@ func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGate
 	}
 
 	if len(devices) == 0 {
-		return status.Errorf(codes.NotFound, "not found")
+		log.Debug("DeviceDirectory.GetDevices.filterDevicesByUserFilters returns empty devices")
+		return nil
 	}
 
 	for _, device := range devices {

@@ -101,7 +101,7 @@ func NewSDKClient() (*local.Client, error) {
 	client, err := local.NewClientFromConfig(&cfg, &testSetupSecureClient{
 		mfgCA:   mfgCA,
 		mfgCert: mfgCert,
-		ca:      append(identityTrustedCACert),
+		ca:      identityTrustedCACert,
 	}, func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
 		return signer.NewIdentityCertificateSigner(caCert, caKey, validNotBefore, validNotAfter)
 	}, func(err error) { fmt.Print(err) },

@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
@@ -52,7 +53,7 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logger *zap.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc closeFunc
 
-	resourceSubscriber, err := subscriber.New(config.Eventbus.NATS, logger, subscriber.WithGoPool(goroutinePoolGo))
+	resourceSubscriber, err := subscriber.New(config.Eventbus.NATS, logger, subscriber.WithGoPool(goroutinePoolGo), subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)

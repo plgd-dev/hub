@@ -1,64 +1,146 @@
 package service_test
 
 import (
+	"context"
 	"crypto/tls"
+	"fmt"
+	"io"
 	"net/http"
 	"testing"
+	"time"
 
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	cloudTest "github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
-	"github.com/plgd-dev/kit/codec/json"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"context"
-
-	"github.com/plgd-dev/cloud/http-gateway/test"
+	"github.com/google/go-querystring/query"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/stretchr/testify/require"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
-func TestGetDevices(t *testing.T) {
-	deviceID := cloudTest.MustFindDeviceByName(cloudTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), test.TestTimeout)
+func TestRequestHandler_GetDevices(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	type args struct {
+		req *pb.GetDevicesRequest
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+		want    []*pb.Device
+	}{
+		{
+			name: "all devices",
+			args: args{
+				req: &pb.GetDevicesRequest{},
+			},
+			want: []*pb.Device{
+				{
+					Types:      []string{"oic.d.cloudDevice", "oic.wk.d"},
+					Interfaces: []string{"oic.if.r", "oic.if.baseline"},
+					Id:         deviceID,
+					Name:       test.TestDeviceName,
+					Metadata: &pb.Device_Metadata{
+						Status: &commands.ConnectionStatus{
+							Value: commands.ConnectionStatus_ONLINE,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "offline devices",
+			args: args{
+				req: &pb.GetDevicesRequest{
+					StatusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_OFFLINE},
+				},
+			},
+			want: []*pb.Device{},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
-	tearDown := cloudTest.SetUp(ctx, t)
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+
+	shutdownHttp := httpgwTest.SetUp(t)
+	defer shutdownHttp()
+
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: cloudTest.GetRootCertificatePool(t),
+		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
-	deviceID, shutdownDevSim := cloudTest.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, cloudTest.GetAllBackendResourceLinks())
+
+	log.Setup(log.Config{Debug: true})
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
-	webTearDown := test.SetUp(t)
-	defer webTearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			type Options struct {
+				TypeFilter     []string                      `url:"typeFilter,omitempty"`
+				StatusFilter   []pb.GetDevicesRequest_Status `url:"status,omitempty"`
+				DeviceIdFilter []string                      `url:"deviceIdFilter,omitempty"`
+			}
+			opt := Options{
+				TypeFilter:     tt.args.req.TypeFilter,
+				StatusFilter:   tt.args.req.StatusFilter,
+				DeviceIdFilter: tt.args.req.DeviceIdFilter,
+			}
+			v, err := query.Values(opt)
+			require.NoError(t, err)
+			url := fmt.Sprintf("https://%v/"+uri.Devices+"/", testCfg.HTTP_GW_HOST)
+			val := v.Encode()
+			if val != "" {
+				url = url + "?" + val
+			}
 
-	var response []interface{}
-	getDevices(t, &response)
+			request, err := http.NewRequest(http.MethodGet, url, nil)
+			require.NoError(t, err)
+			request.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+			trans := http.DefaultTransport.(*http.Transport).Clone()
+			trans.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			c := http.Client{
+				Transport: trans,
+			}
+			resp, err := c.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-	require.Len(t, response, 1)
-	exp := test.GetDeviceRepresentation(deviceID, cloudTest.TestDeviceName)
-	delete(exp.(map[interface{}]interface{}), "links")
-	require.Equal(t, exp, test.CleanUpDeviceRepresentation(response[0]))
-}
-
-func getDevices(t *testing.T, response interface{}) {
-	req := test.NewRequest(http.MethodGet, uri.Devices, nil).AuthToken(oauthTest.GetServiceToken(t)).Build()
-	req.Header.Set("Request-Timeout", "1")
-
-	res := test.HTTPDo(t, req)
-	defer res.Body.Close()
-
-	require.Equal(t, http.StatusOK, res.StatusCode)
-	err := json.ReadFrom(res.Body, response)
-	require.NoError(t, err)
+			devices := make([]*pb.Device, 0, 1)
+			for {
+				var dev pb.Device
+				err = Unmarshal(resp.StatusCode, resp.Body, &dev)
+				if err == io.EOF {
+					break
+				}
+				if tt.wantErr {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				dev.ProtocolIndependentId = ""
+				dev.Metadata.Status.ValidUntil = 0
+				devices = append(devices, &dev)
+			}
+			test.CheckProtobufs(t, tt.want, devices, test.RequireToCheckFunc(require.Equal))
+		})
+	}
 }

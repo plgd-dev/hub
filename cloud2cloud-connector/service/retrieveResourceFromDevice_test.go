@@ -23,10 +23,10 @@ import (
 	"github.com/plgd-dev/kit/codec/cbor"
 )
 
-func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Events) {
+func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		req pb.RetrieveResourceFromDeviceRequest
+		req *pb.GetResourceFromDeviceRequest
 	}
 	tests := []struct {
 		name            string
@@ -38,7 +38,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 		{
 			name: "valid /light/2",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
 				},
 			},
@@ -48,7 +48,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 		{
 			name: "valid /oic/d",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 				},
 			},
@@ -58,7 +58,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 		{
 			name: "invalid Href",
 			args: args{
-				req: pb.RetrieveResourceFromDeviceRequest{
+				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
 				},
 			},
@@ -82,14 +82,14 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := c.RetrieveResourceFromDevice(ctx, &tt.args.req)
+			got, err := c.GetResourceFromDevice(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tt.wantContentType, got.GetContent().GetContentType())
+				assert.Equal(t, tt.wantContentType, got.GetData().GetContent().GetContentType())
 				var d map[string]interface{}
-				err := cbor.Decode(got.GetContent().GetData(), &d)
+				err := cbor.Decode(got.GetData().GetContent().GetData(), &d)
 				require.NoError(t, err)
 				delete(d, "piid")
 				assert.Equal(t, tt.want, d)
@@ -98,7 +98,7 @@ func testRequestHandler_RetrieveResourceFromDevice(t *testing.T, events store.Ev
 	}
 }
 
-func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
+func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 	type args struct {
 		events store.Events
 	}
@@ -148,7 +148,7 @@ func TestRequestHandler_RetrieveResourceFromDevice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testRequestHandler_RetrieveResourceFromDevice(t, tt.args.events)
+			testRequestHandler_GetResourceFromDevice(t, tt.args.events)
 		})
 	}
 }

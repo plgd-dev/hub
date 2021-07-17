@@ -39,7 +39,7 @@ func (c *Client) getResource(
 	codec Codec,
 	response interface{}) error {
 	var resp *pb.Resource
-	err := c.RetrieveResourcesByResourceIDs(ctx, MakeResourceIDCallback(deviceID, href, func(v *pb.Resource) {
+	err := c.GetResourcesByResourceIDs(ctx, MakeResourceIDCallback(deviceID, href, func(v *pb.Resource) {
 		resp = v
 	}))
 	if err != nil {

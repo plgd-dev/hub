@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -13,5 +11,5 @@ func (s *Service) HandleJWKs(ctx *fasthttp.RequestCtx) {
 		p.HandleJWKs(ctx)
 		return
 	}
-	setErrorResponse(&ctx.Response, fasthttp.StatusNotFound, fmt.Sprintf("not found"))
+	setErrorResponse(&ctx.Response, fasthttp.StatusNotFound, "not found")
 }

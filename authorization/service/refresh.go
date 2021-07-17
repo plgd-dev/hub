@@ -45,7 +45,7 @@ func (s *Service) RefreshToken(ctx context.Context, request *pb.RefreshTokenRequ
 		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot refresh token: err"))
 	}
 
-	expiresIn, ok := ExpiresIn(token.Expiry)
+	validUntil, ok := ValidUntil(token.Expiry)
 	if !ok {
 		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: expired access token"))
 	}
@@ -53,6 +53,6 @@ func (s *Service) RefreshToken(ctx context.Context, request *pb.RefreshTokenRequ
 	return &pb.RefreshTokenResponse{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
-		ExpiresIn:    expiresIn,
+		ValidUntil:   validUntil,
 	}, nil
 }

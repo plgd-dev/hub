@@ -22,7 +22,7 @@ import (
 func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	type args struct {
-		sub pb.SubscribeToEvents
+		sub *pb.SubscribeToEvents
 	}
 	tests := []struct {
 		name string
@@ -32,8 +32,8 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		{
 			name: "invalid - invalid type subscription",
 			args: args{
-				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+				sub: &pb.SubscribeToEvents{
+					CorrelationId: "testToken",
 				},
 			},
 
@@ -46,7 +46,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_SubscriptionCanceled_{
@@ -54,18 +54,18 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							Reason: "not supported",
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
 		{
 			name: "devices subscription - registered",
 			args: args{
-				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+				sub: &pb.SubscribeToEvents{
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
 						},
@@ -81,7 +81,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceRegistered_{
@@ -89,18 +89,18 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							DeviceIds: []string{deviceID},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
 		{
 			name: "devices subscription - online",
 			args: args{
-				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+				sub: &pb.SubscribeToEvents{
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
 						},
@@ -116,7 +116,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				{
 					Type: &pb.Event_DeviceMetadataUpdated{
@@ -127,19 +127,19 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 			},
 		},
 		{
 			name: "device subscription - published",
 			args: args{
-				sub: pb.SubscribeToEvents{
-					Token: "testToken",
+				sub: &pb.SubscribeToEvents{
+					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							DeviceIdsFilter: []string{deviceID},
-							EventsFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+							DeviceIdFilter: []string{deviceID},
+							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
 						},
@@ -155,7 +155,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					Token: "testToken",
+					CorrelationId: "testToken",
 				},
 				test.ResourceLinkToPublishEvent(deviceID, "testToken", test.GetAllBackendResourceLinks()),
 			},
@@ -175,7 +175,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -207,7 +207,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					test.CheckProtobufs(t, tt.want, ev, test.RequireToCheckFunc(require.Contains))
 				}
 			}()
-			err = client.Send(&tt.args.sub)
+			err = client.Send(tt.args.sub)
 			require.NoError(t, err)
 			wg.Wait()
 		})

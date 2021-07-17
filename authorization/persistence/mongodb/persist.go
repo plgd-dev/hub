@@ -3,9 +3,9 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -180,7 +180,7 @@ func (i *iterator) Next(s *persistence.AuthorizedDevice) bool {
 	s.DeviceID = sub[deviceIDKey].(string)
 	s.Owner = sub[ownerKey].(string)
 	s.AccessToken = sub[accessTokenKey].(string)
-	s.Expiry = time.Unix(sub[expiryKey].(int64), 0)
+	s.Expiry = pkgTime.Unix(0, sub[expiryKey].(int64))
 	s.RefreshToken = sub[refreshTokenKey].(string)
 
 	return true
@@ -205,7 +205,7 @@ func makeRecord(d *persistence.AuthorizedDevice) bson.M {
 		ownerKey:        d.Owner,
 		accessTokenKey:  d.AccessToken,
 		refreshTokenKey: d.RefreshToken,
-		expiryKey:       d.Expiry.Unix(),
+		expiryKey:       pkgTime.UnixNano(d.Expiry),
 	}
 }
 

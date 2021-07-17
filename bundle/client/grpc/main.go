@@ -24,6 +24,7 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 )
 
+/*
 func toJSON(v interface{}) string {
 	d, err := json.Encode(v)
 	if err != nil {
@@ -33,41 +34,40 @@ func toJSON(v interface{}) string {
 }
 
 func decodePayload(resp *pbGW.Content) {
-	/*
-		buf := fmt.Sprint("-------------------COAP-RESPONSE------------------\n",
-			"Code: ", resp.Code(), "\n",
-			"ContentFormat: ", resp.Options(coap.ContentFormat), "\n",
-			"Payload: ",
-		)
-		if mediaType, ok := resp.Option(coap.ContentFormat).(coap.MediaType); ok {
-			switch mediaType {
-			case coap.AppCBOR, coap.AppOcfCbor:
-				var m interface{}
-				err := codec.NewDecoderBytes(resp.Payload(), new(codec.CborHandle)).Decode(&m)
-				bw := new(bytes.Buffer)
-				h := new(codec.JsonHandle)
-				h.BasicHandle.Canonical = true
-				err = codec.NewEncoder(bw, h).Encode(m)
-				if err != nil {
-					buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", m, err)
-				} else {
-					buf = buf + fmt.Sprintf("%v\n", bw.String())
-				}
-			case coap.TextPlain:
-				buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-			case coap.AppJSON:
-				buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-			case coap.AppXML:
-				buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
-			default:
-				buf = buf + fmt.Sprintf("%v\n", resp.Payload())
+	buf := fmt.Sprint("-------------------COAP-RESPONSE------------------\n",
+		"Code: ", resp.Code(), "\n",
+		"ContentFormat: ", resp.Options(coap.ContentFormat), "\n",
+		"Payload: ",
+	)
+	if mediaType, ok := resp.Option(coap.ContentFormat).(coap.MediaType); ok {
+		switch mediaType {
+		case coap.AppCBOR, coap.AppOcfCbor:
+			var m interface{}
+			err := codec.NewDecoderBytes(resp.Payload(), new(codec.CborHandle)).Decode(&m)
+			bw := new(bytes.Buffer)
+			h := new(codec.JsonHandle)
+			h.BasicHandle.Canonical = true
+			err = codec.NewEncoder(bw, h).Encode(m)
+			if err != nil {
+				buf = buf + fmt.Sprintf("Cannot encode %v to JSON: %v", m, err)
+			} else {
+				buf = buf + fmt.Sprintf("%v\n", bw.String())
 			}
-		} else {
+		case coap.TextPlain:
+			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
+		case coap.AppJSON:
+			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
+		case coap.AppXML:
+			buf = buf + fmt.Sprintf("%v\n", string(resp.Payload()))
+		default:
 			buf = buf + fmt.Sprintf("%v\n", resp.Payload())
 		}
-		log.Printf(buf)
-	*/
+	} else {
+		buf = buf + fmt.Sprintf("%v\n", resp.Payload())
+	}
+	log.Printf(buf)
 }
+*/
 
 func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	reqBody := map[string]string{
@@ -148,10 +148,7 @@ func main() {
 	switch {
 	case *delete:
 		resp, err := ocfGW.DeleteResource(ctx, &pbGW.DeleteResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			},
+			ResourceId: commands.NewResourceID(*deviceID, *href),
 		})
 		if err != nil {
 			log.Fatalf("cannot delete resource: %v", err)
@@ -167,10 +164,7 @@ func main() {
 			log.Fatalf("cannot read data for update resource: %v", err)
 		}
 		resp, err := ocfGW.UpdateResource(ctx, &pbGW.UpdateResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			},
+			ResourceId: commands.NewResourceID(*deviceID, *href),
 			Content: &pbGW.Content{
 				ContentType: message.MediaType(*contentFormat).String(),
 				Data:        data,
@@ -190,10 +184,7 @@ func main() {
 			log.Fatalf("cannot read data for create resource: %v", err)
 		}
 		resp, err := ocfGW.CreateResource(ctx, &pbGW.CreateResourceRequest{
-			ResourceId: &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			},
+			ResourceId: commands.NewResourceID(*deviceID, *href),
 			Content: &pbGW.Content{
 				ContentType: message.MediaType(*contentFormat).String(),
 				Data:        data,
@@ -239,20 +230,17 @@ func main() {
 		}
 		fmt.Println(string(d))
 	case *get:
-		var deviceIdsFilter []string
+		var deviceIdFilter []string
 		if *deviceID != "" {
-			deviceIdsFilter = append(deviceIdsFilter, *deviceID)
+			deviceIdFilter = append(deviceIdFilter, *deviceID)
 		}
-		var resourceIdsFilter []*commands.ResourceId
+		var resourceIdFilter []string
 		if *href != "" {
-			resourceIdsFilter = append(resourceIdsFilter, &commands.ResourceId{
-				DeviceId: *deviceID,
-				Href:     *href,
-			})
+			resourceIdFilter = append(resourceIdFilter, commands.NewResourceID(*deviceID, *href).ToString())
 		}
-		getClient, err := ocfGW.RetrieveResources(ctx, &pbGW.RetrieveResourcesRequest{
-			ResourceIdsFilter: resourceIdsFilter,
-			DeviceIdsFilter:   deviceIdsFilter,
+		getClient, err := ocfGW.GetResources(ctx, &pbGW.GetResourcesRequest{
+			ResourceIdFilter: resourceIdFilter,
+			DeviceIdFilter:   deviceIdFilter,
 		})
 		if err != nil {
 			log.Fatalf("cannot retrieve values: %v", err)

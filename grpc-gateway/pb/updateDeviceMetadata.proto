@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ocf.cloud.grpcgateway.pb;
+
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
+
+option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+
+message UpdateDeviceMetadataRequest{
+    enum ShadowSynchronization {
+      DISABLED = 0;
+      ENABLED = 1;
+    }
+    string device_id = 1;
+    ShadowSynchronization shadow_synchronization = 2;
+}
+
+message UpdateDeviceMetadataResponse{
+  ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated data = 1;
+}

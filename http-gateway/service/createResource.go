@@ -1,72 +1,31 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/gofrs/uuid"
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
-
 	"github.com/gorilla/mux"
+	"github.com/plgd-dev/cloud/http-gateway/uri"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 func (requestHandler *RequestHandler) createResource(w http.ResponseWriter, r *http.Request) {
-	correlationUUID, err := uuid.NewV4()
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot create correlationID: %w", err))
-		return
-	}
-
-	var body interface{}
-	if err := json.ReadFrom(r.Body, &body); err != nil {
-		writeError(w, fmt.Errorf("invalid json body: %w", err))
-		return
-	}
-
 	vars := mux.Vars(r)
-	ctx := requestHandler.makeCtx(r)
+	deviceID := vars[uri.DeviceIDKey]
+	href := vars[uri.ResourceHrefKey]
 
-	data, err := cbor.Encode(body)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot encode to cbor: %w", err))
+	contentType := r.Header.Get(uri.ContentTypeHeaderKey)
+	if contentType == uri.ApplicationProtoJsonContentType {
+		requestHandler.mux.ServeHTTP(w, r)
 		return
 	}
 
-	createCommand := &commands.CreateResourceRequest{
-		ResourceId:    commands.NewResourceID(vars[uri.DeviceIDKey], vars[uri.HrefKey]),
-		CorrelationId: correlationUUID.String(),
-		Content: &commands.Content{
-			Data:              data,
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: -1,
-		},
-		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: r.RemoteAddr,
-		},
-	}
-
-	createdEvent, err := requestHandler.raClient.SyncCreateResource(ctx, createCommand)
+	newBody, err := createContentBody(r.Body)
 	if err != nil {
-		writeError(w, fmt.Errorf("cannot create resource: %w", err))
-		return
-	}
-	content, err := commands.EventContentToContent(createdEvent)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot create resource: %w", err))
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot create resource('%v%v'): %v", deviceID, href, err))
 		return
 	}
 
-	var respBody interface{}
-	err = client.DecodeContentWithCodec(client.GeneralMessageCodec{}, content.GetContentType(), content.GetData(), &respBody)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot decode response of created resource: %w", err))
-		return
-	}
-
-	jsonResponseWriter(w, respBody)
+	r.Body = newBody
+	requestHandler.mux.ServeHTTP(w, r)
 }

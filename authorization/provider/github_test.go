@@ -54,7 +54,7 @@ func TestSignUpGitHubProvider(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("TestAccessToken", token.AccessToken)
 	assert.Equal("TestRefreshToken", token.RefreshToken)
-	expiresIn := int(token.Expiry.Sub(time.Now()).Seconds())
+	expiresIn := int(time.Until(token.Expiry).Seconds())
 	assert.True(3595 < expiresIn && expiresIn <= 3600)
 	assert.Equal("42", token.Owner)
 }
@@ -159,7 +159,7 @@ const validAccessToken = `{
 `
 
 // https://developer.github.com/v3/users/
-const validUserID = `{ 
-	"id": 42 
+const validUserID = `{
+	"id": 42
 }
 `

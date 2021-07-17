@@ -18,8 +18,12 @@ func (req *DeleteResourceRequest) ToRACommand(ctx context.Context) (*commands.De
 	if ok {
 		connectionID = peer.Addr.String()
 	}
+	href := req.GetResourceId().GetHref()
+	if len(href) > 0 && href[0] != '/' {
+		href = "/" + href
+	}
 	return &commands.DeleteResourceRequest{
-		ResourceId:    req.GetResourceId(),
+		ResourceId:    commands.NewResourceID(req.GetResourceId().GetDeviceId(), href),
 		CorrelationId: correlationUUID.String(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,

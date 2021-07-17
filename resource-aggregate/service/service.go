@@ -25,6 +25,7 @@ import (
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"google.golang.org/grpc"
 )
 
@@ -35,20 +36,17 @@ type EventStore interface {
 
 //Service handle GRPC request
 type Service struct {
-	server             *server.Server
-	cfg                Config
-	handler            *RequestHandler
-	sigs               chan os.Signal
-	authConn           *grpc.ClientConn
-	userDevicesManager *clientAS.UserDevicesManager
+	server  *server.Server
+	handler *RequestHandler
+	sigs    chan os.Signal
 }
 
 func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
-	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger)
+	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger)
+	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	if err != nil {
 		eventstore.Close(ctx)
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)

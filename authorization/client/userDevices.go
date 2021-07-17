@@ -164,7 +164,7 @@ func (d *UserDevicesManager) release(userID string) *kitSync.RefCounter {
 	if !ok {
 		return nil
 	}
-	if 1 == u.Count() {
+	if u.Count() == 1 {
 		delete(d.users, userID)
 	}
 	return u
@@ -322,10 +322,7 @@ func (u *userDevices) isExpired(now time.Time) bool {
 		return false
 	}
 	defer u.lock.Release(1)
-	if u.validTo.Sub(now) <= 0 {
-		return true
-	}
-	return false
+	return u.validTo.Sub(now) <= 0
 }
 
 func (u *userDevices) getDevices() map[string]bool {
@@ -342,16 +339,6 @@ func (u *userDevices) isUserDevice(deviceID string) bool {
 	u.lock.Acquire(context.Background(), 1)
 	defer u.lock.Release(1)
 	return u.devices[deviceID]
-}
-
-func (u *userDevices) setDevices(deviceIDs []string) {
-	devices := make(map[string]bool)
-	for _, deviceID := range deviceIDs {
-		devices[deviceID] = true
-	}
-	u.lock.Acquire(context.Background(), 1)
-	defer u.lock.Release(1)
-	u.devices = devices
 }
 
 func (u *userDevices) updateDevices(deviceIDs []string, validTo time.Time) (added, removed, allDevices map[string]bool) {
