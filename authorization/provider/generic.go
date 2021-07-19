@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
@@ -80,7 +81,11 @@ func (p *GenericProvider) Exchange(ctx context.Context, authorizationProvider, a
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body stream: %v")
+		}
+	}()
 
 	var profile map[string]interface{}
 	if err = json.NewDecoder(resp.Body).Decode(&profile); err != nil {
@@ -118,7 +123,11 @@ func (p *GenericProvider) Refresh(ctx context.Context, refreshToken string) (*To
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body stream: %v")
+		}
+	}()
 
 	var profile map[string]interface{}
 	if err = json.NewDecoder(resp.Body).Decode(&profile); err != nil {
