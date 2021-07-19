@@ -127,37 +127,38 @@ func TestResourceLinksSnapshotTaken_GetNewPublishedLinks(t *testing.T) {
 	}
 }
 
-func TestResourceLinksSnapshotTaken_CopyData(t *testing.T) {
-	evt := events.ResourceLinksSnapshotTaken{
-		Resources: map[string]*commands.Resource{
-			"res1": {
-				Href:                  "/res1",
-				DeviceId:              "dev1",
-				ResourceTypes:         []string{"type1", "type2"},
-				Interfaces:            []string{"if1", "if2"},
-				Anchor:                "anchor1",
-				Title:                 "Resource1",
-				SupportedContentTypes: []string{"stype1", "stype2"},
-				ValidUntil:            123,
-				Policies: &commands.Policies{
-					BitFlags: 42,
-				},
-				EndpointInformations: []*commands.EndpointInformation{
-					{
-						Endpoint: "ep1",
-						Priority: 1,
-					},
+var testEventResourceLinksSnapshotTaken events.ResourceLinksSnapshotTaken = events.ResourceLinksSnapshotTaken{
+	Resources: map[string]*commands.Resource{
+		"res1": {
+			Href:                  "/res1",
+			DeviceId:              "dev1",
+			ResourceTypes:         []string{"type1", "type2"},
+			Interfaces:            []string{"if1", "if2"},
+			Anchor:                "anchor1",
+			Title:                 "Resource1",
+			SupportedContentTypes: []string{"stype1", "stype2"},
+			ValidUntil:            123,
+			Policies: &commands.Policies{
+				BitFlags: 42,
+			},
+			EndpointInformations: []*commands.EndpointInformation{
+				{
+					Endpoint: "ep1",
+					Priority: 1,
 				},
 			},
 		},
-		DeviceId: "dev1",
-		EventMetadata: &events.EventMetadata{
-			Version:      42,
-			Timestamp:    12345,
-			ConnectionId: "con1",
-			Sequence:     1,
-		},
-	}
+	},
+	DeviceId: "dev1",
+	EventMetadata: &events.EventMetadata{
+		Version:      42,
+		Timestamp:    12345,
+		ConnectionId: "con1",
+		Sequence:     1,
+	},
+}
+
+func TestResourceLinksSnapshotTaken_CopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceLinksSnapshotTaken
 	}
@@ -168,7 +169,7 @@ func TestResourceLinksSnapshotTaken_CopyData(t *testing.T) {
 		{
 			name: "Idetity",
 			args: args{
-				event: &evt,
+				event: &testEventResourceLinksSnapshotTaken,
 			},
 		},
 	}
@@ -177,6 +178,37 @@ func TestResourceLinksSnapshotTaken_CopyData(t *testing.T) {
 			var e events.ResourceLinksSnapshotTaken
 			e.CopyData(tt.args.event)
 			require.True(t, proto.Equal(tt.args.event, &e))
+		})
+	}
+}
+
+func TestResourceLinksSnapshotTaken_CheckInitialized(t *testing.T) {
+	type args struct {
+		event *events.ResourceLinksSnapshotTaken
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Uninitialized",
+			args: args{
+				event: &events.ResourceLinksSnapshotTaken{},
+			},
+			want: false,
+		},
+		{
+			name: "Initialized",
+			args: args{
+				event: &testEventResourceLinksSnapshotTaken,
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, tt.args.event.CheckInitialized())
 		})
 	}
 }

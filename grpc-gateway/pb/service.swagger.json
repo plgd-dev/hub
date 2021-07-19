@@ -391,6 +391,69 @@
         ]
       }
     },
+    "/api/v1/events": {
+      "get": {
+        "summary": "Get events for given combination of device id, resource id and timemstamp",
+        "operationId": "GrpcGateway_GetEvents",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbGetEventsResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbGetEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "resourceIdFilter",
+            "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\".",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "timemstampFilter",
+            "description": "filter events with timestamp \u003e than given value.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Resource Directory"
+        ]
+      }
+    },
     "/api/v1/pending-commands": {
       "get": {
         "summary": "Gets pending commands for devices .",
@@ -1069,6 +1132,26 @@
         }
       }
     },
+    "pbDeviceMetadataSnapshotTaken": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "deviceMetadataUpdated": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        },
+        "updatePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbDeviceMetadataUpdatePending"
+          }
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
     "pbDeviceMetadataUpdatePending": {
       "type": "object",
       "properties": {
@@ -1145,6 +1228,59 @@
         "OFFLINE"
       ],
       "default": "ONLINE"
+    },
+    "pbGetEventsResponse": {
+      "type": "object",
+      "properties": {
+        "resourceLinksPublished": {
+          "$ref": "#/definitions/pbResourceLinksPublished"
+        },
+        "resourceLinksUnpublished": {
+          "$ref": "#/definitions/pbResourceLinksUnpublished"
+        },
+        "resourceLinksSnapshotTaken": {
+          "$ref": "#/definitions/pbResourceLinksSnapshotTaken"
+        },
+        "resourceChanged": {
+          "$ref": "#/definitions/pbResourceChanged"
+        },
+        "resourceUpdatePending": {
+          "$ref": "#/definitions/pbResourceUpdatePending"
+        },
+        "resourceUpdated": {
+          "$ref": "#/definitions/pbResourceUpdated"
+        },
+        "resourceRetrievePending": {
+          "$ref": "#/definitions/pbResourceRetrievePending"
+        },
+        "resourceRetrieved": {
+          "$ref": "#/definitions/pbResourceRetrieved"
+        },
+        "resourceDeletePending": {
+          "$ref": "#/definitions/pbResourceDeletePending"
+        },
+        "resourceDeleted": {
+          "$ref": "#/definitions/pbResourceDeleted"
+        },
+        "resourceCreatePending": {
+          "$ref": "#/definitions/pbResourceCreatePending"
+        },
+        "resourceCreated": {
+          "$ref": "#/definitions/pbResourceCreated"
+        },
+        "resourceStateSnapshotTaken": {
+          "$ref": "#/definitions/pbResourceStateSnapshotTaken"
+        },
+        "deviceMetadataUpdatePending": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdatePending"
+        },
+        "deviceMetadataUpdated": {
+          "$ref": "#/definitions/pbDeviceMetadataUpdated"
+        },
+        "deviceMetadataSnapshotTaken": {
+          "$ref": "#/definitions/pbDeviceMetadataSnapshotTaken"
+        }
+      }
     },
     "pbGetResourceFromDeviceResponse": {
       "type": "object",
@@ -1317,6 +1453,23 @@
       },
       "title": "https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173"
     },
+    "pbResourceLinksSnapshotTaken": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/cloudresourceaggregatepbResource"
+          }
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
     "pbResourceLinksUnpublished": {
       "type": "object",
       "properties": {
@@ -1366,6 +1519,47 @@
         },
         "content": {
           "$ref": "#/definitions/cloudresourceaggregatepbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        }
+      }
+    },
+    "pbResourceStateSnapshotTaken": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "latestResourceChange": {
+          "$ref": "#/definitions/pbResourceChanged"
+        },
+        "resourceCreatePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceCreatePending"
+          }
+        },
+        "resourceRetrievePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceRetrievePending"
+          }
+        },
+        "resourceUpdatePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceUpdatePending"
+          }
+        },
+        "resourceDeletePendings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/pbResourceDeletePending"
+          }
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"

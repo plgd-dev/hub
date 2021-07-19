@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package ocf.cloud.grpcgateway.pb;
+
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
+
+option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+
+message GetEventsRequest {
+	repeated string device_id_filter = 1;
+	// format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
+	repeated string resource_id_filter = 2;
+
+	/*
+	// event filter is to be added in the future
+
+	enum Event {
+		REGISTERED = 0;
+		UNREGISTERED = 1;
+		DEVICE_METADATA_UPDATED = 4;
+		DEVICE_METADATA_UPDATE_PENDING = 5;
+		RESOURCE_PUBLISHED = 6;
+		RESOURCE_UNPUBLISHED = 7;
+		RESOURCE_UPDATE_PENDING = 8;
+		RESOURCE_UPDATED = 9;
+		RESOURCE_RETRIEVE_PENDING = 10;
+		RESOURCE_RETRIEVED = 11;
+		RESOURCE_DELETE_PENDING = 12;
+		RESOURCE_DELETED = 13;
+		RESOURCE_CREATE_PENDING = 14;
+		RESOURCE_CREATED = 15;
+		RESOURCE_CHANGED = 16;
+	}
+	repeated Event event_filter = 3;
+	*/
+
+	// filter events with timestamp > than given value
+	int64 timemstamp_filter = 3;
+}
+
+message GetEventsResponse {
+	oneof type {
+		ocf.cloud.resourceaggregate.pb.ResourceLinksPublished resource_links_published = 1;
+		ocf.cloud.resourceaggregate.pb.ResourceLinksUnpublished resource_links_unpublished = 2;
+		ocf.cloud.resourceaggregate.pb.ResourceLinksSnapshotTaken resource_links_snapshot_taken = 3;
+		ocf.cloud.resourceaggregate.pb.ResourceChanged resource_changed = 4;
+		ocf.cloud.resourceaggregate.pb.ResourceUpdatePending resource_update_pending = 5;
+		ocf.cloud.resourceaggregate.pb.ResourceUpdated resource_updated = 6;
+		ocf.cloud.resourceaggregate.pb.ResourceRetrievePending resource_retrieve_pending = 7;
+		ocf.cloud.resourceaggregate.pb.ResourceRetrieved resource_retrieved = 8;
+		ocf.cloud.resourceaggregate.pb.ResourceDeletePending resource_delete_pending = 9;
+		ocf.cloud.resourceaggregate.pb.ResourceDeleted resource_deleted = 10;
+		ocf.cloud.resourceaggregate.pb.ResourceCreatePending resource_create_pending = 11;
+		ocf.cloud.resourceaggregate.pb.ResourceCreated resource_created = 12;
+		ocf.cloud.resourceaggregate.pb.ResourceStateSnapshotTaken resource_state_snapshot_taken = 13;
+		ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdatePending device_metadata_update_pending = 14;
+		ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated device_metadata_updated = 15;
+		ocf.cloud.resourceaggregate.pb.DeviceMetadataSnapshotTaken device_metadata_snapshot_taken = 16;
+	}
+}

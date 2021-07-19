@@ -50,6 +50,13 @@ func (e *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {
 	e.EventMetadata = event.GetEventMetadata()
 }
 
+func (e *DeviceMetadataUpdated) CheckInitialized() bool {
+	return e.GetDeviceId() != "" &&
+		e.GetStatus() != nil &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil
+}
+
 // Check if two DeviceMetadataUpdated events are equal
 func (e *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 	return e.GetStatus().GetValue() == upd.GetStatus().GetValue() &&

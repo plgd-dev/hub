@@ -69,6 +69,17 @@ func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken)
 	e.EventMetadata = event.GetEventMetadata()
 }
 
+func (e *ResourceStateSnapshotTaken) CheckInitialized() bool {
+	return e.GetResourceId() != nil &&
+		e.GetLatestResourceChange() != nil &&
+		e.GetResourceCreatePendings() != nil &&
+		e.GetResourceRetrievePendings() != nil &&
+		e.GetResourceUpdatePendings() != nil &&
+		e.GetResourceDeletePendings() != nil &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil
+}
+
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
 	for _, event := range e.GetResourceCreatePendings() {
 		if event.GetAuditContext().GetCorrelationId() == createPending.GetAuditContext().GetCorrelationId() {

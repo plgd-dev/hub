@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/kit/strings"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 /// Get array of unique aggregateId values
-func getEventsAggregateIdFilter(queries []eventstore.GetEventsQuery) bson.A {
+func getEventsAggregateIdFilter(groupID string, queries []eventstore.GetEventsQuery) bson.A {
 	if len(queries) == 0 {
 		return nil
 	}
@@ -19,7 +20,7 @@ func getEventsAggregateIdFilter(queries []eventstore.GetEventsQuery) bson.A {
 	// get unique aggregateIds
 	aggregateIds := make(map[string]struct{})
 	for _, query := range queries {
-		if len(query.AggregateID) != 0 {
+		if query.GroupID == groupID && len(query.AggregateID) != 0 {
 			aggregateIds[query.AggregateID] = struct{}{}
 		}
 	}
@@ -43,19 +44,17 @@ func getEventsFilter(groupID string, queries []eventstore.GetEventsQuery, timest
 		filter = append(filter, bson.E{Key: groupIDKey, Value: groupID})
 	}
 
-	if len(queries) == 0 {
-		return filter
-	}
-
-	aggregateIdFilter := getEventsAggregateIdFilter(queries)
-	if len(aggregateIdFilter) > 0 {
-		// filter documents by aggregateID
-		filter = append(filter, bson.E{
-			Key: aggregateIDKey,
-			Value: bson.M{
-				"$in": aggregateIdFilter,
-			},
-		})
+	if len(queries) > 0 {
+		aggregateIdFilter := getEventsAggregateIdFilter(groupID, queries)
+		if len(aggregateIdFilter) > 0 {
+			// filter documents by aggregateID
+			filter = append(filter, bson.E{
+				Key: aggregateIDKey,
+				Value: bson.M{
+					"$in": aggregateIdFilter,
+				},
+			})
+		}
 	}
 
 	if timestamp > 0 {
@@ -110,17 +109,49 @@ func (s *EventStore) getEvents(ctx context.Context, groupID string, queries []ev
 	return s.loadEventsQuery(ctx, eventHandler, nil, filter, opts)
 }
 
-func getNormalizedGetEventsQuery(queries []eventstore.GetEventsQuery) map[string][]eventstore.GetEventsQuery {
-	normalizedQuery := make(map[string][]eventstore.GetEventsQuery)
-	for _, query := range queries {
-		v, ok := normalizedQuery[query.GroupID]
-		if !ok {
-			v = make([]eventstore.GetEventsQuery, 0, 1)
-		}
-		v = append(v, query)
-		normalizedQuery[query.GroupID] = v
+type resourceIdFilter struct {
+	all         bool
+	resourceIds strings.Set
+}
+
+type deviceIdFilter struct {
+	all       bool
+	deviceIds map[string]resourceIdFilter
+}
+
+func getNormalizedGetEventsFilter(queries []eventstore.GetEventsQuery) deviceIdFilter {
+	filter := deviceIdFilter{
+		all:       false,
+		deviceIds: make(map[string]resourceIdFilter),
 	}
-	return normalizedQuery
+
+	for _, query := range queries {
+		if len(query.GroupID) == 0 && len(query.AggregateID) == 0 {
+			return deviceIdFilter{
+				all: true,
+			}
+		}
+
+		v, ok := filter.deviceIds[query.GroupID]
+		if !ok {
+			v = resourceIdFilter{
+				all:         false,
+				resourceIds: make(strings.Set),
+			}
+		}
+		if v.all {
+			continue
+		}
+
+		if len(query.AggregateID) == 0 {
+			v.all = true
+			v.resourceIds = nil
+		} else {
+			v.resourceIds.Add(query.AggregateID)
+		}
+		filter.deviceIds[query.GroupID] = v
+	}
+	return filter
 }
 
 // Get events from the eventstore.
@@ -134,11 +165,14 @@ func (s *EventStore) GetEvents(ctx context.Context, queries []eventstore.GetEven
 		return fmt.Errorf("not supported")
 	}
 
-	normalizedQuery := getNormalizedGetEventsQuery(queries)
-
+	eventFilter := getNormalizedGetEventsFilter(queries)
+	if eventFilter.all {
+		s.LogDebugfFunc("Query all events")
+		return s.getEvents(ctx, "", nil, timestamp, eventHandler)
+	}
 	var errors []error
-	for groupID, queries := range normalizedQuery {
-		s.LogDebugfFunc("GroupID: %v, #queries: %v", groupID, len(queries))
+	for groupID, filter := range eventFilter.deviceIds {
+		s.LogDebugfFunc("GroupID: %v, all: %v #resourceIds: %v", groupID, filter.all, len(filter.resourceIds))
 		err := s.getEvents(ctx, groupID, queries, timestamp, eventHandler)
 		if err != nil {
 			errors = append(errors, err)
