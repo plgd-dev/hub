@@ -43,6 +43,8 @@ type GrpcGatewayClient interface {
 	GetPendingCommands(ctx context.Context, in *GetPendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_GetPendingCommandsClient, error)
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error)
+	// Get events for given combination of device id, resource id and timemstamp
+	GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (GrpcGateway_GetEventsClient, error)
 }
 
 type grpcGatewayClient struct {
@@ -298,6 +300,38 @@ func (x *grpcGatewayGetDevicesMetadataClient) Recv() (*events.DeviceMetadataUpda
 	return m, nil
 }
 
+func (c *grpcGatewayClient) GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (GrpcGateway_GetEventsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[6], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetEvents", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpcGatewayGetEventsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GrpcGateway_GetEventsClient interface {
+	Recv() (*GetEventsResponse, error)
+	grpc.ClientStream
+}
+
+type grpcGatewayGetEventsClient struct {
+	grpc.ClientStream
+}
+
+func (x *grpcGatewayGetEventsClient) Recv() (*GetEventsResponse, error) {
+	m := new(GetEventsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GrpcGatewayServer is the server API for GrpcGateway service.
 // All implementations must embed UnimplementedGrpcGatewayServer
 // for forward compatibility
@@ -326,6 +360,8 @@ type GrpcGatewayServer interface {
 	GetPendingCommands(*GetPendingCommandsRequest, GrpcGateway_GetPendingCommandsServer) error
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error
+	// Get events for given combination of device id, resource id and timemstamp
+	GetEvents(*GetEventsRequest, GrpcGateway_GetEventsServer) error
 	mustEmbedUnimplementedGrpcGatewayServer()
 }
 
@@ -368,6 +404,9 @@ func (UnimplementedGrpcGatewayServer) GetPendingCommands(*GetPendingCommandsRequ
 }
 func (UnimplementedGrpcGatewayServer) GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetDevicesMetadata not implemented")
+}
+func (UnimplementedGrpcGatewayServer) GetEvents(*GetEventsRequest, GrpcGateway_GetEventsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
 }
 func (UnimplementedGrpcGatewayServer) mustEmbedUnimplementedGrpcGatewayServer() {}
 
@@ -621,6 +660,27 @@ func (x *grpcGatewayGetDevicesMetadataServer) Send(m *events.DeviceMetadataUpdat
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GrpcGateway_GetEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetEventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GrpcGatewayServer).GetEvents(m, &grpcGatewayGetEventsServer{stream})
+}
+
+type GrpcGateway_GetEventsServer interface {
+	Send(*GetEventsResponse) error
+	grpc.ServerStream
+}
+
+type grpcGatewayGetEventsServer struct {
+	grpc.ServerStream
+}
+
+func (x *grpcGatewayGetEventsServer) Send(m *GetEventsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GrpcGateway_ServiceDesc is the grpc.ServiceDesc for GrpcGateway service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -683,6 +743,11 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetDevicesMetadata",
 			Handler:       _GrpcGateway_GetDevicesMetadata_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetEvents",
+			Handler:       _GrpcGateway_GetEvents_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -43,6 +43,7 @@ type RequestHandler struct {
 	authServiceClient pbAS.AuthorizationServiceClient
 
 	resourceProjection            *Projection
+	eventStore                    eventstore.EventStore
 	subscriptions                 *Subscriptions
 	updateNotificationContainer   *notification.UpdateNotificationContainer
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer
@@ -147,6 +148,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 	h := NewRequestHandler(
 		authServiceClient,
 		resourceProjection,
+		eventstore,
 		subscriptions,
 		updateNotificationContainer,
 		retrieveNotificationContainer,
@@ -162,6 +164,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 func NewRequestHandler(
 	authServiceClient pbAS.AuthorizationServiceClient,
 	resourceProjection *Projection,
+	eventstore eventstore.EventStore,
 	subscriptions *Subscriptions,
 	updateNotificationContainer *notification.UpdateNotificationContainer,
 	retrieveNotificationContainer *notification.RetrieveNotificationContainer,
@@ -173,6 +176,7 @@ func NewRequestHandler(
 	return &RequestHandler{
 		authServiceClient:             authServiceClient,
 		resourceProjection:            resourceProjection,
+		eventStore:                    eventstore,
 		subscriptions:                 subscriptions,
 		updateNotificationContainer:   updateNotificationContainer,
 		retrieveNotificationContainer: retrieveNotificationContainer,

@@ -56,6 +56,13 @@ func (e *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTake
 	e.EventMetadata = event.GetEventMetadata()
 }
 
+func (e *DeviceMetadataSnapshotTaken) CheckInitialized() bool {
+	return e.GetDeviceId() != "" &&
+		e.GetDeviceMetadataUpdated() != nil &&
+		e.GetUpdatePendings() != nil &&
+		e.GetEventMetadata() != nil
+}
+
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Context, upd *DeviceMetadataUpdated, confirm bool) (bool, error) {
 	index := -1
 	for i, event := range e.GetUpdatePendings() {

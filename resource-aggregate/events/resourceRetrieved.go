@@ -4,6 +4,7 @@ import (
 	"time"
 
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
+	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -47,4 +48,12 @@ func (e *ResourceRetrieved) CopyData(event *ResourceRetrieved) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 	e.Status = event.GetStatus()
+}
+
+func (e *ResourceRetrieved) CheckInitialized() bool {
+	return e.GetResourceId() != nil &&
+		e.GetContent() != nil &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil &&
+		e.GetStatus() != commands.Status(0)
 }

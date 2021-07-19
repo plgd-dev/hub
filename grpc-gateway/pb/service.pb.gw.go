@@ -701,6 +701,34 @@ func request_GrpcGateway_GetDevicesMetadata_0(ctx context.Context, marshaler run
 
 }
 
+var (
+	filter_GrpcGateway_GetEvents_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_GrpcGateway_GetEvents_0(ctx context.Context, marshaler runtime.Marshaler, client GrpcGatewayClient, req *http.Request, pathParams map[string]string) (GrpcGateway_GetEventsClient, runtime.ServerMetadata, error) {
+	var protoReq GetEventsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_GrpcGateway_GetEvents_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.GetEvents(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 // RegisterGrpcGatewayHandlerServer registers the http handlers for service GrpcGateway to "mux".
 // UnaryRPC     :call GrpcGatewayServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -881,6 +909,13 @@ func RegisterGrpcGatewayHandlerServer(ctx context.Context, mux *runtime.ServeMux
 	})
 
 	mux.Handle("GET", pattern_GrpcGateway_GetDevicesMetadata_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
+	})
+
+	mux.Handle("GET", pattern_GrpcGateway_GetEvents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1168,6 +1203,26 @@ func RegisterGrpcGatewayHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+	mux.Handle("GET", pattern_GrpcGateway_GetEvents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetEvents", runtime.WithHTTPPathPattern("/api/v1/events"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_GrpcGateway_GetEvents_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_GrpcGateway_GetEvents_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -1195,6 +1250,8 @@ var (
 	pattern_GrpcGateway_GetPendingCommands_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "pending-commands"}, ""))
 
 	pattern_GrpcGateway_GetDevicesMetadata_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "devices-metadata"}, ""))
+
+	pattern_GrpcGateway_GetEvents_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "events"}, ""))
 )
 
 var (
@@ -1221,4 +1278,6 @@ var (
 	forward_GrpcGateway_GetPendingCommands_0 = runtime.ForwardResponseStream
 
 	forward_GrpcGateway_GetDevicesMetadata_0 = runtime.ForwardResponseStream
+
+	forward_GrpcGateway_GetEvents_0 = runtime.ForwardResponseStream
 )

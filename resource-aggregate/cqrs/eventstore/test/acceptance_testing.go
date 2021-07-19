@@ -133,7 +133,9 @@ func (eh *mockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) er
 		e.aggregateID = eu.AggregateID()
 		e.groupID = eu.GroupID()
 		e.isSnapshot = eu.IsSnapshot()
-		e.timestamp = eu.Timestamp().UnixNano()
+		if !eu.Timestamp().IsZero() {
+			e.timestamp = eu.Timestamp().UnixNano()
+		}
 		eh.SetElement(eu.GroupID(), eu.AggregateID(), e)
 	}
 	return nil

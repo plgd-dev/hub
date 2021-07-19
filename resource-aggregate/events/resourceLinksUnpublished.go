@@ -48,3 +48,10 @@ func (e *ResourceLinksUnpublished) CopyData(event *ResourceLinksUnpublished) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 }
+
+func (e *ResourceLinksUnpublished) CheckInitialized() bool {
+	return e.GetHrefs() != nil &&
+		e.GetDeviceId() != "" &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil
+}

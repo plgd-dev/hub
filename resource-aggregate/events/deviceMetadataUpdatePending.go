@@ -48,3 +48,10 @@ func (e *DeviceMetadataUpdatePending) CopyData(event *DeviceMetadataUpdatePendin
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 }
+
+func (e *DeviceMetadataUpdatePending) CheckInitialized() bool {
+	return e.GetDeviceId() != "" &&
+		e.GetUpdatePending() != nil &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil
+}

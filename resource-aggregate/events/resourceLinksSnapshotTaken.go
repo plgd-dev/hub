@@ -57,6 +57,12 @@ func (e *ResourceLinksSnapshotTaken) CopyData(event *ResourceLinksSnapshotTaken)
 	e.EventMetadata = event.GetEventMetadata()
 }
 
+func (e *ResourceLinksSnapshotTaken) CheckInitialized() bool {
+	return e.GetResources() != nil &&
+		e.GetDeviceId() != "" &&
+		e.GetEventMetadata() != nil
+}
+
 // Examine published resources by the ResourceLinksPublished, compare it with cached resources and
 // return array of new or changed resources.
 func (e *ResourceLinksSnapshotTaken) GetNewPublishedLinks(pub *ResourceLinksPublished) []*commands.Resource {
