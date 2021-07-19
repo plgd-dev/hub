@@ -73,8 +73,13 @@ func NewStoreWithSession(ctx context.Context, client *mongo.Client, dbPrefix str
 	subCol := s.client.Database(s.DBName()).Collection(userDevicesCName)
 	err := ensureIndex(ctx, subCol, userDeviceQueryIndex, userDevicesQueryIndex)
 	if err != nil {
-		client.Disconnect(ctx)
-		return nil, fmt.Errorf("cannot ensure index for device subscription: %w", err)
+		var errors []error = []error{
+			fmt.Errorf("cannot ensure index for device subscription: %w", err),
+		}
+		if err = client.Disconnect(ctx); err != nil {
+			errors = append(errors, fmt.Errorf("failed to disconnect mongodb client: %w", err))
+		}
+		return nil, fmt.Errorf("%v", errors)
 	}
 
 	return s, nil

@@ -24,3 +24,15 @@ jobs:
           export PATH=${PATH}:`go env GOPATH`/bin
           go get honnef.co/go/tools/cmd/staticcheck@latest
           staticcheck ./...
+
+      - name: Install and run ineffassign
+        run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
+          go get github.com/gordonklaus/ineffassign@latest
+          ineffassign ./...
+
+      - name: Install and run errcheck
+        run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
+          go get github.com/kisielk/errcheck@latest
+          errcheck ./... || echo "Errcheck detected issues"

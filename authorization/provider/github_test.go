@@ -144,7 +144,9 @@ func makeJSONHandler(statuscode int, body string) func(http.ResponseWriter, *htt
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statuscode)
-		io.WriteString(w, body)
+		if _, err := io.WriteString(w, body); err != nil {
+			log.Errorf("failed to write response body: %w", err)
+		}
 	}
 }
 

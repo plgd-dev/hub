@@ -121,7 +121,10 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		}, nil
 	})))
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 
 	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
@@ -256,7 +259,10 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 		}, nil
 	})))
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 
 	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
@@ -362,7 +368,10 @@ func TestUserDevicesManager_Release(t *testing.T) {
 		}, nil
 	})))
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	}()
 
 	c := pb.NewAuthorizationServiceClient(conn.GRPC())
 
