@@ -62,6 +62,15 @@ var groupIDaggregateIDQueryIndex = bson.D{
 	{Key: isActiveKey, Value: 1},
 }
 
+var groupIDLatestTimestampQueryIndex = bson.D{
+	{Key: groupIDKey, Value: 1},
+	{Key: latestTimestampKey, Value: 1},
+}
+
+var latestTimestampQueryIndex = bson.D{
+	{Key: latestTimestampKey, Value: 1},
+}
+
 type signOperator string
 
 const (
@@ -162,7 +171,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		dbPrefix = "default"
 	}
 
-	if dbPrefix == "" {
+	if colPrefix == "" {
 		colPrefix = "events"
 	}
 
@@ -198,6 +207,8 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		aggregateIDFirstVersionQueryIndex,
 		groupIDQueryIndex,
 		groupIDaggregateIDQueryIndex,
+		groupIDLatestTimestampQueryIndex,
+		latestTimestampQueryIndex,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)
@@ -292,6 +303,25 @@ func (s *EventStore) Clear(ctx context.Context) error {
 		return fmt.Errorf("cannot clear: %w", err)
 	}
 
+	return nil
+}
+
+// Clear documents in collections, but don't drop the database or the collections
+func (s *EventStore) ClearCollections(ctx context.Context) error {
+	cols, err := s.client.Database(s.DBName()).ListCollectionNames(ctx, bson.D{})
+	if err != nil {
+		return fmt.Errorf("failed to obtain collection names: %w", err)
+	}
+	var errors []error
+	for _, col := range cols {
+		if _, err2 := s.client.Database(s.DBName()).Collection(col).DeleteMany(ctx, bson.D{}); err2 != nil {
+			errors = append(errors, fmt.Errorf("failed to clear collection %v: %w", col, err2))
+		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("%v", errors)
+	}
 	return nil
 }
 

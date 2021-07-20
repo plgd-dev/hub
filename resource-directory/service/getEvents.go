@@ -368,7 +368,6 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 		queries = getDeviceQueries(req.DeviceIdFilter, mapUserDeviceIds)
 		queries = append(queries, getResourceQueries(req.ResourceIdFilter, mapUserDeviceIds)...)
 	}
-	// TODO indexes
 
 	err = r.eventStore.GetEvents(srv.Context(), queries, req.TimemstampFilter, &resourceEvent{srv: srv})
 	if err != nil {
