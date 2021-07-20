@@ -177,6 +177,18 @@ func getEvents(fromVersion uint64, num uint64, firstEventSnapshot bool, groupID 
 	return e
 }
 
+type eventsFilter func(eventstore.Event) bool
+
+func filterEvents(events []eventstore.Event, filter eventsFilter) []eventstore.Event {
+	newEvents := make([]eventstore.Event, 0, len(events))
+	for _, v := range events {
+		if filter(v) {
+			newEvents = append(newEvents, v)
+		}
+	}
+	return newEvents
+}
+
 const aggregateID1 = "aggregateID1"
 const aggregateID2 = "aggregateID2"
 const aggregateID3 = "aggregateID3"
@@ -253,6 +265,16 @@ func GetEventsTest(t *testing.T, ctx context.Context, store eventstore.EventStor
 	store.GetEvents(ctx, []eventstore.GetEventsQuery{{}}, timestamp, saveEh)
 	require.NoError(t, err)
 	require.True(t, saveEh.Equals(groupID3Events))
+
+	timestamp = timestamp3 + 2
+	t.Logf("get groupid (%v, %v) events with timestamp > %v", groupID2, groupID3, timestamp)
+	saveEh = NewMockEventHandler()
+	store.GetEvents(ctx, []eventstore.GetEventsQuery{{GroupID: groupID2}, {GroupID: groupID3}}, timestamp, saveEh)
+	events = filterEvents(allEvents, func(e eventstore.Event) bool {
+		return e.Timestamp().UnixNano() > timestamp
+	})
+	require.NoError(t, err)
+	require.True(t, saveEh.Equals(events))
 
 	timestamp = timestamp2 - 1
 	t.Logf("get aggregateid (%v, %v) events with timestamp > %v", aggregateID3, aggregateID4, timestamp)
