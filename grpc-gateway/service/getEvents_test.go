@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
-	"reflect"
 	"testing"
 	"time"
 
@@ -14,62 +13,11 @@ import (
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/cloud/test/pb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
-
-func getWrappedEvent(value *pb.GetEventsResponse) interface{} {
-	if event := value.GetDeviceMetadataSnapshotTaken(); event != nil {
-		return event
-	}
-	if event := value.GetDeviceMetadataUpdatePending(); event != nil {
-		return event
-	}
-	if event := value.GetDeviceMetadataUpdated(); event != nil {
-		return event
-	}
-	if event := value.GetResourceChanged(); event != nil {
-		return event
-	}
-	if event := value.GetResourceCreatePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceCreated(); event != nil {
-		return event
-	}
-	if event := value.GetResourceDeletePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceDeleted(); event != nil {
-		return event
-	}
-	if event := value.GetResourceLinksPublished(); event != nil {
-		return event
-	}
-	if event := value.GetResourceLinksSnapshotTaken(); event != nil {
-		return event
-	}
-	if event := value.GetResourceLinksUnpublished(); event != nil {
-		return event
-	}
-	if event := value.GetResourceRetrievePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceRetrieved(); event != nil {
-		return event
-	}
-	if event := value.GetResourceStateSnapshotTaken(); event != nil {
-		return event
-	}
-	if event := value.GetResourceUpdatePending(); event != nil {
-		return event
-	}
-	if event := value.GetResourceUpdated(); event != nil {
-		return event
-	}
-	return nil
-}
 
 func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context) []interface{} {
 	events := make([]interface{}, 0, len(test.GetAllBackendResourceLinks()))
@@ -82,27 +30,11 @@ func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context
 		if err == io.EOF {
 			break
 		}
-		event := getWrappedEvent(value)
+		event := pbTest.GetWrappedEvent(value)
 		require.NotNil(t, event)
 		events = append(events, event)
 	}
 	return events
-}
-
-func checkGetEventsResponse(t *testing.T, deviceId string, got []*pb.GetEventsResponse) {
-	for _, value := range got {
-		event := getWrappedEvent(value)
-		r := reflect.ValueOf(event)
-		const CheckMethodName = "CheckInitialized"
-		m := r.MethodByName(CheckMethodName)
-		if !m.IsValid() {
-			require.Failf(t, "Invalid type", "Struct %T doesn't have %v method", event, CheckMethodName)
-		}
-		v := m.Call([]reflect.Value{})
-		require.Len(t, v, 1)
-		initialized := v[0].Bool()
-		require.True(t, initialized)
-	}
 }
 
 func TestRequestHandler_GetEvents(t *testing.T) {
@@ -201,7 +133,7 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 			}
 
 			require.Len(t, values, tt.wantLen)
-			checkGetEventsResponse(t, deviceID, values)
+			pbTest.CheckGetEventsResponse(t, deviceID, values)
 		})
 	}
 }
