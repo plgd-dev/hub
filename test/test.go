@@ -231,7 +231,10 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, devic
 	d, links, err := c.GetRefDevice(ctx, deviceID)
 	require.NoError(t, err)
 
-	defer d.Release(ctx)
+	defer func() {
+		err := d.Release(ctx)
+		require.NoError(t, err)
+	}()
 	p, err := d.Provision(ctx, links)
 	require.NoError(t, err)
 	defer func() {
@@ -263,7 +266,10 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, devic
 func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
 	client, err := NewSDKClient()
 	require.NoError(t, err)
-	defer client.Close(ctx)
+	defer func() {
+		err := client.Close(ctx)
+		require.NoError(t, err)
+	}()
 	deviceID, err = client.OwnDevice(ctx, deviceID)
 	require.NoError(t, err)
 
@@ -282,7 +288,8 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		err = client.DisownDevice(ctx, deviceID)
 		require.NoError(t, err)
-		client.Close(ctx)
+		err = client.Close(ctx)
+		require.NoError(t, err)
 		time.Sleep(time.Second * 2)
 	}
 }
@@ -546,7 +553,10 @@ type findDeviceIDByNameHandler struct {
 }
 
 func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, device *core.Device, deviceLinks schema.ResourceLinks) {
-	defer device.Close(ctx)
+	defer func() {
+		err := device.Close(ctx)
+		h.Error(err)
+	}()
 	l, ok := deviceLinks.GetResourceLink("/oic/d")
 	if !ok {
 		return
