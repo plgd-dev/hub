@@ -98,6 +98,14 @@ func (c *requestBuilder) Shadow(v bool) *requestBuilder {
 	return c
 }
 
+func (c *requestBuilder) Timestamp(v time.Time) *requestBuilder {
+	if v.IsZero() {
+		return c
+	}
+	c.AddQuery(uri.TimestampFilterQueryKey, fmt.Sprintf("%v", v.UnixNano()))
+	return c
+}
+
 func (c *requestBuilder) ResourceInterface(v string) *requestBuilder {
 	if v == "" {
 		return c

@@ -99,15 +99,18 @@ func trailSlashSuffix(next http.Handler) http.Handler {
 	})
 }
 
-func splitDevicePath(requestURI, prefix string) []string {
-	p := kitHttp.CanonicalHref(requestURI)
-	p = strings.TrimPrefix(p, prefix) // remove core prefix
+func splitURIPath(requestURI, prefix string) []string {
+	v := kitHttp.CanonicalHref(requestURI)
+	p := strings.TrimPrefix(v, prefix) // remove core prefix
+	if p == v {
+		return nil
+	}
 	p = strings.TrimLeft(p, "/")
 	return strings.Split(p, "/")
 }
 
 func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitDevicePath(r.RequestURI, uri.Devices)
+	paths := splitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
@@ -120,8 +123,10 @@ func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool
 }
 
 func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitDevicePath(r.RequestURI, uri.Devices)
-	if len(paths) > 2 && paths[1] == uri.ResourcesPathKey {
+	paths := splitURIPath(r.RequestURI, uri.Devices)
+	if len(paths) > 2 &&
+		paths[1] == uri.ResourcesPathKey &&
+		!strings.HasPrefix(paths[len(paths)-1], uri.EventsPathKey) {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
@@ -133,13 +138,30 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 func resourceLinksMatcher(r *http.Request, rm *router.RouteMatch) bool {
-	paths := splitDevicePath(r.RequestURI, uri.Devices)
+	paths := splitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 2 && paths[1] == uri.ResourceLinksPathKey {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
 		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:], "/"), "?")[0]
+		return true
+	}
+	return false
+}
+
+func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
+	paths := splitURIPath(r.RequestURI, uri.Devices)
+	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events
+	// /api/v1/devices/{deviceId}/resources/{resourceHref}/events?timestampFilter={timestamp}
+	if len(paths) > 3 &&
+		paths[1] == uri.ResourcesPathKey &&
+		strings.HasPrefix(paths[len(paths)-1], uri.EventsPathKey) {
+		if rm.Vars == nil {
+			rm.Vars = make(map[string]string)
+		}
+		rm.Vars[uri.DeviceIDKey] = paths[0]
+		rm.Vars[uri.ResourceHrefKey] = "/" + strings.Join(paths[2:len(paths)-1], "/")
 		return true
 	}
 	return false
@@ -162,11 +184,13 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.HandleFunc(uri.AliasDeviceResourceLinks, requestHandler.getDeviceResourceLinks).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDeviceResources, requestHandler.getDeviceResources).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevicePendingCommands, requestHandler.getDevicePendingCommands).Methods(http.MethodGet)
+	r.HandleFunc(uri.AliasDeviceEvents, requestHandler.getEvents).Methods(http.MethodGet)
 
 	r.PathPrefix(uri.Devices).Methods(http.MethodPost).MatcherFunc(resourceLinksMatcher).HandlerFunc(requestHandler.createResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.getResourcePendingCommands)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.getResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodPut).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.updateResource)
+	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceEventsMatcher).HandlerFunc(requestHandler.getEvents)
 
 	// register grpc-proxy handler
 	pb.RegisterGrpcGatewayHandlerClient(context.Background(), requestHandler.mux, requestHandler.client.GrpcGatewayClient())
