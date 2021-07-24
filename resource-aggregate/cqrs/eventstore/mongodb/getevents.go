@@ -94,7 +94,7 @@ func getEventsProjection(timestamp int64) bson.M {
 	return projection
 }
 
-func getEventsQueriesToMongoQuery(groupID string, queries []eventstore.GetEventsQuery, timestamp int64) (interface{}, *options.FindOptions) {
+func getEventsQueriesToMongoQuery(groupID string, queries []eventstore.GetEventsQuery, timestamp int64) (bson.D, *options.FindOptions) {
 	filter := getEventsFilter(groupID, queries, timestamp)
 
 	opts := options.Find()
@@ -109,47 +109,47 @@ func (s *EventStore) getEvents(ctx context.Context, groupID string, queries []ev
 	return s.loadEventsQuery(ctx, eventHandler, nil, filter, opts)
 }
 
-type resourceIdFilter struct {
-	all         bool
-	resourceIds strings.Set
+type ResourceIdFilter struct {
+	All         bool
+	ResourceIds strings.Set
 }
 
-type deviceIdFilter struct {
-	all       bool
-	deviceIds map[string]resourceIdFilter
+type DeviceIdFilter struct {
+	All       bool
+	DeviceIds map[string]ResourceIdFilter
 }
 
-func getNormalizedGetEventsFilter(queries []eventstore.GetEventsQuery) deviceIdFilter {
-	filter := deviceIdFilter{
-		all:       false,
-		deviceIds: make(map[string]resourceIdFilter),
+func GetNormalizedGetEventsFilter(queries []eventstore.GetEventsQuery) DeviceIdFilter {
+	filter := DeviceIdFilter{
+		All:       false,
+		DeviceIds: make(map[string]ResourceIdFilter),
 	}
 
 	for _, query := range queries {
 		if len(query.GroupID) == 0 && len(query.AggregateID) == 0 {
-			return deviceIdFilter{
-				all: true,
+			return DeviceIdFilter{
+				All: true,
 			}
 		}
 
-		v, ok := filter.deviceIds[query.GroupID]
+		v, ok := filter.DeviceIds[query.GroupID]
 		if !ok {
-			v = resourceIdFilter{
-				all:         false,
-				resourceIds: make(strings.Set),
+			v = ResourceIdFilter{
+				All:         false,
+				ResourceIds: make(strings.Set),
 			}
 		}
-		if v.all {
+		if v.All {
 			continue
 		}
 
 		if len(query.AggregateID) == 0 {
-			v.all = true
-			v.resourceIds = nil
+			v.All = true
+			v.ResourceIds = nil
 		} else {
-			v.resourceIds.Add(query.AggregateID)
+			v.ResourceIds.Add(query.AggregateID)
 		}
-		filter.deviceIds[query.GroupID] = v
+		filter.DeviceIds[query.GroupID] = v
 	}
 	return filter
 }
@@ -165,14 +165,15 @@ func (s *EventStore) GetEvents(ctx context.Context, queries []eventstore.GetEven
 		return fmt.Errorf("not supported")
 	}
 
-	eventFilter := getNormalizedGetEventsFilter(queries)
-	if eventFilter.all {
+	eventFilter := GetNormalizedGetEventsFilter(queries)
+	if eventFilter.All {
 		s.LogDebugfFunc("Query all events")
 		return s.getEvents(ctx, "", nil, timestamp, eventHandler)
 	}
+
 	var errors []error
-	for groupID, filter := range eventFilter.deviceIds {
-		s.LogDebugfFunc("GroupID: %v, all: %v #resourceIds: %v", groupID, filter.all, len(filter.resourceIds))
+	for groupID, filter := range eventFilter.DeviceIds {
+		s.LogDebugfFunc("GroupID: %v, all: %v #resourceIds: %v", groupID, filter.All, len(filter.ResourceIds))
 		err := s.getEvents(ctx, groupID, queries, timestamp, eventHandler)
 		if err != nil {
 			errors = append(errors, err)

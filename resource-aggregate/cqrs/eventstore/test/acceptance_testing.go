@@ -2,146 +2,12 @@ package test
 
 import (
 	"context"
-	"errors"
-	"reflect"
-	"sort"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/stretchr/testify/require"
 )
-
-type mockEvent struct {
-	VersionI    uint64 `bson:"version"`
-	EventTypeI  string `bson:"eventtype"`
-	isSnapshot  bool   `bson:"issnapshot"`
-	aggregateID string `bson:"aggregateid"`
-	groupID     string `bson:"groupid"`
-	Data        []byte `bson:"data"`
-	timestamp   int64  `bson:"timestamp"`
-}
-
-func (e mockEvent) Version() uint64 {
-	return e.VersionI
-}
-
-func (e mockEvent) EventType() string {
-	return e.EventTypeI
-}
-
-func (e mockEvent) AggregateID() string {
-	return e.aggregateID
-}
-
-func (e mockEvent) GroupID() string {
-	return e.groupID
-}
-
-func (e mockEvent) IsSnapshot() bool {
-	return e.isSnapshot
-}
-
-func (e mockEvent) Timestamp() time.Time {
-	return time.Unix(0, e.timestamp)
-}
-
-type mockEventHandler struct {
-	lock   sync.Mutex
-	events map[string]map[string][]eventstore.Event
-}
-
-func NewMockEventHandler() *mockEventHandler {
-	return &mockEventHandler{events: make(map[string]map[string][]eventstore.Event)}
-}
-
-func (eh *mockEventHandler) SetElement(groupId, aggregateId string, e mockEvent) {
-	var device map[string][]eventstore.Event
-	var ok bool
-
-	eh.lock.Lock()
-	defer eh.lock.Unlock()
-	if device, ok = eh.events[groupId]; !ok {
-		device = make(map[string][]eventstore.Event)
-		eh.events[groupId] = device
-	}
-	device[aggregateId] = append(device[aggregateId], e)
-}
-
-func (eh *mockEventHandler) Contains(event eventstore.Event) bool {
-	device, ok := eh.events[event.GroupID()]
-	if !ok {
-		return false
-	}
-	eventsDB, ok := device[event.AggregateID()]
-	if !ok {
-		return false
-	}
-
-	for _, eventDB := range eventsDB {
-		if reflect.DeepEqual(eventDB, event) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (eh *mockEventHandler) Equals(events []eventstore.Event) bool {
-	eventsMap := make(map[string]map[string][]eventstore.Event)
-	for _, event := range events {
-		device, ok := eventsMap[event.GroupID()]
-		if !ok {
-			device = make(map[string][]eventstore.Event)
-			eventsMap[event.GroupID()] = device
-		}
-		device[event.AggregateID()] = append(device[event.AggregateID()], event)
-	}
-
-	if len(eh.events) != len(eventsMap) {
-		return false
-	}
-
-	// sort slices by version
-	for deviceId, resourceEventsMap := range eventsMap {
-		for resourceId, resources := range resourceEventsMap {
-			sort.Slice(resources, func(i, j int) bool {
-				return resources[i].Version() < resources[j].Version()
-			})
-			eventsMap[deviceId][resourceId] = resources
-		}
-	}
-
-	return reflect.DeepEqual(eh.events, eventsMap)
-}
-
-func (eh *mockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) error {
-	for {
-		eu, ok := iter.Next(ctx)
-		if !ok {
-			break
-		}
-		if eu.EventType() == "" {
-			return errors.New("cannot determine type of event")
-		}
-		var e mockEvent
-		err := eu.Unmarshal(&e)
-		if err != nil {
-			return err
-		}
-		e.aggregateID = eu.AggregateID()
-		e.groupID = eu.GroupID()
-		e.isSnapshot = eu.IsSnapshot()
-		if !eu.Timestamp().IsZero() {
-			e.timestamp = eu.Timestamp().UnixNano()
-		}
-		eh.SetElement(eu.GroupID(), eu.AggregateID(), e)
-	}
-	return nil
-}
-
-func (eh *mockEventHandler) SnapshotEventType() string { return "snapshot" }
 
 // AcceptanceTest is the acceptance test that all implementations of EventStore
 // should pass. It should manually be called from a test case in each
@@ -156,22 +22,22 @@ func (eh *mockEventHandler) SnapshotEventType() string { return "snapshot" }
 
 func getEvents(fromVersion uint64, num uint64, firstEventSnapshot bool, groupID string, aggregateID string, timestamp int64) []eventstore.Event {
 	e := []eventstore.Event{
-		mockEvent{
-			VersionI:    fromVersion,
-			EventTypeI:  "test0",
-			aggregateID: aggregateID,
-			groupID:     groupID,
-			isSnapshot:  firstEventSnapshot,
-			timestamp:   timestamp,
+		MockEvent{
+			VersionI:     fromVersion,
+			EventTypeI:   "test0",
+			AggregateIDI: aggregateID,
+			GroupIDI:     groupID,
+			IsSnapshotI:  firstEventSnapshot,
+			TimestampI:   timestamp,
 		},
 	}
 	for i := uint64(1); i < num; i++ {
-		e = append(e, mockEvent{
-			VersionI:    fromVersion + i,
-			EventTypeI:  "test0",
-			aggregateID: aggregateID,
-			groupID:     groupID,
-			timestamp:   timestamp + int64(i),
+		e = append(e, MockEvent{
+			VersionI:     fromVersion + i,
+			EventTypeI:   "test0",
+			AggregateIDI: aggregateID,
+			GroupIDI:     groupID,
+			TimestampI:   timestamp + int64(i),
 		})
 	}
 	return e
@@ -297,8 +163,8 @@ func invalidTimpestampFailTest(t *testing.T, ctx context.Context, store eventsto
 	t.Log("try save descreasing timestamp")
 	timestamp := time.Date(2021, time.April, 1, 13, 37, 00, 0, time.UTC).UnixNano()
 	events := getEvents(0, 2, false, groupID1, aggregateID1, timestamp)
-	mockEvent := events[1].(mockEvent)
-	mockEvent.timestamp = timestamp - 1
+	mockEvent := events[1].(MockEvent)
+	mockEvent.TimestampI = timestamp - 1
 	events[1] = mockEvent
 	saveStatus, err := store.Save(ctx, events...)
 	require.Error(t, err)
@@ -384,8 +250,8 @@ func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventSto
 	require.Equal(t, getEvents(3, 4, true, aggregateID4Path.GroupID, aggregateID4Path.AggregateID, timestamp), saveEh.events[aggregateID4Path.GroupID][aggregateID4Path.AggregateID])
 
 	t.Log("test if need snapshot occurs from save")
-	bigEv := getEvents(7, 1, false, aggregateID4Path.GroupID, aggregateID4Path.AggregateID, timestamp)[0].(mockEvent)
-	bigEv.Data = make([]byte, 7*1024*1024)
+	bigEv := getEvents(7, 1, false, aggregateID4Path.GroupID, aggregateID4Path.AggregateID, timestamp)[0].(MockEvent)
+	bigEv.DataI = make([]byte, 7*1024*1024)
 
 	saveStatus, err = store.Save(ctx, bigEv)
 	require.NoError(t, err)
@@ -401,14 +267,14 @@ func AcceptanceTest(t *testing.T, ctx context.Context, store eventstore.EventSto
 	require.NoError(t, err)
 	require.Equal(t, eventstore.SnapshotRequired, saveStatus)
 
-	bigEv.isSnapshot = true
+	bigEv.IsSnapshotI = true
 	saveStatus, err = store.Save(ctx, bigEv)
 	require.NoError(t, err)
 	require.Equal(t, eventstore.Ok, saveStatus)
 	exp := []eventstore.Event{bigEv}
 
 	bigEv.VersionI++
-	bigEv.isSnapshot = false
+	bigEv.IsSnapshotI = false
 	saveStatus, err = store.Save(ctx, bigEv)
 	require.NoError(t, err)
 	require.Equal(t, eventstore.Ok, saveStatus)

@@ -67,7 +67,8 @@ var groupIDLatestTimestampQueryIndex = bson.D{
 	{Key: latestTimestampKey, Value: 1},
 }
 
-var latestTimestampQueryIndex = bson.D{
+var aggregateIDLatestTimestampQueryIndex = bson.D{
+	{Key: aggregateIDKey, Value: 1},
 	{Key: latestTimestampKey, Value: 1},
 }
 
@@ -208,7 +209,7 @@ func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix
 		groupIDQueryIndex,
 		groupIDaggregateIDQueryIndex,
 		groupIDLatestTimestampQueryIndex,
-		latestTimestampQueryIndex,
+		aggregateIDLatestTimestampQueryIndex,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)
