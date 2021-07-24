@@ -60,7 +60,7 @@ func Test_parallelRequest(t *testing.T) {
 	deviceID := "7397398d-3ae8-4d9a-62d6-511f7b736a60"
 	href := "/test/resource/1"
 
-	newAggragate := func(deviceID, href string) *aggregate.Aggregate {
+	newAggregate := func(deviceID, href string) *aggregate.Aggregate {
 		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID(), aggregate.NewDefaultRetryFunc(64), 16, store, func(context.Context) (aggregate.AggregateModel, error) {
 			ev := events.NewResourceStateSnapshotTaken()
 			ev.ResourceId = commands.NewResourceID(deviceID, href)
@@ -92,7 +92,7 @@ func Test_parallelRequest(t *testing.T) {
 					},
 					Status: commands.Status_OK,
 				}
-				aggr := newAggragate(commandContentChanged.GetResourceId().GetDeviceId(), commandContentChanged.GetResourceId().GetHref())
+				aggr := newAggregate(commandContentChanged.GetResourceId().GetDeviceId(), commandContentChanged.GetResourceId().GetHref())
 				events, err := aggr.HandleCommand(ctx, &commandContentChanged)
 				if err != nil {
 					anyError.Store(true)
