@@ -25,7 +25,7 @@ func (e *Published) IsSnapshot() bool         { return false }
 func (e *Published) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
 
 func (e *Unpublished) Version() uint64          { return e.EventVersion }
-func (e *Unpublished) EventType() string        { return "ocf.cloud.resourceaggregate.pb.Unublished" }
+func (e *Unpublished) EventType() string        { return "ocf.cloud.resourceaggregate.pb.Unpublished" }
 func (e *Unpublished) Marshal() ([]byte, error) { return proto.Marshal(e) }
 func (e *Unpublished) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
 func (e *Unpublished) AggregateID() string      { return e.DeviceId + e.Href }
@@ -180,7 +180,7 @@ func TestAggregate(t *testing.T) {
 		Href:     res2.Href,
 	}
 
-	newAggragate := func(deviceID, href string) *Aggregate {
+	newAggregate := func(deviceID, href string) *Aggregate {
 		a, err := NewAggregate(deviceID, deviceID+href, NewDefaultRetryFunc(1), 2, store, func(context.Context) (AggregateModel, error) {
 			return &Snapshot{DeviceId: deviceID, Href: href, IsPublished: true}, nil
 		}, nil)
@@ -188,42 +188,42 @@ func TestAggregate(t *testing.T) {
 		return a
 	}
 
-	a := newAggragate(commandPub1.GetDeviceId(), commandPub1.GetHref())
+	a := newAggregate(commandPub1.GetDeviceId(), commandPub1.GetHref())
 	ev, err := a.HandleCommand(ctx, &commandPub1)
 	require.NoError(t, err)
 	require.NotNil(t, ev)
 
-	b := newAggragate(commandPub1.GetDeviceId(), commandPub1.GetHref())
+	b := newAggregate(commandPub1.GetDeviceId(), commandPub1.GetHref())
 	ev, err = b.HandleCommand(ctx, &commandPub1)
 	require.NoError(t, err)
 	require.NotNil(t, ev)
 
-	c := newAggragate(commandUnpub1.GetDeviceId(), commandUnpub1.GetHref())
+	c := newAggregate(commandUnpub1.GetDeviceId(), commandUnpub1.GetHref())
 	ev, err = c.HandleCommand(ctx, &commandUnpub1)
 	require.NoError(t, err)
 	require.NotNil(t, ev)
 
-	d := newAggragate(commandUnpub1.GetDeviceId(), commandUnpub1.GetHref())
+	d := newAggregate(commandUnpub1.GetDeviceId(), commandUnpub1.GetHref())
 	ev, err = d.HandleCommand(ctx, &commandUnpub1)
 	require.Error(t, err)
 	require.Nil(t, ev)
 
-	e := newAggragate(commandPub2.GetDeviceId(), commandPub2.GetHref())
+	e := newAggregate(commandPub2.GetDeviceId(), commandPub2.GetHref())
 	ev, err = e.HandleCommand(ctx, &commandPub2)
 	require.NoError(t, err)
 	require.NotNil(t, ev)
 
-	f := newAggragate(commandUnpub2.GetDeviceId(), commandUnpub2.GetHref())
+	f := newAggregate(commandUnpub2.GetDeviceId(), commandUnpub2.GetHref())
 	ev, err = f.HandleCommand(ctx, &commandUnpub2)
 	require.NoError(t, err)
 	require.NotNil(t, ev)
 
-	g := newAggragate(commandPub1.GetDeviceId(), commandPub1.GetHref())
+	g := newAggregate(commandPub1.GetDeviceId(), commandPub1.GetHref())
 	ev, err = g.HandleCommand(ctx, &commandPub1)
 	require.NoError(t, err)
 	require.NotNil(t, ev)
 
-	h := newAggragate(commandUnpub1.GetDeviceId(), commandUnpub1.GetHref())
+	h := newAggregate(commandUnpub1.GetDeviceId(), commandUnpub1.GetHref())
 	ev, err = h.HandleCommand(ctx, &commandUnpub1)
 	require.NoError(t, err)
 	require.NotNil(t, ev)
@@ -239,7 +239,7 @@ func TestAggregate(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	concurrencyExcepTestA := newAggragate(commandPub1.GetDeviceId(), commandPub1.GetHref())
+	concurrencyExcepTestA := newAggregate(commandPub1.GetDeviceId(), commandPub1.GetHref())
 	model, err := concurrencyExcepTestA.factoryModel(ctx)
 	require.NoError(t, err)
 
