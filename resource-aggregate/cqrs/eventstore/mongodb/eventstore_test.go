@@ -11,14 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.uber.org/zap"
 )
 
-func TestEventStore(t *testing.T) {
-	logger, err := log.NewLogger(log.Config{})
-	require.NoError(t, err)
-
-	ctx := context.Background()
-
+func NewTestEventStore(ctx context.Context, logger *zap.Logger) (*mongodb.EventStore, error) {
 	store, err := mongodb.New(
 		ctx,
 		mongodb.Config{
@@ -29,6 +25,16 @@ func TestEventStore(t *testing.T) {
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(bson.Unmarshal),
 	)
+	return store, err
+}
+
+func TestEventStore(t *testing.T) {
+	logger, err := log.NewLogger(log.Config{})
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	store, err := NewTestEventStore(ctx, logger)
+
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer store.Close(ctx)

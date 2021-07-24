@@ -1,7 +1,12 @@
 package test
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"reflect"
+	"sort"
+	"sync"
 	"time"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -258,4 +263,146 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 			return fmt.Errorf("cannot unmarshal event")
 		},
 	)
+}
+
+type MockEvent struct {
+	VersionI     uint64 `bson:"version"`
+	EventTypeI   string `bson:"eventtype"`
+	IsSnapshotI  bool   `bson:"issnapshot"`
+	AggregateIDI string `bson:"aggregateid"`
+	GroupIDI     string `bson:"groupid"`
+	DataI        []byte `bson:"data"`
+	TimestampI   int64  `bson:"timestamp"`
+}
+
+func (e MockEvent) Version() uint64 {
+	return e.VersionI
+}
+
+func (e MockEvent) EventType() string {
+	return e.EventTypeI
+}
+
+func (e MockEvent) AggregateID() string {
+	return e.AggregateIDI
+}
+
+func (e MockEvent) GroupID() string {
+	return e.GroupIDI
+}
+
+func (e MockEvent) IsSnapshot() bool {
+	return e.IsSnapshotI
+}
+
+func (e MockEvent) Timestamp() time.Time {
+	return time.Unix(0, e.TimestampI)
+}
+
+type MockEventHandler struct {
+	lock   sync.Mutex
+	events map[string]map[string][]eventstore.Event
+}
+
+func NewMockEventHandler() *MockEventHandler {
+	return &MockEventHandler{events: make(map[string]map[string][]eventstore.Event)}
+}
+
+func (eh *MockEventHandler) SetElement(groupId, aggregateId string, e MockEvent) {
+	var device map[string][]eventstore.Event
+	var ok bool
+
+	eh.lock.Lock()
+	defer eh.lock.Unlock()
+	if device, ok = eh.events[groupId]; !ok {
+		device = make(map[string][]eventstore.Event)
+		eh.events[groupId] = device
+	}
+	device[aggregateId] = append(device[aggregateId], e)
+}
+
+func (eh *MockEventHandler) Contains(event eventstore.Event) bool {
+	device, ok := eh.events[event.GroupID()]
+	if !ok {
+		return false
+	}
+	eventsDB, ok := device[event.AggregateID()]
+	if !ok {
+		return false
+	}
+
+	for _, eventDB := range eventsDB {
+		if reflect.DeepEqual(eventDB, event) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (eh *MockEventHandler) Equals(events []eventstore.Event) bool {
+	eventsMap := make(map[string]map[string][]eventstore.Event)
+	for _, event := range events {
+		device, ok := eventsMap[event.GroupID()]
+		if !ok {
+			device = make(map[string][]eventstore.Event)
+			eventsMap[event.GroupID()] = device
+		}
+		device[event.AggregateID()] = append(device[event.AggregateID()], event)
+	}
+
+	if len(eh.events) != len(eventsMap) {
+		return false
+	}
+
+	// sort slices by version
+	for deviceId, resourceEventsMap := range eventsMap {
+		for resourceId, resources := range resourceEventsMap {
+			sort.Slice(resources, func(i, j int) bool {
+				return resources[i].Version() < resources[j].Version()
+			})
+			eventsMap[deviceId][resourceId] = resources
+		}
+	}
+
+	return reflect.DeepEqual(eh.events, eventsMap)
+}
+
+func (eh *MockEventHandler) Handle(ctx context.Context, iter eventstore.Iter) error {
+	for {
+		eu, ok := iter.Next(ctx)
+		if !ok {
+			break
+		}
+		if eu.EventType() == "" {
+			return errors.New("cannot determine type of event")
+		}
+		var e MockEvent
+		err := eu.Unmarshal(&e)
+		if err != nil {
+			return err
+		}
+		e.AggregateIDI = eu.AggregateID()
+		e.GroupIDI = eu.GroupID()
+		e.IsSnapshotI = eu.IsSnapshot()
+		if !eu.Timestamp().IsZero() {
+			e.TimestampI = eu.Timestamp().UnixNano()
+		}
+		eh.SetElement(eu.GroupID(), eu.AggregateID(), e)
+	}
+	return nil
+}
+
+func (eh *MockEventHandler) SnapshotEventType() string { return "snapshot" }
+
+func (eh *MockEventHandler) Count() int {
+	eh.lock.Lock()
+	defer eh.lock.Unlock()
+	count := 0
+	for _, r := range eh.events {
+		for _, e := range r {
+			count += len(e)
+		}
+	}
+	return count
 }
