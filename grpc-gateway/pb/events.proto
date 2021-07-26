@@ -35,7 +35,7 @@ message GetEventsRequest {
 	*/
 
 	// filter events with timestamp > than given value
-	int64 timemstamp_filter = 3;
+	int64 timestamp_filter = 3;
 }
 
 message GetEventsResponse {

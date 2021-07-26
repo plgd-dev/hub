@@ -161,7 +161,7 @@ service GrpcGateway {
     };
   }
 
-  // Get events for given combination of device id, resource id and timemstamp
+  // Get events for given combination of device id, resource id and timestamp
   rpc GetEvents(GetEventsRequest) returns (stream GetEventsResponse) {
     option (google.api.http) = {
       get: "/api/v1/events"

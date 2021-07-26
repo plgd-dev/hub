@@ -74,7 +74,7 @@ func getWrappedEvent(value *pb.GetEventsResponse) interface{} {
 func getAllEvents(t *testing.T, client pb.GrpcGatewayClient, ctx context.Context) []interface{} {
 	events := make([]interface{}, 0, len(test.GetAllBackendResourceLinks()))
 	c, err := client.GetEvents(ctx, &pb.GetEventsRequest{
-		TimemstampFilter: 0,
+		TimestampFilter: 0,
 	})
 	require.NoError(t, err)
 	for {
@@ -141,7 +141,7 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 			name: "None (timestamp filter)",
 			args: args{
 				&pb.GetEventsRequest{
-					TimemstampFilter: time.Now().UnixNano(),
+					TimestampFilter: time.Now().UnixNano(),
 				},
 			},
 			wantLen: 0,
@@ -151,7 +151,7 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 			name: "All (timestamp filter)",
 			args: args{
 				&pb.GetEventsRequest{
-					TimemstampFilter: beforeOnBoard,
+					TimestampFilter: beforeOnBoard,
 				},
 			},
 			wantLen: len(events),
@@ -161,8 +161,8 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 			name: "All (device filter)",
 			args: args{
 				&pb.GetEventsRequest{
-					DeviceIdFilter:   []string{deviceID},
-					TimemstampFilter: beforeOnBoard,
+					DeviceIdFilter:  []string{deviceID},
+					TimestampFilter: beforeOnBoard,
 				},
 			},
 			wantLen: len(events),
@@ -173,7 +173,7 @@ func TestRequestHandler_GetEvents(t *testing.T) {
 			args: args{
 				&pb.GetEventsRequest{
 					ResourceIdFilter: []string{commands.NewResourceID(deviceID, test.GetAllBackendResourceLinks()[0].Href).ToString()},
-					TimemstampFilter: beforeOnBoard,
+					TimestampFilter:  beforeOnBoard,
 				},
 			},
 			wantLen: 1,
