@@ -43,7 +43,7 @@ type GrpcGatewayClient interface {
 	GetPendingCommands(ctx context.Context, in *GetPendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_GetPendingCommandsClient, error)
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error)
-	// Get events for given combination of device id, resource id and timemstamp
+	// Get events for given combination of device id, resource id and timestamp
 	GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (GrpcGateway_GetEventsClient, error)
 }
 
@@ -360,7 +360,7 @@ type GrpcGatewayServer interface {
 	GetPendingCommands(*GetPendingCommandsRequest, GrpcGateway_GetPendingCommandsServer) error
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error
-	// Get events for given combination of device id, resource id and timemstamp
+	// Get events for given combination of device id, resource id and timestamp
 	GetEvents(*GetEventsRequest, GrpcGateway_GetEventsServer) error
 	mustEmbedUnimplementedGrpcGatewayServer()
 }

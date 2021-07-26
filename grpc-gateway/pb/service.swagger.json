@@ -393,7 +393,7 @@
     },
     "/api/v1/events": {
       "get": {
-        "summary": "Get events for given combination of device id, resource id and timemstamp",
+        "summary": "Get events for given combination of device id, resource id and timestamp",
         "operationId": "GrpcGateway_GetEvents",
         "responses": {
           "200": {
@@ -441,7 +441,7 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "timemstampFilter",
+            "name": "timestampFilter",
             "description": "filter events with timestamp \u003e than given value.",
             "in": "query",
             "required": false,

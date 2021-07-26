@@ -369,7 +369,7 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 		queries = append(queries, getResourceQueries(req.ResourceIdFilter, mapUserDeviceIds)...)
 	}
 
-	err = r.eventStore.GetEvents(srv.Context(), queries, req.TimemstampFilter, &resourceEvent{srv: srv})
+	err = r.eventStore.GetEvents(srv.Context(), queries, req.TimestampFilter, &resourceEvent{srv: srv})
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get events: %v", err))
 	}
