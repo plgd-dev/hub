@@ -2,6 +2,7 @@ package wsproxy
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -294,26 +295,28 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// write loop -- take messages from response and write to websocket
-	scanner := bufio.NewScanner(responseBodyR)
-
-	// if maxRespBodyBufferSize has been specified, use custom buffer for scanner
-	var scannerBuf []byte
+	readerSize := 64 * 1024
 	if p.maxRespBodyBufferBytes > 0 {
-		scannerBuf = make([]byte, 0, 64*1024)
-		scanner.Buffer(scannerBuf, p.maxRespBodyBufferBytes)
+		readerSize = p.maxRespBodyBufferBytes
 	}
-
-	for scanner.Scan() {
-		if len(scanner.Bytes()) == 0 {
-			p.logger.Warnln("[write] empty scan", scanner.Err())
+	responseBodyRBuffered := bufio.NewReaderSize(responseBodyR, readerSize)
+	decoder := json.NewDecoder(responseBodyRBuffered)
+	for {
+		var m json.RawMessage
+		err := decoder.Decode(&m)
+		if err == io.EOF {
+			p.logger.Debugln("[write] decoding json done")
+			return
+		}
+		if err != nil {
+			p.logger.Warnln("[write] cannot decode json from buffer:", err)
+			return
+		}
+		if len(m) == 0 {
 			continue
 		}
-		p.logger.Debugln("[write] scanned", scanner.Text())
-		dataWriteChan <- scanner.Bytes()
-	}
-	if err := scanner.Err(); err != nil {
-		p.logger.Warnln("scanner err:", err)
+		p.logger.Debugln("[write] scanned json", string(m))
+		dataWriteChan <- m
 	}
 }
 
