@@ -20,7 +20,10 @@ func TestRequestHandler_getJWKs(t *testing.T) {
 func getJWKs(t *testing.T) map[string]interface{} {
 	getReq := test.NewRequest(http.MethodGet, uri.JWKs, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		require.NoError(t, err)
+	}()
 
 	var body map[string]interface{}
 	err := json.ReadFrom(res.Body, &body)

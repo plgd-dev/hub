@@ -67,7 +67,10 @@ func getToken(t *testing.T, clientID, audience, code string, grantType service.A
 
 	getReq := test.NewRequest(http.MethodPost, uri.Token, bytes.NewReader(d)).Build()
 	res := test.HTTPDo(t, getReq, false)
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		require.NoError(t, err)
+	}()
 	require.Equal(t, statusCode, res.StatusCode)
 	if res.StatusCode == http.StatusOK {
 		var body map[string]string

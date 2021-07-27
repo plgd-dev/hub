@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/plgd-dev/cloud/pkg/log"
 )
 
 func (requestHandler *RequestHandler) getJWKs(w http.ResponseWriter, r *http.Request) {
@@ -13,5 +14,8 @@ func (requestHandler *RequestHandler) getJWKs(w http.ResponseWriter, r *http.Req
 			requestHandler.accessTokenJwkKey,
 		},
 	}
-	jsonResponseWriter(w, resp)
+
+	if err := jsonResponseWriter(w, resp); err != nil {
+		log.Errorf("failed to write response: %v", err)
+	}
 }

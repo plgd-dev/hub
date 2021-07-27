@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/codec/json"
 )
@@ -68,7 +69,9 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 		</html>`
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set(contentTypeHeaderKey, "text/html;charset=UTF-8")
-		w.Write([]byte(body))
+		if _, err = w.Write([]byte(body)); err != nil {
+			log.Errorf("failed to write response body: %v", err)
+		}
 		return
 	}
 	u := r.URL.Query().Get(uri.RedirectURIKey)
@@ -93,5 +96,8 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 	resp := map[string]interface{}{
 		"code": code,
 	}
-	jsonResponseWriter(w, resp)
+
+	if err = jsonResponseWriter(w, resp); err != nil {
+		log.Errorf("failed to write response: %v", err)
+	}
 }

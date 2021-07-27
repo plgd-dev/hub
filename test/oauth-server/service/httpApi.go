@@ -50,8 +50,12 @@ func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 		return nil, fmt.Errorf("cannot marshal public key: %w", err)
 	}
 
-	jwkKey.Set(jwk.KeyIDKey, uuid.NewV5(uuid.NamespaceX500, string(data)).String())
-	jwkKey.Set(jwk.AlgorithmKey, alg)
+	if err = jwkKey.Set(jwk.KeyIDKey, uuid.NewV5(uuid.NamespaceX500, string(data)).String()); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %w", jwk.KeyIDKey, err)
+	}
+	if err = jwkKey.Set(jwk.AlgorithmKey, alg); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %w", jwk.AlgorithmKey, err)
+	}
 	return jwkKey, nil
 }
 
