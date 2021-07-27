@@ -446,7 +446,7 @@ paths:
                     result:
                       properties:
                         resourceLinksPublished:
-                          $ref: '#/components/schemas/ResourceLinks'
+                          $ref: '#/components/schemas/ResourceLinksPublished'
                         resourceLinksUnpublished:
                           $ref: '#/components/schemas/ResourceLinksUnpublished'
                         resourceLinksSnapshotTaken:
@@ -481,6 +481,41 @@ paths:
           $ref: '#/components/responses/badRequest'
         401:
           $ref: '#/components/responses/unauthorized'
+  '/api/v1/ws/events':
+    post:
+      tags:
+        - 'Resource Events'
+      summary: 'Subscribe to events'
+      description: |
+        Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream.
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      requestBody:
+        description: 'SubscribeToEvents message that opens a websocket stream'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeToEvents'
+        required: true
+      responses:
+        200:
+          description: 'Stream of events'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Event'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
+        404:
+          $ref: '#/components/responses/notFound'
 components:
   securitySchemes:
     oauth2:
@@ -668,7 +703,7 @@ components:
         status:
           $ref: '#/components/schemas/ConnectionStatus'
         shadowSynchronization:
-          $ref: '#/components/schemas/ShadowSynchronization'
+          $ref: '#/components/schemas/ShadowSynchronizationStatus'
         auditContext:
           $ref: '#/components/schemas/AuditContext'
         eventMetadata:
@@ -679,11 +714,66 @@ components:
         deviceId:
           type: string
         shadowSynchronization:
-          $ref: '#/components/schemas/ShadowSynchronization'
+          $ref: '#/components/schemas/ShadowSynchronizationStatus'
         auditContext:
           $ref: '#/components/schemas/AuditContext'
         eventMetadata:
           $ref: '#/components/schemas/EventMetadata'
+    Event:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+        correlationId:
+          type: string
+        deviceRegistered:
+          $ref: '#/components/schemas/EventDeviceRegistered'
+        deviceUnregistered:
+          $ref: '#/components/schemas/EventDeviceUnregistered'
+        resourcePublished:
+          $ref: '#/components/schemas/ResourceLinksPublished'
+        resourceUnpublished:
+          $ref: '#/components/schemas/ResourceLinksUnpublished'
+        resourceChanged:
+          $ref: '#/components/schemas/ResourceChanged'
+        operationProcessed:
+          $ref: '#/components/schemas/EventOperationProcessed'
+        subscriptionCanceled:
+          $ref: '#/components/schemas/EventSubscriptionCanceled'
+        resourceUpdatePending:
+          $ref: '#/components/schemas/ResourceUpdatePending'
+        resourceUpdated:
+          $ref: '#/components/schemas/ResourceUpdated'
+        resourceRetrievePending:
+          $ref: '#/components/schemas/ResourceRetrievePending'
+        resourceRetrieved:
+          $ref: '#/components/schemas/ResourceRetrieved'
+        resourceDeletePending:
+          $ref: '#/components/schemas/ResourceDeletePending'
+        resourceDeleted:
+          $ref: '#/components/schemas/ResourceDeleted'
+        resourceCreatePending:
+          $ref: '#/components/schemas/ResourceCreatePending'
+        resourceCreated:
+          $ref: '#/components/schemas/ResourceCreated'
+        deviceMetadataUpdatePending:
+          $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+        deviceMetadataUpdated:
+          $ref: '#/components/schemas/DeviceMetadataUpdated'
+    EventDeviceRegistered:
+      type: object
+      properties:
+        deviceIds:
+          type: array
+          items:
+            type: string
+    EventDeviceUnregistered:
+      type: object
+      properties:
+        deviceIds:
+          type: array
+          items:
+            type: string
     EventMetadata:
       type: object
       properties:
@@ -698,6 +788,42 @@ components:
         sequence:
           type: string
           format: uint64
+    EventOperationProcessed:
+      type: object
+      properties:
+        errorStatus:
+          $ref: '#/components/schemas/OperationProcessedErrorStatus'
+    EventSubscriptionCanceled:
+      type: object
+      properties:
+        reason:
+          type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+    ErrorStatusCode:
+      type: string
+      default: 'OK'
+      enum:
+        - 'OK'
+        - 'ERROR'
+        - 'NOT_FOUND'
+    OperationProcessedErrorStatus:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorStatusCode'
+        message:
+          type: string
     Resource:
       type: object
       properties:
@@ -948,6 +1074,8 @@ components:
           sequence: '4'
           version: '0'
           timestamp: '1625432924483895839'
+    ResourceLinksPublished:
+      $ref: '#/components/schemas/ResourceLinks'
     ResourceLinksSnapshotTaken:
       type: object
       properties:
@@ -1082,18 +1210,54 @@ components:
         - 'ERROR'
         - 'METHOD_NOT_ALLOWED'
         - 'CREATED'
-    Error:
+    SubscribeToEvents:
       type: object
       properties:
-        code:
-          type: integer
-          format: int32
-        message:
+        createSubscription:
+          $ref: '#/components/schemas/SubscribeToEventsCreateSubscription'
+        cancelSubscription:
+          $ref: '#/components/schemas/SubscribeToEventsCancelSubscription'
+        correlationId:
           type: string
-        details:
+    SubscribeToEventsCancelSubscription:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+    SubscribeToEventsCreateSubscription:
+      type: object
+      properties:
+        eventFilter:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/SubscribeToEventsCreateSubscriptionEvent'
+        deviceIdFilter:
+          type: array
+          items:
+            type: string
+        resourceIdFilter:
+          type: array
+          items:
+            type: string
+    SubscribeToEventsCreateSubscriptionEvent:
+      type: string
+      default: 'REGISTERED'
+      enum:
+        - 'REGISTERED'
+        - 'UNREGISTERED'
+        - 'DEVICE_METADATA_UPDATED'
+        - 'DEVICE_METADATA_UPDATE_PENDING'
+        - 'RESOURCE_PUBLISHED'
+        - 'RESOURCE_UNPUBLISHED'
+        - 'RESOURCE_UPDATE_PENDING'
+        - 'RESOURCE_UPDATED'
+        - 'RESOURCE_RETRIEVE_PENDING'
+        - 'RESOURCE_RETRIEVED'
+        - 'RESOURCE_DELETE_PENDING'
+        - 'RESOURCE_DELETED'
+        - 'RESOURCE_CREATE_PENDING'
+        - 'RESOURCE_CREATED'
+        - 'RESOURCE_CHANGED'
   parameters:
     deviceId:
       name: deviceId
