@@ -55,10 +55,10 @@ func New(t *testing.T, cfg service.Config) func() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		s.Serve()
+		_ = s.Serve()
 	}()
 	return func() {
-		s.Shutdown()
+		_ = s.Shutdown()
 		wg.Wait()
 	}
 }
@@ -135,7 +135,10 @@ func GetServiceToken(t *testing.T) string {
 
 	getReq := NewRequest(http.MethodPost, uri.Token, bytes.NewReader(d)).Build()
 	res := HTTPDo(t, getReq, false)
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		require.NoError(t, err)
+	}()
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	var body map[string]string
 	err = json.ReadFrom(res.Body, &body)
@@ -154,7 +157,10 @@ func GetDeviceAuthorizationCode(t *testing.T) string {
 	u.RawQuery = q.Encode()
 	getReq := NewRequest(http.MethodGet, u.String(), nil).Build()
 	res := HTTPDo(t, getReq, false)
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		require.NoError(t, err)
+	}()
 	require.Equal(t, http.StatusOK, res.StatusCode)
 
 	var body map[string]string

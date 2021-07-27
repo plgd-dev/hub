@@ -16,7 +16,10 @@ func TestRequestHandler_getUserInfo(t *testing.T) {
 
 	getReq := test.NewRequest(http.MethodGet, uri.UserInfo, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		require.NoError(t, err)
+	}()
 
 	var body map[string]string
 	err := json.ReadFrom(res.Body, &body)
