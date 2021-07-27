@@ -55,7 +55,7 @@ paths:
         - 'Devices'
       summary: 'Get device by ID'
       description: |
-        Get information about a single device. Alternative is to call 'Get all devices' with a `deviceId` filter query parameter. 
+        Get information about a single device. Alternative is to call 'Get all devices' with a `deviceId` filter query parameter.
       parameters:
         - $ref: '#/components/parameters/deviceId'
       security:
@@ -143,7 +143,7 @@ paths:
         - oauth2:
           - 'plgd.devices'
       requestBody:
-        description: 'Create request as defined by the Open Connectivity Founation.'
+        description: 'Create request as defined by the Open Connectivity Foundation.'
         content:
           application/json:
             schema:
@@ -420,6 +420,67 @@ paths:
           $ref: '#/components/responses/badRequest'
         401:
           $ref: '#/components/responses/unauthorized'
+  '/api/v1/events':
+    get:
+      tags:
+        - 'Resource Events'
+      summary: 'Get resource events'
+      description: |
+          All events from resources belonging to devices user is authorized to use are returned in form of a stream, chunk by chunk. Attach your reader and consume event by event. Filters allow you to select devices and resources of interest, and the timestamp filter allows to filter out events and return only those that occured after a given time. Error response might be returned immediately, but also anytime during the stream reading.
+      parameters:
+        - $ref: '#/components/parameters/deviceIdFilter'
+        - $ref: '#/components/parameters/resourceIdFilter'
+        - $ref: '#/components/parameters/timestampFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Stream of events'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    result:
+                      properties:
+                        resourceLinksPublished:
+                          $ref: '#/components/schemas/ResourceLinks'
+                        resourceLinksUnpublished:
+                          $ref: '#/components/schemas/ResourceLinksUnpublished'
+                        resourceLinksSnapshotTaken:
+                          $ref: '#/components/schemas/ResourceLinksSnapshotTaken'
+                        resourceChanged:
+                          $ref: '#/components/schemas/ResourceChanged'
+                        resourceUpdatePending:
+                          $ref: '#/components/schemas/ResourceUpdatePending'
+                        resourceUpdated:
+                          $ref: '#/components/schemas/ResourceUpdated'
+                        resourceRetrievePending:
+                          $ref: '#/components/schemas/ResourceRetrievePending'
+                        resourceRetrieved:
+                          $ref: '#/components/schemas/ResourceRetrieved'
+                        resourceDeletePending:
+                          $ref: '#/components/schemas/ResourceDeletePending'
+                        resourceDeleted:
+                          $ref: '#/components/schemas/ResourceDeleted'
+                        resourceCreatePending:
+                          $ref: '#/components/schemas/ResourceCreatePending'
+                        resourceCreated:
+                          $ref: '#/components/schemas/ResourceCreated'
+                        resourceStateSnapshotTaken:
+                          $ref: '#/components/schemas/ResourceStateSnapshotTaken'
+                        deviceMetadataUpdatePending:
+                          $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+                        deviceMetadataUpdated:
+                          $ref: '#/components/schemas/DeviceMetadataUpdated'
+                        deviceMetadataSnapshotTaken:
+                          $ref: '#/components/schemas/DeviceMetadataSnapshotTaken'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
 components:
   securitySchemes:
     oauth2:
@@ -444,6 +505,13 @@ components:
             example:
               Token: 53080a4f-5e3e-4291-802f-3436238232d1
   schemas:
+    AuditContext:
+      type: object
+      properties:
+        userId:
+          type: string
+        correlationId:
+          type: string
     CloudConfiguration:
       type: object
       properties:
@@ -491,6 +559,31 @@ components:
           Af8wCgYIKoZIzj0EAwIDSQAwRgIhAIyyCjzD8YzCNSY6YbnLgJ7TaXz5HPE0Eyqm
           gfQCLUhwAiEAmfMN+GW05NyB3n5OxYHqVmHGDZJ8rHUUBCPJ3WbCweM=
           -----END CERTIFICATE-----
+    CommandType:
+      type: string
+      enum:
+        - 'RESOURCE_CREATE'
+        - 'RESOURCE_RETRIEVE'
+        - 'RESOURCE_UPDATE'
+        - 'RESOURCE_DELETE'
+        - 'DEVICE_METADATA_UPDATE'
+    ConnectionStatus:
+      type: string
+      enum:
+        - 'OFFLINE'
+        - 'ONLINE'
+      default: 'OFFLINE'
+    Content:
+      type: object
+      properties:
+        data:
+          type: string
+          format: byte
+        contentType:
+          type: string
+        coapContentFormat:
+          type: integer
+          format: int32
     Device:
       type: object
       properties:
@@ -554,27 +647,227 @@ components:
           description: 'Unix timestamp in nanoseconds.'
         shadowSynchronization:
           $ref: '#/components/schemas/ShadowSynchronizationStatus'
-    ConnectionStatus:
-      type: string
-      enum:
-        - 'OFFLINE'
-        - 'ONLINE'
-      default: 'OFFLINE'
-    ShadowSynchronizationStatus:
-      type: string
-      enum:
-        - 'UNSET'
-        - 'ENABLED'
-        - 'DISABLED'
-      default: 'UNSET'
-    CommandType:
-      type: string
-      enum:
-        - 'RESOURCE_CREATE'
-        - 'RESOURCE_RETRIEVE'
-        - 'RESOURCE_UPDATE'
-        - 'RESOURCE_DELETE'
-        - 'DEVICE_METADATA_UPDATE'
+    DeviceMetadataSnapshotTaken:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        deviceMetadataUpdated:
+          $ref: '#/components/schemas/DeviceMetadataUpdated'
+        updatePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    DeviceMetadataUpdated:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        status:
+          $ref: '#/components/schemas/ConnectionStatus'
+        shadowSynchronization:
+          $ref: '#/components/schemas/ShadowSynchronization'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    DeviceMetadataUpdatePending:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        shadowSynchronization:
+          $ref: '#/components/schemas/ShadowSynchronization'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    EventMetadata:
+      type: object
+      properties:
+        version:
+          type: string
+          format: uint64
+        timestamp:
+          type: string
+          format: int64
+        connectionId:
+          type: string
+        sequence:
+          type: string
+          format: uint64
+    Resource:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        content:
+          oneOf:
+            - $ref: '#/components/schemas/ResourceContent'
+            - $ref: '#/components/schemas/ResourceCreatedContent'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+        status:
+          $ref: '#/components/schemas/Status'
+      example:
+        resourceId:
+          href: '/switches/1'
+          deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        content:
+          rt:
+            - 'oic.r.switch.binary'
+          if:
+            - 'oic.if.a'
+            - 'oic.if.baseline'
+          value: false
+        auditContext:
+          userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
+          correlationId: 'e20f1eef-2eeb-4755-b33e-139106d28e2c'
+        eventMetadata:
+          connectionId: '194.1.25.111:61692'
+          sequence: '7'
+          version: '0'
+          timestamp: '1625427236429144178'
+        status: 'OK'
+    ResourceChanged:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+        status:
+          $ref: '#/components/schemas/Status'
+    ResourceContent:
+      type: object
+      example:
+        value: true
+    ResourceCreateContent:
+      type: object
+      properties:
+        rt:
+          type: array
+          items:
+            type: string
+        if:
+          type: array
+          items:
+            type: string
+        rep:
+          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
+          type: object
+        p:
+          type: object
+          properties:
+            bm:
+              type: integer
+              default: 3
+          required:
+            - bm
+      required:
+        - rt
+        - if
+        - rep
+        - p
+      example:
+        rt:
+          - 'oic.r.switch.binary'
+        if:
+          - 'oic.if.a'
+          - 'oic.if.baseline'
+        rep:
+          value: false
+        p:
+          bm: 3
+    ResourceCreated:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceCreatedContent:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+        rt:
+          type: array
+          items:
+            type: string
+        if:
+          type: array
+          items:
+            type: string
+        rep:
+          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
+          type: object
+      example:
+        href: '/switches/1'
+        rt:
+          - 'oic.r.switch.binary'
+        if:
+          - 'oic.if.a'
+          - 'oic.if.baseline'
+        rep:
+          value: false
+    ResourceCreatePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceDeleted:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceDeletePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceId:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        href:
+          type: string
+          format: url
     ResourceLink:
       type: object
       properties:
@@ -617,15 +910,6 @@ components:
               priority:
                 type: string
                 format: int64
-    ResourceId:
-      type: object
-      properties:
-        deviceId:
-          type: string
-          format: uuid
-        href:
-          type: string
-          format: url
     ResourceLinks:
       type: object
       properties:
@@ -664,142 +948,140 @@ components:
           sequence: '4'
           version: '0'
           timestamp: '1625432924483895839'
-    AuditContext:
+    ResourceLinksSnapshotTaken:
       type: object
       properties:
-        userId:
+        resources:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Resource'
+        deviceId:
           type: string
-        correlationId:
-          type: string
-    EventMetadata:
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceLinksUnpublished:
       type: object
       properties:
-        version:
+        hrefs:
+          type: array
+          items:
+            type: string
+        deviceId:
           type: string
-          format: uint64
-        timestamp:
-          type: string
-          format: int64
-        connectionId:
-          type: string
-        sequence:
-          type: string
-          format: uint64
-    Resource:
-      type: object
-      properties:
-        resourceId:
-          $ref: '#/components/schemas/ResourceId'
-        content:
-          oneOf:
-            - $ref: '#/components/schemas/ResourceContent'
-            - $ref: '#/components/schemas/ResourceCreatedContent'
         auditContext:
           $ref: '#/components/schemas/AuditContext'
         eventMetadata:
           $ref: '#/components/schemas/EventMetadata'
-        status:
-          type: string
-          enum:
-            - 'UNKNOWN'
-            - 'OK'
-            - 'BAD_REQUEST'
-            - 'UNAUTHORIZED'
-            - 'FORBIDDEN'
-            - 'NOT_FOUND'
-            - 'UNAVAILABLE'
-            - 'NOT_IMPLEMENTED'
-            - 'ACCEPTED'
-            - 'ERROR'
-            - 'METHOD_NOT_ALLOWED'
-            - 'CREATED'
       example:
-        resourceId:
-          href: '/switches/1'
-          deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
-        content:
-          rt:
-            - 'oic.r.switch.binary'
-          if:
-            - 'oic.if.a'
-            - 'oic.if.baseline'
-          value: false
+        hrefs: ['/light/1', '/light/2']
+        deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
         auditContext:
           userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
-          correlationId: 'e20f1eef-2eeb-4755-b33e-139106d28e2c'
+          correlationId: 'ef007f88-6073-4af1-8951-971578bf6803'
         eventMetadata:
           connectionId: '194.1.25.111:61692'
-          sequence: '7'
+          sequence: '4'
           version: '0'
-          timestamp: '1625427236429144178'
-        status: 'OK'
-    ResourceContent:
-      type: object
-      example:
-        value: true
-    ResourceCreatedContent:
+          timestamp: '1625432924483895839'
+    ResourceRetrieved:
       type: object
       properties:
-        href:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceRetrievePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        resourceInterface:
           type: string
-          format: uri
-        rt:
-          type: array
-          items:
-            type: string
-        if:
-          type: array
-          items:
-            type: string
-        rep:
-          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
-          type: object
-      example:
-        href: '/switches/1'
-        rt:
-          - 'oic.r.switch.binary'
-        if:
-          - 'oic.if.a'
-          - 'oic.if.baseline'
-        rep:
-          value: false
-    ResourceCreateContent:
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceStateSnapshotTaken:
       type: object
       properties:
-        rt:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        latestResourceChange:
+          $ref: '#/components/schemas/ResourceChanged'
+        resourceCreatePendings:
           type: array
           items:
-            type: string
-        if:
+            $ref: '#/components/schemas/ResourceCreatePending'
+        resourceRetrievePendings:
           type: array
           items:
-            type: string
-        rep:
-          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
-          type: object
-        p:
-          type: object
-          properties:
-            bm:
-              type: integer
-              default: 3
-          required:
-            - bm
-      required:
-        - rt
-        - if
-        - rep
-        - p
-      example:
-        rt:
-          - 'oic.r.switch.binary'
-        if:
-          - 'oic.if.a'
-          - 'oic.if.baseline'
-        rep:
-          value: false
-        p:
-          bm: 3
+            $ref: '#/components/schemas/ResourceRetrievePending'
+        resourceUpdatePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceUpdatePending'
+        resourceDeletePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceDeletePending'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceUpdated:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceUpdatePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        resourceInterface:
+          type: string
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ShadowSynchronizationStatus:
+      type: string
+      enum:
+        - 'UNSET'
+        - 'ENABLED'
+        - 'DISABLED'
+      default: 'UNSET'
+    Status:
+      type: string
+      enum:
+        - 'UNKNOWN'
+        - 'OK'
+        - 'BAD_REQUEST'
+        - 'UNAUTHORIZED'
+        - 'FORBIDDEN'
+        - 'NOT_FOUND'
+        - 'UNAVAILABLE'
+        - 'NOT_IMPLEMENTED'
+        - 'ACCEPTED'
+        - 'ERROR'
+        - 'METHOD_NOT_ALLOWED'
+        - 'CREATED'
     Error:
       type: object
       properties:
@@ -881,6 +1163,13 @@ components:
         type: array
         items:
           $ref: '#/components/schemas/CommandType'
+    timestampFilter:
+      name: timestamp
+      in: query
+      description: 'Filter by Unix time in nanoseconds'
+      schema:
+        type: integer
+        format: int64
   responses:
     ok:
       description: Content is stored in body.
@@ -917,4 +1206,3 @@ components:
                 $ref: '#/components/schemas/Error'
     notFound:
       description: 'Entity was not found.'
-
