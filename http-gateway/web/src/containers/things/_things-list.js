@@ -46,7 +46,7 @@ export const ThingsList = ({ data }) => {
       {
         Header: _(t.shadowSynchronization),
         accessor: 'metadata.shadowSynchronization',
-        style: { width: '180px' },
+        style: { width: '220px' },
         Cell: ({ value }) => {
           const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(value)
           return (

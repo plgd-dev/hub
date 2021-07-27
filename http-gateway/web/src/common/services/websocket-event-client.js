@@ -25,7 +25,7 @@ class _WebSocketEventClient {
     this.retrySubscribeMs = 300
 
     // Time for delaying the event listener apply
-    this.delayListenersMs = 350
+    this.delayListenersMs = 2000
   }
 
   _connect = async () => {
@@ -107,30 +107,39 @@ class _WebSocketEventClient {
     this.onError(...args)
   }
 
-  _onMessage = (message) => {
-    const { result, code } = JSON.parse(
-      message.data
-    )
+  _onMessage = message => {
+    try {
+      const { result, code } = JSON.parse(message.data)
 
-    // If there is an error, ignore the message
-    if (code !== undefined && code !== 0) {
-      return
-    }
+      // If there is an error, ignore the message
+      if (code !== undefined && code !== 0) {
+        return
+      }
 
-    const { correlationId, subscriptionId, operationProcessed, ...args } = result || {}
+      const { correlationId, subscriptionId, operationProcessed, ...args } =
+        result || {}
 
-    if (!correlationId) {
-      return
-    }
+      if (!correlationId) {
+        return
+      }
 
-    // Save the subscriptionId to this.idsMap
-    if (!this.idsMap[correlationId] && operationProcessed?.errorStatus?.code === 'OK') {
-      this.idsMap[correlationId] = subscriptionId
-    }
+      // Save the subscriptionId to this.idsMap
+      if (
+        !this.idsMap[correlationId] &&
+        operationProcessed?.errorStatus?.code === 'OK'
+      ) {
+        this.idsMap[correlationId] = subscriptionId
+      }
 
-    // Invoke the event listener attached to this correlation id
-    if (this.events?.[correlationId]?.listenerEnabled && !operationProcessed) {
-      this.events[correlationId]?.listener(args)
+      // Invoke the event listener attached to this correlation id
+      if (
+        this.events?.[correlationId]?.listenerEnabled &&
+        !operationProcessed
+      ) {
+        this.events[correlationId]?.listener(args)
+      }
+    } catch (e) {
+      console.log('Cannot parse JSON from WS', message)
     }
   }
 
@@ -155,7 +164,7 @@ class _WebSocketEventClient {
     })
   }
 
-  send = (data) => {
+  send = data => {
     this.ws.send(JSON.stringify(data))
   }
 
@@ -188,7 +197,7 @@ class _WebSocketEventClient {
     }
   }
 
-  unsubscribe = (correlationId) => {
+  unsubscribe = correlationId => {
     if (this?.ws?.readyState !== 1) {
       setTimeout(() => this.unsubscribe(correlationId), this.retrySubscribeMs)
       return

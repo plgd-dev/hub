@@ -39,7 +39,6 @@ export const streamApi = async (url, options = {}) => {
               }
               // Get the data and send it to the browser via the controller
               controller.enqueue(value)
-              // Check chunks by logging to the console
               push()
             })
           }

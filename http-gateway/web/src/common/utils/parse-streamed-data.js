@@ -6,3 +6,6 @@ export const parseStreamedData = stream =>
         .split('\n\n')
         .map(a => JSON.parse(a).result)
     : []
+
+// Convert Uint8Array to text
+export const binArrayToJson = binArray => new TextDecoder().decode(binArray)
