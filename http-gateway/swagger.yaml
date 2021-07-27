@@ -420,6 +420,64 @@ paths:
           $ref: '#/components/responses/badRequest'
         401:
           $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/pending-commands':
+    get:
+      tags:
+        - 'Pending Commands'
+      summary: 'Get all pending commands for a device'
+      description: |
+        Retrieve all pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/commandFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Stream of resource links or errors.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResourceLinks'
+                  error:
+                    $ref: '#/components/schemas/Error'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands':
+    get:
+      tags:
+        - 'Pending Commands'
+      summary: 'Get all pending commands for a resource from a device'
+      description: |
+        Retrieve all pending commands for a single single resource from a device. Alternative is to call 'Get all pending commands' with `resourceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/commandFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Stream of resource links or errors.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResourceLinks'
+                  error:
+                    $ref: '#/components/schemas/Error'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
   '/api/v1/events':
     get:
       tags:
