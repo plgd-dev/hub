@@ -406,16 +406,7 @@ paths:
           - 'plgd.devices'
       responses:
         200:
-          description: 'Stream of resource links or errors.'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    $ref: '#/components/schemas/ResourceLinks'
-                  error:
-                    $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/pendingCommands'
         400:
           $ref: '#/components/responses/badRequest'
         401:
@@ -435,16 +426,7 @@ paths:
           - 'plgd.devices'
       responses:
         200:
-          description: 'Stream of resource links or errors.'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    $ref: '#/components/schemas/ResourceLinks'
-                  error:
-                    $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/pendingCommands'
         400:
           $ref: '#/components/responses/badRequest'
         401:
@@ -455,7 +437,7 @@ paths:
         - 'Pending Commands'
       summary: 'Get all pending commands for a resource from a device'
       description: |
-        Retrieve all pending commands for a single single resource from a device. Alternative is to call 'Get all pending commands' with `resourceIdFilter` query parameter.
+        Retrieve all pending commands for a single resource from a device. Alternative is to call 'Get all pending commands' with `resourceIdFilter` query parameter.
       parameters:
         - $ref: '#/components/parameters/typeFilter'
         - $ref: '#/components/parameters/commandFilter'
@@ -464,16 +446,7 @@ paths:
           - 'plgd.devices'
       responses:
         200:
-          description: 'Stream of resource links or errors.'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    $ref: '#/components/schemas/ResourceLinks'
-                  error:
-                    $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/pendingCommands'
         400:
           $ref: '#/components/responses/badRequest'
         401:
@@ -484,7 +457,7 @@ paths:
         - 'Resource Events'
       summary: 'Get resource events'
       description: |
-          All events from resources belonging to devices user is authorized to use are returned in form of a stream, chunk by chunk. Attach your reader and consume event by event. Filters allow you to select devices and resources of interest, and the timestamp filter allows to filter out events and return only those that occured after a given time. Error response might be returned immediately, but also anytime during the stream reading.
+        All events from resources belonging to devices user is authorized to use are returned in form of a stream, chunk by chunk. Attach your reader and consume event by event. Filters allow you to select devices and resources of interest, and the timestamp filter allows to filter out events and return only those that occurred after a given time. Error response might be returned immediately, but also anytime during the stream reading.
       parameters:
         - $ref: '#/components/parameters/deviceIdFilter'
         - $ref: '#/components/parameters/resourceIdFilter'
@@ -494,47 +467,45 @@ paths:
           - 'plgd.devices'
       responses:
         200:
-          description: 'Stream of events'
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  properties:
-                    result:
-                      properties:
-                        resourceLinksPublished:
-                          $ref: '#/components/schemas/ResourceLinksPublished'
-                        resourceLinksUnpublished:
-                          $ref: '#/components/schemas/ResourceLinksUnpublished'
-                        resourceLinksSnapshotTaken:
-                          $ref: '#/components/schemas/ResourceLinksSnapshotTaken'
-                        resourceChanged:
-                          $ref: '#/components/schemas/ResourceChanged'
-                        resourceUpdatePending:
-                          $ref: '#/components/schemas/ResourceUpdatePending'
-                        resourceUpdated:
-                          $ref: '#/components/schemas/ResourceUpdated'
-                        resourceRetrievePending:
-                          $ref: '#/components/schemas/ResourceRetrievePending'
-                        resourceRetrieved:
-                          $ref: '#/components/schemas/ResourceRetrieved'
-                        resourceDeletePending:
-                          $ref: '#/components/schemas/ResourceDeletePending'
-                        resourceDeleted:
-                          $ref: '#/components/schemas/ResourceDeleted'
-                        resourceCreatePending:
-                          $ref: '#/components/schemas/ResourceCreatePending'
-                        resourceCreated:
-                          $ref: '#/components/schemas/ResourceCreated'
-                        resourceStateSnapshotTaken:
-                          $ref: '#/components/schemas/ResourceStateSnapshotTaken'
-                        deviceMetadataUpdatePending:
-                          $ref: '#/components/schemas/DeviceMetadataUpdatePending'
-                        deviceMetadataUpdated:
-                          $ref: '#/components/schemas/DeviceMetadataUpdated'
-                        deviceMetadataSnapshotTaken:
-                          $ref: '#/components/schemas/DeviceMetadataSnapshotTaken'
+          $ref: '#/components/responses/events'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/events':
+    get:
+      tags:
+        - 'Resource Events'
+      summary: 'Get resource events from selected device'
+      description: |
+        Get all resource events that occurred on the device with given `deviceId`. Alternative is to call 'Get resource events' with `deviceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/timestampFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/events'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/resources/{resourceHref}/events':
+    get:
+      tags:
+        - 'Resource Events'
+      summary: 'Get events from selected resource'
+      description: |
+        Get all events that occurred on the resource from device with given `deviceId` addressable at given `resourceHref`. Alternative is to call 'Get resource events' with `resourceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/timestampFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/events'
         400:
           $ref: '#/components/responses/badRequest'
         401:
@@ -1428,3 +1399,58 @@ components:
                 $ref: '#/components/schemas/Error'
     notFound:
       description: 'Entity was not found.'
+    pendingCommands:
+      description: 'Stream of resource links or errors.'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: '#/components/schemas/ResourceLinks'
+              error:
+                $ref: '#/components/schemas/Error'
+    events:
+      description: 'Stream of events or error'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              properties:
+                result:
+                  properties:
+                    resourceLinksPublished:
+                      $ref: '#/components/schemas/ResourceLinksPublished'
+                    resourceLinksUnpublished:
+                      $ref: '#/components/schemas/ResourceLinksUnpublished'
+                    resourceLinksSnapshotTaken:
+                      $ref: '#/components/schemas/ResourceLinksSnapshotTaken'
+                    resourceChanged:
+                      $ref: '#/components/schemas/ResourceChanged'
+                    resourceUpdatePending:
+                      $ref: '#/components/schemas/ResourceUpdatePending'
+                    resourceUpdated:
+                      $ref: '#/components/schemas/ResourceUpdated'
+                    resourceRetrievePending:
+                      $ref: '#/components/schemas/ResourceRetrievePending'
+                    resourceRetrieved:
+                      $ref: '#/components/schemas/ResourceRetrieved'
+                    resourceDeletePending:
+                      $ref: '#/components/schemas/ResourceDeletePending'
+                    resourceDeleted:
+                      $ref: '#/components/schemas/ResourceDeleted'
+                    resourceCreatePending:
+                      $ref: '#/components/schemas/ResourceCreatePending'
+                    resourceCreated:
+                      $ref: '#/components/schemas/ResourceCreated'
+                    resourceStateSnapshotTaken:
+                      $ref: '#/components/schemas/ResourceStateSnapshotTaken'
+                    deviceMetadataUpdatePending:
+                      $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+                    deviceMetadataUpdated:
+                      $ref: '#/components/schemas/DeviceMetadataUpdated'
+                    deviceMetadataSnapshotTaken:
+                      $ref: '#/components/schemas/DeviceMetadataSnapshotTaken'
+                error:
+                  $ref: '#/components/schemas/Error'
