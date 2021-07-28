@@ -9,13 +9,17 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUserDevicesList(t *testing.T) {
 	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
 	err := s.service.GetUserDevices(newGetUserDevicesRequest(), srv)
 	assert.NoError(t, err)
@@ -32,7 +36,10 @@ func TestListingMoreDevices(t *testing.T) {
 	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
 	d := newTestDevice()
 	d.DeviceID = "anotherDeviceID"

@@ -26,12 +26,12 @@ func New(t *testing.T, config service.Config) func() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = auth.Serve()
-		require.NoError(t, err)
+		_ = auth.Serve()
 	}()
 
 	return func() {
-		auth.Shutdown()
+		err := auth.Shutdown()
+		require.NoError(t, err)
 		wg.Wait()
 	}
 }

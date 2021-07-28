@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -86,19 +87,29 @@ func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provi
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		s.Serve()
+		_ = s.Serve()
 		defer wg.Done()
 	}()
 	return s, func() {
-		s.Shutdown()
+		err := s.Shutdown()
+		require.NoError(t, err)
 		wg.Wait()
 	}
 }
 
-func (s *Server) cleanUp() {
+func (s *Server) cleanUp() error {
 	p := s.service.persistence
-	p.Clear(context.Background())
-	p.Close(context.Background())
+	var errors []error
+	if err := p.Clear(context.Background()); err != nil {
+		errors = append(errors, err)
+	}
+	if err := p.Close(context.Background()); err != nil {
+		errors = append(errors, err)
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("%v", errors)
+	}
+	return nil
 }
 
 func newTestDevice() *persistence.AuthorizedDevice {

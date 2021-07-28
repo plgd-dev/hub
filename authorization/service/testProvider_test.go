@@ -13,6 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"github.com/plgd-dev/cloud/authorization/provider"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/lestrrat-go/jwx/jwa"
@@ -40,8 +41,12 @@ func init() {
 	if err != nil {
 		log.Fatalf("failed to create JWK: %s", err)
 	}
-	key.Set(jwk.KeyIDKey, jwkKeyID)
-	key.Set(jwk.AlgorithmKey, jwa.ES256.String())
+	if err := key.Set(jwk.KeyIDKey, jwkKeyID); err != nil {
+		log.Fatalf("failed to set %v: %v", jwk.KeyIDKey, err)
+	}
+	if err := key.Set(jwk.AlgorithmKey, jwa.ES256.String()); err != nil {
+		log.Fatalf("failed to set %v: %v", jwk.AlgorithmKey, err)
+	}
 	jwkKey = key
 
 	token, err := generateToken(false)
@@ -59,24 +64,48 @@ func generateToken(isService bool) (*provider.Token, error) {
 	}
 	token := jwt.New()
 	if !isService {
-		token.Set(jwt.SubjectKey, t.Owner)
+		if err := token.Set(jwt.SubjectKey, t.Owner); err != nil {
+			return nil, fmt.Errorf("failed to set %v: %v", jwt.SubjectKey, err)
+		}
 	}
-	token.Set(jwt.AudienceKey, []string{"https://127.0.0.1", "https://localhost"})
-	token.Set(jwt.IssuedAtKey, time.Now().Unix())
-	token.Set(jwt.ExpirationKey, t.Expiry.Unix())
-	token.Set(`scope`, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"})
-	token.Set(`client_id`, clientID)
-	token.Set(`email`, `test@test.com`)
-	token.Set(jwt.IssuerKey, "https://localhost/")
+	if err := token.Set(jwt.AudienceKey, []string{"https://127.0.0.1", "https://localhost"}); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", jwt.AudienceKey, err)
+	}
+	if err := token.Set(jwt.IssuedAtKey, time.Now().Unix()); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", jwt.IssuedAtKey, err)
+	}
+	if err := token.Set(jwt.ExpirationKey, t.Expiry.Unix()); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", jwt.ExpirationKey, err)
+	}
+	if err := token.Set(oauthTest.TokenScopeKey, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"}); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", oauthTest.TokenScopeKey, err)
+	}
+	const TokenClientIdKey = "client_id"
+	if err := token.Set(TokenClientIdKey, clientID); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", TokenClientIdKey, err)
+	}
+	const TokenEmailKey = "email"
+	if err := token.Set(TokenEmailKey, `test@test.com`); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", TokenEmailKey, err)
+	}
+	if err := token.Set(jwt.IssuerKey, "https://localhost/"); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", jwt.IssuerKey, err)
+	}
 	buf, err := json.Encode(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode token: %s", err)
 	}
 
 	hdr := jws.NewHeaders()
-	hdr.Set(jws.AlgorithmKey, jwa.ES256.String())
-	hdr.Set(jws.TypeKey, `JWT`)
-	hdr.Set(jws.KeyIDKey, jwkKeyID)
+	if err := hdr.Set(jws.AlgorithmKey, jwa.ES256.String()); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", jws.AlgorithmKey, err)
+	}
+	if err := hdr.Set(jws.TypeKey, `JWT`); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", jws.TypeKey, err)
+	}
+	if err := hdr.Set(jws.KeyIDKey, jwkKeyID); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %v", jws.KeyIDKey, err)
+	}
 	payload, err := jws.Sign(buf, jwa.ES256, jwkPrivateKey, jws.WithHeaders(hdr))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create UserToken: %s", err)
