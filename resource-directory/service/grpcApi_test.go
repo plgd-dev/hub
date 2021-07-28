@@ -273,7 +273,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.SubscribeToEvents(ctx)
 			require.NoError(t, err)
-			defer client.CloseSend()
+			defer func() {
+				err := client.CloseSend()
+				require.NoError(t, err)
+			}()
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {

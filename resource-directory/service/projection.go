@@ -6,6 +6,7 @@ import (
 	"time"
 
 	cache "github.com/patrickmn/go-cache"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
@@ -46,7 +47,9 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 
 	cache := cache.New(expiration, cleanupInterval)
 	cache.OnEvicted(func(deviceID string, _ interface{}) {
-		projection.Unregister(deviceID)
+		if err := projection.Unregister(deviceID); err != nil {
+			log.Errorf("failed to unregister device %v in projection cache during eviction: %v", deviceID, err)
+		}
 	})
 	return &Projection{Projection: projection, cache: cache}, nil
 }
@@ -59,9 +62,13 @@ func (p *Projection) getModels(ctx context.Context, resourceID *commands.Resourc
 	if created {
 		p.cache.Set(resourceID.GetDeviceId(), created, cache.DefaultExpiration)
 	} else {
-		p.cache.Replace(resourceID.GetDeviceId(), created, cache.DefaultExpiration)
+		if err := p.cache.Replace(resourceID.GetDeviceId(), created, cache.DefaultExpiration); err != nil {
+			log.Debugf("failed to replace item %v in projection cache: %v", resourceID, err)
+		}
 		defer func(ID string) {
-			p.Unregister(ID)
+			if err := p.Unregister(ID); err != nil {
+				log.Errorf("failed to unregister device %v in projection cache after replacement: %v", ID, err)
+			}
 		}(resourceID.GetDeviceId())
 	}
 	m := p.Models(resourceID)
