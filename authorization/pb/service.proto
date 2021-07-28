@@ -7,10 +7,9 @@ import "github.com/plgd-dev/cloud/authorization/pb/auth.proto";
 option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
 
 service AuthorizationService {
-  rpc SignUp (SignUpRequest) returns (SignUpResponse) {}
+	rpc SignUp (SignUpRequest) returns (SignUpResponse) {}
 	rpc SignOff (SignOffRequest) returns (SignOffResponse) {}
 
-	rpc SignIn (SignInRequest) returns (SignInResponse) {}
 	rpc SignOut (SignOutRequest) returns (SignOutResponse) {}
 
 	rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse) {}
