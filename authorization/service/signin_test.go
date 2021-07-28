@@ -14,7 +14,10 @@ import (
 func TestSignIn(t *testing.T) {
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
 	r, err := s.service.SignIn(context.Background(), newSignInRequest())
 	require.NoError(t, err)
@@ -29,7 +32,10 @@ func TestPermanentTokensExpiration(t *testing.T) {
 	d.Expiry = time.Time{}
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, d)
 
 	r, err := s.service.SignIn(context.Background(), newSignInRequest())
@@ -41,7 +47,10 @@ func TestPermanentTokensExpiration(t *testing.T) {
 func TestUnauthorizedDevice(t *testing.T) {
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 
 	_, err := s.service.SignIn(context.Background(), newSignInRequest())
 	assert := assert.New(t)
@@ -53,7 +62,10 @@ func TestExpiredAccessToken(t *testing.T) {
 	d.Expiry = time.Now().Add(-time.Minute)
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, d)
 
 	_, err := s.service.SignIn(context.Background(), newSignInRequest())

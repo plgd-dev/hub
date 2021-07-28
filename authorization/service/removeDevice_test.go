@@ -82,7 +82,10 @@ func TestService_RemoveDevice(t *testing.T) {
 	}
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
 
 	for _, tt := range tests {

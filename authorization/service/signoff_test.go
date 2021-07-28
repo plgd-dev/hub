@@ -14,7 +14,10 @@ import (
 func TestSignOff(t *testing.T) {
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
 
 	_, err := s.service.SignOff(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken), newSignOffRequest())
@@ -27,7 +30,10 @@ func TestSignOff(t *testing.T) {
 func TestNonexistentDevice(t *testing.T) {
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 
 	_, err := s.service.SignOff(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken), newSignOffRequest())
 	require.Error(t, err)
@@ -38,7 +44,10 @@ func TestUnexpectedAccessTokenOnSignOff(t *testing.T) {
 	d.AccessToken = "unexpected"
 	s, shutdown := newTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	persistDevice(t, s.service.persistence, d)
 
 	_, err := s.service.SignOff(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken), newSignOffRequest())

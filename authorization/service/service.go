@@ -87,7 +87,11 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 	if err != nil {
 		return nil, fmt.Errorf("cannot create connector to mongo: %w", err)
 	}
-	grpcServer.AddCloseFunc(func() { persistence.Close(ctx) })
+	grpcServer.AddCloseFunc(func() {
+		if err := persistence.Close(ctx); err != nil {
+			log.Debugf("failed to close mongodb connector: %w", err)
+		}
+	})
 
 	service := NewService(deviceProvider, sdkProvider, persistence, cfg.Clients.Storage.OwnerClaim)
 
@@ -158,14 +162,13 @@ func (s *Server) Serve() error {
 	g.Go(func() error { return s.grpcServer.Serve() })
 	g.Go(func() error { return s.httpServer.Serve(s.listener) })
 
-	g.Wait()
-	return nil
+	return g.Wait()
 }
 
 // Shutdown ends serving
-func (s *Server) Shutdown() {
+func (s *Server) Shutdown() error {
 	s.grpcServer.Close()
-	s.httpServer.Shutdown()
+	return s.httpServer.Shutdown()
 }
 
 func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {

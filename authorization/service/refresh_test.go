@@ -14,7 +14,10 @@ import (
 func TestRefreshToken(t *testing.T) {
 	s, shutdown := newTestServiceWithProviders(t, NewTestProvider(), NewTestProvider())
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	r, err := s.service.RefreshToken(context.Background(), newRefreshInRequest())
 	require.NoError(t, err)
 	assert := assert.New(t)
@@ -26,7 +29,10 @@ func TestRefreshToken(t *testing.T) {
 func TestUnauthorizedRefreshToken(t *testing.T) {
 	s, shutdown := newTestServiceWithProviders(t, NewTestProvider(), NewTestProvider())
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	s.service.deviceProvider = &providerT{t: nil, err: errors.New("unauthorized")}
 	_, err := s.service.RefreshToken(context.Background(), newRefreshInRequest())
 	assert.Error(t, err)

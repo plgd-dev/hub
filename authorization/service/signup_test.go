@@ -9,12 +9,16 @@ import (
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/provider"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSignUp(t *testing.T) {
 	s, o, shutdown := newSignUpTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 
 	r, err := s.service.SignUp(context.Background(), newSignUpRequest())
 	assert := assert.New(t)
@@ -34,7 +38,10 @@ func TestUnknownProvider(t *testing.T) {
 
 	s, _, shutdown := newSignUpTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	s.service.deviceProvider = &providerT{t: nil, err: errors.New("invalid provider")}
 
 	_, err := s.service.SignUp(context.Background(), r)
@@ -45,7 +52,10 @@ func TestUnknownProvider(t *testing.T) {
 func TestUnauthorizedSignUp(t *testing.T) {
 	s, _, shutdown := newSignUpTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	s.service.deviceProvider = &providerT{t: nil, err: errors.New("unauthorized")}
 	_, err := s.service.SignUp(context.Background(), newSignUpRequest())
 	assert := assert.New(t)
@@ -55,7 +65,10 @@ func TestUnauthorizedSignUp(t *testing.T) {
 func TestPermanentToken(t *testing.T) {
 	s, o, shutdown := newSignUpTestService(t)
 	defer shutdown()
-	defer s.cleanUp()
+	defer func() {
+		err := s.cleanUp()
+		require.NoError(t, err)
+	}()
 	o.t.Expiry = time.Time{} // 0 means permanent
 
 	r, err := s.service.SignUp(context.Background(), newSignUpRequest())
