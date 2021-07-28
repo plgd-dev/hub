@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	pbGW "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	pkgLog "github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
@@ -93,9 +94,13 @@ func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			pkgLog.Errorf("failed to close response body: %v")
+		}
+	}()
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("returns statu code %v", res.StatusCode)
+		return "", fmt.Errorf("returns status code %v", res.StatusCode)
 	}
 	var body map[string]string
 	err = json.ReadFrom(res.Body, &body)
