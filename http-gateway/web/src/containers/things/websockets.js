@@ -120,7 +120,7 @@ export const deviceResourceRegistrationListener = ({
     const event = resourcePublished
       ? resourceEventTypes.ADDED
       : resourceEventTypes.REMOVED
-    
+
     // Emit an event: things.resource.registration.{deviceId}
     Emitter.emit(`${resourceRegistrationObservationWSKey}.${event}`, {
       event,
@@ -143,7 +143,7 @@ export const deviceResourceRegistrationListener = ({
             title: toastTitle,
             message: {
               message: toastMessage,
-              params: { deviceName, deviceId },
+              params: { deviceName, deviceId, count: resources.length },
             },
           },
           {

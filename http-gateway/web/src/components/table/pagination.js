@@ -27,7 +27,7 @@ export const Pagination = props => {
   // Only do this if there are the least 2 pages available (pageCount > 1)
   useEffect(
     () => {
-      if (pageLength === 0 && pageCount > 1) {
+      if (pageLength === 0 && pageCount >= 1) {
         gotoPage(pageCount - 1)
       }
     },

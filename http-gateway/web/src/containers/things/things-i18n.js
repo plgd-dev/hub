@@ -173,11 +173,13 @@ export const messages = defineMessages({
   shadowSynchronizationError: {
     id: 'things.shadowSynchronizationError',
     defaultMessage: 'Failed to set shadow synchronization',
-    description: 'Title of the toast message on shadow synchronization set error.',
+    description:
+      'Title of the toast message on shadow synchronization set error.',
   },
   shadowSynchronizationWasSetOffline: {
     id: 'things.shadowSynchronizationWasSetOffline',
-    defaultMessage: 'Shadow synchronization was scheduled, changes will be applied once the device is online.',
+    defaultMessage:
+      'Shadow synchronization was scheduled, changes will be applied once the device is online.',
   },
   thingWentOnline: {
     id: 'things.thingWentOnline',
@@ -232,12 +234,12 @@ export const messages = defineMessages({
   resourcesAdded: {
     id: 'things.resourcesAdded',
     defaultMessage:
-      'New resources were added to the thing {deviceName} ({deviceId}).',
+      '{count} new resources were added to the thing {deviceName} ({deviceId}).',
   },
   resourcesWereDeleted: {
     id: 'things.resourcesWereDeleted',
     defaultMessage:
-      'Resources were deleted from thing {deviceName} ({deviceId}).',
+      '{count} resources were deleted from thing {deviceName} ({deviceId}).',
   },
   resourceUpdated: {
     id: 'things.resourceUpdated',
