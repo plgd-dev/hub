@@ -96,7 +96,9 @@ func (s *Subscriptions) UserDevicesChanged(ctx context.Context, owner string, ad
 		err := sub.Init(ctx, currentDevices)
 		if err != nil {
 			log.Errorf("cannot init sub ID %v: %v", sub.ID(), err)
-			s.Close(sub.ID(), err)
+			if err2 := s.Close(sub.ID(), err); err2 != nil {
+				log.Errorf("cannot close sub ID %v: %v", sub.ID(), err2)
+			}
 		}
 	}
 
@@ -106,7 +108,9 @@ func (s *Subscriptions) UserDevicesChanged(ctx context.Context, owner string, ad
 			err := sub.Update(ctx, addedDevices, removedDevices)
 			if err != nil {
 				log.Errorf("cannot update sub ID %v: %v", sub.ID(), err)
-				s.Close(sub.ID(), err)
+				if err2 := s.Close(sub.ID(), err); err2 != nil {
+					log.Errorf("cannot close sub ID %v: %v", sub.ID(), err2)
+				}
 			}
 		}
 	}
@@ -146,7 +150,9 @@ func (s *Subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, 
 	}
 	s.removeFromInitSubscriptions(id, sub.UserID())
 	if releaseFromUserDevManager {
-		s.userDevicesManager.Release(sub.UserID())
+		if err := s.userDevicesManager.Release(sub.UserID()); err != nil {
+			log.Errorf("failed to release device %s from manager: %v", sub.UserID(), err)
+		}
 	}
 
 	err := sub.Close(reason)
@@ -419,12 +425,16 @@ func (s *Subscriptions) SubscribeForDevicesEvent(ctx context.Context, owner stri
 	sub := Newsubscription(subscriptionID, owner, token, send, resourceProjection, req)
 	err := s.Insertsubscription(ctx, sub)
 	if err != nil {
-		sub.Close(err)
+		if err2 := sub.Close(err); err2 != nil {
+			log.Errorf("failed to close subscription %v after failed insert: %v", subscriptionID, err2)
+		}
 		return err
 	}
 	err = s.userDevicesManager.Acquire(ctx, owner)
 	if err != nil {
-		s.closeWithReleaseUserDevicesMfg(subscriptionID, err, false)
+		if err2 := s.closeWithReleaseUserDevicesMfg(subscriptionID, err, false); err2 != nil {
+			log.Errorf("failed to close subscription %v and release user devices after failed acquire: %v", subscriptionID, err2)
+		}
 		return err
 	}
 	return nil
@@ -499,7 +509,9 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 				subRes.GetOperationProcessed().ErrorStatus.Message = err.Error()
 			}
 			subRes.SubscriptionId = r.GetSubscriptionId()
-			send(&subRes)
+			if err = send(&subRes); err != nil {
+				log.Errorf("send failed: %v", err)
+			}
 			continue
 		}
 
@@ -507,13 +519,19 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 		if err != nil {
 			subRes.GetOperationProcessed().ErrorStatus.Code = pb.Event_OperationProcessed_ErrorStatus_ERROR
 			subRes.GetOperationProcessed().ErrorStatus.Message = fmt.Sprintf("cannot generate subscription ID: %v", err)
-			send(&subRes)
+			if err = send(&subRes); err != nil {
+				log.Errorf("send failed: %v", err)
+			}
 			continue
 		}
 
 		subRes.SubscriptionId = subID.String()
 		localSubscriptions.Store(subRes.SubscriptionId, true)
-		send(&subRes)
+		if err = send(&subRes); err != nil {
+			localSubscriptions.Delete(subRes.SubscriptionId)
+			log.Errorf("send failed: %v", err)
+			continue
+		}
 
 		switch r := subReq.GetAction().(type) {
 		case *pb.SubscribeToEvents_CreateSubscription_:
@@ -523,14 +541,16 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 			err = nil
 		default:
 			err = fmt.Errorf("not supported")
-			send(&pb.Event{
+			if err2 := send(&pb.Event{
 				SubscriptionId: subRes.SubscriptionId,
 				CorrelationId:  subReq.GetCorrelationId(),
 				Type: &pb.Event_SubscriptionCanceled_{
 					SubscriptionCanceled: &pb.Event_SubscriptionCanceled{
 						Reason: err.Error(),
 					},
-				}})
+				}}); err2 != nil {
+				log.Errorf("send failed: %v", err2)
+			}
 		}
 
 		if err != nil {
