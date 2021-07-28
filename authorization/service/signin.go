@@ -1,12 +1,7 @@
 package service
 
 import (
-	"context"
-
-	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -47,17 +42,4 @@ func checkReq(tx persistence.PersistenceTx, request request) (validUntil int64, 
 	}
 
 	return validUntil, nil
-}
-
-// SignIn verifies device's AccessToken and Expiry required for signing in.
-func (s *Service) SignIn(ctx context.Context, request *pb.SignInRequest) (*pb.SignInResponse, error) {
-	tx := s.persistence.NewTransaction(ctx)
-	defer tx.Close()
-
-	validUntil, err := checkReq(tx, request)
-	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot sign in: %v", err))
-	}
-
-	return &pb.SignInResponse{ValidUntil: validUntil}, nil
 }

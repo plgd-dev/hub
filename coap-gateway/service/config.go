@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/plgd-dev/cloud/coap-gateway/provider"
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -16,16 +17,21 @@ import (
 
 //Config represent application configuration
 type Config struct {
-	Log       LogConfig     `yaml:"log" json:"log"`
-	APIs      APIsConfig    `yaml:"apis" json:"apis"`
-	Clients   ClientsConfig `yaml:"clients" json:"clients"`
-	TaskQueue queue.Config  `yaml:"taskQueue" json:"taskQueue"`
+	Log               LogConfig       `yaml:"log" json:"log"`
+	APIs              APIsConfig      `yaml:"apis" json:"apis"`
+	OAuthDeviceClient provider.Config `yaml:"oauthDeviceClient" json:"oauthDeviceClient"`
+	Clients           ClientsConfig   `yaml:"clients" json:"clients"`
+	TaskQueue         queue.Config    `yaml:"taskQueue" json:"taskQueue"`
 }
 
 func (c *Config) Validate() error {
 	err := c.APIs.Validate()
 	if err != nil {
 		return fmt.Errorf("apis.%w", err)
+	}
+	err = c.OAuthDeviceClient.Validate()
+	if err != nil {
+		return fmt.Errorf("oauthDeviceClient.%w", err)
 	}
 	err = c.Clients.Validate()
 	if err != nil {
@@ -151,11 +157,15 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
+	OwnerClaim string           `yaml:"ownerClaim" json:"ownerClaim"`
 	Connection client.Config    `yaml:"grpc" json:"grpc"`
 	OAuth      client2.ConfigV2 `yaml:"oauth" json:"oauth"`
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
 	err := c.OAuth.Validate()
 	if err != nil {
 		return fmt.Errorf("oauth.%w", err)

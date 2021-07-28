@@ -468,7 +468,7 @@ while true; do
   echo "Try to reconnect to oauth-server(${MOCKED_OAUTH_SERVER_ADDRESS}) $i"
   sleep 1
 done
-    
+
 # authorization
 ## configuration
 cat /configs/authorization.yaml | yq e "\
@@ -612,6 +612,14 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
+  .oauthDeviceClient.provider = \"${DEVICE_PROVIDER}\" |
+  .oauthDeviceClient.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .oauthDeviceClient.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .oauthDeviceClient.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .oauthDeviceClient.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .oauthDeviceClient.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .oauthDeviceClient.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .oauthDeviceClient.http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -644,6 +652,14 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
+  .oauthDeviceClient.provider = \"${DEVICE_PROVIDER}\" |
+  .oauthDeviceClient.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .oauthDeviceClient.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
+  .oauthDeviceClient.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
+  .oauthDeviceClient.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .oauthDeviceClient.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
+  .oauthDeviceClient.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .oauthDeviceClient.http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -779,84 +795,84 @@ echo "Open browser at https://${DOMAIN}"
 # Otherwise it loops forever, waking up every 60 seconds
 while sleep 10; do
   ps aux |grep $nats_server_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "nats-server has already exited."
     sync
     cat $LOGS_PATH/nats-server.log
     exit 1
   fi
   ps aux |grep $mongo_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "mongod has already exited."
     sync
     cat $LOGS_PATH/mongod.log
     exit 1
   fi
   ps aux |grep $authorization_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "authorization has already exited."
     sync
     cat $LOGS_PATH/authorization.log
     exit 1
   fi
   ps aux |grep $resource_aggregate_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "resource-aggregate has already exited."
     sync
     cat $LOGS_PATH/resource-aggregate.log
     exit 1
   fi
   ps aux |grep $resource_directory_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "resource-directory has already exited."
     sync
     cat $LOGS_PATH/resource-directory.log
     exit 1
   fi
   ps aux |grep $coap_gw_unsecure_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "coap-gateway-unsecure has already exited."
     sync
     cat $LOGS_PATH/coap-gateway-unsecure.log
     exit 1
   fi
   ps aux |grep $coap_gw_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "coap-gateway has already exited."
     sync
     cat $LOGS_PATH/coap-gateway.log
     exit 1
   fi
   ps aux |grep $grpc_gw_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "grpc-gateway has already exited."
     sync
     cat $LOGS_PATH/grpc-gateway.log
    exit 1
   fi
   ps aux |grep $http_gw_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "http-gateway has already exited."
     sync
     cat $LOGS_PATH/http-gateway.log
    exit 1
   fi
   ps aux |grep $certificate_authority_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "certificate-authority has already exited."
     sync
     cat $LOGS_PATH/certificate-authority.log
    exit 1
   fi
   ps aux |grep $oauth_server_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "oauth-server has already exited."
     sync
     cat $LOGS_PATH/oauth-server.log
    exit 1
   fi
   ps aux |grep $nginx_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then 
+  if [ $? -ne 0 ]; then
     echo "nginx has already exited."
     sync
     cat $LOGS_PATH/nginx.log

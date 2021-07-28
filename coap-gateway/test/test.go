@@ -10,6 +10,8 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +32,12 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = false
 	cfg.APIs.COAP.TLS.Embedded.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
 	cfg.APIs.COAP.TLS.Embedded.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")
-
+	cfg.OAuthDeviceClient.Provider = "plgd"
+	cfg.OAuthDeviceClient.ClientID = oauthService.ClientTest
+	cfg.OAuthDeviceClient.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
+	cfg.OAuthDeviceClient.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	cfg.OAuthDeviceClient.HTTP = config.MakeHttpClientConfig()
+	cfg.Clients.AuthServer.OwnerClaim = "sub"
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
 	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)

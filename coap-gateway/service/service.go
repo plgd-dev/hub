@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/coap-gateway/provider"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -61,6 +62,7 @@ type Service struct {
 	userDeviceSubscriptions *kitSync.Map
 	devicesStatusUpdater    *devicesStatusUpdater
 	resourceSubscriber      *subscriber.Subscriber
+	provider                *provider.PlgdProvider
 	sigs                    chan os.Signal
 }
 
@@ -219,6 +221,15 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
+	provider, err := provider.NewPlgdProvider(config.OAuthDeviceClient,
+		logger,
+		config.Clients.AuthServer.OwnerClaim,
+		"query", "offline", "code")
+	if err != nil {
+		resourceSubscriber.Close()
+		return nil, fmt.Errorf("cannot create device provider: %w", err)
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	s := Service{
@@ -239,6 +250,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 		taskQueue:          p,
 		resourceSubscriber: resourceSubscriber,
+		provider:           provider,
 
 		ctx:    ctx,
 		cancel: cancel,
