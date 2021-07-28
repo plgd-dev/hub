@@ -38,11 +38,10 @@ func validateRefreshToken(req CoapRefreshTokenReq) error {
 	return nil
 }
 
-func validUntilToExpiresIn(v int64) int64 {
-	if v == 0 {
+func validUntilToExpiresIn(validUntil time.Time) int64 {
+	if validUntil.IsZero() {
 		return -1
 	}
-	validUntil := time.Unix(0, v)
 	return int64(time.Until(validUntil).Seconds())
 }
 
@@ -73,7 +72,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	coapResp := CoapRefreshTokenResp{
 		RefreshToken: resp.RefreshToken,
 		AccessToken:  resp.AccessToken,
-		ExpiresIn:    validUntilToExpiresIn(resp.GetValidUntil()),
+		ExpiresIn:    validUntilToExpiresIn(time.Unix(0, resp.GetValidUntil())),
 	}
 
 	accept := coapconv.GetAccept(req.Options)

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
@@ -54,7 +55,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		AccessToken:  response.AccessToken,
 		UserID:       response.UserId,
 		RefreshToken: response.RefreshToken,
-		ExpiresIn:    validUntilToExpiresIn(response.GetValidUntil()),
+		ExpiresIn:    validUntilToExpiresIn(time.Unix(0, response.GetValidUntil())),
 		RedirectURI:  response.RedirectUri,
 	}
 
