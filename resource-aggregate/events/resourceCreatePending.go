@@ -47,3 +47,10 @@ func (e *ResourceCreatePending) CopyData(event *ResourceCreatePending) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 }
+
+func (e *ResourceCreatePending) CheckInitialized() bool {
+	return e.GetResourceId() != nil &&
+		e.GetContent() != nil &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil
+}

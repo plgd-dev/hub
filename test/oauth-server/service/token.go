@@ -11,11 +11,19 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/codec/json"
 )
 
 var deviceUserID = "1"
+
+const (
+	TokenScopeKey    = "scope"
+	TokenNicknameKey = "nickname"
+	TokenNameKey     = "name"
+	TokenPictureKey  = "picture"
+)
 
 // Token provides access tokens and their attributes.
 type Token struct {
@@ -30,23 +38,43 @@ func generateAccessToken(clientID string, lifeTime time.Duration, host string, k
 	now := time.Now()
 	expires := now.Add(lifeTime)
 
-	token.Set(jwt.SubjectKey, deviceUserID)
-	token.Set(jwt.AudienceKey, host+"/")
-	token.Set(jwt.IssuedAtKey, now)
-	token.Set(jwt.ExpirationKey, expires)
-	token.Set(`scope`, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"})
-	token.Set(uri.ClientIDKey, clientID)
-	token.Set(jwt.IssuerKey, host+"/")
+	if err := token.Set(jwt.SubjectKey, deviceUserID); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
+	}
+	if err := token.Set(jwt.AudienceKey, host+"/"); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
+	}
+	if err := token.Set(jwt.IssuedAtKey, now); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
+	}
+	if err := token.Set(jwt.ExpirationKey, expires); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+	}
+	if err := token.Set(TokenScopeKey, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"}); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", TokenScopeKey, err)
+	}
+	if err := token.Set(uri.ClientIDKey, clientID); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", uri.ClientIDKey, err)
+	}
+	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
+	}
 	buf, err := json.Encode(token)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to encode token: %s", err)
 	}
 
 	hdr := jws.NewHeaders()
-	hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm())
-	hdr.Set(jws.TypeKey, `JWT`)
+	if err = hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm()); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jws.AlgorithmKey, err)
+	}
+	if err = hdr.Set(jws.TypeKey, `JWT`); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jws.TypeKey, err)
+	}
 	kid := jwkKey.KeyID()
-	hdr.Set(jws.KeyIDKey, kid)
+	if err = hdr.Set(jws.KeyIDKey, kid); err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jws.KeyIDKey, err)
+	}
 	payload, err := jws.Sign(buf, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to create UserToken: %s", err)
@@ -59,15 +87,33 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	now := time.Now()
 	expires := now.Add(lifeTime)
 
-	token.Set(jwt.SubjectKey, deviceUserID)
-	token.Set(jwt.AudienceKey, clientID)
-	token.Set(jwt.IssuedAtKey, now)
-	token.Set(jwt.ExpirationKey, expires)
-	token.Set(jwt.IssuerKey, host+"/")
-	token.Set(uri.NonceKey, nonce)
-	token.Set("nickname", "test")
-	token.Set("name", "test@test.com")
-	token.Set("picture", "https://s.gravatar.com/avatar/319673928161fae8216e9a2225cff4b6?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png")
+	if err := token.Set(jwt.SubjectKey, deviceUserID); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
+	}
+	if err := token.Set(jwt.AudienceKey, clientID); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
+	}
+	if err := token.Set(jwt.IssuedAtKey, now); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
+	}
+	if err := token.Set(jwt.ExpirationKey, expires); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+	}
+	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
+	}
+	if err := token.Set(uri.NonceKey, nonce); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", uri.NonceKey, err)
+	}
+	if err := token.Set(TokenNicknameKey, "test"); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", TokenNicknameKey, err)
+	}
+	if err := token.Set(TokenNameKey, "test@test.com"); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", TokenNameKey, err)
+	}
+	if err := token.Set(TokenPictureKey, "https://s.gravatar.com/avatar/319673928161fae8216e9a2225cff4b6?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png"); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", TokenPictureKey, err)
+	}
 	//,\"updated_at\":\"2021-02-24T08:13:30.677Z\",\"email\":\"dnaik@infinera.com\",\"email_verified\":true,
 	buf, err := json.Encode(token)
 	if err != nil {
@@ -75,9 +121,15 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	}
 
 	hdr := jws.NewHeaders()
-	hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm())
-	hdr.Set(jws.TypeKey, `JWT`)
-	hdr.Set(jws.KeyIDKey, jwkKey.KeyID())
+	if err = hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm()); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jws.AlgorithmKey, err)
+	}
+	if err = hdr.Set(jws.TypeKey, `JWT`); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jws.TypeKey, err)
+	}
+	if err = hdr.Set(jws.KeyIDKey, jwkKey.KeyID()); err != nil {
+		return "", fmt.Errorf("failed to set %v: %w", jws.KeyIDKey, err)
+	}
 	payload, err := jws.Sign(buf, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
 	if err != nil {
 		return "", fmt.Errorf("failed to create UserToken: %s", err)
@@ -86,7 +138,9 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 }
 
 func (requestHandler *RequestHandler) tokenOptions(w http.ResponseWriter, r *http.Request) {
-	jsonResponseWriter(w, r)
+	if err := jsonResponseWriter(w, r); err != nil {
+		log.Errorf("failed to write response: %v", err)
+	}
 }
 
 type tokenRequest struct {
@@ -214,5 +268,8 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		"refresh_token": "refresh-token",
 	}
 
-	jsonResponseWriter(w, resp)
+	if err = jsonResponseWriter(w, resp); err != nil {
+		log.Errorf("failed to write response: %v", err)
+		return
+	}
 }

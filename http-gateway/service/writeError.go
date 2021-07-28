@@ -16,10 +16,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func errToJsonRes(err error) map[string]string {
-	return map[string]string{"err": err.Error()}
-}
-
 type grpcErr interface {
 	GRPCStatus() *grpcStatus.Status
 }

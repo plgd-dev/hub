@@ -11,6 +11,7 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitSync "github.com/plgd-dev/kit/sync"
 	"google.golang.org/grpc/status"
 )
@@ -40,7 +41,9 @@ func NewUserDevicesManager(fn TriggerFunc, asClient pbAS.AuthorizationServiceCli
 	c := cache.New(expiration, cache.DefaultExpiration)
 	c.OnEvicted(func(key string, v interface{}) {
 		r := v.(*kitSync.RefCounter)
-		r.Release(context.Background())
+		if err := r.Release(context.Background()); err != nil {
+			log.Errorf("failed to decrement RefCounter: %w", err)
+		}
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -72,7 +75,11 @@ func (d *UserDevicesManager) getRef(userID string, update bool) (_ *kitSync.RefC
 			validTo: time.Now().Add(time.Hour * 24),
 		}, func(ctx context.Context, data interface{}) error {
 			u := data.(*userDevices)
-			d.fn(ctx, u.userID, nil, u.getDevices(), nil)
+			devs, err := u.getDevices()
+			if err != nil {
+				return err
+			}
+			d.fn(ctx, u.userID, nil, devs, nil)
 			return nil
 		})
 		d.users[userID] = u
@@ -88,7 +95,9 @@ func (d *UserDevicesManager) Acquire(ctx context.Context, userID string) error {
 	d.getRef(userID, true)
 	userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
 	if err != nil {
-		d.Release(userID)
+		if err2 := d.Release(userID); err2 != nil {
+			d.errFunc(fmt.Errorf("cannot release userID %v devices: %w", userID, err2))
+		}
 		return err
 	}
 	d.trigger <- triggerUserDevice{
@@ -102,10 +111,17 @@ func (d *UserDevicesManager) Acquire(ctx context.Context, userID string) error {
 // GetUserDevices returns devices which belongs to user.
 func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) ([]string, error) {
 	v, created := d.getRef(userID, true)
+	needsRelease := true
+	defer func() {
+		if needsRelease {
+			if err := d.Release(userID); err != nil {
+				d.errFunc(fmt.Errorf("cannot release userID %v devices: %w", userID, err))
+			}
+		}
+	}()
 	if created {
 		userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
 		if err != nil {
-			d.Release(userID)
 			return nil, err
 		}
 		d.trigger <- triggerUserDevice{
@@ -113,11 +129,16 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 			userDevices: userDevices,
 			update:      true,
 		}
-		d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
+		if err := d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration); err != nil {
+			return nil, err
+		}
+		needsRelease = false
 		return userDevices[userID], nil
 	}
-	defer d.Release(userID) // getRef increase ref counter
-	mapDevs := v.Data().(*userDevices).getDevices()
+	mapDevs, err := v.Data().(*userDevices).getDevices()
+	if err != nil {
+		return nil, err
+	}
 	devs := make([]string, 0, len(mapDevs))
 	for d := range mapDevs {
 		devs = append(devs, d)
@@ -127,15 +148,17 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 
 // UpdateUserDevices updates and returns devices which belongs to user.
 func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID string) ([]string, error) {
-	v, created := d.getRef(userID, true)
-	if !created {
-		defer d.Release(userID)
-	}
+	v, _ := d.getRef(userID, true)
+	needsRelease := true
+	defer func() {
+		if needsRelease {
+			if err := d.Release(userID); err != nil {
+				d.errFunc(fmt.Errorf("cannot release userID %v devices: %w", userID, err))
+			}
+		}
+	}()
 	userDevices, err := getUsersDevices(ctx, d.asClient, []string{userID})
 	if err != nil {
-		if created {
-			d.Release(userID)
-		}
 		return nil, err
 	}
 	d.trigger <- triggerUserDevice{
@@ -143,7 +166,10 @@ func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID strin
 		userDevices: userDevices,
 		update:      true,
 	}
-	d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
+	if err := d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration); err != nil {
+		return nil, err
+	}
+	needsRelease = false
 	return userDevices[userID], nil
 }
 
@@ -152,7 +178,11 @@ func (d *UserDevicesManager) IsUserDevice(userID, deviceID string) bool {
 	if v == nil {
 		return false
 	}
-	defer d.Release(userID) // getRef increase ref counter
+	defer func() {
+		if err := d.Release(userID); err != nil {
+			d.errFunc(fmt.Errorf("cannot release userID %v devices: %w", userID, err))
+		}
+	}()
 	return v.Data().(*userDevices).isUserDevice(deviceID)
 }
 
@@ -179,10 +209,10 @@ func (d *UserDevicesManager) Release(userID string) error {
 	return nil
 }
 
-func (d *UserDevicesManager) updateDevices(ctx context.Context, userID string, deviceIDs []string, validTo time.Time) (added, removed, allDevices map[string]bool) {
+func (d *UserDevicesManager) updateDevices(ctx context.Context, userID string, deviceIDs []string, validTo time.Time) (map[string]bool, map[string]bool, map[string]bool, error) {
 	v, _ := d.getRef(userID, false)
 	if v == nil {
-		return
+		return nil, nil, nil, nil
 	}
 	defer func() {
 		err := d.Release(userID)
@@ -194,10 +224,10 @@ func (d *UserDevicesManager) updateDevices(ctx context.Context, userID string, d
 	return v.Data().(*userDevices).updateDevices(deviceIDs, validTo)
 }
 
-func (d *UserDevicesManager) getDevices(ctx context.Context, userID string) map[string]bool {
+func (d *UserDevicesManager) getDevices(ctx context.Context, userID string) (map[string]bool, error) {
 	v, _ := d.getRef(userID, false)
 	if v == nil {
-		return nil
+		return nil, nil
 	}
 	defer func() {
 		err := d.Release(userID)
@@ -227,7 +257,11 @@ func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClie
 	if err != nil {
 		return nil, status.Errorf(status.Convert(err).Code(), "cannot get users devices: %v", err)
 	}
-	defer getUserDevicesClient.CloseSend()
+	defer func() {
+		if err := getUserDevicesClient.CloseSend(); err != nil {
+			log.Errorf("failed to close send direction of get users devices stream: %v", err)
+		}
+	}()
 	userDevices := make(map[string][]string)
 	for _, userID := range usedIDs {
 		userDevices[userID] = make([]string, 0, 32)
@@ -261,7 +295,11 @@ func (d *UserDevicesManager) onTick(ctx context.Context, timeout time.Duration, 
 		return
 	}
 	for userID, devices := range usersDevices {
-		added, removed, all := d.updateDevices(ctx, userID, devices, time.Now().Add(expiration))
+		added, removed, all, err := d.updateDevices(ctx, userID, devices, time.Now().Add(expiration))
+		if err != nil {
+			d.errFunc(fmt.Errorf("failed to update user devices: %w", err))
+			continue
+		}
 		if len(added) != 0 || len(removed) != 0 {
 			d.fn(ctx, userID, added, removed, all)
 		}
@@ -273,11 +311,19 @@ func (d *UserDevicesManager) onTrigger(ctx context.Context, timeout time.Duratio
 	defer cancel()
 	if t.update {
 		for userID, devices := range t.userDevices {
-			added, removed, all := d.updateDevices(ctx, userID, devices, time.Now().Add(expiration))
+			added, removed, all, err := d.updateDevices(ctx, userID, devices, time.Now().Add(expiration))
+			if err != nil {
+				d.errFunc(fmt.Errorf("failed to update user devices: %w", err))
+				continue
+			}
 			d.fn(ctx, t.userID, added, removed, all)
 		}
 	} else {
-		all := d.getDevices(ctx, t.userID)
+		all, err := d.getDevices(ctx, t.userID)
+		if err != nil {
+			d.errFunc(fmt.Errorf("failed to get user devices: %w", err))
+			return
+		}
 		d.fn(ctx, t.userID, nil, nil, all)
 	}
 }
@@ -325,26 +371,32 @@ func (u *userDevices) isExpired(now time.Time) bool {
 	return u.validTo.Sub(now) <= 0
 }
 
-func (u *userDevices) getDevices() map[string]bool {
-	u.lock.Acquire(context.Background(), 1)
+func (u *userDevices) getDevices() (map[string]bool, error) {
+	if err := u.lock.Acquire(context.Background(), 1); err != nil {
+		return nil, err
+	}
 	defer u.lock.Release(1)
 	devices := make(map[string]bool)
 	for deviceID := range u.devices {
 		devices[deviceID] = true
 	}
-	return devices
+	return devices, nil
 }
 
 func (u *userDevices) isUserDevice(deviceID string) bool {
-	u.lock.Acquire(context.Background(), 1)
+	if err := u.lock.Acquire(context.Background(), 1); err != nil {
+		log.Errorf("failed to acquire lock: %v", err)
+		return false
+	}
 	defer u.lock.Release(1)
 	return u.devices[deviceID]
 }
 
-func (u *userDevices) updateDevices(deviceIDs []string, validTo time.Time) (added, removed, allDevices map[string]bool) {
-
-	added = make(map[string]bool)
-	u.lock.Acquire(context.Background(), 1)
+func (u *userDevices) updateDevices(deviceIDs []string, validTo time.Time) (map[string]bool, map[string]bool, map[string]bool, error) {
+	added := make(map[string]bool)
+	if err := u.lock.Acquire(context.Background(), 1); err != nil {
+		return nil, nil, nil, err
+	}
 	defer u.lock.Release(1)
 	for _, deviceID := range deviceIDs {
 		_, ok := u.devices[deviceID]
@@ -353,7 +405,7 @@ func (u *userDevices) updateDevices(deviceIDs []string, validTo time.Time) (adde
 		}
 	}
 
-	removed = make(map[string]bool)
+	removed := make(map[string]bool)
 	for deviceID := range u.devices {
 		removed[deviceID] = true
 	}
@@ -371,10 +423,10 @@ func (u *userDevices) updateDevices(deviceIDs []string, validTo time.Time) (adde
 	u.devices = devices
 	u.validTo = validTo
 
-	allDevices = make(map[string]bool)
+	allDevices := make(map[string]bool)
 	for _, deviceID := range deviceIDs {
 		allDevices[deviceID] = true
 	}
 
-	return added, removed, allDevices
+	return added, removed, allDevices, nil
 }

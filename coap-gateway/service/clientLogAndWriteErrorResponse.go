@@ -17,13 +17,8 @@ func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token
 	defer pool.ReleaseMessage(msg)
 	msg.SetCode(code)
 	msg.SetToken(token)
-	if client != nil {
-		// Don't set content format for diagnostic message: https://tools.ietf.org/html/rfc7252#section-5.5.2
-		msg.SetBody(bytes.NewReader([]byte(err.Error())))
-	} else {
-		msg.SetContentFormat(message.AppOcfCbor)
-		msg.SetBody(bytes.NewReader([]byte{0xA0})) // empty object
-	}
+	// Don't set content format for diagnostic message: https://tools.ietf.org/html/rfc7252#section-5.5.2
+	msg.SetBody(bytes.NewReader([]byte(err.Error())))
 	err = client.coapConn.WriteMessage(msg)
 	if err != nil {
 		log.Errorf("cannot send error to %v: %v", getDeviceID(client), err)

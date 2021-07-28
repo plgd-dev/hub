@@ -9,15 +9,19 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 )
 
 type Claims = interface{ Valid() error }
 type ClaimsFunc = func(ctx context.Context, code codes.Code, path string) Claims
-type Interceptor = func(ctx context.Context, code coapCodes.Code, path string) (context.Context, error)
+type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
 
 const bearerKey = "bearer"
-const authorizationKey = "authorization"
+
+type key int
+
+const (
+	authorizationKey key = 0
+)
 
 func CtxWithToken(ctx context.Context, token string) context.Context {
 	return context.WithValue(ctx, authorizationKey, fmt.Sprintf("%s %s", bearerKey, token))
@@ -51,7 +55,7 @@ func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor
 }
 
 func NewAuthInterceptor() Interceptor {
-	return func(ctx context.Context, code coapCodes.Code, path string) (context.Context, error) {
+	return func(ctx context.Context, code codes.Code, path string) (context.Context, error) {
 		switch path {
 		case uri.RefreshToken, uri.SignUp, uri.SignIn:
 			return ctx, nil

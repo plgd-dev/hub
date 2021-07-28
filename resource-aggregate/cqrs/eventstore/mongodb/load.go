@@ -180,6 +180,25 @@ func (r *queryResolver) check(aggregateID string, version int64) bool {
 	return false
 }
 
+/// Create mongodb find query to load events
+func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler, queryResolver *queryResolver, filter interface{}, opts ...*options.FindOptions) error {
+	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
+	iter, err := col.Find(ctx, filter, opts...)
+	if err == mongo.ErrNilDocument {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	i := NewIterator(iter, queryResolver, s.dataUnmarshaler, s.LogDebugfFunc)
+	err = eh.Handle(ctx, i)
+	errClose := iter.Close(ctx)
+	if err == nil {
+		return errClose
+	}
+	return err
+}
+
 func (r *queryResolver) toMongoQuery(maxVersionKey string) (filter bson.M, hint bson.D) {
 	orQueries := make([]bson.D, 0, 32)
 	if len(r.aggregateVersions) == 0 {
@@ -245,7 +264,7 @@ func (s *EventStore) loadEvents(ctx context.Context, versionQueries []eventstore
 	return nil
 }
 
-// LoadFromVersion loads aggragates events from version.
+// LoadFromVersion loads aggregates events from version.
 func (s *EventStore) LoadFromVersion(ctx context.Context, queries []eventstore.VersionQuery, eh eventstore.Handler) error {
 	return s.loadEvents(ctx, queries, eh, signOperator_gte, latestVersionKey)
 }
@@ -254,22 +273,7 @@ func (s *EventStore) loadMongoQuery(ctx context.Context, eh eventstore.Handler, 
 	filter, hint := queryResolver.toMongoQuery(maxVersionKey)
 	opts := options.Find()
 	opts.SetHint(hint)
-	iter, err := s.client.Database(s.DBName()).Collection(getEventCollectionName()).Find(ctx, filter, opts)
-	if err == mongo.ErrNilDocument {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	i := NewIterator(iter, queryResolver, s.dataUnmarshaler, s.LogDebugfFunc)
-	err = eh.Handle(ctx, i)
-
-	errClose := iter.Close(ctx)
-	if err == nil {
-		return errClose
-	}
-	return err
+	return s.loadEventsQuery(ctx, eh, queryResolver, filter, opts)
 }
 
 func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQuery) (interface{}, *options.FindOptions) {
@@ -308,24 +312,8 @@ func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQu
 }
 
 func (s *EventStore) loadFromSnapshot(ctx context.Context, groupID string, queries []eventstore.SnapshotQuery, eventHandler eventstore.Handler) error {
-	var err error
-	var iter *mongo.Cursor
-	col := s.client.Database(s.DBName()).Collection(getEventCollectionName())
-	pipeline, opts := snapshotQueriesToMongoQuery(groupID, queries)
-	iter, err = col.Find(ctx, pipeline, opts)
-	if err == mongo.ErrNilDocument {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	i := NewIterator(iter, nil, s.dataUnmarshaler, s.LogDebugfFunc)
-	err = eventHandler.Handle(ctx, i)
-	errClose := iter.Close(ctx)
-	if err == nil {
-		return errClose
-	}
-	return err
+	filter, opts := snapshotQueriesToMongoQuery(groupID, queries)
+	return s.loadEventsQuery(ctx, eventHandler, nil, filter, opts)
 }
 
 // LoadFromSnapshot loads events from the last snapshot eventstore.

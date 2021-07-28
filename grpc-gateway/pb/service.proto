@@ -4,8 +4,9 @@ package ocf.cloud.grpcgateway.pb;
 
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/clientConfiguration.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/devices.proto";
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/getPendingCommands.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/events.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/getDevicesMetadata.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/getPendingCommands.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/updateDeviceMetadata.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 
@@ -154,6 +155,16 @@ service GrpcGateway {
   rpc GetDevicesMetadata(GetDevicesMetadataRequest) returns (stream ocf.cloud.resourceaggregate.pb.DeviceMetadataUpdated) {
     option (google.api.http) = {
       get: "/api/v1/devices-metadata"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Directory" ]
+    };
+  }
+
+  // Get events for given combination of device id, resource id and timestamp
+  rpc GetEvents(GetEventsRequest) returns (stream GetEventsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/events"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Resource Directory" ]

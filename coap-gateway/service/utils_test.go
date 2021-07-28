@@ -22,7 +22,6 @@ import (
 	"github.com/plgd-dev/kit/security/certManager"
 
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 
@@ -37,7 +36,7 @@ import (
 )
 
 type input struct {
-	code    coapCodes.Code
+	code    codes.Code
 	payload interface{}
 	queries []string
 }
@@ -48,28 +47,6 @@ type testEl struct {
 	name string
 	in   input
 	out  output
-}
-
-func initializeStruct(t reflect.Type, v reflect.Value) {
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		ft := t.Field(i)
-		switch ft.Type.Kind() {
-		case reflect.Map:
-			f.Set(reflect.MakeMap(ft.Type))
-		case reflect.Slice:
-			f.Set(reflect.MakeSlice(ft.Type, 0, 0))
-		case reflect.Chan:
-			f.Set(reflect.MakeChan(ft.Type, 0))
-		case reflect.Struct:
-			initializeStruct(ft.Type, f)
-		case reflect.Ptr:
-			fv := reflect.New(ft.Type.Elem())
-			initializeStruct(ft.Type.Elem(), fv.Elem())
-			f.Set(fv)
-		default:
-		}
-	}
 }
 
 func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
@@ -216,28 +193,11 @@ func json2cbor(data string) ([]byte, error) {
 	return json.ToCBOR(data)
 }
 
-func cannonalizeJSON(data string) (string, error) {
-	if len(data) == 0 {
-		return "", nil
-	}
-	var m interface{}
-	err := json.Decode([]byte(data), &m)
-	if err != nil {
-		return "", err
-	}
-	out, err := json.Encode(m)
-	return string(out), err
-}
-
-func cbor2json(data []byte) (string, error) {
-	return cbor.ToJSON(data)
-}
-
 func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	testSignUpIn(t, CertIdentity, co)
 	publishResEl := []testEl{
-		{"publishResourceA", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
-			output{coapCodes.Changed, TestWkRD{
+		{"publishResourceA", input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestAResourceHref + `", "rt":["` + TestAResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+			output{codes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
@@ -250,8 +210,8 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 					},
 				},
 			}, nil}},
-		{"publishResourceB", input{coapCodes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
-			output{coapCodes.Changed, TestWkRD{
+		{"publishResourceB", input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
+			output{codes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
 				TimeToLive:       12345,
 				TimeToLiveLegacy: 12345,
@@ -313,13 +273,13 @@ func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn
 	}
 	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
 		switch r.Code() {
-		case coapCodes.POST:
+		case codes.POST:
 			w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
-		case coapCodes.GET:
+		case codes.GET:
 			w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
-		case coapCodes.PUT:
+		case codes.PUT:
 			w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
-		case coapCodes.DELETE:
+		case codes.DELETE:
 			w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		}
 	}))

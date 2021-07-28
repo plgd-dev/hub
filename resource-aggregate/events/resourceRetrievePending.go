@@ -47,3 +47,10 @@ func (e *ResourceRetrievePending) CopyData(event *ResourceRetrievePending) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 }
+
+func (e *ResourceRetrievePending) CheckInitialized() bool {
+	return e.GetResourceId() != nil &&
+		e.GetResourceInterface() != "" &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil
+}

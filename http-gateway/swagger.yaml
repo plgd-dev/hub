@@ -1,1 +1,1456 @@
-../grpc-gateway/pb/service.swagger.json
+openapi: 3.0.1
+info:
+  title: plgd HTTP Gateway
+  version: 2.0.0
+servers:
+  - url: 'https://try.plgd.cloud'
+paths:
+  '/.well-known/ocfcloud-configuration':
+    get:
+      tags:
+        - 'Configuration'
+      summary: 'plgd cloud clients configuration'
+      description: |
+        Basic publicly available configuration required to connect the device to the plgd cloud.
+      responses:
+        200:
+          description: Configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudConfiguration'
+  '/api/v1/devices':
+    get:
+      tags:
+        - 'Devices'
+      summary: 'Get all devices'
+      description: |
+        All registered devices user is authorized to use are returned in form of a stream, chunk by chunk. Attach your reader and consume device by device. Various filters allows you to be more concrete in devices you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
+      parameters:
+        - $ref: '#/components/parameters/deviceIdFilter'
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/statusFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Stream of devices or errors.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Device'
+                  error:
+                    $ref: '#/components/schemas/Error'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}':
+    get:
+      tags:
+        - 'Devices'
+      summary: 'Get device by ID'
+      description: |
+        Get information about a single device. Alternative is to call 'Get all devices' with a `deviceId` filter query parameter.
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Information about a single device.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+  '/api/v1/resource-links':
+    get:
+      tags:
+        - 'Resource Links'
+      summary: 'Get resource links'
+      description: |
+        Each device publishes links to its resources to the plgd cloud. Authorized user can get all published links in form of a stream, chunk by chunk. Attach your reader and consume link by link. Various filters allows you to be more concrete in links you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
+      parameters:
+        - $ref: '#/components/parameters/deviceIdFilter'
+        - $ref: '#/components/parameters/typeFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Stream of resource links or errors.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResourceLinks'
+                  error:
+                    $ref: '#/components/schemas/Error'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/resource-links':
+    get:
+      tags:
+        - 'Resource Links'
+      summary: 'Get device''s resource links'
+      description: |
+        Get resource links published by a single device. Alternative is to call 'Get all resource links' with `deviceId` filter query parameter.
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/typeFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Resource links of a single device.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceLinks'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+  '/api/v1/devices/{deviceId}/resource-links/{resourceHref}':
+    parameters:
+      - $ref: '#/components/parameters/deviceId'
+      - $ref: '#/components/parameters/resourceHref'
+    post:
+      tags:
+        - 'Resource Links'
+      summary: 'Create a resource'
+      description: |
+        This API enables you to create a new resource on a collection supporting create operation - interface `oic.if.create` shall be present. The resource is automatically published by the device, about what you are informed through an `RESOURCE_PUBLISHED` event.
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      requestBody:
+        description: 'Create request as defined by the Open Connectivity Foundation.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceCreateContent'
+        required: true
+      responses:
+        200:
+          description: 'Resource create response containing href to a new resource.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Resource'
+              example:
+                data:
+                  resourceId:
+                    href: '/switches'
+                    deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+                  content:
+                    href: '/switches/1'
+                    rt:
+                      - 'oic.r.switch.binary'
+                    if:
+                      - 'oic.if.a'
+                      - 'oic.if.baseline'
+                    rep:
+                      value: false
+                  auditContext:
+                    userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
+                    correlationId: 'e20f1eef-2eeb-4755-b33e-139106d28e2c'
+                  eventMetadata:
+                    connectionId: '194.1.25.111:61692'
+                    sequence: '7'
+                    version: '0'
+                    timestamp: '1625427236429144178'
+                  status: 'CREATED'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
+        404:
+          $ref: '#/components/responses/notFound'
+    delete:
+      tags:
+        - 'Resource Links'
+      summary: 'Delete a resource'
+      description: |
+        Request to delete a resource is an async operation. The device after successful resource deletion unpublishes the resource from the plgd Cloud. This information is published to the WebSocket in form of an `RESOURCE_UNPUBLISHED` event.
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Confirmation event about successful resource deletion.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Resource'
+        204:
+          $ref: '#/components/responses/accepted'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
+        404:
+          $ref: '#/components/responses/notFound'
+  '/api/v1/resources':
+    get:
+      tags:
+        - 'Resources'
+      summary: 'Get all resources'
+      description: |
+        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by all device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
+      parameters:
+        - $ref: '#/components/parameters/deviceIdFilter'
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/resourceIdFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'Stream of resource shadow contents or errors.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      types:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - 'oic.r.switch.binary'
+                      data:
+                        $ref: '#/components/schemas/Resource'
+                  error:
+                    $ref: '#/components/schemas/Error'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/resources/':
+    get:
+      tags:
+        - 'Resources'
+      summary: 'Retrieve device''s resources'
+      description: |
+        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. This API allows you to retrieve shadow contents of all resources published by this device. Response is sent in form of a stream, chunk by chunk. Error response might be returned immediately, but also anytime during the stream reading.
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/typeFilter'
+      responses:
+        200:
+          description: 'Stream of resource shadow contents or errors.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      types:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - 'oic.r.switch.binary'
+                      data:
+                        $ref: '#/components/schemas/Resource'
+                  error:
+                    $ref: '#/components/schemas/Error'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/resources/{resourceHref}':
+    parameters:
+      - $ref: '#/components/parameters/deviceId'
+      - $ref: '#/components/parameters/resourceHref'
+    get:
+      tags:
+        - 'Resources'
+      summary: 'Retrieve a resource'
+      description: |
+        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility bypass the shadow by setting the query parameter `shadow` to `false.`
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      parameters:
+        - $ref: '#/components/parameters/interface'
+        - $ref: '#/components/parameters/shadow'
+      responses:
+        200:
+          description: 'Resource content.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Resource'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+    put:
+      tags:
+        - 'Resources'
+      summary: 'Update a resource'
+      description: |
+        Resource update request is send directly to the device, carrying values which should be modified. Update confirmation doesn't have to carry updated content, this is up to the device implementation if it replies with an up to date values. If subscribed to the websocket, after the update command is successfuly accepted by the device, event `RESOURCE_UPDATED` with matching `correlationId` is emmited. At the moment values are applied / changed on the device (e.g. resource update might trigger some processing, which was successfuly requested but operation is in progress) event `RESOURCE_CHANGED` is emmited and resource shadow updated.
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      requestBody:
+        description: 'Updated content of the resource.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceContent'
+        required: true
+      responses:
+        200:
+          description: 'Confirmation of an update. Presence of the content in the response depends on the device implementation.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceContent'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
+        404:
+          $ref: '#/components/responses/notFound'
+  '/api/v1/devices/{deviceId}/metadata':
+    put:
+      tags:
+        - 'Devices'
+      summary: 'Update device metadata'
+      description: |
+        Device metadata represent configuration of the relationship between the plgd cloud and the device. It's not configuration of the device itself. [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) configuration is part of the metadata. By setting this value you control if the shadow for this device is kept up to date or not.
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+      requestBody:
+        description: 'Device metadata change successfuly requested. If the device is online, change is immediately applied. If the device is offline, pending command is registered and executed at the moment device comes online.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceMetadata'
+            example:
+              shadowSynchronization: 'DISABLED'
+        required: true
+      responses:
+        200:
+          description: 'Metadata successfuly updated.'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+  '/api/v1/pending-commands':
+    get:
+      tags:
+        - 'Pending Commands'
+      summary: 'Get all pending commands'
+      description: |
+        Resource shadow can be updated even if the device is offline. Each update request creates a pending command which is executed at the moment devices comes online. If the device is offline, this API allows you to retrieve all pending commands in form of a stream. Various filters allows you to be more concrete in pending commands you would like to get. Error response might be returned immediately, but also anytime during the stream reading.
+      parameters:
+        - $ref: '#/components/parameters/deviceIdFilter'
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/resourceIdFilter'
+        - $ref: '#/components/parameters/commandFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/pendingCommands'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/pending-commands':
+    get:
+      tags:
+        - 'Pending Commands'
+      summary: 'Get all pending commands for a device'
+      description: |
+        Retrieve all pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/commandFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/pendingCommands'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands':
+    get:
+      tags:
+        - 'Pending Commands'
+      summary: 'Get all pending commands for a resource from a device'
+      description: |
+        Retrieve all pending commands for a single resource from a device. Alternative is to call 'Get all pending commands' with `resourceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/typeFilter'
+        - $ref: '#/components/parameters/commandFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/pendingCommands'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/events':
+    get:
+      tags:
+        - 'Resource Events'
+      summary: 'Get resource events'
+      description: |
+        All events from resources belonging to devices user is authorized to use are returned in form of a stream, chunk by chunk. Attach your reader and consume event by event. Filters allow you to select devices and resources of interest, and the timestamp filter allows to filter out events and return only those that occurred after a given time. Error response might be returned immediately, but also anytime during the stream reading.
+      parameters:
+        - $ref: '#/components/parameters/deviceIdFilter'
+        - $ref: '#/components/parameters/resourceIdFilter'
+        - $ref: '#/components/parameters/timestampFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/events'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/events':
+    get:
+      tags:
+        - 'Resource Events'
+      summary: 'Get resource events from selected device'
+      description: |
+        Get all resource events that occurred on the device with given `deviceId`. Alternative is to call 'Get resource events' with `deviceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/timestampFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/events'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/resources/{resourceHref}/events':
+    get:
+      tags:
+        - 'Resource Events'
+      summary: 'Get events from selected resource'
+      description: |
+        Get all events that occurred on the resource from device with given `deviceId` addressable at given `resourceHref`. Alternative is to call 'Get resource events' with `resourceIdFilter` query parameter.
+      parameters:
+        - $ref: '#/components/parameters/timestampFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/events'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/ws/events':
+    post:
+      tags:
+        - 'Resource Events'
+      summary: 'Subscribe to events'
+      description: |
+        Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream.
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      requestBody:
+        description: 'SubscribeToEvents message that opens a websocket stream'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeToEvents'
+        required: true
+      responses:
+        200:
+          description: 'Stream of events'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Event'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
+        404:
+          $ref: '#/components/responses/notFound'
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: The default OAuth API Resources.
+      flows:
+        implicit:
+          authorizationUrl: https://auth.plgd.cloud/authorize?audience=https://try.plgd.cloud
+          scopes:
+            openid: to authorize access to a user's details
+  requestBodies:
+    authorizationContext:
+      description: An access token must be send in the first message for backend mode via websocket.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+                description: Access token
+            example:
+              Token: 53080a4f-5e3e-4291-802f-3436238232d1
+  schemas:
+    AuditContext:
+      type: object
+      properties:
+        userId:
+          type: string
+        correlationId:
+          type: string
+    CloudConfiguration:
+      type: object
+      properties:
+        accessTokenUrl:
+          description: URL to get an access token to authorize an access to the plgd API.
+          type: string
+        authCodeUrl:
+          description: URL to get an authorization code, required for device registration at the plgd cloud.
+          type: string
+        jwtClaimOwnerId:
+          description: JWT claim identifying device owner.
+          type: string
+          default: 'sub'
+        signingServerAddress:
+          description: Certificate authority endpoint used to sign identity certificates for devices.
+          type: string
+        cloudId:
+          description: Unique ID of the cloud, required for device registration at the plgd cloud.
+          type: string
+          format: uuid
+        cloudUrl:
+          description: URL of the device endpoint - plgd CoAP Gateway where the device connects.
+          type: string
+        cloudAuthorizationProvider:
+          description: Identifer of token issuer which device sends together with the token to the plgd cloud during during its registration.
+          type: string
+        cloudCertificateAuthorities:
+          description: Public key of the certificate authority issuing the plgd identity certificates.
+          type: string
+      example:
+        accessTokenUrl: 'https://api.try.plgd.cloud/api/authz/token'
+        authCodeUrl: 'https://api.try.plgd.cloud/api/authz/code'
+        jwtClaimOwnerId: 'sub'
+        signingServerAddress: 'api.try.plgd.cloud:443'
+        cloudId: 'adebc667-1f2b-41e3-bf5c-6d6eabc68cc6'
+        cloudUrl: 'coaps+tcp://try.plgd.cloud:5684'
+        cloudAuthorizationProvider: 'plgd'
+        cloudCertificateAuthorities: |
+          -----BEGIN CERTIFICATE-----
+          MIIBRTCB66ADAgECAhAYrP/8939ZQulrospE3RuHMAoGCCqGSM49BAMCMBIxEDAO
+          BgNVBAMTB1Jvb3QgQ0EwHhcNMjAwODE3MDcyMzM3WhcNMjEwODE3MDcyMzM3WjAS
+          MRAwDgYDVQQDEwdSb290IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEad6z
+          XxjrEezHI8IvNH8RZkc10CM2CdaeU0S+azvpEqV+LMIh0CFLHw9WLEUaTV8JBmXU
+          m2Ien4YsLfHbAC4Q/6MjMCEwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMB
+          Af8wCgYIKoZIzj0EAwIDSQAwRgIhAIyyCjzD8YzCNSY6YbnLgJ7TaXz5HPE0Eyqm
+          gfQCLUhwAiEAmfMN+GW05NyB3n5OxYHqVmHGDZJ8rHUUBCPJ3WbCweM=
+          -----END CERTIFICATE-----
+    CommandType:
+      type: string
+      enum:
+        - 'RESOURCE_CREATE'
+        - 'RESOURCE_RETRIEVE'
+        - 'RESOURCE_UPDATE'
+        - 'RESOURCE_DELETE'
+        - 'DEVICE_METADATA_UPDATE'
+    ConnectionStatus:
+      type: string
+      enum:
+        - 'OFFLINE'
+        - 'ONLINE'
+      default: 'OFFLINE'
+    Content:
+      type: object
+      properties:
+        data:
+          type: string
+          format: byte
+        contentType:
+          type: string
+        coapContentFormat:
+          type: integer
+          format: int32
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+        types:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/DeviceMetadata'
+        manufacturerName:
+          type: array
+          items:
+            type: object
+            properties:
+              language:
+                type: string
+              value:
+                type: string
+        modelNumber:
+          type: string
+        interfaces:
+          type: array
+          items:
+            type: string
+        protocolIndependentId:
+          type: string
+      example:
+        id: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        types:
+          - 'oic.d.cloudDevice'
+          - 'oic.wk.d'
+        name: 'CloudServer'
+        metadata:
+          status:
+            value: 'ONLINE'
+            validUntil: 1625262498747539632
+          shadowSynchronization: 'UNSET'
+        manufacturerName:
+          - language: 'en-US'
+            value: 'plugged'
+        modelNumber: '12-d21d4-23jzi2'
+        interfaces:
+          - 'oic.if.r'
+          - 'oic.if.baseline'
+        protocolIndependentId: 'cd5f73ed-51e0-4ad7-59f9-bfb0f7b4b747'
+    DeviceMetadata:
+      type: object
+      properties:
+        status:
+          type: object
+          properties:
+            value:
+              $ref: '#/components/schemas/ConnectionStatus'
+            validUntil:
+              type: string
+              format: int64
+          description: 'Unix timestamp in nanoseconds.'
+        shadowSynchronization:
+          $ref: '#/components/schemas/ShadowSynchronizationStatus'
+    DeviceMetadataSnapshotTaken:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        deviceMetadataUpdated:
+          $ref: '#/components/schemas/DeviceMetadataUpdated'
+        updatePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    DeviceMetadataUpdated:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        status:
+          $ref: '#/components/schemas/ConnectionStatus'
+        shadowSynchronization:
+          $ref: '#/components/schemas/ShadowSynchronizationStatus'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    DeviceMetadataUpdatePending:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        shadowSynchronization:
+          $ref: '#/components/schemas/ShadowSynchronizationStatus'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    Event:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+        correlationId:
+          type: string
+        deviceRegistered:
+          $ref: '#/components/schemas/EventDeviceRegistered'
+        deviceUnregistered:
+          $ref: '#/components/schemas/EventDeviceUnregistered'
+        resourcePublished:
+          $ref: '#/components/schemas/ResourceLinksPublished'
+        resourceUnpublished:
+          $ref: '#/components/schemas/ResourceLinksUnpublished'
+        resourceChanged:
+          $ref: '#/components/schemas/ResourceChanged'
+        operationProcessed:
+          $ref: '#/components/schemas/EventOperationProcessed'
+        subscriptionCanceled:
+          $ref: '#/components/schemas/EventSubscriptionCanceled'
+        resourceUpdatePending:
+          $ref: '#/components/schemas/ResourceUpdatePending'
+        resourceUpdated:
+          $ref: '#/components/schemas/ResourceUpdated'
+        resourceRetrievePending:
+          $ref: '#/components/schemas/ResourceRetrievePending'
+        resourceRetrieved:
+          $ref: '#/components/schemas/ResourceRetrieved'
+        resourceDeletePending:
+          $ref: '#/components/schemas/ResourceDeletePending'
+        resourceDeleted:
+          $ref: '#/components/schemas/ResourceDeleted'
+        resourceCreatePending:
+          $ref: '#/components/schemas/ResourceCreatePending'
+        resourceCreated:
+          $ref: '#/components/schemas/ResourceCreated'
+        deviceMetadataUpdatePending:
+          $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+        deviceMetadataUpdated:
+          $ref: '#/components/schemas/DeviceMetadataUpdated'
+    EventDeviceRegistered:
+      type: object
+      properties:
+        deviceIds:
+          type: array
+          items:
+            type: string
+    EventDeviceUnregistered:
+      type: object
+      properties:
+        deviceIds:
+          type: array
+          items:
+            type: string
+    EventMetadata:
+      type: object
+      properties:
+        version:
+          type: string
+          format: uint64
+        timestamp:
+          type: string
+          format: int64
+        connectionId:
+          type: string
+        sequence:
+          type: string
+          format: uint64
+    EventOperationProcessed:
+      type: object
+      properties:
+        errorStatus:
+          $ref: '#/components/schemas/OperationProcessedErrorStatus'
+    EventSubscriptionCanceled:
+      type: object
+      properties:
+        reason:
+          type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+    ErrorStatusCode:
+      type: string
+      default: 'OK'
+      enum:
+        - 'OK'
+        - 'ERROR'
+        - 'NOT_FOUND'
+    OperationProcessedErrorStatus:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorStatusCode'
+        message:
+          type: string
+    Resource:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        content:
+          oneOf:
+            - $ref: '#/components/schemas/ResourceContent'
+            - $ref: '#/components/schemas/ResourceCreatedContent'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+        status:
+          $ref: '#/components/schemas/Status'
+      example:
+        resourceId:
+          href: '/switches/1'
+          deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        content:
+          rt:
+            - 'oic.r.switch.binary'
+          if:
+            - 'oic.if.a'
+            - 'oic.if.baseline'
+          value: false
+        auditContext:
+          userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
+          correlationId: 'e20f1eef-2eeb-4755-b33e-139106d28e2c'
+        eventMetadata:
+          connectionId: '194.1.25.111:61692'
+          sequence: '7'
+          version: '0'
+          timestamp: '1625427236429144178'
+        status: 'OK'
+    ResourceChanged:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+        status:
+          $ref: '#/components/schemas/Status'
+    ResourceContent:
+      type: object
+      example:
+        value: true
+    ResourceCreateContent:
+      type: object
+      properties:
+        rt:
+          type: array
+          items:
+            type: string
+        if:
+          type: array
+          items:
+            type: string
+        rep:
+          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
+          type: object
+        p:
+          type: object
+          properties:
+            bm:
+              type: integer
+              default: 3
+          required:
+            - bm
+      required:
+        - rt
+        - if
+        - rep
+        - p
+      example:
+        rt:
+          - 'oic.r.switch.binary'
+        if:
+          - 'oic.if.a'
+          - 'oic.if.baseline'
+        rep:
+          value: false
+        p:
+          bm: 3
+    ResourceCreated:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceCreatedContent:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+        rt:
+          type: array
+          items:
+            type: string
+        if:
+          type: array
+          items:
+            type: string
+        rep:
+          description: 'Resource content provided as JSON object or base64 encoded CBOR.'
+          type: object
+      example:
+        href: '/switches/1'
+        rt:
+          - 'oic.r.switch.binary'
+        if:
+          - 'oic.if.a'
+          - 'oic.if.baseline'
+        rep:
+          value: false
+    ResourceCreatePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceDeleted:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceDeletePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceId:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        href:
+          type: string
+          format: url
+    ResourceLink:
+      type: object
+      properties:
+        href:
+          type: string
+        deviceId:
+          type: string
+        resourceTypes:
+          type: array
+          items:
+            type: string
+        interfaces:
+          type: array
+          items:
+            type: string
+        anchor:
+          type: string
+        title:
+          type: string
+        supportedContentTypes:
+          type: array
+          items:
+            type: string
+        validUntil:
+          type: string
+          format: int64
+        policies:
+          type: object
+          properties:
+            bitFlags:
+              type: integer
+              format: int32
+        endpointInformations:
+          type: array
+          items:
+            type: object
+            properties:
+              endpoint:
+                type: string
+              priority:
+                type: string
+                format: int64
+    ResourceLinks:
+      type: object
+      properties:
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLink'
+        deviceId:
+          type: string
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+      example:
+        resources:
+          - href: '/switches/1'
+            deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+            resourceTypes:
+              - 'oic.r.switch.binary'
+            interfaces:
+              - 'oic.if.a'
+              - 'oic.if.baseline'
+            anchor: ''
+            title: ''
+            supportedContentTypes: []
+            validUntil: '0'
+            policies:
+              bitFlags: 3
+            endpointInformations: []
+        deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        auditContext:
+          userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
+          correlationId: 'ef007f88-6073-4af1-8951-971578bf6803'
+        eventMetadata:
+          connectionId: '194.1.25.111:61692'
+          sequence: '4'
+          version: '0'
+          timestamp: '1625432924483895839'
+    ResourceLinksPublished:
+      $ref: '#/components/schemas/ResourceLinks'
+    ResourceLinksSnapshotTaken:
+      type: object
+      properties:
+        resources:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Resource'
+        deviceId:
+          type: string
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceLinksUnpublished:
+      type: object
+      properties:
+        hrefs:
+          type: array
+          items:
+            type: string
+        deviceId:
+          type: string
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+      example:
+        hrefs: ['/light/1', '/light/2']
+        deviceId: '4629b3cb-3a6e-477c-5d50-ccb28ad7c349'
+        auditContext:
+          userId: '9772fcff-dcfb-4db8-a6c9-1b75f2165eb1'
+          correlationId: 'ef007f88-6073-4af1-8951-971578bf6803'
+        eventMetadata:
+          connectionId: '194.1.25.111:61692'
+          sequence: '4'
+          version: '0'
+          timestamp: '1625432924483895839'
+    ResourceRetrieved:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceRetrievePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        resourceInterface:
+          type: string
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceStateSnapshotTaken:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        latestResourceChange:
+          $ref: '#/components/schemas/ResourceChanged'
+        resourceCreatePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceCreatePending'
+        resourceRetrievePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceRetrievePending'
+        resourceUpdatePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceUpdatePending'
+        resourceDeletePendings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceDeletePending'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceUpdated:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        status:
+          $ref: '#/components/schemas/Status'
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ResourceUpdatePending:
+      type: object
+      properties:
+        resourceId:
+          $ref: '#/components/schemas/ResourceId'
+        resourceInterface:
+          type: string
+        content:
+          $ref: '#/components/schemas/Content'
+        auditContext:
+          $ref: '#/components/schemas/AuditContext'
+        eventMetadata:
+          $ref: '#/components/schemas/EventMetadata'
+    ShadowSynchronizationStatus:
+      type: string
+      enum:
+        - 'UNSET'
+        - 'ENABLED'
+        - 'DISABLED'
+      default: 'UNSET'
+    Status:
+      type: string
+      enum:
+        - 'UNKNOWN'
+        - 'OK'
+        - 'BAD_REQUEST'
+        - 'UNAUTHORIZED'
+        - 'FORBIDDEN'
+        - 'NOT_FOUND'
+        - 'UNAVAILABLE'
+        - 'NOT_IMPLEMENTED'
+        - 'ACCEPTED'
+        - 'ERROR'
+        - 'METHOD_NOT_ALLOWED'
+        - 'CREATED'
+    SubscribeToEvents:
+      type: object
+      properties:
+        createSubscription:
+          $ref: '#/components/schemas/SubscribeToEventsCreateSubscription'
+        cancelSubscription:
+          $ref: '#/components/schemas/SubscribeToEventsCancelSubscription'
+        correlationId:
+          type: string
+    SubscribeToEventsCancelSubscription:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+    SubscribeToEventsCreateSubscription:
+      type: object
+      properties:
+        eventFilter:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscribeToEventsCreateSubscriptionEvent'
+        deviceIdFilter:
+          type: array
+          items:
+            type: string
+        resourceIdFilter:
+          type: array
+          items:
+            type: string
+    SubscribeToEventsCreateSubscriptionEvent:
+      type: string
+      default: 'REGISTERED'
+      enum:
+        - 'REGISTERED'
+        - 'UNREGISTERED'
+        - 'DEVICE_METADATA_UPDATED'
+        - 'DEVICE_METADATA_UPDATE_PENDING'
+        - 'RESOURCE_PUBLISHED'
+        - 'RESOURCE_UNPUBLISHED'
+        - 'RESOURCE_UPDATE_PENDING'
+        - 'RESOURCE_UPDATED'
+        - 'RESOURCE_RETRIEVE_PENDING'
+        - 'RESOURCE_RETRIEVED'
+        - 'RESOURCE_DELETE_PENDING'
+        - 'RESOURCE_DELETED'
+        - 'RESOURCE_CREATE_PENDING'
+        - 'RESOURCE_CREATED'
+        - 'RESOURCE_CHANGED'
+  parameters:
+    deviceId:
+      name: deviceId
+      in: path
+      description: 'Id of the device.'
+      required: true
+      schema:
+        type: string
+        format: uuid
+    resourceHref:
+      name: resourceHref
+      in: path
+      description: 'Href of the resource.'
+      required: true
+      schema:
+        type: string
+    shadow:
+      name: shadow
+      in: query
+      description: 'Bypass resource shadow and send the GET request directly to the device.'
+      schema:
+        type: boolean
+        default: true
+    deviceIdFilter:
+      name: deviceId
+      in: query
+      description: 'Filter by the device id.'
+      schema:
+        type: string
+        format: uuid
+    typeFilter:
+      name: type
+      in: query
+      description: 'Filter by the type.'
+      schema:
+        type: array
+        items:
+          type: string
+    statusFilter:
+      name: status
+      in: query
+      description: 'Filter by the device status.'
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/ConnectionStatus'
+    interface:
+      name: interface
+      in: query
+      description: 'Defines the view or a way how to interact with a resource.'
+      schema:
+        type: string
+    resourceIdFilter:
+      name: resourceId
+      in: query
+      description: 'Filter by resource id specified in format `{deviceId}+{resourceHref}`'
+      schema:
+        type: array
+        items:
+          type: string
+          format: url
+    commandFilter:
+      name: command
+      in: query
+      description: 'Filter by the command type.'
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/CommandType'
+    timestampFilter:
+      name: timestamp
+      in: query
+      description: 'Filter by Unix time in nanoseconds'
+      schema:
+        type: integer
+        format: int64
+  responses:
+    ok:
+      description: Content is stored in body.
+    nocontent:
+      description: No content in body.
+    accepted:
+      description: Action will asynchronously processed.
+    unauthorized:
+      description: Not authorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/Error'
+    forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/Error'
+    badRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                $ref: '#/components/schemas/Error'
+    notFound:
+      description: 'Entity was not found.'
+    pendingCommands:
+      description: 'Stream of resource links or errors.'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: '#/components/schemas/ResourceLinks'
+              error:
+                $ref: '#/components/schemas/Error'
+    events:
+      description: 'Stream of events or error'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              properties:
+                result:
+                  properties:
+                    resourceLinksPublished:
+                      $ref: '#/components/schemas/ResourceLinksPublished'
+                    resourceLinksUnpublished:
+                      $ref: '#/components/schemas/ResourceLinksUnpublished'
+                    resourceLinksSnapshotTaken:
+                      $ref: '#/components/schemas/ResourceLinksSnapshotTaken'
+                    resourceChanged:
+                      $ref: '#/components/schemas/ResourceChanged'
+                    resourceUpdatePending:
+                      $ref: '#/components/schemas/ResourceUpdatePending'
+                    resourceUpdated:
+                      $ref: '#/components/schemas/ResourceUpdated'
+                    resourceRetrievePending:
+                      $ref: '#/components/schemas/ResourceRetrievePending'
+                    resourceRetrieved:
+                      $ref: '#/components/schemas/ResourceRetrieved'
+                    resourceDeletePending:
+                      $ref: '#/components/schemas/ResourceDeletePending'
+                    resourceDeleted:
+                      $ref: '#/components/schemas/ResourceDeleted'
+                    resourceCreatePending:
+                      $ref: '#/components/schemas/ResourceCreatePending'
+                    resourceCreated:
+                      $ref: '#/components/schemas/ResourceCreated'
+                    resourceStateSnapshotTaken:
+                      $ref: '#/components/schemas/ResourceStateSnapshotTaken'
+                    deviceMetadataUpdatePending:
+                      $ref: '#/components/schemas/DeviceMetadataUpdatePending'
+                    deviceMetadataUpdated:
+                      $ref: '#/components/schemas/DeviceMetadataUpdated'
+                    deviceMetadataSnapshotTaken:
+                      $ref: '#/components/schemas/DeviceMetadataSnapshotTaken'
+                error:
+                  $ref: '#/components/schemas/Error'

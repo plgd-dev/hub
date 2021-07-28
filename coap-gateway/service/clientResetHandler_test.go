@@ -9,7 +9,6 @@ import (
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
-	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +33,7 @@ func Test_clientResetHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		args      args
-		wantsCode coapCodes.Code
+		wantsCode codes.Code
 	}{
 		{
 			name: "observe",
@@ -44,7 +43,7 @@ func Test_clientResetHandler(t *testing.T) {
 				observe: 0,
 				token:   message.Token("observe"),
 			},
-			wantsCode: coapCodes.Content,
+			wantsCode: codes.Content,
 		},
 		{
 			name: "reset",
@@ -52,7 +51,7 @@ func Test_clientResetHandler(t *testing.T) {
 				code:  codes.Empty,
 				token: message.Token("observe"),
 			},
-			wantsCode: coapCodes.Empty,
+			wantsCode: codes.Empty,
 		},
 		{
 			name: "unobserve",
@@ -62,7 +61,7 @@ func Test_clientResetHandler(t *testing.T) {
 				observe: 1,
 				token:   message.Token("observe"),
 			},
-			wantsCode: coapCodes.BadRequest,
+			wantsCode: codes.BadRequest,
 		},
 	}
 
@@ -71,7 +70,7 @@ func Test_clientResetHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.args.code == coapCodes.Empty {
+			if tt.args.code == codes.Empty {
 				ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 				defer cancel()
 				msg := pool.AcquireMessage(ctx)

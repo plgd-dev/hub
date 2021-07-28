@@ -46,3 +46,9 @@ func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 }
+
+func (e *ResourceDeletePending) CheckInitialized() bool {
+	return e.GetResourceId() != nil &&
+		e.GetAuditContext() != nil &&
+		e.GetEventMetadata() != nil
+}

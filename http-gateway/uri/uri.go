@@ -15,6 +15,7 @@ const (
 	ResourceIdFilterQueryKey  = "resourceIdFilter"
 	AcceptQueryKey            = "accept" // for websocket
 	CorrelationIDQueryKey     = "correlationId"
+	TimestampFilterQueryKey   = "timestampFilter"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"
@@ -29,6 +30,7 @@ const (
 	ResourcesPathKey       = "resources"
 	ResourceLinksPathKey   = "resource-links"
 	PendingCommandsPathKey = "pending-commands"
+	EventsPathKey          = "events"
 
 	ApplicationProtoJsonContentType = "application/protojson"
 
@@ -82,6 +84,18 @@ const (
 
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands == rpc RetrievePendingCommands + resourceIdFilter
 	AliasResourcePendingCommands = AliasDeviceResource + "/" + PendingCommandsPathKey
+
+	// (GRPC + HTTP) GET /api/v1/events -> rpc GetEvents
+	// (GRPC + HTTP) GET /api/v1/events?timestampFilter={timestamp} -> rpc GetEvents + timestampFilter
+	Events = API + "/" + EventsPathKey
+
+	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/events == rpc GetEvents + deviceIdFilter
+	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/events?timestampFilter={timestamp} == rpc GetEvents + deviceIdFilter + timestampFilter
+	AliasDeviceEvents = AliasDevice + "/" + EventsPathKey
+
+	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}/events == rpc GetEvents + resourceIdFilter
+	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}/events?timestampFilter={timestamp} == rpc GetEvents + resourceIdFilter + timestampFilter
+	AliasResourceEvents = AliasDeviceResource + "/" + EventsPathKey
 )
 
 var QueryCaseInsensitive = map[string]string{
@@ -100,4 +114,5 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(StatusFilterQueryKey):          StatusFilterQueryKey,
 	strings.ToLower(AliasStatusFilterQueryKey):     StatusFilterQueryKey,
 	strings.ToLower(CorrelationIDQueryKey):         CorrelationIDQueryKey,
+	strings.ToLower(TimestampFilterQueryKey):       TimestampFilterQueryKey,
 }

@@ -35,7 +35,10 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI string, statusCode 
 	u.RawQuery = q.Encode()
 	getReq := test.NewRequest(http.MethodGet, u.String(), nil).Build()
 	res := test.HTTPDo(t, getReq, false)
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		require.NoError(t, err)
+	}()
 	require.Equal(t, statusCode, res.StatusCode)
 	if res.StatusCode == http.StatusTemporaryRedirect {
 		loc, err := res.Location()
