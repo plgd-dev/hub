@@ -30,71 +30,74 @@ export const deviceStatusListener = async ({
       store.getState()
     )
 
-    setTimeout(async () => {
-      const {
-        deviceId,
-        status: { value: deviceStatus } = {},
-        shadowSynchronization,
-      } = deviceMetadataUpdated || {}
-      const eventType = deviceRegistered
-        ? REGISTERED
-        : deviceUnregistered
+    setTimeout(
+      async () => {
+        const {
+          deviceId,
+          status: { value: deviceStatus } = {},
+          shadowSynchronization,
+        } = deviceMetadataUpdated || {}
+        const eventType = deviceRegistered
+          ? REGISTERED
+          : deviceUnregistered
           ? UNREGISTERED
           : null
-      const deviceIds = deviceId
-        ? [deviceId]
-        : deviceRegistered
+        const deviceIds = deviceId
+          ? [deviceId]
+          : deviceRegistered
           ? deviceRegistered.deviceIds
           : deviceUnregistered.deviceIds
-      const status = deviceStatus || eventType
+        const status = deviceStatus || eventType
 
-      try {
-        deviceIds.forEach(async deviceId => {
-          // Emit an event: things.status.{deviceId}
-          Emitter.emit(`${THINGS_STATUS_WS_KEY}.${deviceId}`, {
-            deviceId,
-            status,
-            shadowSynchronization,
-          })
+        try {
+          deviceIds.forEach(async deviceId => {
+            // Emit an event: things.status.{deviceId}
+            Emitter.emit(`${THINGS_STATUS_WS_KEY}.${deviceId}`, {
+              deviceId,
+              status,
+              shadowSynchronization,
+            })
 
-          // Get the notification state of a single device from redux store
-          const currentThingNotificationsEnabled = isNotificationActive(
-            getThingNotificationKey(deviceId)
-          )(store.getState())
+            // Get the notification state of a single device from redux store
+            const currentThingNotificationsEnabled = isNotificationActive(
+              getThingNotificationKey(deviceId)
+            )(store.getState())
 
-          // Show toast
-          if (
-            (notificationsEnabled || currentThingNotificationsEnabled) &&
-            status !== UNREGISTERED
-          ) {
-            const { data: { name } = {} } = await getThingApi(deviceId)
-            const toastMessage =
-              status === ONLINE ? t.thingWentOnline : t.thingWentOffline
-            showInfoToast(
-              {
-                title: t.thingStatusChange,
-                message: { message: toastMessage, params: { name } },
-              },
-              {
-                onClick: () => {
-                  history.push(`/things/${deviceId}`)
+            // Show toast
+            if (
+              (notificationsEnabled || currentThingNotificationsEnabled) &&
+              status !== UNREGISTERED
+            ) {
+              const { data: { name } = {} } = await getThingApi(deviceId)
+              const toastMessage =
+                status === ONLINE ? t.thingWentOnline : t.thingWentOffline
+              showInfoToast(
+                {
+                  title: t.thingStatusChange,
+                  message: { message: toastMessage, params: { name } },
                 },
-                isNotification: true,
-              }
-            )
-          }
-        })
-      } catch (error) {} // ignore error
+                {
+                  onClick: () => {
+                    history.push(`/things/${deviceId}`)
+                  },
+                  isNotification: true,
+                }
+              )
+            }
+          })
+        } catch (error) {} // ignore error
 
-      // If the event was registered or unregistered, emit an event with the number to increment by
-      if ([REGISTERED, UNREGISTERED].includes(status)) {
-        // Emit an event: things-registered-unregistered-count
-        Emitter.emit(
-          THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
-          deviceIds.length
-        )
-      }
-    }, notificationsEnabled ? DEFAULT_NOTIFICATION_DELAY : 0)
+        // If the event was registered or unregistered, emit an event with the number to increment by
+        if ([REGISTERED, UNREGISTERED].includes(status)) {
+          // Emit an event: things-registered-unregistered-count
+          Emitter.emit(
+            THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
+            deviceIds.length
+          )
+        }
+      },
+      notificationsEnabled ? DEFAULT_NOTIFICATION_DELAY : 0
+    )
   }
 }
 
@@ -117,30 +120,22 @@ export const deviceResourceRegistrationListener = ({
     const event = resourcePublished
       ? resourceEventTypes.ADDED
       : resourceEventTypes.REMOVED
+    
+    // Emit an event: things.resource.registration.{deviceId}
+    Emitter.emit(`${resourceRegistrationObservationWSKey}.${event}`, {
+      event,
+      resources,
+    })
 
-    resources.forEach(resource => {
-      const { href } = resource
+    if (notificationsEnabled) {
+      const isNew = event === resourceEventTypes.ADDED
 
-      // Emit an event: things.resource.registration.{deviceId}.{href}.{event}
-      Emitter.emit(`${resourceRegistrationObservationWSKey}.${href}.${event}`, {
-        event,
-        resource,
-      })
-
-      if (notificationsEnabled) {
-        const isNew = event === resourceEventTypes.ADDED
-        const toastTitle = isNew ? t.newResource : t.resourceDeleted
-        const toastMessage = isNew
-          ? t.resourceAdded
-          : t.resourceWithHrefWasDeleted
+      // If 5 or more resources came in the WS, show only one notification message
+      if (resources.length >= 5) {
+        const toastTitle = isNew ? t.newResources : t.resourcesDeleted
+        const toastMessage = isNew ? t.resourcesAdded : t.resourcesWereDeleted
         const onClickAction = () => {
-          if (isNew) {
-            // redirect to resource and open resource modal
-            history.push(`/things/${deviceId}${href}`)
-          } else {
-            // redirect to device
-            history.push(`/things/${deviceId}`)
-          }
+          history.push(`/things/${deviceId}`)
         }
         // Show toast
         showInfoToast(
@@ -148,7 +143,7 @@ export const deviceResourceRegistrationListener = ({
             title: toastTitle,
             message: {
               message: toastMessage,
-              params: { href, deviceName, deviceId },
+              params: { deviceName, deviceId },
             },
           },
           {
@@ -156,8 +151,38 @@ export const deviceResourceRegistrationListener = ({
             isNotification: true,
           }
         )
+      } else {
+        resources.forEach(({ href }) => {
+          const toastTitle = isNew ? t.newResource : t.resourceDeleted
+          const toastMessage = isNew
+            ? t.resourceAdded
+            : t.resourceWithHrefWasDeleted
+          const onClickAction = () => {
+            if (isNew) {
+              // redirect to resource and open resource modal
+              history.push(`/things/${deviceId}${href}`)
+            } else {
+              // redirect to device
+              history.push(`/things/${deviceId}`)
+            }
+          }
+          // Show toast
+          showInfoToast(
+            {
+              title: toastTitle,
+              message: {
+                message: toastMessage,
+                params: { href, deviceName, deviceId },
+              },
+            },
+            {
+              onClick: onClickAction,
+              isNotification: true,
+            }
+          )
+        })
       }
-    })
+    }
   }
 }
 

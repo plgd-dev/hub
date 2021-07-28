@@ -160,6 +160,8 @@ const deDensisfy = objectToDeDensify => {
       value.subRows = deDensisfy(value.subRows)
     }
     return value
+  }).sort((a, b) => {
+    return compareIgnoreCase(a.href, b.href)
   })
 }
 

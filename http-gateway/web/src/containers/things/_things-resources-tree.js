@@ -33,11 +33,11 @@ export const ThingsResourcesTree = ({
         accessor: 'href',
         Cell: ({ value, row }) => {
           const {
-            original: { di, href },
+            original: { deviceId, href },
           } = row
           const lastValue = getLastPartOfAResourceHref(value)
-          const onLinkClick = di
-            ? () => onUpdate({ di, href: href.replace(/\/$/, '') })
+          const onLinkClick = deviceId
+            ? () => onUpdate({ deviceId, href: href.replace(/\/$/, '') })
             : null
 
           if (isUnregistered) {
@@ -55,12 +55,12 @@ export const ThingsResourcesTree = ({
                   }}
                 />
                 <span
-                  className={di ? 'link reveal-icon-on-hover' : ''}
+                  className={deviceId ? 'link reveal-icon-on-hover' : ''}
                   onClick={onLinkClick}
                 >
                   {`/${lastValue}/`}
                 </span>
-                {di && <i className="fas fa-pen" />}
+                {deviceId && <i className="fas fa-pen" />}
               </div>
             )
           }
@@ -87,9 +87,9 @@ export const ThingsResourcesTree = ({
       },
       {
         Header: _(t.types),
-        accessor: 'rt',
+        accessor: 'resourceTypes',
         Cell: ({ value, row }) => {
-          if (!row.original.di) {
+          if (!row.original.deviceId) {
             return null
           }
 
@@ -105,19 +105,19 @@ export const ThingsResourcesTree = ({
         accessor: 'actions',
         disableSortBy: true,
         Cell: ({ row }) => {
-          if (!row.original.di) {
+          if (!row.original.deviceId) {
             return null
           }
 
           const {
-            original: { di, href, if: interfaces },
+            original: { deviceId, href, interfaces },
           } = row
           const cleanHref = href.replace(/\/$/, '') // href without a trailing slash
           return (
             <ThingsResourcesActionButton
               disabled={isUnregistered || loading}
               href={cleanHref}
-              di={di}
+              deviceId={deviceId}
               interfaces={interfaces}
               onCreate={onCreate}
               onUpdate={onUpdate}

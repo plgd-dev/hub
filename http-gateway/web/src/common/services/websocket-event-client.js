@@ -25,7 +25,7 @@ class _WebSocketEventClient {
     this.retrySubscribeMs = 300
 
     // Time for delaying the event listener apply
-    this.delayListenersMs = 2000
+    this.delayListenersMs = 350
   }
 
   _connect = async () => {
@@ -139,7 +139,9 @@ class _WebSocketEventClient {
         this.events[correlationId]?.listener(args)
       }
     } catch (e) {
-      console.log('Cannot parse JSON from WS', message)
+      if (getAppMode() !== 'production') {
+        console.info('%cWebSocket: Cannot parse JSON', 'color: #eab927;')
+      }
     }
   }
 
@@ -192,8 +194,8 @@ class _WebSocketEventClient {
           this.events[correlationId].listenerEnabled = true
         }
       }, this.delayListenersMs)
-    } else {
-      console.log('already subscribed')
+    } else if (getAppMode() !== 'production') {
+      console.info('%cWebSocket: Already subscribed', 'color: #eab927;')
     }
   }
 
@@ -228,6 +230,8 @@ export const WebSocketEventClient = new _WebSocketEventClient(
 )
 
 /*
+// ------------Example usage:-------------- //
+
 const WebSocketEventClient = new _WebSocketEventClient('/api/v1/ws/events')
 
 const handler = data => {}

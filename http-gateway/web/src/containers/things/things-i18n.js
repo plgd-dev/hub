@@ -211,6 +211,14 @@ export const messages = defineMessages({
     id: 'things.resourceDeleted',
     defaultMessage: 'Resource Deleted',
   },
+  newResources: {
+    id: 'things.newResources',
+    defaultMessage: 'New Resources',
+  },
+  resourcesDeleted: {
+    id: 'things.resourcesDeleted',
+    defaultMessage: 'Resources Deleted',
+  },
   resourceWithHrefWasDeleted: {
     id: 'things.resourceWithHrefWasDeleted',
     defaultMessage:
@@ -220,6 +228,16 @@ export const messages = defineMessages({
     id: 'things.resourceAdded',
     defaultMessage:
       'New resource {href} was added to the thing {deviceName} ({deviceId}).',
+  },
+  resourcesAdded: {
+    id: 'things.resourcesAdded',
+    defaultMessage:
+      'New resources were added to the thing {deviceName} ({deviceId}).',
+  },
+  resourcesWereDeleted: {
+    id: 'things.resourcesWereDeleted',
+    defaultMessage:
+      'Resources were deleted from thing {deviceName} ({deviceId}).',
   },
   resourceUpdated: {
     id: 'things.resourceUpdated',

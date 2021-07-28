@@ -69,36 +69,36 @@ export const useThingsResources = deviceId => {
 
   // Fetch the data
   const { data, updateData, ...rest } = useStreamApi(
-    `${httpGatewayAddress}${
-      thingsApiEndpoints.THINGS_RESOURCES
-    }?device_id_filter=${deviceId}`
+    `${httpGatewayAddress}${thingsApiEndpoints.THINGS_RESOURCES}?device_id_filter=${deviceId}`
   )
 
   useEmitter(
     getResourceRegistrationNotificationKey(deviceId),
-    ({ event, resource }) => {
+    ({ event, resources: updatedResources }) => {
       if (data?.[0]?.resources) {
         const resources = data[0].resources // get the first set of resources from an array, since it came from a stream of data
         let updatedLinks = []
 
-        if (event === resourceEventTypes.ADDED) {
-          const linkExists =
-            resources.findIndex(link => link.href === resource.href) !== -1
-          if (linkExists) {
-            // Already exists, update
-            updatedLinks = resources.map(link => {
-              if (link.href === resource.href) {
-                return resource
-              }
+        updatedResources.forEach(resource => {
+          if (event === resourceEventTypes.ADDED) {
+            const linkExists =
+              resources.findIndex(link => link.href === resource.href) !== -1
+            if (linkExists) {
+              // Already exists, update
+              updatedLinks = resources.map(link => {
+                if (link.href === resource.href) {
+                  return resource
+                }
 
-              return link
-            })
+                return link
+              })
+            } else {
+              updatedLinks = resources.concat(resource)
+            }
           } else {
-            updatedLinks = resources.concat(resource)
+            updatedLinks = resources.filter(link => link.href !== resource.href)
           }
-        } else {
-          updatedLinks = resources.filter(link => link.href !== resource.href)
-        }
+        })
 
         updateData([{ ...data[0], resources: updatedLinks }])
       }
