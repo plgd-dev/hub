@@ -129,9 +129,7 @@ func (d *UserDevicesManager) GetUserDevices(ctx context.Context, userID string) 
 			userDevices: userDevices,
 			update:      true,
 		}
-		if err := d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration); err != nil {
-			return nil, err
-		}
+		_ = d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
 		needsRelease = false
 		return userDevices[userID], nil
 	}
@@ -166,9 +164,7 @@ func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID strin
 		userDevices: userDevices,
 		update:      true,
 	}
-	if err := d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration); err != nil {
-		return nil, err
-	}
+	_ = d.getUserDevicesCache.Add(userID, v, cache.DefaultExpiration)
 	needsRelease = false
 	return userDevices[userID], nil
 }
