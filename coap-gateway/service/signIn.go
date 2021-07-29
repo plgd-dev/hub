@@ -8,12 +8,12 @@ import (
 	"math/rand"
 	"time"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -95,8 +95,8 @@ func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID st
 	return nil
 }
 
-/// Get JW Token from oauth server
-func getJWToken(ctx context.Context, service *Service, accessToken string) (map[string]interface{}, error) {
+/// Get user info from oauth server
+func getUserInfo(ctx context.Context, service *Service, accessToken string) (map[string]interface{}, error) {
 	oauthClient := service.provider.OAuth2.Client(ctx, &oauth2.Token{
 		AccessToken: accessToken,
 		TokenType:   "bearer",
@@ -118,11 +118,11 @@ func getJWToken(ctx context.Context, service *Service, accessToken string) (map[
 	return profile, nil
 }
 
-/// Get expiration time (exp) from the JW Token.
+/// Get expiration time (exp) from user info map.
 /// It might not be set, in that case zero time and no error are returned.
-func getExpirationTime(jwtToken map[string]interface{}) (time.Time, error) {
+func getExpirationTime(userInfo map[string]interface{}) (time.Time, error) {
 	const expKey = "exp"
-	v, ok := jwtToken[expKey]
+	v, ok := userInfo[expKey]
 	if !ok {
 		return time.Time{}, nil
 	}
@@ -131,21 +131,21 @@ func getExpirationTime(jwtToken map[string]interface{}) (time.Time, error) {
 	if !ok {
 		return time.Time{}, fmt.Errorf("invalid userinfo: invalid %v value type", expKey)
 	}
-	return time.Unix(int64(exp), 0), nil
+	return pkgTime.Unix(int64(exp), 0), nil
 }
 
 /// Validate that ownerClaim is set and that it matches given user ID
-func validateOwnerClaim(jwtToken map[string]interface{}, ocKey string, userID string) error {
-	v, ok := jwtToken[ocKey]
+func validateOwnerClaim(userInfo map[string]interface{}, ocKey string, userID string) error {
+	v, ok := userInfo[ocKey]
 	if !ok {
 		return fmt.Errorf("invalid userinfo: %v not set", ocKey)
 	}
 	ownerClaim, ok := v.(string)
 	if !ok {
-		return fmt.Errorf("invalid userinfo: invalid %v value type", ocKey)
+		return fmt.Errorf("invalid userinfo: %v", "invalid ownerClaim value type")
 	}
 	if ownerClaim != userID {
-		return fmt.Errorf("invalid %v: %v", ocKey, userID)
+		return fmt.Errorf("invalid ownerClaim: %v", userID)
 	}
 	return nil
 }
@@ -159,11 +159,11 @@ func getContent(expiresIn int64, options message.Options) (message.MediaType, []
 	accept := coapconv.GetAccept(options)
 	encode, err := coapconv.GetEncoder(accept)
 	if err != nil {
-		return 0, nil, fmt.Errorf("cannot handle sign in: %w", err)
+		return 0, nil, err
 	}
 	out, err := encode(coapResp)
 	if err != nil {
-		return 0, nil, fmt.Errorf("cannot handle sign in: %w", err)
+		return 0, nil, err
 
 	}
 	return accept, out, nil
@@ -207,24 +207,26 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		}
 	}
 
-	if err := checkReq(signIn); err != nil {
+	if err := checkOAuthRequest(signIn); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.BadRequest)
 		return
 	}
 
 	ctx := context.WithValue(req.Context, oauth2.HTTPClient, client.server.provider.HTTPClient.HTTP())
-	jwtToken, err := getJWToken(ctx, client.server, signIn.AccessToken)
+	userInfo, err := getUserInfo(ctx, client.server, signIn.AccessToken)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+		return
 	}
 
-	if err := validateOwnerClaim(jwtToken, client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
+	if err := validateOwnerClaim(userInfo, client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+		return
 	}
 
-	validUntil, err := getExpirationTime(jwtToken)
+	validUntil, err := getExpirationTime(userInfo)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
@@ -232,7 +234,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 	accept, out, err := getContent(expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
@@ -276,7 +278,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		}
 
 		if err := setNewDeviceSubscriber(req.Context, client, signIn.DeviceID); err != nil {
-			logErrorAndCloseClient(err, coapCodes.InternalServerError)
+			logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 			return
 		}
 	}
@@ -325,24 +327,13 @@ func updateDeviceMetadata(req *mux.Message, client *Client) error {
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			return fmt.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
+			return fmt.Errorf("DeviceId %v: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 		}
 	}
 	return nil
 }
 
 func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
-	// fix for iotivity-classic
-	authCurrentCtx, _ := client.GetAuthorizationContext()
-	userID := signOut.UserID
-	deviceID := signOut.DeviceID
-	if userID == "" {
-		userID = authCurrentCtx.GetUserID()
-	}
-	if deviceID == "" {
-		deviceID = authCurrentCtx.GetDeviceID()
-	}
-
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(err, code, req.Token)
 		if err := client.Close(); err != nil {
@@ -350,23 +341,34 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		}
 	}
 
-	if err := checkReq(signOut); err != nil {
+	if signOut.DeviceID == "" || signOut.UserID == "" || signOut.AccessToken == "" {
+		authCurrentCtx, err := client.GetAuthorizationContext()
+		if err != nil {
+			logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
+			return
+		}
+		signOut = signOut.updateOAUthRequestIfEmpty(authCurrentCtx.DeviceID, authCurrentCtx.UserID, authCurrentCtx.AccessToken)
+	}
+
+	if err := checkOAuthRequest(signOut); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.BadRequest)
+		return
+	}
+
+	ctx := context.WithValue(req.Context, oauth2.HTTPClient, client.server.provider.HTTPClient.HTTP())
+	userInfo, err := getUserInfo(ctx, client.server, signOut.AccessToken)
+	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	_, err := client.server.asClient.SignOut(req.Context, &pbAS.SignOutRequest{
-		DeviceId:    deviceID,
-		UserId:      userID,
-		AccessToken: signOut.AccessToken,
-	})
-	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update))
+	if err := validateOwnerClaim(userInfo, client.server.config.Clients.AuthServer.OwnerClaim, signOut.UserID); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
 	if err := updateDeviceMetadata(req, client); err != nil {
-		logErrorAndCloseClient(err, coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
 		return
 	}
 

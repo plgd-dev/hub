@@ -7,6 +7,7 @@ import (
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -72,7 +73,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	coapResp := CoapRefreshTokenResp{
 		RefreshToken: resp.RefreshToken,
 		AccessToken:  resp.AccessToken,
-		ExpiresIn:    validUntilToExpiresIn(time.Unix(0, resp.GetValidUntil())),
+		ExpiresIn:    validUntilToExpiresIn(pkgTime.Unix(0, resp.GetValidUntil())),
 	}
 
 	accept := coapconv.GetAccept(req.Options)
