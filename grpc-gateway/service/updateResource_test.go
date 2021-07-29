@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -124,6 +125,22 @@ func TestRequestHandler_UpdateResourcesValues(t *testing.T) {
 			args: args{
 				req: &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid timeToLive",
+			args: args{
+				req: &pb.UpdateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/1"),
+					TimeToLive: int64(99 * time.Millisecond),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
 				},
 			},
 			wantErr: true,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -77,7 +78,11 @@ func (rp *resourceProjection) onResourceUpdatePendingLocked(ctx context.Context,
 		return nil
 	}
 	log.Debugf("onResourceUpdatePendingLocked /%v", rp.resourceID)
+	now := time.Now()
 	for _, u := range rp.resourceUpdatePendings {
+		if u.IsExpired(now) {
+			continue
+		}
 		err := do(ctx, u)
 		if err != nil {
 			return err
@@ -101,7 +106,11 @@ func (rp *resourceProjection) onResourceRetrievePendingLocked(ctx context.Contex
 		return nil
 	}
 	log.Debugf("onResourceRetrievePendingLocked /%v", rp.resourceID)
+	now := time.Now()
 	for _, u := range rp.resourceRetrievePendings {
+		if u.IsExpired(now) {
+			continue
+		}
 		err := do(ctx, u)
 		if err != nil {
 			return err
@@ -115,7 +124,11 @@ func (rp *resourceProjection) onResourceDeletePendingLocked(ctx context.Context,
 		return nil
 	}
 	log.Debugf("onResourceDeletePendingLocked /%v", rp.resourceID)
+	now := time.Now()
 	for _, u := range rp.resourceDeletePendings {
+		if u.IsExpired(now) {
+			continue
+		}
 		err := do(ctx, u)
 		if err != nil {
 			return err
@@ -129,7 +142,11 @@ func (rp *resourceProjection) onResourceCreatePendingLocked(ctx context.Context,
 		return nil
 	}
 	log.Debugf("onResourceCreatePendingLocked %v", rp.resourceID)
+	now := time.Now()
 	for _, u := range rp.resourceCreatePendings {
+		if u.IsExpired(now) {
+			continue
+		}
 		err := do(ctx, u)
 		if err != nil {
 			return err

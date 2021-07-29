@@ -303,6 +303,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 				},
+				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -343,6 +344,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED,
 				},
+				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -431,6 +433,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
+					IncludeCurrentState: true,
 				},
 			},
 		})

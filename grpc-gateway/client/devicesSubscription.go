@@ -76,7 +76,8 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	err = client.Send(&pb.SubscribeToEvents{
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventFilter: filterEvents,
+				EventFilter:         filterEvents,
+				IncludeCurrentState: true,
 			},
 		},
 	})

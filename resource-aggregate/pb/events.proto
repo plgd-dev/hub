@@ -16,69 +16,72 @@ message EventMetadata {
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json#L173
 message ResourceLinksPublished {
-    repeated Resource resources = 1;
-    string device_id = 2;
-    AuditContext audit_context = 3;
-    EventMetadata event_metadata = 4;
+    string device_id = 1;
+    repeated Resource resources = 2;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
 }
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.wk.rd.swagger.json #Specification CR needed
 message ResourceLinksUnpublished {
-    repeated string hrefs = 1;
-    string device_id = 2;
-    AuditContext audit_context = 3;
-    EventMetadata event_metadata = 4;
+    string device_id = 1;
+    repeated string hrefs = 2;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
 }
 
 message ResourceLinksSnapshotTaken {
-    map<string, Resource> resources = 1;
-    string device_id = 2;
-    EventMetadata event_metadata = 3;
+    string device_id = 1;
+    map<string, Resource> resources = 2;
+    EventMetadata event_metadata = 101;
 }
 
 message ResourceChanged {
     ResourceId resource_id = 1;
     Content content = 2;
-    AuditContext audit_context = 3;
-    EventMetadata event_metadata = 4;
     Status status = 5;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
 }
 
 message ResourceUpdatePending {
     ResourceId resource_id = 1;
     string resource_interface = 2;
     Content content = 4;
-    AuditContext audit_context = 5;
-    EventMetadata event_metadata = 6;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+    int64 valid_until = 102;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
 }
 
 message ResourceUpdated {
     ResourceId resource_id = 1;
     Status status = 2;
     Content content = 3;
-    AuditContext audit_context = 4;
-    EventMetadata event_metadata = 5;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
 }
 
 message ResourceRetrievePending {
     ResourceId resource_id = 1;
     string resource_interface = 2;
-    AuditContext audit_context = 3;
-    EventMetadata event_metadata = 4;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
+    int64 valid_until = 102;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
 }
 
 message ResourceRetrieved {
     ResourceId resource_id = 1;
     Status status = 2;
     Content content = 3;
-    AuditContext audit_context = 4;
-    EventMetadata event_metadata = 5;
+    AuditContext audit_context = 100;
+    EventMetadata event_metadata = 101;
 }
 
 message ResourceDeletePending {
     ResourceId resource_id = 1;
     AuditContext audit_context = 100;
     EventMetadata event_metadata = 101;
+    int64 valid_until = 102;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
 }
 
 message ResourceDeleted {
@@ -94,6 +97,7 @@ message ResourceCreatePending {
     Content content = 2;
     AuditContext audit_context = 100;
     EventMetadata event_metadata = 101;
+    int64 valid_until = 102;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
 }
 
 message ResourceCreated {
@@ -107,10 +111,10 @@ message ResourceCreated {
 message ResourceStateSnapshotTaken {
     ResourceId resource_id = 1;
     ResourceChanged  latest_resource_change = 2;
-    repeated ResourceCreatePending resource_create_pendings = 3;
-    repeated ResourceRetrievePending resource_retrieve_pendings = 4;
-    repeated ResourceUpdatePending resource_update_pendings = 5;
-    repeated ResourceDeletePending resource_delete_pendings = 6;
+    repeated ResourceCreatePending resource_create_pendings = 3; // expired events will be removed by creating a new snapshot.
+    repeated ResourceRetrievePending resource_retrieve_pendings = 4; // expired events will be removed by creating a new snapshot.
+    repeated ResourceUpdatePending resource_update_pendings = 5; // expired events will be removed by creating a new snapshot.
+    repeated ResourceDeletePending resource_delete_pendings = 6; // expired events will be removed by creating a new snapshot.
     AuditContext audit_context = 100;
     EventMetadata event_metadata = 101;
 }
@@ -130,11 +134,12 @@ message DeviceMetadataUpdatePending {
     };
     AuditContext audit_context = 100;
     EventMetadata event_metadata = 101;
+    int64 valid_until = 102;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever.
 }
 
 message DeviceMetadataSnapshotTaken {
     string device_id = 1;
     DeviceMetadataUpdated device_metadata_updated = 2;
-    repeated DeviceMetadataUpdatePending update_pendings = 3;
+    repeated DeviceMetadataUpdatePending update_pendings = 3; // expired events will be removed by creating a new snapshot.
     EventMetadata event_metadata = 101;
 }

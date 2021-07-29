@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/go-coap/v2/message"
 
@@ -374,7 +375,7 @@ func testMakeNotifyResourceChangedRequest(deviceID, href string, seqNum uint64, 
 	return &r
 }
 
-func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlationID string) *commands.UpdateResourceRequest {
+func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlationID string, timeToLive time.Duration) *commands.UpdateResourceRequest {
 	r := commands.UpdateResourceRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -382,6 +383,7 @@ func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlatio
 		},
 		ResourceInterface: resourceInterface,
 		CorrelationId:     correlationID,
+		TimeToLive:        int64(timeToLive),
 		Content: &commands.Content{
 			Data: []byte("hello world"),
 		},
@@ -393,13 +395,14 @@ func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlatio
 	return &r
 }
 
-func testMakeRetrieveResourceRequest(deviceID, href string, correlationID string) *commands.RetrieveResourceRequest {
+func testMakeRetrieveResourceRequest(deviceID, href string, correlationID string, timeToLive time.Duration) *commands.RetrieveResourceRequest {
 	r := commands.RetrieveResourceRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
 		CorrelationId: correlationID,
+		TimeToLive:    int64(timeToLive),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -408,13 +411,14 @@ func testMakeRetrieveResourceRequest(deviceID, href string, correlationID string
 	return &r
 }
 
-func testMakeDeleteResourceRequest(deviceID, href string, correlationID string) *commands.DeleteResourceRequest {
+func testMakeDeleteResourceRequest(deviceID, href string, correlationID string, timeToLive time.Duration) *commands.DeleteResourceRequest {
 	r := commands.DeleteResourceRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
 		CorrelationId: correlationID,
+		TimeToLive:    int64(timeToLive),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
@@ -423,12 +427,13 @@ func testMakeDeleteResourceRequest(deviceID, href string, correlationID string) 
 	return &r
 }
 
-func testMakeCreateResourceRequest(deviceID, href string, correlationID string) *commands.CreateResourceRequest {
+func testMakeCreateResourceRequest(deviceID, href string, correlationID string, timeToLive time.Duration) *commands.CreateResourceRequest {
 	r := commands.CreateResourceRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
+		TimeToLive: int64(timeToLive),
 		Content: &commands.Content{
 			Data: []byte("create hello world"),
 		},
@@ -636,7 +641,8 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *commands.UpdateResourceRequest
+		req   *commands.UpdateResourceRequest
+		sleep time.Duration
 	}
 	tests := []struct {
 		name           string
@@ -648,7 +654,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&commands.UpdateResourceRequest{
+				req: &commands.UpdateResourceRequest{
 					ResourceId: &commands.ResourceId{},
 				},
 			},
@@ -657,9 +663,19 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 			wantErr:        true,
 		},
 		{
-			name: "valid",
+			name: "valid with validUntil",
 			args: args{
-				testMakeUpdateResourceRequest(deviceID, resourceID, "", "123"),
+				req:   testMakeUpdateResourceRequest(deviceID, resourceID, "", "123", time.Millisecond*250),
+				sleep: time.Millisecond * 500,
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+		{
+			name: "valid with same correlationID",
+			args: args{
+				req: testMakeUpdateResourceRequest(deviceID, resourceID, "", "123", time.Minute),
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
@@ -668,11 +684,20 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 		{
 			name: "valid with resource interface",
 			args: args{
-				testMakeUpdateResourceRequest(deviceID, resourceID, "oic.if.baseline", "456"),
+				req: testMakeUpdateResourceRequest(deviceID, resourceID, "oic.if.baseline", "456", time.Minute),
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
 			wantErr:        false,
+		},
+		{
+			name: "invalid valid until",
+			args: args{
+				req: testMakeUpdateResourceRequest(deviceID, resourceID, "", "123", -time.Hour),
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
 		},
 	}
 
@@ -715,6 +740,7 @@ func Test_aggregate_HandleUpdateResourceContent(t *testing.T) {
 			if tt.wantEvents {
 				assert.NotEmpty(t, gotEvents)
 			}
+			time.Sleep(tt.args.sleep)
 		})
 	}
 }
@@ -778,7 +804,7 @@ func Test_aggregate_HandleConfirmResourceUpdate(t *testing.T) {
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
 	require.NoError(t, err)
-	_, err = ag.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resourceID, "", "123"))
+	_, err = ag.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resourceID, "", "123", 0))
 	require.NoError(t, err)
 
 	for _, tt := range tests {
@@ -809,7 +835,8 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *commands.RetrieveResourceRequest
+		req   *commands.RetrieveResourceRequest
+		sleep time.Duration
 	}
 	tests := []struct {
 		name           string
@@ -821,7 +848,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&commands.RetrieveResourceRequest{
+				req: &commands.RetrieveResourceRequest{
 					ResourceId: &commands.ResourceId{},
 				},
 			},
@@ -830,13 +857,32 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 			wantErr:        true,
 		},
 		{
-			name: "valid",
+			name: "valid with validUntil",
 			args: args{
-				testMakeRetrieveResourceRequest(deviceID, resourceID, "123"),
+				req:   testMakeRetrieveResourceRequest(deviceID, resourceID, "123", time.Millisecond*250),
+				sleep: time.Millisecond * 500,
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
 			wantErr:        false,
+		},
+		{
+			name: "valid",
+			args: args{
+				req: testMakeRetrieveResourceRequest(deviceID, resourceID, "123", time.Hour),
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+		{
+			name: "invalid valid until",
+			args: args{
+				req: testMakeRetrieveResourceRequest(deviceID, resourceID, "123", -time.Hour),
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
 		},
 	}
 
@@ -878,6 +924,7 @@ func Test_aggregate_HandleRetrieveResource(t *testing.T) {
 			if tt.wantEvents {
 				assert.NotEmpty(t, gotEvents)
 			}
+			time.Sleep(tt.args.sleep)
 		})
 	}
 }
@@ -941,7 +988,7 @@ func Test_aggregate_HandleNotifyResourceContentResourceProcessed(t *testing.T) {
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
 	require.NoError(t, err)
-	_, err = ag.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resourceID, "123"))
+	_, err = ag.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resourceID, "123", time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range tests {
@@ -980,7 +1027,8 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *commands.DeleteResourceRequest
+		req   *commands.DeleteResourceRequest
+		sleep time.Duration
 	}
 	tests := []struct {
 		name           string
@@ -992,7 +1040,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&commands.DeleteResourceRequest{
+				req: &commands.DeleteResourceRequest{
 					ResourceId: &commands.ResourceId{},
 				},
 			},
@@ -1001,13 +1049,33 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 			wantErr:        true,
 		},
 		{
-			name: "valid",
+			name: "valid with validUntil",
 			args: args{
-				testMakeDeleteResourceRequest(deviceID, resourceID, "123"),
+				req:   testMakeDeleteResourceRequest(deviceID, resourceID, "123", time.Millisecond*250),
+				sleep: time.Millisecond * 500,
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
 			wantErr:        false,
+		},
+		{
+			name: "valid",
+			args: args{
+				req:   testMakeDeleteResourceRequest(deviceID, resourceID, "123", time.Hour),
+				sleep: time.Millisecond * 500,
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+		{
+			name: "invalid valid until",
+			args: args{
+				req: testMakeDeleteResourceRequest(deviceID, resourceID, "123", -time.Hour),
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
 		},
 	}
 
@@ -1049,6 +1117,7 @@ func Test_aggregate_HandleDeleteResource(t *testing.T) {
 			if tt.wantEvents {
 				assert.NotEmpty(t, gotEvents)
 			}
+			time.Sleep(tt.args.sleep)
 		})
 	}
 }
@@ -1113,7 +1182,7 @@ func Test_aggregate_HandleConfirmResourceDelete(t *testing.T) {
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
 	require.NoError(t, err)
-	_, err = ag.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resourceID, "123"))
+	_, err = ag.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resourceID, "123", time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range tests {
@@ -1145,7 +1214,8 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 	userID := "user0"
 
 	type args struct {
-		req *commands.CreateResourceRequest
+		req   *commands.CreateResourceRequest
+		sleep time.Duration
 	}
 	tests := []struct {
 		name           string
@@ -1157,7 +1227,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				&commands.CreateResourceRequest{
+				req: &commands.CreateResourceRequest{
 					ResourceId: &commands.ResourceId{},
 				},
 			},
@@ -1166,13 +1236,32 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 			wantErr:        true,
 		},
 		{
-			name: "valid",
+			name: "valid with validUntil",
 			args: args{
-				testMakeCreateResourceRequest(deviceID, resourceID, "123"),
+				req:   testMakeCreateResourceRequest(deviceID, resourceID, "123", time.Millisecond*250),
+				sleep: time.Millisecond * 500,
 			},
 			wantEvents:     true,
 			wantStatusCode: codes.OK,
 			wantErr:        false,
+		},
+		{
+			name: "valid",
+			args: args{
+				req: testMakeCreateResourceRequest(deviceID, resourceID, "123", time.Hour),
+			},
+			wantEvents:     true,
+			wantStatusCode: codes.OK,
+			wantErr:        false,
+		},
+		{
+			name: "invalid valid until",
+			args: args{
+				req: testMakeCreateResourceRequest(deviceID, resourceID, "123", -time.Hour),
+			},
+			wantEvents:     false,
+			wantStatusCode: codes.InvalidArgument,
+			wantErr:        true,
 		},
 	}
 
@@ -1214,6 +1303,7 @@ func Test_aggregate_HandleCreateResource(t *testing.T) {
 			if tt.wantEvents {
 				assert.NotEmpty(t, gotEvents)
 			}
+			time.Sleep(tt.args.sleep)
 		})
 	}
 }
@@ -1278,7 +1368,7 @@ func Test_aggregate_HandleConfirmResourceCreate(t *testing.T) {
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
 	require.NoError(t, err)
-	_, err = ag.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resourceID, "123"))
+	_, err = ag.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resourceID, "123", time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range tests {

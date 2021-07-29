@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -35,6 +36,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					TimeToLive: int64(time.Hour),
 				},
 			},
 			want: &events.ResourceRetrieved{
@@ -54,6 +56,7 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					TimeToLive: int64(time.Hour),
 				},
 			},
 			want: &events.ResourceRetrieved{
@@ -73,6 +76,17 @@ func TestRequestHandler_GetResourceFromDevice(t *testing.T) {
 			args: args{
 				req: &pb.GetResourceFromDeviceRequest{
 					ResourceId: commands.NewResourceID(deviceID, "/unknown"),
+					TimeToLive: int64(time.Hour),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid timeToLive",
+			args: args{
+				req: &pb.GetResourceFromDeviceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					TimeToLive: int64(99 * time.Millisecond),
 				},
 			},
 			wantErr: true,

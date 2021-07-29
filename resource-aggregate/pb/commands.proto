@@ -162,11 +162,13 @@ message UpdateResourceRequest {
     string correlation_id = 2;
     Content content = 3;
     string resource_interface = 4;
+    int64 timeToLive = 5; // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
     CommandMetadata command_metadata = 100;
 }
 
 message UpdateResourceResponse {
-    AuditContext audit_context = 1;
+    int64 valid_until = 1; // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when command is considered as expired. 0 means forever.
+    AuditContext audit_context = 100;
 }
 
 message ConfirmResourceUpdateRequest {
@@ -225,10 +227,12 @@ message RetrieveResourceRequest {
     ResourceId resource_id = 1;
     string correlation_id = 2;
     string resource_interface = 3;
+    int64 timeToLive = 4; // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
     CommandMetadata command_metadata = 100;
 }
 
 message RetrieveResourceResponse {
+    int64 valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when command is considered as expired. 0 means forever.  
     AuditContext audit_context = 100;
 }
 
@@ -295,10 +299,12 @@ Delete Resource
 message DeleteResourceRequest {
     ResourceId resource_id = 1;
     string correlation_id = 2;
+    int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
     CommandMetadata command_metadata = 100;
 }
 
 message DeleteResourceResponse {
+    int64 valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when command is considered as expired. 0 means forever.
     AuditContext audit_context = 100;
 }
 
@@ -366,10 +372,12 @@ message CreateResourceRequest {
     ResourceId resource_id = 1;
     string correlation_id = 2;
     Content content = 3;
+    int64 timeToLive = 4;  // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
     CommandMetadata command_metadata = 100;
 }
 
 message CreateResourceResponse {
+    int64 valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when command is considered as expired. 0 means forever.
     AuditContext audit_context = 100;
 }
 
@@ -461,10 +469,12 @@ message UpdateDeviceMetadataRequest {
         ConnectionStatus status = 3;
         ShadowSynchronization shadow_synchronization = 4;
     };
+    int64 timeToLive = 5;  // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
     CommandMetadata command_metadata = 100;
 }
 
 message UpdateDeviceMetadataResponse {
+    int64 valid_until = 1;  // unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when command is considered as expired. 0 means forever.
     AuditContext audit_context = 100;
 }
 

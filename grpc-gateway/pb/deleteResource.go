@@ -25,6 +25,7 @@ func (req *DeleteResourceRequest) ToRACommand(ctx context.Context) (*commands.De
 	return &commands.DeleteResourceRequest{
 		ResourceId:    commands.NewResourceID(req.GetResourceId().GetDeviceId(), href),
 		CorrelationId: correlationUUID.String(),
+		TimeToLive:    req.GetTimeToLive(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,
 		},

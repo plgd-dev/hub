@@ -94,7 +94,17 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx cont
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx context.Context, updatePending *DeviceMetadataUpdatePending) error {
+	now := time.Now()
+	if updatePending.IsExpired(now) {
+		e.DeviceId = updatePending.GetDeviceId()
+		e.EventMetadata = updatePending.GetEventMetadata()
+		// for events from eventstore we do nothing
+		return nil
+	}
 	for _, event := range e.GetUpdatePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
 		if event.GetAuditContext().GetCorrelationId() == updatePending.GetAuditContext().GetCorrelationId() {
 			return status.Errorf(codes.InvalidArgument, "device metadata update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
 		}
@@ -144,6 +154,20 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 	return iter.Err()
 }
 
+func checkTimeToLive(timeToLive int64) error {
+	if timeToLive != 0 && timeToLive < int64(time.Millisecond*100) {
+		return status.Errorf(codes.InvalidArgument, "timeToLive(`%v`) is less than 100ms", time.Duration(timeToLive))
+	}
+	return nil
+}
+
+func timeToLive2ValidUntil(timeToLive int64) int64 {
+	if timeToLive == 0 {
+		return 0
+	}
+	return pkgTime.UnixNano(time.Now().Add(time.Duration(timeToLive)))
+}
+
 func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	owner, err := grpc.OwnerFromMD(ctx)
 	if err != nil {
@@ -174,8 +198,12 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 			}
 			return []eventstore.Event{&ev}, nil
 		case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
+			if err := checkTimeToLive(req.GetTimeToLive()); err != nil {
+				return nil, err
+			}
 			ev := DeviceMetadataUpdatePending{
-				DeviceId: req.GetDeviceId(),
+				DeviceId:   req.GetDeviceId(),
+				ValidUntil: timeToLive2ValidUntil(req.GetTimeToLive()),
 				UpdatePending: &DeviceMetadataUpdatePending_ShadowSynchronization{
 					ShadowSynchronization: req.GetShadowSynchronization(),
 				},

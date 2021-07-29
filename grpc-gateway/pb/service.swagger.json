@@ -209,6 +209,10 @@
               "properties": {
                 "shadowSynchronization": {
                   "$ref": "#/definitions/pbUpdateDeviceMetadataRequestShadowSynchronization"
+                },
+                "timeToLive": {
+                  "type": "string",
+                  "format": "int64"
                 }
               }
             }
@@ -249,6 +253,13 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "timeToLive",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -292,6 +303,13 @@
             "schema": {
               "$ref": "#/definitions/cloudgrpcgatewaypbContent"
             }
+          },
+          {
+            "name": "timeToLive",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -335,6 +353,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "timeToLive",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -384,6 +409,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "timeToLive",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -619,7 +651,6 @@
         "parameters": [
           {
             "name": "resourceIdFilter",
-            "description": "format {deviceID}{href}. eg \"ae424c58-e517-4494-6de7-583536c48213/oic/d\".",
             "in": "query",
             "required": false,
             "type": "array",
@@ -807,6 +838,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "includeCurrentState": {
+          "type": "boolean"
         }
       }
     },
@@ -1166,6 +1200,10 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -1339,14 +1377,14 @@
         "content": {
           "$ref": "#/definitions/cloudresourceaggregatepbContent"
         },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
-        },
-        "status": {
-          "$ref": "#/definitions/resourceaggregatepbStatus"
         }
       }
     },
@@ -1364,6 +1402,10 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -1398,6 +1440,10 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -1435,14 +1481,14 @@
     "pbResourceLinksPublished": {
       "type": "object",
       "properties": {
+        "deviceId": {
+          "type": "string"
+        },
         "resources": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/cloudresourceaggregatepbResource"
           }
-        },
-        "deviceId": {
-          "type": "string"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1456,14 +1502,14 @@
     "pbResourceLinksSnapshotTaken": {
       "type": "object",
       "properties": {
+        "deviceId": {
+          "type": "string"
+        },
         "resources": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/cloudresourceaggregatepbResource"
           }
-        },
-        "deviceId": {
-          "type": "string"
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
@@ -1473,14 +1519,14 @@
     "pbResourceLinksUnpublished": {
       "type": "object",
       "properties": {
+        "deviceId": {
+          "type": "string"
+        },
         "hrefs": {
           "type": "array",
           "items": {
             "type": "string"
           }
-        },
-        "deviceId": {
-          "type": "string"
         },
         "auditContext": {
           "$ref": "#/definitions/pbAuditContext"
@@ -1505,6 +1551,10 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -1586,6 +1636,10 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

@@ -21,6 +21,20 @@ func (s *subscription) initNotifyOfDevicesMetadata(ctx context.Context, deviceID
 	return res.InitialNotifyOfDeviceMetadata(ctx, s)
 }
 
+func (s *subscription) initSendDevicesMetadataPending(ctx context.Context, deviceID string) error {
+	if s.filteredEvents&filterBitmaskDeviceMetadataUpdatePending == 0 {
+		return nil
+	}
+
+	statusResourceID := commands.NewResourceID(deviceID, commands.StatusHref)
+	models := s.resourceProjection.Models(statusResourceID)
+	if len(models) == 0 {
+		return nil
+	}
+	res := models[0].(*deviceMetadataProjection)
+	return res.InitialSendDevicesMetadataPending(ctx, s)
+}
+
 func (s *subscription) NotifyOfUpdatePendingDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
 	if s.filteredEvents&filterBitmaskDeviceMetadataUpdatePending == 0 {
 		return nil

@@ -26,6 +26,7 @@ func (req *GetResourceFromDeviceRequest) ToRACommand(ctx context.Context) (*comm
 	return &commands.RetrieveResourceRequest{
 		ResourceId:        commands.NewResourceID(req.GetResourceId().GetDeviceId(), href),
 		CorrelationId:     correlationUUID.String(),
+		TimeToLive:        req.GetTimeToLive(),
 		ResourceInterface: req.GetResourceInterface(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,

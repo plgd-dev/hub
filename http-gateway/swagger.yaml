@@ -305,13 +305,14 @@ paths:
         - 'Resources'
       summary: 'Retrieve a resource'
       description: |
-        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility bypass the shadow by setting the query parameter `shadow` to `false.`
+        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration. 
       security:
         - oauth2:
           - 'plgd.devices'
       parameters:
         - $ref: '#/components/parameters/interface'
         - $ref: '#/components/parameters/shadow'
+        - $ref: '#/components/parameters/validUntil'
       responses:
         200:
           description: 'Resource content.'
@@ -337,6 +338,9 @@ paths:
       security:
         - oauth2:
           - 'plgd.devices'
+      parameters:
+        - $ref: '#/components/parameters/interface'
+        - $ref: '#/components/parameters/validUntil'
       requestBody:
         description: 'Updated content of the resource.'
         content:
@@ -412,6 +416,8 @@ paths:
         401:
           $ref: '#/components/responses/unauthorized'
   '/api/v1/devices/{deviceId}/pending-commands':
+    parameters:
+      - $ref: '#/components/parameters/deviceId'
     get:
       tags:
         - 'Pending Commands'
@@ -432,6 +438,9 @@ paths:
         401:
           $ref: '#/components/responses/unauthorized'
   '/api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands':
+    parameters:
+      - $ref: '#/components/parameters/deviceId'
+      - $ref: '#/components/parameters/resourceHref'
     get:
       tags:
         - 'Pending Commands'
@@ -473,6 +482,8 @@ paths:
         401:
           $ref: '#/components/responses/unauthorized'
   '/api/v1/devices/{deviceId}/events':
+    parameters:
+      - $ref: '#/components/parameters/deviceId'
     get:
       tags:
         - 'Resource Events'
@@ -492,6 +503,9 @@ paths:
         401:
           $ref: '#/components/responses/unauthorized'
   '/api/v1/devices/{deviceId}/resources/{resourceHref}/events':
+    parameters:
+      - $ref: '#/components/parameters/deviceId'
+      - $ref: '#/components/parameters/resourceHref'
     get:
       tags:
         - 'Resource Events'
@@ -516,7 +530,7 @@ paths:
         - 'Resource Events'
       summary: 'Subscribe to events'
       description: |
-        Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream.
+        Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream. If you're interested in the current state right after subscribing, set the includeCurrentState query parameter to true.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -1268,6 +1282,9 @@ components:
           type: array
           items:
             type: string
+        includeCurrentState:
+          type: boolean
+          description: 'Sends the current state of events right after subscribing.'
     SubscribeToEventsCreateSubscriptionEvent:
       type: string
       default: 'REGISTERED'
@@ -1359,10 +1376,18 @@ components:
     timestampFilter:
       name: timestamp
       in: query
-      description: 'Filter by Unix time in nanoseconds'
+      description: 'Filter by Unix nanoseconds timestamp'
       schema:
         type: integer
         format: int64
+    validUntil:
+      name: validUntil
+      in: query
+      description: 'Command expiration defined as Unix timestamp in nanoseconds. 0 means forever.'
+      schema:
+        type: integer
+        format: int64
+        default: 0
   responses:
     ok:
       description: Content is stored in body.

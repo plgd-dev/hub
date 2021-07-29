@@ -68,6 +68,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
+							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -103,6 +104,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
+							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -142,6 +144,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
+							IncludeCurrentState: true,
 						},
 					},
 				},

@@ -150,6 +150,29 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			},
 		},
 		{
+			name: "without IncludeCurrentState",
+			args: args{
+				sub: &pb.SubscribeToEvents{
+					CorrelationId: "testToken",
+					Action: &pb.SubscribeToEvents_CreateSubscription_{
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{},
+					},
+				},
+			},
+			want: []*pb.Event{
+				{
+					Type: &pb.Event_OperationProcessed_{
+						OperationProcessed: &pb.Event_OperationProcessed{
+							ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+								Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+							},
+						},
+					},
+					CorrelationId: "testToken",
+				},
+			},
+		},
+		{
 			name: "devices subscription - registered",
 			args: args{
 				sub: &pb.SubscribeToEvents{
@@ -159,6 +182,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
+							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -194,6 +218,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
+							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -233,6 +258,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
+							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -340,6 +366,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
+				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -468,6 +495,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
+				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -538,6 +566,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
+				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -592,6 +621,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 				},
+				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -787,6 +817,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED,
 				},
+				IncludeCurrentState: true,
 			},
 		},
 	})

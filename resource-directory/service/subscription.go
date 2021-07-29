@@ -82,6 +82,17 @@ func (s *subscription) update(ctx context.Context, currentDevices map[string]boo
 
 	}
 
+	for _, d := range filteredDevices {
+		s.isInitialized.Store(d, true)
+	}
+
+	if init && !s.devicesEvent.GetIncludeCurrentState() {
+		for _, deviceID := range filteredDevices {
+			s.initializeResource(commands.NewResourceID(deviceID, commands.ResourceLinksHref), true)
+		}
+		return nil
+	}
+
 	if init || len(filteredDevices) > 0 {
 		err := s.NotifyOfRegisteredDevice(ctx, filteredDevices)
 		if err != nil {
@@ -123,6 +134,7 @@ func (s *subscription) initDevices(ctx context.Context, deviceIDs []string) erro
 	var errors []error
 	initFuncs := []func(ctx context.Context, deviceID string) error{
 		s.initNotifyOfDevicesMetadata,
+		s.initSendDevicesMetadataPending,
 		s.initSendResourcesPublished,
 		s.initSendResourcesChanged,
 		s.initSendResourcesCreatePending,

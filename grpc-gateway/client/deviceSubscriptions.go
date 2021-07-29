@@ -317,8 +317,9 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 	ev, err := s.doOp(ctx, &pb.SubscribeToEvents{
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdFilter: []string{deviceID},
-				EventFilter:    filterEvents,
+				DeviceIdFilter:      []string{deviceID},
+				EventFilter:         filterEvents,
+				IncludeCurrentState: true,
 			},
 		},
 		CorrelationId: token.String(),

@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	cqrsAggregate "github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -52,16 +53,26 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
 	}
 
-	events, err := aggregate.UpdateDeviceMetadata(ctx, request)
+	publishEvents, err := aggregate.UpdateDeviceMetadata(ctx, request)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot update device('%v') metadata: %v", request.GetDeviceId(), err))
 	}
 
-	err = PublishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
+	err = PublishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), publishEvents)
 	if err != nil {
 		log.Errorf("cannot publish device('%v') metadata events: %w", request.GetDeviceId(), err)
 	}
+
+	var validUntil int64
+	for _, e := range publishEvents {
+		if ev, ok := e.(*events.DeviceMetadataUpdatePending); ok {
+			validUntil = ev.GetValidUntil()
+			break
+		}
+	}
+
 	return &commands.UpdateDeviceMetadataResponse{
 		AuditContext: commands.NewAuditContext(owner, ""),
+		ValidUntil:   validUntil,
 	}, nil
 }
