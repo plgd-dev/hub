@@ -17,21 +17,16 @@ import (
 
 //Config represent application configuration
 type Config struct {
-	Log               LogConfig       `yaml:"log" json:"log"`
-	APIs              APIsConfig      `yaml:"apis" json:"apis"`
-	OAuthDeviceClient provider.Config `yaml:"oauthDeviceClient" json:"oauthDeviceClient"`
-	Clients           ClientsConfig   `yaml:"clients" json:"clients"`
-	TaskQueue         queue.Config    `yaml:"taskQueue" json:"taskQueue"`
+	Log       LogConfig     `yaml:"log" json:"log"`
+	APIs      APIsConfig    `yaml:"apis" json:"apis"`
+	Clients   ClientsConfig `yaml:"clients" json:"clients"`
+	TaskQueue queue.Config  `yaml:"taskQueue" json:"taskQueue"`
 }
 
 func (c *Config) Validate() error {
 	err := c.APIs.Validate()
 	if err != nil {
 		return fmt.Errorf("apis.%w", err)
-	}
-	err = c.OAuthDeviceClient.Validate()
-	if err != nil {
-		return fmt.Errorf("oauthDeviceClient.%w", err)
 	}
 	err = c.Clients.Validate()
 	if err != nil {
@@ -70,6 +65,7 @@ type COAPConfig struct {
 	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
 	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
 	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
+	Authorization            provider.Config         `yaml:"authorization" json:"authorization"`
 }
 
 func (c *COAPConfig) Validate() error {
@@ -96,6 +92,10 @@ func (c *COAPConfig) Validate() error {
 	err = c.TLS.Validate()
 	if err != nil {
 		return fmt.Errorf("tls.%w", err)
+	}
+	err = c.Authorization.Validate()
+	if err != nil {
+		return fmt.Errorf("authorization.%w", err)
 	}
 	return nil
 }

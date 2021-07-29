@@ -83,7 +83,7 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %w", err)
+			log.Errorf("failed to close response body: %w", err)
 		}
 	}()
 
@@ -126,7 +126,7 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %w", err)
+			log.Errorf("failed to close response body: %w", err)
 		}
 	}()
 

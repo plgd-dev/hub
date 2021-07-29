@@ -221,10 +221,8 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	provider, err := provider.NewPlgdProvider(config.OAuthDeviceClient,
-		logger,
-		config.Clients.AuthServer.OwnerClaim,
-		"query", "offline", "code")
+	provider, err := provider.NewPlgdProvider(config.APIs.COAP.Authorization,
+		logger, config.Clients.AuthServer.OwnerClaim, "query", "offline", "code")
 	if err != nil {
 		resourceSubscriber.Close()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -259,7 +257,9 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		userDeviceSubscriptions: kitSync.NewMap(),
 	}
 
-	s.setupCoapServer()
+	if err := s.setupCoapServer(); err != nil {
+		return nil, fmt.Errorf("cannot setup coap server: %w", err)
+	}
 
 	return &s, nil
 }
@@ -288,6 +288,9 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 		case coapCodes.Empty:
 			if !ok {
 				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token)
+				if err := client.Close(); err != nil {
+					log.Errorf("cannot handle command: %w", err)
+				}
 				return
 			}
 			clientResetHandler(req, client)
@@ -307,7 +310,9 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 	})
 	if err != nil {
 		deviceID := getDeviceID(client)
-		client.Close()
+		if err2 := client.Close(); err2 != nil {
+			log.Errorf("cannot handle command: %w", err2)
+		}
 		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %w", deviceID, req.String(), err)
 	}
 }
@@ -359,16 +364,20 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
 		path, _ := r.Options.Path()
+		logErrorAndCloseClient := func(err error, code coapCodes.Code) {
+			client.logAndWriteErrorResponse(err, code, r.Token)
+			if err := client.Close(); err != nil {
+				log.Errorf("coap server error: %w", err)
+			}
+		}
 		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized, r.Token)
-			client.Close()
+			logErrorAndCloseClient(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized)
 			return
 		}
 		serviceToken, err := server.oauthMgr.GetToken(r.Context)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, r.Token)
-			client.Close()
+			logErrorAndCloseClient(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError)
 			return
 		}
 		r.Context = kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.GetUserID())
@@ -385,27 +394,37 @@ func (server *Service) ServiceRequestContext(userID string) (context.Context, er
 }
 
 //setupCoapServer setup coap server
-func (server *Service) setupCoapServer() {
+func (server *Service) setupCoapServer() error {
 	m := mux.NewRouter()
 	m.Use(server.loggingMiddleware, server.authMiddleware)
 	m.DefaultHandle(mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, defaultHandler)
 	}))
-	m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+	if err := m.Handle(uri.ResourceDirectory, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourceDirectoryHandler)
-	}))
-	m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+	})); err != nil {
+		return fmt.Errorf("failed to set %v handler: %w", uri.ResourceDirectory, err)
+	}
+	if err := m.Handle(uri.SignUp, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signUpHandler)
-	}))
-	m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+	})); err != nil {
+		return fmt.Errorf("failed to set %v handler: %w", uri.SignUp, err)
+	}
+	if err := m.Handle(uri.SignIn, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, signInHandler)
-	}))
-	m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+	})); err != nil {
+		return fmt.Errorf("failed to set %v handler: %w", uri.SignIn, err)
+	}
+	if err := m.Handle(uri.ResourceDiscovery, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, resourceDiscoveryHandler)
-	}))
-	m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
+	})); err != nil {
+		return fmt.Errorf("failed to set %v handler: %w", uri.ResourceDiscovery, err)
+	}
+	if err := m.Handle(uri.RefreshToken, mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		validateCommand(w, r, server, refreshTokenHandler)
-	}))
+	})); err != nil {
+		return fmt.Errorf("failed to set %v handler: %w", uri.RefreshToken, err)
+	}
 
 	opts := make([]tcp.ServerOption, 0, 8)
 	opts = append(opts, tcp.WithKeepAlive(1, server.config.APIs.COAP.KeepAlive.Timeout, server.KeepaliveOnInactivity))
@@ -425,6 +444,7 @@ func (server *Service) setupCoapServer() {
 		return nil
 	}))
 	server.coapServer = tcp.NewServer(opts...)
+	return nil
 }
 
 func (server *Service) tlsEnabled() bool {

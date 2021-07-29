@@ -2,14 +2,17 @@ package service
 
 import (
 	"fmt"
-	"time"
+	"strings"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/coap-gateway/provider"
+	"github.com/plgd-dev/cloud/pkg/log"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
+	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"google.golang.org/grpc/status"
 )
 
 type CoapSignUpRequest struct {
@@ -27,47 +30,92 @@ type CoapSignUpResponse struct {
 	RedirectURI  string `json:"redirecturi"`
 }
 
+/// Check that all required request fields are set
+func (request CoapSignUpRequest) checkOAuthRequest() error {
+	if request.DeviceID == "" {
+		return fmt.Errorf("invalid deviceID")
+	}
+	if request.AuthorizationCode == "" {
+		return fmt.Errorf("invalid authorization code")
+	}
+	if request.AuthorizationProvider == "" {
+		return fmt.Errorf("invalid authorization provider")
+	}
+	return nil
+}
+
+/// Get data for sign up response
+func getSignUpContent(token *provider.Token, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
+	resp := CoapSignUpResponse{
+		AccessToken:  token.AccessToken,
+		UserID:       token.Owner,
+		RefreshToken: token.RefreshToken,
+		ExpiresIn:    validUntilToExpiresIn(pkgTime.Unix(0, validUntil)),
+		RedirectURI:  "",
+	}
+
+	accept := coapconv.GetAccept(options)
+	encode, err := coapconv.GetEncoder(accept)
+	if err != nil {
+		return 0, nil, err
+	}
+	out, err := encode(resp)
+	if err != nil {
+		return 0, nil, err
+	}
+	return accept, out, nil
+}
+
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signUpPostHandler(r *mux.Message, client *Client) {
+	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
+		client.logAndWriteErrorResponse(err, code, r.Token)
+		if err := client.Close(); err != nil {
+			log.Errorf("sign up error: %w", err)
+		}
+	}
+
 	var signUp CoapSignUpRequest
-	err := cbor.ReadFrom(r.Body, &signUp)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.BadRequest, r.Token)
+	if err := cbor.ReadFrom(r.Body, &signUp); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.BadRequest)
 		return
 	}
 
-	// set AuthorizationCode from AuthorizationCodeLegacy
 	if signUp.AuthorizationCode == "" {
 		signUp.AuthorizationCode = signUp.AuthorizationCodeLegacy
 	}
-
-	response, err := client.server.asClient.SignUp(r.Context, &pbAS.SignUpRequest{
-		DeviceId:              signUp.DeviceID,
-		AuthorizationCode:     signUp.AuthorizationCode,
-		AuthorizationProvider: signUp.AuthorizationProvider,
-	})
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), r.Token)
+	if err := signUp.checkOAuthRequest(); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.BadRequest)
 		return
 	}
 
-	coapResponse := CoapSignUpResponse{
-		AccessToken:  response.AccessToken,
-		UserID:       response.UserId,
-		RefreshToken: response.RefreshToken,
-		ExpiresIn:    validUntilToExpiresIn(time.Unix(0, response.GetValidUntil())),
-		RedirectURI:  response.RedirectUri,
-	}
-
-	accept := coapconv.GetAccept(r.Options)
-	encode, err := coapconv.GetEncoder(accept)
+	token, err := client.server.provider.Exchange(r.Context, signUp.AuthorizationProvider, signUp.AuthorizationCode)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.InternalServerError, r.Token)
+		code := coapCodes.Unauthorized
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			code = coapCodes.ServiceUnavailable
+		}
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), code)
 		return
 	}
-	out, err := encode(coapResponse)
+
+	validUntil, ok := ValidUntil(token.Expiry)
+	if !ok {
+		logErrorAndCloseClient(fmt.Errorf("cannot sign up: expired access token"), coapCodes.Unauthorized)
+		return
+	}
+
+	if _, err := client.server.asClient.AddDevice(r.Context, &pb.AddDeviceRequest{
+		DeviceId: signUp.DeviceID,
+		UserId:   token.Owner,
+	}); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot sign up: %w", err), coapCodes.InternalServerError)
+		return
+	}
+
+	accept, out, err := getSignUpContent(token, validUntil, r.Options)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.InternalServerError, r.Token)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.InternalServerError)
 		return
 	}
 
