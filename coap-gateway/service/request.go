@@ -1,16 +1,14 @@
 package service
 
-import (
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-)
+import "fmt"
 
+/// Check that all required request fields are set
 func checkReq(request CoapSignInReq) error {
 	if request.UserID == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid UserId")
+		return fmt.Errorf("invalid UserId")
 	}
 	if request.AccessToken == "" {
-		return status.Errorf(codes.InvalidArgument, "invalid AccessToken")
+		return fmt.Errorf("invalid AccessToken")
 	}
 	return nil
 }
