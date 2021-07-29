@@ -43,8 +43,9 @@ func TestStore_InsertLinkedAccount(t *testing.T) {
 	s := newStore(ctx, t, config)
 	require.NoError(err)
 	defer func() {
-		s.Clear(ctx)
-		s.Close(ctx)
+		err := s.Clear(ctx)
+		require.NoError(err)
+		_ = s.Close(ctx)
 	}()
 
 	assert := assert.New(t)
@@ -110,8 +111,9 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 	s := newStore(ctx, t, config)
 	require.NoError(err)
 	defer func() {
-		s.Clear(ctx)
-		s.Close(ctx)
+		err := s.Clear(ctx)
+		require.NoError(err)
+		_ = s.Close(ctx)
 	}()
 
 	assert := assert.New(t)
@@ -172,8 +174,9 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 	s := newStore(ctx, t, config)
 	require.NoError(err)
 	defer func() {
-		s.Clear(ctx)
-		s.Close(ctx)
+		err := s.Clear(ctx)
+		require.NoError(err)
+		_ = s.Close(ctx)
 	}()
 
 	assert := assert.New(t)
@@ -270,8 +273,9 @@ func TestStore_LoadLinkedAccounts(t *testing.T) {
 	s := newStore(ctx, t, config)
 	require.NoError(err)
 	defer func() {
-		s.Clear(ctx)
-		s.Close(ctx)
+		err := s.Clear(ctx)
+		require.NoError(err)
+		_ = s.Close(ctx)
 	}()
 
 	assert := assert.New(t)

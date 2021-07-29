@@ -47,11 +47,12 @@ func New(t *testing.T, cfg refImpl.Config) func() {
 
 	go func() {
 		defer wg.Done()
-		c.Serve()
+		_ = c.Serve()
 	}()
 
 	return func() {
-		c.Shutdown()
+		err := c.Shutdown()
+		require.NoError(t, err)
 		wg.Wait()
 	}
 }

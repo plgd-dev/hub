@@ -42,8 +42,7 @@ func cancelLinkedAccountSubscription(ctx context.Context, cloud store.LinkedClou
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					err := cancelResourceSubscription(ctx, linkedAccount.linkedAccount, cloud, resource.subscription.DeviceID, resource.subscription.Href, resource.subscription.ID)
-					if err != nil {
+					if err := cancelResourceSubscription(ctx, linkedAccount.linkedAccount, cloud, resource.subscription.DeviceID, resource.subscription.Href, resource.subscription.ID); err != nil {
 						log.Error(err)
 					}
 				}()

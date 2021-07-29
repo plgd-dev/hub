@@ -46,7 +46,11 @@ func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClie
 	if err != nil {
 		return nil, fmt.Errorf("cannot get users devices: %w", err)
 	}
-	defer getUserDevicesClient.CloseSend()
+	defer func() {
+		if err := getUserDevicesClient.CloseSend(); err != nil {
+			log.Errorf("failed to close user devices client: %v", err)
+		}
+	}()
 	userDevices := make(map[string]bool)
 	for {
 		userDevice, err := getUserDevicesClient.Recv()
@@ -82,7 +86,11 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body: %v", err)
+		}
+	}()
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err

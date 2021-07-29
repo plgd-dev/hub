@@ -84,8 +84,9 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 	s := newStore(ctx, t, config)
 	require.NoError(err)
 	defer func() {
-		s.Clear(ctx)
-		s.Close(ctx)
+		err := s.Clear(ctx)
+		require.NoError(err)
+		_ = s.Close(ctx)
 	}()
 
 	assert := assert.New(t)
@@ -151,8 +152,9 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 	ctx := context.Background()
 	s := newStore(ctx, t, config)
 	defer func() {
-		s.Clear(ctx)
-		s.Close(ctx)
+		err := s.Clear(ctx)
+		require.NoError(err)
+		_ = s.Close(ctx)
 	}()
 
 	assert := assert.New(t)
@@ -271,8 +273,9 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 	s := newStore(ctx, t, config)
 	require.NoError(err)
 	defer func() {
-		s.Clear(ctx)
-		s.Close(ctx)
+		err := s.Clear(ctx)
+		require.NoError(err)
+		_ = s.Close(ctx)
 	}()
 
 	assert := assert.New(t)

@@ -53,8 +53,12 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 	}
 	_, _, err = s.store.LoadOrCreateSubscription(sub)
 	if err != nil {
-		cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID)
-		return fmt.Errorf("cannot store resource subscription to DB: %w", err)
+		var errors []error = make([]error, 1, 2)
+		errors = append(errors, fmt.Errorf("cannot store resource subscription to DB: %w", err))
+		if err2 := cancelResourceSubscription(ctx, linkedAccount, linkedCloud, sub.DeviceID, sub.Href, sub.ID); err2 != nil {
+			errors = append(errors, fmt.Errorf("cannot cancel resource %v/%v subscription: %w", sub.DeviceID, sub.Href, err2))
+		}
+		return fmt.Errorf("%v", errors)
 	}
 	return nil
 }
