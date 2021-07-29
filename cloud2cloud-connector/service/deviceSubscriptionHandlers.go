@@ -136,6 +136,5 @@ func (c *DevicesSubscription) Delete(userID, deviceID string) error {
 	if sub == nil {
 		return nil
 	}
-	sub.Close()
-	return nil
+	return sub.Close()
 }

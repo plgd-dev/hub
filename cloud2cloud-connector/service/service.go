@@ -157,7 +157,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		taskProcessor.Run(ctx, subscriptionManager)
+		if err := taskProcessor.Run(ctx, subscriptionManager); err != nil {
+			log.Errorf("failed to process subscriptionManager tasks: %v", err)
+		}
 	}()
 	wg.Add(1)
 	go func() {
@@ -198,14 +200,22 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 // Serve starts the service's HTTP server and blocks.
 func (s *Server) Serve() error {
 	defer func() {
-		s.raConn.Close()
-		s.rdConn.Close()
-		s.authConn.Close()
+		if err := s.raConn.Close(); err != nil {
+			log.Errorf("failed to close ResourceAggregate connection: %v", err)
+		}
+		if err := s.rdConn.Close(); err != nil {
+			log.Errorf("failed to close ResourceDirectory connection: %v", err)
+		}
+		if err := s.authConn.Close(); err != nil {
+			log.Errorf("failed to close Grpc connection: %v", err)
+		}
 		s.dialCertManager.Close()
 		if s.listenCertManager != nil {
 			s.listenCertManager.Close()
 		}
-		s.db.Close(context.Background())
+		if err := s.db.Close(context.Background()); err != nil {
+			log.Errorf("failed to close db connector: %v", err)
+		}
 	}()
 	return s.server.Serve(s.ln)
 }

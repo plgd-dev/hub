@@ -89,21 +89,27 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	req := test.NewHTTPRequest(http.MethodPost, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp := test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	var linkCloud store.LinkedCloud
 	err = json.ReadFrom(resp.Body, &linkCloud)
 	require.NoError(t, err)
 	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp = test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// for pulling
 	time.Sleep(time.Second * 10)
 
 	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp = test.DoHTTPRequest(t, req)
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	b, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	fmt.Println(string(b))
@@ -112,11 +118,14 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 		req := test.NewHTTPRequest(http.MethodDelete, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 		resp := test.DoHTTPRequest(t, req)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		cloud2()
 		shutdownDevSim()
-		cloud1Conn.Close()
+		err := cloud1Conn.Close()
+		require.NoError(t, err)
 		cloud1()
 		runtime.GC()
 
@@ -167,7 +176,9 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

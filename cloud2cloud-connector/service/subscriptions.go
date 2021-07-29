@@ -94,7 +94,11 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	req.Close = true
 
 	go func() {
-		defer w.Close()
+		defer func() {
+			if err := w.Close(); err != nil {
+				log.Errorf("failed to close write pipe: %v", err)
+			}
+		}()
 		err := json.WriteTo(w, reqBody)
 		if err != nil {
 			log.Errorf("cannot encode %+v to json: %w", reqBody, err)
@@ -104,7 +108,11 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	if err != nil {
 		return resp, fmt.Errorf("cannot post: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() {
+		if err := httpResp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body stream: %v")
+		}
+	}()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusCreated {
 		return resp, fmt.Errorf("unexpected statusCode %v", httpResp.StatusCode)
 	}
@@ -132,7 +140,11 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	if err != nil {
 		return fmt.Errorf("cannot delete: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() {
+		if err := httpResp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body stream: %v")
+		}
+	}()
 	if httpResp.StatusCode != http.StatusOK && httpResp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unexpected statusCode %v", httpResp.StatusCode)
 	}

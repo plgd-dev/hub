@@ -39,7 +39,11 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	req.Close = true
 
 	go func() {
-		defer w.Close()
+		defer func() {
+			if err := w.Close(); err != nil {
+				log.Errorf("failed to close write pipe: %v", err)
+			}
+		}()
 		_, err := w.Write(content)
 		if err != nil {
 			log.Errorf("cannot update content of device %v resource %v: %w", deviceID, href, err)
@@ -49,7 +53,11 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	if err != nil {
 		return "", nil, commands.Status_UNAVAILABLE, fmt.Errorf("cannot post: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() {
+		if err := httpResp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body stream: %v")
+		}
+	}()
 	if httpResp.StatusCode != http.StatusOK {
 		status := commands.HTTPStatus2Status(httpResp.StatusCode)
 		return "", nil, status, fmt.Errorf("unexpected statusCode %v", httpResp.StatusCode)

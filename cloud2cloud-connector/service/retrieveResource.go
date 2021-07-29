@@ -35,7 +35,11 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 	if err != nil {
 		return "", nil, commands.Status_UNAVAILABLE, fmt.Errorf("cannot post: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() {
+		if err := httpResp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body stream: %v")
+		}
+	}()
 	if httpResp.StatusCode != http.StatusOK {
 		status := commands.HTTPStatus2Status(httpResp.StatusCode)
 		return "", nil, status, fmt.Errorf("unexpected statusCode %v", httpResp.StatusCode)
