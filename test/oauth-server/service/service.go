@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	"github.com/plgd-dev/cloud/pkg/net/listener"
-	"go.uber.org/zap"
 )
 
 //Server handle HTTP request
@@ -18,7 +19,7 @@ type Service struct {
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
 	listener, err := listener.New(config.APIs.HTTP, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)

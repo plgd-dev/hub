@@ -179,7 +179,7 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		Value: []byte("if=" + OCFBaselineInterface),
 	})
 	if err != nil {
-		log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
+		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 		return
 	}
 	client.server.taskQueue.Submit(func() {
@@ -187,7 +187,7 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		err = client.notifyContentChanged(deviceID, href, resp)
 		if err != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-			log.Errorf("cannot get resource /%v%v content: %v", deviceID, href, err)
+			log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 			client.Close()
 		}
 		if resp.Code() == codes.NotFound {
@@ -208,7 +208,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 				defer pool.ReleaseMessage(req)
 				if err != nil {
 					// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
-					log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
+					log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
 					client.Close()
 				}
 				if req.Code() == codes.NotFound {
@@ -220,7 +220,7 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 			Value: []byte("if=" + OCFBaselineInterface),
 		})
 		if err != nil {
-			log.Errorf("cannot observe resource /%v%v: %v", deviceID, obsRes.href, err)
+			log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
 		} else {
 			obsRes.SetObservation(obs)
 		}
@@ -408,7 +408,7 @@ func (client *Client) OnClose() {
 		defer cancel()
 		token, err := client.server.oauthMgr.GetToken(ctx)
 		if err != nil {
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 			return
 		}
 		_, err = client.server.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), oldAuthCtx.GetUserID()), &commands.UpdateDeviceMetadataRequest{
@@ -425,7 +425,7 @@ func (client *Client) OnClose() {
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 		}
 	}
 }
@@ -736,13 +736,13 @@ func (client *Client) publishResourceLinks(ctx context.Context, links schema.Res
 func (client *Client) getUserAuthorizedContext(ctx context.Context) context.Context {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		log.Errorf("unable to load authorization context", err)
+		log.Errorf("unable to load authorization context: %w", err)
 		return nil
 	}
 
 	token, err := client.server.oauthMgr.GetToken(ctx)
 	if err != nil {
-		log.Errorf("unable to get token", err)
+		log.Errorf("unable to get token: %w", err)
 		return nil
 	}
 	return kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(ctx, token.AccessToken), authCtx.GetUserID())
@@ -751,7 +751,7 @@ func (client *Client) getUserAuthorizedContext(ctx context.Context) context.Cont
 func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string) {
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
-		log.Errorf("unable to load authorization context during resource links publish for device", err)
+		log.Errorf("unable to load authorization context during resource links publish for device: %w", err)
 	}
 
 	resp, err := client.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
@@ -765,7 +765,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 	if err != nil {
 		// unpublish resource is not critical -> resource can be still accessible
 		// next resource update will return 'not found' what triggers a publish again
-		log.Errorf("error occured during resource links unpublish for device %v: %v", authCtx.GetDeviceID(), err)
+		log.Errorf("error occured during resource links unpublish for device %v: %w", authCtx.GetDeviceID(), err)
 	}
 
 	client.cancelResourcesObservations(ctx, resp.UnpublishedHrefs)
@@ -857,7 +857,7 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 func (client *Client) OnDeviceSubscriberReconnectError(err error) {
 	auth, _ := client.GetAuthorizationContext()
 	deviceID := auth.GetDeviceID()
-	log.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %v", deviceID, err)
+	log.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %w", deviceID, err)
 	client.Close()
 }
 

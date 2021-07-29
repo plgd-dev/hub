@@ -97,7 +97,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 		defer w.Close()
 		err := json.WriteTo(w, reqBody)
 		if err != nil {
-			log.Errorf("cannot encode %+v to json: %v", reqBody, err)
+			log.Errorf("cannot encode %+v to json: %w", reqBody, err)
 		}
 	}()
 	httpResp, err := client.Do(req)
@@ -243,7 +243,7 @@ func (s *SubscriptionManager) Run(ctx context.Context) {
 		for _, data := range s.store.DumpDevices() {
 			err := s.devicesSubscription.Add(data.subscription.DeviceID, data.linkedAccount, data.linkedCloud)
 			if err != nil {
-				log.Errorf("cannot add device %v from subscriptions to devicesSubscription: %v", data.subscription.DeviceID, err)
+				log.Errorf("cannot add device %v from subscriptions to devicesSubscription: %w", data.subscription.DeviceID, err)
 			}
 		}
 		select {

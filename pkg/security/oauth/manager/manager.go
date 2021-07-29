@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
 	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -76,7 +75,7 @@ func new(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout, 
 	return mgr, nil
 }
 
-func New(config ConfigV2, logger *zap.Logger) (*Manager, error) {
+func New(config ConfigV2, logger log.Logger) (*Manager, error) {
 	http, err := client.New(config.HTTP, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http client: %w", err)

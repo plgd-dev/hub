@@ -61,7 +61,7 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 			case message.AppCBOR, message.AppOcfCbor:
 				s, err := cbor.ToJSON(body)
 				if err != nil {
-					log.Errorf("Cannot encode %v to JSON: %v", body, err)
+					log.Errorf("Cannot encode %v to JSON: %w", body, err)
 				}
 				fmt.Fprintf(buf, "CBOR:\n%v", s)
 			case message.TextPlain:

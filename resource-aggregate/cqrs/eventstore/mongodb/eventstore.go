@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/plgd-dev/cloud/pkg/log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -104,7 +104,7 @@ func (s *EventStore) AddCloseFunc(f func()) {
 	s.closeFunc = append(s.closeFunc, f)
 }
 
-func New(ctx context.Context, config Config, logger *zap.Logger, opts ...Option) (*EventStore, error) {
+func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) (*EventStore, error) {
 	config.marshalerFunc = json.Marshal
 	config.unmarshalerFunc = json.Unmarshal
 	for _, o := range opts {

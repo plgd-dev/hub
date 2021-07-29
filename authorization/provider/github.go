@@ -6,15 +6,16 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	"github.com/google/go-github/github"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
-	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	githubconf "golang.org/x/oauth2/github"
 )
 
 // NewGitHubProvider creates GitHub OAuth client
-func NewGitHubProvider(config Config, logger *zap.Logger, ownerClaim, responseMode, accessType, responseType string) (*GitHubProvider, error) {
+func NewGitHubProvider(config Config, logger log.Logger, ownerClaim, responseMode, accessType, responseType string) (*GitHubProvider, error) {
 	config.ResponseMode = responseMode
 	config.AccessType = accessType
 	config.ResponseType = responseType

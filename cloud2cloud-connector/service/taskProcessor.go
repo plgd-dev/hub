@@ -123,7 +123,7 @@ func (h *TaskProcessor) readTask(ctx context.Context, subscriptionManager *Subsc
 	case e := <-h.tasksChan:
 		err := h.runTask(ctx, e, subscriptionManager)
 		if err != nil {
-			log.Errorf("cannot process task %+v: %v", e, err)
+			log.Errorf("cannot process task %+v: %w", e, err)
 		}
 		return true, nil
 	case <-ctx.Done():
@@ -144,7 +144,7 @@ func (h *TaskProcessor) Run(ctx context.Context, subscriptionManager *Subscripti
 				defer cancel()
 				err := h.runTask(ctx, e, subscriptionManager)
 				if err != nil {
-					log.Errorf("cannot process task %+v: %v", e, err)
+					log.Errorf("cannot process task %+v: %w", e, err)
 				}
 			default:
 				process = false

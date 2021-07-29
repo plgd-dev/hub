@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"errors"
 
 	"google.golang.org/grpc/codes"
@@ -10,6 +11,16 @@ import (
 
 type grpcErr interface {
 	GRPCStatus() *status.Status
+}
+
+func IsContextCanceled(err error) bool {
+	if errors.Is(err, context.Canceled) {
+		return true
+	}
+	if grpcErr, ok := err.(grpcErr); ok {
+		return grpcErr.GRPCStatus().Code() == codes.Canceled
+	}
+	return false
 }
 
 // ForwardFromError tries to unwrap err as GRPCStatus() and forward original code and details.

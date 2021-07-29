@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
+	"github.com/plgd-dev/cloud/pkg/log"
 
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
@@ -14,7 +14,7 @@ type Service struct {
 	*server.Server
 }
 
-func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
 	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)

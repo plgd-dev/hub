@@ -19,7 +19,6 @@ import (
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
-	"go.uber.org/zap"
 
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"google.golang.org/grpc"
@@ -62,7 +61,7 @@ func (s *RequestHandler) Close() {
 	s.closeFunc.Close()
 }
 
-func AddHandler(ctx context.Context, svr *server.Server, config ClientsConfig, publicConfiguration PublicConfiguration, logger *zap.Logger, goroutinePoolGo func(func()) error) error {
+func AddHandler(ctx context.Context, svr *server.Server, config ClientsConfig, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) error {
 	handler, err := NewRequestHandlerFromConfig(ctx, config, publicConfiguration, logger, goroutinePoolGo)
 	if err != nil {
 		return err
@@ -77,7 +76,7 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publicConfiguration PublicConfiguration, logger *zap.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publicConfiguration PublicConfiguration, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc closeFunc
 	if publicConfiguration.CAPool != "" {
 		content, err := ioutil.ReadFile(publicConfiguration.CAPool)
@@ -101,7 +100,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 	closeFunc = append(closeFunc, func() {
 		err := asConn.Close()
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to authorization server: %w", err)
+			logger.Errorf("error occurs during close connection to authorization server: %w", err)
 		}
 	})
 	authServiceClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
@@ -114,7 +113,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 	closeFunc = append(closeFunc, func() {
 		err := eventstore.Close(ctx)
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to mongodb: %w", err)
+			logger.Errorf("error occurs during close connection to mongodb: %w", err)
 		}
 	})
 

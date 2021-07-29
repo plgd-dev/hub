@@ -6,9 +6,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"net/url"
 	"time"
+
+	"github.com/plgd-dev/cloud/pkg/log"
 
 	"github.com/valyala/fasthttp"
 

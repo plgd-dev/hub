@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"go.uber.org/zap"
+	"github.com/plgd-dev/cloud/pkg/log"
 )
 
 // Provider defines interface for authentification against auth service
@@ -15,7 +15,7 @@ type Provider = interface {
 }
 
 // New creates GitHub OAuth client
-func New(config Config, logger *zap.Logger, ownerClaim, responseMode, accessType, responseType string) (Provider, error) {
+func New(config Config, logger log.Logger, ownerClaim, responseMode, accessType, responseType string) (Provider, error) {
 	switch config.Provider {
 	case "github":
 		return NewGitHubProvider(config, logger, ownerClaim, responseMode, accessType, responseType)

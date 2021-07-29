@@ -42,7 +42,7 @@ func (client *Client) registerObservationsForPublishedResourcesLocked(ctx contex
 		if status.Convert(err).Code() == codes.NotFound {
 			return
 		}
-		log.Errorf("signIn: cannot get resource links for the device %v: %v", deviceID, err)
+		log.Errorf("signIn: cannot get resource links for the device %v: %w", deviceID, err)
 		return
 	}
 	resources := make([]*commands.Resource, 0, 8)
@@ -55,7 +55,7 @@ func (client *Client) registerObservationsForPublishedResourcesLocked(ctx contex
 			return
 		}
 		if err != nil {
-			log.Errorf("signIn: cannot receive link for the device %v: %v", deviceID, err)
+			log.Errorf("signIn: cannot receive link for the device %v: %w", deviceID, err)
 			return
 		}
 		resources = append(resources, m.GetResources()...)
@@ -269,7 +269,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %v", oldAuthCtx.GetDeviceID(), err)
+			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 			return
 		}
 	}

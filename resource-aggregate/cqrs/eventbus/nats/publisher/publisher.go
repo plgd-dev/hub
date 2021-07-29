@@ -6,11 +6,12 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -52,7 +53,7 @@ func WithMarshaler(dataMarshaler MarshalerFunc) MarshalerOpt {
 }
 
 // New creates new publisher with proto marshaller.
-func New(config Config, logger *zap.Logger, opts ...Option) (*Publisher, error) {
+func New(config Config, logger log.Logger, opts ...Option) (*Publisher, error) {
 	cfg := options{
 		dataMarshaler: json.Marshal,
 	}

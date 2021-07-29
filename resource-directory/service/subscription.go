@@ -7,6 +7,7 @@ import (
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/strings"
 	kitSync "github.com/plgd-dev/kit/sync"
@@ -73,7 +74,7 @@ func (s *subscription) update(ctx context.Context, currentDevices map[string]boo
 		if isFilteredDevice(s.filteredDeviceIDs, deviceID) {
 			_, err := s.RegisterToProjection(ctx, deviceID)
 			if err != nil {
-				log.Errorf("cannot register to resource projection for %v: %v", deviceID, err)
+				log.Errorf("cannot register to resource projection for %v: %w", deviceID, err)
 				continue
 			}
 			filteredDevices = append(filteredDevices, deviceID)
@@ -106,7 +107,7 @@ func (s *subscription) Update(ctx context.Context, addedDevices, removedDevices 
 		toSend = append(toSend, devID)
 		err := s.UnregisterFromProjection(ctx, deviceID)
 		if err != nil {
-			log.Errorf("cannot unregister resource from projection for %v: %v", deviceID, err)
+			log.Errorf("cannot unregister resource from projection for %v: %w", deviceID, err)
 		}
 	}
 	if len(toSend) > 0 {
@@ -283,11 +284,11 @@ func (s *subscription) Close(reason error) error {
 			},
 		},
 	})
-	if err != nil {
+	if err != nil && !grpc.IsContextCanceled(err) {
 		errors = append(errors, err)
 	}
 	if len(errors) > 0 {
-		return fmt.Errorf("cannot close subscription %v: %v", s.ID(), errors)
+		return fmt.Errorf("%v", errors)
 	}
 
 	return nil

@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/kit/security"
-	"go.uber.org/zap"
 )
 
 // Config provides configuration of a file based Server Certificate manager
@@ -48,7 +48,7 @@ type CertManager struct {
 	doneWg                  sync.WaitGroup
 	done                    chan struct{}
 	verifyClientCertificate tls.ClientAuthType
-	logger                  *zap.Logger
+	logger                  log.Logger
 
 	mutex      sync.Mutex
 	tlsKeyPair tls.Certificate
@@ -56,7 +56,7 @@ type CertManager struct {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, logger *zap.Logger) (*CertManager, error) {
+func New(config Config, logger log.Logger) (*CertManager, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err

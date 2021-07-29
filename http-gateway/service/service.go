@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
@@ -13,7 +15,6 @@ import (
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
-	"go.uber.org/zap"
 )
 
 //Server handle HTTP request
@@ -25,7 +26,7 @@ type Server struct {
 }
 
 // New parses configuration and creates new Server with provided store and bus
-func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error) {
+func New(ctx context.Context, config Config, logger log.Logger) (*Server, error) {
 	validator, err := validator.New(ctx, config.APIs.HTTP.Authorization, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -45,7 +46,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Server, error
 	listener.AddCloseFunc(func() {
 		err := rdConn.Close()
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to resource-directory: %v", err)
+			logger.Errorf("error occurs during close connection to resource-directory: %v", err)
 		}
 	})
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())

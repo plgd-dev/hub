@@ -40,7 +40,7 @@ func (h *linkedAccountLoader) Handle(ctx context.Context, iter store.LinkedAccou
 		}
 		_, _, err := h.cache.LoadOrCreateLinkedAccount(account)
 		if err != nil {
-			log.Errorf("cannot load linked account %+v: %v", account, err)
+			log.Errorf("cannot load linked account %+v: %w", account, err)
 		}
 	}
 	return iter.Err()

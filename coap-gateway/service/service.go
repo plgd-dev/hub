@@ -13,7 +13,6 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	kitSync "github.com/plgd-dev/kit/sync"
-	"go.uber.org/zap"
 
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 
@@ -74,7 +73,7 @@ type ListenCertManager = interface {
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
 	p, err := queue.New(config.TaskQueue)
 	if err != nil {
 		return nil, fmt.Errorf("cannot job queue %w", err)
@@ -115,7 +114,10 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	resourceSubscriber.AddCloseFunc(func() {
 		err := raConn.Close()
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to resource aggregate: %v", err)
+			if kitNetGrpc.IsContextCanceled(err) {
+				return
+			}
+			logger.Errorf("error occurs during close connection to resource aggregate: %v", err)
 		}
 	})
 	raClient := raClient.New(raConn.GRPC(), resourceSubscriber)
@@ -128,7 +130,10 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	resourceSubscriber.AddCloseFunc(func() {
 		err := asConn.Close()
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to authorization server: %v", err)
+			if kitNetGrpc.IsContextCanceled(err) {
+				return
+			}
+			logger.Errorf("error occurs during close connection to authorization server: %v", err)
 		}
 	})
 	asClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
@@ -141,7 +146,10 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	resourceSubscriber.AddCloseFunc(func() {
 		err := asConn.Close()
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to resource directory: %v", err)
+			if kitNetGrpc.IsContextCanceled(err) {
+				return
+			}
+			logger.Errorf("error occurs during close connection to resource directory: %v", err)
 		}
 	})
 	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
@@ -275,7 +283,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 			deviceID := getDeviceID(client)
 			tmp, err := pool.ConvertFrom(req.Message)
 			if err != nil {
-				log.Errorf("DeviceId: %v: cannot convert dropped notification: %v", deviceID, err)
+				log.Errorf("DeviceId: %v: cannot convert dropped notification: %w", deviceID, err)
 			} else {
 				decodeMsgToDebug(client, tmp, "DROPPED-NOTIFICATION")
 			}
@@ -287,7 +295,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 	if err != nil {
 		deviceID := getDeviceID(client)
 		client.Close()
-		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %v", deviceID, req.String(), err)
+		log.Errorf("DeviceId: %v: cannot handle request %v by task queue: %w", deviceID, req.String(), err)
 	}
 }
 

@@ -95,7 +95,7 @@ func (s *Subscriptions) UserDevicesChanged(ctx context.Context, owner string, ad
 	for _, sub := range init {
 		err := sub.Init(ctx, currentDevices)
 		if err != nil {
-			log.Errorf("cannot init sub ID %v: %v", sub.ID(), err)
+			log.Errorf("cannot init sub ID %v: %w", sub.ID(), err)
 			if err2 := s.Close(sub.ID(), err); err2 != nil {
 				log.Errorf("cannot close sub ID %v: %v", sub.ID(), err2)
 			}
@@ -107,7 +107,7 @@ func (s *Subscriptions) UserDevicesChanged(ctx context.Context, owner string, ad
 		for _, sub := range update {
 			err := sub.Update(ctx, addedDevices, removedDevices)
 			if err != nil {
-				log.Errorf("cannot update sub ID %v: %v", sub.ID(), err)
+				log.Errorf("cannot update sub ID %v: %w", sub.ID(), err)
 				if err2 := s.Close(sub.ID(), err); err2 != nil {
 					log.Errorf("cannot close sub ID %v: %v", sub.ID(), err2)
 				}
@@ -151,7 +151,7 @@ func (s *Subscriptions) closeWithReleaseUserDevicesMfg(id string, reason error, 
 	s.removeFromInitSubscriptions(id, sub.UserID())
 	if releaseFromUserDevManager {
 		if err := s.userDevicesManager.Release(sub.UserID()); err != nil {
-			log.Errorf("failed to release device %s from manager: %v", sub.UserID(), err)
+			log.Errorf("failed to release device %s from manager: %w", sub.UserID(), err)
 		}
 	}
 
@@ -555,7 +555,7 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 
 		if err != nil {
 			localSubscriptions.Delete(subRes.SubscriptionId)
-			log.Errorf("errors occurs during %T: %v", subReq.GetAction(), err)
+			log.Errorf("errors occurs during %T: %w", subReq.GetAction(), err)
 		}
 	}
 	return nil

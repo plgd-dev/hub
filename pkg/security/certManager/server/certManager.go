@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/general"
-	"go.uber.org/zap"
 )
 
 // Config provides configuration of a file based Server Certificate manager
@@ -49,7 +49,7 @@ func (c *CertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, logger *zap.Logger) (*CertManager, error) {
+func New(config Config, logger log.Logger) (*CertManager, error) {
 
 	c, err := general.New(general.Config{
 		CAPool:                    config.CAPool,

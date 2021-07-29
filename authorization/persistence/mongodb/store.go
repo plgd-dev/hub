@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.uber.org/zap"
 )
 
 const userDevicesCName = "userdevices"
@@ -33,7 +34,7 @@ type Store struct {
 }
 
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, logger *zap.Logger) (*Store, error) {
+func NewStore(ctx context.Context, cfg Config, logger log.Logger) (*Store, error) {
 	certManager, err := client.New(cfg.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)

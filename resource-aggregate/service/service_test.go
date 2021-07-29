@@ -33,12 +33,12 @@ func TestPublishUnpublish(t *testing.T) {
 
 	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetServiceToken(t))
 
-	authConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.AuthServer.Connection.Addr), log.Get().Desugar())
+	authConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.AuthServer.Connection.Addr), log.Get())
 	require.NoError(t, err)
 	defer authConn.Close()
 	authClient := pbAS.NewAuthorizationServiceClient(authConn.GRPC())
 
-	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get().Desugar())
+	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get())
 	require.NoError(t, err)
 	defer raConn.Close()
 	raClient := service.NewResourceAggregateClient(raConn.GRPC())

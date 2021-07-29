@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
@@ -72,7 +71,7 @@ func NewService(deviceProvider, sdkProvider Provider, persistence Persistence, o
 	}
 }
 
-func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvider Provider, sdkProvider Provider, grpcOpts ...grpc.ServerOption) (*Server, error) {
+func NewServer(ctx context.Context, cfg Config, logger log.Logger, deviceProvider Provider, sdkProvider Provider, grpcOpts ...grpc.ServerOption) (*Server, error) {
 	grpcServer, err := server.New(cfg.APIs.GRPC, logger, grpcOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
@@ -115,7 +114,7 @@ func NewServer(ctx context.Context, cfg Config, logger *zap.Logger, deviceProvid
 }
 
 // New creates the service's HTTP server.
-func New(ctx context.Context, cfg Config, logger *zap.Logger) (*Server, error) {
+func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 	deviceProvider, err := provider.New(cfg.OAuthClients.Device, logger, cfg.Clients.Storage.OwnerClaim, "query", "offline", "code")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create device provider: %w", err)

@@ -65,7 +65,7 @@ func SendResourceContentToObserver(client *Client, resourceChanged *events.Resou
 	}
 	err := client.coapConn.WriteMessage(msg)
 	if err != nil {
-		log.Errorf("cannot send observe notification to %v: %v", client.remoteAddrString(), err)
+		log.Errorf("cannot send observe notification to %v: %w", client.remoteAddrString(), err)
 	}
 	decodeMsgToDebug(client, msg, "SEND-NOTIFICATION")
 }

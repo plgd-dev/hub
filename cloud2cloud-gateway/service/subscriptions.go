@@ -285,7 +285,7 @@ func (h *closeEventHandler) OnClose() {
 
 func (h *closeEventHandler) Error(err error) {
 	data := h.data.Data()
-	log.Errorf("subscription %+v ends with error: %v", data, err)
+	log.Errorf("subscription %+v ends with error: %w", data, err)
 	if errors.Is(err, context.Canceled) {
 		return
 	}
@@ -449,7 +449,7 @@ func (s *SubscriptionManager) Run() {
 				defer wg.Done()
 				err := subData.Connect(s.ctx, s.emitEvent, s.PullOut)
 				if err != nil {
-					log.Errorf("cannot connect %+v: %v", subData.Data(), err)
+					log.Errorf("cannot connect %+v: %w", subData.Data(), err)
 				}
 			}(task)
 		}

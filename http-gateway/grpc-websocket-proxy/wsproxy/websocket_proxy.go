@@ -162,7 +162,7 @@ func isClosedConnError(err error) bool {
 	if strings.Contains(str, "use of closed network connection") {
 		return true
 	}
-	return websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway)
+	return websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure)
 }
 
 func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
@@ -288,6 +288,10 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 				}
 			case data := <-dataWriteChan:
 				if err = conn.WriteMessage(websocket.TextMessage, data); err != nil {
+					if isClosedConnError(err) {
+						p.logger.Debugln("[write] error writing websocket message:", err)
+						return
+					}
 					p.logger.Warnln("[write] error writing websocket message:", err)
 					return
 				}
