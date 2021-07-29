@@ -136,8 +136,7 @@ func GetServiceToken(t *testing.T) string {
 	getReq := NewRequest(http.MethodPost, uri.Token, bytes.NewReader(d)).Build()
 	res := HTTPDo(t, getReq, false)
 	defer func() {
-		err := res.Body.Close()
-		require.NoError(t, err)
+		_ = res.Body.Close()
 	}()
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	var body map[string]string
@@ -158,8 +157,7 @@ func GetDeviceAuthorizationCode(t *testing.T) string {
 	getReq := NewRequest(http.MethodGet, u.String(), nil).Build()
 	res := HTTPDo(t, getReq, false)
 	defer func() {
-		err := res.Body.Close()
-		require.NoError(t, err)
+		_ = res.Body.Close()
 	}()
 	require.Equal(t, http.StatusOK, res.StatusCode)
 

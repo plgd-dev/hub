@@ -17,8 +17,7 @@ func TestRequestHandler_getUserInfo(t *testing.T) {
 	getReq := test.NewRequest(http.MethodGet, uri.UserInfo, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
-		err := res.Body.Close()
-		require.NoError(t, err)
+		_ = res.Body.Close()
 	}()
 
 	var body map[string]string
