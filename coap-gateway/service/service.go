@@ -229,6 +229,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		resourceSubscriber.Close()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
+	resourceSubscriber.AddCloseFunc(provider.Close)
 
 	ctx, cancel := context.WithCancel(ctx)
 
