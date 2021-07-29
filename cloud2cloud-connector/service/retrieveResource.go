@@ -55,7 +55,7 @@ func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateC
 	href := e.GetResourceId().GetHref()
 	contentType, content, status, err := retrieveDeviceResource(ctx, deviceID, href, linkedAccount, linkedCloud)
 	if err != nil {
-		log.Errorf("cannot update resource %v/%v: %v", deviceID, href, err)
+		log.Errorf("cannot update resource %v/%v: %w", deviceID, href, err)
 	}
 	coapContentFormat := int32(-1)
 

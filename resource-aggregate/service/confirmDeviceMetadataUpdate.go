@@ -59,7 +59,7 @@ func (r RequestHandler) ConfirmDeviceMetadataUpdate(ctx context.Context, request
 
 	err = PublishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
 	if err != nil {
-		log.Errorf("cannot publish device('%v') metadata events: %v", request.GetDeviceId(), err)
+		log.Errorf("cannot publish device('%v') metadata events: %w", request.GetDeviceId(), err)
 	}
 	return &commands.ConfirmDeviceMetadataUpdateResponse{
 		AuditContext: commands.NewAuditContext(owner, ""),

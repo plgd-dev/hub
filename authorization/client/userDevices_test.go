@@ -112,7 +112,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 			CertFile: cfg.APIs.GRPC.TLS.CertFile,
 			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get().Desugar(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+	}, log.Get(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken:  token,
 			TokenType:    "Bearer",
@@ -250,7 +250,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 			CertFile: cfg.APIs.GRPC.TLS.CertFile,
 			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get().Desugar(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+	}, log.Get(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken:  token,
 			TokenType:    "Bearer",
@@ -359,7 +359,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 			CertFile: cfg.APIs.GRPC.TLS.CertFile,
 			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, log.Get().Desugar(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+	}, log.Get(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken:  token,
 			TokenType:    "Bearer",

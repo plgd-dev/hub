@@ -42,7 +42,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 		defer w.Close()
 		_, err := w.Write(content)
 		if err != nil {
-			log.Errorf("cannot update content of device %v resource %v: %v", deviceID, href, err)
+			log.Errorf("cannot update content of device %v resource %v: %w", deviceID, href, err)
 		}
 	}()
 	httpResp, err := client.Do(req)
@@ -69,7 +69,7 @@ func updateResource(ctx context.Context, raClient raService.ResourceAggregateCli
 	href := e.GetResourceId().GetHref()
 	contentType, content, status, err := updateDeviceResource(ctx, deviceID, href, e.GetContent().GetContentType(), e.GetContent().GetData(), linkedAccount, linkedCloud)
 	if err != nil {
-		log.Errorf("cannot update resource %v/%v: %v", deviceID, href, err)
+		log.Errorf("cannot update resource %v/%v: %w", deviceID, href, err)
 	}
 	coapContentFormat := int32(-1)
 

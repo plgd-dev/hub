@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
+
+	"github.com/plgd-dev/cloud/pkg/log"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

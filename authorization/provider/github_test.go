@@ -15,7 +15,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 const providerName = "github"
@@ -116,7 +115,7 @@ func TestGithubFailure(t *testing.T) {
 	assert.Nil(token)
 }
 
-func newGithubOAuth(t *testing.T, server *httptest.Server, logger *zap.Logger) Provider {
+func newGithubOAuth(t *testing.T, server *httptest.Server, logger log.Logger) Provider {
 	Config := Config{
 		Provider: "github",
 		Config: oauth.Config{

@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -34,7 +34,7 @@ func (s *Client) Close() error {
 	return err
 }
 
-func New(config Config, logger *zap.Logger, opts ...grpc.DialOption) (*Client, error) {
+func New(config Config, logger log.Logger, opts ...grpc.DialOption) (*Client, error) {
 	certManager, err := client.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)

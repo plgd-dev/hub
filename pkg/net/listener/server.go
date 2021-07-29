@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
-	"go.uber.org/zap"
 )
 
 // Server handles gRPC requests to the service.
@@ -17,7 +18,7 @@ type Server struct {
 
 // NewServer instantiates a listen server.
 // When passing addr with an unspecified port or ":", use Addr().
-func New(config Config, logger *zap.Logger) (*Server, error) {
+func New(config Config, logger log.Logger) (*Server, error) {
 	certManager, err := server.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)

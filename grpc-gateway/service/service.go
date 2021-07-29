@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -18,7 +16,7 @@ type Service struct {
 	*server.Server
 }
 
-func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
 	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -65,7 +63,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, meth
 		token, _ := kitNetGrpc.TokenFromMD(ctx)
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
-			log.Errorf("auth interceptor %v %v: %v", method, token, err)
+			log.Errorf("auth interceptor %v %v: %w", method, token, err)
 			return ctx, err
 		}
 		return kitNetGrpc.CtxWithToken(ctx, token), nil

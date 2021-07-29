@@ -14,19 +14,17 @@ import (
 	"google.golang.org/grpc"
 )
 
-func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger *zap.Logger) ([]grpc.ServerOption, error) {
+func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger) ([]grpc.ServerOption, error) {
 	streamInterceptors := []grpc.StreamServerInterceptor{}
-	if logger.Core().Enabled(zapcore.DebugLevel) {
+	unaryInterceptors := []grpc.UnaryServerInterceptor{}
+	zapLogger, ok := logger.(*zap.SugaredLogger)
+	if ok && zapLogger.Desugar().Core().Enabled(zapcore.DebugLevel) {
 		streamInterceptors = append(streamInterceptors, grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(logger))
+			grpc_zap.StreamServerInterceptor(zapLogger.Desugar()))
+		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_zap.UnaryServerInterceptor(zapLogger.Desugar()))
 	}
 	streamInterceptors = append(streamInterceptors, auth.Stream())
-
-	unaryInterceptors := []grpc.UnaryServerInterceptor{}
-	if logger.Core().Enabled(zapcore.DebugLevel) {
-		unaryInterceptors = append(unaryInterceptors, grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(logger))
-	}
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
 	return []grpc.ServerOption{

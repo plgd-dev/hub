@@ -15,7 +15,7 @@ import (
 )
 
 type Config struct {
-	Log          log.Config `envconfig:"LOG"`
+	Log          log.Config `envconfig:"log"`
 	Service      service.Config
 	StoreMongoDB storeMongodb.Config
 	Dial         certManager.Config `envconfig:"DIAL"`

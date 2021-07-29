@@ -118,7 +118,7 @@ func (u *devicesStatusUpdater) run() {
 			for _, d := range u.getDevicesToUpdate(now) {
 				expires, err := u.updateOnlineStatus(d.client, time.Now().Add(u.cfg.ExpiresIn))
 				if err != nil {
-					log.Errorf("cannot update device(%v) status to online: %v", getDeviceID(d.client), err)
+					log.Errorf("cannot update device(%v) status to online: %w", getDeviceID(d.client), err)
 				} else {
 					d.expires = expires
 				}

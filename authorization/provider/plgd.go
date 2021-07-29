@@ -8,12 +8,11 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
-	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 )
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(config Config, logger *zap.Logger, ownerClaim, responseMode, accessType, responseType string) (*PlgdProvider, error) {
+func NewPlgdProvider(config Config, logger log.Logger, ownerClaim, responseMode, accessType, responseType string) (*PlgdProvider, error) {
 	config.ResponseMode = responseMode
 	config.AccessType = accessType
 	config.ResponseType = responseType
@@ -84,7 +83,7 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %v")
+			log.Errorf("failed to close response body stream: %w", err)
 		}
 	}()
 
@@ -127,7 +126,7 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body stream: %v")
+			log.Errorf("failed to close response body stream: %w", err)
 		}
 	}()
 

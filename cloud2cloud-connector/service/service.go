@@ -134,7 +134,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		log.Fatalf("cannot create logger: %v", err)
 	}
 
-	sub, err := subscriber.New(config.Nats, logger, subscriber.WithUnmarshaler(utils.Unmarshal))
+	sub, err := subscriber.New(config.Nats, logger.Sugar(), subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		log.Fatalf("cannot create subscriber: %v", err)
 	}

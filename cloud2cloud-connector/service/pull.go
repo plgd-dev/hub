@@ -372,7 +372,7 @@ func pullDevices(ctx context.Context, s *Store,
 			defer wg.Done()
 			err := p.pullDevicesFromAccount(ctx, linkedAccount, linkedCloud)
 			if err != nil {
-				log.Errorf("cannot pull devices for linked linkedAccount(%v): %v", linkedAccount, err)
+				log.Errorf("cannot pull devices for linked linkedAccount(%v): %w", linkedAccount, err)
 			}
 		}(d.linkedAccount, d.linkedCloud)
 	}

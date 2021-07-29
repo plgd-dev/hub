@@ -11,7 +11,7 @@ import (
 
 func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token message.Token) {
 	if err != nil {
-		log.Errorf("%v", err)
+		log.LogAndReturnError(err)
 	}
 	msg := pool.AcquireMessage(client.coapConn.Context())
 	defer pool.ReleaseMessage(msg)
@@ -21,7 +21,7 @@ func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token
 	msg.SetBody(bytes.NewReader([]byte(err.Error())))
 	err = client.coapConn.WriteMessage(msg)
 	if err != nil {
-		log.Errorf("cannot send error to %v: %v", getDeviceID(client), err)
+		log.Errorf("cannot send error to %v: %w", getDeviceID(client), err)
 	}
 	decodeMsgToDebug(client, msg, "SEND-ERROR")
 }

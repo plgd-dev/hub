@@ -145,7 +145,7 @@ func (p *Projection) release(v *kitSync.RefCounter) error {
 	if updateSubscriber {
 		err := p.cqrsProjection.SubscribeTo(topics)
 		if err != nil {
-			log.Errorf("cannot change topics for projection device %v: %v", deviceID, err)
+			log.Errorf("cannot change topics for projection device %v: %w", deviceID, err)
 		}
 	}
 	return p.cqrsProjection.Forget([]eventstore.SnapshotQuery{

@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"go.uber.org/zap"
 
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
@@ -41,7 +40,7 @@ type Service struct {
 	sigs    chan os.Signal
 }
 
-func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, error) {
+func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
 	eventstore, err := mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, logger, mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
@@ -61,7 +60,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 	service.AddCloseFunc(func() {
 		err := eventstore.Close(ctx)
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to mongodb: %w", err)
+			logger.Errorf("error occurs during close connection to mongodb: %w", err)
 		}
 	})
 	service.AddCloseFunc(publisher.Close)
@@ -70,7 +69,7 @@ func New(ctx context.Context, config Config, logger *zap.Logger) (*Service, erro
 }
 
 // New creates new Server with provided store and publisher.
-func NewService(ctx context.Context, config Config, logger *zap.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
+func NewService(ctx context.Context, config Config, logger log.Logger, eventStore EventStore, publisher cqrsEventBus.Publisher) (*Service, error) {
 	validator, err := validator.New(ctx, config.APIs.GRPC.Authorization, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
@@ -101,7 +100,7 @@ func NewService(ctx context.Context, config Config, logger *zap.Logger, eventSto
 	grpcServer.AddCloseFunc(func() {
 		err := asConn.Close()
 		if err != nil {
-			logger.Sugar().Errorf("error occurs during close connection to authorization server: %w", err)
+			logger.Errorf("error occurs during close connection to authorization server: %w", err)
 		}
 	})
 

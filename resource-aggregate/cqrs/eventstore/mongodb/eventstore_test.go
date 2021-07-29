@@ -11,10 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.uber.org/zap"
 )
 
-func NewTestEventStore(ctx context.Context, logger *zap.Logger) (*mongodb.EventStore, error) {
+func NewTestEventStore(ctx context.Context, logger log.Logger) (*mongodb.EventStore, error) {
 	store, err := mongodb.New(
 		ctx,
 		mongodb.Config{

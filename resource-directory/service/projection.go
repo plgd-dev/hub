@@ -48,7 +48,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	cache := cache.New(expiration, cleanupInterval)
 	cache.OnEvicted(func(deviceID string, _ interface{}) {
 		if err := projection.Unregister(deviceID); err != nil {
-			log.Errorf("failed to unregister device %v in projection cache during eviction: %v", deviceID, err)
+			log.Errorf("failed to unregister device %v in projection cache during eviction: %w", deviceID, err)
 		}
 	})
 	return &Projection{Projection: projection, cache: cache}, nil
@@ -67,7 +67,7 @@ func (p *Projection) getModels(ctx context.Context, resourceID *commands.Resourc
 		}
 		defer func(ID string) {
 			if err := p.Unregister(ID); err != nil {
-				log.Errorf("failed to unregister device %v in projection cache after replacement: %v", ID, err)
+				log.Errorf("failed to unregister device %v in projection cache after replacement: %w", ID, err)
 			}
 		}(resourceID.GetDeviceId())
 	}

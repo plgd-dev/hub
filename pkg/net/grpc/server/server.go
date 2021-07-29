@@ -3,13 +3,14 @@ package server
 import (
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func New(config Config, logger *zap.Logger, opts ...grpc.ServerOption) (*Server, error) {
+func New(config Config, logger log.Logger, opts ...grpc.ServerOption) (*Server, error) {
 	tls, err := server.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)

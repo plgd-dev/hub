@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	Log              log.Config `envconfig:"LOG"`
+	Log              log.Config `envconfig:"log"`
 	Service          service.Config
 	Dial             certManager.Config `envconfig:"DIAL"`
 	Listen           certManager.Config `envconfig:"LISTEN"`

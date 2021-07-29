@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
-	"go.uber.org/zap"
 )
 
 // Server handles gRPC requests to the service.
@@ -29,7 +29,7 @@ func (s *Client) Close() {
 	}
 }
 
-func New(config Config, logger *zap.Logger) (*Client, error) {
+func New(config Config, logger log.Logger) (*Client, error) {
 	certManager, err := client.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)

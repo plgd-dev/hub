@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/log"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
 	jwtValidator "github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/openid"
-	"go.uber.org/zap"
 )
 
 // Validator Client.
@@ -31,7 +32,7 @@ func (v *Validator) Close() {
 	v.http.Close()
 }
 
-func New(ctx context.Context, config Config, logger *zap.Logger) (*Validator, error) {
+func New(ctx context.Context, config Config, logger log.Logger) (*Validator, error) {
 	httpClient, err := client.New(config.HTTP, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
