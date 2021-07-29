@@ -272,16 +272,18 @@ func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn
 		tlsConfig = nil
 	}
 	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
+		var err error
 		switch r.Code() {
 		case codes.POST:
-			w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Changed, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		case codes.GET:
-			w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Content, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		case codes.PUT:
-			w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Created, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		case codes.DELETE:
-			w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
+			err = w.SetResponse(codes.Deleted, message.TextPlain, bytes.NewReader([]byte("hello world")))
 		}
+		require.NoError(t, err)
 	}))
 	require.NoError(t, err)
 	return conn

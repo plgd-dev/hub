@@ -35,6 +35,31 @@ type CoapSignInResp struct {
 	ExpiresIn int64 `json:"expiresin"`
 }
 
+/// Check that all required request fields are set
+func (request CoapSignInReq) checkOAuthRequest() error {
+	if request.UserID == "" {
+		return fmt.Errorf("invalid UserId")
+	}
+	if request.AccessToken == "" {
+		return fmt.Errorf("invalid AccessToken")
+	}
+	return nil
+}
+
+/// Update empty values
+func (request CoapSignInReq) updateOAUthRequestIfEmpty(deviceID, userID, accessToken string) CoapSignInReq {
+	if request.DeviceID == "" {
+		request.DeviceID = deviceID
+	}
+	if request.UserID == "" {
+		request.UserID = userID
+	}
+	if request.AccessToken == "" {
+		request.AccessToken = accessToken
+	}
+	return request
+}
+
 func (client *Client) registerObservationsForPublishedResourcesLocked(ctx context.Context, deviceID string) {
 	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
 		DeviceIdFilter: []string{deviceID},
@@ -151,7 +176,7 @@ func validateOwnerClaim(userInfo map[string]interface{}, ocKey string, userID st
 }
 
 /// Get data for sign in response
-func getContent(expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
+func getSignInContent(expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapSignInResp{
 		ExpiresIn: expiresIn,
 	}
@@ -207,7 +232,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		}
 	}
 
-	if err := checkOAuthRequest(signIn); err != nil {
+	if err := signIn.checkOAuthRequest(); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.BadRequest)
 		return
 	}
@@ -232,7 +257,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 	expiresIn := validUntilToExpiresIn(validUntil)
 
-	accept, out, err := getContent(expiresIn, req.Options)
+	accept, out, err := getSignInContent(expiresIn, req.Options)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
@@ -350,7 +375,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		signOut = signOut.updateOAUthRequestIfEmpty(authCurrentCtx.DeviceID, authCurrentCtx.UserID, authCurrentCtx.AccessToken)
 	}
 
-	if err := checkOAuthRequest(signOut); err != nil {
+	if err := signOut.checkOAuthRequest(); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.BadRequest)
 		return
 	}
