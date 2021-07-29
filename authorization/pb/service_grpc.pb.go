@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 type AuthorizationServiceClient interface {
 	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error)
 	SignOff(ctx context.Context, in *SignOffRequest, opts ...grpc.CallOption) (*SignOffResponse, error)
-	SignOut(ctx context.Context, in *SignOutRequest, opts ...grpc.CallOption) (*SignOutResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error)
 	AddDevice(ctx context.Context, in *AddDeviceRequest, opts ...grpc.CallOption) (*AddDeviceResponse, error)
@@ -47,15 +46,6 @@ func (c *authorizationServiceClient) SignUp(ctx context.Context, in *SignUpReque
 func (c *authorizationServiceClient) SignOff(ctx context.Context, in *SignOffRequest, opts ...grpc.CallOption) (*SignOffResponse, error) {
 	out := new(SignOffResponse)
 	err := c.cc.Invoke(ctx, "/ocf.cloud.auth.pb.AuthorizationService/SignOff", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authorizationServiceClient) SignOut(ctx context.Context, in *SignOutRequest, opts ...grpc.CallOption) (*SignOutResponse, error) {
-	out := new(SignOutResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.auth.pb.AuthorizationService/SignOut", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +117,6 @@ func (c *authorizationServiceClient) RemoveDevice(ctx context.Context, in *Remov
 type AuthorizationServiceServer interface {
 	SignUp(context.Context, *SignUpRequest) (*SignUpResponse, error)
 	SignOff(context.Context, *SignOffRequest) (*SignOffResponse, error)
-	SignOut(context.Context, *SignOutRequest) (*SignOutResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	GetUserDevices(*GetUserDevicesRequest, AuthorizationService_GetUserDevicesServer) error
 	AddDevice(context.Context, *AddDeviceRequest) (*AddDeviceResponse, error)
@@ -144,9 +133,6 @@ func (UnimplementedAuthorizationServiceServer) SignUp(context.Context, *SignUpRe
 }
 func (UnimplementedAuthorizationServiceServer) SignOff(context.Context, *SignOffRequest) (*SignOffResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignOff not implemented")
-}
-func (UnimplementedAuthorizationServiceServer) SignOut(context.Context, *SignOutRequest) (*SignOutResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SignOut not implemented")
 }
 func (UnimplementedAuthorizationServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
@@ -205,24 +191,6 @@ func _AuthorizationService_SignOff_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthorizationServiceServer).SignOff(ctx, req.(*SignOffRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthorizationService_SignOut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SignOutRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthorizationServiceServer).SignOut(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ocf.cloud.auth.pb.AuthorizationService/SignOut",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).SignOut(ctx, req.(*SignOutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -316,10 +284,6 @@ var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SignOff",
 			Handler:    _AuthorizationService_SignOff_Handler,
-		},
-		{
-			MethodName: "SignOut",
-			Handler:    _AuthorizationService_SignOut_Handler,
 		},
 		{
 			MethodName: "RefreshToken",

@@ -31,18 +31,6 @@ message SignOffRequest {
 message SignOffResponse {
 }
 
-// https://github.com/openconnectivityfoundation/security/blob/master/oic.r.session.raml #Specification CR needed
-message SignOutRequest {
-    string device_id = 1;
-    string user_id = 2;
-    string access_token = 3; // access token for device
-    string correlation_id = 4;
-}
-
-// https://github.com/openconnectivityfoundation/security/blob/master/oic.r.session.raml #Specification CR needed
-message SignOutResponse {
-}
-
 // https://github.com/openconnectivityfoundation/security/blob/master/oic.r.tokenrefresh.raml#L27
 message RefreshTokenRequest {
     string device_id = 1;

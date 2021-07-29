@@ -10,8 +10,6 @@ service AuthorizationService {
 	rpc SignUp (SignUpRequest) returns (SignUpResponse) {}
 	rpc SignOff (SignOffRequest) returns (SignOffResponse) {}
 
-	rpc SignOut (SignOutRequest) returns (SignOutResponse) {}
-
 	rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse) {}
 
 	rpc GetUserDevices (GetUserDevicesRequest) returns (stream UserDevice) {}
