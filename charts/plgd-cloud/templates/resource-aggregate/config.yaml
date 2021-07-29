@@ -1,0 +1,98 @@
+{{- if .Values.resourceaggregate.enabled }}
+{{- $resourceAggregateClientCert := "/certs/client" }}
+{{- $resourceAggregateServiceCert := "/certs/service" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "plgd-cloud.resourceaggregate.configSecretName" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  {{ .Values.coapgateway.config.fileName }}: |
+    {{- with .Values.resourceaggregate }}
+    log:
+      debug: {{ .log.debug }}
+    apis:
+      grpc:
+        address: {{ printf "0.0.0.0:%v" .port | quote }}
+        enforcementPolicy:
+          minTime: {{ .apis.grpc.enforcementPolicy.minTime | quote }}
+          permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
+        keepAlive:
+          maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionAge }}
+          maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
+          time: {{ .apis.grpc.keepAlive.time }}
+          timeout: {{ .apis.grpc.keepAlive.timeout }}
+        tls:
+          {{- $tls := .apis.grpc.tls }}
+          {{- include "plgd-cloud.certificateConfig" (list $ $tls $resourceAggregateServiceCert) | indent 8 }}
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+        authorization:
+          authority: {{ .apis.grpc.authorization.authority }}
+          audience: {{ .apis.grpc.authorization.audience }}
+          http:
+            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
+            maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
+            maxIdleConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
+            idleConnTimeout: {{ .apis.grpc.authorization.http.idleConnTimeout }}
+            timeout: {{ .apis.grpc.authorization.http.timeout }}
+            tls:
+              {{- $grpcTls := .apis.grpc.authorization.http.tls }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $resourceAggregateServiceCert) | indent 12 }}
+              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+    clients:
+      eventBus:
+        nats:
+          url: {{ .clients.eventBus.nats.url }}
+          jetstream: {{ .clients.eventBus.nats.jetstream }}
+          tls:
+            {{- $natsTls := .clients.eventBus.nats.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $resourceAggregateServiceCert) | indent 10 }}
+            useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+      eventStore:
+        snapshotThreshold: {{ .clients.eventStore.snapshotThreshold }}
+        occMaxRetry: {{ .clients.eventStore.occMaxRetry }}
+        mongoDB:
+          uri: {{- include "plgd-cloud.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
+          database: {{ .clients.eventStore.mongoDB.database }}
+          batchSize: {{ .clients.eventStore.mongoDB.batchSize }}
+          maxPoolSize: {{ .clients.eventStore.mongoDB.maxPoolSize }}
+          maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
+          tls:
+            {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $resourceAggregateServiceCert) | indent 10 }}
+            useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
+      authorizationServer:
+        pullFrequency: {{ .clients.authorizationServer.pullFrequency }}
+        cacheExpiration: {{ .clients.authorizationServer.cacheExpiration }}
+        ownerClaim: {{ .clients.authorizationServer.ownerClaim }}
+        grpc:
+          address: {{ .clients.authorizationServer.grpc.address }}
+          keepAlive:
+            time: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
+            timeout: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.authorizationServer.grpc.keepAlive.permitWithoutStream }}
+          tls:
+            {{- $authClientTls := .clients.authorizationServer.grpc.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $resourceAggregateClientCert) | indent 10 }}
+            useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
+        oauth:
+          clientID: {{ .clients.authorizationServer.oauth.clientID }}
+          clientSecret: {{ .clients.authorizationServer.oauth.clientSecret }}
+          scopes:
+          {{- .clients.authorizationServer.oauth.scopes | toYaml }}
+          tokenURL: {{ .clients.authorizationServer.oauth.tokenURL }}
+          audience: {{ .clients.authorizationServer.oauth.audience }}
+          verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
+          http:
+            maxIdleConns: {{ .clients.authorizationServer.oauth.http.maxIdleConns }}
+            maxConnsPerHost: {{ .clients.authorizationServer.oauth.http.maxConnsPerHost }}
+            maxIdleConnsPerHost: {{ .clients.authorizationServer.oauth.http.maxIdleConnsPerHost }}
+            idleConnTimeout: {{ .clients.authorizationServer.oauth.http.idleConnTimeout }}
+            timeout: {{ .clients.authorizationServer.oauth.http.timeout }}
+            tls:
+              {{- $oauthHttpClientTls := .clients.authorizationServer.oauth.http.tls }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $resourceAggregateClientCert) | indent 12 }}
+              useSystemCAPool: {{ .clients.authorizationServer.oauth.http.tls.useSystemCAPool }}
+  {{- end }}
+{{- end }}

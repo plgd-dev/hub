@@ -1,0 +1,103 @@
+{{- if .Values.coapgateway.enabled }}
+{{- $coapGatewayClientCert := "/certs/internal" }}
+{{- $coapGatewayServiceCert := "/certs/service" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-cloud.coapgateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.coapgateway.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.coapgateway.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.coapgateway.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.coapgateway.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.coapgateway.initContainers }}
+      initContainers:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.coapgateway.name }}
+          {{- with .Values.coapgateway.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-cloud.coapgateway.image" . | quote }}
+          imagePullPolicy: {{ .Values.coapgateway.image.pullPolicy }}
+          command:
+            - "--config"
+            - {{  printf "%s/%s" .Values.coapgateway.config.mountPath .Values.coapgateway.config.fileName | quote }}
+          ports:
+            - name: coaps
+              containerPort: {{ .Values.coapgateway.port }}
+              protocol: TCP
+          {{- with .Values.coapgateway.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.coapgateway.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.coapgateway.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.coapgateway.config.mountPath }}
+              name: {{ .Values.coapgateway.config.volume }}
+            {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
+            - name: internal-crt
+              mountPath: {{ $coapGatewayClientCert }}
+            {{- end }}
+            {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $coapGatewayServiceCert }}
+            {{- end }}
+            {{- with .Values.coapgateway.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
+        - name: internal-crt
+          secret:
+            secretName: {{ include "plgd-cloud.internalCertName" . }}
+        {{- end }}
+        {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-cloud.coapgateway.serviceCertName" . }}
+        {{- end }}
+        {{- with .Values.coapgateway.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.coapgateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.coapgateway.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.coapgateway.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

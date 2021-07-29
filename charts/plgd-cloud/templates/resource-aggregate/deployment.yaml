@@ -1,0 +1,103 @@
+{{- if .Values.resourceaggregate.enabled }}
+{{- $resourceAggregateClientCert := "/certs/internal" }}
+{{- $resourceAggregateServiceCert := "/certs/service" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-cloud.resourceaggregate.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.resourceaggregate.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.resourceaggregate.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.coapgateway.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-cloud.resourceaggregate.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.resourceaggregate.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-cloud.resourceaggregate.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.resourceaggregate.initContainers }}
+      initContainers:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.resourceaggregate.name }}
+          {{- with .Values.resourceaggregate.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-cloud.resourceaggregate.image" . | quote }}
+          imagePullPolicy: {{ .Values.resourceaggregate.image.pullPolicy }}
+          command:
+            - "--config"
+            - {{  printf "%s/%s" .Values.resourceaggregate.config.mountPath .Values.resourceaggregate.config.fileName | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.resourceaggregate.port }}
+              protocol: TCP
+          {{- with .Values.resourceaggregate.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resourceaggregate.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resourceaggregate.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.resourceaggregate.config.mountPath }}
+              name: {{ .Values.resourceaggregate.config.volume }}
+            {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
+            - name: internal-crt
+              mountPath: {{ $resourceAggregateClientCert }}
+            {{- end }}
+            {{- if ( include "plgd-cloud.resourceaggregate.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $resourceAggregateServiceCert }}
+            {{- end }}
+            {{- with .Values.resourceaggregate.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
+        - name: internal-crt
+          secret:
+            secretName: {{ include "plgd-cloud.internalCertName" . }}
+        {{- end }}
+        {{- if ( include "plgd-cloud.resourceaggregate.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-cloud.resourceaggregate.serviceCertName" . }}
+        {{- end }}
+        {{- with .Values.resourceaggregate.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.resourceaggregate.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.resourceaggregate.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.resourceaggregate.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

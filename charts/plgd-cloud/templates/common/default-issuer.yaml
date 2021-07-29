@@ -1,0 +1,24 @@
+{{- if and .Values.certmanager.enabled }}
+{{- $name := .Values.certmanager.internal.issuer.name }}
+{{- $kind := .Values.certmanager.internal.issuer.kind }}
+{{- $spec := .Values.certmanager.internal.issuer.spec }}
+
+{{- $internalIssuer := and $name $kind $spec }}
+{{- $coapIssuer := .Values.certmanager.coap.issuer }}
+{{- $defaultIssuer := .Values.certmanager.default }}
+{{- if and (not (and $coapIssuer $internalIssuer)) $defaultIssuer }}
+apiVersion: cert-manager.io/v1
+kind: {{ .Values.certmanager.default.issuer.kind  }}
+metadata:
+  name: {{ .Values.certmanager.default.issuer.name  }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+  annotations:
+  {{- range $key, $value := .Values.certmanager.default.issuer.annotations }}
+     {{ $key }}: {{ $value | quote }}
+  {{- end }}
+spec:
+{{- .Values.certmanager.default.issuer.spec | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}

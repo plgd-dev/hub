@@ -1,0 +1,25 @@
+{{- if .Values.resourcedirectory.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-cloud.resourcedirectory.fullname" . }}
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.resourcedirectory.service.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.resourcedirectory.service.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.resourcedirectory.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.resourcedirectory.port }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+  {{- include "plgd-cloud.resourcedirectory.selectorLabels" . | nindent 4 }}
+{{- end }}

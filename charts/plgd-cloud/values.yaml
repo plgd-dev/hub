@@ -1,0 +1,634 @@
+# Extra deploy
+extraDeploy:
+
+# External nats dependency
+nats:
+  enabled: true
+  nats:
+    tls:
+     secret:
+       name: nats-service-crt
+  cluster:
+    enabled: false
+    noAdvertise: false
+
+  leafnodes:
+    enabled: false
+    noAdvertise: false
+
+  natsbox:
+    enabled: false
+
+
+# External mongodb-replica dependency
+mongodb:
+  enabled: true
+  fullnameOverride: mongodb
+  architecture: replicaset
+  replicaSetName: rs0
+  replicaCount: 3
+  persistence:
+    enabled: true
+  arbiter:
+    enabled: false
+  auth:
+    enabled: false
+  image:
+    debug: true
+    net:
+      port: 27017
+  tls:
+    enabled: false
+  extraEnvVars:
+    - name: MONGODB_EXTRA_FLAGS
+      value: "--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
+    - name: MONGODB_CLIENT_EXTRA_FLAGS
+      value: "--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
+  extraVolumeMounts:
+    - name: mongodb-crt
+      mountPath: "/certs"
+  extraVolumes:
+    - name: mongodb-crt
+      emptyDir: {}
+    - name: mongodb-cm-crt
+      secret:
+        secretName: mongodb-cm-crt
+  initContainers:
+    - name: convert-cm-crt
+      image: docker.io/bitnami/nginx:1.19.10-debian-10-r63
+      imagePullPolicy: "IfNotPresent"
+      volumeMounts:
+        - name: mongodb-crt
+          mountPath: "/certs"
+        - name: mongodb-cm-crt
+          mountPath: "/tmp/certs"
+      command:
+        - sh
+        - "-c"
+        - |
+          /bin/bash <<'EOF'
+          cat /tmp/certs/tls.crt >> /certs/cert.pem
+          cat /tmp/certs/tls.key >> /certs/cert.pem
+          cp /tmp/certs/ca.crt  /certs/ca.pem
+          EOF
+  livenessProbe:
+    enabled: false
+  customLivenessProbe:
+    exec:
+      command:
+        - mongo
+        - --disableImplicitSessions
+        - --tls
+        - --tlsCertificateKeyFile=/certs/cert.pem
+        - --tlsCAFile=/certs/ca.pem
+        - --eval
+        - db.adminCommand('ping')
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+  readinessProbe:
+    enabled: false
+  customReadinessProbe:
+    exec:
+      command:
+        - bash
+        - -ec
+        - |
+          TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
+          mongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+
+cluster:
+  dns: cluster.local
+
+certmanager:
+  # Enable cert-manager integration
+  enabled: true
+  default:
+    issuer:
+      enabled: true
+      labels: {}
+      annotations: {}
+      name: selfsigned-issuer
+      kind: ClusterIssuer
+      spec:
+        selfSigned: {}
+    cert:
+      labels: {}
+      annotations: {}
+      duration: 8760h
+      renewBefore: 360h
+      key:
+        algorithm: ECDSA
+        size: 256
+  internal:
+    # In case you want to create your own issuer for internal certs
+    issuer:
+      labels: {}
+      annotations: {}
+      name:
+      kind:
+      spec:
+    cert:
+      duration:
+      renewBefore:
+      key:
+        algorithm:
+        size:
+  coap:
+    issuer:
+      # In case you want to create your own coap-gateway service issuer
+#      labels: {}
+#      annotations: {}
+      name:
+      kind:
+      spec:
+    cert:
+#      labels: { }
+#      annotations: { }
+      duration:
+      renewBefore:
+      key:
+        algorithm:
+        size:
+
+resourcedirectory:
+  # Enable resource-directory service
+  enabled: true
+  # Name of component. Used in label selectors
+  name: resource-directory
+  # Full name to override
+  fullnameOverride:
+  # Number of replicas
+  replicas: 1
+  # Additional labels for resource-directory deployment
+  deploymentLabels: {}
+  # Additional annotations for resource-directory deployment
+  deploymentAnnotations: {}
+  # Pod security context
+  podSecurityContext: {}
+  # Labels for resource-directory pod
+  podLabels: {}
+  # Annotations for resource-directory pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # Labels for resource-directory service
+    labels: {}
+    # Annotations for resource-directory service
+    annotations: {}
+  # Init containers definition
+  initContainers: {}
+  image:
+    # Image registry
+    registry: docker.io
+    # Image repository
+    repository: plgd/resource-directory
+    # Image tag.
+    tag:
+    # Image pull policy
+    pullPolicy: IfNotPresent
+    # Image pull secrets
+    pullSecrets: {}
+  # Liveness probe. resource-directory doesn't have any default liveness probe
+  livenessProbe: {}
+  # Readiness probe. resource-directory doesn't have aby default readiness probe
+  readinessProbe: {}
+  # Resources limit
+  resources: {}
+  # Node selector
+  nodeSelector: {}
+  # Affinity definition
+  affinity: {}
+  # Toleration definition
+  tolerations: {}
+  # Optional extra volumes
+  extraVolumes: {}
+  # Optional extra volume mounts
+  extraVolumeMounts: {}
+  config:
+    fileName: service.yaml
+    volume: config
+    mountPath: /config
+  port: 9100
+  log:
+    debug: false
+  apis:
+    grpc:
+      address:
+      enforcementPolicy:
+        minTime: 5s
+        permitWithoutStream: true
+      keepAlive:
+        # 0s - means infinity
+        maxConnectionIdle: 0s
+        # 0s - means infinity
+        maxConnectionAge: 0s
+        # 0s - means infinity
+        maxConnectionAgeGrace: 0s
+        time: 2h
+        timeout: 20s
+      tls:
+        clientCertificateRequired: true
+      authorization:
+        authority: ""
+        audience: ""
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            useSystemCAPool: false
+  clients:
+    eventBus:
+      # number of routines to process events in projection
+      goPoolSize: 16
+      nats:
+        url: ""
+        jetstream:
+        pendingLimits:
+          msgLimit: 524288
+          bytesLimit: 67108864
+        tls:
+#          caPool: "/secrets/public/rootca.crt"
+#          keyFile: "/secrets/private/cert.key"
+#          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+    eventStore:
+      # expiration time of cached resource in projection
+      cacheExpiration: 20m
+      mongoDB:
+        uri: ""
+        database: eventStore
+        # limits number of queries in one find request.
+        batchSize: 128
+        # limits number of connections.
+        maxPoolSize: 16
+        # close connection when idle time reach the value.
+        maxConnIdleTime: 4m0s
+        tls:
+#          caPool: "/secrets/public/rootca.crt"
+#          keyFile: "/secrets/private/cert.key"
+#          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+    authorizationServer:
+      pullFrequency: 15s
+      cacheExpiration: 1m
+      ownerClaim: sub
+      grpc:
+        address: ""
+        tls:
+#          caPool: "/secrets/public/rootca.crt"
+#          keyFile: "/secrets/private/cert.key"
+#          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+      oauth:
+        clientID: ""
+        clientSecret: ""
+        scopes: []
+        tokenURL: ""
+        audience: ""
+        verifyServiceTokenFrequency: 10s
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+#            caPool: "/secrets/public/rootca.crt"
+#            keyFile: "/secrets/private/cert.key"
+#            certFile: "/secrets/public/cert.crt"
+            useSystemCAPool: false
+  publicConfiguration:
+    caPool:
+    tokenURL:
+    authorizationURL:
+    ownerClaim:
+    signingServerAddress:
+    cloudID:
+    cloudURL:
+    cloudAuthorizationProvider:
+
+resourceaggregate:
+  # Enable resource-aggregate component
+  enabled: true
+  # Name of component. Used in label selectors
+  name: resource-aggregate
+  # Full name to override
+  fullnameOverride:
+  replicas: 1
+  # Additional labels for coap-gateway deployment
+  deploymentLabels: {}
+  # Additional annotations for coap-gateway deployment
+  deploymentAnnotations: {}
+  # Pod security context
+  podSecurityContext: {}
+  # Labels for coap-gateway pod
+  podLabels: {}
+  # Annotations for coap-gateway pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # Labels for resource-aggregate service
+    labels: {}
+    # Annotations for resource-aggregate service
+    annotations: {}
+  # Init containers definition
+  initContainers: {}
+  image:
+    # Image registry
+    registry: docker.io
+    # Image repository
+    repository: plgd/resource-aggregate
+    # Image tag.
+    tag:
+    # Image pull policy
+    pullPolicy: IfNotPresent
+    # Image pull secrets
+    pullSecrets: {}
+  # Liveness probe. resource-aggregate doesn't have any default liveness probe
+  livenessProbe: {}
+  # Readiness probe. resource-aggregate doesn't have aby default readiness probe
+  readinessProbe: {}
+  # Resources limit
+  resources: {}
+  # Node selector
+  nodeSelector: {}
+  # Affinity definition
+  affinity: {}
+  # Toleration definition
+  tolerations: {}
+  # Optional extra volumes
+  extraVolumes: {}
+  # Optional extra volume mounts
+  extraVolumeMounts: {}
+  config:
+    fileName: service.yaml
+    volume: config
+    mountPath: /config
+  port: 9100
+  log:
+    debug: false
+  apis:
+    grpc:
+      enforcementPolicy:
+        minTime: 5s
+        permitWithoutStream: true
+      keepAlive:
+        # 0s - means infinity
+        maxConnectionIdle: 0s
+        # 0s - means infinity
+        maxConnectionAge: 0s
+        # 0s - means infinity
+        maxConnectionAgeGrace: 0s
+        time: 2h
+        timeout: 20s
+      tls:
+#        caPool: "/secrets/public/rootca.crt"
+#        keyFile: "/secrets/private/cert.key"
+#        certFile: "/secrets/public/cert.crt"
+        clientCertificateRequired: true
+      authorization:
+        authority: ""
+        audience: ""
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+#            caPool: "/secrets/public/rootca.crt"
+#            keyFile: "/secrets/private/cert.key"
+#            certFile: "/secrets/public/cert.crt"
+            useSystemCAPool: false
+  clients:
+    eventBus:
+      nats:
+        url: ""
+        jetstream: false
+        tls:
+#          caPool: "/secrets/public/rootca.crt"
+#          keyFile: "/secrets/private/cert.key"
+#          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+    eventStore:
+      # tries to create the snapshot event after n events
+      snapshotThreshold: 16
+      # limits number of try to store event
+      occMaxRetry: 8
+      mongoDB:
+        uri:
+        database: eventStore
+        # limits number of queries in one find request.
+        batchSize: 128
+        # limits number of connections.
+        maxPoolSize: 16
+        # close connection when idle time reach the value.
+        maxConnIdleTime: 4m0s
+        tls:
+#          caPool: "/secrets/public/rootca.crt"
+#          keyFile: "/secrets/private/cert.key"
+#          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+    authorizationServer:
+      pullFrequency: 15s
+      cacheExpiration: 1m
+      ownerClaim: sub
+      grpc:
+        address: ""
+        tls:
+#          caPool: "/secrets/public/rootca.crt"
+#          keyFile: "/secrets/private/cert.key"
+#          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+      oauth:
+        clientID: ""
+        clientSecret: ""
+        scopes: []
+        tokenURL: ""
+        audience: ""
+        verifyServiceTokenFrequency: 10s
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+#            caPool: "/secrets/public/rootca.crt"
+#            keyFile: "/secrets/private/cert.key"
+#            certFile: "/secrets/public/cert.crt"
+            useSystemCAPool: false
+
+# CoAP gateway parameters
+coapgateway:
+  # Enable coap-gateway component
+  enabled: true
+  # Name of component. Used in label selectors
+  name: coap-gateway
+  # Full name to override
+  fullnameOverride:
+  replicas: 1
+  # Additional labels for coap-gateway deployment
+  deploymentLabels: {}
+  # Additional annotations for coap-gateway deployment
+  deploymentAnnotations: {}
+  # Pod security context
+  podSecurityContext: {}
+  # Labels for coap-gateway pod
+  podLabels: {}
+  # Annotations for coap-gateway pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # Labels for coap-gateway service
+    labels: {}
+    # Annotations for coap-gateway service
+    annotations: {}
+  # Init containers definition
+  initContainers: {}
+  image:
+    # Image registry
+    registry: docker.io
+    # Image repository
+    repository: plgd/coap-gateway
+    # Image tag.
+    tag:
+    # Image pull policy
+    pullPolicy: IfNotPresent
+    # Image pull secrets
+    pullSecrets: {}
+  # Default coap-gateway port
+  port: 5684
+  # Liveness probe. coap-gateway doesn't have any default liveness probe
+  livenessProbe: {}
+  # Readiness probe. coap-gateway doesn't have aby default readiness probe
+  readinessProbe: {}
+  # Resources limit
+  resources: {}
+  # Node selector
+  nodeSelector: {}
+  # Affinity definition
+  affinity: {}
+  # Toleration definition
+  tolerations: {}
+  # Optional extra volumes
+  extraVolumes: {}
+  # Optional extra volume mounts
+  extraVolumeMounts: {}
+  config:
+    fileName: service.yaml
+    volume: config
+    mountPath: /config
+  log:
+    debug: true
+    dumpCoapMessages: true
+  cloudId:
+  apis:
+    coap:
+      externalAddress: ""
+      maxMessageSize: 262144
+      goroutineSocketHeartbeat: "4s"
+      keepAlive:
+        timeout: 20s
+      blockwiseTransfer:
+        enabled: true
+        blockSize: "1024"
+      tls:
+        enabled: true
+        caPool: {}
+        keyFile: {}
+        certFile: {}
+        clientCertificateRequired: true
+  clients:
+    eventBus:
+      nats:
+        url: ""
+        pendingLimits:
+          msgLimit: "524288"
+          bytesLimit: "67108864"
+        tls:
+          caPool: {}
+          keyFile: {}
+          certFile: {}
+          useSystemCAPool: false
+    authorizationServer:
+      grpc:
+        address: ""
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool: {}
+          keyFile: {}
+          certFile: {}
+          useSystemCAPool: false
+      oauth:
+        clientID: ""
+        clientSecret: ""
+        scopes: []
+        tokenURL: ""
+        audience: ""
+        verifyServiceTokenFrequency: 10s
+        http:
+          maxIdleConns: 10
+          maxConnsPerHost: 10
+          maxIdleConnsPerHost: 10
+          idleConnTimeout: 5s
+          timeout: 2s
+          tls:
+            caPool: {}
+            keyFile: {}
+            certFile: {}
+            useSystemCAPool: false
+    resourceAggregate:
+      grpc:
+        address: ""
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool: {}
+          keyFile: {}
+          certFile: {}
+          useSystemCAPool: false
+      deviceStatusExpiration:
+        enabled: false
+        expiresIn: 0s
+    resourceDirectory:
+      grpc:
+        address: ""
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+  taskQueue:
+    goPoolSize: 1600
+    size: "2097152"
+    maxIdleTime: "10m"
+

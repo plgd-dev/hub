@@ -1,0 +1,27 @@
+{{- if .Values.coapgateway.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-cloud.coapgateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.coapgateway.service.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.coapgateway.service.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.coapgateway.service.type }}
+  type: {{ .Values.coapgateway.service.type }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.coapgateway.port }}
+      targetPort: coaps
+      protocol: TCP
+      name: coaps
+  selector:
+  {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 4 }}
+{{- end }}

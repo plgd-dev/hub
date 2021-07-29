@@ -1,0 +1,19 @@
+apiVersion: v2
+name: plgd-cloud
+description: A Helm chart for plgd cloud
+
+type: application
+
+version: 0.0.1
+
+appVersion: "2.0.0-rc9"
+
+dependencies:
+  - name: "nats"
+    version: "0.8.2"
+    repository: "https://nats-io.github.io/k8s/helm/charts/"
+    condition: nats.enabled
+  - name: "mongodb"
+    version: "10.21.2"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: mongodb.enabled
