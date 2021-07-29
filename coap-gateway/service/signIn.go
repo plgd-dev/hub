@@ -95,54 +95,62 @@ func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID st
 	return nil
 }
 
-func getValidUntilByOAuth(ctx context.Context, service *Service, signIn CoapSignInReq) (time.Time, error) {
-	if err := checkReq(signIn); err != nil {
-		return time.Time{}, fmt.Errorf("cannot handle sign in: %v", err)
-	}
-
+/// Get JW Token from oauth server
+func getJWToken(ctx context.Context, service *Service, accessToken string) (map[string]interface{}, error) {
 	oauthClient := service.provider.OAuth2.Client(ctx, &oauth2.Token{
-		AccessToken: signIn.AccessToken,
+		AccessToken: accessToken,
 		TokenType:   "bearer",
 	})
 	resp, err := oauthClient.Get(service.provider.OAuth2.Endpoint.AuthURL + "/userinfo")
 	if err != nil {
-		return time.Time{}, fmt.Errorf("failed oauth userinfo request: %v", err)
+		return nil, fmt.Errorf("failed oauth userinfo request: %v", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Errorf("signIn: failed to close response body: %v", err)
+			log.Errorf("failed to close userinfo response body: %v", err)
 		}
 	}()
 
 	var profile map[string]interface{}
 	if err = json.NewDecoder(resp.Body).Decode(&profile); err != nil {
-		return time.Time{}, fmt.Errorf("failed to decode userinfo request body: %v", err)
+		return nil, fmt.Errorf("failed to decode userinfo request body: %v", err)
 	}
+	return profile, nil
+}
 
-	v, ok := profile[service.config.Clients.AuthServer.OwnerClaim]
-	if !ok {
-		return time.Time{}, fmt.Errorf("invalid userinfo response: %v", "ownerClaim not set")
-	}
-	userID, ok := v.(string)
-	if !ok {
-		return time.Time{}, fmt.Errorf("invalid userinfo response: %v", "invalid ownerClaim value")
-	}
-	if userID != signIn.UserID {
-		return time.Time{}, fmt.Errorf("invalid ownerClaim: %v", signIn.UserID)
-	}
-
-	v, ok = profile["exp"]
+/// Get expiration time (exp) from the JW Token.
+/// It might not be set, in that case zero time and no error are returned.
+func getExpirationTime(jwtToken map[string]interface{}) (time.Time, error) {
+	const expKey = "exp"
+	v, ok := jwtToken[expKey]
 	if !ok {
 		return time.Time{}, nil
 	}
 
 	exp, ok := v.(float64) // all integers are float64 in json
 	if !ok {
-		return time.Time{}, fmt.Errorf("invalid userinfo response: %v", "invalid exp value")
+		return time.Time{}, fmt.Errorf("invalid userinfo: invalid %v value type", expKey)
 	}
 	return time.Unix(int64(exp), 0), nil
 }
 
+/// Validate that ownerClaim is set and that it matches given user ID
+func validateOwnerClaim(jwtToken map[string]interface{}, ocKey string, userID string) error {
+	v, ok := jwtToken[ocKey]
+	if !ok {
+		return fmt.Errorf("invalid userinfo: %v not set", ocKey)
+	}
+	ownerClaim, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("invalid userinfo: invalid %v value type", ocKey)
+	}
+	if ownerClaim != userID {
+		return fmt.Errorf("invalid %v: %v", ocKey, userID)
+	}
+	return nil
+}
+
+/// Get data for sign in response
 func getContent(expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapSignInResp{
 		ExpiresIn: expiresIn,
@@ -161,13 +169,8 @@ func getContent(expiresIn int64, options message.Options) (message.MediaType, []
 	return accept, out, nil
 }
 
-func setNewDeviceSubscriber(req *mux.Message, client *Client, signIn CoapSignInReq) error {
-	err := client.loadShadowSynchronization(req.Context, signIn.DeviceID)
-	if err != nil {
-		return fmt.Errorf("cannot load shadow synchronization for device %v: %w", signIn.DeviceID, err)
-	}
-
-	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, signIn.DeviceID, func() func() (when time.Time, err error) {
+func setNewDeviceSubscriber(ctx context.Context, client *Client, deviceID string) error {
+	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, deviceID, func() func() (when time.Time, err error) {
 		var count uint64
 		maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
 		if maxRand <= 0 {
@@ -177,12 +180,12 @@ func setNewDeviceSubscriber(req *mux.Message, client *Client, signIn CoapSignInR
 			count++
 			r := rand.Int63n(int64(maxRand) / 2)
 			next := time.Now().Add(client.server.config.APIs.COAP.KeepAlive.Timeout + time.Duration(r))
-			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, signIn.DeviceID, next)
+			log.Debugf("next iteration %v of retrying reconnect to grpc-client for deviceID %v will be at %v", count, deviceID, next)
 			return next, nil
 		}
 	}, client.server.rdClient, client.server.resourceSubscriber)
 	if err != nil {
-		return fmt.Errorf("cannot create device subscription for device %v: %w", signIn.DeviceID, err)
+		return fmt.Errorf("cannot create device subscription for device %v: %w", deviceID, err)
 	}
 	oldDeviceSubscriber := client.replaceDeviceSubscriber(deviceSubscriber)
 	if oldDeviceSubscriber != nil {
@@ -191,24 +194,37 @@ func setNewDeviceSubscriber(req *mux.Message, client *Client, signIn CoapSignInR
 		}
 	}
 	h := grpcgwClient.NewDeviceSubscriptionHandlers(client)
-	deviceSubscriber.SubscribeToPendingCommands(req.Context, h)
+	deviceSubscriber.SubscribeToPendingCommands(ctx, h)
 	return nil
 }
 
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
-	ctx := context.WithValue(req.Context, oauth2.HTTPClient, client.server.provider.HTTPClient.HTTP())
-
-	logErrorAndcloseClient := func(err error) {
-		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token)
+	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
+		client.logAndWriteErrorResponse(err, code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign in error: %w", err)
 		}
 	}
 
-	validUntil, err := getValidUntilByOAuth(ctx, client.server, signIn)
+	if err := checkReq(signIn); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.BadRequest)
+		return
+	}
+
+	ctx := context.WithValue(req.Context, oauth2.HTTPClient, client.server.provider.HTTPClient.HTTP())
+	jwtToken, err := getJWToken(ctx, client.server, signIn.AccessToken)
 	if err != nil {
-		logErrorAndcloseClient(err)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+	}
+
+	if err := validateOwnerClaim(jwtToken, client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+	}
+
+	validUntil, err := getExpirationTime(jwtToken)
+	if err != nil {
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
@@ -216,13 +232,13 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 
 	accept, out, err := getContent(expiresIn, req.Options)
 	if err != nil {
-		logErrorAndcloseClient(err)
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
 		return
 	}
 
 	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 	if err != nil {
-		logErrorAndcloseClient(fmt.Errorf("cannot get service token: %w", err))
+		logErrorAndCloseClient(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError)
 		return
 	}
 	authCtx := authorizationContext{
@@ -237,7 +253,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	err = client.server.devicesStatusUpdater.Add(client)
 	if err != nil {
 		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
-		logErrorAndcloseClient(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err))
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError)
 		return
 	}
 
@@ -254,8 +270,13 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	if newDevice {
-		if err := setNewDeviceSubscriber(req, client, signIn); err != nil {
-			logErrorAndcloseClient(err)
+		if err := client.loadShadowSynchronization(ctx, signIn.DeviceID); err != nil {
+			logErrorAndCloseClient(fmt.Errorf("cannot load shadow synchronization for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError)
+			return
+		}
+
+		if err := setNewDeviceSubscriber(req.Context, client, signIn.DeviceID); err != nil {
+			logErrorAndCloseClient(err, coapCodes.InternalServerError)
 			return
 		}
 	}
@@ -267,45 +288,24 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
 
 	// try to register observations to the device for published resources at the cloud.
-	client.server.taskQueue.Submit(func() {
+	if err := client.server.taskQueue.Submit(func() {
 		client.observedResourcesLock.Lock()
 		defer client.observedResourcesLock.Unlock()
 		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
 			return
 		}
 		client.registerObservationsForPublishedResourcesLocked(req.Context, signIn.DeviceID)
-	})
+	}); err != nil {
+		log.Errorf("sign in error: failed to register resource observations for device %v: %v", signIn.DeviceID, err)
+	}
 }
 
-func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
-	// fix for iotivity-classic
-	authCurrentCtx, _ := client.GetAuthorizationContext()
-	userID := signOut.UserID
-	deviceID := signOut.DeviceID
-	if userID == "" {
-		userID = authCurrentCtx.GetUserID()
-	}
-	if deviceID == "" {
-		deviceID = authCurrentCtx.GetDeviceID()
-	}
-
-	_, err := client.server.asClient.SignOut(req.Context, &pbAS.SignOutRequest{
-		DeviceId:    deviceID,
-		UserId:      userID,
-		AccessToken: signOut.AccessToken,
-	})
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update), req.Token)
-		client.Close()
-		return
-	}
+func updateDeviceMetadata(req *mux.Message, client *Client) error {
 	oldAuthCtx := client.CleanUp()
 	if oldAuthCtx.GetDeviceID() != "" {
 		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
 		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError, req.Token)
-			client.Close()
-			return
+			return fmt.Errorf("cannot get service token: %w", err)
 		}
 		ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
@@ -325,9 +325,49 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		})
 		if err != nil {
 			// Device will be still reported as online and it can fix his state by next calls online, offline commands.
-			log.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
-			return
+			return fmt.Errorf("DeviceId %v: cannot handle sign out: cannot update cloud device status: %w", oldAuthCtx.GetDeviceID(), err)
 		}
+	}
+	return nil
+}
+
+func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq) {
+	// fix for iotivity-classic
+	authCurrentCtx, _ := client.GetAuthorizationContext()
+	userID := signOut.UserID
+	deviceID := signOut.DeviceID
+	if userID == "" {
+		userID = authCurrentCtx.GetUserID()
+	}
+	if deviceID == "" {
+		deviceID = authCurrentCtx.GetDeviceID()
+	}
+
+	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
+		client.logAndWriteErrorResponse(err, code, req.Token)
+		if err := client.Close(); err != nil {
+			log.Errorf("sign out error: %w", err)
+		}
+	}
+
+	if err := checkReq(signOut); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
+		return
+	}
+
+	_, err := client.server.asClient.SignOut(req.Context, &pbAS.SignOutRequest{
+		DeviceId:    deviceID,
+		UserId:      userID,
+		AccessToken: signOut.AccessToken,
+	})
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update))
+		return
+	}
+
+	if err := updateDeviceMetadata(req, client); err != nil {
+		logErrorAndCloseClient(err, coapCodes.InternalServerError)
+		return
 	}
 
 	client.sendResponse(coapCodes.Changed, req.Token, message.AppOcfCbor, []byte{0xA0}) // empty object
