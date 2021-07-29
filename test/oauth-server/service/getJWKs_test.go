@@ -21,8 +21,7 @@ func getJWKs(t *testing.T) map[string]interface{} {
 	getReq := test.NewRequest(http.MethodGet, uri.JWKs, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
-		err := res.Body.Close()
-		require.NoError(t, err)
+		_ = res.Body.Close()
 	}()
 
 	var body map[string]interface{}

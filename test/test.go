@@ -238,8 +238,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, devic
 	p, err := d.Provision(ctx, links)
 	require.NoError(t, err)
 	defer func() {
-		err := p.Close(ctx)
-		require.NoError(t, err)
+		_ = p.Close(ctx)
 	}()
 
 	link, err := core.GetResourceLink(links, "/oic/sec/acl2")
@@ -267,8 +266,7 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	client, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
-		err := client.Close(ctx)
-		require.NoError(t, err)
+		_ = client.Close(ctx)
 	}()
 	deviceID, err = client.OwnDevice(ctx, deviceID)
 	require.NoError(t, err)
