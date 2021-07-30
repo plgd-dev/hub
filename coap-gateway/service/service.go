@@ -96,8 +96,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		client := c.(*Client)
 		authCtx, err := client.GetAuthorizationContext()
 		if err != nil {
-			client.Close()
-			log.Debugf("device %v token has ben expired", authCtx.GetDeviceID())
+			if err2 := client.Close(); err2 != nil {
+				log.Errorf("failed to close client connection on token expiration: %w", err2)
+			}
+			log.Debugf("device %v token has been expired", authCtx.GetDeviceID())
 		}
 	})
 
@@ -164,7 +166,9 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 			return nil, fmt.Errorf("cannot create tcp listener: %w", err)
 		}
 		resourceSubscriber.AddCloseFunc(func() {
-			l.Close()
+			if err := l.Close(); err != nil {
+				log.Errorf("failed to close tcp listener: %w", err)
+			}
 		})
 		listener = l
 	} else {
@@ -180,19 +184,23 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 			return nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
 		}
 		resourceSubscriber.AddCloseFunc(func() {
-			l.Close()
+			if err := l.Close(); err != nil {
+				log.Errorf("failed to close tcp-tls listener: %w", err)
+			}
 		})
 		listener = l
 	}
 
 	onInactivity := func(cc inactivity.ClientConn) {
-		cc.Close()
 		client, ok := cc.Context().Value(clientKey).(*Client)
 		if ok {
 			deviceID := getDeviceID(client)
 			log.Errorf("DeviceId: %v: keep alive was reached fail limit:: closing connection", deviceID)
 		} else {
 			log.Errorf("keep alive was reached fail limit:: closing connection")
+		}
+		if err := cc.Close(); err != nil {
+			log.Errorf("failed to close connection: %w", err)
 		}
 	}
 
