@@ -16,7 +16,7 @@ import (
 	"github.com/plgd-dev/kit/codec/json"
 )
 
-var deviceUserID = "1"
+var DeviceUserID = "1"
 
 const (
 	TokenScopeKey    = "scope"
@@ -38,7 +38,7 @@ func generateAccessToken(clientID string, lifeTime time.Duration, host string, k
 	now := time.Now()
 	expires := now.Add(lifeTime)
 
-	if err := token.Set(jwt.SubjectKey, deviceUserID); err != nil {
+	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
 	}
 	if err := token.Set(jwt.AudienceKey, host+"/"); err != nil {
@@ -87,7 +87,7 @@ func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string
 	now := time.Now()
 	expires := now.Add(lifeTime)
 
-	if err := token.Set(jwt.SubjectKey, deviceUserID); err != nil {
+	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
 		return "", fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
 	}
 	if err := token.Set(jwt.AudienceKey, clientID); err != nil {
