@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net/url"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
+	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -19,12 +18,64 @@ var (
 	queryUserID      = "uid" // optional because it is not defined in a current specification => it must be determined from the access token
 )
 
-func validateSignOff(deviceID, accessToken string) error {
-	if deviceID == "" {
-		return fmt.Errorf("invalid di('%v')", deviceID)
+type signOffData struct {
+	deviceID    string
+	userID      string
+	accessToken string
+}
+
+func getSignOffDataFromQuery(req *mux.Message) (signOffData, error) {
+	queries, _ := req.Options.Queries()
+	//from QUERY: di, accesstoken, uid
+	var data signOffData
+	for _, query := range queries {
+		values, err := url.ParseQuery(query)
+		if err != nil {
+			return signOffData{}, err
+		}
+		if deviceID := values.Get(queryDeviceID); deviceID != "" {
+			data.deviceID = deviceID
+		}
+		if accessToken := values.Get(queryAccessToken); accessToken != "" {
+			data.accessToken = accessToken
+		}
+		if userID := values.Get(queryUserID); userID != "" {
+			data.userID = userID
+		}
 	}
-	if accessToken == "" {
-		return fmt.Errorf("invalid accesstoken('%v')", accessToken)
+
+	return data, nil
+}
+
+/// Update empty values
+func (s signOffData) updateSignOffDataFromAuthContext(client *Client) signOffData {
+	authCurrentCtx, err := client.GetAuthorizationContext()
+	if err != nil {
+		log.Debugf("auth context not available: %w", err)
+		return s
+	}
+
+	if s.deviceID == "" {
+		s.deviceID = authCurrentCtx.GetDeviceID()
+	}
+	if s.userID == "" {
+		s.userID = authCurrentCtx.GetUserID()
+	}
+	if s.accessToken == "" {
+		s.accessToken = authCurrentCtx.GetAccessToken()
+	}
+	return s
+}
+
+func (s signOffData) validateSignOffData() error {
+	if s.deviceID == "" {
+		return fmt.Errorf("invalid device id")
+	}
+	if s.userID == "" {
+		return fmt.Errorf("invalid user id")
+	}
+	if s.accessToken == "" {
+		return fmt.Errorf("invalid access token")
 	}
 	return nil
 }
@@ -32,58 +83,47 @@ func validateSignOff(deviceID, accessToken string) error {
 // Sign-off
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.account.swagger.json
 func signOffHandler(req *mux.Message, client *Client) {
-	//from QUERY: di, accesstoken
-	var deviceID string
-	var accessToken string
-	var userID string
+	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
+		client.logAndWriteErrorResponse(err, code, req.Token)
+		if err := client.Close(); err != nil {
+			log.Errorf("sign off error: %w", err)
+		}
+	}
 
 	ctx, cancel := context.WithTimeout(client.server.ctx, client.server.config.APIs.COAP.KeepAlive.Timeout)
 	defer cancel()
 
-	queries, _ := req.Options.Queries()
-	for _, query := range queries {
-		values, err := url.ParseQuery(query)
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.BadOption, req.Token)
-			return
-		}
-		if di := values.Get(queryDeviceID); di != "" {
-			deviceID = di
-		}
-
-		if at := values.Get(queryAccessToken); at != "" {
-			accessToken = at
-		}
-
-		if uid := values.Get(queryUserID); uid != "" {
-			userID = uid
-		}
-	}
-	authCurrentCtx, _ := client.GetAuthorizationContext()
-	if userID == "" {
-		userID = authCurrentCtx.GetUserID()
-	}
-	if deviceID == "" {
-		deviceID = authCurrentCtx.GetDeviceID()
-	}
-	if accessToken == "" {
-		accessToken = authCurrentCtx.GetAccessToken()
-	}
-
-	err := validateSignOff(deviceID, accessToken)
+	signOffData, err := getSignOffDataFromQuery(req)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapCodes.BadRequest, req.Token)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.BadOption)
 		return
 	}
-	_, err = client.server.asClient.SignOff(ctx, &pbAS.SignOffRequest{
-		DeviceId:    deviceID,
-		UserId:      userID,
-		AccessToken: accessToken,
-	})
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("cannot handle sign off for %v: %w", deviceID, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Delete), req.Token)
+
+	signOffData = signOffData.updateSignOffDataFromAuthContext(client)
+	if err = signOffData.validateSignOffData(); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.BadRequest)
 		return
 	}
+
+	userInfo, err := getUserInfo(req.Context, client.server, signOffData.accessToken)
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.InternalServerError)
+		return
+	}
+
+	if err := userInfo.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOffData.userID); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.InternalServerError)
+		return
+	}
+
+	if _, err := client.server.asClient.RemoveDevice(ctx, &pb.RemoveDeviceRequest{
+		DeviceId: signOffData.deviceID,
+		UserId:   signOffData.userID,
+	}); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.InternalServerError)
+		return
+	}
+
 	client.CleanUp()
 	client.sendResponse(coapCodes.Deleted, req.Token, message.TextPlain, nil)
 }

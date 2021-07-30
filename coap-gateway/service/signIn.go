@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -13,7 +12,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -38,10 +36,10 @@ type CoapSignInResp struct {
 /// Check that all required request fields are set
 func (request CoapSignInReq) checkOAuthRequest() error {
 	if request.UserID == "" {
-		return fmt.Errorf("invalid UserId")
+		return fmt.Errorf("invalid user id")
 	}
 	if request.AccessToken == "" {
-		return fmt.Errorf("invalid AccessToken")
+		return fmt.Errorf("invalid access token")
 	}
 	return nil
 }
@@ -120,61 +118,6 @@ func (client *Client) loadShadowSynchronization(ctx context.Context, deviceID st
 	return nil
 }
 
-/// Get user info from oauth server
-func getUserInfo(ctx context.Context, service *Service, accessToken string) (map[string]interface{}, error) {
-	oauthClient := service.provider.OAuth2.Client(ctx, &oauth2.Token{
-		AccessToken: accessToken,
-		TokenType:   "bearer",
-	})
-	resp, err := oauthClient.Get(service.provider.OAuth2.Endpoint.AuthURL + "/userinfo")
-	if err != nil {
-		return nil, fmt.Errorf("failed oauth userinfo request: %v", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close userinfo response body: %v", err)
-		}
-	}()
-
-	var profile map[string]interface{}
-	if err = json.NewDecoder(resp.Body).Decode(&profile); err != nil {
-		return nil, fmt.Errorf("failed to decode userinfo request body: %v", err)
-	}
-	return profile, nil
-}
-
-/// Get expiration time (exp) from user info map.
-/// It might not be set, in that case zero time and no error are returned.
-func getExpirationTime(userInfo map[string]interface{}) (time.Time, error) {
-	const expKey = "exp"
-	v, ok := userInfo[expKey]
-	if !ok {
-		return time.Time{}, nil
-	}
-
-	exp, ok := v.(float64) // all integers are float64 in json
-	if !ok {
-		return time.Time{}, fmt.Errorf("invalid userinfo: invalid %v value type", expKey)
-	}
-	return pkgTime.Unix(int64(exp), 0), nil
-}
-
-/// Validate that ownerClaim is set and that it matches given user ID
-func validateOwnerClaim(userInfo map[string]interface{}, ocKey string, userID string) error {
-	v, ok := userInfo[ocKey]
-	if !ok {
-		return fmt.Errorf("invalid userinfo: %v not set", ocKey)
-	}
-	ownerClaim, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("invalid userinfo: %v", "invalid ownerClaim value type")
-	}
-	if ownerClaim != userID {
-		return fmt.Errorf("invalid ownerClaim: %v", userID)
-	}
-	return nil
-}
-
 /// Get data for sign in response
 func getSignInContent(expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapSignInResp{
@@ -237,19 +180,18 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	ctx := context.WithValue(req.Context, oauth2.HTTPClient, client.server.provider.HTTPClient.HTTP())
-	userInfo, err := getUserInfo(ctx, client.server, signIn.AccessToken)
+	userInfo, err := getUserInfo(req.Context, client.server, signIn.AccessToken)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	if err := validateOwnerClaim(userInfo, client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
+	if err := userInfo.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	validUntil, err := getExpirationTime(userInfo)
+	validUntil, err := userInfo.getExpirationTime()
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
@@ -297,7 +239,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	}
 
 	if newDevice {
-		if err := client.loadShadowSynchronization(ctx, signIn.DeviceID); err != nil {
+		if err := client.loadShadowSynchronization(req.Context, signIn.DeviceID); err != nil {
 			logErrorAndCloseClient(fmt.Errorf("cannot load shadow synchronization for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError)
 			return
 		}
@@ -387,7 +329,7 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		return
 	}
 
-	if err := validateOwnerClaim(userInfo, client.server.config.Clients.AuthServer.OwnerClaim, signOut.UserID); err != nil {
+	if err := userInfo.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOut.UserID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
 		return
 	}
