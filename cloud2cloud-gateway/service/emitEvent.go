@@ -58,16 +58,22 @@ func createEmitEventFunc(tls *tls.Config, timeout time.Duration) emitEventFunc {
 			}
 			req.Header.Set(events.ContentTypeKey, contentType)
 			go func() {
-				defer w.Close()
+				defer func() {
+					if err := w.Close(); err != nil {
+						log.Errorf("failed to close write pipe: %w", err)
+					}
+				}()
 				if len(body) > 0 {
 					_, err := w.Write(body)
 					if err != nil {
-						log.Errorf("cannot write data to client: %v", err)
+						log.Errorf("cannot write data to client: %w", err)
 					}
 				}
 			}()
 		} else {
-			w.Close()
+			if err := w.Close(); err != nil {
+				log.Errorf("failed to close write pipe: %w", err)
+			}
 		}
 		req.Header.Set(events.EventSignatureKey, events.CalculateEventSignature(
 			s.SigningSecret,
@@ -85,7 +91,11 @@ func createEmitEventFunc(tls *tls.Config, timeout time.Duration) emitEventFunc {
 		if err != nil {
 			return false, fmt.Errorf("cannot post: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				log.Errorf("failed to close response body stream: %w", err)
+			}
+		}()
 		if resp.StatusCode != netHttp.StatusOK {
 			errBody, _ := ioutil.ReadAll(resp.Body)
 			return resp.StatusCode == netHttp.StatusGone, fmt.Errorf("%v: unexpected statusCode %v: body: '%v'", s.URL, resp.StatusCode, string(errBody))

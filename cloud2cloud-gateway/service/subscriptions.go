@@ -292,7 +292,9 @@ func (h *closeEventHandler) Error(err error) {
 	if !strings.Contains(err.Error(), "transport is closing") {
 		sub, errSub := h.deleteSub(h.ctx, data.ID, data.UserID)
 		if errSub == nil {
-			cancelSubscription(h.ctx, h.emitEvent, sub)
+			if err2 := cancelSubscription(h.ctx, h.emitEvent, sub); err2 != nil {
+				log.Errorf("cannot cancel resource subscription for %v: %w", sub.ID, err2)
+			}
 		}
 		return
 	}

@@ -51,8 +51,7 @@ func New(t *testing.T, cfg service.Config) func() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := s.Serve()
-		require.NoError(t, err)
+		_ = s.Serve()
 	}()
 
 	return func() {

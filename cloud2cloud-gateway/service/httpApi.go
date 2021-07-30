@@ -46,7 +46,9 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 	log.Errorf("%v", err)
 	w.Header().Set(events.ContentTypeKey, "text/plain")
 	w.WriteHeader(kitNetHttp.ErrToStatusWithDef(err, statusCode))
-	w.Write([]byte(err.Error()))
+	if _, err2 := w.Write([]byte(err.Error())); err2 != nil {
+		log.Errorf("failed to write error response body: %w", err2)
+	}
 }
 
 //NewRequestHandler factory for new RequestHandler

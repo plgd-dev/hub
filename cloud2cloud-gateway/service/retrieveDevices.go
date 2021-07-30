@@ -11,6 +11,7 @@ import (
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/sdk/schema"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,7 +44,11 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 	if err != nil {
 		return nil, fmt.Errorf("cannot get devices: %w", err)
 	}
-	defer getDevicesClient.CloseSend()
+	defer func() {
+		if err := getDevicesClient.CloseSend(); err != nil {
+			log.Errorf("cannot close get devices client: %w", err)
+		}
+	}()
 
 	devices := make([]Device, 0, 32)
 	for {
