@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/cloud/resource-aggregate/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
@@ -35,23 +36,33 @@ func TestPublishUnpublish(t *testing.T) {
 
 	authConn, err := client.New(testCfg.MakeGrpcClientConfig(config.Clients.AuthServer.Connection.Addr), log.Get())
 	require.NoError(t, err)
-	defer authConn.Close()
+	defer func() {
+		_ = authConn.Close()
+	}()
 	authClient := pbAS.NewAuthorizationServiceClient(authConn.GRPC())
 
 	raConn, err := client.New(testCfg.MakeGrpcClientConfig(config.APIs.GRPC.Addr), log.Get())
 	require.NoError(t, err)
-	defer raConn.Close()
+	defer func() {
+		_ = raConn.Close()
+	}()
 	raClient := service.NewResourceAggregateClient(raConn.GRPC())
 
 	deviceId := "dev0"
 	href := "/oic/p"
-	code := oauthTest.GetDeviceAuthorizationCode(t)
-	_, err = authClient.SignUp(ctx, &pbAS.SignUpRequest{
-		DeviceId:              deviceId,
-		AuthorizationCode:     code,
-		AuthorizationProvider: "plgd",
+	userId := oauthService.DeviceUserID
+	_, err = authClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
+		DeviceId: deviceId,
+		UserId:   userId,
 	})
 	require.NoError(t, err)
+	defer func() {
+		_, err = authClient.RemoveDevice(ctx, &pbAS.RemoveDeviceRequest{
+			DeviceId: deviceId,
+			UserId:   userId,
+		})
+		require.NoError(t, err)
+	}()
 
 	pubReq := testMakePublishResourceRequest(deviceId, []string{href})
 	_, err = raClient.PublishResourceLinks(ctx, pubReq)
