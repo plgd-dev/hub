@@ -6,6 +6,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSignOffHandler(t *testing.T) {
@@ -13,21 +14,27 @@ func TestSignOffHandler(t *testing.T) {
 	defer shutdown()
 
 	co := testCoapDial(t, testCfg.GW_HOST)
-	if co == nil {
-		return
-	}
-	defer co.Close()
-
+	require.NotNil(t, co)
 	signUpResp := testSignUp(t, CertIdentity, co)
+	err := co.Close()
+	require.NoError(t, err)
 
 	tbl := []testEl{
-		{"BadRequest0", input{coapCodes.DELETE, `{}`, nil}, output{coapCodes.BadRequest, "invalid di('')", nil}},
-		{"BadRequest1", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity}}, output{coapCodes.BadRequest, "invalid accesstoken('')", nil}},
+		{"Bad query", input{coapCodes.DELETE, `{}`, []string{"di=%"}}, output{coapCodes.BadOption, "invalid URL escape", nil}},
+		{"Bad request (no userId)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity}}, output{coapCodes.BadRequest, "invalid user id", nil}},
+		{"Bad request (invalid userId)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + signUpResp.AccessToken, "uid=0"}}, output{coapCodes.InternalServerError, "invalid ownerClaim", nil}},
+		{"Bad request (missing access token)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "uid=0"}}, output{coapCodes.BadRequest, `invalid access token`, nil}},
 		{"Deleted0", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + signUpResp.AccessToken, "uid=" + signUpResp.UserID}}, output{coapCodes.Deleted, nil, nil}},
 	}
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
+			co := testCoapDial(t, testCfg.GW_HOST)
+			require.NotNil(t, co)
+			defer func() {
+				_ = co.Close()
+			}()
+
 			// delete record for signUp
 			testPostHandler(t, uri.SignUp, test, co)
 		}
@@ -39,20 +46,18 @@ func TestSignOffWithSignInHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
-	if co == nil {
-		return
-	}
-	defer co.Close()
-
-	testSignUpIn(t, CertIdentity, co)
-
 	tbl := []testEl{
 		{"Deleted", input{coapCodes.DELETE, `{}`, nil}, output{coapCodes.Deleted, nil, nil}},
 	}
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
+			co := testCoapDial(t, testCfg.GW_HOST)
+			require.NotNil(t, co)
+			testSignUpIn(t, CertIdentity, co)
+			defer func() {
+				_ = co.Close()
+			}()
 			// delete record for signUp
 			testPostHandler(t, uri.SignUp, test, co)
 		}

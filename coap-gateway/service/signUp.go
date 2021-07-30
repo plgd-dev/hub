@@ -33,7 +33,7 @@ type CoapSignUpResponse struct {
 /// Check that all required request fields are set
 func (request CoapSignUpRequest) checkOAuthRequest() error {
 	if request.DeviceID == "" {
-		return fmt.Errorf("invalid deviceID")
+		return fmt.Errorf("invalid device id")
 	}
 	if request.AuthorizationCode == "" {
 		return fmt.Errorf("invalid authorization code")
