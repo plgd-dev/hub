@@ -11,7 +11,7 @@ import (
 
 func (client *Client) logAndWriteErrorResponse(err error, code codes.Code, token message.Token) {
 	if err != nil {
-		log.LogAndReturnError(err)
+		log.Errorf("%w", err)
 	}
 	msg := pool.AcquireMessage(client.coapConn.Context())
 	defer pool.ReleaseMessage(msg)

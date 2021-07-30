@@ -7,6 +7,7 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,24 +30,24 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	}
 
 	if owner == "" {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: invalid UserId"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: invalid UserId"))
 	}
 
 	if request.DeviceId == "" {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: invalid DeviceId"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: invalid DeviceId"))
 	}
 
 	// TODO validate jwt token -> only jwt token is supported
 
 	dev, ok, err := tx.RetrieveByDevice(request.DeviceId)
 	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot add device: %v", err.Error()))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device: %v", err.Error()))
 	}
 	if ok {
 		if dev.Owner == owner {
 			return &pb.AddDeviceResponse{}, nil
 		}
-		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot add device: devices is owned by another user '%+v'", dev))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot add device: devices is owned by another user '%+v'", dev))
 	}
 
 	d := persistence.AuthorizedDevice{
@@ -58,7 +59,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	}
 
 	if err := tx.Persist(&d); err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
 	}
 
 	return &pb.AddDeviceResponse{}, nil

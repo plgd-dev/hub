@@ -16,7 +16,7 @@ func (r *RequestHandler) SignIdentityCertificate(ctx context.Context, req *pb.Si
 	signer := signer.NewIdentityCertificateSigner(r.Certificate, r.PrivateKey, notBefore, notAfter)
 	cert, err := signer.Sign(ctx, req.CertificateSigningRequest)
 	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
+		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign identity certificate: %v", err))
 	}
 	log.Debugf("RequestHandler.SignIdentityCertificate csr=%v crt=%v", string(req.CertificateSigningRequest), string(cert))
 

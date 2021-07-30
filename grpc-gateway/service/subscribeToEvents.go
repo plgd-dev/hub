@@ -26,7 +26,7 @@ func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsS
 		wg.Wait()
 		select {
 		case err := <-clientErr:
-			log.LogAndReturnError(err)
+			log.Errorf("%w", err)
 			if errRet != nil {
 				errRet = err
 			}

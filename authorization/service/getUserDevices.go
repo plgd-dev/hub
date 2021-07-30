@@ -23,11 +23,6 @@ func hasMatchDeviceID(deviceId string, deviceIdFilter map[string]bool) bool {
 	return false
 }
 
-func logAndReturnError(err error) error {
-	log.Errorf("%v", err)
-	return err
-}
-
 func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationService_GetUserDevicesServer, createIter func() persistence.Iterator) error {
 	deviceIdFilter := make(map[string]bool)
 	for _, deviceID := range request.GetDeviceIdsFilter() {
@@ -43,13 +38,13 @@ func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationServ
 	}
 	it.Close()
 	if it.Err() != nil {
-		return logAndReturnError(status.Errorf(codes.Internal, "cannot get user devices: %v", it.Err()))
+		return log.LogAndReturnError(status.Errorf(codes.Internal, "cannot get user devices: %v", it.Err()))
 	}
 
 	for _, deviceID := range ids {
 		err := srv.Send(&pb.UserDevice{DeviceId: deviceID, UserId: d.Owner})
 		if err != nil {
-			return logAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get user devices: %v", err))
+			return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get user devices: %v", err))
 		}
 	}
 	return nil
@@ -64,14 +59,14 @@ func (s *Service) GetUserDevices(request *pb.GetUserDevicesRequest, srv pb.Autho
 	if len(userIdsFilter) == 0 {
 		token, err := grpc_auth.AuthFromMD(srv.Context(), "bearer")
 		if err != nil {
-			return logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: %v", err))
+			return log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: %v", err))
 		}
 		owner, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
 		if err != nil {
 			log.Debugf("cannot parse '%v' from jwt token: %v", s.ownerClaim, err)
 		}
 		if owner == "" {
-			return logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot get user devices: invalid userIdsFilter"))
+			return log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot get user devices: invalid userIdsFilter"))
 		}
 		if owner == serviceOwner {
 			return sendUserDevices(request, srv, tx.RetrieveAll)

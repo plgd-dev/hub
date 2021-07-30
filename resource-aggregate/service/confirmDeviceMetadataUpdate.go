@@ -43,18 +43,18 @@ func (a *aggregate) ConfirmDeviceMetadataUpdate(ctx context.Context, request *co
 func (r RequestHandler) ConfirmDeviceMetadataUpdate(ctx context.Context, request *commands.ConfirmDeviceMetadataUpdateRequest) (*commands.ConfirmDeviceMetadataUpdateResponse, error) {
 	owner, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
 	if err != nil {
-		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
 
 	resID := commands.NewResourceID(request.DeviceId, commands.StatusHref)
 	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
-		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
 	}
 
 	events, err := aggregate.ConfirmDeviceMetadataUpdate(ctx, request)
 	if err != nil {
-		return nil, logAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))
 	}
 
 	err = PublishEvents(ctx, r.publisher, aggregate.DeviceID(), aggregate.ResourceID(), events)
