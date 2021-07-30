@@ -454,7 +454,7 @@ func (*AddDeviceResponse) Descriptor() ([]byte, []int) {
 	return file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_rawDescGZIP(), []int{7}
 }
 
-type RemoveDeviceRequest struct {
+type DeleteDeviceRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -463,8 +463,8 @@ type RemoveDeviceRequest struct {
 	UserId   string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 }
 
-func (x *RemoveDeviceRequest) Reset() {
-	*x = RemoveDeviceRequest{}
+func (x *DeleteDeviceRequest) Reset() {
+	*x = DeleteDeviceRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -472,13 +472,13 @@ func (x *RemoveDeviceRequest) Reset() {
 	}
 }
 
-func (x *RemoveDeviceRequest) String() string {
+func (x *DeleteDeviceRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RemoveDeviceRequest) ProtoMessage() {}
+func (*DeleteDeviceRequest) ProtoMessage() {}
 
-func (x *RemoveDeviceRequest) ProtoReflect() protoreflect.Message {
+func (x *DeleteDeviceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -490,33 +490,33 @@ func (x *RemoveDeviceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RemoveDeviceRequest.ProtoReflect.Descriptor instead.
-func (*RemoveDeviceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteDeviceRequest.ProtoReflect.Descriptor instead.
+func (*DeleteDeviceRequest) Descriptor() ([]byte, []int) {
 	return file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *RemoveDeviceRequest) GetDeviceId() string {
+func (x *DeleteDeviceRequest) GetDeviceId() string {
 	if x != nil {
 		return x.DeviceId
 	}
 	return ""
 }
 
-func (x *RemoveDeviceRequest) GetUserId() string {
+func (x *DeleteDeviceRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
 	return ""
 }
 
-type RemoveDeviceResponse struct {
+type DeleteDeviceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *RemoveDeviceResponse) Reset() {
-	*x = RemoveDeviceResponse{}
+func (x *DeleteDeviceResponse) Reset() {
+	*x = DeleteDeviceResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -524,13 +524,13 @@ func (x *RemoveDeviceResponse) Reset() {
 	}
 }
 
-func (x *RemoveDeviceResponse) String() string {
+func (x *DeleteDeviceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RemoveDeviceResponse) ProtoMessage() {}
+func (*DeleteDeviceResponse) ProtoMessage() {}
 
-func (x *RemoveDeviceResponse) ProtoReflect() protoreflect.Message {
+func (x *DeleteDeviceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -542,8 +542,8 @@ func (x *RemoveDeviceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RemoveDeviceResponse.ProtoReflect.Descriptor instead.
-func (*RemoveDeviceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteDeviceResponse.ProtoReflect.Descriptor instead.
+func (*DeleteDeviceResponse) Descriptor() ([]byte, []int) {
 	return file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_rawDescGZIP(), []int{9}
 }
 
@@ -594,13 +594,13 @@ var file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_rawDesc = []byte{
 	0x01, 0x28, 0x09, 0x52, 0x08, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64, 0x12, 0x17, 0x0a,
 	0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06,
 	0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x22, 0x13, 0x0a, 0x11, 0x41, 0x64, 0x64, 0x44, 0x65, 0x76,
-	0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x4b, 0x0a, 0x13, 0x52,
-	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x4b, 0x0a, 0x13, 0x44,
+	0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64, 0x12,
 	0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x22, 0x16, 0x0a, 0x14, 0x52, 0x65, 0x6d, 0x6f,
-	0x76, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x22, 0x16, 0x0a, 0x14, 0x44, 0x65, 0x6c, 0x65,
+	0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
 	0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70,
 	0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2f, 0x61, 0x75,
 	0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x62, 0x3b, 0x70,
@@ -629,8 +629,8 @@ var file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_goTypes = []inter
 	(*UserDevice)(nil),            // 5: ocf.cloud.auth.pb.UserDevice
 	(*AddDeviceRequest)(nil),      // 6: ocf.cloud.auth.pb.AddDeviceRequest
 	(*AddDeviceResponse)(nil),     // 7: ocf.cloud.auth.pb.AddDeviceResponse
-	(*RemoveDeviceRequest)(nil),   // 8: ocf.cloud.auth.pb.RemoveDeviceRequest
-	(*RemoveDeviceResponse)(nil),  // 9: ocf.cloud.auth.pb.RemoveDeviceResponse
+	(*DeleteDeviceRequest)(nil),   // 8: ocf.cloud.auth.pb.DeleteDeviceRequest
+	(*DeleteDeviceResponse)(nil),  // 9: ocf.cloud.auth.pb.DeleteDeviceResponse
 }
 var file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -743,7 +743,7 @@ func file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_init() {
 			}
 		}
 		file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveDeviceRequest); i {
+			switch v := v.(*DeleteDeviceRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -755,7 +755,7 @@ func file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_init() {
 			}
 		}
 		file_github_com_plgd_dev_cloud_authorization_pb_auth_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveDeviceResponse); i {
+			switch v := v.(*DeleteDeviceResponse); i {
 			case 0:
 				return &v.state
 			case 1:

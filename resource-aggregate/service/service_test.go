@@ -57,7 +57,7 @@ func TestPublishUnpublish(t *testing.T) {
 	})
 	require.NoError(t, err)
 	defer func() {
-		_, err = authClient.RemoveDevice(ctx, &pbAS.RemoveDeviceRequest{
+		_, err = authClient.DeleteDevice(ctx, &pbAS.DeleteDeviceRequest{
 			DeviceId: deviceId,
 			UserId:   userId,
 		})
