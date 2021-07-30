@@ -18,7 +18,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthorizationServiceClient interface {
-	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error)
 	SignOff(ctx context.Context, in *SignOffRequest, opts ...grpc.CallOption) (*SignOffResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error)
@@ -32,15 +31,6 @@ type authorizationServiceClient struct {
 
 func NewAuthorizationServiceClient(cc grpc.ClientConnInterface) AuthorizationServiceClient {
 	return &authorizationServiceClient{cc}
-}
-
-func (c *authorizationServiceClient) SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error) {
-	out := new(SignUpResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.auth.pb.AuthorizationService/SignUp", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *authorizationServiceClient) SignOff(ctx context.Context, in *SignOffRequest, opts ...grpc.CallOption) (*SignOffResponse, error) {
@@ -115,7 +105,6 @@ func (c *authorizationServiceClient) RemoveDevice(ctx context.Context, in *Remov
 // All implementations must embed UnimplementedAuthorizationServiceServer
 // for forward compatibility
 type AuthorizationServiceServer interface {
-	SignUp(context.Context, *SignUpRequest) (*SignUpResponse, error)
 	SignOff(context.Context, *SignOffRequest) (*SignOffResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	GetUserDevices(*GetUserDevicesRequest, AuthorizationService_GetUserDevicesServer) error
@@ -128,9 +117,6 @@ type AuthorizationServiceServer interface {
 type UnimplementedAuthorizationServiceServer struct {
 }
 
-func (UnimplementedAuthorizationServiceServer) SignUp(context.Context, *SignUpRequest) (*SignUpResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SignUp not implemented")
-}
 func (UnimplementedAuthorizationServiceServer) SignOff(context.Context, *SignOffRequest) (*SignOffResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignOff not implemented")
 }
@@ -157,24 +143,6 @@ type UnsafeAuthorizationServiceServer interface {
 
 func RegisterAuthorizationServiceServer(s grpc.ServiceRegistrar, srv AuthorizationServiceServer) {
 	s.RegisterService(&AuthorizationService_ServiceDesc, srv)
-}
-
-func _AuthorizationService_SignUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SignUpRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthorizationServiceServer).SignUp(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ocf.cloud.auth.pb.AuthorizationService/SignUp",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).SignUp(ctx, req.(*SignUpRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthorizationService_SignOff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -277,10 +245,6 @@ var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.auth.pb.AuthorizationService",
 	HandlerType: (*AuthorizationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "SignUp",
-			Handler:    _AuthorizationService_SignUp_Handler,
-		},
 		{
 			MethodName: "SignOff",
 			Handler:    _AuthorizationService_SignOff_Handler,

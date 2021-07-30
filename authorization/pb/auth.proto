@@ -4,22 +4,6 @@ package ocf.cloud.auth.pb;
 
 option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
 
-// https://github.com/openconnectivityfoundation/security/blob/master/oic.r.account.raml#L27
-message SignUpRequest {
-    string device_id = 1;
-    string authorization_code = 2;
-    string authorization_provider = 3;
-}
-
-// https://github.com/openconnectivityfoundation/security/blob/master/oic.r.account.raml#L40
-message SignUpResponse {
-    string access_token = 1;
-    string user_id = 2;
-    string refresh_token = 3;
-    int64 valid_until = 4;
-    string redirect_uri = 5;
-}
-
 // https://github.com/openconnectivityfoundation/security/blob/master/oic.r.account.raml#L55
 message SignOffRequest {
     string device_id = 1;
