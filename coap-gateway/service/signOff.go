@@ -116,7 +116,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	if _, err := client.server.asClient.RemoveDevice(ctx, &pb.RemoveDeviceRequest{
+	if _, err := client.server.asClient.DeleteDevice(ctx, &pb.DeleteDeviceRequest{
 		DeviceId: signOffData.deviceID,
 		UserId:   signOffData.userID,
 	}); err != nil {

@@ -206,11 +206,11 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			if err != nil {
 				errors = append(errors, fmt.Errorf("cannot delete device %v from devicesSubscription: %w", deviceID, err))
 			}
-			_, err = p.asClient.RemoveDevice(ctx, &pbAS.RemoveDeviceRequest{
+			_, err = p.asClient.DeleteDevice(ctx, &pbAS.DeleteDeviceRequest{
 				DeviceId: deviceID,
 			})
 			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot removeDevice %v: %w", deviceID, err))
+				errors = append(errors, fmt.Errorf("cannot delete device %v: %w", deviceID, err))
 			}
 		}
 	}

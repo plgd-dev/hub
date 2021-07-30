@@ -49,10 +49,10 @@ message AddDeviceResponse {
 }
 
 
-message RemoveDeviceRequest {
+message DeleteDeviceRequest {
     string device_id = 1;
     string user_id = 2;
 }
 
-message RemoveDeviceResponse {
+message DeleteDeviceResponse {
 }

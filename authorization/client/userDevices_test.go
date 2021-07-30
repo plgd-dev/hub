@@ -153,7 +153,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		require.NotEmpty(t, devs)
 	}
 
-	_, err = c.RemoveDevice(ctx, &pb.RemoveDeviceRequest{
+	_, err = c.DeleteDevice(ctx, &pb.DeleteDeviceRequest{
 		UserId:   t.Name(),
 		DeviceId: "deviceId_" + t.Name(),
 	})
