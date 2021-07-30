@@ -6,6 +6,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -18,10 +19,10 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 	defer tx.Close()
 
 	if request.GetDeviceId() == "" {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign up: invalid DeviceId"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign up: invalid DeviceId"))
 	}
 	if request.GetAuthorizationCode() == "" {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign up: invalid AuthorizationCode"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign up: invalid AuthorizationCode"))
 	}
 
 	token, err := s.deviceProvider.Exchange(ctx, request.AuthorizationProvider, request.AuthorizationCode)
@@ -30,16 +31,16 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 		if strings.Contains(err.Error(), "connect: connection refused") {
 			code = codes.Unavailable
 		}
-		return nil, logAndReturnError(status.Errorf(code, "cannot sign up: %v", err.Error()))
+		return nil, log.LogAndReturnError(status.Errorf(code, "cannot sign up: %v", err.Error()))
 	}
 
 	dev, ok, err := tx.RetrieveByDevice(request.DeviceId)
 	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot sign up: %v", err.Error()))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot sign up: %v", err.Error()))
 	}
 	if ok {
 		if dev.Owner != token.Owner {
-			return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: devices is owned by another user"))
+			return nil, log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: devices is owned by another user"))
 		}
 	}
 
@@ -52,12 +53,12 @@ func (s *Service) SignUp(ctx context.Context, request *pb.SignUpRequest) (*pb.Si
 	}
 
 	if err := tx.Persist(&d); err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot sign up: %v", err.Error()))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot sign up: %v", err.Error()))
 	}
 
 	validUntil, ok := ValidUntil(token.Expiry)
 	if !ok {
-		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: expired access token"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot sign up: expired access token"))
 	}
 
 	return &pb.SignUpResponse{

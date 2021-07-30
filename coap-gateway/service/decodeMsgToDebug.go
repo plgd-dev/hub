@@ -61,7 +61,7 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 			case message.AppCBOR, message.AppOcfCbor:
 				s, err := cbor.ToJSON(body)
 				if err != nil {
-					log.Errorf("Cannot encode %v to JSON: %w", body, err)
+					log.Errorf("cannot encode %v to JSON: %w", body, err)
 				}
 				fmt.Fprintf(buf, "CBOR:\n%v", s)
 			case message.TextPlain:
@@ -74,14 +74,14 @@ func decodeMsgToDebug(client *Client, resp *pool.Message, tag string) {
 				fmt.Fprintf(buf, "RAW(%v):\n%v", mt, body)
 			}
 		} else {
-			fmt.Fprintf(buf, "Body is EMPTY")
+			fmt.Fprintf(buf, "body is EMPTY")
 		}
 	} else {
 		if len(body) == 0 {
-			fmt.Fprintf(buf, "Body is EMPTY")
+			fmt.Fprintf(buf, "body is EMPTY")
 		} else {
 			// https://tools.ietf.org/html/rfc7252#section-5.5.2
-			fmt.Fprintf(buf, "Error Message:\n%v", string(body))
+			fmt.Fprintf(buf, "error Message:\n%v", string(body))
 		}
 	}
 	log.Debug(buf.String())

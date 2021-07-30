@@ -17,7 +17,7 @@ func (r *RequestHandler) SignCertificate(ctx context.Context, req *pb.SignCertif
 	signer := signer.NewBasicCertificateSigner(r.Certificate, r.PrivateKey, notBefore, notAfter)
 	cert, err := signer.Sign(ctx, req.CertificateSigningRequest)
 	if err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
+		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: %v", err))
 	}
 	log.Debugf("RequestHandler.SignCertificate csr=%v crt=%v", string(req.CertificateSigningRequest), string(cert))
 

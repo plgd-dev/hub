@@ -121,7 +121,7 @@ func Warnf(template string, args ...interface{}) {
 // Errorf uses fmt.Sprintf to log a templated message.
 func Errorf(template string, args ...interface{}) {
 	err := fmt.Errorf(template, args...)
-	LogAndReturnError(err)
+	_ = LogAndReturnError(err)
 }
 
 // Fatalf uses fmt.Sprintf to log a templated message, then calls os.Exit.

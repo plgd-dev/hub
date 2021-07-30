@@ -9,6 +9,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
+	"github.com/plgd-dev/cloud/pkg/log"
 )
 
 // RefreshToken renews AccessToken using RefreshToken.
@@ -22,7 +23,7 @@ func (s *Service) RefreshToken(ctx context.Context, request *pb.RefreshTokenRequ
 		if strings.Contains(err.Error(), "connect: connection refused") {
 			code = codes.Unavailable
 		}
-		return nil, logAndReturnError(status.Errorf(code, "cannot refresh token: %v", err))
+		return nil, log.LogAndReturnError(status.Errorf(code, "cannot refresh token: %v", err))
 	}
 
 	owner := token.Owner
@@ -30,7 +31,7 @@ func (s *Service) RefreshToken(ctx context.Context, request *pb.RefreshTokenRequ
 		owner = request.UserId
 	}
 	if owner == "" {
-		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: cannot determine owner"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: cannot determine owner"))
 	}
 
 	d := persistence.AuthorizedDevice{
@@ -42,12 +43,12 @@ func (s *Service) RefreshToken(ctx context.Context, request *pb.RefreshTokenRequ
 	}
 
 	if err := tx.Persist(&d); err != nil {
-		return nil, logAndReturnError(status.Errorf(codes.Internal, "cannot refresh token: err"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot refresh token: err"))
 	}
 
 	validUntil, ok := ValidUntil(token.Expiry)
 	if !ok {
-		return nil, logAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: expired access token"))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Unauthenticated, "cannot refresh token: expired access token"))
 	}
 
 	return &pb.RefreshTokenResponse{
