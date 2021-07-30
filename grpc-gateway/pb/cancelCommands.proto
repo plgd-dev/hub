@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ocf.cloud.grpcgateway.pb;
+
+import "github.com/plgd-dev/cloud/resource-aggregate/pb/commands.proto";
+
+option go_package = "github.com/plgd-dev/cloud/grpc-gateway/pb;pb";
+
+message CancelResourceCommandsRequest {
+    ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+    repeated string correlation_id_filter = 2; // empty array means all.
+}
+
+message CancelResponse {
+    repeated string correlation_ids = 2;
+}
+
+message CancelDeviceMetadataUpdatesRequest {
+    string device_id = 1;
+    repeated string correlation_id_filter = 2;
+
+}

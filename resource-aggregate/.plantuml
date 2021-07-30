@@ -238,3 +238,56 @@ ResourceAggregate --> Bus : DeviceMetadataUpdated
 deactivate ResourceAggregate
 deactivate Server
 @enduml
+
+@startuml
+title "Cancel resource command - similar for all Update/Retrieve/Create/Delete commands"
+
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+entity "Client1" as Client1
+
+Client -> ResourceAggregate : RetrieveResourceRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate --> Bus : ResourceRetrievePending
+ResourceAggregate -> Client : RetrieveResourceResponse
+deactivate ResourceAggregate
+deactivate Client
+Bus --> Client1 : ResourceRetrievePending
+
+Client -> ResourceAggregate : CancelResourceCommandsRequest
+activate ResourceAggregate
+ResourceAggregate --> Bus : ResourceRetrieved (status=Canceled)
+ResourceAggregate -> Client : CancelResourceCommandsResponse
+deactivate ResourceAggregate
+deactivate Client
+Bus --> Client1 : ResourceRetrieved (status=Canceled)
+@enduml
+
+@startuml
+title "Cancel update device metadata - Shadow Synchronization Status"
+
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+entity "Client1" as Client1
+
+Client -> ResourceAggregate : UpdateDeviceMetadataRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate --> Bus : DeviceMetadataUpdatePending
+ResourceAggregate -> Client : UpdateDeviceMetadataResponse
+deactivate ResourceAggregate
+deactivate Client
+Bus --> Client1 : DeviceMetadataUpdatePending
+
+Client -> ResourceAggregate : CancelDeviceMetadataUpdatesRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate --> Bus : DeviceMetadataUpdated (Canceled=true)
+ResourceAggregate -> Client : CancelDeviceMetadataUpdatesResponse
+deactivate Client
+deactivate ResourceAggregate
+Bus --> Client1 : DeviceMetadataUpdated (Canceled=true)
+@enduml

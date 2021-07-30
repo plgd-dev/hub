@@ -43,7 +43,7 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "set online",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest("dev0", "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
 				userID:  "user0",
 			},
 			want: codes.OK,
@@ -51,7 +51,7 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
 				userID:  "user0",
 			},
 			want: codes.OK,
@@ -59,7 +59,7 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid valid until",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", nil, commands.ShadowSynchronization_DISABLED, -time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_DISABLED, -time.Hour),
 				userID:  "user0",
 			},
 			want:    codes.InvalidArgument,
@@ -68,7 +68,7 @@ func TestAggregateHandle_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid update commands",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest("dev0", nil, commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest("dev0", "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
 				userID:  "user0",
 			},
 			want:    codes.InvalidArgument,
@@ -136,7 +136,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "set online",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
@@ -147,7 +147,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", newConnectionStatus(commands.ConnectionStatus_ONLINE), commands.ShadowSynchronization_UNSET, time.Hour),
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
@@ -158,7 +158,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "set shadowSynchronizationDisabled - with expiration",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, nil, commands.ShadowSynchronization_DISABLED, time.Millisecond*250),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Millisecond*250),
 				sleep:   time.Millisecond * 500,
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
@@ -171,7 +171,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "set shadowSynchronizationDisabled",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, nil, commands.ShadowSynchronization_DISABLED, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour),
 			},
 			want: &commands.UpdateDeviceMetadataResponse{
 				AuditContext: &commands.AuditContext{
@@ -183,7 +183,7 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		{
 			name: "invalid",
 			args: args{
-				request: testMakeUpdateDeviceMetadataRequest(deviceID, nil, commands.ShadowSynchronization_UNSET, time.Hour),
+				request: testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_UNSET, time.Hour),
 			},
 			wantError: true,
 		},
@@ -240,14 +240,15 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	}
 }
 
-func testMakeUpdateDeviceMetadataRequest(deviceID string, online *commands.ConnectionStatus_Status, shadowSynchronization commands.ShadowSynchronization, timeToLive time.Duration) *commands.UpdateDeviceMetadataRequest {
+func testMakeUpdateDeviceMetadataRequest(deviceID, correlationID string, online *commands.ConnectionStatus_Status, shadowSynchronization commands.ShadowSynchronization, timeToLive time.Duration) *commands.UpdateDeviceMetadataRequest {
 	r := commands.UpdateDeviceMetadataRequest{
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: uuid.Must(uuid.NewV4()).String(),
 			Sequence:     0,
 		},
-		TimeToLive: int64(timeToLive),
+		TimeToLive:    int64(timeToLive),
+		CorrelationId: correlationID,
 	}
 	if online != nil {
 		r.Update = &commands.UpdateDeviceMetadataRequest_Status{

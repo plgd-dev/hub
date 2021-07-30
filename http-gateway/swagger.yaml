@@ -442,6 +442,24 @@ paths:
           $ref: '#/components/responses/badRequest'
         401:
           $ref: '#/components/responses/unauthorized'
+    delete:
+      tags:
+        - 'Pending Commands'
+      summary: 'Cancel updates metadata for a device'
+      description: |
+        Cancel all updates metadata for a single device. To cancel one pending update set 'correlationIdFilter' query parameter of pending command.
+      parameters:
+        - $ref: '#/components/parameters/correlationIdFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/canceledCommands'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
   '/api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands':
     parameters:
       - $ref: '#/components/parameters/deviceId'
@@ -461,6 +479,24 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/pendingCommands'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+    delete:
+      tags:
+        - 'Pending Commands'
+      summary: 'Cancel pending commands for a resource of a device'
+      description: |
+        Cancel all pending commands for a single resource of a device. To cancel one pending command set 'correlationIdFilter' query parameter of pending command.
+      parameters:
+        - $ref: '#/components/parameters/correlationIdFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/canceledCommands'
         400:
           $ref: '#/components/responses/badRequest'
         401:
@@ -1394,6 +1430,13 @@ components:
         format: int64
         default: 0
         minimum: 100000000
+    correlationIdFilter:
+      name: correlationIdFilter
+      in: query
+      description: 'Filter by the correlationId.'
+      schema:
+        type: string
+        format: uuid
   responses:
     ok:
       description: Content is stored in body.
@@ -1441,6 +1484,18 @@ components:
                 $ref: '#/components/schemas/ResourceLinks'
               error:
                 $ref: '#/components/schemas/Error'
+    canceledCommands:
+      description: 'List correlation ids of canceled commands.'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              correlationIds:
+                type: array
+                items:
+                  type: string
+                  format: uuid
     events:
       description: 'Stream of events or error'
       content:

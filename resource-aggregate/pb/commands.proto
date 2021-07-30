@@ -491,3 +491,89 @@ message ConfirmDeviceMetadataUpdateRequest {
 message ConfirmDeviceMetadataUpdateResponse {
     AuditContext audit_context = 1;
 }
+
+// Cancel resource command - similar for all Update/Retrieve/Create/Delete commands                                  
+                                                                                                
+// ┌──────────────────┐                       ┌─────────┐          ┌──────┐          ┌───────┐
+// │Resource Aggregate│                       │Event Bus│          │Client│          │Client1│
+// └────────┬─────────┘                       └─────────┘          └──────┘          └───────┘
+//         ┌┴┐                RetrieveResourceRequest                ┌┴┐                 │    
+//         │ │ <─────────────────────────────────────────────────────│ │                 │    
+//         │ │                                     │                 │ │                 │    
+//         │ │       ResourceRetrievePending       │                 │ │                 │    
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                 │    
+//         └┬┘                                     │                 └┬┘                 │    
+//          │                 RetrieveResourceResponse                │                  │    
+//          │ ────────────────────────────────────────────────────────>                  │    
+//          │                                      │                  │                  │    
+//          │                                      │      ResourceRetrievePending        │    
+//          │                                      │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│    
+//          │                                      │                  │                  │    
+//         ┌┴┐             CancelResourceCommandsRequest              │                  │    
+//         │ │ <──────────────────────────────────────────────────────│                  │    
+//         │ │                                     │                  │                  │    
+//         │ │ ResourceRetrieved (status=Canceled) │                  │                  │    
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │                  │    
+//         └┬┘                                     │                  │                  │    
+//          │              CancelResourceCommandsResponse             │                  │    
+//          │ ────────────────────────────────────────────────────────>                  │    
+//          │                                      │                  │                  │    
+//          │                                      │ResourceRetrieved (status=Canceled)  │    
+//          │                                      │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│    
+// ┌────────┴─────────┐                       ┌─────────┐          ┌──────┐          ┌───────┐
+// │Resource Aggregate│                       │Event Bus│          │Client│          │Client1│
+// └──────────────────┘                       └─────────┘          └──────┘          └───────┘
+
+message CancelResourceCommandsRequest {
+    ResourceId resource_id = 1;
+    repeated string correlation_id_filter = 2; // empty array means all.
+    CommandMetadata command_metadata = 100;
+}
+
+message CancelResourceCommandsResponse{
+    repeated string correlation_ids = 1; // list of cancelled correlation id
+    AuditContext audit_context = 100;
+}
+
+// Cancel update device metadata - Shadow Synchronization Status                 
+                                                                                                   
+// ┌──────────────────┐                         ┌─────────┐          ┌──────┐           ┌───────┐
+// │Resource Aggregate│                         │Event Bus│          │Client│           │Client1│
+// └────────┬─────────┘                         └─────────┘          └──────┘           └───────┘
+//         ┌┴┐               UpdateDeviceMetadataRequest               ┌┴┐                  │    
+//         │ │ <───────────────────────────────────────────────────────│ │                  │    
+//         │ │                                       │                 │ │                  │    
+//         │ │      DeviceMetadataUpdatePending      │                 │ │                  │    
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │    
+//         └┬┘                                       │                 └┬┘                  │    
+//          │                UpdateDeviceMetadataResponse               │                   │    
+//          │ ──────────────────────────────────────────────────────────>                   │    
+//          │                                        │                  │                   │    
+//          │                                        │     DeviceMetadataUpdatePending      │    
+//          │                                        │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│    
+//          │                                        │                  │                   │    
+//         ┌┴┐           CancelDeviceMetadataUpdatesRequest            ┌┴┐                  │    
+//         │ │ <───────────────────────────────────────────────────────│ │                  │    
+//         │ │                                       │                 │ │                  │    
+//         │ │ DeviceMetadataUpdated (Canceled=true) │                 │ │                  │    
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │    
+//         └┬┘                                       │                 └┬┘                  │    
+//          │            CancelDeviceMetadataUpdatesResponse            │                   │    
+//          │ ──────────────────────────────────────────────────────────>                   │    
+//          │                                        │                  │                   │    
+//          │                                        │DeviceMetadataUpdated (Canceled=true) │    
+//          │                                        │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│    
+// ┌────────┴─────────┐                         ┌─────────┐          ┌──────┐           ┌───────┐
+// │Resource Aggregate│                         │Event Bus│          │Client│           │Client1│
+// └──────────────────┘                         └─────────┘          └──────┘           └───────┘
+
+message CancelDeviceMetadataUpdatesRequest {
+    string device_id = 1;
+    repeated string correlation_id_filter = 2; // empty array means all.
+    CommandMetadata command_metadata = 100;
+}
+
+message CancelDeviceMetadataUpdatesResponse {
+    repeated string correlation_ids = 1; // list of cancelled correlation id
+    AuditContext audit_context = 100;
+}

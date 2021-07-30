@@ -41,6 +41,10 @@ type GrpcGatewayClient interface {
 	UpdateDeviceMetadata(ctx context.Context, in *UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*UpdateDeviceMetadataResponse, error)
 	// Gets pending commands for devices .
 	GetPendingCommands(ctx context.Context, in *GetPendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_GetPendingCommandsClient, error)
+	// Cancels resource commands.
+	CancelResourceCommands(ctx context.Context, in *CancelResourceCommandsRequest, opts ...grpc.CallOption) (*CancelResponse, error)
+	// Cancels update device metadata.
+	CancelDeviceMetadataUpdates(ctx context.Context, in *CancelDeviceMetadataUpdatesRequest, opts ...grpc.CallOption) (*CancelResponse, error)
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error)
 	// Get events for given combination of device id, resource id and timestamp
@@ -268,6 +272,24 @@ func (x *grpcGatewayGetPendingCommandsClient) Recv() (*PendingCommand, error) {
 	return m, nil
 }
 
+func (c *grpcGatewayClient) CancelResourceCommands(ctx context.Context, in *CancelResourceCommandsRequest, opts ...grpc.CallOption) (*CancelResponse, error) {
+	out := new(CancelResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CancelResourceCommands", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *grpcGatewayClient) CancelDeviceMetadataUpdates(ctx context.Context, in *CancelDeviceMetadataUpdatesRequest, opts ...grpc.CallOption) (*CancelResponse, error) {
+	out := new(CancelResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/CancelDeviceMetadataUpdates", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *grpcGatewayClient) GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error) {
 	stream, err := c.cc.NewStream(ctx, &GrpcGateway_ServiceDesc.Streams[5], "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetDevicesMetadata", opts...)
 	if err != nil {
@@ -358,6 +380,10 @@ type GrpcGatewayServer interface {
 	UpdateDeviceMetadata(context.Context, *UpdateDeviceMetadataRequest) (*UpdateDeviceMetadataResponse, error)
 	// Gets pending commands for devices .
 	GetPendingCommands(*GetPendingCommandsRequest, GrpcGateway_GetPendingCommandsServer) error
+	// Cancels resource commands.
+	CancelResourceCommands(context.Context, *CancelResourceCommandsRequest) (*CancelResponse, error)
+	// Cancels update device metadata.
+	CancelDeviceMetadataUpdates(context.Context, *CancelDeviceMetadataUpdatesRequest) (*CancelResponse, error)
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error
 	// Get events for given combination of device id, resource id and timestamp
@@ -401,6 +427,12 @@ func (UnimplementedGrpcGatewayServer) UpdateDeviceMetadata(context.Context, *Upd
 }
 func (UnimplementedGrpcGatewayServer) GetPendingCommands(*GetPendingCommandsRequest, GrpcGateway_GetPendingCommandsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetPendingCommands not implemented")
+}
+func (UnimplementedGrpcGatewayServer) CancelResourceCommands(context.Context, *CancelResourceCommandsRequest) (*CancelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelResourceCommands not implemented")
+}
+func (UnimplementedGrpcGatewayServer) CancelDeviceMetadataUpdates(context.Context, *CancelDeviceMetadataUpdatesRequest) (*CancelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelDeviceMetadataUpdates not implemented")
 }
 func (UnimplementedGrpcGatewayServer) GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetDevicesMetadata not implemented")
@@ -639,6 +671,42 @@ func (x *grpcGatewayGetPendingCommandsServer) Send(m *PendingCommand) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GrpcGateway_CancelResourceCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelResourceCommandsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GrpcGatewayServer).CancelResourceCommands(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/CancelResourceCommands",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GrpcGatewayServer).CancelResourceCommands(ctx, req.(*CancelResourceCommandsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GrpcGateway_CancelDeviceMetadataUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelDeviceMetadataUpdatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GrpcGatewayServer).CancelDeviceMetadataUpdates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/CancelDeviceMetadataUpdates",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GrpcGatewayServer).CancelDeviceMetadataUpdates(ctx, req.(*CancelDeviceMetadataUpdatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GrpcGateway_GetDevicesMetadata_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(GetDevicesMetadataRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -711,6 +779,14 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateDeviceMetadata",
 			Handler:    _GrpcGateway_UpdateDeviceMetadata_Handler,
+		},
+		{
+			MethodName: "CancelResourceCommands",
+			Handler:    _GrpcGateway_CancelResourceCommands_Handler,
+		},
+		{
+			MethodName: "CancelDeviceMetadataUpdates",
+			Handler:    _GrpcGateway_CancelDeviceMetadataUpdates_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

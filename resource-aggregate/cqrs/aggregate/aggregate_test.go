@@ -40,7 +40,7 @@ func (e *Snapshot) Unmarshal(b []byte) error { return proto.Unmarshal(b, e) }
 func (e *Snapshot) AggregateID() string      { return e.DeviceId + e.Href }
 func (e *Snapshot) GroupId() string          { return e.DeviceId }
 func (e *Snapshot) GroupID() string          { return e.DeviceId }
-func (e *Snapshot) IsSnapshot() bool         { return false }
+func (e *Snapshot) IsSnapshot() bool         { return true }
 func (e *Snapshot) Timestamp() time.Time     { return time.Unix(0, e.EventTimestamp) }
 
 func (e *Snapshot) Handle(ctx context.Context, iter eventstore.Iter) error {
@@ -89,11 +89,13 @@ func (e *Snapshot) Handle(ctx context.Context, iter eventstore.Iter) error {
 func (e *Snapshot) HandleCommand(ctx context.Context, cmd Command, newVersion uint64) ([]eventstore.Event, error) {
 	switch req := cmd.(type) {
 	case *Publish:
+		e.IsPublished = true
 		return []eventstore.Event{&Published{DeviceId: req.DeviceId, Href: req.Href, EventVersion: newVersion}}, nil
 	case *Unpublish:
 		if !e.IsPublished {
 			return nil, fmt.Errorf("not allowed to unpublish twice in tests")
 		}
+		e.IsPublished = false
 		return []eventstore.Event{&Unpublished{DeviceId: req.DeviceId, Href: req.Href, EventVersion: newVersion}}, nil
 	}
 	return nil, fmt.Errorf("unknown command %T", cmd)

@@ -60,6 +60,7 @@ func (e *DeviceMetadataUpdated) CheckInitialized() bool {
 // Check if two DeviceMetadataUpdated events are equal
 func (e *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 	return e.GetStatus().GetValue() == upd.GetStatus().GetValue() &&
+		e.GetCanceled() == upd.GetCanceled() &&
 		e.GetStatus().GetValidUntil() == upd.GetStatus().GetValidUntil() &&
 		e.GetShadowSynchronization() == upd.GetShadowSynchronization() &&
 		e.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&

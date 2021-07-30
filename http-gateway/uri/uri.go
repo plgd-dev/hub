@@ -3,20 +3,22 @@ package uri
 import "strings"
 
 const (
-	DeviceIDKey     = "deviceId"
-	ResourceHrefKey = "resourceHref"
+	DeviceIDKey      = "deviceId"
+	ResourceHrefKey  = "resourceHref"
+	CorrelationIDKey = "correlationId"
 
-	ResourceInterfaceQueryKey = "resourceInterface"
-	ShadowQueryKey            = "shadow"
-	CommandFilterQueryKey     = "commandFilter"
-	TypeFilterQueryKey        = "typeFilter"
-	StatusFilterQueryKey      = "statusFilter"
-	DeviceIdFilterQueryKey    = "deviceIdFilter"
-	TimeToLiveQueryKey        = "timeToLive"
-	ResourceIdFilterQueryKey  = "resourceIdFilter"
-	AcceptQueryKey            = "accept" // for websocket
-	CorrelationIDQueryKey     = "correlationId"
-	TimestampFilterQueryKey   = "timestampFilter"
+	ResourceInterfaceQueryKey   = "resourceInterface"
+	ShadowQueryKey              = "shadow"
+	CommandFilterQueryKey       = "commandFilter"
+	TypeFilterQueryKey          = "typeFilter"
+	StatusFilterQueryKey        = "statusFilter"
+	DeviceIdFilterQueryKey      = "deviceIdFilter"
+	TimeToLiveQueryKey          = "timeToLive"
+	ResourceIdFilterQueryKey    = "resourceIdFilter"
+	AcceptQueryKey              = "accept" // for websocket
+	CorrelationIDQueryKey       = "correlationId"
+	TimestampFilterQueryKey     = "timestampFilter"
+	CorrelationIdFilterQueryKey = "correlationIdFilter"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"
@@ -80,10 +82,18 @@ const (
 	// (GRPC + HTTP) GET /api/v1/pending-commands -> rpc RetrievePendingCommands
 	PendingCommands = API + "/" + PendingCommandsPathKey
 
+	// DELETE /api/v1/pending-commands/resources -> rpc CancelResourcesCommands
+	PendingResourcesCommands = PendingCommands + "/" + ResourcesPathKey
+
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/pending-commands == rpc RetrievePendingCommands + deviceIdFilter
+	// (GRPC + HTTP) DELETE /api/v1/devices/{deviceId}/pending-commands == rpc CancelDeviceMetadataUpdates
 	AliasDevicePendingCommands = AliasDevice + "/" + PendingCommandsPathKey
 
+	// (GRPC + HTTP) DELETE /api/v1/devices/{deviceId}/pending-commands/{correlationId} == rpc CancelDeviceMetadataUpdates + correlationIdFilter
+	AliasDevicePendingCommand = AliasDevice + "/" + PendingCommandsPathKey + "/" + "{" + CorrelationIDKey + "}"
+
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands == rpc RetrievePendingCommands + resourceIdFilter
+	// (HTTP ALIAS) DELETE /api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands == rpc CancelResourceCommands + deviceIdFilter
 	AliasResourcePendingCommands = AliasDeviceResource + "/" + PendingCommandsPathKey
 
 	// (GRPC + HTTP) GET /api/v1/events -> rpc GetEvents
@@ -117,4 +127,5 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(CorrelationIDQueryKey):         CorrelationIDQueryKey,
 	strings.ToLower(TimestampFilterQueryKey):       TimestampFilterQueryKey,
 	strings.ToLower(TimeToLiveQueryKey):            TimeToLiveQueryKey,
+	strings.ToLower(CorrelationIdFilterQueryKey):   CorrelationIdFilterQueryKey,
 }

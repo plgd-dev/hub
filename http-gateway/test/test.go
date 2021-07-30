@@ -156,6 +156,14 @@ func (c *requestBuilder) AddTypeFilter(typeFilter []string) *requestBuilder {
 	return c
 }
 
+func (c *requestBuilder) AddCorrelantionIdFilter(correlantionId []string) *requestBuilder {
+	if len(correlantionId) == 0 {
+		return c
+	}
+	c.AddQuery(uri.CorrelationIdFilterQueryKey, correlantionId...)
+	return c
+}
+
 func (c *requestBuilder) AddCommandsFilter(commandFilter []string) *requestBuilder {
 	if len(commandFilter) == 0 {
 		return c

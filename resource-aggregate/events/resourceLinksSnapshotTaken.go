@@ -222,7 +222,7 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		return []eventstore.Event{&rlu}, nil
 	}
 
-	return nil, fmt.Errorf("unknown command")
+	return nil, fmt.Errorf("unknown command (%T)", cmd)
 }
 
 func (e *ResourceLinksSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {

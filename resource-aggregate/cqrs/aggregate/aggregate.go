@@ -198,6 +198,15 @@ func (a *Aggregate) handleCommandWithAggrModel(ctx context.Context, cmd Command,
 		}
 		return events, false, nil
 	}
+
+	if len(newEvents)+amodel.numEvents >= a.numEventsInSnapshot {
+		// append new snapshot because numEvents + len(newEvents) > a.numEventsInSnapshot
+		snapshot, ok := amodel.TakeSnapshot(newVersion + uint64(len(newEvents)))
+		if ok {
+			newEvents = append(newEvents, snapshot)
+		}
+	}
+
 	status, err := a.store.Save(ctx, newEvents...)
 	if err != nil {
 		return nil, false, fmt.Errorf("cannot save events: %w", err)

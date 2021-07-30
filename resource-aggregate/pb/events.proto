@@ -125,6 +125,7 @@ message DeviceMetadataUpdated {
     ShadowSynchronization shadow_synchronization = 3;
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
+    bool canceled = 6; // it true then the command with audit_context.correlation_id was canceled.
 }
 
 message DeviceMetadataUpdatePending {

@@ -223,6 +223,47 @@
         ]
       }
     },
+    "/api/v1/devices/{deviceId}/pending-commands": {
+      "delete": {
+        "summary": "Cancels update device metadata.",
+        "operationId": "GrpcGateway_CancelDeviceMetadataUpdates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCancelResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "correlationIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Resource Directory"
+        ]
+      }
+    },
     "/api/v1/devices/{resourceId.deviceId}/resource-links/{resourceId.href}": {
       "delete": {
         "summary": "Delete resource at the device.",
@@ -553,6 +594,53 @@
           },
           {
             "name": "typeFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Resource Directory"
+        ]
+      }
+    },
+    "/api/v1/pending-commands/resources": {
+      "delete": {
+        "summary": "Cancels resource commands.",
+        "operationId": "GrpcGateway_CancelResourceCommands",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCancelResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "resourceId.deviceId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "resourceId.href",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "correlationIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -1079,6 +1167,17 @@
         }
       }
     },
+    "pbCancelResponse": {
+      "type": "object",
+      "properties": {
+        "correlationIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "pbClientConfigurationResponse": {
       "type": "object",
       "properties": {
@@ -1224,6 +1323,9 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "canceled": {
+          "type": "boolean"
         }
       }
     },
@@ -1721,7 +1823,8 @@
         "ACCEPTED",
         "ERROR",
         "METHOD_NOT_ALLOWED",
-        "CREATED"
+        "CREATED",
+        "CANCELED"
       ],
       "default": "UNKNOWN"
     }

@@ -129,7 +129,7 @@ func checkBeforeSave(events ...eventstore.Event) error {
 			if event.Version() != version+uint64(idx) {
 				return fmt.Errorf("invalid continues ascending events[%v].Version(%v))", idx, event.Version())
 			}
-			if event.IsSnapshot() {
+			if event.IsSnapshot() && idx < len(events)-1 {
 				return fmt.Errorf("inner snapshot for events[%v] is not supported", idx)
 			}
 			if event.AggregateID() != aggregateID {
