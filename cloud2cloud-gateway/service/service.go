@@ -127,8 +127,12 @@ func New(
 func (s *Server) Serve() error {
 	defer func() {
 		s.doneWg.Wait()
-		s.rdConn.Close()
-		s.raConn.Close()
+		if err := s.rdConn.Close(); err != nil {
+			log.Errorf("failed to close ResourceDirectory connection: %v", err)
+		}
+		if err := s.raConn.Close(); err != nil {
+			log.Errorf("failed to close ResourceAggregate connection: %v", err)
+		}
 	}()
 	return s.server.Serve(s.ln)
 }

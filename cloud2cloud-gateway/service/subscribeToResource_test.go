@@ -51,7 +51,9 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
@@ -76,7 +78,9 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
 			assert.NoError(t, err)
-			defer r.Body.Close()
+			defer func() {
+				_ = r.Body.Close()
+			}()
 			assert.Equal(t, wantEventType, h.EventType)
 			buf, err := ioutil.ReadAll(r.Body)
 			assert.NoError(t, err)
@@ -85,9 +89,10 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, wantEventContent, v)
 			w.WriteHeader(http.StatusOK)
-			eventsServer.Close()
+			err = eventsServer.Close()
+			assert.NoError(t, err)
 		})).Methods("POST")
-		http.Serve(eventsServer, r)
+		_ = http.Serve(eventsServer, r)
 	}()
 
 	_, port, err := net.SplitHostPort(eventsServer.Addr().String())
@@ -105,7 +110,9 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetServiceToken(t)).AddHeader("Accept", accept).Build(ctx, t)
 	resp := test.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	v, err := ioutil.ReadAll(resp.Body)
 	fmt.Printf("body %v\n", string(v))
 	require.NoError(t, err)

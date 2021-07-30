@@ -69,10 +69,11 @@ func (r *RefImpl) Serve() error {
 	return r.server.Serve()
 }
 
-func (r *RefImpl) Close() {
-	r.server.Shutdown()
+func (r *RefImpl) Close() error {
+	err := r.server.Shutdown()
 	r.dialCertManager.Close()
 	r.listenCertManager.Close()
+	return err
 }
 
 // https://openconnectivity.org/draftspecs/Gaborone/OCF_Cloud_API_for_Cloud_Services.pdf

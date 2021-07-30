@@ -207,7 +207,9 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
@@ -216,7 +218,9 @@ func TestRequestHandler_RetrieveDevice(t *testing.T) {
 			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).AddHeader("Accept", tt.args.accept).Build(ctx, t)
 			resp := test.DoHTTPRequest(t, req)
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
 			if tt.want != nil {
 				var got interface{}

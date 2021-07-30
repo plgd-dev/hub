@@ -115,8 +115,11 @@ func TestStore_SaveSubscription(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 	s := newStore(ctx, t, cfg)
-	defer s.Close(ctx)
-	defer s.Clear(ctx)
+	defer func() {
+		err := s.Clear(ctx)
+		require.NoError(t, err)
+		_ = s.Close(ctx)
+	}()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -183,8 +186,11 @@ func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 	s := newStore(ctx, t, cfg)
-	defer s.Close(ctx)
-	defer s.Clear(ctx)
+	defer func() {
+		err := s.Clear(ctx)
+		require.NoError(t, err)
+		_ = s.Close(ctx)
+	}()
 
 	err = s.SaveSubscription(context.Background(), sub)
 	require.NoError(t, err)
@@ -247,8 +253,11 @@ func TestStore_PopSubscription(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 	s := newStore(ctx, t, cfg)
-	defer s.Close(ctx)
-	defer s.Clear(ctx)
+	defer func() {
+		err := s.Clear(ctx)
+		require.NoError(t, err)
+		_ = s.Close(ctx)
+	}()
 
 	err = s.SaveSubscription(context.Background(), sub)
 	require.NoError(t, err)
@@ -350,8 +359,11 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 	s := newStore(ctx, t, cfg)
-	defer s.Close(ctx)
-	defer s.Clear(ctx)
+	defer func() {
+		err := s.Clear(ctx)
+		require.NoError(t, err)
+		_ = s.Close(ctx)
+	}()
 
 	err = s.SaveSubscription(context.Background(), sub)
 	require.NoError(t, err)

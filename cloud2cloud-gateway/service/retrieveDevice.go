@@ -36,7 +36,11 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter [
 	if err != nil {
 		return nil, fmt.Errorf("cannot get resource links: %w", err)
 	}
-	defer client.CloseSend()
+	defer func() {
+		if err := client.CloseSend(); err != nil {
+			log.Errorf("failed to close client send stream: %w", err)
+		}
+	}()
 
 	resourceLinks := make(map[string]schema.ResourceLinks)
 	for {
@@ -109,7 +113,11 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve resources values: %w", err)
 	}
-	defer client.CloseSend()
+	defer func() {
+		if err := client.CloseSend(); err != nil {
+			log.Errorf("failed to close client send stream: %w", err)
+		}
+	}()
 
 	allResources := make(map[string][]Representation)
 	for {
