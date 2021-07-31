@@ -14,10 +14,13 @@ func TestUnaryInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
 	svr := server.StubGrpcServer(grpc.UnaryServerInterceptorOption(m.Intercept))
 	defer svr.Close()
-	go svr.Serve()
+	go func() {
+		_ = svr.Serve()
+	}()
 
 	c := server.StubGrpcClient(svr.Addr())
-	c.TestCall(context.Background(), &server.TestRequest{})
+	_, err := c.TestCall(context.Background(), &server.TestRequest{})
+	require.Error(t, err)
 	assert.Equal(t, "/ocf.cloud.test.pb.StubService/TestCall", m.Method)
 }
 
@@ -25,14 +28,17 @@ func TestStreamInterceptor(t *testing.T) {
 	m := &MockInterceptor{}
 	svr := server.StubGrpcServer(grpc.StreamServerInterceptorOption(m.Intercept))
 	defer svr.Close()
-	go svr.Serve()
+	go func() {
+		_ = svr.Serve()
+	}()
 
 	c := server.StubGrpcClient(svr.Addr())
 	s, err := c.TestStream(context.Background())
 	require.NoError(t, err)
 	err = s.Send(&server.TestRequest{})
 	require.NoError(t, err)
-	s.Recv()
+	_, err = s.Recv()
+	require.Error(t, err)
 	assert.Equal(t, "/ocf.cloud.test.pb.StubService/TestStream", m.Method)
 }
 
