@@ -95,7 +95,7 @@ func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			log.Errorf("failed to close response body: %v", err)
+			log.Errorf("failed to close response body: %w", err)
 		}
 	}()
 	if res.StatusCode != http.StatusOK {

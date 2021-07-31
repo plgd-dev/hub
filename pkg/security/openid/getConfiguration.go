@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/kit/codec/json"
 )
 
@@ -21,7 +22,11 @@ func GetConfiguration(ctx context.Context, httpClient *http.Client, domain strin
 	if resp.Body == nil {
 		return Config{}, fmt.Errorf("invalid response GET %v response: is empty", href)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Errorf("failed to close response body stream: %w", err)
+		}
+	}()
 	var cfg Config
 	err = json.ReadFrom(resp.Body, &cfg)
 	if err != nil {

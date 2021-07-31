@@ -56,11 +56,10 @@ func (q *Queue) popQueue() func() {
 
 // Submit appends and execute task by Queue.
 func (q *Queue) Submit(tasks ...func()) error {
-	err := q.appendQueue(tasks)
-	if err != nil {
+	if err := q.appendQueue(tasks); err != nil {
 		return err
 	}
-	q.goPool.Submit(func() {
+	_ = q.goPool.Submit(func() {
 		for {
 			task := q.popQueue()
 			if task == nil {

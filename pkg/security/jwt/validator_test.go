@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,7 +110,8 @@ func TestInvalidToken(t *testing.T) {
 func newTestJwks() *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc(uri, func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, jwks)
+		_, err := io.WriteString(w, jwks)
+		log.Debugf("failed to write jwks: %v", err)
 	})
 	return httptest.NewServer(mux)
 }

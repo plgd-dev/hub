@@ -48,19 +48,24 @@ func TestNew(t *testing.T) {
 	//tmp dir
 	tmpDir, err := ioutil.TempDir("/tmp", "test")
 	require.NoError(t, err)
-	defer deleteTmpDir(tmpDir)
+	defer func() {
+		_ = deleteTmpDir(tmpDir)
+	}()
 	//ca
 	caFile, err := ioutil.TempFile(tmpDir, "ca")
 	require.NoError(t, err)
-	caFile.Close()
+	err = caFile.Close()
+	require.NoError(t, err)
 
 	crtFile, err := ioutil.TempFile(tmpDir, "crt")
 	require.NoError(t, err)
-	crtFile.Close()
+	err = crtFile.Close()
+	require.NoError(t, err)
 
 	keyFile, err := ioutil.TempFile(tmpDir, "key")
 	require.NoError(t, err)
-	keyFile.Close()
+	err = keyFile.Close()
+	require.NoError(t, err)
 
 	config := createTmpCertFiles(t, caFile.Name(), crtFile.Name(), keyFile.Name())
 
@@ -121,6 +126,6 @@ func deleteTmpCertFiles(t *testing.T, cfg client.Config) {
 	require.NoError(t, err)
 }
 
-func deleteTmpDir(tmpDir string) {
-	os.RemoveAll(tmpDir)
+func deleteTmpDir(tmpDir string) error {
+	return os.RemoveAll(tmpDir)
 }
