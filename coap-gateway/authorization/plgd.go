@@ -1,4 +1,4 @@
-package provider
+package authorization
 
 import (
 	"context"
@@ -8,11 +8,12 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
+	"github.com/plgd-dev/cloud/pkg/security/openid"
 	"golang.org/x/oauth2"
 )
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(config Config, logger log.Logger, ownerClaim, responseMode, accessType, responseType string) (*PlgdProvider, error) {
+func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, ownerClaim, responseMode, accessType, responseType string) (*PlgdProvider, error) {
 	config.ResponseMode = responseMode
 	config.AccessType = accessType
 	config.ResponseType = responseType
@@ -20,32 +21,34 @@ func NewPlgdProvider(config Config, logger log.Logger, ownerClaim, responseMode,
 	if err != nil {
 		return nil, err
 	}
-	oauth2 := config.Config.ToOAuth2()
+	oidcfg, err := openid.GetConfiguration(ctx, httpClient.HTTP(), config.Domain)
+	if err != nil {
+		return nil, err
+	}
+
+	oauth2 := config.Config.ToOAuth2(oidcfg.AuthURL, oidcfg.TokenURL)
 
 	return &PlgdProvider{
-		Config:     config,
-		OAuth2:     &oauth2,
-		HTTPClient: httpClient,
-		OwnerClaim: ownerClaim,
+		Config:      config,
+		OAuth2:      &oauth2,
+		HTTPClient:  httpClient,
+		OwnerClaim:  ownerClaim,
+		UserInfoURL: oidcfg.UserInfoURL,
 	}, nil
 }
 
 // PlgdProvider configuration with new http client
 type PlgdProvider struct {
-	Config     Config
-	OAuth2     *oauth2.Config
-	HTTPClient *client.Client
-	OwnerClaim string
-}
-
-// GetProviderName returns unique name of the provider
-func (p *PlgdProvider) GetProviderName() string {
-	return p.Config.Provider
+	Config      Config
+	OAuth2      *oauth2.Config
+	HTTPClient  *client.Client
+	OwnerClaim  string
+	UserInfoURL string
 }
 
 // AuthCodeURL returns URL for redirecting to the authentication web page
 func (p *PlgdProvider) AuthCodeURL(csrfToken string) string {
-	return p.Config.Config.AuthCodeURL(csrfToken)
+	return p.Config.Config.AuthCodeURL(csrfToken, p.OAuth2.Endpoint.AuthURL, p.OAuth2.Endpoint.TokenURL)
 }
 
 // LogoutURL to logout the user
@@ -65,9 +68,6 @@ func (p *PlgdProvider) LogoutURL(returnTo string) string {
 
 // Exchange Auth Code for Access Token via OAuth
 func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
-	if p.GetProviderName() != authorizationProvider {
-		return nil, fmt.Errorf("unsupported authorization provider(%v), only (%v) is supported", authorizationProvider, p.GetProviderName())
-	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 
 	token, err := p.OAuth2.Exchange(ctx, authorizationCode)
@@ -76,7 +76,7 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 	}
 
 	oauthClient := p.OAuth2.Client(ctx, token)
-	resp, err := oauthClient.Get(p.OAuth2.Endpoint.AuthURL + "/userinfo") // todo parse root path
+	resp, err := oauthClient.Get(p.UserInfoURL)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 	}
 
 	oauthClient := p.OAuth2.Client(ctx, token)
-	resp, err := oauthClient.Get(p.OAuth2.Endpoint.AuthURL + "/userinfo") // todo parse root path
+	resp, err := oauthClient.Get(p.UserInfoURL)
 	if err != nil {
 		return nil, err
 	}

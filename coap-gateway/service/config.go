@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/cloud/coap-gateway/provider"
+	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -65,7 +65,7 @@ type COAPConfig struct {
 	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
 	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
 	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
-	Authorization            provider.Config         `yaml:"authorization" json:"authorization"`
+	Authorization            authorization.Config    `yaml:"authorization" json:"authorization"`
 }
 
 func (c *COAPConfig) Validate() error {

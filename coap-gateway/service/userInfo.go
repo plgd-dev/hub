@@ -20,7 +20,7 @@ func getUserInfo(ctx context.Context, service *Service, accessToken string) (use
 		AccessToken: accessToken,
 		TokenType:   "bearer",
 	})
-	resp, err := oauthClient.Get(service.provider.OAuth2.Endpoint.AuthURL + "/userinfo")
+	resp, err := oauthClient.Get(service.provider.UserInfoURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed oauth userinfo request: %v", err)
 	}
