@@ -19,12 +19,10 @@ apis:
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
     authorization:
-      provider: "plgd"
       clientID: ""
       clientSecret: ""
       scopes: []
-      authorizationURL: ""
-      tokenURL: ""
+      domain: ""
       redirectURL: ""
       http:
         maxIdleConns: 16

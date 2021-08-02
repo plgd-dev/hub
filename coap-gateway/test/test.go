@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/test/config"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
-	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,10 +31,8 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = false
 	cfg.APIs.COAP.TLS.Embedded.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
 	cfg.APIs.COAP.TLS.Embedded.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")
-	cfg.APIs.COAP.Authorization.Provider = "plgd"
+	cfg.APIs.COAP.Authorization.Domain = "https://" + config.OAUTH_SERVER_HOST
 	cfg.APIs.COAP.Authorization.ClientID = oauthService.ClientTest
-	cfg.APIs.COAP.Authorization.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
-	cfg.APIs.COAP.Authorization.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
 	cfg.APIs.COAP.Authorization.HTTP = config.MakeHttpClientConfig()
 	cfg.Clients.AuthServer.OwnerClaim = "sub"
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)

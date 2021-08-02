@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	"github.com/plgd-dev/cloud/coap-gateway/provider"
 	"github.com/plgd-dev/cloud/pkg/log"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -45,7 +45,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 }
 
 /// Get data for sign up response
-func getSignUpContent(token *provider.Token, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
+func getSignUpContent(token *authorization.Token, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
 		AccessToken:  token.AccessToken,
 		UserID:       token.Owner,

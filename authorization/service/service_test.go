@@ -122,14 +122,6 @@ func newTestDevice() *persistence.AuthorizedDevice {
 	}
 }
 
-func retrieveDevice(t *testing.T, p Persistence, deviceID, userID string) (d *persistence.AuthorizedDevice, ok bool) {
-	tx := p.NewTransaction(context.Background())
-	defer tx.Close()
-	d, ok, err := tx.Retrieve(deviceID, userID)
-	assert.Nil(t, err)
-	return
-}
-
 func persistDevice(t *testing.T, p Persistence, d *persistence.AuthorizedDevice) {
 	tx := p.NewTransaction(context.Background())
 	defer tx.Close()
