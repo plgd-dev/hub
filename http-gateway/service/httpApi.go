@@ -168,7 +168,7 @@ func resourceEventsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 // NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) *http.Server {
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor) (*http.Server, error) {
 	r0 := router.NewRouter()
 	r0.Use(loggingMiddleware)
 	r0.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
@@ -193,7 +193,9 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceEventsMatcher).HandlerFunc(requestHandler.getEvents)
 
 	// register grpc-proxy handler
-	pb.RegisterGrpcGatewayHandlerClient(context.Background(), requestHandler.mux, requestHandler.client.GrpcGatewayClient())
+	if err := pb.RegisterGrpcGatewayHandlerClient(context.Background(), requestHandler.mux, requestHandler.client.GrpcGatewayClient()); err != nil {
+		return nil, fmt.Errorf("failed to register grpc-gateway handler: %w", err)
+	}
 
 	// ws grpc-proxy
 	ws := wsproxy.WebsocketProxy(requestHandler.mux,
@@ -241,9 +243,11 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 				w.Header().Set(k, strings.Join(v, ""))
 			}
 			w.WriteHeader(c.Code)
-			c.Body.WriteTo(w)
+			if _, err := c.Body.WriteTo(w); err != nil {
+				log.Errorf("failed to write response body: %w", err)
+			}
 		}))
 	}
 
-	return &http.Server{Handler: r0}
+	return &http.Server{Handler: r0}, nil
 }

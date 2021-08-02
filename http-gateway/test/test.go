@@ -57,10 +57,10 @@ func New(t *testing.T, cfg service.Config) func() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		s.Serve()
+		_ = s.Serve()
 	}()
 	return func() {
-		s.Shutdown()
+		_ = s.Shutdown()
 		wg.Wait()
 	}
 }

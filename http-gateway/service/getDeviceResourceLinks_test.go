@@ -80,7 +80,9 @@ func TestRequestHandler_GetDeviceResourceLinks(t *testing.T) {
 			}
 			resp, err := c.Do(request)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
 			var links []*events.ResourceLinksPublished
 			for {

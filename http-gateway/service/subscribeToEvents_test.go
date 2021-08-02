@@ -213,7 +213,9 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			}
 			wsConn, _, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events?accept=%v", testCfg.HTTP_GW_HOST, tt.args.accept), header)
 			require.NoError(t, err)
-			defer wsConn.Close()
+			defer func() {
+				_ = wsConn.Close()
+			}()
 
 			send := func(req *pb.SubscribeToEvents) error {
 				marshaler := runtime.JSONPb{}

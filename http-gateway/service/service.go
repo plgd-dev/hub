@@ -75,8 +75,13 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
 	requestHandler := NewRequestHandler(&config, client)
 
+	http, err := NewHTTP(requestHandler, auth)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create http server: %w", err)
+	}
+
 	server := Server{
-		server:         NewHTTP(requestHandler, auth),
+		server:         http,
 		config:         &config,
 		requestHandler: requestHandler,
 		listener:       listener,
