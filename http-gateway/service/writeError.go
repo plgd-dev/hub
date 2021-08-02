@@ -61,5 +61,8 @@ func writeError(w netHttp.ResponseWriter, err error) {
 		log.Errorf("cannot marshal grpc error(%v): %v", err, err2)
 		return
 	}
-	fmt.Fprintln(w, string(errStr))
+	if _, err = fmt.Fprintln(w, string(errStr)); err != nil {
+		log.Errorf("failed to write grpc error(%v): %v", errStr, err)
+		return
+	}
 }

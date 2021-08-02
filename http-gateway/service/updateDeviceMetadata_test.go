@@ -121,7 +121,9 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	v := NewContentChangedFilter()
 	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject(deviceID), v)
 	require.NoError(t, err)
-	defer obs.Close()
+	defer func() {
+		_ = obs.Close()
+	}()
 
 	updateDeviceShadowSynchronization := func(ctx context.Context, in *pb.UpdateDeviceMetadataRequest) (*pb.UpdateDeviceMetadataResponse, error) {
 		data, err := protojson.Marshal(in)
@@ -137,7 +139,9 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 		}
 		resp, err := c.Do(request)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		var got pb.UpdateDeviceMetadataResponse
 		err = Unmarshal(resp.StatusCode, resp.Body, &got)

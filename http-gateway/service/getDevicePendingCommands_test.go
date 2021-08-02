@@ -412,7 +412,9 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			}
 			resp, err := c.Do(request)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
 			var values []*pb.PendingCommand
 

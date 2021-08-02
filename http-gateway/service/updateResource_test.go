@@ -62,7 +62,9 @@ func updateResource(ctx context.Context, req *pb.UpdateResourceRequest, token, a
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	var got pb.UpdateResourceResponse
 	err = Unmarshal(resp.StatusCode, resp.Body, &got)

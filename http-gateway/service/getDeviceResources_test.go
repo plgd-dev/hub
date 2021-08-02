@@ -245,7 +245,9 @@ func TestRequestHandler_GetDeviceResources(t *testing.T) {
 			}
 			resp, err := c.Do(request)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
 			values := make([]*pb.Resource, 0, 1)
 			for {

@@ -51,7 +51,9 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 			}
 			resp, err := c.Do(request)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
 			var got pb.ClientConfigurationResponse
 			err = Unmarshal(resp.StatusCode, resp.Body, &got)
