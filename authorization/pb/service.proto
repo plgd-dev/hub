@@ -7,8 +7,6 @@ import "github.com/plgd-dev/cloud/authorization/pb/auth.proto";
 option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
 
 service AuthorizationService {
-	rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse) {}
-
 	rpc GetUserDevices (GetUserDevicesRequest) returns (stream UserDevice) {}
 
 	rpc AddDevice(AddDeviceRequest) returns (AddDeviceResponse) {}

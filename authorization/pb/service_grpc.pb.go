@@ -18,7 +18,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthorizationServiceClient interface {
-	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error)
 	AddDevice(ctx context.Context, in *AddDeviceRequest, opts ...grpc.CallOption) (*AddDeviceResponse, error)
 	DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error)
@@ -30,15 +29,6 @@ type authorizationServiceClient struct {
 
 func NewAuthorizationServiceClient(cc grpc.ClientConnInterface) AuthorizationServiceClient {
 	return &authorizationServiceClient{cc}
-}
-
-func (c *authorizationServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error) {
-	out := new(RefreshTokenResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.auth.pb.AuthorizationService/RefreshToken", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *authorizationServiceClient) GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error) {
@@ -95,7 +85,6 @@ func (c *authorizationServiceClient) DeleteDevice(ctx context.Context, in *Delet
 // All implementations must embed UnimplementedAuthorizationServiceServer
 // for forward compatibility
 type AuthorizationServiceServer interface {
-	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	GetUserDevices(*GetUserDevicesRequest, AuthorizationService_GetUserDevicesServer) error
 	AddDevice(context.Context, *AddDeviceRequest) (*AddDeviceResponse, error)
 	DeleteDevice(context.Context, *DeleteDeviceRequest) (*DeleteDeviceResponse, error)
@@ -106,9 +95,6 @@ type AuthorizationServiceServer interface {
 type UnimplementedAuthorizationServiceServer struct {
 }
 
-func (UnimplementedAuthorizationServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
-}
 func (UnimplementedAuthorizationServiceServer) GetUserDevices(*GetUserDevicesRequest, AuthorizationService_GetUserDevicesServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetUserDevices not implemented")
 }
@@ -129,24 +115,6 @@ type UnsafeAuthorizationServiceServer interface {
 
 func RegisterAuthorizationServiceServer(s grpc.ServiceRegistrar, srv AuthorizationServiceServer) {
 	s.RegisterService(&AuthorizationService_ServiceDesc, srv)
-}
-
-func _AuthorizationService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RefreshTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthorizationServiceServer).RefreshToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/ocf.cloud.auth.pb.AuthorizationService/RefreshToken",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).RefreshToken(ctx, req.(*RefreshTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthorizationService_GetUserDevices_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -213,10 +181,6 @@ var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.auth.pb.AuthorizationService",
 	HandlerType: (*AuthorizationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "RefreshToken",
-			Handler:    _AuthorizationService_RefreshToken_Handler,
-		},
 		{
 			MethodName: "AddDevice",
 			Handler:    _AuthorizationService_AddDevice_Handler,
