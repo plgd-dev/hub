@@ -26,14 +26,15 @@ func Test_refreshTokenHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
-	if co == nil {
-		return
-	}
-	defer co.Close()
-
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
+			co := testCoapDial(t, testCfg.GW_HOST)
+			if co == nil {
+				return
+			}
+			defer func() {
+				_ = co.Close()
+			}()
 			testPostHandler(t, uri.RefreshToken, test, co)
 		}
 		t.Run(test.name, tf)
