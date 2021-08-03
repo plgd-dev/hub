@@ -4,20 +4,6 @@ package ocf.cloud.auth.pb;
 
 option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
 
-// https://github.com/openconnectivityfoundation/security/blob/master/oic.r.tokenrefresh.raml#L27
-message RefreshTokenRequest {
-    string device_id = 1;
-    string user_id = 2;
-    string refresh_token = 3;
-}
-
-// https://github.com/openconnectivityfoundation/security/blob/master/oic.r.tokenrefresh.raml#L40
-message RefreshTokenResponse {
-    string access_token = 1;
-    string refresh_token = 2;
-    int64 valid_until = 3;
-}
-
 message GetUserDevicesRequest {
     repeated string user_ids_filter = 1;
     repeated string device_ids_filter = 2;
