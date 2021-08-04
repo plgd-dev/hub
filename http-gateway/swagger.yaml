@@ -142,6 +142,8 @@ paths:
       security:
         - oauth2:
           - 'plgd.devices'
+      parameters:
+        - $ref: '#/components/parameters/timeToLive'
       requestBody:
         description: 'Create request as defined by the Open Connectivity Foundation.'
         content:
@@ -199,6 +201,8 @@ paths:
       security:
         - oauth2:
           - 'plgd.devices'
+      parameters:
+        - $ref: '#/components/parameters/timeToLive'
       responses:
         200:
           description: 'Confirmation event about successful resource deletion.'
@@ -312,7 +316,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/interface'
         - $ref: '#/components/parameters/shadow'
-        - $ref: '#/components/parameters/validUntil'
+        - $ref: '#/components/parameters/timeToLive'
       responses:
         200:
           description: 'Resource content.'
@@ -340,7 +344,7 @@ paths:
           - 'plgd.devices'
       parameters:
         - $ref: '#/components/parameters/interface'
-        - $ref: '#/components/parameters/validUntil'
+        - $ref: '#/components/parameters/timeToLive'
       requestBody:
         description: 'Updated content of the resource.'
         content:
@@ -1380,10 +1384,10 @@ components:
       schema:
         type: integer
         format: int64
-    validUntil:
-      name: validUntil
+    timeToLive:
+      name: timeToLive
       in: query
-      description: 'Command expiration defined as Unix timestamp in nanoseconds. 0 means forever.'
+      description: 'Command expiration in nanoseconds. 0 means forever and 100ms is minimal value.'
       schema:
         type: integer
         format: int64

@@ -690,7 +690,7 @@ type UpdateResourceRequest struct {
 	CorrelationId     string           `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	Content           *Content         `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	ResourceInterface string           `protobuf:"bytes,4,opt,name=resource_interface,json=resourceInterface,proto3" json:"resource_interface,omitempty"`
-	TimeToLive        int64            `protobuf:"varint,5,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive        int64            `protobuf:"varint,5,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 	CommandMetadata   *CommandMetadata `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
 }
 
@@ -957,7 +957,7 @@ type RetrieveResourceRequest struct {
 	ResourceId        *ResourceId      `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	CorrelationId     string           `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	ResourceInterface string           `protobuf:"bytes,3,opt,name=resource_interface,json=resourceInterface,proto3" json:"resource_interface,omitempty"`
-	TimeToLive        int64            `protobuf:"varint,4,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive        int64            `protobuf:"varint,4,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 	CommandMetadata   *CommandMetadata `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
 }
 
@@ -1216,7 +1216,7 @@ type DeleteResourceRequest struct {
 
 	ResourceId      *ResourceId      `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	CorrelationId   string           `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
-	TimeToLive      int64            `protobuf:"varint,3,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive      int64            `protobuf:"varint,3,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 	CommandMetadata *CommandMetadata `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
 }
 
@@ -1469,7 +1469,7 @@ type CreateResourceRequest struct {
 	ResourceId      *ResourceId      `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	CorrelationId   string           `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	Content         *Content         `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
-	TimeToLive      int64            `protobuf:"varint,4,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive      int64            `protobuf:"varint,4,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 	CommandMetadata *CommandMetadata `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
 }
 
@@ -1787,7 +1787,7 @@ type UpdateDeviceMetadataRequest struct {
 	//	*UpdateDeviceMetadataRequest_Status
 	//	*UpdateDeviceMetadataRequest_ShadowSynchronization
 	Update          isUpdateDeviceMetadataRequest_Update `protobuf_oneof:"update"`
-	TimeToLive      int64                                `protobuf:"varint,5,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive      int64                                `protobuf:"varint,5,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 	CommandMetadata *CommandMetadata                     `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
 }
 

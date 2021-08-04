@@ -327,7 +327,7 @@ type GetResourceFromDeviceRequest struct {
 
 	ResourceId        *commands.ResourceId `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	ResourceInterface string               `protobuf:"bytes,2,opt,name=resource_interface,json=resourceInterface,proto3" json:"resource_interface,omitempty"`
-	TimeToLive        int64                `protobuf:"varint,3,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive        int64                `protobuf:"varint,3,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 func (x *GetResourceFromDeviceRequest) Reset() {
@@ -555,7 +555,7 @@ type UpdateResourceRequest struct {
 
 	ResourceId        *commands.ResourceId `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	ResourceInterface string               `protobuf:"bytes,3,opt,name=resource_interface,json=resourceInterface,proto3" json:"resource_interface,omitempty"`
-	TimeToLive        int64                `protobuf:"varint,4,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive        int64                `protobuf:"varint,4,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 	Content           *Content             `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 }
 
@@ -1279,7 +1279,7 @@ type DeleteResourceRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	ResourceId *commands.ResourceId `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
-	TimeToLive int64                `protobuf:"varint,2,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive int64                `protobuf:"varint,2,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 func (x *DeleteResourceRequest) Reset() {
@@ -1382,7 +1382,7 @@ type CreateResourceRequest struct {
 
 	ResourceId *commands.ResourceId `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	Content    *Content             `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	TimeToLive int64                `protobuf:"varint,3,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal valus is 100000000 (100ms).
+	TimeToLive int64                `protobuf:"varint,3,opt,name=timeToLive,proto3" json:"timeToLive,omitempty"` // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 func (x *CreateResourceRequest) Reset() {
