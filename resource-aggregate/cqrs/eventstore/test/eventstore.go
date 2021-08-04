@@ -114,6 +114,11 @@ func (s *MockEventStore) RemoveUpToVersion(ctx context.Context, queries []events
 	return errors.New("not supported")
 }
 
+// Delete aggregates events for specific group ids.
+func (s *MockEventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuery) ([]string, error) {
+	return nil, errors.New("not supported")
+}
+
 type iter struct {
 	idx    int
 	events []eventstore.EventUnmarshaler
