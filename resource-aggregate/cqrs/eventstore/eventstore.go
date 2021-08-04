@@ -24,6 +24,11 @@ type GetEventsQuery struct {
 	AggregateID string //filter to certain aggregateID, optional
 }
 
+// Delete documents with given group id
+type DeleteQuery struct {
+	GroupID string //filter by group ID, required
+}
+
 type SaveStatus int
 
 const (
@@ -49,4 +54,5 @@ type EventStore interface {
 	LoadFromVersion(ctx context.Context, queries []VersionQuery, eventHandler Handler) error
 	LoadFromSnapshot(ctx context.Context, queries []SnapshotQuery, eventHandler Handler) error
 	RemoveUpToVersion(ctx context.Context, queries []VersionQuery) error
+	Delete(ctx context.Context, queries []DeleteQuery) ([]string, error)
 }

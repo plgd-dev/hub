@@ -33,7 +33,6 @@ func TestEventStore(t *testing.T) {
 
 	ctx := context.Background()
 	store, err := NewTestEventStore(ctx, logger)
-
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	defer func() {

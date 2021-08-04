@@ -37,7 +37,7 @@ const (
 	getEventsResourceCount = 2000
 )
 
-func addEventsToDB(t *testing.T, ctx context.Context, store *mongodb.EventStore) int {
+func addEventsForGetEventsToDB(t *testing.T, ctx context.Context, store *mongodb.EventStore) int {
 	const eventCount = 100000
 	var resourceVersion [getEventsResourceCount]uint64
 	var resourceTimestamp [getEventsResourceCount]int64
@@ -63,7 +63,9 @@ func addEventsToDB(t *testing.T, ctx context.Context, store *mongodb.EventStore)
 	}
 
 	for _, v := range resourceEvents {
-		addEvents(t, ctx, store, v...)
+		saveStatus, err := store.Save(ctx, v...)
+		require.NoError(t, err)
+		require.Equal(t, eventstore.Ok, saveStatus)
 	}
 
 	return eventCount
@@ -72,12 +74,6 @@ func addEventsToDB(t *testing.T, ctx context.Context, store *mongodb.EventStore)
 func getEventsByTimestamp(t *testing.T, ctx context.Context, store *mongodb.EventStore, queries []eventstore.GetEventsQuery, timestamp int64) {
 	err := store.GetEvents(ctx, queries, timestamp, &dummyEventHandler{})
 	require.NoError(t, err)
-}
-
-func addEvents(t *testing.T, ctx context.Context, store *mongodb.EventStore, events ...eventstore.Event) {
-	saveStatus, err := store.Save(ctx, events...)
-	require.NoError(t, err)
-	require.Equal(t, eventstore.Ok, saveStatus)
 }
 
 type getEventsQueryGenerator func() []eventstore.GetEventsQuery
@@ -104,7 +100,7 @@ func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
 		require.NoError(t, err)
 	}()
 
-	eventCount := addEventsToDB(t, ctx, store)
+	eventCount := addEventsForGetEventsToDB(t, ctx, store)
 
 	rand.Seed(time.Now().UnixNano())
 	start := time.Now()
