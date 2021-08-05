@@ -25,7 +25,9 @@ func Test_clientCreateHandler(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
+	defer func() {
+		_ = co.Close()
+	}()
 
 	type args struct {
 		href          string

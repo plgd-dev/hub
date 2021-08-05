@@ -116,7 +116,9 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
+	defer func() {
+		_ = co.Close()
+	}()
 
 	testSignUpIn(t, CertIdentity, co)
 
@@ -146,7 +148,9 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
+	defer func() {
+		_ = co.Close()
+	}()
 
 	testSignUpIn(t, CertIdentity, co)
 
@@ -194,7 +198,9 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
+	defer func() {
+		_ = co.Close()
+	}()
 
 	testSignUpIn(t, CertIdentity, co)
 

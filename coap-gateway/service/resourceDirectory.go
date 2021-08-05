@@ -97,9 +97,12 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	client.server.taskQueue.Submit(func() {
+	if err := client.server.taskQueue.Submit(func() {
 		client.observeResources(req.Context, publishedResources)
-	})
+	}); err != nil {
+		client.logAndWriteErrorResponse(fmt.Errorf("unable to observe published resources for device %v: %w", authCtx.GetDeviceID(), err), coapCodes.InternalServerError, req.Token)
+		return
+	}
 
 	accept := coapconv.GetAccept(req.Options)
 	encode, err := coapconv.GetEncoder(accept)

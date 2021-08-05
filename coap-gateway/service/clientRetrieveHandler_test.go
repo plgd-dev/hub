@@ -26,7 +26,9 @@ func Test_clientRetrieveHandler(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
+	defer func() {
+		_ = co.Close()
+	}()
 
 	type args struct {
 		path  string
