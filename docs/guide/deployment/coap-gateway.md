@@ -161,7 +161,7 @@ OAuth2.0 Client is used to issuing an authorization code used by the Onboarding 
 | `api.coap.authorization.client.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `api.coap.authorization.client.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
 | `api.coap.authorization.client.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `api.coap.authorization.client.domain` | string | `Domain of OAuth provider.` | `""` |
+| `api.coap.authorization.client.authority` | string | `Endpoint of OAuth provider.` | `""` |
 | `api.coap.authorization.client.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
 | `api.coap.authorization.client.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.coap.authorization.client.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |

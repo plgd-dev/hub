@@ -612,7 +612,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
-  .apis.coap.authorization.domain = \"${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.authority = \"${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
   .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
@@ -650,7 +650,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
-  .apis.coap.authorization.domain = \"${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.authority = \"${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
   .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
