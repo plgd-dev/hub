@@ -21,7 +21,7 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, owne
 	if err != nil {
 		return nil, err
 	}
-	oidcfg, err := openid.GetConfiguration(ctx, httpClient.HTTP(), config.Domain)
+	oidcfg, err := openid.GetConfiguration(ctx, httpClient.HTTP(), config.Authority)
 	if err != nil {
 		return nil, err
 	}

@@ -31,7 +31,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = false
 	cfg.APIs.COAP.TLS.Embedded.CertFile = os.Getenv("TEST_COAP_GW_CERT_FILE")
 	cfg.APIs.COAP.TLS.Embedded.KeyFile = os.Getenv("TEST_COAP_GW_KEY_FILE")
-	cfg.APIs.COAP.Authorization.Domain = "https://" + config.OAUTH_SERVER_HOST
+	cfg.APIs.COAP.Authorization.Authority = "https://" + config.OAUTH_SERVER_HOST
 	cfg.APIs.COAP.Authorization.ClientID = oauthService.ClientTest
 	cfg.APIs.COAP.Authorization.HTTP = config.MakeHttpClientConfig()
 	cfg.Clients.AuthServer.OwnerClaim = "sub"
