@@ -1393,7 +1393,7 @@ components:
         type: integer
         format: int64
         default: 0
-        min: 100000000
+        minimum: 100000000
   responses:
     ok:
       description: Content is stored in body.
