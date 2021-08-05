@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"reflect"
@@ -44,9 +45,10 @@ type input struct {
 type output input
 
 type testEl struct {
-	name string
-	in   input
-	out  output
+	name                 string
+	in                   input
+	out                  output
+	allowContextCanceled bool
 }
 
 func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
@@ -185,7 +187,12 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 		req.AddQuery(q)
 	}
 	resp, err := co.Do(req)
-	require.NoError(t, err)
+	if err != nil {
+		if errors.Is(err, context.Canceled) && test.allowContextCanceled {
+			return
+		}
+		require.NoError(t, err)
+	}
 	testValidateResp(t, test, resp)
 }
 
@@ -209,7 +216,7 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 						Type:          []string{message.TextPlain.String()},
 					},
 				},
-			}, nil}},
+			}, nil}, false},
 		{"publishResourceB", input{codes.POST, `{ "di":"` + CertIdentity + `", "links":[ { "di":"` + CertIdentity + `", "href":"` + TestBResourceHref + `", "rt":["` + TestBResourceType + `"], "type":["` + message.TextPlain.String() + `"] } ], "ttl":12345}`, nil},
 			output{codes.Changed, TestWkRD{
 				DeviceID:         CertIdentity,
@@ -223,7 +230,7 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 						Type:          []string{message.TextPlain.String()},
 					},
 				},
-			}, nil}},
+			}, nil}, false},
 	}
 	for _, tt := range publishResEl {
 		testPostHandler(t, uri.ResourceDirectory, tt, co)
