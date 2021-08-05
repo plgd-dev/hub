@@ -2,18 +2,22 @@
     "cSpell.words": [
         "Iotivity"
     ],
-    "go.testEnvVars": {       
+    "go.testFlags": [
+        "-race",
+        "-v",
+    ],
+    "go.testEnvVars": {
         "DIAL_TYPE": "file",
-		"DIAL_FILE_CA_POOL": "${workspaceFolder}/.tmp/certs/root_ca.crt",
-		"DIAL_FILE_CERT_DIR_PATH": "${workspaceFolder}/.tmp/certs",
-		"DIAL_FILE_CERT_NAME": "http.crt",
-		"DIAL_FILE_CERT_KEY_NAME": "http.key",
-		"LISTEN_TYPE": "file",
-		"LISTEN_FILE_CA_POOL": "${workspaceFolder}/.tmp/certs/root_ca.crt",
-		"LISTEN_FILE_CERT_DIR_PATH": "${workspaceFolder}/.tmp/certs",
-		"LISTEN_FILE_CERT_NAME": "http.crt",
-		"LISTEN_FILE_CERT_KEY_NAME": "http.key",
-		"TEST_COAP_GW_CERT_FILE": "${workspaceFolder}/.tmp/certs/coap.crt",
+        "DIAL_FILE_CA_POOL": "${workspaceFolder}/.tmp/certs/root_ca.crt",
+        "DIAL_FILE_CERT_DIR_PATH": "${workspaceFolder}/.tmp/certs",
+        "DIAL_FILE_CERT_NAME": "http.crt",
+        "DIAL_FILE_CERT_KEY_NAME": "http.key",
+        "LISTEN_TYPE": "file",
+        "LISTEN_FILE_CA_POOL": "${workspaceFolder}/.tmp/certs/root_ca.crt",
+        "LISTEN_FILE_CERT_DIR_PATH": "${workspaceFolder}/.tmp/certs",
+        "LISTEN_FILE_CERT_NAME": "http.crt",
+        "LISTEN_FILE_CERT_KEY_NAME": "http.key",
+        "TEST_COAP_GW_CERT_FILE": "${workspaceFolder}/.tmp/certs/coap.crt",
         "TEST_COAP_GW_KEY_FILE": "${workspaceFolder}/.tmp/certs/coap.key",
         "TEST_ROOT_CA_CERT": "${workspaceFolder}/.tmp/certs/root_ca.crt",
         "TEST_ROOT_CA_KEY": "${workspaceFolder}/.tmp/certs/root_ca.key",

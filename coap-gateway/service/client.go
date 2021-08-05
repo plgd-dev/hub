@@ -183,18 +183,24 @@ func (client *Client) getResourceContent(ctx context.Context, deviceID, href str
 		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 		return
 	}
-	client.server.taskQueue.Submit(func() {
+	err = client.server.taskQueue.Submit(func() {
 		defer pool.ReleaseMessage(resp)
-		err = client.notifyContentChanged(deviceID, href, resp)
+		err := client.notifyContentChanged(deviceID, href, resp)
 		if err != nil {
 			// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 			log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
-			client.Close()
+			if err := client.Close(); err != nil {
+				log.Errorf("failed to close client connection on get resource /%v%v: %w", deviceID, href, err)
+			}
 		}
 		if resp.Code() == codes.NotFound {
 			client.unpublishResourceLinks(client.getUserAuthorizedContext(ctx), []string{href})
 		}
 	})
+	if err != nil {
+		log.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
+		return
+	}
 }
 
 func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID string, isObservable bool, obsRes *observedResource) {
@@ -204,18 +210,23 @@ func (client *Client) addObservedResourceLocked(ctx context.Context, deviceID st
 	if isObservable {
 		obs, err := client.coapConn.Observe(ctx, obsRes.href, func(req *pool.Message) {
 			req.Hijack()
-			client.server.taskQueue.Submit(func() {
+			err2 := client.server.taskQueue.Submit(func() {
 				err := client.notifyContentChanged(deviceID, obsRes.href, req)
 				defer pool.ReleaseMessage(req)
 				if err != nil {
 					// cloud is unsynchronized against device. To recover cloud state, client need to reconnect to cloud.
 					log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err)
-					client.Close()
+					if err := client.Close(); err != nil {
+						log.Errorf("failed to close client connection on observe resource /%v%v: %w", deviceID, obsRes.href, err)
+					}
 				}
 				if req.Code() == codes.NotFound {
 					client.unpublishResourceLinks(client.getUserAuthorizedContext(req.Context()), []string{obsRes.href})
 				}
 			})
+			if err2 != nil {
+				log.Errorf("cannot observe resource /%v%v: %w", deviceID, obsRes.href, err2)
+			}
 		}, message.Option{
 			ID:    message.URIQuery,
 			Value: []byte("if=" + OCFBaselineInterface),
@@ -284,7 +295,9 @@ func (client *Client) popObservation(deviceID string, instanceID int64) *tcp.Obs
 func (client *Client) cancelResourcesObservations(ctx context.Context, hrefs []string) {
 	observartions := client.popTrackedObservation(hrefs)
 	for _, obs := range observartions {
-		obs.Cancel(ctx)
+		if err := obs.Cancel(ctx); err != nil {
+			log.Errorf("cannot cancel resource observation: %w", err)
+		}
 	}
 }
 
@@ -335,10 +348,12 @@ func (client *Client) popObservedResourcesLocked() map[string]map[int64]*observe
 // cleanObservedResourcesLocked remove all device pbRA observation requested by cloud.
 func (client *Client) cleanObservedResourcesLocked() {
 	for _, resources := range client.popObservedResourcesLocked() {
-		for _, obs := range resources {
+		for k, obs := range resources {
 			v := obs.PopObservation()
 			if v != nil {
-				v.Cancel(client.coapConn.Context())
+				if err := v.Cancel(client.coapConn.Context()); err != nil {
+					log.Errorf("cannot cancel resource('%v') observation: %w", k, err)
+				}
 			}
 		}
 	}
@@ -360,7 +375,7 @@ func (client *Client) cancelResourceSubscriptions(wantWait bool) {
 		}
 		wait, err := o.Cancel()
 		if err != nil {
-			log.Errorf("cannot cancel resource subscription: %v", err)
+			log.Errorf("cannot cancel resource subscription: %w", err)
 		} else if wantWait {
 			wait()
 		}
@@ -375,11 +390,12 @@ func (client *Client) replaceDeviceSubscriber(deviceSubscriber *grpcClient.Devic
 	return c
 }
 
-func (client *Client) closeDeviceSubscriber() {
+func (client *Client) closeDeviceSubscriber() error {
 	deviceSubscriber := client.replaceDeviceSubscriber(nil)
 	if deviceSubscriber != nil {
-		deviceSubscriber.Close()
+		return deviceSubscriber.Close()
 	}
+	return nil
 }
 
 func (client *Client) CleanUp() *authorizationContext {
@@ -391,8 +407,9 @@ func (client *Client) CleanUp() *authorizationContext {
 	defer client.observedResourcesLock.Unlock()
 	client.cleanObservedResourcesLocked()
 	client.cancelResourceSubscriptions(false)
-
-	client.closeDeviceSubscriber()
+	if err := client.closeDeviceSubscriber(); err != nil {
+		log.Errorf("cleanUp error: failed to close device %v connection: %w", authCtx.GetDeviceID(), err)
+	}
 
 	return client.SetAuthorizationContext(nil)
 }
@@ -479,7 +496,7 @@ func (client *Client) sendErrorConfirmResourceUpdate(deviceID, href, userID, cor
 	request := coapconv.NewConfirmResourceUpdateRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceUpdate(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource update: %v", err)
+		log.Errorf("cannot send error via confirm resource update: %w", err)
 	}
 }
 
@@ -488,7 +505,9 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 	if err != nil {
 		err := fmt.Errorf("cannot update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		client.sendErrorConfirmResourceUpdate(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.Forbidden, err)
-		client.Close()
+		if err2 := client.Close(); err2 != nil {
+			log.Errorf("failed to close client connection on update resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
+		}
 		return err
 	}
 	if event.GetResourceId().GetHref() == commands.StatusHref {
@@ -548,7 +567,7 @@ func (client *Client) UpdateResource(ctx context.Context, event *events.Resource
 func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource retrieve: %v", err)
+		log.Errorf("cannot send error via confirm resource retrieve: %w", err)
 		return
 	}
 	resp := pool.AcquireMessage(ctx)
@@ -559,7 +578,7 @@ func (client *Client) sendErrorConfirmResourceRetrieve(deviceID, href, userID, c
 	request := coapconv.NewConfirmResourceRetrieveRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceRetrieve(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error confirm resource retrieve: %v", err)
+		log.Errorf("cannot send error confirm resource retrieve: %w", err)
 	}
 }
 
@@ -568,7 +587,9 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 	if err != nil {
 		err := fmt.Errorf("cannot retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		client.sendErrorConfirmResourceRetrieve(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.Forbidden, err)
-		client.Close()
+		if err2 := client.Close(); err2 != nil {
+			log.Errorf("failed to close client connection on retrieve resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
+		}
 		return err
 	}
 
@@ -630,7 +651,7 @@ func (client *Client) RetrieveResource(ctx context.Context, event *events.Resour
 func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, correlationID string, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource delete: %v", err)
+		log.Errorf("cannot send error via confirm resource delete: %w", err)
 		return
 	}
 
@@ -642,7 +663,7 @@ func (client *Client) sendErrorConfirmResourceDelete(deviceID, href, userID, cor
 	request := coapconv.NewConfirmResourceDeleteRequest(commands.NewResourceID(deviceID, href), correlationID, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceDelete(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource delete: %v", err)
+		log.Errorf("cannot send error via confirm resource delete: %w", err)
 	}
 }
 
@@ -651,7 +672,9 @@ func (client *Client) DeleteResource(ctx context.Context, event *events.Resource
 	if err != nil {
 		err := fmt.Errorf("cannot delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		client.sendErrorConfirmResourceDelete(event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.Forbidden, err)
-		client.Close()
+		if err2 := client.Close(); err2 != nil {
+			log.Errorf("failed to close client connection on delete resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
+		}
 		return err
 	}
 
@@ -728,7 +751,7 @@ func (client *Client) publishResourceLinks(ctx context.Context, links schema.Res
 
 	resp, err := client.server.raClient.PublishResourceLinks(ctx, &request)
 	if err != nil {
-		return nil, fmt.Errorf("error occured during resource links publish %w", err)
+		return nil, fmt.Errorf("error occurred during resource links publish %w", err)
 	}
 
 	return resp.GetPublishedResources(), nil
@@ -766,7 +789,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 	if err != nil {
 		// unpublish resource is not critical -> resource can be still accessible
 		// next resource update will return 'not found' what triggers a publish again
-		log.Errorf("error occured during resource links unpublish for device %v: %w", authCtx.GetDeviceID(), err)
+		log.Errorf("error occurred during resource links unpublish for device %v: %w", authCtx.GetDeviceID(), err)
 	}
 
 	client.cancelResourcesObservations(ctx, resp.UnpublishedHrefs)
@@ -775,7 +798,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.ResourceId, userID, correlationID string, code codes.Code, errToSend error) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource create: %v", err)
+		log.Errorf("cannot send error via confirm resource create: %w", err)
 		return
 	}
 
@@ -787,7 +810,7 @@ func (client *Client) sendErrorConfirmResourceCreate(resourceID *commands.Resour
 	request := coapconv.NewConfirmResourceCreateRequest(resourceID, correlationID, client.remoteAddrString(), resp)
 	_, err = client.server.raClient.ConfirmResourceCreate(ctx, request)
 	if err != nil {
-		log.Errorf("cannot send error via confirm resource create: %v", err)
+		log.Errorf("cannot send error via confirm resource create: %w", err)
 	}
 }
 
@@ -796,7 +819,9 @@ func (client *Client) CreateResource(ctx context.Context, event *events.Resource
 	if err != nil {
 		err := fmt.Errorf("cannot create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err)
 		client.sendErrorConfirmResourceCreate(event.GetResourceId(), authCtx.GetUserID(), event.GetAuditContext().GetCorrelationId(), codes.Forbidden, err)
-		client.Close()
+		if err2 := client.Close(); err2 != nil {
+			log.Errorf("failed to close client connection on create resource /%v%v: %w", event.GetResourceId().GetDeviceId(), event.GetResourceId().GetHref(), err2)
+		}
 		return err
 	}
 
@@ -859,7 +884,9 @@ func (client *Client) OnDeviceSubscriberReconnectError(err error) {
 	auth, _ := client.GetAuthorizationContext()
 	deviceID := auth.GetDeviceID()
 	log.Errorf("cannot reconnect device %v subscriber to resource directory or eventbus - closing the device connection: %w", deviceID, err)
-	client.Close()
+	if err := client.Close(); err != nil {
+		log.Errorf("failed to close device %v connection : %w", deviceID, err)
+	}
 }
 
 func (client *Client) GetContext() (context.Context, context.CancelFunc) {
@@ -873,7 +900,7 @@ func (client *Client) GetContext() (context.Context, context.CancelFunc) {
 func (client *Client) sendErrorConfirmDeviceMetadataUpdate(userID string, event *events.DeviceMetadataUpdatePending, errToSend error, status commands.Status) {
 	ctx, err := client.server.ServiceRequestContext(userID)
 	if err != nil {
-		log.Errorf("cannot send error via confirm device metadata update: %v", err)
+		log.Errorf("cannot send error via confirm device metadata update: %w", err)
 		return
 	}
 
@@ -890,7 +917,7 @@ func (client *Client) sendErrorConfirmDeviceMetadataUpdate(userID string, event 
 		Status: status,
 	})
 	if err != nil {
-		log.Errorf("cannot send error via confirm device metadata update: %v", err)
+		log.Errorf("cannot send error via confirm device metadata update: %w", err)
 	}
 }
 
@@ -916,7 +943,9 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 	if err != nil {
 		err := fmt.Errorf("cannot update device('%v') metadata: %w", event.GetDeviceId(), err)
 		client.sendErrorConfirmDeviceMetadataUpdate(authCtx.GetUserID(), event, err, commands.Status_UNAUTHORIZED)
-		client.Close()
+		if err2 := client.Close(); err2 != nil {
+			log.Errorf("failed to close client connection on update device('%v') metadata: %w", event.GetDeviceId(), err2)
+		}
 		return err
 	}
 	if event.GetShadowSynchronization() == commands.ShadowSynchronization_UNSET {

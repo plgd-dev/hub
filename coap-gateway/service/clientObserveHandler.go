@@ -84,7 +84,11 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		return
 	}
 	var found bool
-	defer getUserDevicesClient.CloseSend()
+	defer func() {
+		if err := getUserDevicesClient.CloseSend(); err != nil {
+			log.Errorf("failed to close user devices client: %w", err)
+		}
+	}()
 	for {
 		userDev, err := getUserDevicesClient.Recv()
 		if err == io.EOF {
@@ -104,13 +108,17 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		return
 	}
 	token := req.Token.String()
-	client.cancelResourceSubscription(token, true)
+	if _, err := client.cancelResourceSubscription(token, true); err != nil {
+		log.Errorf("failed to cancel resource /%v%v subscription: %w", deviceID, href, err)
+	}
 
 	seqNum := uint32(2)
 	h := resourceSubscriptionHandlers{
 		onChange: func(ctx context.Context, resourceChanged *events.ResourceChanged) error {
 			if resourceChanged.GetStatus() != commands.Status_OK {
-				client.cancelResourceSubscription(token, false)
+				if _, err := client.cancelResourceSubscription(token, false); err != nil {
+					log.Errorf("failed to cancel resource /%v%v subscription: %w", deviceID, href, err)
+				}
 				client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %v", authCtx.GetDeviceID(), deviceID, href, resourceChanged.GetStatus()), coapconv.StatusToCoapCode(resourceChanged.GetStatus(), coapconv.Retrieve), req.Token)
 				return nil
 			}
@@ -136,7 +144,9 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 
 	_, loaded := client.resourceSubscriptions.LoadOrStore(token, sub)
 	if loaded {
-		sub.Cancel()
+		if _, err := sub.Cancel(); err != nil {
+			log.Errorf("failed to cancel resource /%v%v subscription: %w", deviceID, href, err)
+		}
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: resource subscription with token %v already exist", authCtx.GetDeviceID(), deviceID, href, token), coapCodes.BadRequest, req.Token)
 		return
 	}

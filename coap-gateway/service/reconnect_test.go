@@ -30,7 +30,9 @@ func TestReconnectNATS(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
+	defer func() {
+		_ = co.Close()
+	}()
 
 	testPrepareDevice(t, co)
 
@@ -73,7 +75,9 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 	if co == nil {
 		return
 	}
-	defer co.Close()
+	defer func() {
+		_ = co.Close()
+	}()
 
 	testPrepareDevice(t, co)
 
