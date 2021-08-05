@@ -60,7 +60,7 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	request.TimeToLive = checkTTLForDefault(r.config.Clients.Eventstore.DefaultCommandsTTL, request.GetTimeToLive())
+	request.TimeToLive = checkTTLForDefault(r.config.Clients.Eventstore.DefaultCommandTTL, request.GetTimeToLive())
 
 	resID := commands.NewResourceID(request.DeviceId, commands.StatusHref)
 	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
