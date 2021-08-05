@@ -379,6 +379,7 @@ paths:
           - 'plgd.devices'
       parameters:
         - $ref: '#/components/parameters/deviceId'
+        - $ref: '#/components/parameters/timeToLive'
       requestBody:
         description: 'Device metadata change successfuly requested. If the device is online, change is immediately applied. If the device is offline, pending command is registered and executed at the moment device comes online.'
         content:
@@ -1392,6 +1393,7 @@ components:
         type: integer
         format: int64
         default: 0
+        min: 100000000
   responses:
     ok:
       description: Content is stored in body.

@@ -15,6 +15,9 @@ import (
 )
 
 func validateUpdateDeviceMetadata(request *commands.UpdateDeviceMetadataRequest) error {
+	if err := checkTimeToLive(request.GetTimeToLive()); err != nil {
+		return err
+	}
 	if request.GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}

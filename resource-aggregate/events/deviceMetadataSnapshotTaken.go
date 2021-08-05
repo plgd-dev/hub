@@ -154,13 +154,6 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 	return iter.Err()
 }
 
-func checkTimeToLive(timeToLive int64) error {
-	if timeToLive != 0 && timeToLive < int64(time.Millisecond*100) {
-		return status.Errorf(codes.InvalidArgument, "timeToLive(`%v`) is less than 100ms", time.Duration(timeToLive))
-	}
-	return nil
-}
-
 func timeToLive2ValidUntil(timeToLive int64) int64 {
 	if timeToLive == 0 {
 		return 0
@@ -198,9 +191,6 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 			}
 			return []eventstore.Event{&ev}, nil
 		case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
-			if err := checkTimeToLive(req.GetTimeToLive()); err != nil {
-				return nil, err
-			}
 			ev := DeviceMetadataUpdatePending{
 				DeviceId:   req.GetDeviceId(),
 				ValidUntil: timeToLive2ValidUntil(req.GetTimeToLive()),

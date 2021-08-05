@@ -90,6 +90,9 @@ func validateNotifyContentChanged(request *commands.NotifyResourceChangedRequest
 }
 
 func validateUpdateResourceContent(request *commands.UpdateResourceRequest) error {
+	if err := checkTimeToLive(request.GetTimeToLive()); err != nil {
+		return err
+	}
 	if request.Content == nil {
 		return status.Errorf(codes.InvalidArgument, "invalid Content")
 	}
@@ -106,6 +109,9 @@ func validateUpdateResourceContent(request *commands.UpdateResourceRequest) erro
 }
 
 func validateRetrieveResource(request *commands.RetrieveResourceRequest) error {
+	if err := checkTimeToLive(request.GetTimeToLive()); err != nil {
+		return err
+	}
 	if request.GetResourceId().GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
 	}
@@ -153,6 +159,9 @@ func validateConfirmResourceRetrieve(request *commands.ConfirmResourceRetrieveRe
 }
 
 func validateDeleteResource(request *commands.DeleteResourceRequest) error {
+	if err := checkTimeToLive(request.GetTimeToLive()); err != nil {
+		return err
+	}
 	if request.GetResourceId().GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
 	}
@@ -166,6 +175,9 @@ func validateDeleteResource(request *commands.DeleteResourceRequest) error {
 }
 
 func validateCreateResource(request *commands.CreateResourceRequest) error {
+	if err := checkTimeToLive(request.GetTimeToLive()); err != nil {
+		return err
+	}
 	if request.GetResourceId().GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid ResourceId.DeviceId")
 	}

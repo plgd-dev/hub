@@ -518,9 +518,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
-		if err := checkTimeToLive(req.GetTimeToLive()); err != nil {
-			return nil, err
-		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
@@ -564,9 +561,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
-		if err := checkTimeToLive(req.GetTimeToLive()); err != nil {
-			return nil, err
-		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
@@ -605,9 +599,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
-		if err := checkTimeToLive(req.GetTimeToLive()); err != nil {
-			return nil, err
-		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
 		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
@@ -644,9 +635,6 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 	case *commands.CreateResourceRequest:
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-		if err := checkTimeToLive(req.GetTimeToLive()); err != nil {
-			return nil, err
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
