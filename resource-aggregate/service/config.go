@@ -59,6 +59,7 @@ func (c *EventBusConfig) Validate() error {
 type EventStoreConfig struct {
 	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold" default:"16"`
 	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry" default:"8"`
+	DefaultCommandsTTL           time.Duration           `yaml:"defaultCommandsTTL" json:"defaultCommandsTTL"`
 	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
 }
 
