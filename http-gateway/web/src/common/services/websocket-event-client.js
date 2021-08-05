@@ -25,7 +25,7 @@ class _WebSocketEventClient {
     this.retrySubscribeMs = 300
 
     // Time for delaying the event listener apply
-    this.delayListenersMs = 350
+    this.delayListenersMs = 0
   }
 
   _connect = async () => {

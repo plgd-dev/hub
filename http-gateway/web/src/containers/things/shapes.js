@@ -1,14 +1,15 @@
 import PropTypes from 'prop-types'
 
-import { thingsStatuses } from './constants'
+import { thingsStatuses, shadowSynchronizationStates } from './constants'
 
 const { ONLINE, OFFLINE, REGISTERED, UNREGISTERED } = thingsStatuses
+const { UNSET, ENABLED, DISABLED } = shadowSynchronizationStates
 
 export const thingResourceShape = PropTypes.shape({
-  di: PropTypes.string,
+  deviceId: PropTypes.string,
   href: PropTypes.string,
-  rt: PropTypes.arrayOf(PropTypes.string),
-  if: PropTypes.arrayOf(PropTypes.string),
+  resourceTypes: PropTypes.arrayOf(PropTypes.string),
+  interfaces: PropTypes.arrayOf(PropTypes.string),
 })
 
 export const thingsResourceLinkShape = PropTypes.shape({
@@ -39,5 +40,6 @@ export const thingShape = PropTypes.shape({
     status: PropTypes.shape({
       value: PropTypes.oneOf([ONLINE, OFFLINE, REGISTERED, UNREGISTERED]),
     }),
+    shadowSynchronization: PropTypes.oneOf([UNSET, ENABLED, DISABLED]),
   }),
 })
