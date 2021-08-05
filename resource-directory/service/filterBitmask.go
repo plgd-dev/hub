@@ -1,6 +1,10 @@
 package service
 
-import "github.com/plgd-dev/cloud/grpc-gateway/pb"
+import (
+	"time"
+
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+)
 
 type filterBitmask uint64
 
@@ -100,13 +104,16 @@ func devicesEventsFilterToBitmask(commandFilter []pb.SubscribeToEvents_CreateSub
 	return bitmask
 }
 
-func toPendingCommands(resource *Resource, commandFilter filterBitmask) []*pb.PendingCommand {
+func toPendingCommands(resource *Resource, commandFilter filterBitmask, now time.Time) []*pb.PendingCommand {
 	if resource.projection == nil {
 		return nil
 	}
 	pendingCmds := make([]*pb.PendingCommand, 0, 32)
 	if commandFilter&filterBitmaskResourceCreatePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceCreatePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceCreatePending{
 					ResourceCreatePending: pendingCmd,
@@ -116,6 +123,9 @@ func toPendingCommands(resource *Resource, commandFilter filterBitmask) []*pb.Pe
 	}
 	if commandFilter&filterBitmaskResourceRetrievePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceRetrievePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceRetrievePending{
 					ResourceRetrievePending: pendingCmd,
@@ -125,6 +135,9 @@ func toPendingCommands(resource *Resource, commandFilter filterBitmask) []*pb.Pe
 	}
 	if commandFilter&filterBitmaskResourceUpdatePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceUpdatePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceUpdatePending{
 					ResourceUpdatePending: pendingCmd,
@@ -134,6 +147,9 @@ func toPendingCommands(resource *Resource, commandFilter filterBitmask) []*pb.Pe
 	}
 	if commandFilter&filterBitmaskResourceDeletePending > 0 {
 		for _, pendingCmd := range resource.projection.resourceDeletePendings {
+			if pendingCmd.IsExpired(now) {
+				continue
+			}
 			pendingCmds = append(pendingCmds, &pb.PendingCommand{
 				Command: &pb.PendingCommand_ResourceDeletePending{
 					ResourceDeletePending: pendingCmd,

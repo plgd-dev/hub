@@ -39,3 +39,10 @@ func EqualStringSlice(x, y []string) bool {
 	}
 	return true
 }
+
+func IsExpired(now time.Time, validUntil time.Time) bool {
+	if validUntil.IsZero() {
+		return false
+	}
+	return now.After(validUntil)
+}

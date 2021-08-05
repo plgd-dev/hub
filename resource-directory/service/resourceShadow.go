@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
@@ -93,6 +94,7 @@ func (rd *ResourceShadow) GetResources(req *pb.GetResourcesRequest, srv pb.GrpcG
 
 func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, srv pb.GrpcGateway_GetPendingCommandsServer) error {
 	filterCmds := filterPendingsCommandsToBitmask(req.GetCommandFilter())
+	now := time.Now()
 	if filterCmds&filterBitmaskDeviceMetadataUpdatePending > 0 && len(req.GetResourceIdFilter()) == 0 && len(req.GetTypeFilter()) == 0 {
 		deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdFilter())
 		devicesMetadata, err := rd.projection.GetDevicesMetadata(srv.Context(), deviceIDs)
@@ -101,6 +103,9 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 		}
 		for _, deviceMetadata := range devicesMetadata {
 			for _, pendingCmd := range deviceMetadata.GetUpdatePendings() {
+				if pendingCmd.IsExpired(now) {
+					continue
+				}
 				err = srv.Send(&pb.PendingCommand{
 					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
 						DeviceMetadataUpdatePending: pendingCmd,
@@ -124,7 +129,7 @@ func (rd *ResourceShadow) GetPendingCommands(req *pb.GetPendingCommandsRequest, 
 
 	for _, deviceResources := range resources {
 		for _, resource := range deviceResources {
-			for _, pendingCmd := range toPendingCommands(resource, filterCmds) {
+			for _, pendingCmd := range toPendingCommands(resource, filterCmds, now) {
 				err = srv.Send(pendingCmd)
 				if err != nil {
 					return status.Errorf(codes.Canceled, "cannot send pending command %v: %v", pendingCmd, err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	exCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
@@ -62,6 +63,17 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 			},
 			wantErr:     true,
 			wantErrCode: codes.PermissionDenied,
+		},
+		{
+			name: "invalid timeToLive",
+			args: args{
+				req: &pb.DeleteResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/light/2"),
+					TimeToLive: int64(99 * time.Millisecond),
+				},
+			},
+			wantErr:     true,
+			wantErrCode: codes.InvalidArgument,
 		},
 	}
 

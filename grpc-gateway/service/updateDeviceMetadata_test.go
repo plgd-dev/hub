@@ -88,6 +88,13 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	require.NoError(t, err)
 	defer obs.Close()
 
+	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		DeviceId:              deviceID,
+		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
+		TimeToLive:            int64(99 * time.Millisecond),
+	})
+	require.Error(t, err)
+
 	ev, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
 		DeviceId:              deviceID,
 		ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,

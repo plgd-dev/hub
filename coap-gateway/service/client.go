@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -893,12 +894,13 @@ func (client *Client) sendErrorConfirmDeviceMetadataUpdate(userID string, event 
 	}
 }
 
-func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, shadowSynchronization commands.ShadowSynchronization) {
+func (client *Client) setShadowSynchronization(ctx context.Context, deviceID string, shadowSynchronization commands.ShadowSynchronization) commands.ShadowSynchronization {
 	client.observedResourcesLock.Lock()
 	defer client.observedResourcesLock.Unlock()
 	if client.shadowSynchronization == shadowSynchronization {
-		return
+		return client.shadowSynchronization
 	}
+	previous := client.shadowSynchronization
 
 	client.shadowSynchronization = shadowSynchronization
 	if shadowSynchronization == commands.ShadowSynchronization_DISABLED {
@@ -906,6 +908,7 @@ func (client *Client) setShadowSynchronization(ctx context.Context, deviceID str
 	} else {
 		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
 	}
+	return previous
 }
 
 func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error {
@@ -924,8 +927,7 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 		return err
 	}
 
-	client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization())
-
+	previous := client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), event.GetShadowSynchronization())
 	_, err = client.server.raClient.ConfirmDeviceMetadataUpdate(sendConfirmCtx, &commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId:      event.GetDeviceId(),
 		CorrelationId: event.GetAuditContext().GetCorrelationId(),
@@ -938,6 +940,9 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 		},
 		Status: commands.Status_OK,
 	})
+	if err != nil && !errors.Is(err, context.Canceled) {
+		client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), previous)
+	}
 	return err
 
 }

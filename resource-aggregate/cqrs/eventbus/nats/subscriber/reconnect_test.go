@@ -24,10 +24,10 @@ func TestSubscriberReconnect(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	publisher, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	pub, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
-	require.NotNil(t, publisher)
-	defer publisher.Close()
+	require.NotNil(t, pub)
+	defer pub.Close()
 
 	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
 	require.NotNil(t, subscriber)
@@ -59,7 +59,7 @@ func TestSubscriberReconnect(t *testing.T) {
 		},
 	}
 
-	err = publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
+	err = pub.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[0])
 	require.NoError(t, err)
 
 	event0, err := m0.waitForEvent(timeout)
@@ -80,7 +80,11 @@ func TestSubscriberReconnect(t *testing.T) {
 	case <-ctx.Done():
 		require.NoError(t, fmt.Errorf("Timeout"))
 	}
-	err = publisher.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
+	pub1, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	require.NoError(t, err)
+	require.NotNil(t, pub1)
+	defer pub1.Close()
+	err = pub1.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
 	require.NoError(t, err)
 	event0, err = m0.waitForEvent(timeout)
 	require.NoError(t, err)

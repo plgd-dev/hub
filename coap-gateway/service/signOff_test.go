@@ -20,11 +20,11 @@ func TestSignOffHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	tbl := []testEl{
-		{"Bad query", input{coapCodes.DELETE, `{}`, []string{"di=%"}}, output{coapCodes.BadOption, "invalid URL escape", nil}},
-		{"Bad request (no userId)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity}}, output{coapCodes.BadRequest, "invalid user id", nil}},
-		{"Bad request (invalid userId)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + signUpResp.AccessToken, "uid=0"}}, output{coapCodes.InternalServerError, "invalid ownerClaim", nil}},
-		{"Bad request (missing access token)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "uid=0"}}, output{coapCodes.BadRequest, `invalid access token`, nil}},
-		{"Deleted0", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + signUpResp.AccessToken, "uid=" + signUpResp.UserID}}, output{coapCodes.Deleted, nil, nil}},
+		{"Bad query", input{coapCodes.DELETE, `{}`, []string{"di=%"}}, output{coapCodes.BadOption, "invalid URL escape", nil}, true},
+		{"Bad request (no userId)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity}}, output{coapCodes.BadRequest, "invalid user id", nil}, true},
+		{"Bad request (invalid userId)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + signUpResp.AccessToken, "uid=0"}}, output{coapCodes.InternalServerError, "invalid ownerClaim", nil}, true},
+		{"Bad request (missing access token)", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "uid=0"}}, output{coapCodes.BadRequest, `invalid access token`, nil}, true},
+		{"Deleted0", input{coapCodes.DELETE, `{}`, []string{"di=" + CertIdentity, "accesstoken=" + signUpResp.AccessToken, "uid=" + signUpResp.UserID}}, output{coapCodes.Deleted, nil, nil}, false},
 	}
 
 	for _, test := range tbl {
@@ -47,7 +47,7 @@ func TestSignOffWithSignInHandler(t *testing.T) {
 	defer shutdown()
 
 	tbl := []testEl{
-		{"Deleted", input{coapCodes.DELETE, `{}`, nil}, output{coapCodes.Deleted, nil, nil}},
+		{"Deleted", input{coapCodes.DELETE, `{}`, nil}, output{coapCodes.Deleted, nil, nil}, false},
 	}
 
 	for _, test := range tbl {

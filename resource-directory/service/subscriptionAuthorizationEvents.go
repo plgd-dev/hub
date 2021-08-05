@@ -7,9 +7,6 @@ import (
 )
 
 func (s *subscription) NotifyOfRegisteredDevice(ctx context.Context, deviceIDs []string) error {
-	for _, d := range deviceIDs {
-		s.isInitialized.Store(d, true)
-	}
 	if s.filteredEvents&filterBitmaskDeviceRegistered == 0 {
 		return nil
 	}

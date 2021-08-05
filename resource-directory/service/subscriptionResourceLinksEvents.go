@@ -90,7 +90,6 @@ func (s *subscription) initSendResourcesPublished(ctx context.Context, deviceID 
 	if !ok {
 		return fmt.Errorf("unexpected event type")
 	}
-
 	err := rlp.InitialNotifyOfPublishedResourceLinks(ctx, s)
 	if err != nil {
 		return fmt.Errorf("cannot send resource published: %w", err)

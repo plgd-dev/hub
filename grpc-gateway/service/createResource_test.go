@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -64,6 +65,23 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			},
 			wantErr:     true,
 			wantErrCode: codes.PermissionDenied,
+		},
+		{
+			name: "invalid timeToLive",
+			args: args{
+				req: &pb.CreateResourceRequest{
+					ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
+					Content: &pb.Content{
+						ContentType: message.AppOcfCbor.String(),
+						Data: test.EncodeToCbor(t, map[string]interface{}{
+							"power": 1,
+						}),
+					},
+					TimeToLive: int64(99 * time.Millisecond),
+				},
+			},
+			wantErr:     true,
+			wantErrCode: codes.InvalidArgument,
 		},
 	}
 

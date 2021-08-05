@@ -80,8 +80,38 @@ func (e *ResourceStateSnapshotTaken) CheckInitialized() bool {
 		e.GetEventMetadata() != nil
 }
 
+type resourceValidUntilValidator interface {
+	ValidUntilTime() time.Time
+	IsExpired(now time.Time) bool
+	GetEventMetadata() *EventMetadata
+	GetAuditContext() *commands.AuditContext
+	GetResourceId() *commands.ResourceId
+}
+
+func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValidator, now time.Time) (bool, error) {
+	if v.IsExpired(now) {
+		// for events from eventstore we just store metada from command.
+		e.ResourceId = v.GetResourceId()
+		e.EventMetadata = v.GetEventMetadata()
+		e.AuditContext = v.GetAuditContext()
+		return false, nil
+	}
+	return true, nil
+}
+
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
+	now := time.Now()
+	ok, err := e.processValidUntil(createPending, now)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
 	for _, event := range e.GetResourceCreatePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
 		if event.GetAuditContext().GetCorrelationId() == createPending.GetAuditContext().GetCorrelationId() {
 			return status.Errorf(codes.InvalidArgument, "resource create pending with correlationId('%v') already exist", createPending.GetAuditContext().GetCorrelationId())
 		}
@@ -94,7 +124,18 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx contex
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx context.Context, updatePending *ResourceUpdatePending) error {
+	now := time.Now()
+	ok, err := e.processValidUntil(updatePending, now)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
 	for _, event := range e.GetResourceUpdatePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
 		if event.GetAuditContext().GetCorrelationId() == updatePending.GetAuditContext().GetCorrelationId() {
 			return status.Errorf(codes.InvalidArgument, "resource update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
 		}
@@ -107,7 +148,18 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx contex
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx context.Context, retrievePending *ResourceRetrievePending) error {
+	now := time.Now()
+	ok, err := e.processValidUntil(retrievePending, now)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
 	for _, event := range e.GetResourceRetrievePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
 		if event.GetAuditContext().GetCorrelationId() == retrievePending.GetAuditContext().GetCorrelationId() {
 			return status.Errorf(codes.InvalidArgument, "resource retrieve pending with correlationId('%v') already exist", retrievePending.GetAuditContext().GetCorrelationId())
 		}
@@ -119,7 +171,18 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx cont
 }
 
 func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx context.Context, deletePending *ResourceDeletePending) error {
+	now := time.Now()
+	ok, err := e.processValidUntil(deletePending, now)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
 	for _, event := range e.GetResourceDeletePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
 		if event.GetAuditContext().GetCorrelationId() == deletePending.GetAuditContext().GetCorrelationId() {
 			return status.Errorf(codes.InvalidArgument, "resource delete pending with correlationId('%v') already exist", deletePending.GetAuditContext().GetCorrelationId())
 		}
@@ -469,6 +532,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			AuditContext:      ac,
 			EventMetadata:     em,
 			Content:           content,
+			ValidUntil:        timeToLive2ValidUntil(req.GetTimeToLive()),
 		}
 
 		if err = e.HandleEventResourceUpdatePending(ctx, &rc); err != nil {
@@ -506,6 +570,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			ResourceInterface: req.GetResourceInterface(),
 			AuditContext:      ac,
 			EventMetadata:     em,
+			ValidUntil:        timeToLive2ValidUntil(req.GetTimeToLive()),
 		}
 
 		if err := e.HandleEventResourceRetrievePending(ctx, &rc); err != nil {
@@ -542,6 +607,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			ResourceId:    req.GetResourceId(),
 			AuditContext:  ac,
 			EventMetadata: em,
+			ValidUntil:    timeToLive2ValidUntil(req.GetTimeToLive()),
 		}
 
 		if err := e.HandleEventResourceDeletePending(ctx, &rc); err != nil {
@@ -582,6 +648,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 			Content:       content,
 			AuditContext:  ac,
 			EventMetadata: em,
+			ValidUntil:    timeToLive2ValidUntil(req.GetTimeToLive()),
 		}
 
 		if err := e.HandleEventResourceCreatePending(ctx, &rc); err != nil {

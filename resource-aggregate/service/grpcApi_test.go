@@ -3,9 +3,11 @@ package service_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
@@ -314,27 +316,29 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "", "123")},
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "", "123", time.Hour)},
 			want: &commands.UpdateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
 					CorrelationId: "123",
 				},
+				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
 		},
 		{
 			name:      "error-duplicit-correlationID",
-			args:      args{request: testMakeUpdateResourceRequest(deviceID, resID, "", "123")},
+			args:      args{request: testMakeUpdateResourceRequest(deviceID, resID, "", "123", time.Hour)},
 			wantError: true,
 		},
 		{
-			name: "valid",
-			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "oic.if.baseline", "456")},
+			name: "valid with interface",
+			args: args{request: testMakeUpdateResourceRequest(deviceID, resID, "oic.if.baseline", "456", time.Hour)},
 			want: &commands.UpdateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
 					CorrelationId: "456",
 				},
+				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
 		},
 		{
@@ -376,10 +380,15 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 			response, err := requestHandler.UpdateResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				return
 			}
-			assert.Equal(t, tt.want, response)
+			require.NoError(t, err)
+			if tt.want.GetValidUntil() == 0 {
+				assert.Equal(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			} else {
+				assert.Less(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			}
+			assert.Equal(t, tt.want.GetAuditContext(), response.GetAuditContext())
 		}
 		t.Run(tt.name, tfunc)
 	}
@@ -447,7 +456,7 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
-	_, err = requestHandler.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resID, "", correlationID))
+	_, err = requestHandler.UpdateResource(ctx, testMakeUpdateResourceRequest(deviceID, resID, "", correlationID, time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range test {
@@ -481,17 +490,18 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeRetrieveResourceRequest(deviceID, resID, correlationID)},
+			args: args{request: testMakeRetrieveResourceRequest(deviceID, resID, correlationID, time.Hour)},
 			want: &commands.RetrieveResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
 					CorrelationId: correlationID,
 				},
+				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
 		},
 		{
 			name:      "error-duplicit-correlationID",
-			args:      args{request: testMakeRetrieveResourceRequest(deviceID, resID, correlationID)},
+			args:      args{request: testMakeRetrieveResourceRequest(deviceID, resID, correlationID, time.Hour)},
 			wantError: true,
 		},
 		{
@@ -533,10 +543,15 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			response, err := requestHandler.RetrieveResource(ctx, tt.args.request)
 			if tt.wantError {
 				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				return
 			}
-			assert.Equal(t, tt.want, response)
+			require.NoError(t, err)
+			if tt.want.GetValidUntil() == 0 {
+				assert.Equal(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			} else {
+				assert.Less(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			}
+			assert.Equal(t, tt.want.GetAuditContext(), response.GetAuditContext())
 		}
 		t.Run(tt.name, tfunc)
 	}
@@ -604,7 +619,7 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
-	_, err = requestHandler.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resID, correlationID))
+	_, err = requestHandler.RetrieveResource(ctx, testMakeRetrieveResourceRequest(deviceID, resID, correlationID, time.Hour))
 	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -641,17 +656,18 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeDeleteResourceRequest(deviceID, resID, correlationID)},
+			args: args{request: testMakeDeleteResourceRequest(deviceID, resID, correlationID, time.Hour)},
 			want: &commands.DeleteResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
 					CorrelationId: correlationID,
 				},
+				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
 		},
 		{
 			name:      "error-duplicit-correlationID",
-			args:      args{request: testMakeDeleteResourceRequest(deviceID, resID, correlationID)},
+			args:      args{request: testMakeDeleteResourceRequest(deviceID, resID, correlationID, time.Hour)},
 			wantError: true,
 		},
 		{
@@ -696,7 +712,12 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, tt.want, response)
+			if tt.want.GetValidUntil() == 0 {
+				assert.Equal(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			} else {
+				assert.Less(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			}
+			assert.Equal(t, tt.want.GetAuditContext(), response.GetAuditContext())
 		}
 		t.Run(tt.name, tfunc)
 	}
@@ -764,7 +785,7 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
-	_, err = requestHandler.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID, correlationID))
+	_, err = requestHandler.DeleteResource(ctx, testMakeDeleteResourceRequest(deviceID, resID, correlationID, time.Hour))
 	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -801,17 +822,18 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			args: args{request: testMakeCreateResourceRequest(deviceID, resID, correlationID)},
+			args: args{request: testMakeCreateResourceRequest(deviceID, resID, correlationID, time.Hour)},
 			want: &commands.CreateResourceResponse{
 				AuditContext: &commands.AuditContext{
 					UserId:        user0,
 					CorrelationId: correlationID,
 				},
+				ValidUntil: pkgTime.UnixNano(time.Now().Add(time.Hour)),
 			},
 		},
 		{
 			name:      "error-duplicit-correlationID",
-			args:      args{request: testMakeCreateResourceRequest(deviceID, resID, correlationID)},
+			args:      args{request: testMakeCreateResourceRequest(deviceID, resID, correlationID, time.Hour)},
 			wantError: true,
 		},
 		{
@@ -856,7 +878,12 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, tt.want, response)
+			if tt.want.GetValidUntil() == 0 {
+				assert.Equal(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			} else {
+				assert.Less(t, tt.want.GetValidUntil(), response.GetValidUntil())
+			}
+			assert.Equal(t, tt.want.GetAuditContext(), response.GetAuditContext())
 		}
 		t.Run(tt.name, tfunc)
 	}
@@ -924,7 +951,7 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
 	require.NoError(t, err)
-	_, err = requestHandler.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resID, correlationID))
+	_, err = requestHandler.CreateResource(ctx, testMakeCreateResourceRequest(deviceID, resID, correlationID, time.Hour))
 	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {

@@ -12,6 +12,7 @@ const (
 	TypeFilterQueryKey        = "typeFilter"
 	StatusFilterQueryKey      = "statusFilter"
 	DeviceIdFilterQueryKey    = "deviceIdFilter"
+	TimeToLiveQueryKey        = "timeToLive"
 	ResourceIdFilterQueryKey  = "resourceIdFilter"
 	AcceptQueryKey            = "accept" // for websocket
 	CorrelationIDQueryKey     = "correlationId"
@@ -115,4 +116,5 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(AliasStatusFilterQueryKey):     StatusFilterQueryKey,
 	strings.ToLower(CorrelationIDQueryKey):         CorrelationIDQueryKey,
 	strings.ToLower(TimestampFilterQueryKey):       TimestampFilterQueryKey,
+	strings.ToLower(TimeToLiveQueryKey):            TimeToLiveQueryKey,
 }

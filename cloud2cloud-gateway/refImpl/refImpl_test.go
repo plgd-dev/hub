@@ -16,6 +16,7 @@ func TestInit(t *testing.T) {
 	var config Config
 	err := envconfig.Process("", &config)
 	require.NoError(t, err)
+	config.Service.Addr = testCfg.C2C_GW_HOST
 	config.Service.OAuth.ClientID = testCfg.OAUTH_MANAGER_CLIENT_ID
 	config.Service.OAuth.Endpoint.TokenURL = testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL
 	config.Service.OAuth.Audience = testCfg.OAUTH_MANAGER_AUDIENCE
@@ -23,4 +24,5 @@ func TestInit(t *testing.T) {
 	got, err := Init(config)
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
+	got.Close()
 }

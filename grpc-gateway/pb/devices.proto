@@ -26,6 +26,7 @@ message GetResourceLinksRequest {
 message GetResourceFromDeviceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   string resource_interface = 2;
+  int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message GetResourceFromDeviceResponse {
@@ -33,8 +34,7 @@ message GetResourceFromDeviceResponse {
 }
 
 message GetResourcesRequest {
-  // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
-  repeated string resource_id_filter = 1;
+  repeated string resource_id_filter = 1; // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
   repeated string device_id_filter = 2;
   repeated string type_filter = 3;
 }
@@ -46,8 +46,9 @@ message Resource {
 
 message UpdateResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
-  Content content = 2;
   string resource_interface = 3;
+  int64 timeToLive = 4;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  Content content = 2;
 }
 
 message UpdateResourceResponse {
@@ -76,7 +77,8 @@ message SubscribeToEvents {
     }
     repeated Event event_filter = 1;
     repeated string device_id_filter = 2;
-    repeated string resource_id_filter = 3;
+    repeated string resource_id_filter = 3; // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
+    bool include_current_state = 4; // If you're interested in the current state of events right after subscribing.
   }
   message CancelSubscription {
     string subscription_id = 1;
@@ -162,6 +164,7 @@ message Content {
 
 message DeleteResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
+  int64 timeToLive = 2;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message DeleteResourceResponse {
@@ -171,6 +174,7 @@ message DeleteResourceResponse {
 message CreateResourceRequest {
   ocf.cloud.resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
+  int64 timeToLive = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
 }
 
 message CreateResourceResponse {

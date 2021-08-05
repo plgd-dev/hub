@@ -54,3 +54,11 @@ func (e *ResourceRetrievePending) CheckInitialized() bool {
 		e.GetAuditContext() != nil &&
 		e.GetEventMetadata() != nil
 }
+
+func (e *ResourceRetrievePending) ValidUntilTime() time.Time {
+	return pkgTime.Unix(0, e.GetValidUntil())
+}
+
+func (e *ResourceRetrievePending) IsExpired(now time.Time) bool {
+	return IsExpired(now, e.ValidUntilTime())
+}
