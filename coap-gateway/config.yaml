@@ -22,7 +22,7 @@ apis:
       clientID: ""
       clientSecret: ""
       scopes: []
-      domain: ""
+      authority: ""
       redirectURL: ""
       http:
         maxIdleConns: 16
