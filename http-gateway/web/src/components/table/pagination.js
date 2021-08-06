@@ -25,14 +25,12 @@ export const Pagination = props => {
 
   // If the last item is removed from the list, and we are on the last page (pageLength === 0), update the last page with (pageCount - 1)
   // Only do this if there are the least 2 pages available (pageCount > 1)
-  useEffect(
-    () => {
-      if (pageLength === 0 && pageCount > 1) {
-        gotoPage(pageCount - 1)
-      }
-    },
-    [gotoPage, pageCount, pageLength]
-  )
+  useEffect(() => {
+    if (pageLength === 0 && pageCount >= 1) {
+      const prevPage = pageCount - 1
+      gotoPage(prevPage >= 0 ? prevPage : 0)
+    }
+  }, [gotoPage, pageCount, pageLength])
 
   return (
     <BPagination

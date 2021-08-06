@@ -4,9 +4,8 @@ import { useSelector, useDispatch } from 'react-redux'
 import classNames from 'classnames'
 import PropTypes from 'prop-types'
 
-import { WSManager } from '@/common/services/ws-manager'
+import { WebSocketEventClient, eventFilters } from '@/common/services'
 import { Switch } from '@/components/switch'
-import { thingsApiEndpoints } from './constants'
 import {
   getThingNotificationKey,
   getResourceRegistrationNotificationKey,
@@ -35,20 +34,26 @@ export const ThingsDetailsHeader = ({
     () => {
       if (deviceId) {
         // Register the WS if not already registered
-        WSManager.addWsClient({
-          name: resourceRegistrationObservationWSKey,
-          api: `${thingsApiEndpoints.THINGS_WS}/${deviceId}`,
-          listener: deviceResourceRegistrationListener({
+        WebSocketEventClient.subscribe(
+          {
+            eventFilter: [
+              eventFilters.RESOURCE_PUBLISHED,
+              eventFilters.RESOURCE_UNPUBLISHED,
+            ],
+            deviceIdFilter: [deviceId],
+          },
+          resourceRegistrationObservationWSKey,
+          deviceResourceRegistrationListener({
             deviceId,
             deviceName,
-          }),
-        })
+          })
+        )
       }
 
       return () => {
         // Unregister the WS if notification is off
         if (!notificationsEnabled.current) {
-          WSManager.removeWsClient(resourceRegistrationObservationWSKey)
+          WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
         }
       }
     },
@@ -59,7 +64,7 @@ export const ThingsDetailsHeader = ({
     () => {
       if (isUnregistered) {
         // Unregister the WS when the device is unregistered
-        WSManager.removeWsClient(resourceRegistrationObservationWSKey)
+        WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
       }
     },
     [isUnregistered, resourceRegistrationObservationWSKey]

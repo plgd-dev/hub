@@ -1,6 +1,6 @@
 import debounce from 'lodash/debounce'
 
-import { useApi } from '@/common/hooks'
+import { useApi, useStreamApi } from '@/common/hooks'
 import { useAppConfig } from '@/containers/app'
 import { useEmitter } from '@/common/hooks'
 
@@ -18,14 +18,14 @@ export const useThingsList = () => {
   const { httpGatewayAddress } = useAppConfig()
 
   // Fetch the data
-  const { data, updateData, ...rest } = useApi(
+  const { data, updateData, ...rest } = useStreamApi(
     `${httpGatewayAddress}${thingsApiEndpoints.THINGS}`
   )
 
-  // Update the status list when a WS event is emitted
+  // Update the metadata when a WS event is emitted
   useEmitter(THINGS_STATUS_WS_KEY, newDeviceStatus => {
     if (data) {
-      // Update the data with the current device status
+      // Update the data with the current device status and shadowSynchronization
       updateData(updateThingsDataStatus(data, newDeviceStatus))
     }
   })
@@ -41,46 +41,66 @@ export const useThingDetails = deviceId => {
     `${httpGatewayAddress}${thingsApiEndpoints.THINGS}/${deviceId}`
   )
 
-  // Update the status when a WS event is emitted
+  // Update the metadata when a WS event is emitted
   useEmitter(
     `${THINGS_STATUS_WS_KEY}.${deviceId}`,
-    debounce(({ status }) => {
+    debounce(({ status, shadowSynchronization }) => {
       if (data) {
-        updateData({ ...data, status })
+        updateData({
+          ...data,
+          metadata: {
+            ...data.metadata,
+            shadowSynchronization,
+            status: {
+              ...data.metadata.status,
+              value: status,
+            },
+          },
+        })
       }
     }, 300)
   )
 
-  // Update the resources (links) when a WS event is emitted
+  return { data, updateData, ...rest }
+}
+
+export const useThingsResources = deviceId => {
+  const { httpGatewayAddress } = useAppConfig()
+
+  // Fetch the data
+  const { data, updateData, ...rest } = useStreamApi(
+    `${httpGatewayAddress}${thingsApiEndpoints.THINGS_RESOURCES}?device_id_filter=${deviceId}`
+  )
+
   useEmitter(
     getResourceRegistrationNotificationKey(deviceId),
-    ({ event, resource }) => {
-      if (data) {
+    ({ event, resources: updatedResources }) => {
+      if (data?.[0]?.resources) {
+        const resources = data[0].resources // get the first set of resources from an array, since it came from a stream of data
         let updatedLinks = []
 
-        if (event === resourceEventTypes.ADDED) {
-          const linkExists =
-            data.links.findIndex(link => link.href === resource.href) !== -1
-          if (linkExists) {
-            // Already exists, update
-            updatedLinks = data.links.map(link => {
-              if (link.href === resource.href) {
-                return resource
-              }
+        updatedResources.forEach(resource => {
+          if (event === resourceEventTypes.ADDED) {
+            const linkExists =
+              resources.findIndex(link => link.href === resource.href) !== -1
+            if (linkExists) {
+              // Already exists, update
+              updatedLinks = resources.map(link => {
+                if (link.href === resource.href) {
+                  return resource
+                }
 
-              return link
-            })
+                return link
+              })
+            } else {
+              updatedLinks = resources.concat(resource)
+            }
           } else {
-            updatedLinks = data.links.concat(resource)
+            updatedLinks = resources.filter(link => link.href !== resource.href)
           }
-        } else {
-          updatedLinks = data.links.filter(link => link.href !== resource.href)
-        }
-
-        updateData({
-          ...data,
-          links: updatedLinks,
         })
+
+        updateData([{ ...data[0], resources: updatedLinks }])
       }
     }
   )

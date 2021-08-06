@@ -21,40 +21,55 @@ import {
   defaultNewResource,
   resourceModalTypes,
   NO_DEVICE_NAME,
+  shadowSynchronizationStates,
 } from './constants'
 import {
   handleCreateResourceErrors,
   handleUpdateResourceErrors,
   handleFetchResourceErrors,
   handleDeleteResourceErrors,
+  handleShadowSynchronizationErrors,
+  shadowSynchronizationEnabled,
 } from './utils'
 import {
   getThingsResourcesApi,
   updateThingsResourceApi,
   createThingsResourceApi,
   deleteThingsResourceApi,
+  updateThingShadowSynchronizationApi,
 } from './rest'
-import { useThingDetails } from './hooks'
+import { useThingDetails, useThingsResources } from './hooks'
 import { messages as t } from './things-i18n'
 
 export const ThingsDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
   const { id, href } = useParams()
+  const [shadowSyncLoading, setShadowSyncLoading] = useState(false)
   const [resourceModalData, setResourceModalData] = useState(null)
   const [loadingResource, setLoadingResource] = useState(false)
   const [savingResource, setSavingResource] = useState(false)
   const [deleteResourceHref, setDeleteResourceHref] = useState()
   const isMounted = useIsMounted()
   const { data, updateData, loading, error } = useThingDetails(id)
+  const {
+    data: resourcesData,
+    loading: loadingResources,
+    error: resourcesError,
+  } = useThingsResources(id)
+
+  const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(
+    data?.metadata?.shadowSynchronization
+  )
+  const resources = resourcesData?.[0]?.resources || []
 
   // Open the resource modal when href is present
   useEffect(
     () => {
-      if (href && !loading) {
+      if (href && !loading && !loadingResources) {
         openUpdateModal({ href: `/${href}` })
       }
     },
-    [href, loading] // eslint-disable-line
+    [href, loading, loadingResources] // eslint-disable-line
   )
 
   if (error) {
@@ -66,13 +81,22 @@ export const ThingsDetailsPage = () => {
     )
   }
 
-  const deviceStatus = data?.status
+  if (resourcesError) {
+    return (
+      <NotFoundPage
+        title={_(t.thingResourcesNotFound)}
+        message={_(t.thingResourcesNotFoundMessage, { id })}
+      />
+    )
+  }
+
+  const deviceStatus = data?.metadata?.status?.value
   const isOnline = thingsStatuses.ONLINE === deviceStatus
   const isUnregistered = thingsStatuses.UNREGISTERED === deviceStatus
   const greyedOutClassName = classNames({
     'grayed-out': isUnregistered,
   })
-  const deviceName = data?.device?.n || NO_DEVICE_NAME
+  const deviceName = data?.name || NO_DEVICE_NAME
   const breadcrumbs = [
     {
       to: '/',
@@ -99,15 +123,15 @@ export const ThingsDetailsPage = () => {
 
     try {
       const {
-        data: { if: ifs, rt, ...resourceData }, // exclude the if and rt
+        data: { data: { content: { if: ifs, rt, ...resourceData } = {} } = {} }, // exclude the if and rt
       } = await getThingsResourcesApi({ deviceId: id, href, currentInterface })
 
       if (isMounted.current) {
         setLoadingResource(false)
 
         // Retrieve the types and interfaces of this resource
-        const { rt: types = [], if: interfaces = [] } =
-          data?.links?.find?.(link => link.href === href) || {}
+        const { resourceTypes: types = [], interfaces = [] } =
+          resources?.find?.(link => link.href === href) || {}
 
         // Setting the data and opening the modal
         setResourceModalData({
@@ -137,12 +161,11 @@ export const ThingsDetailsPage = () => {
     setLoadingResource(true)
 
     try {
-      const {
-        data: { rts: supportedTypes },
-      } = await getThingsResourcesApi({
+      const { data } = await getThingsResourcesApi({
         deviceId: id,
         href,
       })
+      const supportedTypes = data?.data?.content?.rts || []
 
       if (isMounted.current) {
         setLoadingResource(false)
@@ -274,21 +297,41 @@ export const ThingsDetailsPage = () => {
   const updateDeviceNameInData = name => {
     updateData({
       ...data,
-      device: {
-        ...data.device,
-        n: name,
-      },
+      name,
     })
+  }
+
+  // Handler for setting the shadow synchronization on a device
+  const setShadowSynchronization = async () => {
+    setShadowSyncLoading(true)
+
+    try {
+      const setSync = isShadowSynchronizationEnabled
+        ? shadowSynchronizationStates.DISABLED
+        : shadowSynchronizationStates.ENABLED
+      await updateThingShadowSynchronizationApi(id, setSync)
+
+      if (isMounted.current) {
+        setShadowSyncLoading(false)
+      }
+    } catch (error) {
+      if (error && isMounted.current) {
+        handleShadowSynchronizationErrors(error, isOnline, _)
+        setShadowSyncLoading(false)
+      }
+    }
   }
 
   return (
     <Layout
       title={`${deviceName ? deviceName + ' | ' : ''}${_(menuT.things)}`}
       breadcrumbs={breadcrumbs}
-      loading={loading || (!resourceModalData && loadingResource)}
+      loading={
+        loading || (!resourceModalData && loadingResource) || shadowSyncLoading
+      }
       header={
         <ThingsDetailsHeader
-          deviceId={data?.device?.di}
+          deviceId={id}
           deviceName={deviceName}
           isUnregistered={isUnregistered}
         />
@@ -306,17 +349,23 @@ export const ThingsDetailsPage = () => {
         isOnline={isOnline}
         deviceName={deviceName}
         deviceId={id}
-        links={data?.links}
+        links={resources}
       />
-      <ThingsDetails data={data} loading={loading} />
+      <ThingsDetails
+        data={data}
+        loading={loading}
+        shadowSyncLoading={shadowSyncLoading}
+        setShadowSynchronization={setShadowSynchronization}
+      />
 
       <ThingsResources
-        data={data?.links}
+        data={resources}
         onUpdate={openUpdateModal}
         onCreate={openCreateModal}
         onDelete={openDeleteModal}
         deviceStatus={deviceStatus}
         loading={loadingResource}
+        deviceId={id}
       />
 
       <ThingsResourcesModal

@@ -41,6 +41,14 @@ export const messages = defineMessages({
     id: 'things.thingNotFoundMessage',
     defaultMessage: 'Thing with ID "{id}" does not exist.',
   },
+  thingResourcesNotFound: {
+    id: 'things.thingResourcesNotFound',
+    defaultMessage: 'Thing resources not found',
+  },
+  thingResourcesNotFoundMessage: {
+    id: 'things.thingResourcesNotFoundMessage',
+    defaultMessage: 'Thing resources for device with ID "{id}" does not exist.',
+  },
   location: {
     id: 'things.location',
     defaultMessage: 'Location',
@@ -101,7 +109,7 @@ export const messages = defineMessages({
   resourceWasUpdatedOffline: {
     id: 'things.resourceWasUpdatedOffline',
     defaultMessage:
-      'The resource was updated successfully, changes will be applied once the device is online.',
+      'The resource update was scheduled, changes will be applied once the device is online.',
   },
   resourceWasDeletedOffline: {
     id: 'things.resourceWasDeletedOffline',
@@ -115,7 +123,7 @@ export const messages = defineMessages({
   resourceWasCreatedOffline: {
     id: 'things.resourceWasCreatedOffline',
     defaultMessage:
-      'The resource was created successfully, changes will be applied once the device is online.',
+      'The resource creation was scheduled, changes will be applied once the device is online.',
   },
   invalidArgument: {
     id: 'things.invalidArgument',
@@ -155,12 +163,23 @@ export const messages = defineMessages({
   resourceWasDeleted: {
     id: 'things.resourceWasDeleted',
     defaultMessage:
-      'The resource delete was successfully scheduled. you will be notified when the resource was deleted.',
+      'The resource delete was scheduled, you will be notified when the resource was deleted.',
   },
   resourceDeleteError: {
     id: 'things.resourceDeleteError',
     defaultMessage: 'Failed to delete a resource',
     description: 'Title of the toast message on resource delete error.',
+  },
+  shadowSynchronizationError: {
+    id: 'things.shadowSynchronizationError',
+    defaultMessage: 'Failed to set shadow synchronization',
+    description:
+      'Title of the toast message on shadow synchronization set error.',
+  },
+  shadowSynchronizationWasSetOffline: {
+    id: 'things.shadowSynchronizationWasSetOffline',
+    defaultMessage:
+      'Shadow synchronization was scheduled, changes will be applied once the device is online.',
   },
   thingWentOnline: {
     id: 'things.thingWentOnline',
@@ -194,6 +213,14 @@ export const messages = defineMessages({
     id: 'things.resourceDeleted',
     defaultMessage: 'Resource Deleted',
   },
+  newResources: {
+    id: 'things.newResources',
+    defaultMessage: 'New Resources',
+  },
+  resourcesDeleted: {
+    id: 'things.resourcesDeleted',
+    defaultMessage: 'Resources Deleted',
+  },
   resourceWithHrefWasDeleted: {
     id: 'things.resourceWithHrefWasDeleted',
     defaultMessage:
@@ -203,6 +230,16 @@ export const messages = defineMessages({
     id: 'things.resourceAdded',
     defaultMessage:
       'New resource {href} was added to the thing {deviceName} ({deviceId}).',
+  },
+  resourcesAdded: {
+    id: 'things.resourcesAdded',
+    defaultMessage:
+      '{count} new resources were added to the thing {deviceName} ({deviceId}).',
+  },
+  resourcesWereDeleted: {
+    id: 'things.resourcesWereDeleted',
+    defaultMessage:
+      '{count} resources were deleted from thing {deviceName} ({deviceId}).',
   },
   resourceUpdated: {
     id: 'things.resourceUpdated',
@@ -216,6 +253,10 @@ export const messages = defineMessages({
   treeView: {
     id: 'things.treeView',
     defaultMessage: 'Tree view',
+  },
+  shadowSynchronization: {
+    id: 'things.shadowSynchronization',
+    defaultMessage: 'Shadow synchronization',
   },
   save: {
     id: 'things.save',
@@ -232,5 +273,13 @@ export const messages = defineMessages({
   thingNameChangeFailed: {
     id: 'things.thingNameChangeFailed',
     defaultMessage: 'Thing name change failed',
+  },
+  enabled: {
+    id: 'things.enabled',
+    defaultMessage: 'Enabled',
+  },
+  disabled: {
+    id: 'things.disabled',
+    defaultMessage: 'Disabled',
   },
 })

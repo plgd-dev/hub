@@ -13,6 +13,7 @@ import {
   NO_DEVICE_NAME,
 } from './constants'
 import { thingShape } from './shapes'
+import { shadowSynchronizationEnabled } from './utils'
 import { messages as t } from './things-i18n'
 
 const { ONLINE, UNREGISTERED } = thingsStatuses
@@ -24,27 +25,40 @@ export const ThingsList = ({ data }) => {
     () => [
       {
         Header: _(t.name),
-        accessor: 'device.n',
+        accessor: 'name',
         Cell: ({ value, row }) => {
           const deviceName = value || NO_DEVICE_NAME
 
-          if (row.original?.status === UNREGISTERED) {
+          if (row.original?.metadata?.status?.value === UNREGISTERED) {
             return <span>{deviceName}</span>
           }
-          return <Link to={`/things/${row.original?.device?.di}`}>{deviceName}</Link>
+          return <Link to={`/things/${row.original?.id}`}>{deviceName}</Link>
         },
         style: { width: '33%' },
       },
       {
         Header: 'ID',
-        accessor: 'device.di',
+        accessor: 'id',
         Cell: ({ value }) => {
           return <span className="no-wrap-text">{value}</span>
         },
       },
       {
+        Header: _(t.shadowSynchronization),
+        accessor: 'metadata.shadowSynchronization',
+        style: { width: '220px' },
+        Cell: ({ value }) => {
+          const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(value)
+          return (
+            <Badge className={isShadowSynchronizationEnabled ? 'green' : 'red'}>
+              {isShadowSynchronizationEnabled ? _(t.enabled) : _(t.disabled)}
+            </Badge>
+          )
+        },
+      },
+      {
         Header: _(t.status),
-        accessor: 'status',
+        accessor: 'metadata.status.value',
         style: { width: '120px' },
         Cell: ({ value }) => {
           const isOnline = ONLINE === value
@@ -65,7 +79,7 @@ export const ThingsList = ({ data }) => {
       data={data || []}
       defaultSortBy={[
         {
-          id: 'device.n',
+          id: 'name',
           desc: false,
         },
       ]}

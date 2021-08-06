@@ -3,9 +3,8 @@ import { useIntl } from 'react-intl'
 import { useSelector, useDispatch } from 'react-redux'
 import PropTypes from 'prop-types'
 
-import { WSManager } from '@/common/services/ws-manager'
+import { WebSocketEventClient, eventFilters } from '@/common/services'
 import { Switch } from '@/components/switch'
-import { thingsApiEndpoints } from './constants'
 import { getResourceUpdateNotificationKey } from './utils'
 import { isNotificationActive, toggleActiveNotification } from './slice'
 import { deviceResourceUpdateListener } from './websockets'
@@ -31,7 +30,7 @@ export const ThingsResourcesModalNotifications = ({
     () => {
       if (isUnregistered) {
         // Unregister the WS when the device is unregistered
-        WSManager.removeWsClient(resourceUpdateObservationWSKey)
+        WebSocketEventClient.unsubscribe(resourceUpdateObservationWSKey)
       }
     },
     [isUnregistered, resourceUpdateObservationWSKey]
@@ -45,13 +44,16 @@ export const ThingsResourcesModalNotifications = ({
       Notification?.requestPermission?.()
 
       // Register the WS
-      WSManager.addWsClient({
-        name: resourceUpdateObservationWSKey,
-        api: `${thingsApiEndpoints.THINGS_WS}/${deviceId}${href}`,
-        listener: deviceResourceUpdateListener({ deviceId, href, deviceName }),
-      })
+      WebSocketEventClient.subscribe(
+        {
+          eventFilter: [eventFilters.RESOURCE_CHANGED],
+          resourceIdFilter: [`${deviceId}${href}`]
+        },
+        resourceUpdateObservationWSKey,
+        deviceResourceUpdateListener({ deviceId, href, deviceName })
+      )
     } else {
-      WSManager.removeWsClient(resourceUpdateObservationWSKey)
+      WebSocketEventClient.unsubscribe(resourceUpdateObservationWSKey)
     }
 
     dispatch(toggleActiveNotification(resourceUpdateObservationWSKey))

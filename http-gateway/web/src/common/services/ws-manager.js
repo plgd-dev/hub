@@ -1,6 +1,7 @@
 import { getAppMode } from '@/common/utils'
 import { WebSocketClient } from './websocket-client'
 
+// eslint-disable-next-line no-unused-vars
 class _WSManager {
   constructor() {
     // Object containing the list of websocket clients which are about to be registered (or are already registered).
@@ -202,5 +203,3 @@ class _WSManager {
     })
   }
 }
-
-export const WSManager = new _WSManager()

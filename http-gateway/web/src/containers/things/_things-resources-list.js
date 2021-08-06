@@ -30,7 +30,7 @@ export const ThingsResourcesList = ({
         accessor: 'href',
         Cell: ({ value, row }) => {
           const {
-            original: { di, href },
+            original: { deviceId, href },
           } = row
           if (isUnregistered) {
             return <span>{value}</span>
@@ -39,7 +39,7 @@ export const ThingsResourcesList = ({
             <div className="tree-expander-container">
               <span
                 className="link reveal-icon-on-hover"
-                onClick={() => onUpdate({ di, href })}
+                onClick={() => onUpdate({ deviceId, href })}
               >
                 {value}
               </span>
@@ -51,7 +51,7 @@ export const ThingsResourcesList = ({
       },
       {
         Header: _(t.types),
-        accessor: 'rt',
+        accessor: 'resourceTypes',
         Cell: ({ value }) => {
           return (
             <div className="badges-box-horizontal">
@@ -66,13 +66,13 @@ export const ThingsResourcesList = ({
         disableSortBy: true,
         Cell: ({ row }) => {
           const {
-            original: { di, href, if: interfaces },
+            original: { deviceId, href, interfaces },
           } = row
           return (
             <ThingsResourcesActionButton
               disabled={isUnregistered || loading}
               href={href}
-              di={di}
+              deviceId={deviceId}
               interfaces={interfaces}
               onCreate={onCreate}
               onUpdate={onUpdate}

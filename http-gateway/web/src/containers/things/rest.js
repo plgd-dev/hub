@@ -36,7 +36,7 @@ export const getThingsResourcesApi = ({
   fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}${href}${interfaceGetParam(currentInterface)}`
+    }/${deviceId}/resources${href}${interfaceGetParam(currentInterface)}`
   )
 
 /**
@@ -51,7 +51,7 @@ export const updateThingsResourceApi = (
   return fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}${href}${interfaceGetParam(currentInterface)}`,
+    }/${deviceId}/resources${href}${interfaceGetParam(currentInterface)}`,
     { method: 'PUT', body: data }
   )
 }
@@ -68,7 +68,7 @@ export const createThingsResourceApi = (
   return fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}${href}${interfaceGetParam(currentInterface)}`,
+    }/${deviceId}/resource-links${href}${interfaceGetParam(currentInterface)}`,
     { method: 'POST', body: data }
   )
 }
@@ -82,7 +82,24 @@ export const deleteThingsResourceApi = ({ deviceId, href }) => {
   return fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}${href}`,
+    }/${deviceId}/resource-links${href}`,
     { method: 'DELETE' }
+  )
+}
+
+/**
+ * Update the shadowSynchronization of one Thing Rest Api endpoint
+ * @param {*} deviceId
+ * @param {*} shadowSynchronization
+ */
+export const updateThingShadowSynchronizationApi = (
+  deviceId,
+  shadowSynchronization
+) => {
+  return fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      thingsApiEndpoints.THINGS
+    }/${deviceId}/metadata`,
+    { method: 'PUT', body: { shadowSynchronization } }
   )
 }
