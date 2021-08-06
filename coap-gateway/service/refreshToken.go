@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -69,6 +70,14 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 	return int64(time.Until(validUntil).Seconds())
 }
 
+func isTempError(err error) bool {
+	switch {
+	case strings.Contains(err.Error(), "connect: connection refused"), strings.Contains(err.Error(), context.DeadlineExceeded.Error()), strings.Contains(err.Error(), context.Canceled.Error()):
+		return true
+	}
+	return false
+}
+
 func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
 		client.logAndWriteErrorResponse(err, code, req.Token)
@@ -93,7 +102,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	token, err := client.server.provider.Refresh(req.Context, refreshToken.RefreshToken)
 	if err != nil {
 		code := coapCodes.Unauthorized
-		if strings.Contains(err.Error(), "connect: connection refused") {
+		if isTempError(err) {
 			code = coapCodes.ServiceUnavailable
 		}
 		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), code)

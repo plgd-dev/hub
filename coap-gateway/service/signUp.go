@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
@@ -93,7 +92,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 	token, err := client.server.provider.Exchange(r.Context, signUp.AuthorizationProvider, signUp.AuthorizationCode)
 	if err != nil {
 		code := coapCodes.Unauthorized
-		if strings.Contains(err.Error(), "connect: connection refused") {
+		if isTempError(err) {
 			code = coapCodes.ServiceUnavailable
 		}
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), code)
