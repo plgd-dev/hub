@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -66,11 +65,7 @@ func (u *devicesStatusUpdater) updateOnlineStatus(client *Client, validUntil tim
 	if err != nil {
 		return time.Time{}, err
 	}
-	serviceToken, err := client.server.oauthMgr.GetToken(client.Context())
-	if err != nil {
-		return time.Time{}, fmt.Errorf("cannot get service token: %w", err)
-	}
-	ctx := kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(client.Context(), serviceToken.AccessToken), authCtx.GetUserID())
+	ctx := kitNetGrpc.CtxWithToken(client.Context(), authCtx.GetAccessToken())
 	if !u.cfg.Enabled || authCtx.Expire.UnixNano() < validUntil.UnixNano() {
 		validUntil = authCtx.Expire
 	}

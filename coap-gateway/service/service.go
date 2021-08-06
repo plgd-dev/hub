@@ -11,12 +11,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	kitSync "github.com/plgd-dev/kit/sync"
 
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
-
-	"google.golang.org/grpc"
 
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
@@ -51,7 +49,6 @@ type Service struct {
 	raClient                *raClient.Client
 	asClient                pbAS.AuthorizationServiceClient
 	rdClient                pbGRPC.GrpcGatewayClient
-	oauthMgr                *manager.Manager
 	expirationClientCache   *cache.Cache
 	coapServer              *tcp.Server
 	listener                tcp.Listener
@@ -63,6 +60,7 @@ type Service struct {
 	devicesStatusUpdater    *devicesStatusUpdater
 	resourceSubscriber      *subscriber.Subscriber
 	provider                *authorization.PlgdProvider
+	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
 }
 
@@ -103,14 +101,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	})
 
-	oauthMgr, err := manager.New(config.Clients.AuthServer.OAuth, logger)
-	if err != nil {
-		resourceSubscriber.Close()
-		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
-	}
-	resourceSubscriber.AddCloseFunc(oauthMgr.Close)
-
-	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger)
 	if err != nil {
 		resourceSubscriber.Close()
 		return nil, fmt.Errorf("cannot create connection to resource aggregate: %w", err)
@@ -126,7 +117,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	})
 	raClient := raClient.New(raConn.GRPC(), resourceSubscriber)
 
-	asConn, err := grpcClient.New(config.Clients.AuthServer.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	asConn, err := grpcClient.New(config.Clients.AuthServer.Connection, logger)
 	if err != nil {
 		resourceSubscriber.Close()
 		return nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
@@ -142,7 +133,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	})
 	asClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
 
-	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger)
 	if err != nil {
 		resourceSubscriber.Close()
 		return nil, fmt.Errorf("cannot create connection to resource directory: %w", err)
@@ -237,6 +228,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	resourceSubscriber.AddCloseFunc(provider.Close)
 
+	keyCache := jwt.NewKeyCacheWithHttp(provider.OpenID.JWKSURL, provider.HTTPClient.HTTP())
+
+	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	s := Service{
@@ -247,7 +242,6 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		raClient:              raClient,
 		asClient:              asClient,
 		rdClient:              rdClient,
-		oauthMgr:              oauthMgr,
 		expirationClientCache: expirationClientCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
@@ -258,6 +252,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		taskQueue:          p,
 		resourceSubscriber: resourceSubscriber,
 		provider:           provider,
+		jwtValidator:       jwtValidator,
 
 		ctx:    ctx,
 		cancel: cancel,
@@ -383,22 +378,11 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 			logErrorAndCloseClient(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized)
 			return
 		}
-		serviceToken, err := server.oauthMgr.GetToken(r.Context)
-		if err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError)
-			return
+		if authCtx != nil {
+			r.Context = kitNetGrpc.CtxWithToken(r.Context, authCtx.GetAccessToken())
 		}
-		r.Context = kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(r.Context, serviceToken.AccessToken), authCtx.GetUserID())
 		next.ServeCOAP(w, r)
 	})
-}
-
-func (server *Service) ServiceRequestContext(userID string) (context.Context, error) {
-	serviceToken, err := server.oauthMgr.GetToken(server.ctx)
-	if err != nil {
-		return nil, err
-	}
-	return kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(server.ctx, serviceToken.AccessToken), userID), nil
 }
 
 //setupCoapServer setup coap server

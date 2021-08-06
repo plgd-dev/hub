@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -105,7 +106,8 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	if _, err := client.server.asClient.AddDevice(r.Context, &pb.AddDeviceRequest{
+	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken)
+	if _, err := client.server.asClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: signUp.DeviceID,
 		UserId:   token.Owner,
 	}); err != nil {

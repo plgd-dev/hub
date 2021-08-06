@@ -17,7 +17,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/kit/codec/cbor"
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -180,18 +179,18 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	userInfo, err := getUserInfo(req.Context, client.server, signIn.AccessToken)
+	jwtClaims, err := client.ValidateToken(req.Context, signIn.AccessToken)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	if err := userInfo.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
+	if err := jwtClaims.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signIn.UserID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	validUntil, err := userInfo.getExpirationTime()
+	validUntil, err := jwtClaims.getExpirationTime()
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
@@ -205,18 +204,13 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
-	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot get service token: %w", err), coapCodes.InternalServerError)
-		return
-	}
 	authCtx := authorizationContext{
 		DeviceID:    signIn.DeviceID,
 		UserID:      signIn.UserID,
 		AccessToken: signIn.AccessToken,
 		Expire:      validUntil,
 	}
-	req.Context = kitNetGrpc.CtxWithOwner(kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken), authCtx.GetUserID())
+	req.Context = kitNetGrpc.CtxWithToken(req.Context, signIn.AccessToken)
 
 	oldAuthCtx := client.SetAuthorizationContext(&authCtx)
 	err = client.server.devicesStatusUpdater.Add(client)
@@ -272,15 +266,10 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 func updateDeviceMetadata(req *mux.Message, client *Client) error {
 	oldAuthCtx := client.CleanUp()
 	if oldAuthCtx.GetDeviceID() != "" {
-		serviceToken, err := client.server.oauthMgr.GetToken(req.Context)
-		if err != nil {
-			return fmt.Errorf("cannot get service token: %w", err)
-		}
-		ctx := kitNetGrpc.CtxWithToken(req.Context, serviceToken.AccessToken)
+		ctx := kitNetGrpc.CtxWithToken(req.Context, oldAuthCtx.GetAccessToken())
 		client.server.expirationClientCache.Set(oldAuthCtx.GetDeviceID(), nil, time.Millisecond)
-		req.Context = kitNetGrpc.CtxWithOwner(ctx, oldAuthCtx.GetUserID())
 
-		_, err = client.server.raClient.UpdateDeviceMetadata(req.Context, &commands.UpdateDeviceMetadataRequest{
+		_, err := client.server.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 			DeviceId: oldAuthCtx.GetDeviceID(),
 			Update: &commands.UpdateDeviceMetadataRequest_Status{
 				Status: &commands.ConnectionStatus{
@@ -322,14 +311,13 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 		return
 	}
 
-	ctx := context.WithValue(req.Context, oauth2.HTTPClient, client.server.provider.HTTPClient.HTTP())
-	userInfo, err := getUserInfo(ctx, client.server, signOut.AccessToken)
+	jwtClaims, err := client.ValidateToken(req.Context, signOut.AccessToken)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	if err := userInfo.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOut.UserID); err != nil {
+	if err := jwtClaims.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOut.UserID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
 		return
 	}

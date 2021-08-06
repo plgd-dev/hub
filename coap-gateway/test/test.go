@@ -34,9 +34,9 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.Authorization.Authority = "https://" + config.OAUTH_SERVER_HOST
 	cfg.APIs.COAP.Authorization.ClientID = oauthService.ClientTest
 	cfg.APIs.COAP.Authorization.HTTP = config.MakeHttpClientConfig()
+	cfg.APIs.COAP.Authorization.Audience = config.OAUTH_MANAGER_AUDIENCE
 	cfg.Clients.AuthServer.OwnerClaim = "sub"
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
-	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
 	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()

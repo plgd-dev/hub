@@ -7,6 +7,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -105,16 +106,18 @@ func signOffHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	userInfo, err := getUserInfo(req.Context, client.server, signOffData.accessToken)
+	jwtClaims, err := client.ValidateToken(req.Context, signOffData.accessToken)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	if err := userInfo.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOffData.userID); err != nil {
+	if err := jwtClaims.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOffData.userID); err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.InternalServerError)
 		return
 	}
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)
 
 	if _, err := client.server.asClient.DeleteDevice(ctx, &pb.DeleteDeviceRequest{
 		DeviceId: signOffData.deviceID,

@@ -29,21 +29,21 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, owne
 	oauth2 := config.Config.ToOAuth2(oidcfg.AuthURL, oidcfg.TokenURL)
 
 	return &PlgdProvider{
-		Config:      config,
-		OAuth2:      &oauth2,
-		HTTPClient:  httpClient,
-		OwnerClaim:  ownerClaim,
-		UserInfoURL: oidcfg.UserInfoURL,
+		Config:     config,
+		OAuth2:     &oauth2,
+		HTTPClient: httpClient,
+		OwnerClaim: ownerClaim,
+		OpenID:     oidcfg,
 	}, nil
 }
 
 // PlgdProvider configuration with new http client
 type PlgdProvider struct {
-	Config      Config
-	OAuth2      *oauth2.Config
-	HTTPClient  *client.Client
-	OwnerClaim  string
-	UserInfoURL string
+	Config     Config
+	OAuth2     *oauth2.Config
+	HTTPClient *client.Client
+	OwnerClaim string
+	OpenID     openid.Config
 }
 
 // AuthCodeURL returns URL for redirecting to the authentication web page
@@ -76,7 +76,7 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 	}
 
 	oauthClient := p.OAuth2.Client(ctx, token)
-	resp, err := oauthClient.Get(p.UserInfoURL)
+	resp, err := oauthClient.Get(p.OpenID.UserInfoURL)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 	}
 
 	oauthClient := p.OAuth2.Client(ctx, token)
-	resp, err := oauthClient.Get(p.UserInfoURL)
+	resp, err := oauthClient.Get(p.OpenID.UserInfoURL)
 	if err != nil {
 		return nil, err
 	}

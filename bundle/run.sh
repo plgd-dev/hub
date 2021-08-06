@@ -486,6 +486,7 @@ cat /configs/authorization.yaml | yq e "\
   .oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
   .oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
   .oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .oauthClients.device.audience = \"${SDK_OAUTH_AUDIENCE}\" |
   .oauthClients.device.http.tls.useSystemCAPool = true |
   .oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
   .oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
