@@ -426,6 +426,9 @@ func (server *Service) setupCoapServer() error {
 	opts = append(opts, tcp.WithContext(server.ctx))
 	opts = append(opts, tcp.WithHeartBeat(server.config.APIs.COAP.GoroutineSocketHeartbeat))
 	opts = append(opts, tcp.WithMaxMessageSize(server.config.APIs.COAP.MaxMessageSize))
+	opts = append(opts, tcp.WithErrors(func(e error) {
+		log.Errorf("plgd/go-coap: %w", e)
+	}))
 	opts = append(opts, tcp.WithGoPool(func(f func()) error {
 		// we call directly function in connection-goroutine because
 		// pairing request/response cannot be done in taskQueue for a observe resource.
