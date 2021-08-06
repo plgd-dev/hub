@@ -168,9 +168,6 @@ func setNewDeviceSubscriber(ctx context.Context, client *Client, deviceID string
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
-		if isTempError(err) {
-			code = coapCodes.ServiceUnavailable
-		}
 		client.logAndWriteErrorResponse(err, code, req.Token)
 		if err := client.Close(); err != nil {
 			log.Errorf("sign in error: %w", err)

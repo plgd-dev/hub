@@ -91,11 +91,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 
 	token, err := client.server.provider.Exchange(r.Context, signUp.AuthorizationProvider, signUp.AuthorizationCode)
 	if err != nil {
-		code := coapCodes.Unauthorized
-		if isTempError(err) {
-			code = coapCodes.ServiceUnavailable
-		}
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), code)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
 		return
 	}
 
