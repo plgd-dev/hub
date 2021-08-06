@@ -971,15 +971,10 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 	}
 }
 
-func mockGetUserDevices(ctx context.Context, userID, deviceID string) (bool, error) {
-	deviceIds, code, err := testListDevicesOfUserFunc(ctx, "0", userID)
+func mockGetUserDevices(ctx context.Context, userID string, deviceIDs []string) ([]string, error) {
+	ownedDevices, code, err := testListDevicesOfUserFunc(ctx, "0", userID)
 	if err != nil {
-		return false, status.Errorf(code, "%v", err)
+		return nil, status.Errorf(code, "%v", err)
 	}
-	for _, id := range deviceIds {
-		if id == deviceID {
-			return true, nil
-		}
-	}
-	return false, nil
+	return service.Intersection(ownedDevices, deviceIDs), nil
 }

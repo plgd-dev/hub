@@ -169,6 +169,19 @@ func (d *UserDevicesManager) UpdateUserDevices(ctx context.Context, userID strin
 	return userDevices[userID], nil
 }
 
+func (d *UserDevicesManager) ChecksUserDevices(userID string, deviceIDs []string) bool {
+	v, _ := d.getRef(userID, false)
+	if v == nil {
+		return false
+	}
+	defer func() {
+		if err := d.Release(userID); err != nil {
+			d.errFunc(fmt.Errorf("cannot release userID %v devices: %w", userID, err))
+		}
+	}()
+	return v.Data().(*userDevices).checkUserDevices(deviceIDs)
+}
+
 func (d *UserDevicesManager) IsUserDevice(userID, deviceID string) bool {
 	v, _ := d.getRef(userID, false)
 	if v == nil {
@@ -377,6 +390,21 @@ func (u *userDevices) getDevices() (map[string]bool, error) {
 		devices[deviceID] = true
 	}
 	return devices, nil
+}
+
+func (u *userDevices) checkUserDevices(deviceIDs []string) bool {
+	if err := u.lock.Acquire(context.Background(), 1); err != nil {
+		log.Errorf("failed to acquire lock: %v", err)
+		return false
+	}
+	defer u.lock.Release(1)
+
+	for _, deviceID := range deviceIDs {
+		if val, ok := u.devices[deviceID]; !ok || !val {
+			return false
+		}
+	}
+	return true
 }
 
 func (u *userDevices) isUserDevice(deviceID string) bool {
