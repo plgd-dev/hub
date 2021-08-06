@@ -47,20 +47,26 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	if err != nil {
-		eventstore.Close(ctx)
+		err := eventstore.Close(ctx)
+		if err != nil {
+			logger.Errorf("error occurs during closing of connection to mongodb: %w", err)
+		}
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
 
 	service, err := NewService(ctx, config, logger, eventstore, publisher)
 	if err != nil {
-		eventstore.Close(ctx)
+		err := eventstore.Close(ctx)
+		if err != nil {
+			logger.Errorf("error occurs during closing of connection to mongodb: %w", err)
+		}
 		publisher.Close()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
 	service.AddCloseFunc(func() {
 		err := eventstore.Close(ctx)
 		if err != nil {
-			logger.Errorf("error occurs during close connection to mongodb: %w", err)
+			logger.Errorf("error occurs during closing of connection to mongodb: %w", err)
 		}
 	})
 	service.AddCloseFunc(publisher.Close)

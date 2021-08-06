@@ -133,27 +133,26 @@ func New(ctx context.Context, config Config, logger log.Logger, opts ...Option) 
 }
 
 // NewEventStore creates a new EventStore.
-//lint:ignore U1000 Lets keep this for now
-func newEventStore(ctx context.Context, host, dbPrefix string, colPrefix string, batchSize int, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc, opts ...*options.ClientOptions) (*EventStore, error) {
-	newOpts := []*options.ClientOptions{options.Client().ApplyURI("mongodb://" + host)}
-	newOpts = append(newOpts, opts...)
-	client, err := mongo.Connect(ctx, newOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
-	}
-	err = client.Ping(ctx, readpref.Primary())
-	if err != nil {
-		client.Disconnect(ctx)
-		return nil, fmt.Errorf("could not dial database: %w", err)
-	}
+// func newEventStore(ctx context.Context, host, dbPrefix string, colPrefix string, batchSize int, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc, opts ...*options.ClientOptions) (*EventStore, error) {
+// 	newOpts := []*options.ClientOptions{options.Client().ApplyURI("mongodb://" + host)}
+// 	newOpts = append(newOpts, opts...)
+// 	client, err := mongo.Connect(ctx, newOpts...)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("could not dial database: %w", err)
+// 	}
+// 	err = client.Ping(ctx, readpref.Primary())
+// 	if err != nil {
+// 		client.Disconnect(ctx)
+// 		return nil, fmt.Errorf("could not dial database: %w", err)
+// 	}
 
-	s, err := newEventStoreWithClient(ctx, client, dbPrefix, colPrefix, batchSize, eventMarshaler, eventUnmarshaler, LogDebugfFunc)
-	if err != nil {
-		client.Disconnect(ctx)
-		return nil, err
-	}
-	return s, err
-}
+// 	s, err := newEventStoreWithClient(ctx, client, dbPrefix, colPrefix, batchSize, eventMarshaler, eventUnmarshaler, LogDebugfFunc)
+// 	if err != nil {
+// 		client.Disconnect(ctx)
+// 		return nil, err
+// 	}
+// 	return s, err
+// }
 
 // NewEventStoreWithClient creates a new EventStore with a session.
 func newEventStoreWithClient(ctx context.Context, client *mongo.Client, dbPrefix string, colPrefix string, batchSize int, eventMarshaler MarshalerFunc, eventUnmarshaler UnmarshalerFunc, LogDebugfFunc LogDebugfFunc) (*EventStore, error) {

@@ -231,7 +231,9 @@ func (o *Observer) cleanUp(topics map[string]bool) (map[string]bool, error) {
 		}
 	}
 	if unsetTopics {
-		o.conn.Flush()
+		if err := o.conn.Flush(); err != nil {
+			errors = append(errors, err)
+		}
 	}
 	newSubs := make(map[string]bool)
 	for topic := range topics {
@@ -261,17 +263,25 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 		return fmt.Errorf("cannot set topics: %w", err)
 	}
 
+	cleanUpAfterError := func(err error) error {
+		errors := []error{
+			fmt.Errorf("cannot subscribe to topics: %w", err),
+		}
+		if _, err := o.cleanUp(make(map[string]bool)); err != nil {
+			errors = append(errors, err)
+		}
+		return fmt.Errorf("%+v", errors)
+	}
+
 	for topic := range newTopicsForSub {
 		sub, err := o.conn.QueueSubscribe(topic, o.subscriptionId, o.handleMsg)
 		if err != nil {
-			o.cleanUp(make(map[string]bool))
-			return fmt.Errorf("cannot subscribe to topics: %w", err)
+			return cleanUpAfterError(err)
 		}
 		o.subs[topic] = sub
 		err = sub.SetPendingLimits(o.pendingLimits.MsgLimit, o.pendingLimits.BytesLimit)
 		if err != nil {
-			o.cleanUp(make(map[string]bool))
-			return fmt.Errorf("cannot subscribe to topics: %w", err)
+			return cleanUpAfterError(err)
 		}
 	}
 

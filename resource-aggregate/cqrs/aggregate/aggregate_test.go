@@ -139,10 +139,10 @@ func testNewEventstore(ctx context.Context, t *testing.T) *mongodb.EventStore {
 func TestAggregate(t *testing.T) {
 	ctx := context.Background()
 	store := testNewEventstore(ctx, t)
-	defer store.Close(ctx)
 	defer func() {
 		err := store.Clear(ctx)
 		require.NoError(t, err)
+		_ = store.Close(ctx)
 	}()
 
 	type Resource struct {

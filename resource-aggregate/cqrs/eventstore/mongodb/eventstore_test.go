@@ -36,17 +36,18 @@ func TestEventStore(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
-	defer store.Close(ctx)
 	defer func() {
 		t.Log("clearing db")
 		err := store.Clear(ctx)
 		require.NoError(t, err)
+		_ = store.Close(ctx)
 	}()
 
 	t.Log("event store with default namespace")
 	test.AcceptanceTest(t, ctx, store)
 
 	t.Log("clearing collections")
-	store.ClearCollections(ctx)
+	err = store.ClearCollections(ctx)
+	require.NoError(t, err)
 	test.GetEventsTest(t, ctx, store)
 }

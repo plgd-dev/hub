@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -61,7 +62,11 @@ func (c *Client) SyncUpdateDeviceMetadata(ctx context.Context, req *commands.Upd
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
-	defer obs.Close()
+	defer func() {
+		if err := obs.Close(); err != nil {
+			log.Errorf("update device metadata: %w", err)
+		}
+	}()
 
 	_, err = c.UpdateDeviceMetadata(ctx, req)
 	if err != nil {

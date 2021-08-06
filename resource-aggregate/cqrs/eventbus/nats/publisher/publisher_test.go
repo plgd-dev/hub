@@ -68,7 +68,9 @@ func TestPublisherJetStream(t *testing.T) {
 		Subjects: []string{"test.>"},
 	})
 	require.NoError(t, err)
-	defer js.DeleteStream(s.Config.Name)
+	defer func() {
+		_ = js.DeleteStream(s.Config.Name)
+	}()
 	publisher, err := publisher.New(publisher.Config{
 		URL:       "nats://localhost:4222",
 		TLS:       config.MakeTLSClientConfig(),
