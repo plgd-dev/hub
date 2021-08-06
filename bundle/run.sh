@@ -622,12 +622,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
-  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
-  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
 
 coap-gateway --config /data/coap-gateway-unsecure.yaml >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
@@ -660,12 +655,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
-  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
-  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
 
 coap-gateway --config /data/coap-gateway-secure.yaml >$LOGS_PATH/coap-gateway.log 2>&1 &

@@ -60,24 +60,6 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-    oauth:
-      clientID: ""
-      clientSecret: ""
-      scopes: []
-      tokenURL: ""
-      audience: ""
-      verifyServiceTokenFrequency: 10s
-      http:
-        maxIdleConns: 10
-        maxConnsPerHost: 10
-        maxIdleConnsPerHost: 10
-        idleConnTimeout: 5s
-        timeout: 2s
-        tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
   resourceAggregate:
     grpc:
       address: ""
