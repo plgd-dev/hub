@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -61,7 +62,11 @@ func (c *Client) SyncCreateResource(ctx context.Context, req *commands.CreateRes
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)
 	}
-	defer obs.Close()
+	defer func() {
+		if err := obs.Close(); err != nil {
+			log.Errorf("create resource: %w", err)
+		}
+	}()
 
 	_, err = c.CreateResource(ctx, req)
 	if err != nil {

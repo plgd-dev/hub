@@ -140,8 +140,13 @@ func (o *Observer) SetTopics(ctx context.Context, topics []string) error {
 	for topic := range newTopicsForSub {
 		sub, err := o.conn.QueueSubscribe(topic, o.subscriptionId, o.handleMsg)
 		if err != nil {
-			o.cleanUp(make(map[string]bool))
-			return fmt.Errorf("cannot subscribe to topics: %w", err)
+			var errors []error = []error{
+				fmt.Errorf("cannot subscribe to topics: %w", err),
+			}
+			if _, err2 := o.cleanUp(make(map[string]bool)); err2 != nil {
+				errors = append(errors, err2)
+			}
+			return fmt.Errorf("%+v", errors)
 		}
 		o.subs[topic] = sub
 	}

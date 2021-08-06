@@ -53,11 +53,11 @@ func TestPerformMaintenance(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, store)
 
-	defer store.Close(ctx)
 	defer func() {
 		t.Log("clearing db")
 		err := store.Clear(ctx)
 		require.NoError(t, err)
+		_ = store.Close(ctx)
 	}()
 
 	aggregateID1 := "aggregateID1"

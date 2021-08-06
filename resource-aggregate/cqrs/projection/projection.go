@@ -65,18 +65,25 @@ func (p *Projection) Register(ctx context.Context, deviceID string) (created boo
 		return false, nil
 	}
 	topics, updateSubscriber := p.topicManager.Add(deviceID)
+	releaseAndReturnError := func(deviceID string, err error) error {
+		errors := []error{
+			fmt.Errorf("cannot register device %v: %w", deviceID, err),
+		}
+		if err := p.release(r); err != nil {
+			errors = append(errors, fmt.Errorf("cannot register device: %w", err))
+		}
+		return fmt.Errorf("%+v", errors)
+	}
 	if updateSubscriber {
 		err := p.cqrsProjection.SubscribeTo(topics)
 		if err != nil {
-			p.release(r)
-			return false, fmt.Errorf("cannot register device %v: %w", deviceID, err)
+			return false, releaseAndReturnError(deviceID, err)
 		}
 	}
 
 	err = p.cqrsProjection.Project(ctx, []eventstore.SnapshotQuery{{GroupID: deviceID}})
 	if err != nil {
-		p.release(r)
-		return false, fmt.Errorf("cannot register device %v: %w", deviceID, err)
+		return false, releaseAndReturnError(deviceID, err)
 	}
 
 	return true, nil
@@ -96,8 +103,16 @@ func (p *Projection) Unregister(deviceID string) error {
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	p.release(r)
-	return p.release(r)
+	var errors []error
+	for i := 0; i < 2; i++ {
+		if err := p.release(r); err != nil {
+			errors = append(errors, fmt.Errorf("cannot unregister projection for %v: %w", deviceID, err))
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("%+v", errors)
+	}
+	return nil
 }
 
 // Models returns models for device, resource or nil for non exist.
@@ -116,7 +131,11 @@ func (p *Projection) ForceUpdate(ctx context.Context, resourceID *commands.Resou
 		return fmt.Errorf("cannot force update projection for %v: not found", resourceID.GetDeviceId())
 	}
 	r := v.(*kitSync.RefCounter)
-	defer p.release(r)
+	defer func() {
+		if err := p.release(r); err != nil {
+			log.Errorf("cannot release projection: %w", err)
+		}
+	}()
 	d := r.Data().(*deviceProjection)
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -134,7 +153,9 @@ func (p *Projection) release(v *kitSync.RefCounter) error {
 	p.refCountMap.ReplaceWithFunc(deviceID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
 		o := oldValue.(*kitSync.RefCounter)
 		d := o.Data().(*deviceProjection)
-		o.Release(context.Background())
+		if err := o.Release(context.Background()); err != nil {
+			log.Errorf("cannot release projection device %v: %w", d.deviceID, err)
+		}
 		return o, d.released
 	})
 	if !data.released {

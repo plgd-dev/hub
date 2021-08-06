@@ -52,10 +52,10 @@ func Test_parallelRequest(t *testing.T) {
 	ctx := context.Background()
 	ctx = grpc.CtxWithIncomingOwner(ctx, "test")
 	store := testNewEventstore(ctx, t)
-	defer store.Close(ctx)
 	defer func() {
 		err := store.Clear(ctx)
 		require.NoError(t, err)
+		_ = store.Close(ctx)
 	}()
 
 	deviceID := "7397398d-3ae8-4d9a-62d6-511f7b736a60"

@@ -99,13 +99,13 @@ func GetEventsTest(t *testing.T, ctx context.Context, store eventstore.EventStor
 
 	t.Log("get all events")
 	saveEh := NewMockEventHandler()
-	store.GetEvents(ctx, []eventstore.GetEventsQuery{{}}, 0, saveEh)
+	err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{}}, 0, saveEh)
 	require.NoError(t, err)
 	require.True(t, saveEh.Equals(allEvents))
 
 	t.Logf("get groupid %v and %v events", groupID1, groupID2)
 	saveEh = NewMockEventHandler()
-	store.GetEvents(ctx, []eventstore.GetEventsQuery{{GroupID: groupID1}, {GroupID: groupID2}}, 0, saveEh)
+	err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{GroupID: groupID1}, {GroupID: groupID2}}, 0, saveEh)
 	require.NoError(t, err)
 	events := groupID1Events
 	events = append(events, groupID2Events...)
@@ -113,42 +113,42 @@ func GetEventsTest(t *testing.T, ctx context.Context, store eventstore.EventStor
 
 	t.Logf("get aggregateid %v events", aggregateID2)
 	saveEh = NewMockEventHandler()
-	store.GetEvents(ctx, []eventstore.GetEventsQuery{{AggregateID: aggregateID2}}, 0, saveEh)
+	err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{AggregateID: aggregateID2}}, 0, saveEh)
 	require.NoError(t, err)
 	require.True(t, saveEh.Equals(groupID2AggID2Events))
 
 	t.Logf("get groupid %v and aggregateid %v events", groupID1, aggregateID4)
 	saveEh = NewMockEventHandler()
-	store.GetEvents(ctx, []eventstore.GetEventsQuery{{GroupID: groupID1}, {GroupID: groupID3, AggregateID: aggregateID4}}, 0, saveEh)
+	err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{GroupID: groupID1}, {GroupID: groupID3, AggregateID: aggregateID4}}, 0, saveEh)
+	require.NoError(t, err)
 	events = groupID1Events
 	events = append(events, groupID3Events...)
-	require.NoError(t, err)
 	require.True(t, saveEh.Equals(events))
 
 	timestamp := timestamp4 - 1
 	t.Logf("get events with timestamp > %v", timestamp)
 	saveEh = NewMockEventHandler()
-	store.GetEvents(ctx, []eventstore.GetEventsQuery{{}}, timestamp, saveEh)
+	err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{}}, timestamp, saveEh)
 	require.NoError(t, err)
 	require.True(t, saveEh.Equals(groupID3Events))
 
 	timestamp = timestamp3 + 2
 	t.Logf("get groupid (%v, %v) events with timestamp > %v", groupID2, groupID3, timestamp)
 	saveEh = NewMockEventHandler()
-	store.GetEvents(ctx, []eventstore.GetEventsQuery{{GroupID: groupID2}, {GroupID: groupID3}}, timestamp, saveEh)
+	err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{GroupID: groupID2}, {GroupID: groupID3}}, timestamp, saveEh)
+	require.NoError(t, err)
 	events = filterEvents(allEvents, func(e eventstore.Event) bool {
 		return e.Timestamp().UnixNano() > timestamp
 	})
-	require.NoError(t, err)
 	require.True(t, saveEh.Equals(events))
 
 	timestamp = timestamp2 - 1
 	t.Logf("get aggregateid (%v, %v) events with timestamp > %v", aggregateID3, aggregateID4, timestamp)
 	saveEh = NewMockEventHandler()
-	store.GetEvents(ctx, []eventstore.GetEventsQuery{{AggregateID: aggregateID3}, {AggregateID: aggregateID4}}, timestamp, saveEh)
+	err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{AggregateID: aggregateID3}, {AggregateID: aggregateID4}}, timestamp, saveEh)
+	require.NoError(t, err)
 	events = groupID2AggID3Events
 	events = append(events, groupID3Events...)
-	require.NoError(t, err)
 	require.True(t, saveEh.Equals(events))
 }
 

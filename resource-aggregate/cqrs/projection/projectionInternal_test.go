@@ -80,10 +80,10 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, store)
 
-	defer store.Close(ctx)
 	defer func() {
 		err = store.Clear(ctx)
 		require.NoError(t, err)
+		_ = store.Close(ctx)
 	}()
 
 	res1 := commands.ResourceId{
