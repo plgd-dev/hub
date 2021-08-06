@@ -72,7 +72,10 @@ func validUntilToExpiresIn(validUntil time.Time) int64 {
 
 func isTempError(err error) bool {
 	switch {
-	case strings.Contains(err.Error(), "connect: connection refused"), strings.Contains(err.Error(), context.DeadlineExceeded.Error()), strings.Contains(err.Error(), context.Canceled.Error()):
+	case strings.Contains(err.Error(), "connect: connection refused"),
+		strings.Contains(err.Error(), "i/o timeout"),
+		strings.Contains(err.Error(), context.DeadlineExceeded.Error()),
+		strings.Contains(err.Error(), context.Canceled.Error()):
 		return true
 	}
 	return false
