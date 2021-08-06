@@ -6,7 +6,7 @@
     "@auth0/auth0-react": "^1.6.0",
     "@babel/cli": "^7.14.5",
     "@craco/craco": "^6.2.0",
-    "@reduxjs/toolkit": "^1.6.0",
+    "@reduxjs/toolkit": "1.6.1",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^11.2.7",
     "@testing-library/user-event": "^12.8.3",
