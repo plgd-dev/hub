@@ -113,21 +113,16 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 	authClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
 
 	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.Clients.AuthServer.PullFrequency, config.Clients.AuthServer.CacheExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
-	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner, deviceID string) (bool, error) {
-		ok := userDevicesManager.IsUserDevice(owner, deviceID)
+	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
+		ok := userDevicesManager.ChecksUserDevices(owner, deviceIDs)
 		if ok {
-			return ok, nil
+			return deviceIDs, nil
 		}
-		devices, err := userDevicesManager.UpdateUserDevices(ctx, owner)
+		ownedDevices, err := userDevicesManager.UpdateUserDevices(ctx, owner)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
-		for _, id := range devices {
-			if id == deviceID {
-				return true, nil
-			}
-		}
-		return false, nil
+		return Intersection(deviceIDs, ownedDevices), nil
 	})
 	grpcServer.AddCloseFunc(userDevicesManager.Close)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
