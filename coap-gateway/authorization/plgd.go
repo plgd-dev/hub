@@ -2,11 +2,10 @@ package authorization
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/url"
 
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
 	"github.com/plgd-dev/cloud/pkg/security/openid"
 	"golang.org/x/oauth2"
@@ -46,26 +45,6 @@ type PlgdProvider struct {
 	OpenID     openid.Config
 }
 
-// AuthCodeURL returns URL for redirecting to the authentication web page
-func (p *PlgdProvider) AuthCodeURL(csrfToken string) string {
-	return p.Config.Config.AuthCodeURL(csrfToken, p.OAuth2.Endpoint.AuthURL, p.OAuth2.Endpoint.TokenURL)
-}
-
-// LogoutURL to logout the user
-func (p *PlgdProvider) LogoutURL(returnTo string) string {
-	URL, err := url.Parse(p.OAuth2.Endpoint.AuthURL + "/v2/logout") // todo parse root path
-	if err != nil {
-		panic("invalid OAuthEndpoint configured")
-	}
-
-	parameters := url.Values{}
-	parameters.Add("returnTo", returnTo)
-	parameters.Add("client_id", p.OAuth2.ClientID)
-	URL.RawQuery = parameters.Encode()
-
-	return URL.String()
-}
-
 // Exchange Auth Code for Access Token via OAuth
 func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
@@ -75,33 +54,16 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, auth
 		return nil, err
 	}
 
-	oauthClient := p.OAuth2.Client(ctx, token)
-	resp, err := oauthClient.Get(p.OpenID.UserInfoURL)
+	owner, err := grpc.ParseOwnerFromJwtToken(p.OwnerClaim, token.AccessToken)
 	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body: %w", err)
-		}
-	}()
-
-	var profile map[string]interface{}
-	if err = json.NewDecoder(resp.Body).Decode(&profile); err != nil {
-		return nil, err
-	}
-
-	userID, ok := profile[p.OwnerClaim].(string)
-	if !ok {
-		return nil, fmt.Errorf("cannot determine owner claim %v", p.OwnerClaim)
+		return nil, fmt.Errorf("configured owner claim '%v' is not present in the device token: %w", p.OwnerClaim, err)
 	}
 
 	t := Token{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		Owner:        userID,
+		Owner:        owner,
 	}
 	return &t, nil
 }
@@ -118,33 +80,16 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 		return nil, err
 	}
 
-	oauthClient := p.OAuth2.Client(ctx, token)
-	resp, err := oauthClient.Get(p.OpenID.UserInfoURL)
+	owner, err := grpc.ParseOwnerFromJwtToken(p.OwnerClaim, token.AccessToken)
 	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Errorf("failed to close response body: %w", err)
-		}
-	}()
-
-	var profile map[string]interface{}
-	if err = json.NewDecoder(resp.Body).Decode(&profile); err != nil {
-		return nil, err
-	}
-
-	userID, ok := profile[p.OwnerClaim].(string)
-	if !ok {
-		return nil, fmt.Errorf("cannot determine owner claim %v", p.OwnerClaim)
+		return nil, fmt.Errorf("configured owner claim '%v' is not present in the device token: %w", p.OwnerClaim, err)
 	}
 
 	return &Token{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
-		Owner:        userID,
+		Owner:        owner,
 	}, nil
 }
 

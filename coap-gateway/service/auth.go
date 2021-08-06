@@ -51,23 +51,23 @@ func (u jwtClaims) getExpirationTime() (time.Time, error) {
 
 	exp, ok := v.(float64) // all integers are float64 in json
 	if !ok {
-		return time.Time{}, fmt.Errorf("invalid jwtClaims: invalid %v value type", expKey)
+		return time.Time{}, fmt.Errorf("expiration claim '%v' is present, but it has an invalid type '%T'", expKey, v)
 	}
 	return pkgTime.Unix(int64(exp), 0), nil
 }
 
 /// Validate that ownerClaim is set and that it matches given user ID
-func (u jwtClaims) validateOwnerClaim(ocKey string, userID string) error {
-	v, ok := u[ocKey]
+func (u jwtClaims) validateOwnerClaim(ownerClaim string, userID string) error {
+	v, ok := u[ownerClaim]
 	if !ok {
-		return fmt.Errorf("invalid jwtClaims: %v not set", ocKey)
+		return fmt.Errorf("owner claim '%v' is not present", ownerClaim)
 	}
-	ownerClaim, ok := v.(string)
+	owner, ok := v.(string)
 	if !ok {
-		return fmt.Errorf("invalid jwtClaims: %v", "invalid ownerClaim value type")
+		return fmt.Errorf("owner claim '%v' is present, but it has an invalid type '%T'", ownerClaim, v)
 	}
-	if ownerClaim != userID {
-		return fmt.Errorf("invalid ownerClaim: %v", userID)
+	if owner != userID {
+		return fmt.Errorf("owner identifier from the token '%v' doesn't match userID '%v' from the device", owner, userID)
 	}
 	return nil
 }

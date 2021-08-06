@@ -52,7 +52,7 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	code := getAuthorize(t, service.ClientTest, "", "https://localhost:3000", http.StatusTemporaryRedirect)
 	token := getToken(t, service.ClientTest, "", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
-	require.Equal(t, service.ClientTest, token["access_token"])
+	require.NotEmpty(t, token["access_token"])
 }
 
 func getToken(t *testing.T, clientID, audience, code string, grantType service.AllowedGrantType, statusCode int) map[string]string {

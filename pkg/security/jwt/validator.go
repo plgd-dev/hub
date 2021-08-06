@@ -45,13 +45,14 @@ func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.Map
 	}
 
 	t, err := jwt.Parse(token, jwtKeyfunc)
-	if t == nil {
+	if err != nil {
 		return nil, fmt.Errorf("could not parse token: %w", err)
 	}
-	c := t.Claims.(jwt.MapClaims)
-	if err != nil {
-		return c, fmt.Errorf("could not parse token: %w", err)
+	c, ok := t.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("unsupported type %T", t.Claims)
 	}
+
 	return c, nil
 }
 
