@@ -123,18 +123,20 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	authCtx := authorizationContext{
-		DeviceID:    refreshToken.DeviceID,
-		UserID:      owner,
-		AccessToken: token.AccessToken,
-		Expire:      validUntil,
-	}
-	client.SetAuthorizationContext(&authCtx)
+	if _, err := client.GetAuthorizationContext(); err != nil {
+		authCtx := authorizationContext{
+			DeviceID:    refreshToken.DeviceID,
+			UserID:      owner,
+			AccessToken: token.AccessToken,
+			Expire:      validUntil,
+		}
+		client.SetAuthorizationContext(&authCtx)
 
-	if validUntil.IsZero() {
-		client.server.expirationClientCache.Set(refreshToken.DeviceID, nil, time.Millisecond)
-	} else {
-		client.server.expirationClientCache.Set(refreshToken.DeviceID, client, time.Second*time.Duration(expiresIn))
+		if validUntil.IsZero() {
+			client.server.expirationClientCache.Set(refreshToken.DeviceID, nil, time.Millisecond)
+		} else {
+			client.server.expirationClientCache.Set(refreshToken.DeviceID, client, time.Second*time.Duration(expiresIn))
+		}
 	}
 
 	client.sendResponse(coapCodes.Changed, req.Token, accept, out)
