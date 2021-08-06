@@ -123,7 +123,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	if _, err := client.GetAuthorizationContext(); err != nil {
+	if _, err := client.GetAuthorizationContext(); err == nil {
 		authCtx := authorizationContext{
 			DeviceID:    refreshToken.DeviceID,
 			UserID:      owner,
