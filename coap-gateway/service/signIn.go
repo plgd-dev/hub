@@ -227,7 +227,9 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		newDevice = true
 	case oldAuthCtx.GetDeviceID() != signIn.DeviceID || oldAuthCtx.GetUserID() != signIn.UserID:
 		client.cancelResourceSubscriptions(true)
-		client.closeDeviceSubscriber()
+		if err := client.closeDeviceSubscriber(); err != nil {
+			log.Errorf("failed to close device %v connection: %w", oldAuthCtx.GetDeviceID(), err)
+		}
 		newDevice = true
 		client.cleanObservedResources()
 	}

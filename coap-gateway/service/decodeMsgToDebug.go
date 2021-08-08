@@ -28,7 +28,7 @@ func readBody(r io.ReadSeeker) []byte {
 	if err != nil {
 		return nil
 	}
-	r.Seek(v, io.SeekStart)
+	_, _ = r.Seek(v, io.SeekStart)
 	if len(body) == 0 {
 		return nil
 	}

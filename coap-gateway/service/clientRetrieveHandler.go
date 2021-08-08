@@ -8,6 +8,7 @@ import (
 
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -91,7 +92,11 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 	if err != nil {
 		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), err
 	}
-	defer RetrieveResourcesClient.CloseSend()
+	defer func() {
+		if err := RetrieveResourcesClient.CloseSend(); err != nil {
+			log.Errorf("failed to close retrieve devices client: %w", err)
+		}
+	}()
 	for {
 		resourceValue, err := RetrieveResourcesClient.Recv()
 		if err == io.EOF {
