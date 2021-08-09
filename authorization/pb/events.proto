@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package ocf.cloud.auth.pb;
+
+option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
+
+// devices was registered to owner.
+message RegisteredDevices {
+    string owner = 1; // determined by clients.storage.ownerClaim.
+    repeated string device_ids = 2; // list of device ids added to owner.
+    int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
+}
+
+// devices was deregistered from owner.
+message UnregisteredDevices {
+    string owner = 1; // determined by clients.storage.ownerClaim
+    repeated string device_ids = 2; // list of device ids deleted from owner.
+    int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
+}
+
+// nats: owners.{owner}.>
+message Event {
+    oneof type {
+        // nats: owners.{owner}.registered
+        RegisteredDevices RegisteredDevices = 1;
+        // nats: owners.{owner}.unregistered
+        UnregisteredDevices UnregisteredDevices = 2;
+    };
+}
+
