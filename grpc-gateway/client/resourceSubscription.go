@@ -137,21 +137,33 @@ func (s *ResourceSubscription) ID() string {
 }
 
 func (s *ResourceSubscription) runRecv() {
+	cancelAndHandleError := func(err error) {
+		errors := make([]error, 0, 2)
+		if err != nil {
+			errors = append(errors, err)
+		}
+		if _, err := s.Cancel(); err != nil {
+			errors = append(errors, fmt.Errorf("failed to cancel resource subscription: %w", err))
+		}
+		if len(errors) > 0 {
+			s.closeErrorHandler.Error(fmt.Errorf("%+v", errors))
+		}
+	}
+
 	for {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
-			s.Cancel()
+			cancelAndHandleError(nil)
 			s.closeErrorHandler.OnClose()
 			return
 		}
 		if err != nil {
-			s.Cancel()
-			s.closeErrorHandler.Error(err)
+			cancelAndHandleError(err)
 			return
 		}
 		cancel := ev.GetSubscriptionCanceled()
 		if cancel != nil {
-			s.Cancel()
+			cancelAndHandleError(nil)
 			reason := cancel.GetReason()
 			if reason == "" {
 				s.closeErrorHandler.OnClose()
@@ -164,13 +176,11 @@ func (s *ResourceSubscription) runRecv() {
 		if ct := ev.GetResourceChanged(); ct != nil {
 			err = s.resourceContentChangedHandler.HandleResourceContentChanged(s.client.Context(), ct)
 			if err != nil {
-				s.Cancel()
-				s.closeErrorHandler.Error(err)
+				cancelAndHandleError(err)
 				return
 			}
 		} else {
-			s.Cancel()
-			s.closeErrorHandler.Error(fmt.Errorf("unknown event occurs %T on recv resource events: %+v", ev, ev))
+			cancelAndHandleError(fmt.Errorf("unknown event occurs %T on recv resource events: %+v", ev, ev))
 			return
 		}
 	}

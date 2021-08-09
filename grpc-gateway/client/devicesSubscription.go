@@ -133,16 +133,28 @@ func (s *DevicesSubscription) ID() string {
 }
 
 func (s *DevicesSubscription) runRecv() {
+	cancelAndHandlerError := func(err error) {
+		errors := make([]error, 0, 2)
+		if err != nil {
+			errors = append(errors, err)
+		}
+		if _, err := s.Cancel(); err != nil {
+			errors = append(errors, fmt.Errorf("failed to cancel device subscription: %w", err))
+		}
+		if len(errors) > 0 {
+			s.closeErrorHandler.Error(fmt.Errorf("%+v", errors))
+		}
+	}
+
 	for {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
-			s.Cancel()
+			cancelAndHandlerError(nil)
 			s.closeErrorHandler.OnClose()
 			return
 		}
 		if err != nil {
-			s.Cancel()
-			s.closeErrorHandler.Error(err)
+			cancelAndHandlerError(err)
 			return
 		}
 		cancel := ev.GetSubscriptionCanceled()
@@ -159,27 +171,23 @@ func (s *DevicesSubscription) runRecv() {
 		if ct := ev.GetDeviceMetadataUpdated(); ct != nil {
 			err = s.deviceMetadataUpdatedHandler.HandleDeviceMetadataUpdated(s.client.Context(), ct)
 			if err != nil {
-				s.Cancel()
-				s.closeErrorHandler.Error(err)
+				cancelAndHandlerError(err)
 				return
 			}
 		} else if ct := ev.GetDeviceRegistered(); ct != nil {
 			err = s.deviceRegisteredHandler.HandleDeviceRegistered(s.client.Context(), ct)
 			if err != nil {
-				s.Cancel()
-				s.closeErrorHandler.Error(err)
+				cancelAndHandlerError(err)
 				return
 			}
 		} else if ct := ev.GetDeviceUnregistered(); ct != nil {
 			err = s.deviceUnregisteredHandler.HandleDeviceUnregistered(s.client.Context(), ct)
 			if err != nil {
-				s.Cancel()
-				s.closeErrorHandler.Error(err)
+				cancelAndHandlerError(err)
 				return
 			}
 		} else {
-			s.Cancel()
-			s.closeErrorHandler.Error(fmt.Errorf("unknown event occurs %T on recv devices events: %+v", ev, ev))
+			cancelAndHandlerError(fmt.Errorf("unknown event occurs %T on recv devices events: %+v", ev, ev))
 			return
 		}
 	}

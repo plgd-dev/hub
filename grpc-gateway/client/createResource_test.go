@@ -67,7 +67,10 @@ func TestClient_CreateResource(t *testing.T) {
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
 	c := NewTestClient(t)
-	defer c.Close(context.Background())
+	defer func() {
+		err := c.Close(context.Background())
+		assert.NoError(t, err)
+	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
