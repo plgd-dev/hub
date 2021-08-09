@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -185,7 +186,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := c.SubscribeToEvents(ctx)
 			require.NoError(t, err)
-			defer client.CloseSend()
+			defer func() {
+				err := client.CloseSend()
+				assert.NoError(t, err)
+			}()
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {

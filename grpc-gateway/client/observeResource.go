@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -32,7 +33,9 @@ func (c *Client) ObserveResource(
 		codec: cfg.codec,
 		obs:   handler,
 		removeSubscription: func() {
-			c.stopObservingResource(ID.String())
+			if _, err := c.stopObservingResource(ID.String()); err != nil {
+				handler.Error(fmt.Errorf("failed to stop resource('%v') observation: %w", ID.String(), err))
+			}
 		},
 	})
 	if err != nil {

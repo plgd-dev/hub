@@ -407,7 +407,9 @@ func (s *DeviceSubscriptions) runRecv() {
 	for {
 		ev, err := s.client.Recv()
 		if err == io.EOF {
-			s.Cancel()
+			if _, err := s.Cancel(); err != nil {
+				s.errFunc(fmt.Errorf("failed to cancel device subscription: %w", err))
+			}
 			s.handlers.PullOutAll()
 			cancelled := atomic.LoadUint32(&s.canceled)
 			for _, h := range s.handlers.PullOutAll() {
@@ -420,7 +422,9 @@ func (s *DeviceSubscriptions) runRecv() {
 			return
 		}
 		if err != nil {
-			s.Cancel()
+			if _, err := s.Cancel(); err != nil {
+				s.errFunc(fmt.Errorf("failed to cancel device subscription: %w", err))
+			}
 			s.handlers.PullOutAll()
 			for _, h := range s.handlers.PullOutAll() {
 				h.(SubscriptionHandler).Error(err)

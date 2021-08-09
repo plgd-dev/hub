@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -87,7 +88,8 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject(deviceID), v)
 	require.NoError(t, err)
 	defer func() {
-		_ = obs.Close()
+		err := obs.Close()
+		assert.NoError(t, err)
 	}()
 
 	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{

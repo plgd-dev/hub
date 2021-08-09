@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gofrs/uuid"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -44,7 +45,9 @@ func (c *Client) ObserveDeviceResources(ctx context.Context, deviceID string, ha
 	sub, err := c.NewDeviceSubscription(ctx, deviceID, &deviceResourcesObservation{
 		h: handler,
 		removeSubscription: func() {
-			c.stopObservingDeviceResources(ID.String())
+			if _, err := c.stopObservingDeviceResources(ID.String()); err != nil {
+				handler.Error(fmt.Errorf("failed to stop device('%v') resources observation: %w", ID.String(), err))
+			}
 		},
 	})
 	if err != nil {
