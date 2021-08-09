@@ -24,10 +24,11 @@ message AddDeviceResponse {
 }
 
 
-message DeleteDeviceRequest {
-    string device_id = 1;
+message DeleteDevicesRequest {
+    repeated string device_ids = 1;
     string user_id = 2;
 }
 
-message DeleteDeviceResponse {
+message DeleteDevicesResponse {
+    repeated string device_ids = 1;
 }

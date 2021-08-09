@@ -134,16 +134,17 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	err = m.Acquire(ctx, t.Name())
 	require.NoError(t, err)
 
+	deviceID := "deviceId_" + t.Name()
 	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{
 		UserId:   t.Name(),
-		DeviceId: "deviceId_" + t.Name(),
+		DeviceId: deviceID,
 	})
 	require.NoError(t, err)
 
 	time.Sleep(time.Second * 2)
 	require.Equal(t, map[string]map[string]bool{
 		t.Name(): {
-			"deviceId_" + t.Name(): true,
+			deviceID: true,
 		},
 	}, trigger.Clone().allDevices)
 
@@ -153,11 +154,12 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 		require.NotEmpty(t, devs)
 	}
 
-	_, err = c.DeleteDevice(ctx, &pb.DeleteDeviceRequest{
-		UserId:   t.Name(),
-		DeviceId: "deviceId_" + t.Name(),
+	resp, err := c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+		UserId:    t.Name(),
+		DeviceIds: []string{deviceID},
 	})
 	require.NoError(t, err)
+	require.Equal(t, []string{deviceID}, resp.DeviceIds)
 
 	time.Sleep(time.Second * 2)
 	require.Equal(t, map[string]map[string]bool(nil), trigger.Clone().allDevices)
@@ -171,7 +173,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 
 	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{
 		UserId:   t.Name(),
-		DeviceId: "deviceId_" + t.Name(),
+		DeviceId: deviceID,
 	})
 	require.NoError(t, err)
 	time.Sleep(time.Second * 2)

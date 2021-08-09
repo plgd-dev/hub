@@ -118,12 +118,16 @@ func signOffHandler(req *mux.Message, client *Client) {
 	}
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)
-
-	if _, err := client.server.asClient.DeleteDevice(ctx, &pb.DeleteDeviceRequest{
-		DeviceId: signOffData.deviceID,
-		UserId:   signOffData.userID,
-	}); err != nil {
+	resp, err := client.server.asClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+		DeviceIds: []string{signOffData.deviceID},
+		UserId:    signOffData.userID,
+	})
+	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.InternalServerError)
+		return
+	}
+	if err == nil && len(resp.DeviceIds) != 1 {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: cannot remove device %v from user", signOffData.deviceID), coapCodes.InternalServerError)
 		return
 	}
 

@@ -128,12 +128,15 @@ func (s *SubscriptionManager) HandleDevicesUnregistered(ctx context.Context, sub
 			log.Debugf("HandleDevicesUnregistered: cannot remove device %v subscription: not found", device.ID)
 		}
 		s.cache.Delete(correlationID)
-		_, err := s.asClient.DeleteDevice(ctx, &pbAS.DeleteDeviceRequest{
-			DeviceId: device.ID,
-			UserId:   userID,
+		resp, err := s.asClient.DeleteDevices(ctx, &pbAS.DeleteDevicesRequest{
+			DeviceIds: []string{device.ID},
+			UserId:    userID,
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot remove device  %v from user: %w", device.ID, err))
+			errors = append(errors, fmt.Errorf("cannot remove device %v from user: %w", device.ID, err))
+		}
+		if err == nil && len(resp.DeviceIds) != 1 {
+			errors = append(errors, fmt.Errorf("cannot remove device %v from user", device.ID))
 		}
 		err = s.devicesSubscription.Delete(userID, device.ID)
 		if err != nil {

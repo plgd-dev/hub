@@ -10,27 +10,31 @@ import (
 )
 
 func TestService_DeleteDevice(t *testing.T) {
+	const testDevID1 = "testDeviceID1"
+	const testDevID2 = "testDeviceID2"
+	const testDevID3 = "testDeviceID3"
+
 	type args struct {
 		ctx     context.Context
-		request *pb.DeleteDeviceRequest
+		request *pb.DeleteDevicesRequest
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *pb.DeleteDeviceResponse
+		want    *pb.DeleteDevicesResponse
 		wantErr bool
 	}{
 		{
 			name: "invalid userId",
 			args: args{
-				request: &pb.DeleteDeviceRequest{},
+				request: &pb.DeleteDevicesRequest{},
 			},
 			wantErr: true,
 		},
 		{
 			name: "invalid deviceId",
 			args: args{
-				request: &pb.DeleteDeviceRequest{
+				request: &pb.DeleteDevicesRequest{
 					UserId: "userId",
 				},
 			},
@@ -39,9 +43,9 @@ func TestService_DeleteDevice(t *testing.T) {
 		{
 			name: "invalid accesstoken",
 			args: args{
-				request: &pb.DeleteDeviceRequest{
-					UserId:   "userId",
-					DeviceId: "deviceId",
+				request: &pb.DeleteDevicesRequest{
+					UserId:    "userId",
+					DeviceIds: []string{"deviceId"},
 				},
 			},
 			wantErr: true,
@@ -49,9 +53,9 @@ func TestService_DeleteDevice(t *testing.T) {
 		{
 			name: "not belongs to user",
 			args: args{
-				request: &pb.DeleteDeviceRequest{
-					DeviceId: testDeviceID,
-					UserId:   "aaa",
+				request: &pb.DeleteDevicesRequest{
+					DeviceIds: []string{testDevID1},
+					UserId:    "aaa",
 				},
 				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
@@ -60,20 +64,31 @@ func TestService_DeleteDevice(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				request: &pb.DeleteDeviceRequest{
-					DeviceId: testDeviceID,
-					UserId:   testUserID,
+				request: &pb.DeleteDevicesRequest{
+					DeviceIds: []string{testDevID1},
+					UserId:    testUserID,
 				},
 				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
-			want: &pb.DeleteDeviceResponse{},
+			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID1}},
+		},
+		{
+			name: "multiple",
+			args: args{
+				request: &pb.DeleteDevicesRequest{
+					DeviceIds: []string{testDevID2, testDevID3},
+					UserId:    testUserID,
+				},
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
+			},
+			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID2, testDevID3}},
 		},
 		{
 			name: "duplicit",
 			args: args{
-				request: &pb.DeleteDeviceRequest{
-					DeviceId: testDeviceID,
-					UserId:   testUserID,
+				request: &pb.DeleteDevicesRequest{
+					DeviceIds: []string{testDevID1},
+					UserId:    testUserID,
 				},
 				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
@@ -86,11 +101,13 @@ func TestService_DeleteDevice(t *testing.T) {
 		err := s.cleanUp()
 		require.NoError(t, err)
 	}()
-	persistDevice(t, s.service.persistence, newTestDevice())
+	persistDevice(t, s.service.persistence, newTestDeviceWithID(testDevID1))
+	persistDevice(t, s.service.persistence, newTestDeviceWithID(testDevID2))
+	persistDevice(t, s.service.persistence, newTestDeviceWithID(testDevID3))
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.service.DeleteDevice(context.Background(), tt.args.request)
+			got, err := s.service.DeleteDevices(context.Background(), tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
