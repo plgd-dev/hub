@@ -10,5 +10,5 @@ service AuthorizationService {
 	rpc GetUserDevices (GetUserDevicesRequest) returns (stream UserDevice) {}
 
 	rpc AddDevice(AddDeviceRequest) returns (AddDeviceResponse) {}
-	rpc DeleteDevice(DeleteDeviceRequest) returns (DeleteDeviceResponse) {}
+	rpc DeleteDevices(DeleteDevicesRequest) returns (DeleteDevicesResponse) {}
 }

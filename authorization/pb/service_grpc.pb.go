@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type AuthorizationServiceClient interface {
 	GetUserDevices(ctx context.Context, in *GetUserDevicesRequest, opts ...grpc.CallOption) (AuthorizationService_GetUserDevicesClient, error)
 	AddDevice(ctx context.Context, in *AddDeviceRequest, opts ...grpc.CallOption) (*AddDeviceResponse, error)
-	DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error)
+	DeleteDevices(ctx context.Context, in *DeleteDevicesRequest, opts ...grpc.CallOption) (*DeleteDevicesResponse, error)
 }
 
 type authorizationServiceClient struct {
@@ -72,9 +72,9 @@ func (c *authorizationServiceClient) AddDevice(ctx context.Context, in *AddDevic
 	return out, nil
 }
 
-func (c *authorizationServiceClient) DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error) {
-	out := new(DeleteDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.auth.pb.AuthorizationService/DeleteDevice", in, out, opts...)
+func (c *authorizationServiceClient) DeleteDevices(ctx context.Context, in *DeleteDevicesRequest, opts ...grpc.CallOption) (*DeleteDevicesResponse, error) {
+	out := new(DeleteDevicesResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.auth.pb.AuthorizationService/DeleteDevices", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (c *authorizationServiceClient) DeleteDevice(ctx context.Context, in *Delet
 type AuthorizationServiceServer interface {
 	GetUserDevices(*GetUserDevicesRequest, AuthorizationService_GetUserDevicesServer) error
 	AddDevice(context.Context, *AddDeviceRequest) (*AddDeviceResponse, error)
-	DeleteDevice(context.Context, *DeleteDeviceRequest) (*DeleteDeviceResponse, error)
+	DeleteDevices(context.Context, *DeleteDevicesRequest) (*DeleteDevicesResponse, error)
 	mustEmbedUnimplementedAuthorizationServiceServer()
 }
 
@@ -101,8 +101,8 @@ func (UnimplementedAuthorizationServiceServer) GetUserDevices(*GetUserDevicesReq
 func (UnimplementedAuthorizationServiceServer) AddDevice(context.Context, *AddDeviceRequest) (*AddDeviceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddDevice not implemented")
 }
-func (UnimplementedAuthorizationServiceServer) DeleteDevice(context.Context, *DeleteDeviceRequest) (*DeleteDeviceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevice not implemented")
+func (UnimplementedAuthorizationServiceServer) DeleteDevices(context.Context, *DeleteDevicesRequest) (*DeleteDevicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevices not implemented")
 }
 func (UnimplementedAuthorizationServiceServer) mustEmbedUnimplementedAuthorizationServiceServer() {}
 
@@ -156,20 +156,20 @@ func _AuthorizationService_AddDevice_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthorizationService_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteDeviceRequest)
+func _AuthorizationService_DeleteDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDevicesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthorizationServiceServer).DeleteDevice(ctx, in)
+		return srv.(AuthorizationServiceServer).DeleteDevices(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.auth.pb.AuthorizationService/DeleteDevice",
+		FullMethod: "/ocf.cloud.auth.pb.AuthorizationService/DeleteDevices",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).DeleteDevice(ctx, req.(*DeleteDeviceRequest))
+		return srv.(AuthorizationServiceServer).DeleteDevices(ctx, req.(*DeleteDevicesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -186,8 +186,8 @@ var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthorizationService_AddDevice_Handler,
 		},
 		{
-			MethodName: "DeleteDevice",
-			Handler:    _AuthorizationService_DeleteDevice_Handler,
+			MethodName: "DeleteDevices",
+			Handler:    _AuthorizationService_DeleteDevices_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

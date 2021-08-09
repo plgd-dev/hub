@@ -121,8 +121,12 @@ func (s *Server) cleanUp() error {
 }
 
 func newTestDevice() *persistence.AuthorizedDevice {
+	return newTestDeviceWithID(testDeviceID)
+}
+
+func newTestDeviceWithID(deviceID string) *persistence.AuthorizedDevice {
 	return &persistence.AuthorizedDevice{
-		DeviceID:     testDeviceID,
+		DeviceID:     deviceID,
 		Owner:        testUserID,
 		AccessToken:  testAccessToken,
 		RefreshToken: "testRefreshToken",
