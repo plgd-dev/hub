@@ -21,6 +21,7 @@ func MakeConfig(t *testing.T) service.Config {
 	authCfg.OAuthClients.Device.ClientID = oauthService.ClientTest
 	authCfg.OAuthClients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
 	authCfg.OAuthClients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	authCfg.OAuthClients.Device.Audience = config.OAUTH_MANAGER_AUDIENCE
 	authCfg.OAuthClients.Device.HTTP = config.MakeHttpClientConfig()
 
 	authCfg.OAuthClients.SDK.ClientID = oauthService.ClientTest

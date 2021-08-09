@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 
@@ -34,11 +35,46 @@ func (v *Validator) Parse(token string) (jwt.MapClaims, error) {
 	return c, nil
 }
 
+func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.MapClaims, error) {
+	if token == "" {
+		return nil, fmt.Errorf("missing token")
+	}
+
+	jwtKeyfunc := func(token *jwt.Token) (interface{}, error) {
+		return v.keys.GetOrFetchKeyWithContext(ctx, token)
+	}
+
+	t, err := jwt.Parse(token, jwtKeyfunc)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse token: %w", err)
+	}
+	c, ok := t.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("unsupported type %T", t.Claims)
+	}
+
+	return c, nil
+}
+
 func (v *Validator) ParseWithClaims(token string, claims jwt.Claims) error {
 	if token == "" {
 		return fmt.Errorf("missing token")
 	}
 	_, err := jwt.ParseWithClaims(token, claims, v.keys.GetOrFetchKey)
+	if err != nil {
+		return fmt.Errorf("could not parse token: %w", err)
+	}
+	return nil
+}
+
+func (v *Validator) ParseWithContextClaims(ctx context.Context, token string, claims jwt.Claims) error {
+	if token == "" {
+		return fmt.Errorf("missing token")
+	}
+	jwtKeyfunc := func(token *jwt.Token) (interface{}, error) {
+		return v.keys.GetOrFetchKeyWithContext(ctx, token)
+	}
+	_, err := jwt.ParseWithClaims(token, claims, jwtKeyfunc)
 	if err != nil {
 		return fmt.Errorf("could not parse token: %w", err)
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
-	client2 "github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 )
@@ -157,20 +156,15 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
-	OwnerClaim string           `yaml:"ownerClaim" json:"ownerClaim"`
-	Connection client.Config    `yaml:"grpc" json:"grpc"`
-	OAuth      client2.ConfigV2 `yaml:"oauth" json:"oauth"`
+	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
+	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
-	err := c.OAuth.Validate()
-	if err != nil {
-		return fmt.Errorf("oauth.%w", err)
-	}
-	err = c.Connection.Validate()
+	err := c.Connection.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}

@@ -486,6 +486,7 @@ cat /configs/authorization.yaml | yq e "\
   .oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
   .oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
   .oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .oauthClients.device.audience = \"${SDK_OAUTH_AUDIENCE}\" |
   .oauthClients.device.http.tls.useSystemCAPool = true |
   .oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
   .oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
@@ -612,7 +613,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
   .apis.coap.externalAddress = \"${FQDN}:${COAP_GATEWAY_UNSECURE_PORT}\" |
   .apis.coap.tls.enabled = false |
-  .apis.coap.authorization.authority = \"${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
   .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
@@ -621,12 +622,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
-  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
-  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
 
 coap-gateway --config /data/coap-gateway-unsecure.yaml >$LOGS_PATH/coap-gateway-unsecure.log 2>&1 &
@@ -650,7 +646,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = true |
   .apis.coap.tls.keyFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_KEY_NAME}\" |
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
-  .apis.coap.authorization.authority = \"${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
   .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
@@ -659,12 +655,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
-  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
-  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
 
 coap-gateway --config /data/coap-gateway-secure.yaml >$LOGS_PATH/coap-gateway.log 2>&1 &

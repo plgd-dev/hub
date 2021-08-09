@@ -2,12 +2,12 @@ package service
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -91,11 +91,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 
 	token, err := client.server.provider.Exchange(r.Context, signUp.AuthorizationProvider, signUp.AuthorizationCode)
 	if err != nil {
-		code := coapCodes.Unauthorized
-		if strings.Contains(err.Error(), "connect: connection refused") {
-			code = coapCodes.ServiceUnavailable
-		}
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), code)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
 		return
 	}
 
@@ -105,7 +101,8 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	if _, err := client.server.asClient.AddDevice(r.Context, &pb.AddDeviceRequest{
+	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken)
+	if _, err := client.server.asClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: signUp.DeviceID,
 		UserId:   token.Owner,
 	}); err != nil {

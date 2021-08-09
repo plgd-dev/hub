@@ -43,6 +43,7 @@ func makeConfig(t *testing.T) Config {
 	cfg.OAuthClients.Device.ClientID = oauthService.ClientTest
 	cfg.OAuthClients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
 	cfg.OAuthClients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	cfg.OAuthClients.Device.Audience = config.OAUTH_MANAGER_AUDIENCE
 	cfg.OAuthClients.Device.HTTP = config.MakeHttpClientConfig()
 
 	cfg.OAuthClients.SDK.ClientID = oauthService.ClientTest

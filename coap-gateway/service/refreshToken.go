@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
@@ -92,11 +91,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 
 	token, err := client.server.provider.Refresh(req.Context, refreshToken.RefreshToken)
 	if err != nil {
-		code := coapCodes.Unauthorized
-		if strings.Contains(err.Error(), "connect: connection refused") {
-			code = coapCodes.ServiceUnavailable
-		}
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), code)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
 		return
 	}
 

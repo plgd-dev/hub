@@ -38,6 +38,16 @@ func NewKeyCache(url string, tls *tls.Config) *KeyCache {
 	return NewKeyCacheWithHttp(url, client)
 }
 
+func (c *KeyCache) GetOrFetchKeyWithContext(ctx context.Context, token *jwt.Token) (interface{}, error) {
+	if k, err := c.GetKey(token); err == nil {
+		return k, nil
+	}
+	if err := c.FetchKeysWithContext(ctx); err != nil {
+		return nil, err
+	}
+	return c.GetKey(token)
+}
+
 func (c *KeyCache) GetOrFetchKey(token *jwt.Token) (interface{}, error) {
 	if k, err := c.GetKey(token); err == nil {
 		return k, nil
@@ -81,6 +91,10 @@ func (c *KeyCache) FetchKeys() error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.http.Timeout)
 	defer cancel()
 
+	return c.FetchKeysWithContext(ctx)
+}
+
+func (c *KeyCache) FetchKeysWithContext(ctx context.Context) error {
 	keys, err := jwk.Fetch(ctx, c.url, jwk.WithHTTPClient(c.http))
 	if err != nil {
 		return fmt.Errorf("could not fetch JWK: %w", err)

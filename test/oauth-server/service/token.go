@@ -188,7 +188,7 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 
 	tokenReq := tokenRequest{
 		host:      requestHandler.getDomain(),
-		tokenType: AccessTokenType_REFERENCE,
+		tokenType: AccessTokenType_JWT,
 	}
 
 	if strings.Contains(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {

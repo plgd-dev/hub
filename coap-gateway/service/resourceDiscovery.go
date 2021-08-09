@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -119,7 +118,7 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 		return
 	}
 
-	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(kitNetGrpc.CtxWithOwner(req.Context, authCtx.GetUserID()), request)
+	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(req.Context, request)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), req.Token)
 		return
