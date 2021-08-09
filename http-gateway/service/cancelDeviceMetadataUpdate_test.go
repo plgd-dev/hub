@@ -69,7 +69,9 @@ func TestRequestHandler_CancelDeviceMetadataUpdate(t *testing.T) {
 			}
 			resp, err := c.Do(request)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 			var v pb.CancelResponse
 			err = Unmarshal(resp.StatusCode, resp.Body, &v)
 			if tt.wantErr {

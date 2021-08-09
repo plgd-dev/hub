@@ -162,7 +162,7 @@ service GrpcGateway {
     };
   }
 
-  // Cancels update device metadata.
+  // Cancels device metadata updates.
   rpc CancelDeviceMetadataUpdates(CancelDeviceMetadataUpdatesRequest) returns (CancelResponse) {
     option (google.api.http) = {
       delete: "/api/v1/devices/{device_id}/pending-commands"

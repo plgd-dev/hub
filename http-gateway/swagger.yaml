@@ -447,7 +447,7 @@ paths:
         - 'Pending Commands'
       summary: 'Cancel updates metadata for a device'
       description: |
-        Cancel all updates metadata for a single device. To cancel one pending update set 'correlationIdFilter' query parameter of pending command.
+        Cancel all metadata updates for a single device. To cancel one pending update set 'correlationIdFilter' query parameter of pending command.
       parameters:
         - $ref: '#/components/parameters/correlationIdFilter'
       security:

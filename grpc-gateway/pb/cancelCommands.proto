@@ -12,7 +12,7 @@ message CancelResourceCommandsRequest {
 }
 
 message CancelResponse {
-    repeated string correlation_ids = 2;
+    repeated string correlation_ids = 1;
 }
 
 message CancelDeviceMetadataUpdatesRequest {

@@ -43,7 +43,7 @@ type GrpcGatewayClient interface {
 	GetPendingCommands(ctx context.Context, in *GetPendingCommandsRequest, opts ...grpc.CallOption) (GrpcGateway_GetPendingCommandsClient, error)
 	// Cancels resource commands.
 	CancelResourceCommands(ctx context.Context, in *CancelResourceCommandsRequest, opts ...grpc.CallOption) (*CancelResponse, error)
-	// Cancels update device metadata.
+	// Cancels device metadata updates.
 	CancelDeviceMetadataUpdates(ctx context.Context, in *CancelDeviceMetadataUpdatesRequest, opts ...grpc.CallOption) (*CancelResponse, error)
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(ctx context.Context, in *GetDevicesMetadataRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesMetadataClient, error)
@@ -382,7 +382,7 @@ type GrpcGatewayServer interface {
 	GetPendingCommands(*GetPendingCommandsRequest, GrpcGateway_GetPendingCommandsServer) error
 	// Cancels resource commands.
 	CancelResourceCommands(context.Context, *CancelResourceCommandsRequest) (*CancelResponse, error)
-	// Cancels update device metadata.
+	// Cancels device metadata updates.
 	CancelDeviceMetadataUpdates(context.Context, *CancelDeviceMetadataUpdatesRequest) (*CancelResponse, error)
 	// Gets metadata of the devices. Is contains online/offline or shadown synchronization status.
 	GetDevicesMetadata(*GetDevicesMetadataRequest, GrpcGateway_GetDevicesMetadataServer) error

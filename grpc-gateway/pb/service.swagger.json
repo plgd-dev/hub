@@ -225,7 +225,7 @@
     },
     "/api/v1/devices/{deviceId}/pending-commands": {
       "delete": {
-        "summary": "Cancels update device metadata.",
+        "summary": "Cancels device metadata updates.",
         "operationId": "GrpcGateway_CancelDeviceMetadataUpdates",
         "responses": {
           "200": {
