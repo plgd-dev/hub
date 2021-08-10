@@ -340,6 +340,11 @@ func (eh *MockEventHandler) Contains(event eventstore.Event) bool {
 	return false
 }
 
+func (eh *MockEventHandler) ContainsGroupID(groupID string) bool {
+	_, ok := eh.events[groupID]
+	return ok
+}
+
 func (eh *MockEventHandler) Equals(events []eventstore.Event) bool {
 	eventsMap := make(map[string]map[string][]eventstore.Event)
 	for _, event := range events {

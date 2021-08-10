@@ -9,7 +9,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
-	"github.com/plgd-dev/kit/strings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -69,10 +68,9 @@ func TestEventStore_Delete(t *testing.T) {
 		query []eventstore.DeleteQuery
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantErr      bool
-		wantResponse strings.Set
+		name    string
+		args    args
+		wantErr bool
 	}{
 		{
 			name: "Invalid query",
@@ -99,8 +97,7 @@ func TestEventStore_Delete(t *testing.T) {
 					GroupID: "device1",
 				}},
 			},
-			wantErr:      false,
-			wantResponse: strings.MakeSet("device1"),
+			wantErr: false,
 		},
 		{
 			name: "Delete single device",
@@ -109,8 +106,7 @@ func TestEventStore_Delete(t *testing.T) {
 					GroupID: "device5",
 				}},
 			},
-			wantErr:      false,
-			wantResponse: strings.MakeSet("device5"),
+			wantErr: false,
 		},
 		{
 			name: "Delete multiple devices",
@@ -125,8 +121,7 @@ func TestEventStore_Delete(t *testing.T) {
 					GroupID: "device7",
 				}},
 			},
-			wantErr:      false,
-			wantResponse: strings.MakeSet("device2", "device3", "device5", "device7"),
+			wantErr: false,
 		},
 	}
 
@@ -138,18 +133,21 @@ func TestEventStore_Delete(t *testing.T) {
 				require.NoError(t, err)
 			}()
 
-			res, err := store.Delete(ctx, tt.args.query)
+			err := store.Delete(ctx, tt.args.query)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
 
-			var got strings.Set
-			if res != nil {
-				got = strings.MakeSet(res...)
+			// get all events after deletion
+			handler := test.NewMockEventHandler()
+			err = store.GetEvents(ctx, []eventstore.GetEventsQuery{{}}, 0, handler)
+			require.NoError(t, err)
+			// no documents with deleted group id should remain
+			for _, q := range tt.args.query {
+				require.False(t, handler.ContainsGroupID(q.GroupID))
 			}
-			require.Equal(t, tt.wantResponse, got)
 		})
 	}
 }

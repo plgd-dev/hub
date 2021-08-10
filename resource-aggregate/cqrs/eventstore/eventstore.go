@@ -54,5 +54,5 @@ type EventStore interface {
 	LoadFromVersion(ctx context.Context, queries []VersionQuery, eventHandler Handler) error
 	LoadFromSnapshot(ctx context.Context, queries []SnapshotQuery, eventHandler Handler) error
 	RemoveUpToVersion(ctx context.Context, queries []VersionQuery) error
-	Delete(ctx context.Context, queries []DeleteQuery) ([]string, error)
+	Delete(ctx context.Context, queries []DeleteQuery) error
 }
