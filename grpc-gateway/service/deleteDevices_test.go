@@ -27,19 +27,19 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		want    *pb.DeleteDevicesResponse
 	}{
 		{
-			name: "invalid",
+			name: "invalid deviceID",
 			args: args{
 				req: &pb.DeleteDevicesRequest{
-					DeviceIdFilter: []string{""},
+					DeviceIdFilter: []string{"badId"},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "valid",
+			name: "all owned devices",
 			args: args{
 				req: &pb.DeleteDevicesRequest{
-					DeviceIdFilter: []string{deviceID},
+					DeviceIdFilter: []string{},
 				},
 			},
 			want: &pb.DeleteDevicesResponse{

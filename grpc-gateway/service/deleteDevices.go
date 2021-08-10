@@ -37,14 +37,21 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices: %v", err))
 	}
+	deleteAllOwned := len(cmdRA.DeviceIds) == 0
 	respRA, err := r.resourceAggregateClient.DeleteDevices(ctx, cmdRA)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from ResourceAggregate: %v", err))
 	}
-	deleted, notDeleted := partitionDeletedDevices(cmdRA.GetDeviceIds(), respRA.GetDeviceIds())
-	if len(notDeleted) > 0 {
-		for _, deviceId := range notDeleted {
-			log.Errorf("failed to delete device('%v') in ResourceAggregate", deviceId)
+
+	var deleted, notDeleted []string
+	if deleteAllOwned {
+		deleted = respRA.DeviceIds
+	} else {
+		deleted, notDeleted = partitionDeletedDevices(cmdRA.GetDeviceIds(), respRA.GetDeviceIds())
+		if len(notDeleted) > 0 {
+			for _, deviceId := range notDeleted {
+				log.Errorf("failed to delete device('%v') in ResourceAggregate", deviceId)
+			}
 		}
 	}
 
