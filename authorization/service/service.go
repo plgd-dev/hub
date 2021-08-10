@@ -10,6 +10,8 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/authorization/uri"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 
 	"github.com/patrickmn/go-cache"
 
@@ -48,6 +50,7 @@ type Service struct {
 	deviceProvider Provider
 	sdkProvider    Provider
 	persistence    Persistence
+	publisher      *publisher.Publisher
 	csrfTokens     *cache.Cache
 	ownerClaim     string
 }
@@ -57,21 +60,23 @@ type Server struct {
 	service    *Service
 	grpcServer *server.Server
 	httpServer *fasthttp.Server
+	publisher  *publisher.Publisher
 	cfg        Config
 	listener   net.Listener
 }
 
-func NewService(deviceProvider, sdkProvider Provider, persistence Persistence, ownerClaim string) *Service {
+func NewService(deviceProvider, sdkProvider Provider, persistence Persistence, publisher *publisher.Publisher, ownerClaim string) *Service {
 	return &Service{
 		deviceProvider: deviceProvider,
 		sdkProvider:    sdkProvider,
 		persistence:    persistence,
 		csrfTokens:     cache.New(5*time.Minute, 10*time.Minute),
 		ownerClaim:     ownerClaim,
+		publisher:      publisher,
 	}
 }
 
-func NewServer(ctx context.Context, cfg Config, logger log.Logger, deviceProvider Provider, sdkProvider Provider, grpcOpts ...grpc.ServerOption) (*Server, error) {
+func NewServer(ctx context.Context, cfg Config, logger log.Logger, deviceProvider Provider, sdkProvider Provider, publisher *publisher.Publisher, grpcOpts ...grpc.ServerOption) (*Server, error) {
 	grpcServer, err := server.New(cfg.APIs.GRPC, logger, grpcOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
@@ -92,7 +97,7 @@ func NewServer(ctx context.Context, cfg Config, logger log.Logger, deviceProvide
 		}
 	})
 
-	service := NewService(deviceProvider, sdkProvider, persistence, cfg.Clients.Storage.OwnerClaim)
+	service := NewService(deviceProvider, sdkProvider, persistence, publisher, cfg.Clients.Storage.OwnerClaim)
 
 	pb.RegisterAuthorizationServiceServer(grpcServer.Server, service)
 
@@ -119,6 +124,11 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	if err != nil {
+		deviceProvider.Close()
+		return nil, fmt.Errorf("cannot create nats publisher %w", err)
+	}
 	sdkProvider, err := provider.New(provider.Config{
 		Provider: "generic",
 		Config:   cfg.OAuthClients.SDK.Config,
@@ -126,6 +136,7 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 	}, logger, "", "form_post", "online", "token")
 	if err != nil {
 		deviceProvider.Close()
+		publisher.Close()
 		return nil, fmt.Errorf("cannot create sdk provider: %w", err)
 	}
 	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization, logger)
@@ -139,19 +150,22 @@ func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
 		deviceProvider.Close()
 		sdkProvider.Close()
 		validator.Close()
+		publisher.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 
-	s, err := NewServer(ctx, cfg, logger, deviceProvider, sdkProvider, opts...)
+	s, err := NewServer(ctx, cfg, logger, deviceProvider, sdkProvider, publisher, opts...)
 	if err != nil {
 		deviceProvider.Close()
 		sdkProvider.Close()
 		validator.Close()
+		publisher.Close()
 		return nil, fmt.Errorf("cannot create server: %w", err)
 	}
 	s.grpcServer.AddCloseFunc(validator.Close)
 	s.grpcServer.AddCloseFunc(deviceProvider.Close)
 	s.grpcServer.AddCloseFunc(sdkProvider.Close)
+	s.grpcServer.AddCloseFunc(publisher.Close)
 	return s, nil
 }
 

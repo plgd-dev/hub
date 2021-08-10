@@ -1,7 +1,8 @@
 {
   "name": "EVENTS",
   "subjects": [
-    "events.>"
+    "events.>",
+    "owners.>"
   ],
   "retention": "limits",
   "max_consumers": -1,

@@ -79,6 +79,15 @@ oauthClients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
 clients:
+  eventBus:
+    nats:
+      url: ""
+      jetstream: false
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
   storage:
     ownerClaim: sub
     mongoDB:

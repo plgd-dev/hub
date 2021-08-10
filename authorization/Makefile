@@ -27,6 +27,7 @@ push: build-servicecontainer
 
 proto/generate:
 	protoc -I=. -I=$(GOPATH)/src -I=./pb --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/auth.proto
+	protoc -I=. -I=$(GOPATH)/src -I=./pb --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/events.proto
 	protoc -I=. -I=$(GOPATH)/src -I=./pb --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
 
 .PHONY: build-servicecontainer build push clean proto/generate

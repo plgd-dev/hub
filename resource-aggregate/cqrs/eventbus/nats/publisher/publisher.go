@@ -123,13 +123,13 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 
 	var errors []error
 	for _, t := range topics {
-		err := p.publish(t, eData)
+		err := p.PublishData(ctx, t, eData)
 		if err != nil {
 			errors = append(errors, err)
 		}
 	}
 
-	err = p.conn.Flush()
+	err = p.Flush(ctx)
 	if err != nil {
 		errors = append(errors, err)
 	}
@@ -139,6 +139,14 @@ func (p *Publisher) Publish(ctx context.Context, topics []string, groupId, aggre
 	}
 
 	return nil
+}
+
+func (p *Publisher) PublishData(ctx context.Context, subj string, data []byte) error {
+	return p.publish(subj, data)
+}
+
+func (p *Publisher) Flush(ctx context.Context) error {
+	return p.conn.Flush()
 }
 
 // Close close connection to nats
