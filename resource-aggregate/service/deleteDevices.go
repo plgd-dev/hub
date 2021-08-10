@@ -23,10 +23,6 @@ func getUniqueDeviceIdsFromDeleteRequest(request *commands.DeleteDevicesRequest)
 
 func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.DeleteDevicesRequest) (*commands.DeleteDevicesResponse, error) {
 	deviceIds := getUniqueDeviceIdsFromDeleteRequest(request)
-	if len(deviceIds) == 0 {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete devices: invalid request"))
-	}
-
 	owner, ownedDevices, err := r.getOwnedDevices(ctx, deviceIds)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
