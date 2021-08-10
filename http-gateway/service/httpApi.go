@@ -190,6 +190,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 
 	// Aliases
 	r.HandleFunc(uri.AliasDevice, requestHandler.getDevice).Methods(http.MethodGet)
+	r.HandleFunc(uri.AliasDevice, requestHandler.deleteDevice).Methods(http.MethodDelete)
 	r.HandleFunc(uri.AliasDeviceResourceLinks, requestHandler.getDeviceResourceLinks).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDeviceResources, requestHandler.getDeviceResources).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevicePendingCommands, requestHandler.getDevicePendingCommands).Methods(http.MethodGet)

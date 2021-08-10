@@ -49,6 +49,42 @@ paths:
           $ref: '#/components/responses/badRequest'
         401:
           $ref: '#/components/responses/unauthorized'
+    delete:
+      tags:
+        - 'Devices'
+      summary: 'Delete owned devices'
+      description: |
+        Request to delete selected or all owned devices.
+      parameters:
+        - $ref: '#/components/parameters/deviceIdFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'List of deleted device IDs'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deviceIds:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - '7aaa3d7d-b8e2-4a83-5ce3-4d81ad2bf5f8'
+                      - '3eeac884-f38c-48dc-714f-0f36a829cb89'
+        204:
+          $ref: '#/components/responses/accepted'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
+        404:
+          $ref: '#/components/responses/notFound'
   '/api/v1/devices/{deviceId}':
     get:
       tags:
@@ -68,6 +104,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Device'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+    delete:
+      tags:
+        - 'Devices'
+      summary: 'Delete device by ID'
+      description: |
+        Delete a single device by ID. Alternative is to call 'Delete owned devices' with a `deviceIdFilter` filter query parameter.
+      parameters:
+        - $ref: '#/components/parameters/deviceId'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          description: 'List of deleted device IDs'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deviceIds:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - '7aaa3d7d-b8e2-4a83-5ce3-4d81ad2bf5f8'
         400:
           $ref: '#/components/responses/badRequest'
         401:
