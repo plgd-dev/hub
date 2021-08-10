@@ -297,3 +297,27 @@ ResourceAggregate -> Client : CancelPendingMetadataUpdatesResponse
 deactivate Client
 deactivate ResourceAggregate
 @enduml
+
+@startuml
+title "Delete Devices"
+
+entity "OCF Server" as Server
+participant "Gateway" as Gateway
+participant "Resource Aggregate" as ResourceAggregate
+participant "Authorization Server" as AuthServer
+
+activate ResourceAggregate
+activate Server
+activate Gateway
+activate AuthServer
+Server -> Gateway : DeleteDevicesRequest
+Gateway-> ResourceAggregate : DeleteDevicesRequest
+ResourceAggregate -> Gateway : DeleteDevicesResponse
+Gateway -> AuthServer : DeleteDevicesRequest
+AuthServer -> Gateway : DeleteDevicesResponse
+Gateway -> Server : DeleteDevicesResponse
+deactivate AuthServer
+deactivate Gateway
+deactivate ResourceAggregate
+deactivate Server
+@enduml
