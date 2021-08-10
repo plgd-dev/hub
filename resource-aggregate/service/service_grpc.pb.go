@@ -34,6 +34,7 @@ type ResourceAggregateClient interface {
 	ConfirmDeviceMetadataUpdate(ctx context.Context, in *commands.ConfirmDeviceMetadataUpdateRequest, opts ...grpc.CallOption) (*commands.ConfirmDeviceMetadataUpdateResponse, error)
 	CancelPendingMetadataUpdates(ctx context.Context, in *commands.CancelPendingMetadataUpdatesRequest, opts ...grpc.CallOption) (*commands.CancelPendingMetadataUpdatesResponse, error)
 	CancelPendingCommands(ctx context.Context, in *commands.CancelPendingCommandsRequest, opts ...grpc.CallOption) (*commands.CancelPendingCommandsResponse, error)
+	DeleteDevices(ctx context.Context, in *commands.DeleteDevicesRequest, opts ...grpc.CallOption) (*commands.DeleteDevicesResponse, error)
 }
 
 type resourceAggregateClient struct {
@@ -179,6 +180,15 @@ func (c *resourceAggregateClient) CancelPendingCommands(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *resourceAggregateClient) DeleteDevices(ctx context.Context, in *commands.DeleteDevicesRequest, opts ...grpc.CallOption) (*commands.DeleteDevicesResponse, error) {
+	out := new(commands.DeleteDevicesResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/DeleteDevices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceAggregateServer is the server API for ResourceAggregate service.
 // All implementations must embed UnimplementedResourceAggregateServer
 // for forward compatibility
@@ -198,6 +208,7 @@ type ResourceAggregateServer interface {
 	ConfirmDeviceMetadataUpdate(context.Context, *commands.ConfirmDeviceMetadataUpdateRequest) (*commands.ConfirmDeviceMetadataUpdateResponse, error)
 	CancelPendingMetadataUpdates(context.Context, *commands.CancelPendingMetadataUpdatesRequest) (*commands.CancelPendingMetadataUpdatesResponse, error)
 	CancelPendingCommands(context.Context, *commands.CancelPendingCommandsRequest) (*commands.CancelPendingCommandsResponse, error)
+	DeleteDevices(context.Context, *commands.DeleteDevicesRequest) (*commands.DeleteDevicesResponse, error)
 	mustEmbedUnimplementedResourceAggregateServer()
 }
 
@@ -249,6 +260,9 @@ func (UnimplementedResourceAggregateServer) CancelPendingMetadataUpdates(context
 }
 func (UnimplementedResourceAggregateServer) CancelPendingCommands(context.Context, *commands.CancelPendingCommandsRequest) (*commands.CancelPendingCommandsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelPendingCommands not implemented")
+}
+func (UnimplementedResourceAggregateServer) DeleteDevices(context.Context, *commands.DeleteDevicesRequest) (*commands.DeleteDevicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevices not implemented")
 }
 func (UnimplementedResourceAggregateServer) mustEmbedUnimplementedResourceAggregateServer() {}
 
@@ -533,6 +547,24 @@ func _ResourceAggregate_CancelPendingCommands_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceAggregate_DeleteDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.DeleteDevicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceAggregateServer).DeleteDevices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/DeleteDevices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceAggregateServer).DeleteDevices(ctx, req.(*commands.DeleteDevicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ResourceAggregate_ServiceDesc is the grpc.ServiceDesc for ResourceAggregate service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -599,6 +631,10 @@ var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelPendingCommands",
 			Handler:    _ResourceAggregate_CancelPendingCommands_Handler,
+		},
+		{
+			MethodName: "DeleteDevices",
+			Handler:    _ResourceAggregate_DeleteDevices_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

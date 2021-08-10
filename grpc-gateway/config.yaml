@@ -35,6 +35,19 @@ apis:
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
 clients:
+  authorizationServer:
+    ownerClaim: sub
+    grpc:
+      address: ""
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
   eventBus:
     # number of routines to process events in projection
     goPoolSize: 16

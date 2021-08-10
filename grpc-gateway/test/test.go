@@ -16,11 +16,12 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.GRPC_HOST)
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 
-	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
-	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
-
+	cfg.Clients.AuthServer.OwnerClaim = "sub"
+	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.Eventbus.GoPoolSize = 16
+	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
+	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
 
 	err := cfg.Validate()
 	require.NoError(t, err)

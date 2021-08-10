@@ -41,10 +41,27 @@ func (c *APIsConfig) Validate() error {
 	return nil
 }
 
+type AuthorizationServerConfig struct {
+	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
+	Connection client.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *AuthorizationServerConfig) Validate() error {
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
+	err := c.Connection.Validate()
+	if err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return err
+}
+
 type ClientsConfig struct {
-	Eventbus          EventBusConfig   `yaml:"eventBus" json:"eventBus"`
-	ResourceAggregate GrpcServerConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
-	ResourceDirectory GrpcServerConfig `yaml:"resourceDirectory" json:"resourceDirectory"`
+	AuthServer        AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
+	Eventbus          EventBusConfig            `yaml:"eventBus" json:"eventBus"`
+	ResourceAggregate GrpcServerConfig          `yaml:"resourceAggregate" json:"resourceAggregate"`
+	ResourceDirectory GrpcServerConfig          `yaml:"resourceDirectory" json:"resourceDirectory"`
 }
 
 type EventBusConfig struct {
@@ -61,17 +78,21 @@ func (c *EventBusConfig) Validate() error {
 }
 
 func (c *ClientsConfig) Validate() error {
-	err := c.ResourceAggregate.Validate()
+	err := c.AuthServer.Validate()
+	if err != nil {
+		return fmt.Errorf("authorizationServer.%w", err)
+	}
+	err = c.Eventbus.Validate()
+	if err != nil {
+		return fmt.Errorf("eventbus.%w", err)
+	}
+	err = c.ResourceAggregate.Validate()
 	if err != nil {
 		return fmt.Errorf("resourceAggregate.%w", err)
 	}
 	err = c.ResourceDirectory.Validate()
 	if err != nil {
 		return fmt.Errorf("resourceDirectory.%w", err)
-	}
-	err = c.Eventbus.Validate()
-	if err != nil {
-		return fmt.Errorf("eventbus.%w", err)
 	}
 	return nil
 }

@@ -18,6 +18,14 @@ message GetDevicesRequest {
   repeated string device_id_filter = 3;
 }
 
+message DeleteDevicesRequest {
+  repeated string device_id_filter = 1;
+}
+
+message DeleteDevicesResponse {
+  repeated string device_ids = 1;
+}
+
 message GetResourceLinksRequest {
   repeated string type_filter = 1;
   repeated string device_id_filter = 2;

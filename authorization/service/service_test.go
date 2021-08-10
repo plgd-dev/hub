@@ -121,13 +121,13 @@ func (s *Server) cleanUp() error {
 }
 
 func newTestDevice() *persistence.AuthorizedDevice {
-	return newTestDeviceWithID(testDeviceID)
+	return newTestDeviceWithIDAndOwner(testDeviceID, testUserID)
 }
 
-func newTestDeviceWithID(deviceID string) *persistence.AuthorizedDevice {
+func newTestDeviceWithIDAndOwner(deviceID, owner string) *persistence.AuthorizedDevice {
 	return &persistence.AuthorizedDevice{
 		DeviceID:     deviceID,
-		Owner:        testUserID,
+		Owner:        owner,
 		AccessToken:  testAccessToken,
 		RefreshToken: "testRefreshToken",
 		Expiry:       time.Now().Add(time.Hour),
