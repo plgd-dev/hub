@@ -976,5 +976,9 @@ func mockGetUserDevices(ctx context.Context, userID string, deviceIDs []string) 
 	if err != nil {
 		return nil, status.Errorf(code, "%v", err)
 	}
+	getAllDevices := len(deviceIDs) == 0
+	if getAllDevices {
+		return ownedDevices, nil
+	}
 	return service.Intersection(ownedDevices, deviceIDs), nil
 }

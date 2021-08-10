@@ -26,7 +26,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var testUnauthorizedUser = "testUnauthorizedUser"
+var (
+	testUnauthorizedUser = "testUnauthorizedUser"
+	testUserDevices      = []string{"dev0", "dev1", "dev2", "dupDeviceId"}
+)
 
 func TestAggregateHandle_PublishResourceLinks(t *testing.T) {
 	type args struct {
@@ -1017,8 +1020,7 @@ func testListDevicesOfUserFunc(ctx context.Context, correlationID, userID string
 	if userID == testUnauthorizedUser {
 		return nil, codes.Unauthenticated, fmt.Errorf("unauthorized access")
 	}
-	deviceIds := []string{"dev0", "dupDeviceId"}
-	return deviceIds, codes.OK, nil
+	return testUserDevices, codes.OK, nil
 }
 
 func Test_aggregate_HandleDeleteResource(t *testing.T) {

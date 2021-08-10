@@ -114,13 +114,18 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 
 	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.Clients.AuthServer.PullFrequency, config.Clients.AuthServer.CacheExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
-		ok := userDevicesManager.ChecksUserDevices(owner, deviceIDs)
-		if ok {
-			return deviceIDs, nil
+		getAllDevices := len(deviceIDs) == 0
+		if !getAllDevices {
+			if ok := userDevicesManager.ChecksUserDevices(owner, deviceIDs); ok {
+				return deviceIDs, nil
+			}
 		}
 		ownedDevices, err := userDevicesManager.UpdateUserDevices(ctx, owner)
 		if err != nil {
 			return nil, err
+		}
+		if getAllDevices {
+			return ownedDevices, nil
 		}
 		return Intersection(deviceIDs, ownedDevices), nil
 	})

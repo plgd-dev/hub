@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -13,7 +14,6 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
 	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,14 +49,6 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		want      *commands.DeleteDevicesResponse
 		wantError bool
 	}{
-		{
-			name: "invalid request",
-			args: args{
-				req:   &commands.DeleteDevicesRequest{},
-				owner: user0,
-			},
-			wantError: true,
-		},
 		{
 			name: "unauthorized user",
 			args: args{
@@ -99,6 +91,22 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 			},
 			wantError: false,
 		},
+		{
+			name: "all owned devices",
+			args: args{
+				req: &commands.DeleteDevicesRequest{
+					DeviceIds: []string{},
+				},
+				owner: user0,
+			},
+			want: &commands.DeleteDevicesResponse{
+				DeviceIds: testUserDevices,
+				AuditContext: &commands.AuditContext{
+					UserId: user0,
+				},
+			},
+			wantError: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -110,7 +118,10 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 			}
 			require.NoError(t, err)
 			if tt.want != nil {
-				assert.Equal(t, tt.want.AuditContext, response.AuditContext)
+				sort.Strings(tt.want.DeviceIds)
+				sort.Strings(response.DeviceIds)
+				require.Equal(t, tt.want.DeviceIds, response.DeviceIds)
+				require.Equal(t, tt.want.AuditContext, response.AuditContext)
 			}
 		})
 	}
