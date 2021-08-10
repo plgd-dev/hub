@@ -54,11 +54,12 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	defer tx.Close()
 
 	owner := request.UserId
-	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
-	if err != nil {
-		uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
-		if err == nil && uid != serviceOwner {
-			owner = uid
+	if owner == "" {
+		if token, err := grpc_auth.AuthFromMD(ctx, "bearer"); err == nil {
+			uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
+			if err == nil && uid != serviceOwner {
+				owner = uid
+			}
 		}
 	}
 

@@ -49,7 +49,7 @@
           }
         },
         "tags": [
-          "Resource Directory"
+          "Cloud"
         ]
       }
     },
@@ -117,7 +117,40 @@
           }
         ],
         "tags": [
-          "Resource Directory"
+          "Cloud"
+        ]
+      },
+      "delete": {
+        "summary": "Delete selected devices.",
+        "operationId": "GrpcGateway_DeleteDevices",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cloudgrpcgatewaypbDeleteDevicesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Cloud"
         ]
       }
     },
@@ -171,7 +204,7 @@
           }
         ],
         "tags": [
-          "Resource Directory"
+          "Cloud"
         ]
       }
     },
@@ -523,7 +556,7 @@
           }
         ],
         "tags": [
-          "Resource Directory"
+          "Cloud"
         ]
       }
     },
@@ -604,7 +637,7 @@
           }
         ],
         "tags": [
-          "Resource Directory"
+          "Cloud"
         ]
       },
       "delete": {
@@ -703,7 +736,7 @@
           }
         ],
         "tags": [
-          "Resource Directory"
+          "Cloud"
         ]
       }
     },
@@ -767,7 +800,7 @@
           }
         ],
         "tags": [
-          "Resource Directory"
+          "Cloud"
         ]
       }
     },
@@ -810,7 +843,7 @@
           }
         ],
         "tags": [
-          "Resource Directory"
+          "Cloud"
         ]
       }
     }
@@ -979,6 +1012,17 @@
       "properties": {
         "data": {
           "$ref": "#/definitions/pbResourceCreated"
+        }
+      }
+    },
+    "cloudgrpcgatewaypbDeleteDevicesResponse": {
+      "type": "object",
+      "properties": {
+        "deviceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -1805,7 +1849,7 @@
         "DISABLED"
       ],
       "default": "UNSET",
-      "title": "┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───┬───┘                         └────────┬─────────┘               └─────────┘               └──────┘\n    ┌┴┐                   │                                      ┌┴┐            UpdateDeviceMetadataRequest             ┌┴┐  \n    │ │                   │                                      │ │ \u003c──────────────────────────────────────────────────│ │  \n    │ │                   │                                      │ │                            │                       │ │  \n    │ │                   │                                      │ │            UpdateDeviceMetadataResponse            │ │  \n    │ │                   │                                      │ │ ──────────────────────────────────────────────────\u003e│ │  \n    │ │                   │                                      └┬┘                            │                       │ │  \n    │ │                   │                                      │ DeviceMetadataUpdatePending  │                       │ │  \n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │  \n    │ │                   │                                      │                              │                       │ │  \n    │ │                  ┌┴┐                     DeviceMetadataUpdatePending                    │                       │ │  \n    │ │                  │ │ \u003c─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                       │ │  \n    │ │                  │ │                                     │                              │                       │ │  \n    │ │                  │ │ ConfirmDeviceMetadataUpdateRequest  ┌┴┐                            │                       │ │  \n    │ │                  │ │ ───────────────────────────────────\u003e│ │                            │                       │ │  \n    │ │                  └┬┘                                     │ │                            │                       │ │  \n    │ │                   │ConfirmDeviceMetadataUpdateResponse   │ │                            │                       │ │  \n    │ │                   │\u003c──────────────────────────────────── │ │                            │                       │ │  \n    │ │                   │                                      └┬┘                            │                       │ │  \n    │ │                   │                                      │    DeviceMetadataUpdated     │                       │ │  \n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │  \n    └┬┘                   │                                      │                              │                       └┬┘  \n     │                    │                                      │                              │ DeviceMetadataUpdated │    \n     │                    │                                      │                              │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e    \n┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘"
+      "title": "┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───┬───┘                         └────────┬─────────┘               └─────────┘               └──────┘\n    ┌┴┐                   │                                      ┌┴┐            UpdateDeviceMetadataRequest             ┌┴┐\n    │ │                   │                                      │ │ \u003c──────────────────────────────────────────────────│ │\n    │ │                   │                                      │ │                            │                       │ │\n    │ │                   │                                      │ │            UpdateDeviceMetadataResponse            │ │\n    │ │                   │                                      │ │ ──────────────────────────────────────────────────\u003e│ │\n    │ │                   │                                      └┬┘                            │                       │ │\n    │ │                   │                                      │ DeviceMetadataUpdatePending  │                       │ │\n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │\n    │ │                   │                                      │                              │                       │ │\n    │ │                  ┌┴┐                     DeviceMetadataUpdatePending                    │                       │ │\n    │ │                  │ │ \u003c─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                       │ │\n    │ │                  │ │                                     │                              │                       │ │\n    │ │                  │ │ ConfirmDeviceMetadataUpdateRequest  ┌┴┐                            │                       │ │\n    │ │                  │ │ ───────────────────────────────────\u003e│ │                            │                       │ │\n    │ │                  └┬┘                                     │ │                            │                       │ │\n    │ │                   │ConfirmDeviceMetadataUpdateResponse   │ │                            │                       │ │\n    │ │                   │\u003c──────────────────────────────────── │ │                            │                       │ │\n    │ │                   │                                      └┬┘                            │                       │ │\n    │ │                   │                                      │    DeviceMetadataUpdated     │                       │ │\n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │\n    └┬┘                   │                                      │                              │                       └┬┘\n     │                    │                                      │                              │ DeviceMetadataUpdated │\n     │                    │                                      │                              │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e\n┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘"
     },
     "resourceaggregatepbStatus": {
       "type": "string",

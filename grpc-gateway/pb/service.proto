@@ -45,16 +45,27 @@ service GrpcGateway {
       get: "/api/v1/devices"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
     };
   }
+
+  // Delete selected devices.
+  rpc DeleteDevices(DeleteDevicesRequest) returns (DeleteDevicesResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/devices"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Cloud" ]
+    };
+  }
+
   // Get resource links of devices.
   rpc GetResourceLinks(GetResourceLinksRequest) returns (stream ocf.cloud.resourceaggregate.pb.ResourceLinksPublished) {
     option (google.api.http) = {
       get: "/api/v1/resource-links"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
     };
   }
 
@@ -74,7 +85,7 @@ service GrpcGateway {
       get: "/api/v1/resources"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
     };
   }
   // Update resource at the device.
@@ -95,7 +106,7 @@ service GrpcGateway {
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
       schemes: [ WSS ];
     };
   }
@@ -106,7 +117,7 @@ service GrpcGateway {
       get: "/.well-known/ocfcloud-configuration"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
     };
   }
 
@@ -148,7 +159,7 @@ service GrpcGateway {
       get: "/api/v1/pending-commands"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
     };
   }
 
@@ -178,7 +189,7 @@ service GrpcGateway {
       get: "/api/v1/devices-metadata"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
     };
   }
 
@@ -188,7 +199,7 @@ service GrpcGateway {
       get: "/api/v1/events"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Resource Directory" ]
+      tags: [ "Cloud" ]
     };
   }
 }

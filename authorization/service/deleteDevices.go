@@ -53,17 +53,18 @@ func (s *Service) publishDevicesUnregistered(ctx context.Context, owner string, 
 	return nil
 }
 
-// DeleteDevice removes a devices from user.
+// DeleteDevices removes a devices from user.
 func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRequest) (*pb.DeleteDevicesResponse, error) {
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
 	owner := request.UserId
-	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
-	if err != nil {
-		uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
-		if err == nil {
-			owner = uid
+	if owner == "" {
+		if token, err := grpc_auth.AuthFromMD(ctx, "bearer"); err == nil {
+			uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
+			if err == nil {
+				owner = uid
+			}
 		}
 	}
 
@@ -78,14 +79,15 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 
 	// TODO validate jwt token -> only jwt token is supported
 
-	deletedDeviceIds := make([]string, 0, len(request.DeviceIds))
+	var deletedDeviceIds []string
 	for _, deviceId := range request.DeviceIds {
 		_, ok, err := tx.Retrieve(deviceId, owner)
 		if err != nil {
 			return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot delete device('%v'): %v", deviceId, err.Error()))
 		}
 		if !ok {
-			return nil, log.LogAndReturnError(status.Errorf(codes.NotFound, "cannot delete device('%v'): not found", deviceId))
+			log.Debugf("cannot retrieve device('%v') by user('%v')", deviceId, owner)
+			continue
 		}
 
 		err = tx.Delete(deviceId, owner)

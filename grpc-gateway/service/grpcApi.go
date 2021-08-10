@@ -6,6 +6,7 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 
+	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -30,8 +31,8 @@ func (s closeFunc) Close() {
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
+	authorizationClient     pbAS.AuthorizationServiceClient
 	resourceDirectoryClient pb.GrpcGatewayClient
-
 	resourceAggregateClient *raClient.Client
 	closeFunc               closeFunc
 }
@@ -61,6 +62,19 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 	}
 	closeFunc = append(closeFunc, resourceSubscriber.Close)
 
+	authorizationConn, err := client.New(config.AuthServer.Connection, logger)
+	if err != nil {
+		closeFunc.Close()
+		return nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
+	}
+	closeFunc = append(closeFunc, func() {
+		err := authorizationConn.Close()
+		if err != nil {
+			logger.Errorf("error occurs during close connection to authorization server: %w", err)
+		}
+	})
+	authorizationClient := pbAS.NewAuthorizationServiceClient(authorizationConn.GRPC())
+
 	rdConn, err := client.New(config.ResourceDirectory.Connection, logger)
 	if err != nil {
 		closeFunc.Close()
@@ -73,6 +87,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 		}
 	})
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
+
 	raConn, err := client.New(config.ResourceAggregate.Connection, logger)
 	if err != nil {
 		closeFunc.Close()
@@ -87,6 +102,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 	resourceAggregateClient := raClient.New(raConn.GRPC(), resourceSubscriber)
 
 	return NewRequestHandler(
+		authorizationClient,
 		resourceDirectoryClient,
 		resourceAggregateClient,
 		closeFunc,
@@ -95,11 +111,13 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 
 // NewRequestHandler factory for new RequestHandler.
 func NewRequestHandler(
+	authorizationClient pbAS.AuthorizationServiceClient,
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceAggregateClient *raClient.Client,
 	closeFunc closeFunc,
 ) *RequestHandler {
 	return &RequestHandler{
+		authorizationClient:     authorizationClient,
 		resourceDirectoryClient: resourceDirectoryClient,
 		resourceAggregateClient: resourceAggregateClient,
 		closeFunc:               closeFunc,

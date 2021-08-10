@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion7
 type GrpcGatewayClient interface {
 	// Get all devices
 	GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (GrpcGateway_GetDevicesClient, error)
+	// Delete selected devices.
+	DeleteDevices(ctx context.Context, in *DeleteDevicesRequest, opts ...grpc.CallOption) (*DeleteDevicesResponse, error)
 	// Get resource links of devices.
 	GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error)
 	// Get resource from the device.
@@ -89,6 +91,15 @@ func (x *grpcGatewayGetDevicesClient) Recv() (*Device, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *grpcGatewayClient) DeleteDevices(ctx context.Context, in *DeleteDevicesRequest, opts ...grpc.CallOption) (*DeleteDevicesResponse, error) {
+	out := new(DeleteDevicesResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteDevices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *grpcGatewayClient) GetResourceLinks(ctx context.Context, in *GetResourceLinksRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourceLinksClient, error) {
@@ -360,6 +371,8 @@ func (x *grpcGatewayGetEventsClient) Recv() (*GetEventsResponse, error) {
 type GrpcGatewayServer interface {
 	// Get all devices
 	GetDevices(*GetDevicesRequest, GrpcGateway_GetDevicesServer) error
+	// Delete selected devices.
+	DeleteDevices(context.Context, *DeleteDevicesRequest) (*DeleteDevicesResponse, error)
 	// Get resource links of devices.
 	GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error
 	// Get resource from the device.
@@ -397,6 +410,9 @@ type UnimplementedGrpcGatewayServer struct {
 
 func (UnimplementedGrpcGatewayServer) GetDevices(*GetDevicesRequest, GrpcGateway_GetDevicesServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetDevices not implemented")
+}
+func (UnimplementedGrpcGatewayServer) DeleteDevices(context.Context, *DeleteDevicesRequest) (*DeleteDevicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevices not implemented")
 }
 func (UnimplementedGrpcGatewayServer) GetResourceLinks(*GetResourceLinksRequest, GrpcGateway_GetResourceLinksServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetResourceLinks not implemented")
@@ -472,6 +488,24 @@ type grpcGatewayGetDevicesServer struct {
 
 func (x *grpcGatewayGetDevicesServer) Send(m *Device) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _GrpcGateway_DeleteDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDevicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GrpcGatewayServer).DeleteDevices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/DeleteDevices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GrpcGatewayServer).DeleteDevices(ctx, req.(*DeleteDevicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _GrpcGateway_GetResourceLinks_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -756,6 +790,10 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "ocf.cloud.grpcgateway.pb.GrpcGateway",
 	HandlerType: (*GrpcGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DeleteDevices",
+			Handler:    _GrpcGateway_DeleteDevices_Handler,
+		},
 		{
 			MethodName: "GetResourceFromDevice",
 			Handler:    _GrpcGateway_GetResourceFromDevice_Handler,
