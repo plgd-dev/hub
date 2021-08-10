@@ -52,11 +52,13 @@ const (
 	CertificaAuthoritySign = CertificaAuthority + "/sign"
 
 	// (GRPC + HTTP) GET /api/v1/devices -> rpc GetDevices
+	// (GRPC + HTTP) DELETE /api/v1/devices -> rpc DeleteDevices
 	Devices = API + "/devices"
-	//(HTTP ALIAS) GET /api/v1/devices/{deviceId} -> rpc GetDevices + deviceIdFilter
+	// (HTTP ALIAS) GET /api/v1/devices/{deviceId} -> rpc GetDevices + deviceIdFilter
+	// (HTTP ALIAS) DELETE /api/v1/devices/{deviceId} -> rpc DeleteDevices + deviceIdFilter
 	AliasDevice = Devices + "/{" + DeviceIDKey + "}"
 
-	//(GRPC + HTTP) GET /api/v1/resource-links -> rpc GetResourceLinks
+	// (GRPC + HTTP) GET /api/v1/resource-links -> rpc GetResourceLinks
 	ResourceLinks = API + "/" + ResourceLinksPathKey
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resource-links
 	AliasDeviceResourceLinks = AliasDevice + "/" + ResourceLinksPathKey

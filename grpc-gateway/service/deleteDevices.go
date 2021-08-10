@@ -55,6 +55,12 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 		}
 	}
 
+	if len(deleted) == 0 {
+		return &pb.DeleteDevicesResponse{
+			DeviceIds: deleted,
+		}, nil
+	}
+
 	cmdAS := pbAS.DeleteDevicesRequest{
 		DeviceIds: deleted,
 	}
