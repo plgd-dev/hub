@@ -60,7 +60,6 @@ type Server struct {
 	service    *Service
 	grpcServer *server.Server
 	httpServer *fasthttp.Server
-	publisher  *publisher.Publisher
 	cfg        Config
 	listener   net.Listener
 }
