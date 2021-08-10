@@ -204,6 +204,7 @@ func TestProjection(t *testing.T) {
 
 	time.Sleep(waitForSubscription)
 
+	commandPub1.Content.Data = []byte("commandPub1.Content.Data")
 	evs, err = a1.HandleCommand(ctx, &commandPub1)
 	require.NoError(t, err)
 	require.NotNil(t, evs)
