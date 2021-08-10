@@ -4,27 +4,32 @@ package ocf.cloud.auth.pb;
 
 option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
 
+// provides who register/unregister the device
+message AuditContext {
+    string user_id = 1;
+}
+
 // devices was registered to owner.
-message RegisteredDevices {
+message DevicesRegistered {
     string owner = 1; // determined by clients.storage.ownerClaim.
     repeated string device_ids = 2; // list of device ids added to owner.
-    int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
 }
 
 // devices was deregistered from owner.
-message UnregisteredDevices {
+message DevicesUnregistered {
     string owner = 1; // determined by clients.storage.ownerClaim
     repeated string device_ids = 2; // list of device ids deleted from owner.
-    int64 timestamp = 3; // unix timestamp in nanoseconds of creation event.
 }
 
 // nats: owners.{owner}.>
 message Event {
+    AuditContext audit_context = 1;
+    int64 timestamp = 2; // unix timestamp in nanoseconds of creation event.
     oneof type {
         // nats: owners.{owner}.registered
-        RegisteredDevices RegisteredDevices = 1;
+        DevicesRegistered devices_registered = 3;
         // nats: owners.{owner}.unregistered
-        UnregisteredDevices UnregisteredDevices = 2;
+        DevicesUnregistered devices_unregistered = 4;
     };
 }
 
