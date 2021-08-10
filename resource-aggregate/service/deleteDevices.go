@@ -44,13 +44,12 @@ func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.Del
 		queries[i].GroupID = dev
 	}
 
-	deletedDeviceIds, err := r.eventstore.Delete(ctx, queries)
-	if err != nil {
+	if err := r.eventstore.Delete(ctx, queries); err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices: %v", err))
 	}
 
 	return &commands.DeleteDevicesResponse{
-		DeviceIds:    deletedDeviceIds,
+		DeviceIds:    ownedDevices,
 		AuditContext: commands.NewAuditContext(owner, ""),
 	}, nil
 }
