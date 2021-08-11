@@ -223,15 +223,15 @@
         ]
       }
     },
-    "/api/v1/devices/{deviceId}/pending-commands": {
+    "/api/v1/devices/{deviceId}/pending-metadata-updates": {
       "delete": {
         "summary": "Cancels device metadata updates.",
-        "operationId": "GrpcGateway_CancelDeviceMetadataUpdates",
+        "operationId": "GrpcGateway_CancelPendingMetadataUpdates",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbCancelResponse"
+              "$ref": "#/definitions/cloudgrpcgatewaypbCancelPendingCommandsResponse"
             }
           },
           "default": {
@@ -606,17 +606,15 @@
         "tags": [
           "Resource Directory"
         ]
-      }
-    },
-    "/api/v1/pending-commands/resources": {
+      },
       "delete": {
         "summary": "Cancels resource commands.",
-        "operationId": "GrpcGateway_CancelResourceCommands",
+        "operationId": "GrpcGateway_CancelPendingCommands",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbCancelResponse"
+              "$ref": "#/definitions/cloudgrpcgatewaypbCancelPendingCommandsResponse"
             }
           },
           "default": {
@@ -953,6 +951,17 @@
       ],
       "default": "REGISTERED"
     },
+    "cloudgrpcgatewaypbCancelPendingCommandsResponse": {
+      "type": "object",
+      "properties": {
+        "correlationIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "cloudgrpcgatewaypbContent": {
       "type": "object",
       "properties": {
@@ -1164,17 +1173,6 @@
         },
         "correlationId": {
           "type": "string"
-        }
-      }
-    },
-    "pbCancelResponse": {
-      "type": "object",
-      "properties": {
-        "correlationIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },

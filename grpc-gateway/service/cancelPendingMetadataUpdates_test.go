@@ -12,7 +12,7 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
-func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
+func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
@@ -22,30 +22,30 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 	require.Equal(t, len(devicePendings), 2)
 
 	type args struct {
-		req *pb.CancelDeviceMetadataUpdatesRequest
+		req *pb.CancelPendingMetadataUpdatesRequest
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
-		want    *pb.CancelResponse
+		want    *pb.CancelPendingCommandsResponse
 	}{
 		{
 			name: "cancel one pending",
 			args: args{
-				req: &pb.CancelDeviceMetadataUpdatesRequest{
+				req: &pb.CancelPendingMetadataUpdatesRequest{
 					DeviceId:            devicePendings[0].DeviceID,
 					CorrelationIdFilter: []string{devicePendings[0].CorrelationID},
 				},
 			},
-			want: &pb.CancelResponse{
+			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{devicePendings[0].CorrelationID},
 			},
 		},
 		{
 			name: "duplicate cancel event",
 			args: args{
-				req: &pb.CancelDeviceMetadataUpdatesRequest{
+				req: &pb.CancelPendingMetadataUpdatesRequest{
 					DeviceId:            devicePendings[0].DeviceID,
 					CorrelationIdFilter: []string{devicePendings[0].CorrelationID},
 				},
@@ -55,11 +55,11 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 		{
 			name: "cancel all events",
 			args: args{
-				req: &pb.CancelDeviceMetadataUpdatesRequest{
+				req: &pb.CancelPendingMetadataUpdatesRequest{
 					DeviceId: devicePendings[0].DeviceID,
 				},
 			},
-			want: &pb.CancelResponse{
+			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{devicePendings[1].CorrelationID},
 			},
 		},
@@ -69,7 +69,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := client.CancelDeviceMetadataUpdates(ctx, tt.args.req)
+			resp, err := client.CancelPendingMetadataUpdates(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

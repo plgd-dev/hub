@@ -11,24 +11,24 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-func (r *RequestHandler) CancelResourceCommands(ctx context.Context, req *pb.CancelResourceCommandsRequest) (*pb.CancelResponse, error) {
+func (r *RequestHandler) CancelPendingMetadataUpdates(ctx context.Context, req *pb.CancelPendingMetadataUpdatesRequest) (*pb.CancelPendingCommandsResponse, error) {
 	connectionID := ""
 	peer, ok := peer.FromContext(ctx)
 	if ok {
 		connectionID = peer.Addr.String()
 	}
-	resp, err := r.resourceAggregateClient.CancelResourceCommands(ctx, &commands.CancelResourceCommandsRequest{
-		ResourceId:          req.GetResourceId(),
+	resp, err := r.resourceAggregateClient.CancelPendingMetadataUpdates(ctx, &commands.CancelPendingMetadataUpdatesRequest{
+		DeviceId:            req.GetDeviceId(),
 		CorrelationIdFilter: req.GetCorrelationIdFilter(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: connectionID,
 		},
 	})
 	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel resource('%v') commands: %v", req.GetResourceId().ToString(), err))
+		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel device('%v') metadata updates: %v", req.GetDeviceId(), err))
 	}
 
-	return &pb.CancelResponse{
+	return &pb.CancelPendingCommandsResponse{
 		CorrelationIds: resp.GetCorrelationIds(),
 	}, nil
 }

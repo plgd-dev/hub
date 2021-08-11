@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
 
-func (requestHandler *RequestHandler) cancelResourceCommands(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) CancelPendingCommands(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deviceID := vars[uri.DeviceIDKey]
 	href := vars[uri.ResourceHrefKey]
@@ -42,7 +42,7 @@ func (requestHandler *RequestHandler) cancelResourceCommands(w http.ResponseWrit
 			}
 		}
 	}
-	r.URL.Path = uri.PendingResourcesCommands
+	r.URL.Path = uri.PendingCommands
 	r.URL.RawQuery = q.Encode()
 	requestHandler.mux.ServeHTTP(w, r)
 }

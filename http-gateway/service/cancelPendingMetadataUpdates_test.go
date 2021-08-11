@@ -14,7 +14,7 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
-func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
+func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
@@ -32,7 +32,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    *pb.CancelResponse
+		want    *pb.CancelPendingCommandsResponse
 	}{
 		{
 			name: "cancel one pending",
@@ -41,7 +41,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 				correlationIdFilter: []string{devicePendings[0].CorrelationID},
 				accept:              uri.ApplicationProtoJsonContentType,
 			},
-			want: &pb.CancelResponse{
+			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{devicePendings[0].CorrelationID},
 			},
 		},
@@ -60,7 +60,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 				deviceID: devicePendings[0].DeviceID,
 				accept:   uri.ApplicationProtoJsonContentType,
 			},
-			want: &pb.CancelResponse{
+			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{devicePendings[1].CorrelationID},
 			},
 		},
@@ -69,7 +69,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 	token := oauthTest.GetServiceToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingCommands, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).AddCorrelantionIdFilter(tt.args.correlationIdFilter).Build()
+			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).AddCorrelantionIdFilter(tt.args.correlationIdFilter).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -82,7 +82,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 			defer func() {
 				_ = resp.Body.Close()
 			}()
-			var v pb.CancelResponse
+			var v pb.CancelPendingCommandsResponse
 			err = Unmarshal(resp.StatusCode, resp.Body, &v)
 			if tt.wantErr {
 				require.Error(t, err)

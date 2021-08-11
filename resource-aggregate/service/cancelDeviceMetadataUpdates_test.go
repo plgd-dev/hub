@@ -21,14 +21,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestAggregateHandle_CancelDeviceMetadataUpdates(t *testing.T) {
+func TestAggregateHandle_CancelPendingMetadataUpdates(t *testing.T) {
 	deviceID := "dev0"
 	userID := "user0"
 	correlationID0 := "0"
 	correlationID1 := "1"
 	correlationID2 := "2"
 	type args struct {
-		request *commands.CancelDeviceMetadataUpdatesRequest
+		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
 	}
 
@@ -42,7 +42,7 @@ func TestAggregateHandle_CancelDeviceMetadataUpdates(t *testing.T) {
 		{
 			name: "cancel one update",
 			args: args{
-				request: testMakeCancelDeviceMetadataUpdatesRequest(deviceID, []string{correlationID0}),
+				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, []string{correlationID0}),
 				userID:  userID,
 			},
 			wantCode: codes.OK,
@@ -50,7 +50,7 @@ func TestAggregateHandle_CancelDeviceMetadataUpdates(t *testing.T) {
 		{
 			name: "cancel all updates",
 			args: args{
-				request: testMakeCancelDeviceMetadataUpdatesRequest(deviceID, nil),
+				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
 			},
 			wantCode: codes.OK,
@@ -58,7 +58,7 @@ func TestAggregateHandle_CancelDeviceMetadataUpdates(t *testing.T) {
 		{
 			name: "duplicit cancel all updates",
 			args: args{
-				request: testMakeCancelDeviceMetadataUpdatesRequest(deviceID, nil),
+				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
 			},
 			wantCode: codes.NotFound,
@@ -102,7 +102,7 @@ func TestAggregateHandle_CancelDeviceMetadataUpdates(t *testing.T) {
 		tfunc := func(t *testing.T) {
 			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 			require.NoError(t, err)
-			events, err := ag.CancelDeviceMetadataUpdates(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			events, err := ag.CancelPendingMetadataUpdates(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -118,21 +118,21 @@ func TestAggregateHandle_CancelDeviceMetadataUpdates(t *testing.T) {
 	}
 }
 
-func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
+func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 	deviceID := "dev0"
 	userID := "user0"
 	correlationID0 := "0"
 	correlationID1 := "1"
 	correlationID2 := "2"
 	type args struct {
-		request *commands.CancelDeviceMetadataUpdatesRequest
+		request *commands.CancelPendingMetadataUpdatesRequest
 		userID  string
 	}
 
 	test := []struct {
 		name     string
 		args     args
-		want     *commands.CancelDeviceMetadataUpdatesResponse
+		want     *commands.CancelPendingMetadataUpdatesResponse
 		wantCode codes.Code
 		wantErr  bool
 	}{
@@ -140,10 +140,10 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 		{
 			name: "cancel one update",
 			args: args{
-				request: testMakeCancelDeviceMetadataUpdatesRequest(deviceID, []string{correlationID0}),
+				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, []string{correlationID0}),
 				userID:  userID,
 			},
-			want: &commands.CancelDeviceMetadataUpdatesResponse{
+			want: &commands.CancelPendingMetadataUpdatesResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
 				},
@@ -154,10 +154,10 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 		{
 			name: "cancel all updates",
 			args: args{
-				request: testMakeCancelDeviceMetadataUpdatesRequest(deviceID, nil),
+				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
 			},
-			want: &commands.CancelDeviceMetadataUpdatesResponse{
+			want: &commands.CancelPendingMetadataUpdatesResponse{
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
 				},
@@ -168,7 +168,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 		{
 			name: "duplicit cancel all updates",
 			args: args{
-				request: testMakeCancelDeviceMetadataUpdatesRequest(deviceID, nil),
+				request: testMakeCancelPendingMetadataUpdatesRequest(deviceID, nil),
 				userID:  userID,
 			},
 			wantCode: codes.NotFound,
@@ -212,7 +212,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			want, err := requestHandler.CancelDeviceMetadataUpdates(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
+			want, err := requestHandler.CancelPendingMetadataUpdates(kitNetGrpc.CtxWithIncomingOwner(ctx, tt.args.userID), tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -227,8 +227,8 @@ func TestRequestHandler_CancelDeviceMetadataUpdates(t *testing.T) {
 	}
 }
 
-func testMakeCancelDeviceMetadataUpdatesRequest(deviceID string, correlationIdFilter []string) *commands.CancelDeviceMetadataUpdatesRequest {
-	r := commands.CancelDeviceMetadataUpdatesRequest{
+func testMakeCancelPendingMetadataUpdatesRequest(deviceID string, correlationIdFilter []string) *commands.CancelPendingMetadataUpdatesRequest {
+	r := commands.CancelPendingMetadataUpdatesRequest{
 		DeviceId:            deviceID,
 		CorrelationIdFilter: correlationIdFilter,
 		CommandMetadata: &commands.CommandMetadata{

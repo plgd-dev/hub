@@ -32,7 +32,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdate(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    *pb.CancelResponse
+		want    *pb.CancelPendingCommandsResponse
 	}{
 		{
 			name: "cancel one pending",
@@ -41,7 +41,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdate(t *testing.T) {
 				correlationId: devicePendings[0].CorrelationID,
 				accept:        uri.ApplicationProtoJsonContentType,
 			},
-			want: &pb.CancelResponse{
+			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{devicePendings[0].CorrelationID},
 			},
 		},
@@ -59,7 +59,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdate(t *testing.T) {
 	token := oauthTest.GetServiceToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingCommands+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).Build()
+			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -72,7 +72,7 @@ func TestRequestHandler_CancelDeviceMetadataUpdate(t *testing.T) {
 			defer func() {
 				_ = resp.Body.Close()
 			}()
-			var v pb.CancelResponse
+			var v pb.CancelPendingCommandsResponse
 			err = Unmarshal(resp.StatusCode, resp.Body, &v)
 			if tt.wantErr {
 				require.Error(t, err)

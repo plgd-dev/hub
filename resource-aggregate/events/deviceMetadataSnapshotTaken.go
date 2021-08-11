@@ -202,7 +202,7 @@ func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	}
 }
 
-func (e *DeviceMetadataSnapshotTaken) CancelDeviceMetadataUpdates(ctx context.Context, owner string, req *commands.CancelDeviceMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, owner string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -278,8 +278,8 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		}
 	case *commands.ConfirmDeviceMetadataUpdateRequest:
 		return e.ConfirmDeviceMetadataUpdate(ctx, owner, req, newVersion, false)
-	case *commands.CancelDeviceMetadataUpdatesRequest:
-		return e.CancelDeviceMetadataUpdates(ctx, owner, req, newVersion)
+	case *commands.CancelPendingMetadataUpdatesRequest:
+		return e.CancelPendingMetadataUpdates(ctx, owner, req, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command (%T)", cmd)

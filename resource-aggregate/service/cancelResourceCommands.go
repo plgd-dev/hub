@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func validateCancelResourceCommand(request *commands.CancelResourceCommandsRequest) error {
+func validateCancelResourceCommand(request *commands.CancelPendingCommandsRequest) error {
 	if request.GetResourceId().GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}
@@ -25,7 +25,7 @@ func validateCancelResourceCommand(request *commands.CancelResourceCommandsReque
 	return nil
 }
 
-func (a *aggregate) CancelResourceCommand(ctx context.Context, request *commands.CancelResourceCommandsRequest) (events []eventstore.Event, err error) {
+func (a *aggregate) CancelResourceCommand(ctx context.Context, request *commands.CancelPendingCommandsRequest) (events []eventstore.Event, err error) {
 	if err = validateCancelResourceCommand(request); err != nil {
 		return
 	}
@@ -40,7 +40,7 @@ func (a *aggregate) CancelResourceCommand(ctx context.Context, request *commands
 	return
 }
 
-func (r RequestHandler) CancelResourceCommands(ctx context.Context, request *commands.CancelResourceCommandsRequest) (*commands.CancelResourceCommandsResponse, error) {
+func (r RequestHandler) CancelPendingCommands(ctx context.Context, request *commands.CancelPendingCommandsRequest) (*commands.CancelPendingCommandsResponse, error) {
 	owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
@@ -76,7 +76,7 @@ func (r RequestHandler) CancelResourceCommands(ctx context.Context, request *com
 		}
 	}
 
-	return &commands.CancelResourceCommandsResponse{
+	return &commands.CancelPendingCommandsResponse{
 		AuditContext:   commands.NewAuditContext(owner, ""),
 		CorrelationIds: correlationIDs,
 	}, nil

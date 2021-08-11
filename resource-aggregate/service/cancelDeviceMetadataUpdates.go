@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func validateCancelDeviceMetadataUpdates(request *commands.CancelDeviceMetadataUpdatesRequest) error {
+func validateCancelPendingMetadataUpdates(request *commands.CancelPendingMetadataUpdatesRequest) error {
 	if request.GetDeviceId() == "" {
 		return status.Errorf(codes.InvalidArgument, "invalid DeviceId")
 	}
@@ -22,8 +22,8 @@ func validateCancelDeviceMetadataUpdates(request *commands.CancelDeviceMetadataU
 	return nil
 }
 
-func (a *aggregate) CancelDeviceMetadataUpdates(ctx context.Context, request *commands.CancelDeviceMetadataUpdatesRequest) (events []eventstore.Event, err error) {
-	if err = validateCancelDeviceMetadataUpdates(request); err != nil {
+func (a *aggregate) CancelPendingMetadataUpdates(ctx context.Context, request *commands.CancelPendingMetadataUpdatesRequest) (events []eventstore.Event, err error) {
+	if err = validateCancelPendingMetadataUpdates(request); err != nil {
 		return
 	}
 
@@ -37,7 +37,7 @@ func (a *aggregate) CancelDeviceMetadataUpdates(ctx context.Context, request *co
 	return
 }
 
-func (r RequestHandler) CancelDeviceMetadataUpdates(ctx context.Context, request *commands.CancelDeviceMetadataUpdatesRequest) (*commands.CancelDeviceMetadataUpdatesResponse, error) {
+func (r RequestHandler) CancelPendingMetadataUpdates(ctx context.Context, request *commands.CancelPendingMetadataUpdatesRequest) (*commands.CancelPendingMetadataUpdatesResponse, error) {
 	owner, err := r.validateAccessToDevice(ctx, request.GetDeviceId())
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
@@ -49,7 +49,7 @@ func (r RequestHandler) CancelDeviceMetadataUpdates(ctx context.Context, request
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel device ('%v') metadata updates: %v", request.GetDeviceId(), err))
 	}
 
-	cancelEvents, err := aggregate.CancelDeviceMetadataUpdates(ctx, request)
+	cancelEvents, err := aggregate.CancelPendingMetadataUpdates(ctx, request)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot cancel resource('%v') metadata updates: %v", request.GetDeviceId(), err))
 	}
@@ -67,7 +67,7 @@ func (r RequestHandler) CancelDeviceMetadataUpdates(ctx context.Context, request
 		}
 	}
 
-	return &commands.CancelDeviceMetadataUpdatesResponse{
+	return &commands.CancelPendingMetadataUpdatesResponse{
 		AuditContext:   commands.NewAuditContext(owner, ""),
 		CorrelationIds: correlationIDs,
 	}, nil

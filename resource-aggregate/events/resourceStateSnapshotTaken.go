@@ -579,7 +579,7 @@ func (e *ResourceStateSnapshotTaken) ConfirmResourceCreateCommand(ctx context.Co
 	return []eventstore.Event{&rc}, nil
 }
 
-func (e *ResourceStateSnapshotTaken) CancelResourceCommands(ctx context.Context, owner string, req *commands.CancelResourceCommandsRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, owner string, req *commands.CancelPendingCommandsRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -782,8 +782,8 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceCreateRequest:
 		return e.ConfirmResourceCreateCommand(ctx, owner, req, newVersion)
-	case *commands.CancelResourceCommandsRequest:
-		return e.CancelResourceCommands(ctx, owner, req, newVersion)
+	case *commands.CancelPendingCommandsRequest:
+		return e.CancelPendingCommands(ctx, owner, req, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command(%T)", cmd)

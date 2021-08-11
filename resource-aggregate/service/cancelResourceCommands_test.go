@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestRequestHandler_CancelResourceCommands(t *testing.T) {
+func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 	deviceID := "dev0"
 	resID0 := "res0"
 	resID1 := "res1"
@@ -32,21 +32,21 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 	correlationID3 := "3"
 
 	type args struct {
-		request *commands.CancelResourceCommandsRequest
+		request *commands.CancelPendingCommandsRequest
 	}
 	tests := []struct {
 		name     string
 		args     args
-		want     *commands.CancelResourceCommandsResponse
+		want     *commands.CancelPendingCommandsResponse
 		wantCode codes.Code
 		wantErr  bool
 	}{
 		{
 			name: "cancel one update",
 			args: args{
-				request: testMakeCancelResourceCommandsRequest(deviceID, resID0, []string{correlationID0}),
+				request: testMakeCancelPendingCommandsRequest(deviceID, resID0, []string{correlationID0}),
 			},
-			want: &commands.CancelResourceCommandsResponse{
+			want: &commands.CancelPendingCommandsResponse{
 				CorrelationIds: []string{correlationID0},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
@@ -56,9 +56,9 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 		{
 			name: "cancel 2 updates",
 			args: args{
-				request: testMakeCancelResourceCommandsRequest(deviceID, resID1, []string{correlationID0, correlationID1}),
+				request: testMakeCancelPendingCommandsRequest(deviceID, resID1, []string{correlationID0, correlationID1}),
 			},
-			want: &commands.CancelResourceCommandsResponse{
+			want: &commands.CancelPendingCommandsResponse{
 				CorrelationIds: []string{correlationID0, correlationID1},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
@@ -68,9 +68,9 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 		{
 			name: "cancel one retrieve",
 			args: args{
-				request: testMakeCancelResourceCommandsRequest(deviceID, resID0, []string{correlationID1}),
+				request: testMakeCancelPendingCommandsRequest(deviceID, resID0, []string{correlationID1}),
 			},
-			want: &commands.CancelResourceCommandsResponse{
+			want: &commands.CancelPendingCommandsResponse{
 				CorrelationIds: []string{correlationID1},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
@@ -80,9 +80,9 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 		{
 			name: "cancel one create",
 			args: args{
-				request: testMakeCancelResourceCommandsRequest(deviceID, resID0, []string{correlationID2}),
+				request: testMakeCancelPendingCommandsRequest(deviceID, resID0, []string{correlationID2}),
 			},
-			want: &commands.CancelResourceCommandsResponse{
+			want: &commands.CancelPendingCommandsResponse{
 				CorrelationIds: []string{correlationID2},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
@@ -92,9 +92,9 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 		{
 			name: "cancel one delete",
 			args: args{
-				request: testMakeCancelResourceCommandsRequest(deviceID, resID0, []string{correlationID3}),
+				request: testMakeCancelPendingCommandsRequest(deviceID, resID0, []string{correlationID3}),
 			},
-			want: &commands.CancelResourceCommandsResponse{
+			want: &commands.CancelPendingCommandsResponse{
 				CorrelationIds: []string{correlationID3},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
@@ -104,9 +104,9 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 		{
 			name: "cancel all commands",
 			args: args{
-				request: testMakeCancelResourceCommandsRequest(deviceID, resID1, nil),
+				request: testMakeCancelPendingCommandsRequest(deviceID, resID1, nil),
 			},
-			want: &commands.CancelResourceCommandsResponse{
+			want: &commands.CancelPendingCommandsResponse{
 				CorrelationIds: []string{correlationID2, correlationID3},
 				AuditContext: &commands.AuditContext{
 					UserId: userID,
@@ -116,7 +116,7 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 		{
 			name: "cancel all commands",
 			args: args{
-				request: testMakeCancelResourceCommandsRequest(deviceID, resID1, nil),
+				request: testMakeCancelPendingCommandsRequest(deviceID, resID1, nil),
 			},
 			wantErr:  true,
 			wantCode: codes.NotFound,
@@ -175,7 +175,7 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			want, err := requestHandler.CancelResourceCommands(ctx, tt.args.request)
+			want, err := requestHandler.CancelPendingCommands(ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
@@ -189,8 +189,8 @@ func TestRequestHandler_CancelResourceCommands(t *testing.T) {
 	}
 }
 
-func testMakeCancelResourceCommandsRequest(deviceID string, href string, correlationIdFilter []string) *commands.CancelResourceCommandsRequest {
-	r := commands.CancelResourceCommandsRequest{
+func testMakeCancelPendingCommandsRequest(deviceID string, href string, correlationIdFilter []string) *commands.CancelPendingCommandsRequest {
+	r := commands.CancelPendingCommandsRequest{
 		ResourceId:          commands.NewResourceID(deviceID, href),
 		CorrelationIdFilter: correlationIdFilter,
 		CommandMetadata: &commands.CommandMetadata{

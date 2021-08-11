@@ -153,9 +153,9 @@ service GrpcGateway {
   }
 
   // Cancels resource commands.
-  rpc CancelResourceCommands(CancelResourceCommandsRequest) returns (CancelResponse) {
+  rpc CancelPendingCommands(CancelPendingCommandsRequest) returns (CancelPendingCommandsResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/pending-commands/resources"
+      delete: "/api/v1/pending-commands"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Resource Directory" ]
@@ -163,9 +163,9 @@ service GrpcGateway {
   }
 
   // Cancels device metadata updates.
-  rpc CancelDeviceMetadataUpdates(CancelDeviceMetadataUpdatesRequest) returns (CancelResponse) {
+  rpc CancelPendingMetadataUpdates(CancelPendingMetadataUpdatesRequest) returns (CancelPendingCommandsResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/devices/{device_id}/pending-commands"
+      delete: "/api/v1/devices/{device_id}/pending-metadata-updates"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Resource Directory" ]

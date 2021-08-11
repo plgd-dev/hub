@@ -509,13 +509,13 @@ message ConfirmDeviceMetadataUpdateResponse {
 //          │                                      │      ResourceRetrievePending        │    
 //          │                                      │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│    
 //          │                                      │                  │                  │    
-//         ┌┴┐             CancelResourceCommandsRequest              │                  │    
+//         ┌┴┐             CancelPendingCommandsRequest              │                  │    
 //         │ │ <──────────────────────────────────────────────────────│                  │    
 //         │ │                                     │                  │                  │    
 //         │ │ ResourceRetrieved (status=Canceled) │                  │                  │    
 //         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │                  │    
 //         └┬┘                                     │                  │                  │    
-//          │              CancelResourceCommandsResponse             │                  │    
+//          │              CancelPendingCommandsResponse             │                  │    
 //          │ ────────────────────────────────────────────────────────>                  │    
 //          │                                      │                  │                  │    
 //          │                                      │ResourceRetrieved (status=Canceled)  │    
@@ -524,13 +524,13 @@ message ConfirmDeviceMetadataUpdateResponse {
 // │Resource Aggregate│                       │Event Bus│          │Client│          │Client1│
 // └──────────────────┘                       └─────────┘          └──────┘          └───────┘
 
-message CancelResourceCommandsRequest {
+message CancelPendingCommandsRequest {
     ResourceId resource_id = 1;
     repeated string correlation_id_filter = 2; // empty array means all.
     CommandMetadata command_metadata = 100;
 }
 
-message CancelResourceCommandsResponse{
+message CancelPendingCommandsResponse{
     repeated string correlation_ids = 1; // list of cancelled correlation id
     AuditContext audit_context = 100;
 }
@@ -552,13 +552,13 @@ message CancelResourceCommandsResponse{
 //          │                                        │     DeviceMetadataUpdatePending      │    
 //          │                                        │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│    
 //          │                                        │                  │                   │    
-//         ┌┴┐           CancelDeviceMetadataUpdatesRequest            ┌┴┐                  │    
+//         ┌┴┐           CancelPendingMetadataUpdatesRequest            ┌┴┐                  │    
 //         │ │ <───────────────────────────────────────────────────────│ │                  │    
 //         │ │                                       │                 │ │                  │    
 //         │ │ DeviceMetadataUpdated (Canceled=true) │                 │ │                  │    
 //         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │    
 //         └┬┘                                       │                 └┬┘                  │    
-//          │            CancelDeviceMetadataUpdatesResponse            │                   │    
+//          │            CancelPendingMetadataUpdatesResponse            │                   │    
 //          │ ──────────────────────────────────────────────────────────>                   │    
 //          │                                        │                  │                   │    
 //          │                                        │DeviceMetadataUpdated (Canceled=true) │    
@@ -567,13 +567,13 @@ message CancelResourceCommandsResponse{
 // │Resource Aggregate│                         │Event Bus│          │Client│           │Client1│
 // └──────────────────┘                         └─────────┘          └──────┘           └───────┘
 
-message CancelDeviceMetadataUpdatesRequest {
+message CancelPendingMetadataUpdatesRequest {
     string device_id = 1;
     repeated string correlation_id_filter = 2; // empty array means all.
     CommandMetadata command_metadata = 100;
 }
 
-message CancelDeviceMetadataUpdatesResponse {
+message CancelPendingMetadataUpdatesResponse {
     repeated string correlation_ids = 1; // list of cancelled correlation id
     AuditContext audit_context = 100;
 }

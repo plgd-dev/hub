@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 )
 
-func (requestHandler *RequestHandler) cancelDeviceMetadataUpdate(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) cancelPendingMetadataUpdate(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deviceID := vars[uri.DeviceIDKey]
 	correlationID := vars[uri.CorrelationIDKey]
@@ -26,7 +26,7 @@ func (requestHandler *RequestHandler) cancelDeviceMetadataUpdate(w http.Response
 		writeError(w, fmt.Errorf("cannot cancel device('%v') metadata update: %w", deviceID, err))
 		return
 	}
-	tmp, err := uritemplates.Parse(uri.AliasDevicePendingCommands)
+	tmp, err := uritemplates.Parse(uri.AliasDevicePendingMetadataUpdates)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot cancel device('%v') metadata update: %w", deviceID, err))
 		return

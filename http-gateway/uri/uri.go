@@ -30,10 +30,11 @@ const (
 	CorrelationIDHeaderKey = "Correlation-Id"
 	ContentTypeHeaderKey   = "Content-Type"
 
-	ResourcesPathKey       = "resources"
-	ResourceLinksPathKey   = "resource-links"
-	PendingCommandsPathKey = "pending-commands"
-	EventsPathKey          = "events"
+	ResourcesPathKey              = "resources"
+	ResourceLinksPathKey          = "resource-links"
+	PendingCommandsPathKey        = "pending-commands"
+	PendingMetadataUpdatesPathKey = "pending-metadata-updates"
+	EventsPathKey                 = "events"
 
 	ApplicationProtoJsonContentType = "application/protojson"
 
@@ -80,20 +81,20 @@ const (
 	AliasDeviceResources = AliasDevice + "/" + ResourcesPathKey
 
 	// (GRPC + HTTP) GET /api/v1/pending-commands -> rpc RetrievePendingCommands
+	// (GRPC + HTTP) DELETTE /api/v1/pending-commands -> rpc CancelPendingCommands
 	PendingCommands = API + "/" + PendingCommandsPathKey
 
-	// DELETE /api/v1/pending-commands/resources -> rpc CancelResourcesCommands
-	PendingResourcesCommands = PendingCommands + "/" + ResourcesPathKey
-
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/pending-commands == rpc RetrievePendingCommands + deviceIdFilter
-	// (GRPC + HTTP) DELETE /api/v1/devices/{deviceId}/pending-commands == rpc CancelDeviceMetadataUpdates
 	AliasDevicePendingCommands = AliasDevice + "/" + PendingCommandsPathKey
 
-	// (GRPC + HTTP) DELETE /api/v1/devices/{deviceId}/pending-commands/{correlationId} == rpc CancelDeviceMetadataUpdates + correlationIdFilter
-	AliasDevicePendingCommand = AliasDevice + "/" + PendingCommandsPathKey + "/" + "{" + CorrelationIDKey + "}"
+	// (GRPC + HTTP) GET /api/v1/devices/{device_id}/pending-metadata-updates == rpc CancelPendingMetadataUpdates
+	// (GRPC + HTTP) DELETE /api/v1/devices/{deviceId}/pending-metadata-updates == rpc CancelPendingMetadataUpdates
+	AliasDevicePendingMetadataUpdates = AliasDevice + "/" + PendingMetadataUpdatesPathKey
+	// (GRPC + HTTP) DELETE /api/v1/devices/{deviceId}/pending-metadata-updates/{correlationId} == rpc CancelPendingMetadataUpdates + correlationIdFilter
+	AliasDevicePendingMetadataUpdate = AliasDevice + "/" + PendingMetadataUpdatesPathKey + "/" + "{" + CorrelationIDKey + "}"
 
 	// (HTTP ALIAS) GET /api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands == rpc RetrievePendingCommands + resourceIdFilter
-	// (HTTP ALIAS) DELETE /api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands == rpc CancelResourceCommands + deviceIdFilter
+	// (HTTP ALIAS) DELETE /api/v1/devices/{deviceId}/resources/{resourceHref}/pending-commands == rpc CancelPendingCommands + deviceIdFilter
 	AliasResourcePendingCommands = AliasDeviceResource + "/" + PendingCommandsPathKey
 
 	// (GRPC + HTTP) GET /api/v1/events -> rpc GetEvents

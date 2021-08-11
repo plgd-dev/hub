@@ -32,8 +32,8 @@ type ResourceAggregateClient interface {
 	ConfirmResourceCreate(ctx context.Context, in *commands.ConfirmResourceCreateRequest, opts ...grpc.CallOption) (*commands.ConfirmResourceCreateResponse, error)
 	UpdateDeviceMetadata(ctx context.Context, in *commands.UpdateDeviceMetadataRequest, opts ...grpc.CallOption) (*commands.UpdateDeviceMetadataResponse, error)
 	ConfirmDeviceMetadataUpdate(ctx context.Context, in *commands.ConfirmDeviceMetadataUpdateRequest, opts ...grpc.CallOption) (*commands.ConfirmDeviceMetadataUpdateResponse, error)
-	CancelDeviceMetadataUpdates(ctx context.Context, in *commands.CancelDeviceMetadataUpdatesRequest, opts ...grpc.CallOption) (*commands.CancelDeviceMetadataUpdatesResponse, error)
-	CancelResourceCommands(ctx context.Context, in *commands.CancelResourceCommandsRequest, opts ...grpc.CallOption) (*commands.CancelResourceCommandsResponse, error)
+	CancelPendingMetadataUpdates(ctx context.Context, in *commands.CancelPendingMetadataUpdatesRequest, opts ...grpc.CallOption) (*commands.CancelPendingMetadataUpdatesResponse, error)
+	CancelPendingCommands(ctx context.Context, in *commands.CancelPendingCommandsRequest, opts ...grpc.CallOption) (*commands.CancelPendingCommandsResponse, error)
 }
 
 type resourceAggregateClient struct {
@@ -161,18 +161,18 @@ func (c *resourceAggregateClient) ConfirmDeviceMetadataUpdate(ctx context.Contex
 	return out, nil
 }
 
-func (c *resourceAggregateClient) CancelDeviceMetadataUpdates(ctx context.Context, in *commands.CancelDeviceMetadataUpdatesRequest, opts ...grpc.CallOption) (*commands.CancelDeviceMetadataUpdatesResponse, error) {
-	out := new(commands.CancelDeviceMetadataUpdatesResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelDeviceMetadataUpdates", in, out, opts...)
+func (c *resourceAggregateClient) CancelPendingMetadataUpdates(ctx context.Context, in *commands.CancelPendingMetadataUpdatesRequest, opts ...grpc.CallOption) (*commands.CancelPendingMetadataUpdatesResponse, error) {
+	out := new(commands.CancelPendingMetadataUpdatesResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelPendingMetadataUpdates", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *resourceAggregateClient) CancelResourceCommands(ctx context.Context, in *commands.CancelResourceCommandsRequest, opts ...grpc.CallOption) (*commands.CancelResourceCommandsResponse, error) {
-	out := new(commands.CancelResourceCommandsResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelResourceCommands", in, out, opts...)
+func (c *resourceAggregateClient) CancelPendingCommands(ctx context.Context, in *commands.CancelPendingCommandsRequest, opts ...grpc.CallOption) (*commands.CancelPendingCommandsResponse, error) {
+	out := new(commands.CancelPendingCommandsResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelPendingCommands", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -196,8 +196,8 @@ type ResourceAggregateServer interface {
 	ConfirmResourceCreate(context.Context, *commands.ConfirmResourceCreateRequest) (*commands.ConfirmResourceCreateResponse, error)
 	UpdateDeviceMetadata(context.Context, *commands.UpdateDeviceMetadataRequest) (*commands.UpdateDeviceMetadataResponse, error)
 	ConfirmDeviceMetadataUpdate(context.Context, *commands.ConfirmDeviceMetadataUpdateRequest) (*commands.ConfirmDeviceMetadataUpdateResponse, error)
-	CancelDeviceMetadataUpdates(context.Context, *commands.CancelDeviceMetadataUpdatesRequest) (*commands.CancelDeviceMetadataUpdatesResponse, error)
-	CancelResourceCommands(context.Context, *commands.CancelResourceCommandsRequest) (*commands.CancelResourceCommandsResponse, error)
+	CancelPendingMetadataUpdates(context.Context, *commands.CancelPendingMetadataUpdatesRequest) (*commands.CancelPendingMetadataUpdatesResponse, error)
+	CancelPendingCommands(context.Context, *commands.CancelPendingCommandsRequest) (*commands.CancelPendingCommandsResponse, error)
 	mustEmbedUnimplementedResourceAggregateServer()
 }
 
@@ -244,11 +244,11 @@ func (UnimplementedResourceAggregateServer) UpdateDeviceMetadata(context.Context
 func (UnimplementedResourceAggregateServer) ConfirmDeviceMetadataUpdate(context.Context, *commands.ConfirmDeviceMetadataUpdateRequest) (*commands.ConfirmDeviceMetadataUpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConfirmDeviceMetadataUpdate not implemented")
 }
-func (UnimplementedResourceAggregateServer) CancelDeviceMetadataUpdates(context.Context, *commands.CancelDeviceMetadataUpdatesRequest) (*commands.CancelDeviceMetadataUpdatesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelDeviceMetadataUpdates not implemented")
+func (UnimplementedResourceAggregateServer) CancelPendingMetadataUpdates(context.Context, *commands.CancelPendingMetadataUpdatesRequest) (*commands.CancelPendingMetadataUpdatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelPendingMetadataUpdates not implemented")
 }
-func (UnimplementedResourceAggregateServer) CancelResourceCommands(context.Context, *commands.CancelResourceCommandsRequest) (*commands.CancelResourceCommandsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelResourceCommands not implemented")
+func (UnimplementedResourceAggregateServer) CancelPendingCommands(context.Context, *commands.CancelPendingCommandsRequest) (*commands.CancelPendingCommandsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelPendingCommands not implemented")
 }
 func (UnimplementedResourceAggregateServer) mustEmbedUnimplementedResourceAggregateServer() {}
 
@@ -497,38 +497,38 @@ func _ResourceAggregate_ConfirmDeviceMetadataUpdate_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResourceAggregate_CancelDeviceMetadataUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(commands.CancelDeviceMetadataUpdatesRequest)
+func _ResourceAggregate_CancelPendingMetadataUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.CancelPendingMetadataUpdatesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResourceAggregateServer).CancelDeviceMetadataUpdates(ctx, in)
+		return srv.(ResourceAggregateServer).CancelPendingMetadataUpdates(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelDeviceMetadataUpdates",
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelPendingMetadataUpdates",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceAggregateServer).CancelDeviceMetadataUpdates(ctx, req.(*commands.CancelDeviceMetadataUpdatesRequest))
+		return srv.(ResourceAggregateServer).CancelPendingMetadataUpdates(ctx, req.(*commands.CancelPendingMetadataUpdatesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResourceAggregate_CancelResourceCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(commands.CancelResourceCommandsRequest)
+func _ResourceAggregate_CancelPendingCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(commands.CancelPendingCommandsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ResourceAggregateServer).CancelResourceCommands(ctx, in)
+		return srv.(ResourceAggregateServer).CancelPendingCommands(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelResourceCommands",
+		FullMethod: "/ocf.cloud.resourceaggregate.pb.ResourceAggregate/CancelPendingCommands",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceAggregateServer).CancelResourceCommands(ctx, req.(*commands.CancelResourceCommandsRequest))
+		return srv.(ResourceAggregateServer).CancelPendingCommands(ctx, req.(*commands.CancelPendingCommandsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -593,12 +593,12 @@ var ResourceAggregate_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ResourceAggregate_ConfirmDeviceMetadataUpdate_Handler,
 		},
 		{
-			MethodName: "CancelDeviceMetadataUpdates",
-			Handler:    _ResourceAggregate_CancelDeviceMetadataUpdates_Handler,
+			MethodName: "CancelPendingMetadataUpdates",
+			Handler:    _ResourceAggregate_CancelPendingMetadataUpdates_Handler,
 		},
 		{
-			MethodName: "CancelResourceCommands",
-			Handler:    _ResourceAggregate_CancelResourceCommands_Handler,
+			MethodName: "CancelPendingCommands",
+			Handler:    _ResourceAggregate_CancelPendingCommands_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

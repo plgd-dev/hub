@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
-	"net/http"
 	"sort"
 	"testing"
 	"time"
@@ -19,7 +18,6 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
-	"github.com/plgd-dev/cloud/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
@@ -40,7 +38,7 @@ type devicePendingEvent struct {
 	CorrelationID string
 }
 
-func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEvent, []devicePendingEvent, func()) {
+func initPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient, []resourcePendingEvent, []devicePendingEvent, func()) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	test.ClearDB(ctx, t)
@@ -73,6 +71,10 @@ func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEven
 	})))
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
+	closeFunc = append(closeFunc, func() {
+		err := conn.Close()
+		require.NoError(t, err)
+	})
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
 	closeFunc = append(closeFunc, shutdownDevSim)
@@ -183,172 +185,83 @@ func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEven
 		}
 	}
 
-	return resourcePendings, devicePendings, func() {
+	return c, resourcePendings, devicePendings, func() {
 		for i := range closeFunc {
 			closeFunc[len(closeFunc)-1-i]()
 		}
 	}
 }
 
-func cmpCancel(t *testing.T, want *pb.CancelResponse, got *pb.CancelResponse) {
+func cmpCancel(t *testing.T, want *pb.CancelPendingCommandsResponse, got *pb.CancelPendingCommandsResponse) {
 	sort.Strings(want.CorrelationIds)
 	sort.Strings(got.CorrelationIds)
 	require.Equal(t, want.CorrelationIds, got.CorrelationIds)
 }
 
-func TestRequestHandler_CancelResourceCommands(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+func TestRequestHandler_CancelPendingCommands(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	resourcePendings, _, shutdown := initPendingEvents(ctx, t)
+	client, resourcePendings, _, shutdown := initPendingEvents(ctx, t)
 	defer shutdown()
 
 	require.Equal(t, len(resourcePendings), 4)
 
 	type args struct {
-		deviceID            string
-		href                string
-		correlationIdFilter []string
-		accept              string
+		req *pb.CancelPendingCommandsRequest
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
-		want    *pb.CancelResponse
+		want    *pb.CancelPendingCommandsResponse
 	}{
 		{
 			name: "cancel one pending",
 			args: args{
-				deviceID:            resourcePendings[0].ResourceId.GetDeviceId(),
-				href:                resourcePendings[0].ResourceId.GetHref(),
-				correlationIdFilter: []string{resourcePendings[0].CorrelationID},
-				accept:              uri.ApplicationProtoJsonContentType,
+				req: &pb.CancelPendingCommandsRequest{
+					ResourceId:          resourcePendings[0].ResourceId,
+					CorrelationIdFilter: []string{resourcePendings[0].CorrelationID},
+				},
 			},
-			want: &pb.CancelResponse{
+			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{resourcePendings[0].CorrelationID},
 			},
 		},
 		{
 			name: "duplicate cancel event",
 			args: args{
-				deviceID:            resourcePendings[0].ResourceId.GetDeviceId(),
-				href:                resourcePendings[0].ResourceId.GetHref(),
-				correlationIdFilter: []string{resourcePendings[0].CorrelationID},
-				accept:              uri.ApplicationProtoJsonContentType,
+				req: &pb.CancelPendingCommandsRequest{
+					ResourceId:          resourcePendings[0].ResourceId,
+					CorrelationIdFilter: []string{resourcePendings[0].CorrelationID},
+				},
 			},
 			wantErr: true,
 		},
 		{
 			name: "cancel all events",
 			args: args{
-				deviceID: resourcePendings[0].ResourceId.GetDeviceId(),
-				href:     resourcePendings[0].ResourceId.GetHref(),
-				accept:   uri.ApplicationProtoJsonContentType,
+				req: &pb.CancelPendingCommandsRequest{
+					ResourceId: resourcePendings[0].ResourceId,
+				},
 			},
-			want: &pb.CancelResponse{
+			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{resourcePendings[1].CorrelationID, resourcePendings[2].CorrelationID, resourcePendings[3].CorrelationID},
 			},
 		},
 	}
 
 	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).AddCorrelantionIdFilter(tt.args.correlationIdFilter).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
-			defer func() {
-				_ = resp.Body.Close()
-			}()
-			var v pb.CancelResponse
-			err = Unmarshal(resp.StatusCode, resp.Body, &v)
+			resp, err := client.CancelPendingCommands(ctx, tt.args.req)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			cmpCancel(t, tt.want, &v)
-		})
-	}
-}
-
-func TestRequestHandler_CancelResourceCommand(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
-	defer cancel()
-
-	resourcePendings, _, shutdown := initPendingEvents(ctx, t)
-	defer shutdown()
-
-	require.Equal(t, len(resourcePendings), 4)
-
-	type args struct {
-		deviceID      string
-		href          string
-		correlationId string
-		accept        string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    *pb.CancelResponse
-	}{
-		{
-			name: "cancel one pending",
-			args: args{
-				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
-				href:          resourcePendings[0].ResourceId.GetHref(),
-				correlationId: resourcePendings[0].CorrelationID,
-				accept:        uri.ApplicationProtoJsonContentType,
-			},
-			want: &pb.CancelResponse{
-				CorrelationIds: []string{resourcePendings[0].CorrelationID},
-			},
-		},
-		{
-			name: "duplicate cancel event",
-			args: args{
-				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
-				href:          resourcePendings[0].ResourceId.GetHref(),
-				correlationId: resourcePendings[0].CorrelationID,
-				accept:        uri.ApplicationProtoJsonContentType,
-			},
-			wantErr: true,
-		},
-	}
-
-	token := oauthTest.GetServiceToken(t)
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).Build()
-			trans := http.DefaultTransport.(*http.Transport).Clone()
-			trans.TLSClientConfig = &tls.Config{
-				InsecureSkipVerify: true,
-			}
-			c := http.Client{
-				Transport: trans,
-			}
-			resp, err := c.Do(request)
-			require.NoError(t, err)
-			defer func() {
-				_ = resp.Body.Close()
-			}()
-			var v pb.CancelResponse
-			err = Unmarshal(resp.StatusCode, resp.Body, &v)
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-			cmpCancel(t, tt.want, &v)
+			cmpCancel(t, tt.want, resp)
 		})
 	}
 }

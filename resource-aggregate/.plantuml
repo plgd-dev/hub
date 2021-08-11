@@ -256,10 +256,10 @@ deactivate ResourceAggregate
 deactivate Client
 Bus --> Client1 : ResourceRetrievePending
 
-Client -> ResourceAggregate : CancelResourceCommandsRequest
+Client -> ResourceAggregate : CancelPendingCommandsRequest
 activate ResourceAggregate
 ResourceAggregate --> Bus : ResourceRetrieved (status=Canceled)
-ResourceAggregate -> Client : CancelResourceCommandsResponse
+ResourceAggregate -> Client : CancelPendingCommandsResponse
 deactivate ResourceAggregate
 deactivate Client
 Bus --> Client1 : ResourceRetrieved (status=Canceled)
@@ -282,11 +282,11 @@ deactivate ResourceAggregate
 deactivate Client
 Bus --> Client1 : DeviceMetadataUpdatePending
 
-Client -> ResourceAggregate : CancelDeviceMetadataUpdatesRequest
+Client -> ResourceAggregate : CancelPendingMetadataUpdatesRequest
 activate Client
 activate ResourceAggregate
 ResourceAggregate --> Bus : DeviceMetadataUpdated (Canceled=true)
-ResourceAggregate -> Client : CancelDeviceMetadataUpdatesResponse
+ResourceAggregate -> Client : CancelPendingMetadataUpdatesResponse
 deactivate Client
 deactivate ResourceAggregate
 Bus --> Client1 : DeviceMetadataUpdated (Canceled=true)
