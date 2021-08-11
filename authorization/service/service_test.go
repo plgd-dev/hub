@@ -9,6 +9,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/test/config"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
@@ -58,6 +59,8 @@ func makeConfig(t *testing.T) Config {
 	cfg.Clients.Storage.MongoDB.TLS.CertFile = config.CERT_FILE
 	cfg.Clients.Storage.MongoDB.TLS.KeyFile = config.KEY_FILE
 
+	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
+
 	err := cfg.Validate()
 	require.NoError(t, err)
 
@@ -77,13 +80,16 @@ func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provi
 		deviceProvider = NewTestProvider()
 	}
 	if sdkProvider == nil {
-		deviceProvider = NewTestProvider()
+		sdkProvider = NewTestProvider()
 	}
 
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 
-	s, err := NewServer(context.Background(), cfg, logger, deviceProvider, sdkProvider)
+	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
+	require.NoError(t, err)
+
+	s, err := NewServer(context.Background(), cfg, logger, deviceProvider, sdkProvider, publisher)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -94,6 +100,7 @@ func newTestServiceWithProviders(t *testing.T, deviceProvider, sdkProvider Provi
 	return s, func() {
 		err := s.Shutdown()
 		require.NoError(t, err)
+		publisher.Close()
 		wg.Wait()
 	}
 }

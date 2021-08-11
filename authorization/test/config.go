@@ -11,30 +11,32 @@ import (
 )
 
 func MakeConfig(t *testing.T) service.Config {
-	var authCfg service.Config
+	var cfg service.Config
 
-	authCfg.APIs.GRPC = config.MakeGrpcServerConfig(config.AUTH_HOST)
-	authCfg.APIs.HTTP = config.MakeListenerConfig(config.AUTH_HTTP_HOST)
-	authCfg.APIs.HTTP.TLS.ClientCertificateRequired = false
+	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.AUTH_HOST)
+	cfg.APIs.HTTP = config.MakeListenerConfig(config.AUTH_HTTP_HOST)
+	cfg.APIs.HTTP.TLS.ClientCertificateRequired = false
 
-	authCfg.OAuthClients.Device.Provider = "plgd"
-	authCfg.OAuthClients.Device.ClientID = oauthService.ClientTest
-	authCfg.OAuthClients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
-	authCfg.OAuthClients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
-	authCfg.OAuthClients.Device.Audience = config.OAUTH_MANAGER_AUDIENCE
-	authCfg.OAuthClients.Device.HTTP = config.MakeHttpClientConfig()
+	cfg.OAuthClients.Device.Provider = "plgd"
+	cfg.OAuthClients.Device.ClientID = oauthService.ClientTest
+	cfg.OAuthClients.Device.AuthURL = "https://" + config.OAUTH_SERVER_HOST + uri.Authorize
+	cfg.OAuthClients.Device.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	cfg.OAuthClients.Device.Audience = config.OAUTH_MANAGER_AUDIENCE
+	cfg.OAuthClients.Device.HTTP = config.MakeHttpClientConfig()
 
-	authCfg.OAuthClients.SDK.ClientID = oauthService.ClientTest
-	authCfg.OAuthClients.SDK.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
-	authCfg.OAuthClients.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
-	authCfg.OAuthClients.SDK.HTTP = config.MakeHttpClientConfig()
+	cfg.OAuthClients.SDK.ClientID = oauthService.ClientTest
+	cfg.OAuthClients.SDK.TokenURL = "https://" + config.OAUTH_SERVER_HOST + uri.Token
+	cfg.OAuthClients.SDK.Audience = config.OAUTH_MANAGER_AUDIENCE
+	cfg.OAuthClients.SDK.HTTP = config.MakeHttpClientConfig()
 
-	authCfg.Clients.Storage.OwnerClaim = config.OWNER_CLAIM
-	authCfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
-	authCfg.Clients.Storage.MongoDB.TLS = config.MakeTLSClientConfig()
-	authCfg.Clients.Storage.MongoDB.Database = "ownersDevices"
+	cfg.Clients.Storage.OwnerClaim = config.OWNER_CLAIM
+	cfg.Clients.Storage.MongoDB.URI = config.MONGODB_URI
+	cfg.Clients.Storage.MongoDB.TLS = config.MakeTLSClientConfig()
+	cfg.Clients.Storage.MongoDB.Database = "ownersDevices"
 
-	err := authCfg.Validate()
+	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
+
+	err := cfg.Validate()
 	require.NoError(t, err)
-	return authCfg
+	return cfg
 }

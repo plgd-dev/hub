@@ -479,6 +479,8 @@ cat /configs/authorization.yaml | yq e "\
   .apis.http.address = \"${AUTHORIZATION_HTTP_ADDRESS}\" |
   .clients.storage.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.jetstream = ${JETSTREAM} |
   .oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
   .oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .oauthClients.device.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |

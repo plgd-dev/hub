@@ -74,6 +74,15 @@ apis:
           keyFile: "/data/certs/http.key"
           certFile: "/data/certs/http.crt"
 ...
+clients:
+  eventBus:
+    nats:
+      url: "nats://localhost:4222"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
 oauthClients:
   device:
     provider: "plgd"
@@ -206,6 +215,18 @@ You might have one client, but multiple APIs in the OAuth system. What you want 
 ::: tip Audience 
 You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
 :::
+
+### Event Bus
+Plgd cloud uses NATS messaging system as a event bus.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
+| `clients.eventBus.nats.jetstream `| bool | `If true, events will be published to jetstream.` | `false` |
+| `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
+| `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Storage
 Plgd cloud uses MongoDB database as owner's device store.
