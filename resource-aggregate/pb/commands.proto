@@ -492,37 +492,35 @@ message ConfirmDeviceMetadataUpdateResponse {
     AuditContext audit_context = 1;
 }
 
-// Cancel resource command - similar for all Update/Retrieve/Create/Delete commands                                  
-                                                                                                
-// ┌──────────────────┐                       ┌─────────┐          ┌──────┐          ┌───────┐
-// │Resource Aggregate│                       │Event Bus│          │Client│          │Client1│
-// └────────┬─────────┘                       └─────────┘          └──────┘          └───────┘
-//         ┌┴┐                RetrieveResourceRequest                ┌┴┐                 │    
-//         │ │ <─────────────────────────────────────────────────────│ │                 │    
-//         │ │                                     │                 │ │                 │    
-//         │ │       ResourceRetrievePending       │                 │ │                 │    
-//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                 │    
-//         └┬┘                                     │                 └┬┘                 │    
-//          │                 RetrieveResourceResponse                │                  │    
-//          │ ────────────────────────────────────────────────────────>                  │    
-//          │                                      │                  │                  │    
-//          │                                      │      ResourceRetrievePending        │    
-//          │                                      │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│    
-//          │                                      │                  │                  │    
-//         ┌┴┐             CancelPendingCommandsRequest              │                  │    
-//         │ │ <──────────────────────────────────────────────────────│                  │    
-//         │ │                                     │                  │                  │    
-//         │ │ ResourceRetrieved (status=Canceled) │                  │                  │    
-//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │                  │    
-//         └┬┘                                     │                  │                  │    
-//          │              CancelPendingCommandsResponse             │                  │    
-//          │ ────────────────────────────────────────────────────────>                  │    
-//          │                                      │                  │                  │    
-//          │                                      │ResourceRetrieved (status=Canceled)  │    
-//          │                                      │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│    
-// ┌────────┴─────────┐                       ┌─────────┐          ┌──────┐          ┌───────┐
-// │Resource Aggregate│                       │Event Bus│          │Client│          │Client1│
-// └──────────────────┘                       └─────────┘          └──────┘          └───────┘
+// Cancel resource command - similar for all Update/Retrieve/Create/Delete commands                      
+                                                                                                                             
+// ┌──────────────────┐                       ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                       │Event Bus│          │Client│          │OCF Server│                          
+// └────────┬─────────┘                       └─────────┘          └──────┘          └──────────┘                          
+//          │                                      │                  │                   │  ╔════════════════════════════╗
+//          │                                      │                  │                   │  ║OCF Server is disconnected ░║
+//          │                                      │                  │                   │  ║from the plgd cloud         ║
+//          │                                      │                  │                   │  ╚════════════════════════════╝
+//         ┌┴┐                RetrieveResourceRequest                ┌┴┐                  │                                
+//         │ │ <─────────────────────────────────────────────────────│ │                  │                                
+//         │ │                                     │                 │ │                  │                                
+//         │ │       ResourceRetrievePending       │                 │ │                  │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │                                
+//         └┬┘                                     │                 └┬┘                  │                                
+//          │                 RetrieveResourceResponse                │                   │                                
+//          │ ────────────────────────────────────────────────────────>                   │                                
+//          │                                      │                  │                   │                                
+//         ┌┴┐              CancelPendingCommandsRequest              │                   │                                
+//         │ │ <──────────────────────────────────────────────────────│                   │                                
+//         │ │                                     │                  │                   │                                
+//         │ │ ResourceRetrieved (status=Canceled) │                  │                   │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │                   │                                
+//         └┬┘                                     │                  │                   │                                
+//          │              CancelPendingCommandsResponse              │                   │                                
+//          │ ────────────────────────────────────────────────────────>                   │                                
+// ┌────────┴─────────┐                       ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                       │Event Bus│          │Client│          │OCF Server│                          
+// └──────────────────┘                       └─────────┘          └──────┘          └──────────┘                          
 
 message CancelPendingCommandsRequest {
     ResourceId resource_id = 1;
@@ -535,37 +533,35 @@ message CancelPendingCommandsResponse{
     AuditContext audit_context = 100;
 }
 
-// Cancel update device metadata - Shadow Synchronization Status                 
-                                                                                                   
-// ┌──────────────────┐                         ┌─────────┐          ┌──────┐           ┌───────┐
-// │Resource Aggregate│                         │Event Bus│          │Client│           │Client1│
-// └────────┬─────────┘                         └─────────┘          └──────┘           └───────┘
-//         ┌┴┐               UpdateDeviceMetadataRequest               ┌┴┐                  │    
-//         │ │ <───────────────────────────────────────────────────────│ │                  │    
-//         │ │                                       │                 │ │                  │    
-//         │ │      DeviceMetadataUpdatePending      │                 │ │                  │    
-//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │    
-//         └┬┘                                       │                 └┬┘                  │    
-//          │                UpdateDeviceMetadataResponse               │                   │    
-//          │ ──────────────────────────────────────────────────────────>                   │    
-//          │                                        │                  │                   │    
-//          │                                        │     DeviceMetadataUpdatePending      │    
-//          │                                        │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│    
-//          │                                        │                  │                   │    
-//         ┌┴┐           CancelPendingMetadataUpdatesRequest            ┌┴┐                  │    
-//         │ │ <───────────────────────────────────────────────────────│ │                  │    
-//         │ │                                       │                 │ │                  │    
-//         │ │ DeviceMetadataUpdated (Canceled=true) │                 │ │                  │    
-//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │    
-//         └┬┘                                       │                 └┬┘                  │    
-//          │            CancelPendingMetadataUpdatesResponse            │                   │    
-//          │ ──────────────────────────────────────────────────────────>                   │    
-//          │                                        │                  │                   │    
-//          │                                        │DeviceMetadataUpdated (Canceled=true) │    
-//          │                                        │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│    
-// ┌────────┴─────────┐                         ┌─────────┐          ┌──────┐           ┌───────┐
-// │Resource Aggregate│                         │Event Bus│          │Client│           │Client1│
-// └──────────────────┘                         └─────────┘          └──────┘           └───────┘
+// Cancel update device metadata - Shadow Synchronization Status                                 
+                                                                                                                               
+// ┌──────────────────┐                         ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                         │Event Bus│          │Client│          │OCF Server│                          
+// └────────┬─────────┘                         └─────────┘          └──────┘          └──────────┘                          
+//          │                                        │                  │                   │  ╔════════════════════════════╗
+//          │                                        │                  │                   │  ║OCF Server is disconnected ░║
+//          │                                        │                  │                   │  ║from the plgd cloud         ║
+//          │                                        │                  │                   │  ╚════════════════════════════╝
+//         ┌┴┐               UpdateDeviceMetadataRequest               ┌┴┐                  │                                
+//         │ │ <───────────────────────────────────────────────────────│ │                  │                                
+//         │ │                                       │                 │ │                  │                                
+//         │ │      DeviceMetadataUpdatePending      │                 │ │                  │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │                                
+//         └┬┘                                       │                 └┬┘                  │                                
+//          │                UpdateDeviceMetadataResponse               │                   │                                
+//          │ ──────────────────────────────────────────────────────────>                   │                                
+//          │                                        │                  │                   │                                
+//         ┌┴┐           CancelPendingMetadataUpdatesRequest           ┌┴┐                  │                                
+//         │ │ <───────────────────────────────────────────────────────│ │                  │                                
+//         │ │                                       │                 │ │                  │                                
+//         │ │ DeviceMetadataUpdated (Canceled=true) │                 │ │                  │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │                                
+//         └┬┘                                       │                 └┬┘                  │                                
+//          │            CancelPendingMetadataUpdatesResponse           │                   │                                
+//          │ ──────────────────────────────────────────────────────────>                   │                                
+// ┌────────┴─────────┐                         ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                         │Event Bus│          │Client│          │OCF Server│                          
+// └──────────────────┘                         └─────────┘          └──────┘          └──────────┘                          
 
 message CancelPendingMetadataUpdatesRequest {
     string device_id = 1;

@@ -426,12 +426,31 @@ paths:
     get:
       tags:
         - 'Pending Commands'
-      summary: 'Get all pending commands for a device'
+      summary: 'Get all resources pending commands for a device'
       description: |
-        Retrieve all pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` query parameter.
+        Retrieve all resources pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` queries parameters.
       parameters:
         - $ref: '#/components/parameters/typeFilter'
-        - $ref: '#/components/parameters/commandFilter'
+        - $ref: '#/components/parameters/resourceCommandFilter'
+      security:
+        - oauth2:
+          - 'plgd.devices'
+      responses:
+        200:
+          $ref: '#/components/responses/pendingCommands'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+  '/api/v1/devices/{deviceId}/pending-metadata-updates':
+    parameters:
+      - $ref: '#/components/parameters/deviceId'
+    get:
+      tags:
+        - 'Pending Commands'
+      summary: 'Get all pending metadata updates for a device'
+      description: |
+        Retrieve all pending metadata updates for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` queries parameters.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -445,9 +464,9 @@ paths:
     delete:
       tags:
         - 'Pending Commands'
-      summary: 'Cancel updates metadata for a device'
+      summary: 'Cancel pending metadata update.'
       description: |
-        Cancel all metadata updates for a single device. To cancel one pending update set 'correlationIdFilter' query parameter of pending command.
+        Pending metadata update is identified by the correlationId. If a `correlationIdFilter` is not specified, all pending metadata updates will be canceled.
       parameters:
         - $ref: '#/components/parameters/correlationIdFilter'
       security:
@@ -467,12 +486,12 @@ paths:
     get:
       tags:
         - 'Pending Commands'
-      summary: 'Get all pending commands for a resource from a device'
+      summary: 'Get all pending commands for a resource.'
       description: |
-        Retrieve all pending commands for a single resource from a device. Alternative is to call 'Get all pending commands' with `resourceIdFilter` query parameter.
+        Retrieve all pending resources commands for a single resource from a device. Alternative is to call 'Get all pending commands' with `resourceIdFilter` and `commandFilter` queries parameters.
       parameters:
         - $ref: '#/components/parameters/typeFilter'
-        - $ref: '#/components/parameters/commandFilter'
+        - $ref: '#/components/parameters/resourceCommandFilter'
       security:
         - oauth2:
           - 'plgd.devices'
@@ -486,9 +505,9 @@ paths:
     delete:
       tags:
         - 'Pending Commands'
-      summary: 'Cancel pending commands for a resource of a device'
+      summary: 'Cancel pending command.'
       description: |
-        Cancel all pending commands for a single resource of a device. To cancel one pending command set 'correlationIdFilter' query parameter of pending command.
+        Pending command is identified by the correlationId. If a `correlationIdFilter` is not specified, all pending commands will be canceled.
       parameters:
         - $ref: '#/components/parameters/correlationIdFilter'
       security:
@@ -686,6 +705,13 @@ components:
         - 'RESOURCE_UPDATE'
         - 'RESOURCE_DELETE'
         - 'DEVICE_METADATA_UPDATE'
+    resourceCommandType:
+      type: string
+      enum:
+        - 'RESOURCE_CREATE'
+        - 'RESOURCE_RETRIEVE'
+        - 'RESOURCE_UPDATE'
+        - 'RESOURCE_DELETE'
     ConnectionStatus:
       type: string
       enum:
@@ -1414,6 +1440,14 @@ components:
         type: array
         items:
           $ref: '#/components/schemas/CommandType'
+    resourceCommandFilter:
+      name: command
+      in: query
+      description: 'Filter by the command type.'
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/resourceCommandType'
     timestampFilter:
       name: timestamp
       in: query
@@ -1485,7 +1519,7 @@ components:
               error:
                 $ref: '#/components/schemas/Error'
     canceledCommands:
-      description: 'List correlation ids of canceled commands.'
+      description: 'Correlation ids of all successfully canceled commands.'
       content:
         application/json:
           schema:
