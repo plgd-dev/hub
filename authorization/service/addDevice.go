@@ -40,6 +40,11 @@ func (s *Service) publishDevicesRegistered(ctx context.Context, owner string, de
 	if err != nil {
 		return err
 	}
+
+	err = s.publisher.Flush(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
