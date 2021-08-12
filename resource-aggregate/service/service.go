@@ -8,17 +8,16 @@ import (
 	"sync"
 	"syscall"
 
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-
 	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/strings"
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
@@ -127,7 +126,7 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 		if getAllDevices {
 			return ownedDevices, nil
 		}
-		return Intersection(deviceIDs, ownedDevices), nil
+		return strings.Intersection(deviceIDs, ownedDevices), nil
 	})
 	grpcServer.AddCloseFunc(userDevicesManager.Close)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)

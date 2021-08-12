@@ -5,6 +5,7 @@
     "go.testFlags": [
         "-race",
         "-v",
+        "-cover",
     ],
     "go.testEnvVars": {
         "DIAL_TYPE": "file",
