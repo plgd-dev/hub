@@ -7,7 +7,8 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/kit/strings"
+	"github.com/plgd-dev/cloud/pkg/strings"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 )
 
@@ -17,64 +18,54 @@ func partitionDeletedDevices(expected, actual []string) ([]string, []string) {
 	for _, v := range actual {
 		cache[v] = struct{}{}
 	}
-
-	deleted := make(strings.Set)
-	notDeleted := make(strings.Set)
-	for _, v := range expected {
-		_, ok := cache[v]
-		if ok {
-			deleted.Add(v)
-		} else {
-			notDeleted.Add(v)
-		}
+	contains := func(s string) bool {
+		_, ok := cache[s]
+		return ok
 	}
 
-	return deleted.ToSlice(), notDeleted.ToSlice()
+	return strings.Split(expected, contains)
 }
 
 func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevicesRequest) (*pb.DeleteDevicesResponse, error) {
-	cmdRA, err := req.ToRACommand()
-	if err != nil {
-		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices: %v", err))
-	}
-	deleteAllOwned := len(cmdRA.DeviceIds) == 0
-	respRA, err := r.resourceAggregateClient.DeleteDevices(ctx, cmdRA)
+	// get unique non-empty ids
+	deviceIds, _ := strings.Split(strings.Unique(req.DeviceIdFilter), func(s string) bool {
+		return s != ""
+	})
+
+	deleteAllOwned := len(deviceIds) == 0
+	// ResourceAggregate
+	cmdRA := commands.DeleteDevicesRequest{DeviceIds: deviceIds}
+	respRA, err := r.resourceAggregateClient.DeleteDevices(ctx, &cmdRA)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from ResourceAggregate: %v", err))
 	}
-
-	var owned, notOwned []string
-	if deleteAllOwned {
-		owned = respRA.DeviceIds
-	} else {
-		owned, notOwned = partitionDeletedDevices(cmdRA.GetDeviceIds(), respRA.GetDeviceIds())
-		if len(notOwned) > 0 {
-			for _, deviceId := range notOwned {
-				log.Errorf("failed to delete device('%v') in ResourceAggregate", deviceId)
+	if !deleteAllOwned {
+		_, notDeleted := partitionDeletedDevices(deviceIds, respRA.GetDeviceIds())
+		if len(notDeleted) > 0 {
+			for _, deviceId := range notDeleted {
+				log.Debugf("failed to delete device('%v') in ResourceAggregate", deviceId)
 			}
 		}
 	}
-	if len(owned) == 0 {
-		return &pb.DeleteDevicesResponse{
-			DeviceIds: owned,
-		}, nil
-	}
 
+	// Authorization service
 	cmdAS := pbAS.DeleteDevicesRequest{
-		DeviceIds: owned,
+		DeviceIds: deviceIds,
 	}
 	respAS, err := r.authorizationClient.DeleteDevices(ctx, &cmdAS)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices in Authorization service: %v", err))
 	}
-	deleted, notDeleted := partitionDeletedDevices(cmdAS.GetDeviceIds(), respAS.GetDeviceIds())
-	if len(notDeleted) > 0 {
-		for _, deviceId := range notDeleted {
-			log.Errorf("failed to delete device('%v') in Authorization service", deviceId)
+	if !deleteAllOwned {
+		_, notDeleted := partitionDeletedDevices(deviceIds, respAS.GetDeviceIds())
+		if len(notDeleted) > 0 {
+			for _, deviceId := range notDeleted {
+				log.Debugf("failed to delete device('%v') in Authorization service", deviceId)
+			}
 		}
 	}
 
 	return &pb.DeleteDevicesResponse{
-		DeviceIds: deleted,
+		DeviceIds: respAS.GetDeviceIds(),
 	}, nil
 }
