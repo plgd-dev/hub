@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestService_DeleteDevice(t *testing.T) {
+func TestService_DeleteDevices(t *testing.T) {
 	const testDevID1 = "testDeviceID1"
 	const testDevID2 = "testDeviceID2"
 	const testDevID3 = "testDeviceID3"
