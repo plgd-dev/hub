@@ -36,3 +36,10 @@ jobs:
           export PATH=${PATH}:`go env GOPATH`/bin
           go get github.com/kisielk/errcheck@latest
           errcheck ./...
+
+      - name: Install and run misspell
+        run: |
+          # check misspelling in all files in repository
+          export PATH=${PATH}:`go env GOPATH`/bin
+          go get github.com/client9/misspell/cmd/misspell@latest
+          find . -type f -exec misspell {} \;
