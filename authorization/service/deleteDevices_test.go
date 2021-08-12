@@ -16,6 +16,8 @@ func TestService_DeleteDevice(t *testing.T) {
 	const testDevID4 = "testDeviceID4"
 	const testUser2 = "testUser2"
 	const testUser2DevID1 = "test2DeviceID1"
+	const testUser2DevID2 = "test2DeviceID2"
+	const testUser2DevID3 = "test2DeviceID3"
 
 	type args struct {
 		ctx     context.Context
@@ -41,7 +43,7 @@ func TestService_DeleteDevice(t *testing.T) {
 					UserId: "userId",
 				},
 			},
-			wantErr: true,
+			want: &pb.DeleteDevicesResponse{},
 		},
 		{
 			name: "invalid accesstoken",
@@ -61,8 +63,7 @@ func TestService_DeleteDevice(t *testing.T) {
 				},
 				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
-			wantErr: false,
-			want:    &pb.DeleteDevicesResponse{},
+			want: &pb.DeleteDevicesResponse{},
 		},
 		{
 			name: "valid",
@@ -95,8 +96,7 @@ func TestService_DeleteDevice(t *testing.T) {
 				},
 				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
-			wantErr: false,
-			want:    &pb.DeleteDevicesResponse{},
+			want: &pb.DeleteDevicesResponse{},
 		},
 		{
 			name: "owned and not owned",
@@ -108,6 +108,17 @@ func TestService_DeleteDevice(t *testing.T) {
 				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
 			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID4}},
+		},
+		{
+			name: "all owned by testUser2",
+			args: args{
+				request: &pb.DeleteDevicesRequest{
+					DeviceIds: nil,
+					UserId:    testUser2,
+				},
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
+			},
+			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testUser2DevID1, testUser2DevID2, testUser2DevID3}},
 		},
 	}
 	s, shutdown := newTestService(t)
@@ -121,6 +132,8 @@ func TestService_DeleteDevice(t *testing.T) {
 	persistDevice(t, s.service.persistence, newTestDeviceWithIDAndOwner(testDevID3, testUserID))
 	persistDevice(t, s.service.persistence, newTestDeviceWithIDAndOwner(testDevID4, testUserID))
 	persistDevice(t, s.service.persistence, newTestDeviceWithIDAndOwner(testUser2DevID1, testUser2))
+	persistDevice(t, s.service.persistence, newTestDeviceWithIDAndOwner(testUser2DevID2, testUser2))
+	persistDevice(t, s.service.persistence, newTestDeviceWithIDAndOwner(testUser2DevID3, testUser2))
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
