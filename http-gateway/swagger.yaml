@@ -426,9 +426,9 @@ paths:
     get:
       tags:
         - 'Pending Commands'
-      summary: 'Get all resources pending commands for a device'
+      summary: 'Get all resource's pending commands for a device'
       description: |
-        Retrieve all resources pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` queries parameters.
+        Retrieve all resource's pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` query parameters.
       parameters:
         - $ref: '#/components/parameters/typeFilter'
         - $ref: '#/components/parameters/resourceCommandFilter'
@@ -450,7 +450,7 @@ paths:
         - 'Pending Commands'
       summary: 'Get all pending metadata updates for a device'
       description: |
-        Retrieve all pending metadata updates for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` queries parameters.
+        Retrieve all pending metadata updates for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` query parameters.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -488,7 +488,7 @@ paths:
         - 'Pending Commands'
       summary: 'Get all pending commands for a resource.'
       description: |
-        Retrieve all pending resources commands for a single resource from a device. Alternative is to call 'Get all pending commands' with `resourceIdFilter` and `commandFilter` queries parameters.
+        Retrieve all pending commands for a single resource. Alternative is to call 'Get all pending commands' with `resourceIdFilter` and `commandFilter` query parameters.
       parameters:
         - $ref: '#/components/parameters/typeFilter'
         - $ref: '#/components/parameters/resourceCommandFilter'
