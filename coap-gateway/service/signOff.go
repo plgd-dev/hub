@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
@@ -118,15 +119,27 @@ func signOffHandler(req *mux.Message, client *Client) {
 	}
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)
-	resp, err := client.server.asClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
-		DeviceIds: []string{signOffData.deviceID},
+	deviceIds := []string{signOffData.deviceID}
+	respRA, err := client.server.raClient.DeleteDevices(ctx, &commands.DeleteDevicesRequest{
+		DeviceIds: deviceIds,
+	})
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.InternalServerError)
+		return
+	}
+	if len(respRA.GetDeviceIds()) != 1 {
+		log.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", signOffData.deviceID)
+	}
+
+	respAS, err := client.server.asClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+		DeviceIds: deviceIds,
 		UserId:    signOffData.userID,
 	})
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.InternalServerError)
 		return
 	}
-	if err == nil && len(resp.DeviceIds) != 1 {
+	if len(respAS.GetDeviceIds()) != 1 {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: cannot remove device %v from user", signOffData.deviceID), coapCodes.InternalServerError)
 		return
 	}
