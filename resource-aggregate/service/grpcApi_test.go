@@ -7,6 +7,7 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/strings"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -980,5 +981,5 @@ func mockGetUserDevices(ctx context.Context, userID string, deviceIDs []string) 
 	if getAllDevices {
 		return ownedDevices, nil
 	}
-	return service.Intersection(ownedDevices, deviceIDs), nil
+	return strings.Intersection(ownedDevices, deviceIDs), nil
 }
