@@ -39,7 +39,7 @@ func getUserDevices(tx persistence.PersistenceTx, owner string) ([]string, error
 	return deviceIds, nil
 }
 
-func (s *Service) publishDevicesUnregistered(ctx context.Context, owner string, deviceIDs []string) error {
+func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, sub string, deviceIDs []string) error {
 	v := events.Event{
 		// TODO: verify that s.ownerClaim and sub are filled in JWToken
 		//	- use s.ownerClaim value from JWT for DevicesUnregistered.Owner
@@ -78,12 +78,23 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 	defer tx.Close()
 
 	owner := request.UserId
-	// TODO: always use value from JWT, remove UserId from pb.DeleteDevicesRequest
-	if owner == "" {
-		if token, err := grpc_auth.AuthFromMD(ctx, "bearer"); err == nil {
+	sub := owner
+	// TODO: always use value from JWT, remove UserId from pb.AddDeviceRequest
+	if token, err := grpc_auth.AuthFromMD(ctx, "bearer"); err == nil {
+		// TODO: add mechanism to add token with correct data to tests, then uncomment the following line
+		// return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot delete devices: %v", err))
+
+		// TODO: check that both s.ownerClaim and "sub" are set in token
+		if owner == "" {
 			uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
-			if err == nil {
+			if err == nil && uid != serviceOwner {
 				owner = uid
+			}
+		}
+		if sub == "" {
+			uid, err := grpc.ParseOwnerFromJwtToken("sub", token)
+			if err == nil {
+				sub = uid
 			}
 		}
 	}
@@ -127,7 +138,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		deletedDeviceIds = append(deletedDeviceIds, deviceId)
 	}
 
-	if err := s.publishDevicesUnregistered(ctx, owner, deletedDeviceIds); err != nil {
+	if err := s.publishDevicesUnregistered(ctx, owner, sub, deletedDeviceIds); err != nil {
 		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIds, owner, err)
 	}
 

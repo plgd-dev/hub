@@ -372,3 +372,7 @@ func (i *iter) Next(ctx context.Context) (eventbus.EventUnmarshaler, bool) {
 func (i *iter) Err() error {
 	return nil
 }
+
+func (s *Subscriber) Conn() *nats.Conn {
+	return s.conn
+}
