@@ -179,7 +179,11 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 		p.logger.Warnln("error upgrading websocket:", err)
 		return
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			p.logger.Warnln("error closing websocket connection:", err)
+		}
+	}()
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
@@ -215,8 +219,8 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		<-ctx.Done()
 		p.logger.Debugln("closing pipes")
-		requestBodyW.CloseWithError(io.EOF)
-		responseBodyW.CloseWithError(io.EOF)
+		_ = requestBodyW.CloseWithError(io.EOF)
+		_ = responseBodyW.CloseWithError(io.EOF)
 		response.closed <- true
 	}()
 
@@ -228,8 +232,15 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	// read loop -- take messages from websocket and write to http request
 	go func() {
 		if p.pingInterval > 0 && p.pingWait > 0 && p.pongWait > 0 {
-			conn.SetReadDeadline(time.Now().Add(p.pongWait))
-			conn.SetPongHandler(func(string) error { conn.SetReadDeadline(time.Now().Add(p.pongWait)); return nil })
+			if err := conn.SetReadDeadline(time.Now().Add(p.pongWait)); err != nil {
+				p.logger.Warnln("[write] failed to set read deadline:", err)
+			}
+			conn.SetPongHandler(func(string) error {
+				if err := conn.SetReadDeadline(time.Now().Add(p.pongWait)); err != nil {
+					p.logger.Warnln("[write] failed to set read deadline:", err)
+				}
+				return nil
+			})
 		}
 		defer func() {
 			cancelFn()
@@ -254,7 +265,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 			p.logger.Debugln("[read] read payload:", string(payload))
 			p.logger.Debugln("[read] writing to requestBody:")
 			n, err := requestBodyW.Write(payload)
-			requestBodyW.Write([]byte("\n"))
+			_, _ = requestBodyW.Write([]byte("\n"))
 			p.logger.Debugln("[read] wrote to requestBody", n)
 			if err != nil {
 				p.logger.Warnln("[read] error writing message to upstream http server:", err)
@@ -272,7 +283,9 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 			pingChan = ticker.C
 			defer func() {
 				ticker.Stop()
-				conn.Close()
+				if err := conn.Close(); err != nil {
+					p.logger.Warnln("[write] failed to close websocket connection:", err)
+				}
 			}()
 		} else {
 			pingChan = make(chan time.Time)
