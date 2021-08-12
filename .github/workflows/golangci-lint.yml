@@ -20,4 +20,4 @@ jobs:
         with:
           version: latest
           skip-go-installation: true
-          args: --issues-exit-code=0 --timeout=5m
+          args: --timeout=5m
