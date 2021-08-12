@@ -21,19 +21,20 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		req *pb.DeleteDevicesRequest
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    *pb.DeleteDevicesResponse
+		name string
+		args args
+		want *pb.DeleteDevicesResponse
 	}{
 		{
-			name: "invalid deviceID",
+			name: "not owned device",
 			args: args{
 				req: &pb.DeleteDevicesRequest{
 					DeviceIdFilter: []string{"badId"},
 				},
 			},
-			wantErr: true,
+			want: &pb.DeleteDevicesResponse{
+				DeviceIds: nil,
+			},
 		},
 		{
 			name: "all owned devices",
@@ -67,13 +68,8 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := c.DeleteDevices(ctx, tt.args.req)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-
-				require.Equal(t, tt.want.DeviceIds, resp.DeviceIds)
-			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want.DeviceIds, resp.DeviceIds)
 		})
 	}
 }
