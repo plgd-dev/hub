@@ -42,14 +42,10 @@ func (c *APIsConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
-	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
 	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
-	if c.OwnerClaim == "" {
-		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
-	}
 	err := c.Connection.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)

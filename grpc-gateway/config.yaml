@@ -36,7 +36,6 @@ apis:
           useSystemCAPool: false
 clients:
   authorizationServer:
-    ownerClaim: sub
     grpc:
       address: ""
       tls:

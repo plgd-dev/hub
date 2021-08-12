@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/cloud/authorization/events"
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
@@ -21,6 +23,20 @@ func getUniqueDeviceIds(deviceIds []string) []string {
 	devices.Add(deviceIds...)
 	delete(devices, "")
 	return devices.ToSlice()
+}
+
+func getUserDevices(tx persistence.PersistenceTx, owner string) ([]string, error) {
+	it := tx.RetrieveByOwner(owner)
+	defer it.Close()
+	if it.Err() != nil {
+		return nil, fmt.Errorf("failed to obtain user devices: %w", it.Err())
+	}
+	var deviceIds []string
+	var d persistence.AuthorizedDevice
+	for it.Next(&d) {
+		deviceIds = append(deviceIds, d.DeviceID)
+	}
+	return deviceIds, nil
 }
 
 func (s *Service) publishDevicesUnregistered(ctx context.Context, owner string, deviceIDs []string) error {
@@ -72,15 +88,26 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid UserId"))
 	}
 
-	deviceIds := getUniqueDeviceIds(request.DeviceIds)
-	if len(deviceIds) == 0 {
-		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid DeviceIds"))
-	}
-
 	// TODO validate jwt token -> only jwt token is supported
 
+	var deviceIds []string
+	if len(request.DeviceIds) == 0 {
+		var err error
+		if deviceIds, err = getUserDevices(tx, owner); err != nil {
+			return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: %v", err))
+		}
+		if len(deviceIds) == 0 {
+			return &pb.DeleteDevicesResponse{}, nil
+		}
+	} else {
+		deviceIds = getUniqueDeviceIds(request.DeviceIds)
+		if len(deviceIds) == 0 {
+			return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid DeviceIds"))
+		}
+	}
+
 	var deletedDeviceIds []string
-	for _, deviceId := range request.DeviceIds {
+	for _, deviceId := range deviceIds {
 		_, ok, err := tx.Retrieve(deviceId, owner)
 		if err != nil {
 			return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot delete device('%v'): %v", deviceId, err.Error()))

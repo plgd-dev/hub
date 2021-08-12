@@ -43,32 +43,31 @@ func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevice
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices from ResourceAggregate: %v", err))
 	}
 
-	var deleted, notDeleted []string
+	var owned, notOwned []string
 	if deleteAllOwned {
-		deleted = respRA.DeviceIds
+		owned = respRA.DeviceIds
 	} else {
-		deleted, notDeleted = partitionDeletedDevices(cmdRA.GetDeviceIds(), respRA.GetDeviceIds())
-		if len(notDeleted) > 0 {
-			for _, deviceId := range notDeleted {
+		owned, notOwned = partitionDeletedDevices(cmdRA.GetDeviceIds(), respRA.GetDeviceIds())
+		if len(notOwned) > 0 {
+			for _, deviceId := range notOwned {
 				log.Errorf("failed to delete device('%v') in ResourceAggregate", deviceId)
 			}
 		}
 	}
-
-	if len(deleted) == 0 {
+	if len(owned) == 0 {
 		return &pb.DeleteDevicesResponse{
-			DeviceIds: deleted,
+			DeviceIds: owned,
 		}, nil
 	}
 
 	cmdAS := pbAS.DeleteDevicesRequest{
-		DeviceIds: deleted,
+		DeviceIds: owned,
 	}
 	respAS, err := r.authorizationClient.DeleteDevices(ctx, &cmdAS)
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot delete devices in Authorization service: %v", err))
 	}
-	deleted, notDeleted = partitionDeletedDevices(cmdAS.GetDeviceIds(), respAS.GetDeviceIds())
+	deleted, notDeleted := partitionDeletedDevices(cmdAS.GetDeviceIds(), respAS.GetDeviceIds())
 	if len(notDeleted) > 0 {
 		for _, deviceId := range notDeleted {
 			log.Errorf("failed to delete device('%v') in Authorization service", deviceId)

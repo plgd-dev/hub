@@ -21,6 +21,15 @@ func getUniqueDeviceIdsFromDeleteRequest(request *commands.DeleteDevicesRequest)
 	return deviceIds.ToSlice()
 }
 
+// Delete documents from events database for devices selected by query
+//
+// Using empty deviceIdFilter in DeleteDevicesRequest is interpreting as requesting
+// to delete all documents for devices owned by the user.
+//
+// Function returns error or a non-empty DeleteDevicesResponse message, where the DeviceIds
+// field is filled with list of device ids. The list is an intersection of the list provided
+// by DeleteDevicesRequest and device ids owned by the user (ie. from the original list of device
+// ids it filters out devices that are not owned by the user).
 func (r RequestHandler) DeleteDevices(ctx context.Context, request *commands.DeleteDevicesRequest) (*commands.DeleteDevicesResponse, error) {
 	deviceIds := getUniqueDeviceIdsFromDeleteRequest(request)
 	owner, ownedDevices, err := r.getOwnedDevices(ctx, deviceIds)
