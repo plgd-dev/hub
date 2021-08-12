@@ -35,4 +35,4 @@ jobs:
         run: |
           export PATH=${PATH}:`go env GOPATH`/bin
           go get github.com/kisielk/errcheck@latest
-          errcheck ./... || echo "Errcheck detected issues"
+          errcheck ./...
