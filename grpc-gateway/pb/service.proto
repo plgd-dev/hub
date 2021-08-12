@@ -7,6 +7,7 @@ import "github.com/plgd-dev/cloud/grpc-gateway/pb/devices.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/events.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/getDevicesMetadata.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/getPendingCommands.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/cancelCommands.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/updateDeviceMetadata.proto";
 import "github.com/plgd-dev/cloud/resource-aggregate/pb/events.proto";
 
@@ -145,6 +146,26 @@ service GrpcGateway {
   rpc GetPendingCommands(GetPendingCommandsRequest) returns (stream PendingCommand) {
     option (google.api.http) = {
       get: "/api/v1/pending-commands"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Directory" ]
+    };
+  }
+
+  // Cancels resource commands.
+  rpc CancelPendingCommands(CancelPendingCommandsRequest) returns (CancelPendingCommandsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/pending-commands"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Resource Directory" ]
+    };
+  }
+
+  // Cancels device metadata updates.
+  rpc CancelPendingMetadataUpdates(CancelPendingMetadataUpdatesRequest) returns (CancelPendingCommandsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/devices/{device_id}/pending-metadata-updates"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Resource Directory" ]

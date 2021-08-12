@@ -46,4 +46,5 @@ enum Status {
   ERROR = 9;
   METHOD_NOT_ALLOWED = 10;
   CREATED = 11;
+  CANCELED = 12; // Canceled indicates the operation was canceled (typically by the user).
 }

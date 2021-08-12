@@ -10,6 +10,7 @@ import (
 	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/kit/strings"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -161,6 +162,73 @@ func timeToLive2ValidUntil(timeToLive int64) int64 {
 	return pkgTime.UnixNano(time.Now().Add(time.Duration(timeToLive)))
 }
 
+func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, owner string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+	switch {
+	case cancel:
+		ev := DeviceMetadataUpdated{
+			DeviceId:              req.GetDeviceId(),
+			Status:                e.GetDeviceMetadataUpdated().GetStatus(),
+			ShadowSynchronization: e.GetDeviceMetadataUpdated().GetShadowSynchronization(),
+			Canceled:              true,
+			AuditContext:          ac,
+			EventMetadata:         em,
+		}
+		ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
+		if !ok {
+			return nil, err
+		}
+		return []eventstore.Event{&ev}, nil
+	case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
+		ev := DeviceMetadataUpdated{
+			DeviceId:              req.GetDeviceId(),
+			Status:                e.GetDeviceMetadataUpdated().GetStatus(),
+			ShadowSynchronization: req.GetShadowSynchronization(),
+			AuditContext:          ac,
+			EventMetadata:         em,
+		}
+		ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
+		if !ok {
+			return nil, err
+		}
+		return []eventstore.Event{&ev}, nil
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown confirm type(%T)", req.GetConfirm())
+	}
+}
+
+func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, owner string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
+	events := make([]eventstore.Event, 0, 4)
+	for _, event := range e.GetUpdatePendings() {
+		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			continue
+		}
+		ev, err := e.ConfirmDeviceMetadataUpdate(ctx, owner, &commands.ConfirmDeviceMetadataUpdateRequest{
+			DeviceId:        req.GetDeviceId(),
+			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
+			Status:          commands.Status_CANCELED,
+			CommandMetadata: req.GetCommandMetadata(),
+		}, newVersion+uint64(len(events)), true)
+		if err == nil {
+			// errors appears only when command with correlationID doesn't exist
+			events = append(events, ev...)
+		}
+	}
+	if len(events) == 0 {
+		return nil, status.Errorf(codes.NotFound, "cannot find commands with correlationID(%v)", req.GetCorrelationIdFilter())
+	}
+	return events, nil
+}
+
 func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	owner, err := grpc.OwnerFromMD(ctx)
 	if err != nil {
@@ -209,32 +277,12 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 			return nil, status.Errorf(codes.InvalidArgument, "unknown update type(%T)", req.GetUpdate())
 		}
 	case *commands.ConfirmDeviceMetadataUpdateRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
-		switch {
-		case req.GetShadowSynchronization() != commands.ShadowSynchronization_UNSET:
-			ev := DeviceMetadataUpdated{
-				DeviceId:              req.GetDeviceId(),
-				Status:                e.GetDeviceMetadataUpdated().GetStatus(),
-				ShadowSynchronization: req.GetShadowSynchronization(),
-				AuditContext:          ac,
-				EventMetadata:         em,
-			}
-			ok, err := e.HandleDeviceMetadataUpdated(ctx, &ev, true)
-			if !ok {
-				return nil, err
-			}
-			return []eventstore.Event{&ev}, nil
-		default:
-			return nil, status.Errorf(codes.InvalidArgument, "unknown confirm type(%T)", req.GetConfirm())
-		}
+		return e.ConfirmDeviceMetadataUpdate(ctx, owner, req, newVersion, false)
+	case *commands.CancelPendingMetadataUpdatesRequest:
+		return e.CancelPendingMetadataUpdates(ctx, owner, req, newVersion)
 	}
 
-	return nil, fmt.Errorf("unknown command")
+	return nil, fmt.Errorf("unknown command (%T)", cmd)
 }
 
 func (e *DeviceMetadataSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {

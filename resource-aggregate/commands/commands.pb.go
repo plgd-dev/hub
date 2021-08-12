@@ -2089,6 +2089,242 @@ func (x *ConfirmDeviceMetadataUpdateResponse) GetAuditContext() *AuditContext {
 	return nil
 }
 
+type CancelPendingCommandsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ResourceId          *ResourceId      `protobuf:"bytes,1,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	CorrelationIdFilter []string         `protobuf:"bytes,2,rep,name=correlation_id_filter,json=correlationIdFilter,proto3" json:"correlation_id_filter,omitempty"` // empty array means all.
+	CommandMetadata     *CommandMetadata `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
+}
+
+func (x *CancelPendingCommandsRequest) Reset() {
+	*x = CancelPendingCommandsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CancelPendingCommandsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelPendingCommandsRequest) ProtoMessage() {}
+
+func (x *CancelPendingCommandsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelPendingCommandsRequest.ProtoReflect.Descriptor instead.
+func (*CancelPendingCommandsRequest) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *CancelPendingCommandsRequest) GetResourceId() *ResourceId {
+	if x != nil {
+		return x.ResourceId
+	}
+	return nil
+}
+
+func (x *CancelPendingCommandsRequest) GetCorrelationIdFilter() []string {
+	if x != nil {
+		return x.CorrelationIdFilter
+	}
+	return nil
+}
+
+func (x *CancelPendingCommandsRequest) GetCommandMetadata() *CommandMetadata {
+	if x != nil {
+		return x.CommandMetadata
+	}
+	return nil
+}
+
+type CancelPendingCommandsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CorrelationIds []string      `protobuf:"bytes,1,rep,name=correlation_ids,json=correlationIds,proto3" json:"correlation_ids,omitempty"` // list of cancelled correlation id
+	AuditContext   *AuditContext `protobuf:"bytes,100,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
+}
+
+func (x *CancelPendingCommandsResponse) Reset() {
+	*x = CancelPendingCommandsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[31]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CancelPendingCommandsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelPendingCommandsResponse) ProtoMessage() {}
+
+func (x *CancelPendingCommandsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[31]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelPendingCommandsResponse.ProtoReflect.Descriptor instead.
+func (*CancelPendingCommandsResponse) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *CancelPendingCommandsResponse) GetCorrelationIds() []string {
+	if x != nil {
+		return x.CorrelationIds
+	}
+	return nil
+}
+
+func (x *CancelPendingCommandsResponse) GetAuditContext() *AuditContext {
+	if x != nil {
+		return x.AuditContext
+	}
+	return nil
+}
+
+type CancelPendingMetadataUpdatesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	DeviceId            string           `protobuf:"bytes,1,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
+	CorrelationIdFilter []string         `protobuf:"bytes,2,rep,name=correlation_id_filter,json=correlationIdFilter,proto3" json:"correlation_id_filter,omitempty"` // empty array means all.
+	CommandMetadata     *CommandMetadata `protobuf:"bytes,100,opt,name=command_metadata,json=commandMetadata,proto3" json:"command_metadata,omitempty"`
+}
+
+func (x *CancelPendingMetadataUpdatesRequest) Reset() {
+	*x = CancelPendingMetadataUpdatesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[32]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CancelPendingMetadataUpdatesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelPendingMetadataUpdatesRequest) ProtoMessage() {}
+
+func (x *CancelPendingMetadataUpdatesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[32]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelPendingMetadataUpdatesRequest.ProtoReflect.Descriptor instead.
+func (*CancelPendingMetadataUpdatesRequest) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *CancelPendingMetadataUpdatesRequest) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+func (x *CancelPendingMetadataUpdatesRequest) GetCorrelationIdFilter() []string {
+	if x != nil {
+		return x.CorrelationIdFilter
+	}
+	return nil
+}
+
+func (x *CancelPendingMetadataUpdatesRequest) GetCommandMetadata() *CommandMetadata {
+	if x != nil {
+		return x.CommandMetadata
+	}
+	return nil
+}
+
+type CancelPendingMetadataUpdatesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CorrelationIds []string      `protobuf:"bytes,1,rep,name=correlation_ids,json=correlationIds,proto3" json:"correlation_ids,omitempty"` // list of cancelled correlation id
+	AuditContext   *AuditContext `protobuf:"bytes,100,opt,name=audit_context,json=auditContext,proto3" json:"audit_context,omitempty"`
+}
+
+func (x *CancelPendingMetadataUpdatesResponse) Reset() {
+	*x = CancelPendingMetadataUpdatesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[33]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CancelPendingMetadataUpdatesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelPendingMetadataUpdatesResponse) ProtoMessage() {}
+
+func (x *CancelPendingMetadataUpdatesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[33]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelPendingMetadataUpdatesResponse.ProtoReflect.Descriptor instead.
+func (*CancelPendingMetadataUpdatesResponse) Descriptor() ([]byte, []int) {
+	return file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *CancelPendingMetadataUpdatesResponse) GetCorrelationIds() []string {
+	if x != nil {
+		return x.CorrelationIds
+	}
+	return nil
+}
+
+func (x *CancelPendingMetadataUpdatesResponse) GetAuditContext() *AuditContext {
+	if x != nil {
+		return x.AuditContext
+	}
+	return nil
+}
+
 var File_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto protoreflect.FileDescriptor
 
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc = []byte{
@@ -2513,15 +2749,65 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc 
 	0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65,
 	0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e,
 	0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65,
-	0x78, 0x74, 0x2a, 0x3d, 0x0a, 0x15, 0x53, 0x68, 0x61, 0x64, 0x6f, 0x77, 0x53, 0x79, 0x6e, 0x63,
-	0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x09, 0x0a, 0x05, 0x55,
-	0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x45, 0x4e, 0x41, 0x42, 0x4c, 0x45,
-	0x44, 0x10, 0x01, 0x12, 0x0c, 0x0a, 0x08, 0x44, 0x49, 0x53, 0x41, 0x42, 0x4c, 0x45, 0x44, 0x10,
-	0x02, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2f, 0x72,
-	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74,
-	0x65, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x3b, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
-	0x6e, 0x64, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x78, 0x74, 0x22, 0xfb, 0x01, 0x0a, 0x1c, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x50, 0x65, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x4b, 0x0a, 0x0b, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63,
+	0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67,
+	0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x49, 0x64, 0x52, 0x0a, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64,
+	0x12, 0x32, 0x0a, 0x15, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
+	0x69, 0x64, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52,
+	0x13, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x46, 0x69,
+	0x6c, 0x74, 0x65, 0x72, 0x12, 0x5a, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x5f,
+	0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x64, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2f,
+	0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e,
+	0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52,
+	0x0f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0x22, 0x9b, 0x01, 0x0a, 0x1d, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x50, 0x65, 0x6e, 0x64, 0x69,
+	0x6e, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x27, 0x0a, 0x0f, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0e, 0x63, 0x6f, 0x72,
+	0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x73, 0x12, 0x51, 0x0a, 0x0d, 0x61,
+	0x75, 0x64, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x64, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72,
+	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
+	0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74,
+	0x52, 0x0c, 0x61, 0x75, 0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x22, 0xd2,
+	0x01, 0x0a, 0x23, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x64, 0x65, 0x76, 0x69, 0x63,
+	0x65, 0x49, 0x64, 0x12, 0x32, 0x0a, 0x15, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x09, 0x52, 0x13, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49,
+	0x64, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x5a, 0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
+	0x6e, 0x64, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x64, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x2f, 0x2e, 0x6f, 0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e,
+	0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0x52, 0x0f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0x22, 0xa2, 0x01, 0x0a, 0x24, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x50, 0x65,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x27, 0x0a, 0x0f,
+	0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x73, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0e, 0x63, 0x6f, 0x72, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x49, 0x64, 0x73, 0x12, 0x51, 0x0a, 0x0d, 0x61, 0x75, 0x64, 0x69, 0x74, 0x5f, 0x63,
+	0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x64, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6f,
+	0x63, 0x66, 0x2e, 0x63, 0x6c, 0x6f, 0x75, 0x64, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x62, 0x2e, 0x41, 0x75,
+	0x64, 0x69, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0c, 0x61, 0x75, 0x64, 0x69,
+	0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x2a, 0x3d, 0x0a, 0x15, 0x53, 0x68, 0x61, 0x64,
+	0x6f, 0x77, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x09, 0x0a, 0x05, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07,
+	0x45, 0x4e, 0x41, 0x42, 0x4c, 0x45, 0x44, 0x10, 0x01, 0x12, 0x0c, 0x0a, 0x08, 0x44, 0x49, 0x53,
+	0x41, 0x42, 0x4c, 0x45, 0x44, 0x10, 0x02, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x6c, 0x67, 0x64, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x63,
+	0x6c, 0x6f, 0x75, 0x64, 0x2f, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2d, 0x61, 0x67,
+	0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73,
+	0x3b, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -2537,88 +2823,92 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc
 }
 
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_goTypes = []interface{}{
-	(ShadowSynchronization)(0),                  // 0: ocf.cloud.resourceaggregate.pb.ShadowSynchronization
-	(ConnectionStatus_Status)(0),                // 1: ocf.cloud.resourceaggregate.pb.ConnectionStatus.Status
-	(*CommandMetadata)(nil),                     // 2: ocf.cloud.resourceaggregate.pb.CommandMetadata
-	(*AuditContext)(nil),                        // 3: ocf.cloud.resourceaggregate.pb.AuditContext
-	(*ResourceId)(nil),                          // 4: ocf.cloud.resourceaggregate.pb.ResourceId
-	(*PublishResourceLinksRequest)(nil),         // 5: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest
-	(*PublishResourceLinksResponse)(nil),        // 6: ocf.cloud.resourceaggregate.pb.PublishResourceLinksResponse
-	(*UnpublishResourceLinksRequest)(nil),       // 7: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksRequest
-	(*UnpublishResourceLinksResponse)(nil),      // 8: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksResponse
-	(*NotifyResourceChangedRequest)(nil),        // 9: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest
-	(*NotifyResourceChangedResponse)(nil),       // 10: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedResponse
-	(*UpdateResourceRequest)(nil),               // 11: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest
-	(*UpdateResourceResponse)(nil),              // 12: ocf.cloud.resourceaggregate.pb.UpdateResourceResponse
-	(*ConfirmResourceUpdateRequest)(nil),        // 13: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest
-	(*ConfirmResourceUpdateResponse)(nil),       // 14: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateResponse
-	(*RetrieveResourceRequest)(nil),             // 15: ocf.cloud.resourceaggregate.pb.RetrieveResourceRequest
-	(*RetrieveResourceResponse)(nil),            // 16: ocf.cloud.resourceaggregate.pb.RetrieveResourceResponse
-	(*ConfirmResourceRetrieveRequest)(nil),      // 17: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest
-	(*ConfirmResourceRetrieveResponse)(nil),     // 18: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveResponse
-	(*DeleteResourceRequest)(nil),               // 19: ocf.cloud.resourceaggregate.pb.DeleteResourceRequest
-	(*DeleteResourceResponse)(nil),              // 20: ocf.cloud.resourceaggregate.pb.DeleteResourceResponse
-	(*ConfirmResourceDeleteRequest)(nil),        // 21: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest
-	(*ConfirmResourceDeleteResponse)(nil),       // 22: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteResponse
-	(*CreateResourceRequest)(nil),               // 23: ocf.cloud.resourceaggregate.pb.CreateResourceRequest
-	(*CreateResourceResponse)(nil),              // 24: ocf.cloud.resourceaggregate.pb.CreateResourceResponse
-	(*ConfirmResourceCreateRequest)(nil),        // 25: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest
-	(*ConfirmResourceCreateResponse)(nil),       // 26: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateResponse
-	(*ConnectionStatus)(nil),                    // 27: ocf.cloud.resourceaggregate.pb.ConnectionStatus
-	(*UpdateDeviceMetadataRequest)(nil),         // 28: ocf.cloud.resourceaggregate.pb.UpdateDeviceMetadataRequest
-	(*UpdateDeviceMetadataResponse)(nil),        // 29: ocf.cloud.resourceaggregate.pb.UpdateDeviceMetadataResponse
-	(*ConfirmDeviceMetadataUpdateRequest)(nil),  // 30: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest
-	(*ConfirmDeviceMetadataUpdateResponse)(nil), // 31: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateResponse
-	(*Resource)(nil),                            // 32: ocf.cloud.resourceaggregate.pb.Resource
-	(*Content)(nil),                             // 33: ocf.cloud.resourceaggregate.pb.Content
-	(Status)(0),                                 // 34: ocf.cloud.resourceaggregate.pb.Status
+	(ShadowSynchronization)(0),                   // 0: ocf.cloud.resourceaggregate.pb.ShadowSynchronization
+	(ConnectionStatus_Status)(0),                 // 1: ocf.cloud.resourceaggregate.pb.ConnectionStatus.Status
+	(*CommandMetadata)(nil),                      // 2: ocf.cloud.resourceaggregate.pb.CommandMetadata
+	(*AuditContext)(nil),                         // 3: ocf.cloud.resourceaggregate.pb.AuditContext
+	(*ResourceId)(nil),                           // 4: ocf.cloud.resourceaggregate.pb.ResourceId
+	(*PublishResourceLinksRequest)(nil),          // 5: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest
+	(*PublishResourceLinksResponse)(nil),         // 6: ocf.cloud.resourceaggregate.pb.PublishResourceLinksResponse
+	(*UnpublishResourceLinksRequest)(nil),        // 7: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksRequest
+	(*UnpublishResourceLinksResponse)(nil),       // 8: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksResponse
+	(*NotifyResourceChangedRequest)(nil),         // 9: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest
+	(*NotifyResourceChangedResponse)(nil),        // 10: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedResponse
+	(*UpdateResourceRequest)(nil),                // 11: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest
+	(*UpdateResourceResponse)(nil),               // 12: ocf.cloud.resourceaggregate.pb.UpdateResourceResponse
+	(*ConfirmResourceUpdateRequest)(nil),         // 13: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest
+	(*ConfirmResourceUpdateResponse)(nil),        // 14: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateResponse
+	(*RetrieveResourceRequest)(nil),              // 15: ocf.cloud.resourceaggregate.pb.RetrieveResourceRequest
+	(*RetrieveResourceResponse)(nil),             // 16: ocf.cloud.resourceaggregate.pb.RetrieveResourceResponse
+	(*ConfirmResourceRetrieveRequest)(nil),       // 17: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest
+	(*ConfirmResourceRetrieveResponse)(nil),      // 18: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveResponse
+	(*DeleteResourceRequest)(nil),                // 19: ocf.cloud.resourceaggregate.pb.DeleteResourceRequest
+	(*DeleteResourceResponse)(nil),               // 20: ocf.cloud.resourceaggregate.pb.DeleteResourceResponse
+	(*ConfirmResourceDeleteRequest)(nil),         // 21: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest
+	(*ConfirmResourceDeleteResponse)(nil),        // 22: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteResponse
+	(*CreateResourceRequest)(nil),                // 23: ocf.cloud.resourceaggregate.pb.CreateResourceRequest
+	(*CreateResourceResponse)(nil),               // 24: ocf.cloud.resourceaggregate.pb.CreateResourceResponse
+	(*ConfirmResourceCreateRequest)(nil),         // 25: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest
+	(*ConfirmResourceCreateResponse)(nil),        // 26: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateResponse
+	(*ConnectionStatus)(nil),                     // 27: ocf.cloud.resourceaggregate.pb.ConnectionStatus
+	(*UpdateDeviceMetadataRequest)(nil),          // 28: ocf.cloud.resourceaggregate.pb.UpdateDeviceMetadataRequest
+	(*UpdateDeviceMetadataResponse)(nil),         // 29: ocf.cloud.resourceaggregate.pb.UpdateDeviceMetadataResponse
+	(*ConfirmDeviceMetadataUpdateRequest)(nil),   // 30: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest
+	(*ConfirmDeviceMetadataUpdateResponse)(nil),  // 31: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateResponse
+	(*CancelPendingCommandsRequest)(nil),         // 32: ocf.cloud.resourceaggregate.pb.CancelPendingCommandsRequest
+	(*CancelPendingCommandsResponse)(nil),        // 33: ocf.cloud.resourceaggregate.pb.CancelPendingCommandsResponse
+	(*CancelPendingMetadataUpdatesRequest)(nil),  // 34: ocf.cloud.resourceaggregate.pb.CancelPendingMetadataUpdatesRequest
+	(*CancelPendingMetadataUpdatesResponse)(nil), // 35: ocf.cloud.resourceaggregate.pb.CancelPendingMetadataUpdatesResponse
+	(*Resource)(nil),                             // 36: ocf.cloud.resourceaggregate.pb.Resource
+	(*Content)(nil),                              // 37: ocf.cloud.resourceaggregate.pb.Content
+	(Status)(0),                                  // 38: ocf.cloud.resourceaggregate.pb.Status
 }
 var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_depIdxs = []int32{
-	32, // 0: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest.resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
+	36, // 0: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest.resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
 	2,  // 1: ocf.cloud.resourceaggregate.pb.PublishResourceLinksRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
-	32, // 2: ocf.cloud.resourceaggregate.pb.PublishResourceLinksResponse.published_resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
+	36, // 2: ocf.cloud.resourceaggregate.pb.PublishResourceLinksResponse.published_resources:type_name -> ocf.cloud.resourceaggregate.pb.Resource
 	3,  // 3: ocf.cloud.resourceaggregate.pb.PublishResourceLinksResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	2,  // 4: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 5: ocf.cloud.resourceaggregate.pb.UnpublishResourceLinksResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 6: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	33, // 7: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	37, // 7: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	2,  // 8: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
-	34, // 9: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	38, // 9: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
 	3,  // 10: ocf.cloud.resourceaggregate.pb.NotifyResourceChangedResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 11: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	33, // 12: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	37, // 12: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	2,  // 13: ocf.cloud.resourceaggregate.pb.UpdateResourceRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 14: ocf.cloud.resourceaggregate.pb.UpdateResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 15: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	34, // 16: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	33, // 17: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	38, // 16: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	37, // 17: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	2,  // 18: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 19: ocf.cloud.resourceaggregate.pb.ConfirmResourceUpdateResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 20: ocf.cloud.resourceaggregate.pb.RetrieveResourceRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
 	2,  // 21: ocf.cloud.resourceaggregate.pb.RetrieveResourceRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 22: ocf.cloud.resourceaggregate.pb.RetrieveResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 23: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	34, // 24: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	33, // 25: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	38, // 24: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	37, // 25: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	2,  // 26: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 27: ocf.cloud.resourceaggregate.pb.ConfirmResourceRetrieveResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 28: ocf.cloud.resourceaggregate.pb.DeleteResourceRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
 	2,  // 29: ocf.cloud.resourceaggregate.pb.DeleteResourceRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 30: ocf.cloud.resourceaggregate.pb.DeleteResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 31: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	34, // 32: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	33, // 33: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	38, // 32: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	37, // 33: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	2,  // 34: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 35: ocf.cloud.resourceaggregate.pb.ConfirmResourceDeleteResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 36: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	33, // 37: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	37, // 37: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	2,  // 38: ocf.cloud.resourceaggregate.pb.CreateResourceRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 39: ocf.cloud.resourceaggregate.pb.CreateResourceResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	4,  // 40: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
-	34, // 41: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
-	33, // 42: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
+	38, // 41: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	37, // 42: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.content:type_name -> ocf.cloud.resourceaggregate.pb.Content
 	2,  // 43: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 44: ocf.cloud.resourceaggregate.pb.ConfirmResourceCreateResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
 	1,  // 45: ocf.cloud.resourceaggregate.pb.ConnectionStatus.value:type_name -> ocf.cloud.resourceaggregate.pb.ConnectionStatus.Status
@@ -2626,15 +2916,20 @@ var file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_depIdxs 
 	0,  // 47: ocf.cloud.resourceaggregate.pb.UpdateDeviceMetadataRequest.shadow_synchronization:type_name -> ocf.cloud.resourceaggregate.pb.ShadowSynchronization
 	2,  // 48: ocf.cloud.resourceaggregate.pb.UpdateDeviceMetadataRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 49: ocf.cloud.resourceaggregate.pb.UpdateDeviceMetadataResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
-	34, // 50: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
+	38, // 50: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.status:type_name -> ocf.cloud.resourceaggregate.pb.Status
 	0,  // 51: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.shadow_synchronization:type_name -> ocf.cloud.resourceaggregate.pb.ShadowSynchronization
 	2,  // 52: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
 	3,  // 53: ocf.cloud.resourceaggregate.pb.ConfirmDeviceMetadataUpdateResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
-	54, // [54:54] is the sub-list for method output_type
-	54, // [54:54] is the sub-list for method input_type
-	54, // [54:54] is the sub-list for extension type_name
-	54, // [54:54] is the sub-list for extension extendee
-	0,  // [0:54] is the sub-list for field type_name
+	4,  // 54: ocf.cloud.resourceaggregate.pb.CancelPendingCommandsRequest.resource_id:type_name -> ocf.cloud.resourceaggregate.pb.ResourceId
+	2,  // 55: ocf.cloud.resourceaggregate.pb.CancelPendingCommandsRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
+	3,  // 56: ocf.cloud.resourceaggregate.pb.CancelPendingCommandsResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	2,  // 57: ocf.cloud.resourceaggregate.pb.CancelPendingMetadataUpdatesRequest.command_metadata:type_name -> ocf.cloud.resourceaggregate.pb.CommandMetadata
+	3,  // 58: ocf.cloud.resourceaggregate.pb.CancelPendingMetadataUpdatesResponse.audit_context:type_name -> ocf.cloud.resourceaggregate.pb.AuditContext
+	59, // [59:59] is the sub-list for method output_type
+	59, // [59:59] is the sub-list for method input_type
+	59, // [59:59] is the sub-list for extension type_name
+	59, // [59:59] is the sub-list for extension extendee
+	0,  // [0:59] is the sub-list for field type_name
 }
 
 func init() { file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_init() }
@@ -3004,6 +3299,54 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_init() 
 				return nil
 			}
 		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CancelPendingCommandsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CancelPendingCommandsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CancelPendingMetadataUpdatesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CancelPendingMetadataUpdatesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_msgTypes[26].OneofWrappers = []interface{}{
 		(*UpdateDeviceMetadataRequest_Status)(nil),
@@ -3018,7 +3361,7 @@ func file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_init() 
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_github_com_plgd_dev_cloud_resource_aggregate_pb_commands_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   30,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

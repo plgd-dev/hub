@@ -238,3 +238,62 @@ ResourceAggregate --> Bus : DeviceMetadataUpdated
 deactivate ResourceAggregate
 deactivate Server
 @enduml
+
+@startuml
+title "Cancel resource command - similar for all Update/Retrieve/Create/Delete commands"
+
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+entity "OCF Server" as Server
+
+note right of Server
+    OCF Server is disconnected
+    from the plgd cloud
+end note
+
+Client -> ResourceAggregate : RetrieveResourceRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate --> Bus : ResourceRetrievePending
+ResourceAggregate -> Client : RetrieveResourceResponse
+deactivate ResourceAggregate
+deactivate Client
+
+Client -> ResourceAggregate : CancelPendingCommandsRequest
+activate ResourceAggregate
+ResourceAggregate --> Bus : ResourceRetrieved (status=Canceled)
+ResourceAggregate -> Client : CancelPendingCommandsResponse
+deactivate ResourceAggregate
+deactivate Client
+@enduml
+
+@startuml
+title "Cancel update device metadata - Shadow Synchronization Status"
+
+participant "Resource Aggregate" as ResourceAggregate
+control "Event Bus" as Bus
+entity "Client" as Client
+entity "OCF Server" as Server
+
+note right of Server
+    OCF Server is disconnected
+    from the plgd cloud
+end note
+
+Client -> ResourceAggregate : UpdateDeviceMetadataRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate --> Bus : DeviceMetadataUpdatePending
+ResourceAggregate -> Client : UpdateDeviceMetadataResponse
+deactivate ResourceAggregate
+deactivate Client
+
+Client -> ResourceAggregate : CancelPendingMetadataUpdatesRequest
+activate Client
+activate ResourceAggregate
+ResourceAggregate --> Bus : DeviceMetadataUpdated (Canceled=true)
+ResourceAggregate -> Client : CancelPendingMetadataUpdatesResponse
+deactivate Client
+deactivate ResourceAggregate
+@enduml

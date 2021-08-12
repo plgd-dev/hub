@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/strings"
 )
 
 const eventTypeResourceStateSnapshotTaken = "resourcestatesnapshottaken"
@@ -99,6 +100,42 @@ func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValid
 	return true, nil
 }
 
+func (e *ResourceStateSnapshotTaken) checkForDuplicitCorrelationID(correlationID string, now time.Time) error {
+	for _, event := range e.GetResourceCreatePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
+		if event.GetAuditContext().GetCorrelationId() == correlationID {
+			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource create pendings", correlationID)
+		}
+	}
+	for _, event := range e.GetResourceUpdatePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
+		if event.GetAuditContext().GetCorrelationId() == correlationID {
+			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource update pendings", correlationID)
+		}
+	}
+	for _, event := range e.GetResourceRetrievePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
+		if event.GetAuditContext().GetCorrelationId() == correlationID {
+			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource retrieve pendings", correlationID)
+		}
+	}
+	for _, event := range e.GetResourceDeletePendings() {
+		if event.IsExpired(now) {
+			continue
+		}
+		if event.GetAuditContext().GetCorrelationId() == correlationID {
+			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource delete pendings", correlationID)
+		}
+	}
+	return nil
+}
+
 func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx context.Context, createPending *ResourceCreatePending) error {
 	now := time.Now()
 	ok, err := e.processValidUntil(createPending, now)
@@ -108,13 +145,9 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceCreatePending(ctx contex
 	if !ok {
 		return nil
 	}
-	for _, event := range e.GetResourceCreatePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == createPending.GetAuditContext().GetCorrelationId() {
-			return status.Errorf(codes.InvalidArgument, "resource create pending with correlationId('%v') already exist", createPending.GetAuditContext().GetCorrelationId())
-		}
+	err = e.checkForDuplicitCorrelationID(createPending.GetAuditContext().GetCorrelationId(), now)
+	if err != nil {
+		return err
 	}
 	e.ResourceId = createPending.GetResourceId()
 	e.EventMetadata = createPending.GetEventMetadata()
@@ -132,13 +165,9 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceUpdatePending(ctx contex
 	if !ok {
 		return nil
 	}
-	for _, event := range e.GetResourceUpdatePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == updatePending.GetAuditContext().GetCorrelationId() {
-			return status.Errorf(codes.InvalidArgument, "resource update pending with correlationId('%v') already exist", updatePending.GetAuditContext().GetCorrelationId())
-		}
+	err = e.checkForDuplicitCorrelationID(updatePending.GetAuditContext().GetCorrelationId(), now)
+	if err != nil {
+		return err
 	}
 	e.ResourceId = updatePending.GetResourceId()
 	e.EventMetadata = updatePending.GetEventMetadata()
@@ -156,13 +185,9 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceRetrievePending(ctx cont
 	if !ok {
 		return nil
 	}
-	for _, event := range e.GetResourceRetrievePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == retrievePending.GetAuditContext().GetCorrelationId() {
-			return status.Errorf(codes.InvalidArgument, "resource retrieve pending with correlationId('%v') already exist", retrievePending.GetAuditContext().GetCorrelationId())
-		}
+	err = e.checkForDuplicitCorrelationID(retrievePending.GetAuditContext().GetCorrelationId(), now)
+	if err != nil {
+		return err
 	}
 	e.ResourceId = retrievePending.GetResourceId()
 	e.EventMetadata = retrievePending.GetEventMetadata()
@@ -179,13 +204,9 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeletePending(ctx contex
 	if !ok {
 		return nil
 	}
-	for _, event := range e.GetResourceDeletePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == deletePending.GetAuditContext().GetCorrelationId() {
-			return status.Errorf(codes.InvalidArgument, "resource delete pending with correlationId('%v') already exist", deletePending.GetAuditContext().GetCorrelationId())
-		}
+	err = e.checkForDuplicitCorrelationID(deletePending.GetAuditContext().GetCorrelationId(), now)
+	if err != nil {
+		return err
 	}
 	e.ResourceId = deletePending.GetResourceId()
 	e.EventMetadata = deletePending.GetEventMetadata()
@@ -478,6 +499,158 @@ func convertContent(content *commands.Content, supportedContentType string) (new
 	}, nil
 }
 
+func (e *ResourceStateSnapshotTaken) ConfirmResourceUpdateCommand(ctx context.Context, owner string, req *commands.ConfirmResourceUpdateRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.CommandMetadata == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+	rc := ResourceUpdated{
+		ResourceId:    req.GetResourceId(),
+		AuditContext:  ac,
+		EventMetadata: em,
+		Content:       req.GetContent(),
+		Status:        req.GetStatus(),
+	}
+	if err := e.HandleEventResourceUpdated(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTaken) ConfirmResourceRetrieveCommand(ctx context.Context, owner string, req *commands.ConfirmResourceRetrieveRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+	rc := ResourceRetrieved{
+		ResourceId:    req.GetResourceId(),
+		AuditContext:  ac,
+		EventMetadata: em,
+		Content:       req.GetContent(),
+		Status:        req.GetStatus(),
+	}
+	if err := e.HandleEventResourceRetrieved(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTaken) ConfirmResourceDeleteCommand(ctx context.Context, owner string, req *commands.ConfirmResourceDeleteRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+	rc := ResourceDeleted{
+		ResourceId:    req.GetResourceId(),
+		AuditContext:  ac,
+		EventMetadata: em,
+		Content:       req.GetContent(),
+		Status:        req.GetStatus(),
+	}
+	if err := e.HandleEventResourceDeleted(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTaken) ConfirmResourceCreateCommand(ctx context.Context, owner string, req *commands.ConfirmResourceCreateRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+
+	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
+	ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+	rc := ResourceCreated{
+		ResourceId:    req.GetResourceId(),
+		AuditContext:  ac,
+		EventMetadata: em,
+		Content:       req.GetContent(),
+		Status:        req.GetStatus(),
+	}
+	if err := e.HandleEventResourceCreated(ctx, &rc); err != nil {
+		return nil, err
+	}
+	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTaken) CancelPendingCommands(ctx context.Context, owner string, req *commands.CancelPendingCommandsRequest, newVersion uint64) ([]eventstore.Event, error) {
+	if req.GetCommandMetadata() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
+	}
+	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
+	events := make([]eventstore.Event, 0, 4)
+	for _, event := range e.GetResourceCreatePendings() {
+		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			continue
+		}
+		ev, err := e.ConfirmResourceCreateCommand(ctx, owner, &commands.ConfirmResourceCreateRequest{
+			ResourceId:      req.GetResourceId(),
+			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
+			Status:          commands.Status_CANCELED,
+			CommandMetadata: req.GetCommandMetadata(),
+		}, newVersion+uint64(len(events)))
+		if err == nil {
+			// errors appears only when command with correlationID doesn't exist
+			events = append(events, ev...)
+		}
+	}
+	for _, event := range e.GetResourceUpdatePendings() {
+		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			continue
+		}
+		ev, err := e.ConfirmResourceUpdateCommand(ctx, owner, &commands.ConfirmResourceUpdateRequest{
+			ResourceId:      req.GetResourceId(),
+			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
+			Status:          commands.Status_CANCELED,
+			CommandMetadata: req.GetCommandMetadata(),
+		}, newVersion+uint64(len(events)))
+		if err == nil {
+			// errors appears only when command with correlationID doesn't exist
+			events = append(events, ev...)
+		}
+	}
+	for _, event := range e.GetResourceRetrievePendings() {
+		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			continue
+		}
+		ev, err := e.ConfirmResourceRetrieveCommand(ctx, owner, &commands.ConfirmResourceRetrieveRequest{
+			ResourceId:      req.GetResourceId(),
+			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
+			Status:          commands.Status_CANCELED,
+			CommandMetadata: req.GetCommandMetadata(),
+		}, newVersion+uint64(len(events)))
+		if err == nil {
+			// errors appears only when command with correlationID doesn't exist
+			events = append(events, ev...)
+		}
+	}
+	for _, event := range e.GetResourceDeletePendings() {
+		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			continue
+		}
+		ev, err := e.ConfirmResourceDeleteCommand(ctx, owner, &commands.ConfirmResourceDeleteRequest{
+			ResourceId:      req.GetResourceId(),
+			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
+			Status:          commands.Status_CANCELED,
+			CommandMetadata: req.GetCommandMetadata(),
+		}, newVersion+uint64(len(events)))
+		if err == nil {
+			// errors appears only when command with correlationID doesn't exist
+			events = append(events, ev...)
+		}
+	}
+	if len(events) == 0 {
+		return nil, status.Errorf(codes.NotFound, "cannot find commands with correlationID(%v)", req.GetCorrelationIdFilter())
+	}
+	return events, nil
+}
+
 func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
 	owner, err := grpc.OwnerFromMD(ctx)
 	if err != nil {
@@ -540,23 +713,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceUpdateRequest:
-		if req.CommandMetadata == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
-		rc := ResourceUpdated{
-			ResourceId:    req.GetResourceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
-			Content:       req.GetContent(),
-			Status:        req.GetStatus(),
-		}
-		if err := e.HandleEventResourceUpdated(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.ConfirmResourceUpdateCommand(ctx, owner, req, newVersion)
 	case *commands.RetrieveResourceRequest:
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
@@ -578,23 +735,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceRetrieveRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
-		rc := ResourceRetrieved{
-			ResourceId:    req.GetResourceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
-			Content:       req.GetContent(),
-			Status:        req.GetStatus(),
-		}
-		if err := e.HandleEventResourceRetrieved(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.ConfirmResourceRetrieveCommand(ctx, owner, req, newVersion)
 	case *commands.DeleteResourceRequest:
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
@@ -615,23 +756,7 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceDeleteRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
-		rc := ResourceDeleted{
-			ResourceId:    req.GetResourceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
-			Content:       req.GetContent(),
-			Status:        req.GetStatus(),
-		}
-		if err := e.HandleEventResourceDeleted(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.ConfirmResourceDeleteCommand(ctx, owner, req, newVersion)
 	case *commands.CreateResourceRequest:
 		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
@@ -656,26 +781,12 @@ func (e *ResourceStateSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 		return []eventstore.Event{&rc}, nil
 	case *commands.ConfirmResourceCreateRequest:
-		if req.GetCommandMetadata() == nil {
-			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
-		}
-
-		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
-		rc := ResourceCreated{
-			ResourceId:    req.GetResourceId(),
-			AuditContext:  ac,
-			EventMetadata: em,
-			Content:       req.GetContent(),
-			Status:        req.GetStatus(),
-		}
-		if err := e.HandleEventResourceCreated(ctx, &rc); err != nil {
-			return nil, err
-		}
-		return []eventstore.Event{&rc}, nil
+		return e.ConfirmResourceCreateCommand(ctx, owner, req, newVersion)
+	case *commands.CancelPendingCommandsRequest:
+		return e.CancelPendingCommands(ctx, owner, req, newVersion)
 	}
 
-	return nil, fmt.Errorf("unknown command")
+	return nil, fmt.Errorf("unknown command(%T)", cmd)
 }
 
 func (e *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Event, bool) {

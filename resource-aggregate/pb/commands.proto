@@ -491,3 +491,85 @@ message ConfirmDeviceMetadataUpdateRequest {
 message ConfirmDeviceMetadataUpdateResponse {
     AuditContext audit_context = 1;
 }
+
+// Cancel resource command - similar for all Update/Retrieve/Create/Delete commands                      
+                                                                                                                             
+// ┌──────────────────┐                       ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                       │Event Bus│          │Client│          │OCF Server│                          
+// └────────┬─────────┘                       └─────────┘          └──────┘          └──────────┘                          
+//          │                                      │                  │                   │  ╔════════════════════════════╗
+//          │                                      │                  │                   │  ║OCF Server is disconnected ░║
+//          │                                      │                  │                   │  ║from the plgd cloud         ║
+//          │                                      │                  │                   │  ╚════════════════════════════╝
+//         ┌┴┐                RetrieveResourceRequest                ┌┴┐                  │                                
+//         │ │ <─────────────────────────────────────────────────────│ │                  │                                
+//         │ │                                     │                 │ │                  │                                
+//         │ │       ResourceRetrievePending       │                 │ │                  │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │                                
+//         └┬┘                                     │                 └┬┘                  │                                
+//          │                 RetrieveResourceResponse                │                   │                                
+//          │ ────────────────────────────────────────────────────────>                   │                                
+//          │                                      │                  │                   │                                
+//         ┌┴┐              CancelPendingCommandsRequest              │                   │                                
+//         │ │ <──────────────────────────────────────────────────────│                   │                                
+//         │ │                                     │                  │                   │                                
+//         │ │ ResourceRetrieved (status=Canceled) │                  │                   │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                  │                   │                                
+//         └┬┘                                     │                  │                   │                                
+//          │              CancelPendingCommandsResponse              │                   │                                
+//          │ ────────────────────────────────────────────────────────>                   │                                
+// ┌────────┴─────────┐                       ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                       │Event Bus│          │Client│          │OCF Server│                          
+// └──────────────────┘                       └─────────┘          └──────┘          └──────────┘                          
+
+message CancelPendingCommandsRequest {
+    ResourceId resource_id = 1;
+    repeated string correlation_id_filter = 2; // empty array means all.
+    CommandMetadata command_metadata = 100;
+}
+
+message CancelPendingCommandsResponse{
+    repeated string correlation_ids = 1; // list of cancelled correlation id
+    AuditContext audit_context = 100;
+}
+
+// Cancel update device metadata - Shadow Synchronization Status                                 
+                                                                                                                               
+// ┌──────────────────┐                         ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                         │Event Bus│          │Client│          │OCF Server│                          
+// └────────┬─────────┘                         └─────────┘          └──────┘          └──────────┘                          
+//          │                                        │                  │                   │  ╔════════════════════════════╗
+//          │                                        │                  │                   │  ║OCF Server is disconnected ░║
+//          │                                        │                  │                   │  ║from the plgd cloud         ║
+//          │                                        │                  │                   │  ╚════════════════════════════╝
+//         ┌┴┐               UpdateDeviceMetadataRequest               ┌┴┐                  │                                
+//         │ │ <───────────────────────────────────────────────────────│ │                  │                                
+//         │ │                                       │                 │ │                  │                                
+//         │ │      DeviceMetadataUpdatePending      │                 │ │                  │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │                                
+//         └┬┘                                       │                 └┬┘                  │                                
+//          │                UpdateDeviceMetadataResponse               │                   │                                
+//          │ ──────────────────────────────────────────────────────────>                   │                                
+//          │                                        │                  │                   │                                
+//         ┌┴┐           CancelPendingMetadataUpdatesRequest           ┌┴┐                  │                                
+//         │ │ <───────────────────────────────────────────────────────│ │                  │                                
+//         │ │                                       │                 │ │                  │                                
+//         │ │ DeviceMetadataUpdated (Canceled=true) │                 │ │                  │                                
+//         │ │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ >│                 │ │                  │                                
+//         └┬┘                                       │                 └┬┘                  │                                
+//          │            CancelPendingMetadataUpdatesResponse           │                   │                                
+//          │ ──────────────────────────────────────────────────────────>                   │                                
+// ┌────────┴─────────┐                         ┌─────────┐          ┌──────┐          ┌──────────┐                          
+// │Resource Aggregate│                         │Event Bus│          │Client│          │OCF Server│                          
+// └──────────────────┘                         └─────────┘          └──────┘          └──────────┘                          
+
+message CancelPendingMetadataUpdatesRequest {
+    string device_id = 1;
+    repeated string correlation_id_filter = 2; // empty array means all.
+    CommandMetadata command_metadata = 100;
+}
+
+message CancelPendingMetadataUpdatesResponse {
+    repeated string correlation_ids = 1; // list of cancelled correlation id
+    AuditContext audit_context = 100;
+}

@@ -53,17 +53,6 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 			},
 			want: []*pb.PendingCommand{
 				{
-					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
-						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
-							DeviceId: deviceID,
-							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
-					},
-				},
-				{
 					Command: &pb.PendingCommand_ResourceRetrievePending{
 						ResourceRetrievePending: &events.ResourceRetrievePending{
 							ResourceId: &commands.ResourceId{
@@ -263,29 +252,6 @@ func TestRequestHandler_GetDevicePendingCommands(t *testing.T) {
 							ResourceId: &commands.ResourceId{
 								DeviceId: deviceID,
 								Href:     "/oic/d",
-							},
-							AuditContext: commands.NewAuditContext("1", ""),
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "filter device metadata update",
-			args: args{
-				req: &pb.GetPendingCommandsRequest{
-					DeviceIdFilter: []string{deviceID},
-					CommandFilter:  []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_DEVICE_METADATA_UPDATE},
-				},
-				accept: uri.ApplicationProtoJsonContentType,
-			},
-			want: []*pb.PendingCommand{
-				{
-					Command: &pb.PendingCommand_DeviceMetadataUpdatePending{
-						DeviceMetadataUpdatePending: &events.DeviceMetadataUpdatePending{
-							DeviceId: deviceID,
-							UpdatePending: &events.DeviceMetadataUpdatePending_ShadowSynchronization{
-								ShadowSynchronization: commands.ShadowSynchronization_DISABLED,
 							},
 							AuditContext: commands.NewAuditContext("1", ""),
 						},

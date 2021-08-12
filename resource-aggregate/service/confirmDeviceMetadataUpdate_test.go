@@ -89,7 +89,7 @@ func TestAggregateHandle_ConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.StatusHref), 10, eventstore, service.DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
-	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), testMakeUpdateDeviceMetadataRequest(deviceID, nil, commands.ShadowSynchronization_DISABLED, time.Hour))
+	_, err = ag.UpdateDeviceMetadata(kitNetGrpc.CtxWithIncomingOwner(ctx, user0), testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range test {
@@ -180,7 +180,7 @@ func TestRequestHandler_ConfirmDeviceMetadataUpdate(t *testing.T) {
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
-	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, nil, commands.ShadowSynchronization_DISABLED, time.Hour))
+	_, err = requestHandler.UpdateDeviceMetadata(ctx, testMakeUpdateDeviceMetadataRequest(deviceID, "", nil, commands.ShadowSynchronization_DISABLED, time.Hour))
 	require.NoError(t, err)
 
 	for _, tt := range test {

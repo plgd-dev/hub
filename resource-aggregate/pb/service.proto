@@ -20,4 +20,6 @@ service ResourceAggregate {
   rpc ConfirmResourceCreate (ConfirmResourceCreateRequest) returns (ConfirmResourceCreateResponse) {}
   rpc UpdateDeviceMetadata (UpdateDeviceMetadataRequest) returns (UpdateDeviceMetadataResponse) {}
   rpc ConfirmDeviceMetadataUpdate (ConfirmDeviceMetadataUpdateRequest) returns (ConfirmDeviceMetadataUpdateResponse) {}
+  rpc CancelPendingMetadataUpdates(CancelPendingMetadataUpdatesRequest) returns (CancelPendingMetadataUpdatesResponse) {}
+  rpc CancelPendingCommands(CancelPendingCommandsRequest) returns (CancelPendingCommandsResponse) {}
 }

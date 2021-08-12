@@ -223,6 +223,47 @@
         ]
       }
     },
+    "/api/v1/devices/{deviceId}/pending-metadata-updates": {
+      "delete": {
+        "summary": "Cancels device metadata updates.",
+        "operationId": "GrpcGateway_CancelPendingMetadataUpdates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cloudgrpcgatewaypbCancelPendingCommandsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "correlationIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Resource Directory"
+        ]
+      }
+    },
     "/api/v1/devices/{resourceId.deviceId}/resource-links/{resourceId.href}": {
       "delete": {
         "summary": "Delete resource at the device.",
@@ -565,6 +606,51 @@
         "tags": [
           "Resource Directory"
         ]
+      },
+      "delete": {
+        "summary": "Cancels resource commands.",
+        "operationId": "GrpcGateway_CancelPendingCommands",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cloudgrpcgatewaypbCancelPendingCommandsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "resourceId.deviceId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "resourceId.href",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "correlationIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Resource Directory"
+        ]
       }
     },
     "/api/v1/resource-links": {
@@ -864,6 +950,17 @@
         "RESOURCE_CHANGED"
       ],
       "default": "REGISTERED"
+    },
+    "cloudgrpcgatewaypbCancelPendingCommandsResponse": {
+      "type": "object",
+      "properties": {
+        "correlationIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "cloudgrpcgatewaypbContent": {
       "type": "object",
@@ -1224,6 +1321,9 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/pbEventMetadata"
+        },
+        "canceled": {
+          "type": "boolean"
         }
       }
     },
@@ -1721,7 +1821,8 @@
         "ACCEPTED",
         "ERROR",
         "METHOD_NOT_ALLOWED",
-        "CREATED"
+        "CREATED",
+        "CANCELED"
       ],
       "default": "UNKNOWN"
     }

@@ -111,12 +111,21 @@ func splitURIPath(requestURI, prefix string) []string {
 
 func resourcePendingCommandsMatcher(r *http.Request, rm *router.RouteMatch) bool {
 	paths := splitURIPath(r.RequestURI, uri.Devices)
-	if len(paths) > 2 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
+	if len(paths) > 3 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
 		rm.Vars[uri.DeviceIDKey] = paths[0]
 		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:len(paths)-1], "/"), "?")[0]
+		return true
+	}
+	if len(paths) > 4 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-2], uri.PendingCommandsPathKey) {
+		if rm.Vars == nil {
+			rm.Vars = make(map[string]string)
+		}
+		rm.Vars[uri.DeviceIDKey] = paths[0]
+		rm.Vars[uri.ResourceHrefKey] = "/" + strings.Join(paths[2:len(paths)-2], "/")
+		rm.Vars[uri.CorrelationIDKey] = strings.Split(paths[len(paths)-1], "?")[0]
 		return true
 	}
 	return false
@@ -184,10 +193,13 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.HandleFunc(uri.AliasDeviceResourceLinks, requestHandler.getDeviceResourceLinks).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDeviceResources, requestHandler.getDeviceResources).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevicePendingCommands, requestHandler.getDevicePendingCommands).Methods(http.MethodGet)
+	r.HandleFunc(uri.AliasDevicePendingMetadataUpdates, requestHandler.getPendingMetadataUpdates).Methods(http.MethodGet)
+	r.HandleFunc(uri.AliasDevicePendingMetadataUpdate, requestHandler.cancelPendingMetadataUpdate).Methods(http.MethodDelete)
 	r.HandleFunc(uri.AliasDeviceEvents, requestHandler.getEvents).Methods(http.MethodGet)
 
 	r.PathPrefix(uri.Devices).Methods(http.MethodPost).MatcherFunc(resourceLinksMatcher).HandlerFunc(requestHandler.createResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.getResourcePendingCommands)
+	r.PathPrefix(uri.Devices).Methods(http.MethodDelete).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.CancelPendingCommands)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.getResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodPut).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.updateResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceEventsMatcher).HandlerFunc(requestHandler.getEvents)
