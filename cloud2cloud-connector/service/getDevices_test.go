@@ -89,27 +89,27 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 	req := test.NewHTTPRequest(http.MethodPost, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp := test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer func(r *http.Response) {
+		_ = r.Body.Close()
+	}(resp)
 	var linkCloud store.LinkedCloud
 	err = json.ReadFrom(resp.Body, &linkCloud)
 	require.NoError(t, err)
 	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp = test.DoHTTPRequest(t, req)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer func(r *http.Response) {
+		_ = r.Body.Close()
+	}(resp)
 
 	// for pulling
 	time.Sleep(time.Second * 10)
 
 	req = test.NewHTTPRequest(http.MethodGet, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 	resp = test.DoHTTPRequest(t, req)
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer func(r *http.Response) {
+		_ = r.Body.Close()
+	}(resp)
 	b, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	fmt.Println(string(b))
@@ -118,9 +118,9 @@ func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents s
 		req := test.NewHTTPRequest(http.MethodDelete, "https://"+c2cConnectorTest.C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(oauthTest.GetServiceToken(t)).Build(ctx, t)
 		resp := test.DoHTTPRequest(t, req)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
-		defer func() {
-			_ = resp.Body.Close()
-		}()
+		defer func(r *http.Response) {
+			_ = r.Body.Close()
+		}(resp)
 
 		cloud2()
 		shutdownDevSim()
