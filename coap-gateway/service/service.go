@@ -139,7 +139,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		return nil, fmt.Errorf("cannot create connection to resource directory: %w", err)
 	}
 	resourceSubscriber.AddCloseFunc(func() {
-		err := asConn.Close()
+		err := rdConn.Close()
 		if err != nil {
 			if kitNetGrpc.IsContextCanceled(err) {
 				return
