@@ -11,7 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/kit/log"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -24,14 +24,16 @@ import (
 
 //Server handle HTTP request
 type Server struct {
-	server  *http.Server
-	cfg     Config
-	handler *RequestHandler
-	ln      net.Listener
-	rdConn  *grpc.ClientConn
-	raConn  *grpc.ClientConn
-	cancel  context.CancelFunc
-	doneWg  *sync.WaitGroup
+	server     *http.Server
+	cfg        Config
+	handler    *RequestHandler
+	ln         net.Listener
+	rdConn     *grpc.ClientConn
+	raConn     *grpc.ClientConn
+	subStore   *mongodb.Store
+	subscriber *nats.Subscriber
+	cancel     context.CancelFunc
+	doneWg     *sync.WaitGroup
 }
 
 type DialCertManager = interface {
@@ -48,7 +50,7 @@ func New(
 	dialCertManager DialCertManager,
 	listenCertManager ListenCertManager,
 	authInterceptor kitNetHttp.Interceptor,
-	subscriptionStore store.Store,
+	subscriptionStore *mongodb.Store,
 ) *Server {
 	dialTLSConfig := dialCertManager.GetClientTLSConfig()
 	listenTLSConfig := listenCertManager.GetServerTLSConfig()
@@ -63,6 +65,9 @@ func New(
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
+	defer func() {
+		oauthMgr.Close()
+	}()
 
 	rdConn, err := grpc.Dial(config.ResourceDirectoryAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
@@ -78,7 +83,9 @@ func New(
 		log.Fatalf("cannot create goroutine pool: %v", err)
 	}
 
-	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) { log.Errorf("error occurs during receiving event: %v", err) }, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
+	resourceSubscriber, err := nats.NewSubscriber(config.Nats, pool.Submit, func(err error) {
+		log.Errorf("error occurs during receiving event: %v", err)
+	}, nats.WithTLS(dialCertManager.GetClientTLSConfig()))
 	if err != nil {
 		log.Fatalf("cannot create eventbus subscriber: %v", err)
 	}
@@ -100,6 +107,7 @@ func New(
 	if err != nil {
 		log.Fatalf("cannot create server: %v", err)
 	}
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -110,14 +118,16 @@ func New(
 	requestHandler := NewRequestHandler(rdClient, raClient, subMgr, emitEvent, config.OwnerClaim)
 
 	server := Server{
-		server:  NewHTTP(requestHandler, authInterceptor),
-		cfg:     config,
-		handler: requestHandler,
-		ln:      ln,
-		rdConn:  rdConn,
-		raConn:  raConn,
-		cancel:  cancel,
-		doneWg:  &wg,
+		server:     NewHTTP(requestHandler, authInterceptor),
+		cfg:        config,
+		handler:    requestHandler,
+		ln:         ln,
+		rdConn:     rdConn,
+		raConn:     raConn,
+		subStore:   subscriptionStore,
+		subscriber: resourceSubscriber,
+		cancel:     cancel,
+		doneWg:     &wg,
 	}
 
 	return &server
@@ -127,11 +137,15 @@ func New(
 func (s *Server) Serve() error {
 	defer func() {
 		s.doneWg.Wait()
+		s.subscriber.Close()
+		if err := s.subStore.Close(context.Background()); err != nil {
+			log.Errorf("failed to close subscription store: %w", err)
+		}
 		if err := s.rdConn.Close(); err != nil {
-			log.Errorf("failed to close ResourceDirectory connection: %v", err)
+			log.Errorf("failed to close ResourceDirectory connection: %w", err)
 		}
 		if err := s.raConn.Close(); err != nil {
-			log.Errorf("failed to close ResourceAggregate connection: %v", err)
+			log.Errorf("failed to close ResourceAggregate connection: %w", err)
 		}
 	}()
 	return s.server.Serve(s.ln)
