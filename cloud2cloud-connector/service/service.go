@@ -40,6 +40,7 @@ type Server struct {
 	dialCertManager   DialCertManager
 	listenCertManager ListenCertManager
 	db                connectorStore.Store
+	sub               *subscriber.Subscriber
 }
 
 type DialCertManager = interface {
@@ -93,6 +94,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create oauth manager: %v", err)
 	}
+	defer func() {
+		oauthMgr.Close()
+	}()
 
 	raConn, err := grpc.Dial(config.ResourceAggregateAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(dialTLSConfig)),
@@ -192,6 +196,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		dialCertManager:   dialCertManager,
 		listenCertManager: listenCertManager,
 		db:                db,
+		sub:               sub,
 	}
 
 	return &server
@@ -200,6 +205,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 // Serve starts the service's HTTP server and blocks.
 func (s *Server) Serve() error {
 	defer func() {
+		s.sub.Close()
 		if err := s.raConn.Close(); err != nil {
 			log.Errorf("failed to close ResourceAggregate connection: %v", err)
 		}
