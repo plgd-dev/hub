@@ -109,7 +109,7 @@ func (a *Manager) Close() {
 func (a *Manager) shouldRefresh() bool {
 	/*
 		We cannot use time.Now().After(a.nextTokenRenewalTime ) because
-		golang using monotonic clock for comparision.
+		golang using monotonic clock for comparison.
 
 		So if we have 2 times:
 		// update time on PC to future eg: `date MMDDHHMM`

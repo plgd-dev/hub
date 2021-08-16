@@ -35,7 +35,7 @@ type Operations interface {
 	DeleteResource(ctx context.Context, event *events.ResourceDeletePending) error
 	CreateResource(ctx context.Context, event *events.ResourceCreatePending) error
 	UpdateDeviceMetadata(ctx context.Context, event *events.DeviceMetadataUpdatePending) error
-	// Fatal error occured during reconnection to the server. Client shall call DeviceSubscriber.Close().
+	// Fatal error occurred during reconnection to the server. Client shall call DeviceSubscriber.Close().
 	OnDeviceSubscriberReconnectError(err error)
 }
 
