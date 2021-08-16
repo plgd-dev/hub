@@ -256,7 +256,7 @@ let initialized = false
 const handler = () => {}
 
 WebSocketEventClient.onOpen = () => {
-  // On open is called even on a successfull reconnect.
+  // On open is called even on a successful reconnect.
   // We don't want to manually re-subscribe to a message, since this WS client is doing it automatically.
   // (When reconnected, all registered messages - Object.keys(this.events) - are sent to the websocket to recreate the subscription,
   // the handlers are untouched, still registered, no need to take action there).

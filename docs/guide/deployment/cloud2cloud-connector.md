@@ -41,7 +41,7 @@ Follow [OCF Cloud API For Cloud Services Specification](https://openconnectivity
 | `-` | `SERVICE_RESUBSCRIBE_INTERVAL` | string | `try to resubscribe after interval to resource-directory when subscription not exist` | `"10s"` |
 | `-` | `SERVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | `url to get service access token via OAUTH client credential flow` | `""` |
 | `-` | `SERVICE_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
-| `-` | `SERVICE_OAUTH_CLIENT_SECRET` | string | `secrest for authentication to get access token` | `""` |
+| `-` | `SERVICE_OAUTH_CLIENT_SECRET` | string | `secret for authentication to get access token` | `""` |
 | `-` | `SERVICE_OAUTH_AUDIENCE` | string | `refer to the resource servers that should accept the token` | `""` |
 | `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
 | `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |

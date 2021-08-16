@@ -59,7 +59,7 @@ typedef uint64_t oc_clock_time_t;
 
 #define OC_MAX_NUM_COLLECTIONS (1)
 
-/* Common paramters */
+/* Common parameters */
 /* Prescriptive lower layers MTU size, enable block-wise transfers */
 #define OC_BLOCK_WISE_SET_MTU (700)
 

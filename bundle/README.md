@@ -20,7 +20,7 @@ docker pull plgd/bundle:vnext
 ```
 
 ## Configuration
-Image can be configured via enviroment variables as argument `-e ENV=VALUE` of command `docker`:
+Image can be configured via environment variables as argument `-e ENV=VALUE` of command `docker`:
 | ENV variable | Type | Description | Default |
 | --------- | ----------- | ------- | ------- |
 | `FQDN` | string | public FQDN for bundle | `"localhost"` |

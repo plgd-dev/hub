@@ -122,7 +122,7 @@ export const BrowserNotificationsContainer = () => {
         silent: true,
       })
 
-      // After aproximately 5 seonds the notification disappears, so lets decrement the counter.
+      // After approximately 5 seconds the notification disappears, so lets decrement the counter.
       decrementTimer = setTimeout(() => {
         decrementCounter()
       }, BROWSER_NOTIFICATION_HIDE_TIME)

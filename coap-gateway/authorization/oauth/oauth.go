@@ -32,7 +32,7 @@ func (a AuthStyle) ToOAuth2() oauth2.AuthStyle {
 	return oauth2.AuthStyleAutoDetect
 }
 
-//TODO cleanup settings AccessType, ResponseType, ResponseMode, AuthStyle - be carefull it is used by c2c.
+//TODO cleanup settings AccessType, ResponseType, ResponseMode, AuthStyle - be careful it is used by c2c.
 type Config struct {
 	ClientID     string    `yaml:"clientID" json:"clientID"`
 	ClientSecret string    `yaml:"clientSecret" json:"clientSecret"`

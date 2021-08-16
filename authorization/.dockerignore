@@ -1,5 +1,5 @@
 cmd/authorization-web/authorization-web
-cmd/authorization-sevice/authorization-sevice
+cmd/authorization-service/authorization-service
 
 # Binaries for programs and plugins
 *.exe

@@ -15,7 +15,7 @@ type Config struct {
 	MaxIdleTime time.Duration `yaml:"maxIdleTime" json:"maxIdleTime"`
 }
 
-// SetDefaults set zero values to defautls.
+// SetDefaults set zero values to defaults.
 func (c *Config) Validate() error {
 	if c.GoPoolSize <= 0 {
 		return fmt.Errorf("goPoolSize('%v')", c.GoPoolSize)

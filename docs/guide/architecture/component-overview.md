@@ -1,7 +1,7 @@
 # Component Overview
 ## CoAP Gateway
 The CoAP gateway acts as a CoAP Client, communicating with IoT devices - CoAP Servers following the [OCF specification](https://openconnectivity.org/developer/specifications/). As the component diagram describes, responsibilities of the gateway are:
-- handle and maintain TCP connections comming from devices
+- handle and maintain TCP connections coming from devices
 - forward [authentication and authorization requests (see 5.5.5)](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.1.pdf#page=15)  to the Authorization Service
 - process device CRUDN operations which are by its nature forwarded to the [Resource Aggregate](#resource-aggregate) or [Resource Directory](#resource-directory)
 
@@ -106,7 +106,7 @@ return Signed up\n(Access Token, Refresh Token, ...)
 
 @enduml
 
-Successful registration to the plgd.dev is followed by authorization request called Sign In. Sign In is required right after sucessfully established TCP connection to the CoAP Gateway, otherwise the device won't be reachable - marked as online. Other device requests are blocked as well unless the device successfully Signs In. Successful autorization precedes validation of the [Access Token](https://tools.ietf.org/html/rfc6749#section-1.4).
+Successful registration to the plgd.dev is followed by authorization request called Sign In. Sign In is required right after successfully established TCP connection to the CoAP Gateway, otherwise the device won't be reachable - marked as online. Other device requests are blocked as well unless the device successfully Signs In. Successful authorization precedes validation of the [Access Token](https://tools.ietf.org/html/rfc6749#section-1.4).
 
 #### Device Authorization
 <br/>
@@ -126,8 +126,8 @@ return Signed In
 
 @enduml
 
-Device capabilities are represented in form of resources. Configuration if the resource is published (remotely accessible over plgd.cloud) or not is part of the [IoTivity-Lite API](https://github.com/iotivity/iotivity-lite/blob/master/include/oc_cloud.h#L128). If the resource is publised or not is up to the device vendor which might want to have some resources accessible only on the proximity network. Resources information which are published to the plgd.cloud provides insights into device capabilities. Clients are interested not only in the resource href - location on which they can request resource representation, but mainly in the resource type as this allows them to filter only capabilities they are able to control. 
-As an example, if you have an client application which controls the light, it will search the Resource Directory for all lights user have at home - filter resources by resource type `oic.r.switch.binary`. Other resources like temperature, moisture, etc. are not of any interest, as application doesn't understand their representation. 
+Device capabilities are represented in form of resources. Configuration if the resource is published (remotely accessible over plgd.cloud) or not is part of the [IoTivity-Lite API](https://github.com/iotivity/iotivity-lite/blob/master/include/oc_cloud.h#L128). If the resource is publised or not is up to the device vendor which might want to have some resources accessible only on the proximity network. Resources information which are published to the plgd.cloud provides insights into device capabilities. Clients are interested not only in the resource href - location on which they can request resource representation, but mainly in the resource type as this allows them to filter only capabilities they are able to control.
+As an example, if you have an client application which controls the light, it will search the Resource Directory for all lights user have at home - filter resources by resource type `oic.r.switch.binary`. Other resources like temperature, moisture, etc. are not of any interest, as application doesn't understand their representation.
 Information which is published doesn't contain resource representation, only resource information as described [here (see 6.1.3.2.2)](https://openconnectivity.org/specs/OCF_Device_To_Cloud_Services_Specification_v2.2.0.pdf#page=21).
 
 ::: details Resource Publish Payload
@@ -165,7 +165,7 @@ Information which is published doesn't contain resource representation, only res
 :::
 
 Resource publish request is forwarded to the [Resource Aggregate](#resource-aggregate) which registers a new resource. This process makes the resource discoverable.
-The plgd.cloud starts observation of **every successfuly published resource** by sending the [OBSERVE request](https://tools.ietf.org/html/rfc7641#section-1.2). Each of the received notification from the device is send to the [Resource Aggregate](#resource-aggregate) to record the change.
+The plgd.cloud starts observation of **every successfully published resource** by sending the [OBSERVE request](https://tools.ietf.org/html/rfc7641#section-1.2). Each of the received notification from the device is send to the [Resource Aggregate](#resource-aggregate) to record the change.
 
 As the response to the resource observation request contains actual [representation](https://tools.ietf.org/html/rfc7641#section-1.1), CoAP Gateway doesn't have to pull the data at all. Additional responses called [notifications](https://tools.ietf.org/html/rfc7641#section-3.2) are by the device send whenever the representation of the device changes.
 
@@ -351,7 +351,7 @@ plgd cloud uses [NATS](https://nats.io) messaging system as it's event bus.
 
 ## Event Store
 plgd cloud persist events in an event store, which is a database of events. The store has an API for adding and retrieving device's events. Events needs to be versioned and written in a correct order. To achieve the consistency, optimistic concurrency control method is applied during each write.
-After the event is successfuly written into the event store, it's distributed to the event bus which notifies all subscribers about the change asynchronously.
+After the event is successfully written into the event store, it's distributed to the event bus which notifies all subscribers about the change asynchronously.
 
 The plgd cloud defines an [EventStore](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/cqrs/eventstore/eventstore.go#L23) interface what allows integration of different technologies to store the events. During the last 2 years the project evaluated multiple technologies for both EventStore and EventBus:
 - CockroachDB

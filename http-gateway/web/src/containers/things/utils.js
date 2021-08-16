@@ -31,7 +31,7 @@ export const getDeviceChangeResourceHref = links =>
   links.find(link => link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON))
     ?.href
 
-// Handle the errors occured during resource update
+// Handle the errors occurred during resource update
 export const handleUpdateResourceErrors = (error, isOnline, _) => {
   const errorMessage = getApiErrorMessage(error)
 
@@ -55,7 +55,7 @@ export const handleUpdateResourceErrors = (error, isOnline, _) => {
   }
 }
 
-// Handle the errors occured during resource create
+// Handle the errors occurred during resource create
 export const handleCreateResourceErrors = (error, isOnline, _) => {
   const errorMessage = getApiErrorMessage(error)
 
@@ -79,7 +79,7 @@ export const handleCreateResourceErrors = (error, isOnline, _) => {
   }
 }
 
-// Handle the errors occured shadowSynchronization set
+// Handle the errors occurred shadowSynchronization set
 export const handleShadowSynchronizationErrors = (error, isOnline, _) => {
   const errorMessage = getApiErrorMessage(error)
 
@@ -97,14 +97,14 @@ export const handleShadowSynchronizationErrors = (error, isOnline, _) => {
   }
 }
 
-// Handle the errors occured during resource fetch
+// Handle the errors occurred during resource fetch
 export const handleFetchResourceErrors = (error, _) =>
   showErrorToast({
     title: _(t.resourceRetrieveError),
     message: getApiErrorMessage(error),
   })
 
-// Handle the errors occured during resource fetch
+// Handle the errors occurred during resource fetch
 export const handleDeleteResourceErrors = (error, isOnline, _) => {
   const errorMessage = getApiErrorMessage(error)
 

@@ -114,7 +114,7 @@ export const ThingsDetailsPage = () => {
 
   // Fetches the resource and sets its values to the modal data, which opens the modal.
   const openUpdateModal = async ({ href, currentInterface = '' }) => {
-    // If there is already a fetch for a resource, disable the next attempt for a fetch untill the previous fetch finishes
+    // If there is already a fetch for a resource, disable the next attempt for a fetch until the previous fetch finishes
     if (loadingResource) {
       return
     }
@@ -153,7 +153,7 @@ export const ThingsDetailsPage = () => {
 
   // Fetches the resources supported types and sets its values to the modal data, which opens the modal.
   const openCreateModal = async href => {
-    // If there is already a fetch for a resource, disable the next attempt for a fetch untill the previous fetch finishes
+    // If there is already a fetch for a resource, disable the next attempt for a fetch until the previous fetch finishes
     if (loadingResource) {
       return
     }

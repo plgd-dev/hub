@@ -309,7 +309,7 @@ paths:
         - 'Resources'
       summary: 'Retrieve a resource'
       description: |
-        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration. 
+        The plgd cloud builds an up to date [Shadow](https%3A%2F%2Fplgd.dev%2Ffeatures%2Fdevice-shadow%2F) for each published resource. Retrieving it's content using this API returnes an eventually consistent shadow content of the resource. There is a possibility to bypass the shadow by setting the query parameter `shadow` to `false` or by setting the interface query parameter, which allows you to set the command expiration.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -338,7 +338,7 @@ paths:
         - 'Resources'
       summary: 'Update a resource'
       description: |
-        Resource update request is send directly to the device, carrying values which should be modified. Update confirmation doesn't have to carry updated content, this is up to the device implementation if it replies with an up to date values. If subscribed to the websocket, after the update command is successfuly accepted by the device, event `RESOURCE_UPDATED` with matching `correlationId` is emmited. At the moment values are applied / changed on the device (e.g. resource update might trigger some processing, which was successfuly requested but operation is in progress) event `RESOURCE_CHANGED` is emmited and resource shadow updated.
+        Resource update request is send directly to the device, carrying values which should be modified. Update confirmation doesn't have to carry updated content, this is up to the device implementation if it replies with an up to date values. If subscribed to the websocket, after the update command is successfully accepted by the device, event `RESOURCE_UPDATED` with matching `correlationId` is emitted. At the moment values are applied / changed on the device (e.g. resource update might trigger some processing, which was successfully requested but operation is in progress) event `RESOURCE_CHANGED` is emitted and resource shadow updated.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -381,7 +381,7 @@ paths:
         - $ref: '#/components/parameters/deviceId'
         - $ref: '#/components/parameters/timeToLive'
       requestBody:
-        description: 'Device metadata change successfuly requested. If the device is online, change is immediately applied. If the device is offline, pending command is registered and executed at the moment device comes online.'
+        description: 'Device metadata change successfully requested. If the device is online, change is immediately applied. If the device is offline, pending command is registered and executed at the moment device comes online.'
         content:
           application/json:
             schema:
@@ -391,7 +391,7 @@ paths:
         required: true
       responses:
         200:
-          description: 'Metadata successfuly updated.'
+          description: 'Metadata successfully updated.'
         400:
           $ref: '#/components/responses/badRequest'
         401:
