@@ -426,7 +426,7 @@ paths:
     get:
       tags:
         - 'Pending Commands'
-      summary: 'Get all resource's pending commands for a device'
+      summary: 'Get all resource''s pending commands for a device'
       description: |
         Retrieve all resource's pending commands for a single device. Alternative is to call 'Get all pending commands' with `deviceIdFilter` and `commandFilter` query parameters.
       parameters:
