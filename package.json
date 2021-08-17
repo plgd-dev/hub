@@ -9,9 +9,9 @@
         "docs:build": "vuepress build docs"
     },
     "dependencies": {
-        "markdown-it-imsize": "^2.0.1",
-        "markdown-it-plantuml": "^1.4.1",
+        "markdown-it-imsize": "2.0.1",
+        "markdown-it-plantuml": "1.4.1",
         "vuepress-bar": "0.3.1",
-        "vuepress-plugin-code-copy": "^1.0.6"
+        "vuepress-plugin-code-copy": "1.0.6"
     }
 }
