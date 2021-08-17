@@ -41,6 +41,9 @@ func getUserDevices(tx persistence.PersistenceTx, owner string) ([]string, error
 
 func (s *Service) publishDevicesUnregistered(ctx context.Context, owner string, deviceIDs []string) error {
 	v := events.Event{
+		// TODO: verify that s.ownerClaim and sub are filled in JWToken
+		//	- use s.ownerClaim value from JWT for DevicesUnregistered.Owner
+		//	- use 'sub' from JWT for AuditContext
 		Type: &events.Event_DevicesUnregistered{
 			DevicesUnregistered: &events.DevicesUnregistered{
 				Owner:     owner,
@@ -75,6 +78,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 	defer tx.Close()
 
 	owner := request.UserId
+	// TODO: always use value from JWT, remove UserId from pb.DeleteDevicesRequest
 	if owner == "" {
 		if token, err := grpc_auth.AuthFromMD(ctx, "bearer"); err == nil {
 			uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
@@ -87,8 +91,6 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 	if owner == "" {
 		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid UserId"))
 	}
-
-	// TODO validate jwt token -> only jwt token is supported
 
 	var deviceIds []string
 	if len(request.DeviceIds) == 0 {

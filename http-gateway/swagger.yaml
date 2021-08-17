@@ -52,9 +52,9 @@ paths:
     delete:
       tags:
         - 'Devices'
-      summary: 'Delete owned devices'
+      summary: 'Delete devices'
       description: |
-        Request to delete selected or all owned devices.
+        Request to delete selected or all devices.
       parameters:
         - $ref: '#/components/parameters/deviceIdFilter'
       security:
@@ -115,7 +115,7 @@ paths:
         - 'Devices'
       summary: 'Delete device by ID'
       description: |
-        Delete a single device by ID. Alternative is to call 'Delete owned devices' with a `deviceIdFilter` filter query parameter.
+        Delete a single device by ID. Alternative is to call 'Delete devices' with a `deviceIdFilter` filter query parameter.
       parameters:
         - $ref: '#/components/parameters/deviceId'
       security:

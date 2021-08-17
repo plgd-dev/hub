@@ -19,6 +19,9 @@ import (
 const serviceOwner = "*"
 
 func (s *Service) publishDevicesRegistered(ctx context.Context, owner string, deviceID []string) error {
+	// TODO: verify that s.ownerClaim and sub are filled in JWToken
+	//	- use s.ownerClaim value from JWT for DevicesUnregistered.Owner
+	//	- use 'sub' from JWT for AuditContext
 	v := events.Event{
 		Type: &events.Event_DevicesRegistered{
 			DevicesRegistered: &events.DevicesRegistered{
@@ -54,6 +57,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	defer tx.Close()
 
 	owner := request.UserId
+	// TODO: always use value from JWT, remove UserId from pb.AddDeviceRequest
 	if owner == "" {
 		if token, err := grpc_auth.AuthFromMD(ctx, "bearer"); err == nil {
 			uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
