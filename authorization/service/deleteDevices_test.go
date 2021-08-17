@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
@@ -142,6 +143,8 @@ func TestService_DeleteDevice(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
+				sort.Strings(tt.want.DeviceIds)
+				sort.Strings(got.DeviceIds)
 				require.Equal(t, tt.want, got)
 			}
 		})

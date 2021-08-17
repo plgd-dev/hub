@@ -306,18 +306,18 @@ participant "Gateway" as Gateway
 participant "Resource Aggregate" as ResourceAggregate
 participant "Authorization Server" as AuthServer
 
-activate ResourceAggregate
+Server -> Gateway : [DELETE]
 activate Server
 activate Gateway
-activate AuthServer
-Server -> Gateway : DeleteDevicesRequest
 Gateway-> ResourceAggregate : DeleteDevicesRequest
+activate ResourceAggregate
 ResourceAggregate -> Gateway : DeleteDevicesResponse
-Gateway -> AuthServer : DeleteDevicesRequest
-AuthServer -> Gateway : DeleteDevicesResponse
-Gateway -> Server : DeleteDevicesResponse
-deactivate AuthServer
-deactivate Gateway
 deactivate ResourceAggregate
+Gateway -> AuthServer : DeleteDevicesRequest
+activate AuthServer
+AuthServer -> Gateway : DeleteDevicesResponse
+deactivate AuthServer
+Gateway -> Server : OK
+deactivate Gateway
 deactivate Server
 @enduml
