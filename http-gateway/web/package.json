@@ -24,7 +24,7 @@
     "react-bootstrap": "^1.6.1",
     "react-dom": "^17.0.2",
     "react-helmet": "^6.1.0",
-    "react-intl": "^5.20.4",
+    "react-intl": "5.20.4",
     "react-intl-po": "^2.2.2",
     "react-redux": "^7.2.4",
     "react-router-dom": "^5.2.0",
@@ -38,8 +38,8 @@
     "web-vitals": "^0.2.4"
   },
   "devDependencies": {
-    "@formatjs/cli": "^3.2.0",
-    "babel-plugin-formatjs": "^9.2.5",
+    "@formatjs/cli": "3.2.0",
+    "babel-plugin-formatjs": "9.2.5",
     "react-hot-loader": "^4.13.0",
     "shelljs": "^0.8.4"
   },
