@@ -37,6 +37,12 @@ jobs:
           go get github.com/kisielk/errcheck@latest
           errcheck ./...
 
+      - name: Install and run gocyclo
+        run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
+          go get github.com/fzipp/gocyclo/cmd/gocyclo@latest
+          gocyclo -over 15 -ignore ".pb(.gw)?.go$|_test.go$|wsproxy" . || echo "gocyclo detected too complex functions"
+
       - name: Install and run misspell
         run: |
           # check misspelling in all files in repository
