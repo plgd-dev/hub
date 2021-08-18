@@ -301,15 +301,18 @@ deactivate ResourceAggregate
 @startuml
 title "Delete Devices"
 
-entity "OCF Server" as Server
+entity "Client" as Client
 participant "Gateway" as Gateway
 participant "Resource Aggregate" as ResourceAggregate
 participant "Authorization Server" as AuthServer
+control "Event Bus" as Bus
+participant "CoAP Gateway" as CGateway
+entity "OCF Server" as Server
 
-Server -> Gateway : [DELETE]
-activate Server
+Client -> Gateway: DeleteDevicesRequest
+activate Client
 activate Gateway
-Gateway-> ResourceAggregate : DeleteDevicesRequest
+Gateway -> ResourceAggregate : DeleteDevicesRequest
 activate ResourceAggregate
 ResourceAggregate -> Gateway : DeleteDevicesResponse
 deactivate ResourceAggregate
@@ -317,7 +320,11 @@ Gateway -> AuthServer : DeleteDevicesRequest
 activate AuthServer
 AuthServer -> Gateway : DeleteDevicesResponse
 deactivate AuthServer
-Gateway -> Server : OK
+AuthServer --> Bus: DevicesDeleted
+Gateway -> Client: DeleteDevicesResponse
 deactivate Gateway
-deactivate Server
+deactivate Client
+Bus --> CGateway: DevicesDeleted
+CGateway -> Server : Disconnect
+destroy Server
 @enduml
