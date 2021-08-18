@@ -1,4 +1,5 @@
 # gRPC Gateway
+
 gRPC Gateway exposes the client's gRPC API to manage the user's devices.
 
 ## Docker Image
@@ -8,18 +9,21 @@ docker pull plgd/grpc-gateway:latest
 ```
 
 ## Docker Run
+
 ### How to make certificates
+
 Before you run docker image of plgd/grpc-gateway, you make sure certificates exists on `.tmp/certs` folder.
 If not exists, you can create certificates from plgd/bundle image by following step only once.
+
 ```bash
 # Create local folder for certificates and run plgd/bundle image to execute shell.
 mkdir -p $(pwd).tmp/certs
 docker run -it \
-	--network=host \
-	-v $(pwd)/.tmp/certs:/certs \
-	-e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
-	--entrypoint /bin/bash \
-	plgd/bundle:latest
+  --network=host \
+  -v $(pwd)/.tmp/certs:/certs \
+  -e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
+  --entrypoint /bin/bash \
+  plgd/bundle:latest
 
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
@@ -28,15 +32,18 @@ certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outK
 # Exit shell.
 exit
 ```
+
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-http.crt	http.key	root_ca.crt	root_ca.key
+http.crt http.key root_ca.crt root_ca.key
 ```
 
 ### How to get configuration file
+
 A configuration template is available on [grpc-gateway/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/grpc-gateway/config.yaml).
 You can also see `config.yaml` configuration file on the `grpc-gateway` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
+
 ```bash
 # Copy & paste configuration template from the link and save the file named `grpc-gateway.yaml` on the local folder.
 vi grpc-gateway.yaml
@@ -45,11 +52,13 @@ vi grpc-gateway.yaml
 curl https://github.com/plgd-dev/cloud/blob/v2/grpc-gateway/config.yaml --output grpc-gateway.yaml
 ```
 
-### Edit configuration file 
+### Edit configuration file
+
 You can edit configuration file such as server port, certificates, OAuth provider and so on.
-Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
+Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
 
 See an example of address, tls, event bus/store and OAuth config on the followings.
+
 ```yaml
 ...
 apis:
@@ -69,6 +78,14 @@ apis:
           certFile: "/data/certs/http.crt"
 ...
 clients:
+  authorizationServer:
+    grpc:
+      address: "localhost:9081"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
   eventBus:
     nats:
       url: "nats://localhost:4222"
@@ -104,17 +121,20 @@ clients:
 ...
 ```
 
-### Run docker image 
+### Run docker image
+
 You can run plgd/grpc-gateway image using certificates and configuration file on the folder you made certificates.
+
 ```bash
 docker run -d --network=host \
-	--name=grpc-gateway \
-	-v $(pwd)/.tmp/certs:/data/certs \
-	-v $(pwd)/grpc-gateway.yaml:/data/grpc-gateway.yaml \
-	plgd/grpc-gateway:latest --config=/data/grpc-gateway.yaml
+  --name=grpc-gateway \
+  -v $(pwd)/.tmp/certs:/data/certs \
+  -v $(pwd)/grpc-gateway.yaml:/data/grpc-gateway.yaml \
+  plgd/grpc-gateway:latest --config=/data/grpc-gateway.yaml
 ```
 
 ## YAML Configuration
+
 ### Logging
 
 | Property | Type | Description | Default |
@@ -122,6 +142,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
+
 gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/grpc-gateway/pb/service_grpc.pb.go#L19).
 
 | Property | Type | Description | Default |
@@ -150,7 +171,23 @@ gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-d
 | `api.grpc.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
+### Authorization Server Client
+
+Client configurations to internally connect to Authorization Server service.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
+| `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.authorizationServer.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `clients.authorizationServer.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.authorizationServer.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+
 ### Event Bus
+
 Plgd cloud uses NATS messaging system as a event bus.
 
 | Property | Type | Description | Default |
@@ -165,6 +202,7 @@ Plgd cloud uses NATS messaging system as a event bus.
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Resource Aggregate Client
+
 Client configurations to internally connect to Resource Aggregate service.
 
 | Property | Type | Description | Default |
@@ -179,6 +217,7 @@ Client configurations to internally connect to Resource Aggregate service.
 | `clients.resourceAggregate.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Resource Directory Client
+
 Client configurations to internally connect to Resource Directory service.
 
 | Property | Type | Description | Default |
@@ -193,4 +232,3 @@ Client configurations to internally connect to Resource Directory service.
 | `clients.resourceDirectory.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
-

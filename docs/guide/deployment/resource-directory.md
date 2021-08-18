@@ -45,9 +45,9 @@ vi resource-directory.yaml
 curl https://github.com/plgd-dev/cloud/blob/v2/resource-directory/config.yaml --output resource-directory.yaml
 ```
 
-### Edit configuration file 
+### Edit configuration file
 You can edit configuration file such as server port, certificates, OAuth provider and so on.
-Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
+Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
 
 See an example of address, tls, event bus/store and OAuth config on the followings.
 ```yaml
@@ -102,7 +102,7 @@ clients:
 ...
 ```
 
-### Run docker image 
+### Run docker image
 You can run plgd/resource-directory image using certificates and configuration file on the folder you made certificates.
 ```bash
 docker run -d --network=host \
@@ -186,7 +186,7 @@ Client configurations to internally connect to Authorization Server service.
 | `clients.authorizationServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
 | `clients.authorizationServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
 | `clients.authorizationServer.ownerClaim` | string | `Owner claim of OAuth provider.` | `"sub"` |
-| `clients.authorizationServer.grpc.address` | string | `Authoriztion service address.` | `"127.0.0.1:9100"` |
+| `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
 | `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `clients.authorizationServer.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
@@ -216,7 +216,7 @@ Client configurations to internally connect to Authorization Server service.
 | `clients.authorizationServer.oauth.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `clients.authorizationServer.oauth.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
-::: tip Audience 
+::: tip Audience
 You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
 :::
 
@@ -230,7 +230,7 @@ This will be served by HTTP Gateway API as defined [here](https://github.com/plg
 | `publicConfiguration.tokenURL` | string | `URL where user can get OAuth token via implicit flow.` | `""` |
 | `publicConfiguration.authorizationURL` | string | `URL where user can get OAuth authorization code for the device.` | `""` |
 | `publicConfiguration.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
-| `publicConfiguration.signingServerAddress` | string | `Address of ceritificate authority for plgd-dev/sdk.` | `""` |  
+| `publicConfiguration.signingServerAddress` | string | `Address of ceritificate authority for plgd-dev/sdk.` | `""` |
 | `publicConfiguration.cloudID` | string | `Cloud ID which is stored in coap-gw certificate.` | `""` |
 | `publicConfiguration.cloudURL` | string | `Cloud URL for onboard device.` | `""` |
 | `publicConfiguration.cloudAuthorizationProvider` | string | `OAuth authorization provider for onboard device.` | `""` |
