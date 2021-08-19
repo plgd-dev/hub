@@ -21,11 +21,11 @@ import (
 )
 
 type ownerSubject struct {
-	handlers         map[uint64]func(e *events.Event)
-	subscription     *nats.Subscription
-	devices          strings.SortedSlice
-	validUntil       time.Time
-	devicesWasSynced bool
+	handlers      map[uint64]func(e *events.Event)
+	subscription  *nats.Subscription
+	devices       strings.SortedSlice
+	validUntil    time.Time
+	devicesSynced bool
 	sync.Mutex
 }
 
@@ -39,18 +39,13 @@ func newOwnerSubject(validUntil time.Time) *ownerSubject {
 
 func (d *ownerSubject) Handle(msg *nats.Msg) error {
 	var e events.Event
-	err := utils.Unmarshal(msg.Data, &e)
-	if err != nil {
+	if err := utils.Unmarshal(msg.Data, &e); err != nil {
 		return err
 	}
 	d.Lock()
-	if d.devicesWasSynced {
-		for _, deviceID := range e.GetDevicesRegistered().GetDeviceIds() {
-			d.devices = strings.Insert(d.devices, deviceID)
-		}
-		for _, deviceID := range e.GetDevicesUnregistered().GetDeviceIds() {
-			d.devices = strings.Remove(d.devices, deviceID)
-		}
+	if d.devicesSynced {
+		d.devices = strings.Insert(d.devices, e.GetDevicesRegistered().GetDeviceIds()...)
+		d.devices = strings.Remove(d.devices, e.GetDevicesUnregistered().GetDeviceIds()...)
 	}
 	handlers := make(map[uint64]func(e *events.Event))
 	for key, h := range d.handlers {
@@ -76,28 +71,12 @@ func (d *ownerSubject) RemoveHandlerLocked(v uint64) {
 	delete(d.handlers, v)
 }
 
-func (d *ownerSubject) updateDevicesLocked(deviceIDs []string) (added []string, removed []string) {
-	added = make([]string, 0, 8)
-	removed = make([]string, 0, 8)
+func (d *ownerSubject) updateDevicesLocked(deviceIDs []string) ([]string, []string) {
 	deviceIDs = strings.MakeSortedSlice(deviceIDs)
-	var j int
-	for i := range deviceIDs {
-		if j >= len(d.devices) || deviceIDs[i] != d.devices[j] {
-			added = append(added, deviceIDs[i])
-		} else {
-			j++
-		}
-	}
-	j = 0
-	for i := range d.devices {
-		if j >= len(deviceIDs) || d.devices[i] != d.devices[j] {
-			removed = append(added, d.devices[i])
-		} else {
-			j++
-		}
-	}
+	added := strings.Difference(deviceIDs, d.devices)
+	removed := strings.Difference(d.devices, deviceIDs)
 	d.devices = deviceIDs
-	d.devicesWasSynced = true
+	d.devicesSynced = true
 	return added, removed
 }
 
@@ -125,7 +104,6 @@ type ownerCache struct {
 	wg   sync.WaitGroup
 }
 
-// NewOwnerCache creates owner cache.
 func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn, asClient pbAS.AuthorizationServiceClient, errFunc ErrFunc) *ownerCache {
 	c := &ownerCache{
 		owners:     kitSync.NewMap(),
@@ -280,7 +258,7 @@ func (c *ownerCache) GetDevices(owner string) (devices []string, ok bool) {
 		return nil, false
 	}
 	defer s.Unlock()
-	if !s.devicesWasSynced {
+	if !s.devicesSynced {
 		return nil, false
 	}
 	s.validUntil = now.Add(c.expiration)
@@ -300,7 +278,7 @@ func (c *ownerCache) checkExpiration() {
 			if s.validUntil.Before(now) {
 				//expire devices in cache - user need to get UpdateDevices to get refresh it
 				s.devices = s.devices[:0]
-				s.devicesWasSynced = false
+				s.devicesSynced = false
 			}
 			return true
 		}

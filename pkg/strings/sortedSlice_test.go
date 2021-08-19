@@ -202,3 +202,78 @@ func TestRemove(t *testing.T) {
 		})
 	}
 }
+
+func TestDifference(t *testing.T) {
+	type args struct {
+		first  SortedSlice
+		second SortedSlice
+	}
+	tests := []struct {
+		name string
+		args args
+		want SortedSlice
+	}{
+		{
+			name: "Empty first",
+			args: args{
+				first:  SortedSlice{},
+				second: SortedSlice{"a", "b", "c"},
+			},
+			want: nil,
+		},
+		{
+			name: "Empty second",
+			args: args{
+				first:  SortedSlice{"a", "b", "c"},
+				second: SortedSlice{},
+			},
+			want: SortedSlice{"a", "b", "c"},
+		},
+		{
+			name: "Identity",
+			args: args{
+				first:  SortedSlice{"a", "b", "c"},
+				second: SortedSlice{"a", "b", "c"},
+			},
+			want: nil,
+		},
+		{
+			name: "Subset (1)",
+			args: args{
+				first:  SortedSlice{"a", "b", "c", "d", "e"},
+				second: SortedSlice{"a", "b", "c"},
+			},
+			want: SortedSlice{"d", "e"},
+		},
+		{
+			name: "Subset (2)",
+			args: args{
+				first:  SortedSlice{"a", "b", "c", "d", "e"},
+				second: SortedSlice{"d", "e"},
+			},
+			want: SortedSlice{"a", "b", "c"},
+		},
+		{
+			name: "Superset",
+			args: args{
+				first:  SortedSlice{"b", "d", "e"},
+				second: SortedSlice{"a", "b", "c", "d", "e"},
+			},
+			want: nil,
+		},
+		{
+			name: "Mixed",
+			args: args{
+				first:  SortedSlice{"a", "b", "c", "x", "y"},
+				second: SortedSlice{"a", "d", "e", "y", "z"},
+			},
+			want: SortedSlice{"b", "c", "x"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := Difference(tt.args.first, tt.args.second)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
