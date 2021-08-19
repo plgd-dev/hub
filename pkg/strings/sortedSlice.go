@@ -24,6 +24,26 @@ func MakeSortedSlice(slice []string) SortedSlice {
 	return SortedSlice(sortedSlice)
 }
 
+// Get elements of the first slice not contained in the second
+func Difference(first, second SortedSlice) SortedSlice {
+	var diff SortedSlice
+	var j int
+	for i := range first {
+		for (j < len(second)) && (second[j] < first[i]) {
+			j++
+		}
+		if j == len(second) {
+			diff = append(diff, first[i:]...)
+			break
+		}
+		if second[j] != first[i] {
+			diff = append(diff, first[i])
+		}
+	}
+
+	return diff
+}
+
 func Insert(slice SortedSlice, elems ...string) SortedSlice {
 	for _, v := range elems {
 		i := sort.SearchStrings([]string(slice), v)
