@@ -13,6 +13,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/strings"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	kitSync "github.com/plgd-dev/kit/sync"
 	"google.golang.org/grpc/codes"
@@ -22,7 +23,7 @@ import (
 type ownerSubject struct {
 	handlers         map[uint64]func(e *events.Event)
 	subscription     *nats.Subscription
-	devices          SortedSlice
+	devices          strings.SortedSlice
 	validUntil       time.Time
 	devicesWasSynced bool
 	sync.Mutex
@@ -31,7 +32,7 @@ type ownerSubject struct {
 func newOwnerSubject(validUntil time.Time) *ownerSubject {
 	return &ownerSubject{
 		handlers:   make(map[uint64]func(e *events.Event)),
-		devices:    make(SortedSlice, 0, 16),
+		devices:    make(strings.SortedSlice, 0, 16),
 		validUntil: validUntil,
 	}
 }
@@ -45,10 +46,10 @@ func (d *ownerSubject) Handle(msg *nats.Msg) error {
 	d.Lock()
 	if d.devicesWasSynced {
 		for _, deviceID := range e.GetDevicesRegistered().GetDeviceIds() {
-			d.devices = Insert(d.devices, deviceID)
+			d.devices = strings.Insert(d.devices, deviceID)
 		}
 		for _, deviceID := range e.GetDevicesUnregistered().GetDeviceIds() {
-			d.devices = Remove(d.devices, deviceID)
+			d.devices = strings.Remove(d.devices, deviceID)
 		}
 	}
 	handlers := make(map[uint64]func(e *events.Event))
@@ -78,7 +79,7 @@ func (d *ownerSubject) RemoveHandlerLocked(v uint64) {
 func (d *ownerSubject) updateDevicesLocked(deviceIDs []string) (added []string, removed []string) {
 	added = make([]string, 0, 8)
 	removed = make([]string, 0, 8)
-	deviceIDs = MakeSortedSlice(deviceIDs)
+	deviceIDs = strings.MakeSortedSlice(deviceIDs)
 	var j int
 	for i := range deviceIDs {
 		if j >= len(d.devices) || deviceIDs[i] != d.devices[j] {
