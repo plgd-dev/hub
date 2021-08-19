@@ -12,7 +12,7 @@
 {{- end }}
 
 {{- define  "plgd-cloud.coapgateway.image" -}}
-    {{- $registryName := .Values.coapgateway.image.registry -}}
+    {{- $registryName := .Values.coapgateway.image.registry | default "" -}}
     {{- $repositoryName := .Values.coapgateway.image.repository -}}
     {{- $tag := .Values.coapgateway.image.tag | default .Chart.AppVersion | toString -}}
     {{- printf "%s/%s:%s" $registryName $repositoryName  $tag -}}
@@ -41,4 +41,3 @@
 app.kubernetes.io/name: {{ .Values.coapgateway.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
-

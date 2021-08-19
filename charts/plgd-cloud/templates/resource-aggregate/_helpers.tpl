@@ -1,21 +1,8 @@
-{{- define "plgd-cloud.resourceaggregate.fullname" -}}
-{{- if .Values.resourceaggregate.fullnameOverride }}
-{{- .Values.resourceaggregate.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Values.resourceaggregate.name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s-%s" .Release.Name $name .Values.resourceaggregate.name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-{{- end }}
-
 {{- define  "plgd-cloud.resourceaggregate.image" -}}
-    {{- $registryName := .Values.resourceaggregate.image.registry -}}
+    {{- $registryName := .Values.resourceaggregate.image.registry | default "" -}}
     {{- $repositoryName := .Values.resourceaggregate.image.repository -}}
     {{- $tag := .Values.resourceaggregate.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName  $tag -}}
+    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
 {{- define  "plgd-cloud.resourceaggregate.configSecretName" -}}

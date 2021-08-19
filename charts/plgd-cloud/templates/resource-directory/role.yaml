@@ -1,0 +1,3 @@
+{{- if and .Values.resourcedirectory.rbac.enabled .Values.resourcedirectory.rbac.roleBindingDefitionTpl }}
+{{- tpl .Values.resourcedirectory.rbac.roleBindingDefitionTpl $ }}
+{{- end }}

@@ -1,12 +1,15 @@
 {{- if and .Values.certmanager.enabled }}
-{{- $name := .Values.certmanager.internal.issuer.name }}
-{{- $kind := .Values.certmanager.internal.issuer.kind }}
-{{- $spec := .Values.certmanager.internal.issuer.spec }}
+{{- $nameInternal := .Values.certmanager.internal.issuer.name }}
+{{- $kindInternal := .Values.certmanager.internal.issuer.kind }}
+{{- $specInternal := .Values.certmanager.internal.issuer.spec }}
 
-{{- $internalIssuer := and $name $kind $spec }}
-{{- $coapIssuer := .Values.certmanager.coap.issuer }}
-{{- $defaultIssuer := .Values.certmanager.default }}
-{{- if and (not (and $coapIssuer $internalIssuer)) $defaultIssuer }}
+{{- $nameCoap := .Values.certmanager.coap.issuer.name }}
+{{- $kindCoap := .Values.certmanager.coap.issuer.kind }}
+{{- $specCoap := .Values.certmanager.coap.issuer.spec }}
+
+{{- $internalIssuer := and $nameInternal $kindInternal }}
+{{- $coapIssuer := and $nameCoap $kindCoap }}
+{{- if or ( not (or $internalIssuer $specInternal)) (not (or $coapIssuer $specCoap)) }}
 apiVersion: cert-manager.io/v1
 kind: {{ .Values.certmanager.default.issuer.kind  }}
 metadata:

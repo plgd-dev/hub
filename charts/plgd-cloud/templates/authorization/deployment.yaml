@@ -1,0 +1,117 @@
+{{- if .Values.authorization.enabled }}
+{{- $cert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-cloud.authorization.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.authorization.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.authorization.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.authorization.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-cloud.authorization.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.authorization.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-cloud.authorization.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.authorization.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.authorization.rbac.enabled }}
+      serviceAccountName: {{ .Values.authorization.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.authorization.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.authorization.restartPolicy }}
+      {{- if .Values.authorization.initContainersTpl }}
+      initContainers:
+      {{- tpl .Values.authorization.initContainersTpl . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.authorization.name }}
+          {{- with .Values.authorization.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-cloud.authorization.image" . | quote }}
+          imagePullPolicy: {{ .Values.authorization.image.pullPolicy }}
+          {{- if .Values.authorization.command }}
+          command:
+          {{- range .Values.authorization.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.authorization.config.mountPath .Values.authorization.config.fileName | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.authorization.port.grpc }}
+              protocol: TCP
+            - name: http
+              containerPort: {{ .Values.authorization.port.http }}
+              protocol: TCP
+          {{- with .Values.authorization.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.authorization.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.authorization.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.authorization.config.mountPath }}
+              name: {{ .Values.authorization.config.volume }}
+            {{- if ( include "plgd-cloud.authorization.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $cert }}
+            {{- end }}
+            {{- with .Values.authorization.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- if ( include "plgd-cloud.authorization.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-cloud.authorization.serviceCertName" . }}
+        {{- end }}
+        - name: {{ .Values.authorization.config.volume }}
+          secret:
+            secretName: {{ include "plgd-cloud.authorization.configSecretName" . }}
+        {{- with .Values.authorization.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.authorization.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.authorization.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.authorization.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

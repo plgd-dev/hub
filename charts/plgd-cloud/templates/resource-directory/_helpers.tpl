@@ -12,10 +12,10 @@
 {{- end }}
 
 {{- define  "plgd-cloud.resourcedirectory.image" -}}
-    {{- $registryName := .Values.resourcedirectory.image.registry -}}
+    {{- $registryName := .Values.resourcedirectory.image.registry | default "" -}}
     {{- $repositoryName := .Values.resourcedirectory.image.repository -}}
     {{- $tag := .Values.resourcedirectory.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName  $tag -}}
+    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
 {{- define  "plgd-cloud.resourcedirectory.configSecretName" -}}

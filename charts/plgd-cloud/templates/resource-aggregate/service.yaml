@@ -14,9 +14,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.resourceaggregate.service.type }}
-  type: {{ .Values.resourceaggregate.service.type }}
-  {{- end }}
+  type: {{ .Values.resourceaggregate.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.resourceaggregate.port }}
       targetPort: grpc

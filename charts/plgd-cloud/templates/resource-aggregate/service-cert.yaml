@@ -23,6 +23,7 @@ spec:
     size: {{ .Values.certmanager.internal.cert.key.size | default .Values.certmanager.default.cert.key.size }}
   usages:
     - server auth
+    - client auth
   dnsNames:
     - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace .Values.cluster.dns }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
@@ -32,4 +33,3 @@ spec:
     kind: {{ .Values.certmanager.internal.issuer.kind | default .Values.certmanager.default.issuer.kind }}
     group: cert-manager.io
 {{- end }}
-

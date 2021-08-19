@@ -1,6 +1,5 @@
 {{- if .Values.coapgateway.enabled }}
-{{- $coapGatewayClientCert := "/certs/internal" }}
-{{- $coapGatewayServiceCert := "/certs/service" }}
+{{- $rdServiceCert := "/certs" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.coapgateway.replicas }}
+  replicas: {{ .Values.resourcedirectory.replicas }}
   selector:
     matchLabels:
       {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 6 }}
@@ -29,9 +28,21 @@ spec:
       labels:
         {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.coapgateway.initContainers }}
+      {{- with .Values.coapgateway.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.resourcedirectory.rbac.enabled }}
+      serviceAccountName: {{ .Values.coapgateway.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.coapgateway.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.coapgateway.restartPolicy }}
+      {{- if .Values.coapgateway.initContainersTpl }}
       initContainers:
-      {{- toYaml . | nindent 8 }}
+      {{- tpl .Values.coapgateway.initContainersTpl . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Values.coapgateway.name }}
@@ -41,11 +52,17 @@ spec:
           {{- end }}
           image: {{ include "plgd-cloud.coapgateway.image" . | quote }}
           imagePullPolicy: {{ .Values.coapgateway.image.pullPolicy }}
+          {{- if .Values.coapgateway.command }}
           command:
+          {{- range .Values.coapgateway.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
             - "--config"
             - {{  printf "%s/%s" .Values.coapgateway.config.mountPath .Values.coapgateway.config.fileName | quote }}
           ports:
-            - name: coaps
+            - name: grpc
               containerPort: {{ .Values.coapgateway.port }}
               protocol: TCP
           {{- with .Values.coapgateway.livenessProbe }}
@@ -63,23 +80,17 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.coapgateway.config.mountPath }}
               name: {{ .Values.coapgateway.config.volume }}
-            {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
-            - name: internal-crt
-              mountPath: {{ $coapGatewayClientCert }}
-            {{- end }}
             {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
             - name: service-crt
-              mountPath: {{ $coapGatewayServiceCert }}
+              mountPath: {{ $rdServiceCert }}
             {{- end }}
             {{- with .Values.coapgateway.extraVolumes }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
-        - name: internal-crt
+        - name: {{ .Values.resourcedirectory.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.internalCertName" . }}
-        {{- end }}
+            secretName: {{ include "plgd-cloud.coapgateway.configSecretName" . }}
         {{- if ( include "plgd-cloud.coapgateway.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:

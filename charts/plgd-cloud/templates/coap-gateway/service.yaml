@@ -14,14 +14,12 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.coapgateway.service.type }}
-  type: {{ .Values.coapgateway.service.type }}
-  {{- end }}
+  type: {{ .Values.coapgateway.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.coapgateway.port }}
-      targetPort: coaps
+      targetPort: grpc
       protocol: TCP
-      name: coaps
+      name: grpc
   selector:
   {{- include "plgd-cloud.coapgateway.selectorLabels" . | nindent 4 }}
 {{- end }}

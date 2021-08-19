@@ -23,6 +23,20 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 
+{{- define "plgd-cloud.authorization.fullname" -}}
+{{- if .Values.authorization.fullnameOverride }}
+{{- .Values.authorization.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Values.authorization.name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.authorization.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+
 {{- define "plgd-cloud.coapgateway.fullname" -}}
 {{- if .Values.coapgateway.fullnameOverride }}
 {{- .Values.coapgateway.fullnameOverride | trunc 63 | trimSuffix "-" }}
@@ -37,29 +51,35 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{- define "plgd-cloud.resourceaggregate.fullname" -}}
-{{- if .Values.coapgateway.fullnameOverride }}
-{{- .Values.coapgateway.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- if .Values.resourceaggregate.fullnameOverride }}
+{{- .Values.resourceaggregate.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
-{{- .Values.coapgateway.name | trunc 63 | trimSuffix "-" }}
+{{- .Values.resourceaggregate.name | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- printf "%s-%s-%s" .Release.Name $name .Values.resourceaggregate.name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
 {{- end }}
 
+{{- define "plgd-cloud.resourcedirectory.fullname" -}}
+{{- if .Values.resourcedirectory.fullnameOverride }}
+{{- .Values.resourcedirectory.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Values.resourcedirectory.name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s-%s" .Release.Name $name .Values.resourcedirectory.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 {{- define  "plgd-cloud.coapgateway.image" -}}
-    {{- $registryName := .Values.coapgateway.image.registry -}}
+    {{- $registryName := .Values.coapgateway.image.registry | default "" -}}
     {{- $repositoryName := .Values.coapgateway.image.repository -}}
     {{- $tag := .Values.coapgateway.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
-{{- define  "plgd-cloud.resourceaggregate.image" -}}
-    {{- $registryName := .Values.resourceaggregate.image.registry -}}
-    {{- $repositoryName := .Values.resourceaggregate.image.repository -}}
-    {{- $tag := .Values.resourceaggregate.image.tag | default .Chart.AppVersion | toString -}}
     {{- printf "%s/%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
@@ -78,19 +98,19 @@ If release name contains chart name it will be used as a full name.
   {{- $certDefinition := index . 1 }}
   {{- $certPath := index . 2 }}
   {{- if $certDefinition.caPool }}
-  caPool: {{- printf "%s" $certDefinition.caPool }}
+  caPool:{{- printf " " }}{{- printf "%s" $certDefinition.caPool | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  caPool: {{- printf "%s/ca.crt" $certPath }}
+  caPool:{{- printf " " }}{{- printf "%s/ca.crt" $certPath | quote  }}
   {{- end }}
   {{- if $certDefinition.keyFile }}
-  keyFile: {{- printf "%s" $certDefinition.keyFile }}
+  keyFile:{{- printf " " }}{{- printf "%s" $certDefinition.keyFile | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  keyFile: {{- printf "%s/tls.key" $certPath }}
+  keyFile:{{- printf " " }}{{- printf "%s/tls.key" $certPath  | quote  }}
   {{- end }}
   {{- if $certDefinition.certFile }}
-  certFile: {{- printf "%s" $certDefinition.certFile }}
+  certFile:{{- printf " " }}{{- printf "%s" $certDefinition.certFile | quote }}
   {{- else if $.Values.certmanager.enabled }}
-  certFile: {{- printf "%s/tls.crt" $certPath }}
+  certFile:{{- printf " " }}{{- printf "%s/tls.crt" $certPath | quote }}
   {{- end }}
 {{- end }}
 
@@ -126,19 +146,14 @@ If release name contains chart name it will be used as a full name.
     {{- end }}
 {{- end }}
 
-{{- define "plgd-cloud.internalCertName" -}}
-  {{- $fullName := include "plgd-cloud.fullname" . -}}
-  {{- printf "%s-internal-crt" $fullName -}}
-{{- end }}
-
 {{- define "plgd-cloud.coapgateway.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.fullname" . -}}
-  {{- printf "%s-coap-gateway-crt" $fullName -}}
+  {{- $fullName := include "plgd-cloud.coapgateway.fullname" . -}}
+  {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
 {{- define "plgd-cloud.resourceaggregate.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.fullname" . -}}
-  {{- printf "%s-resource-aggregate-crt" $fullName -}}
+  {{- $fullName := include "plgd-cloud.resourceaggregate.fullname" . -}}
+  {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
 {{- define "plgd-cloud.certmanager.coapIssuerName" -}}
@@ -204,33 +219,59 @@ app.kubernetes.io/name: {{ .Values.resourceaggregate.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "plgd-cloud.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "plgd-cloud.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
-
 {{- define "plgd-cloud.natsUri" }}
   {{- $ := index . 0 }}
   {{- $natsUri := index . 1 }}
-  {{- if $natsUri }}
+  {{- if $.Values.global.natsUri }}
+  {{- printf "%s" $.Values.global.natsUri }}
+  {{- else if $natsUri }}
   {{- printf "%s" $natsUri }}
   {{- else }}
-  {{- printf "nats://%s-nats:4222" $.Release.Namespace }}
+  {{- printf "nats://%s-nats.%s.svc.%s:4222" $.Release.Name $.Release.Namespace $.Values.cluster.dns }}
   {{- end }}
 {{- end }}
 
 {{- define "plgd-cloud.mongoDBUri" }}
   {{- $ := index . 0 }}
   {{- $mongoUri := index . 1 }}
-  {{- if $mongoUri }}
+  {{- if $.Values.global.mongoUri }}
+  {{- printf "%s" $.Values.global.mongoUri }}
+  {{- else if $mongoUri }}
   {{- printf "%s" $mongoUri }}
   {{- else }}
-  {{- printf "mongodb-0.mongodb-headless.%s.svc.cluster.local:27017" $.Release.Namespace }}
+  {{- printf "mongodb-0.mongodb-headless.%s.svc.%s:27017" $.Release.Namespace $.Values.cluster.dns }}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-cloud.authorizationAddress" }}
+  {{- $ := index . 0 }}
+  {{- $address := index . 1 }}
+  {{- if $address }}
+  {{- printf "%s" $address }}
+  {{- else }}
+  {{- $authorizationServer := include "plgd-cloud.authorization.fullname" $ }}
+  {{- printf "%s.%s.svc.%s:%v" $authorizationServer $.Release.Namespace $.Values.cluster.dns $.Values.authorization.port.grpc }}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-cloud.resourceDirectoryAddress" }}
+  {{- $ := index . 0 }}
+  {{- $address := index . 1 }}
+  {{- if $address }}
+  {{- printf "%s" $address }}
+  {{- else }}
+  {{- $rdServer := include "plgd-cloud.resourcedirectory.fullname" $ }}
+  {{- printf "%s.%s.svc.%s:%v" $rdServer $.Release.Namespace $.Values.cluster.dns $.Values.resourcedirectory.port }}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-cloud.resourceAggregateAddress" }}
+  {{- $ := index . 0 }}
+  {{- $address := index . 1 }}
+  {{- if $address }}
+  {{- printf "%s" $address }}
+  {{- else }}
+  {{- $raServer := include "plgd-cloud.resourceaggregate.fullname" $ }}
+  {{- printf "%s.%s.svc.%s:%v" $raServer $.Release.Namespace $.Values.cluster.dns $.Values.resourcedirectory.port }}
   {{- end }}
 {{- end }}

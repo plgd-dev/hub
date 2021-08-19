@@ -1,12 +1,11 @@
 {{- if .Values.resourceaggregate.enabled }}
-{{- $resourceAggregateClientCert := "/certs/client" }}
-{{- $resourceAggregateServiceCert := "/certs/service" }}
+{{- $raCert := "/certs" }}
 apiVersion: v1
 kind: Secret
 metadata:
   name: {{ include "plgd-cloud.resourceaggregate.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
-data:
+stringData:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.resourceaggregate }}
     log:
@@ -25,7 +24,7 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-cloud.certificateConfig" (list $ $tls $resourceAggregateServiceCert) | indent 8 }}
+          {{- include "plgd-cloud.certificateConfig" (list $ $tls $raCert) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           authority: {{ .apis.grpc.authorization.authority }}
@@ -38,29 +37,29 @@ data:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $resourceAggregateServiceCert) | indent 12 }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $raCert) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
         nats:
-          url: {{ .clients.eventBus.nats.url }}
+          url:{{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           jetstream: {{ .clients.eventBus.nats.jetstream }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $resourceAggregateServiceCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
         snapshotThreshold: {{ .clients.eventStore.snapshotThreshold }}
         occMaxRetry: {{ .clients.eventStore.occMaxRetry }}
         mongoDB:
-          uri: {{- include "plgd-cloud.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
+          uri:{{ printf " " }}{{- include "plgd-cloud.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
           database: {{ .clients.eventStore.mongoDB.database }}
           batchSize: {{ .clients.eventStore.mongoDB.batchSize }}
           maxPoolSize: {{ .clients.eventStore.mongoDB.maxPoolSize }}
           maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $resourceAggregateServiceCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
       authorizationServer:
         pullFrequency: {{ .clients.authorizationServer.pullFrequency }}
@@ -74,13 +73,15 @@ data:
             permitWithoutStream: {{ .clients.authorizationServer.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.authorizationServer.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $resourceAggregateClientCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
         oauth:
           clientID: {{ .clients.authorizationServer.oauth.clientID }}
           clientSecret: {{ .clients.authorizationServer.oauth.clientSecret }}
           scopes:
-          {{- .clients.authorizationServer.oauth.scopes | toYaml }}
+          {{- range .clients.authorizationServer.oauth.scopes  }}
+            - {{ . | quote }}
+          {{- end }}
           tokenURL: {{ .clients.authorizationServer.oauth.tokenURL }}
           audience: {{ .clients.authorizationServer.oauth.audience }}
           verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
@@ -92,7 +93,7 @@ data:
             timeout: {{ .clients.authorizationServer.oauth.http.timeout }}
             tls:
               {{- $oauthHttpClientTls := .clients.authorizationServer.oauth.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $resourceAggregateClientCert) | indent 12 }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $raCert) | indent 12 }}
               useSystemCAPool: {{ .clients.authorizationServer.oauth.http.tls.useSystemCAPool }}
   {{- end }}
 {{- end }}

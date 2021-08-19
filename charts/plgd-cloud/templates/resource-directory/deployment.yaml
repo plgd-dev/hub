@@ -1,6 +1,5 @@
 {{- if .Values.resourcedirectory.enabled }}
-{{- $rdClientCert := "/certs/internal" }}
-{{- $rdServiceCert := "/certs/service" }}
+{{- $rdServiceCert := "/certs" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,9 +28,21 @@ spec:
       labels:
         {{- include "plgd-cloud.resourcedirectory.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.resourcedirectory.initContainers }}
+      {{- with .Values.resourcedirectory.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.resourcedirectory.rbac.enabled }}
+      serviceAccountName: {{ .Values.resourcedirectory.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.resourcedirectory.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.resourcedirectory.restartPolicy }}
+      {{- if .Values.resourcedirectory.initContainersTpl }}
       initContainers:
-      {{- toYaml . | nindent 8 }}
+      {{- tpl .Values.resourcedirectory.initContainersTpl . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Values.resourcedirectory.name }}
@@ -41,7 +52,13 @@ spec:
           {{- end }}
           image: {{ include "plgd-cloud.resourcedirectory.image" . | quote }}
           imagePullPolicy: {{ .Values.resourcedirectory.image.pullPolicy }}
+          {{- if .Values.resourcedirectory.command }}
           command:
+          {{- range .Values.resourcedirectory.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
             - "--config"
             - {{  printf "%s/%s" .Values.resourcedirectory.config.mountPath .Values.resourcedirectory.config.fileName | quote }}
           ports:
@@ -61,12 +78,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.resourceaggregate.config.mountPath }}
-              name: {{ .Values.resourceaggregate.config.volume }}
-            {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
-            - name: internal-crt
-              mountPath: {{ $rdClientCert }}
-            {{- end }}
+            - mountPath: {{ .Values.resourcedirectory.config.mountPath }}
+              name: {{ .Values.resourcedirectory.config.volume }}
             {{- if ( include "plgd-cloud.resourcedirectory.createServiceCertByCm" . ) }}
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
@@ -75,11 +88,9 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
-        - name: internal-crt
+        - name: {{ .Values.resourcedirectory.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.internalCertName" . }}
-        {{- end }}
+            secretName: {{ include "plgd-cloud.resourcedirectory.configSecretName" . }}
         {{- if ( include "plgd-cloud.resourcedirectory.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:

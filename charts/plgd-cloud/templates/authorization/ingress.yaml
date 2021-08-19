@@ -1,0 +1,41 @@
+{{- if and .Values.authorization.enabled  .Values.authorization.ingress.enabled -}}
+{{- $createDomainCert := include "plgd-cloud.authorization.domainCertName" . }}
+{{- $fullName := include "plgd-cloud.authorization.fullname" . -}}
+{{- $svcPort := .Values.authorization.port.http -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+  {{- with .Values.authorization.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.authorization.ingress.tls }}
+  tls:
+  {{- .Values.authorization.ingress.tls | toYaml | nindent 2 }}
+  {{- else }}
+  tls:
+    - hosts:
+        - {{ .Values.authorization.domain }}
+      secretName: {{ $createDomainCert }}
+  {{- end }}
+  {{- if .Values.authorization.ingress.rules }}
+  rules:
+  {{- .Values.authorization.ingress.rules | toYaml | nindent 2 }}
+  {{- else }}
+  rules:
+    - host: {{ .Values.authorization.domain }}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $fullName }}
+              port:
+                number: {{ $svcPort }}
+  {{- end }}
+{{- end }}

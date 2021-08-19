@@ -1,0 +1,33 @@
+{{- if and .Values.certmanager.enabled .Values.authorization.enabled .Values.authorization.ingress.enabled }}
+{{- $createDomainCert := include "plgd-cloud.authorization.domainCertName" . }}
+{{- $serviceDns := include "plgd-cloud.authorization.fullname" . }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $createDomainCert }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-cloud.labels" . | nindent 4 }}
+    {{- with .Values.certmanager.external.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.certmanager.external.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ $createDomainCert }}
+  privateKey:
+    algorithm: {{ .Values.certmanager.external.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
+    size: {{ .Values.certmanager.external.cert.key.size | default .Values.certmanager.default.cert.key.size }}
+  usages:
+    - server auth
+  dnsNames:
+    - {{ .Values.authorization.domain }}
+  duration: {{ .Values.certmanager.external.cert.duration | default .Values.certmanager.default.cert.duration }}
+  renewBefore: {{ .Values.certmanager.external.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
+  issuerRef:
+    name: {{ .Values.certmanager.external.issuer.name | default .Values.certmanager.default.issuer.name }}
+    kind: {{ .Values.certmanager.external.issuer.kind | default .Values.certmanager.default.issuer.kind }}
+    group: cert-manager.io
+{{- end }}

@@ -1,13 +1,25 @@
 # Extra deploy
 extraDeploy:
 
+# Global config variables
+global:
+  # Override mongodb uri for every plgd-cloud services
+  mongoUri:
+  # Override nats uri for every plgd-cloud services
+  natsUri:
+  # Create new secret with ca chain and map chain into services mouth path
+  caChain:
 # External nats dependency
 nats:
   enabled: true
   nats:
     tls:
-     secret:
-       name: nats-service-crt
+      secret:
+        name: nats-service-crt
+      ca: ca.crt
+      cert: tls.crt
+      key: tls.key
+      verify: true
   cluster:
     enabled: false
     noAdvertise: false
@@ -41,7 +53,7 @@ mongodb:
     enabled: false
   extraEnvVars:
     - name: MONGODB_EXTRA_FLAGS
-      value: "--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
+      value: "--tlsMode=allowTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
     - name: MONGODB_CLIENT_EXTRA_FLAGS
       value: "--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
   extraVolumeMounts:
@@ -104,6 +116,7 @@ mongodb:
     successThreshold: 1
     failureThreshold: 6
 
+
 cluster:
   dns: cluster.local
 
@@ -112,11 +125,17 @@ certmanager:
   enabled: true
   default:
     issuer:
+      # Default issuer enabled/disabled
       enabled: true
+      # Labels for default issuer
       labels: {}
+      # Annotation for default issuer
       annotations: {}
+      # Name of default issuer
       name: selfsigned-issuer
+      # Kind of default issuer
       kind: ClusterIssuer
+      # Default issuer specification.
       spec:
         selfSigned: {}
     cert:
@@ -157,6 +176,23 @@ certmanager:
       key:
         algorithm:
         size:
+  external:
+    issuer:
+      # In case you want to create your own coap-gateway service issuer
+#      labels: {}
+#      annotations: {}
+      name:
+      kind:
+      spec:
+    cert:
+#      labels: { }
+#      annotations: { }
+      duration:
+      renewBefore:
+      key:
+        algorithm:
+        size:
+
 
 resourcedirectory:
   # Enable resource-directory service
@@ -183,19 +219,33 @@ resourcedirectory:
     labels: {}
     # Annotations for resource-directory service
     annotations: {}
+  # RBAC configuration
+  rbac:
+    # Create RBAC config
+    enabled: true
+    # Name of resource-directory SA
+    serviceAccountName: resource-directory
+    # template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+  # Security context for pod
+  securityContext: {}
+  # Image pull secrets
+  imagePullSecrets: {}
+  # Restart policy for pod
+  restartPolicy: Always
   # Init containers definition
-  initContainers: {}
+  initContainersTpl: {}
   image:
     # Image registry
-    registry: docker.io
+    registry:
     # Image repository
     repository: plgd/resource-directory
     # Image tag.
     tag:
     # Image pull policy
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Image pull secrets
-    pullSecrets: {}
+    imagePullSecrets: {}
   # Liveness probe. resource-directory doesn't have any default liveness probe
   livenessProbe: {}
   # Readiness probe. resource-directory doesn't have aby default readiness probe
@@ -237,7 +287,7 @@ resourcedirectory:
       tls:
         clientCertificateRequired: true
       authorization:
-        authority: ""
+        authority: "sdfsdf"
         audience: ""
         http:
           maxIdleConns: 16
@@ -253,14 +303,14 @@ resourcedirectory:
       goPoolSize: 16
       nats:
         url: ""
-        jetstream:
+        jetstream: false
         pendingLimits:
           msgLimit: 524288
           bytesLimit: 67108864
         tls:
-#          caPool: "/secrets/public/rootca.crt"
-#          keyFile: "/secrets/private/cert.key"
-#          certFile: "/secrets/public/cert.crt"
+#          caPool:
+#          keyFile:
+#          certFile:
           useSystemCAPool: false
     eventStore:
       # expiration time of cached resource in projection
@@ -275,9 +325,9 @@ resourcedirectory:
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
         tls:
-#          caPool: "/secrets/public/rootca.crt"
-#          keyFile: "/secrets/private/cert.key"
-#          certFile: "/secrets/public/cert.crt"
+#          caPool:
+#          keyFile:
+#          certFile:
           useSystemCAPool: false
     authorizationServer:
       pullFrequency: 15s
@@ -286,9 +336,9 @@ resourcedirectory:
       grpc:
         address: ""
         tls:
-#          caPool: "/secrets/public/rootca.crt"
-#          keyFile: "/secrets/private/cert.key"
-#          certFile: "/secrets/public/cert.crt"
+#          caPool:
+#          keyFile:
+#          certFile:
           useSystemCAPool: false
         keepAlive:
           time: 10s
@@ -308,9 +358,9 @@ resourcedirectory:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-#            caPool: "/secrets/public/rootca.crt"
-#            keyFile: "/secrets/private/cert.key"
-#            certFile: "/secrets/public/cert.crt"
+#            caPool:
+#            keyFile:
+#            certFile:
             useSystemCAPool: false
   publicConfiguration:
     caPool:
@@ -323,22 +373,23 @@ resourcedirectory:
     cloudAuthorizationProvider:
 
 resourceaggregate:
-  # Enable resource-aggregate component
+  # Enable resource-aggregate service
   enabled: true
   # Name of component. Used in label selectors
   name: resource-aggregate
   # Full name to override
   fullnameOverride:
+  # Number of replicas
   replicas: 1
-  # Additional labels for coap-gateway deployment
+  # Additional labels for resource-aggregate deployment
   deploymentLabels: {}
-  # Additional annotations for coap-gateway deployment
+  # Additional annotations for resource-aggregate deployment
   deploymentAnnotations: {}
   # Pod security context
   podSecurityContext: {}
-  # Labels for coap-gateway pod
+  # Labels for resource-aggregate pod
   podLabels: {}
-  # Annotations for coap-gateway pod
+  # Annotations for resource-aggregate pod
   podAnnotations: {}
   service:
     type: ClusterIP
@@ -346,19 +397,33 @@ resourceaggregate:
     labels: {}
     # Annotations for resource-aggregate service
     annotations: {}
+  # RBAC configuration
+  rbac:
+    # Create RBAC config
+    enabled: true
+    # Name of resource-aggregate SA
+    serviceAccountName: resource-aggregate
+    # template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+  # Security context for pod
+  securityContext: {}
+  # Image pull secrets
+  imagePullSecrets: {}
+  # Restart policy for pod
+  restartPolicy: Always
   # Init containers definition
-  initContainers: {}
+  initContainersTpl: {}
   image:
     # Image registry
-    registry: docker.io
+    registry:
     # Image repository
     repository: plgd/resource-aggregate
     # Image tag.
     tag:
     # Image pull policy
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Image pull secrets
-    pullSecrets: {}
+    imagePullSecrets: {}
   # Liveness probe. resource-aggregate doesn't have any default liveness probe
   livenessProbe: {}
   # Readiness probe. resource-aggregate doesn't have aby default readiness probe
@@ -397,9 +462,9 @@ resourceaggregate:
         time: 2h
         timeout: 20s
       tls:
-#        caPool: "/secrets/public/rootca.crt"
-#        keyFile: "/secrets/private/cert.key"
-#        certFile: "/secrets/public/cert.crt"
+#        caPool: ""
+#        keyFile: ""
+#        certFile: ""
         clientCertificateRequired: true
       authorization:
         authority: ""
@@ -411,9 +476,9 @@ resourceaggregate:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-#            caPool: "/secrets/public/rootca.crt"
-#            keyFile: "/secrets/private/cert.key"
-#            certFile: "/secrets/public/cert.crt"
+#            caPool: ""
+#            keyFile: ""
+#            certFile: ""
             useSystemCAPool: false
   clients:
     eventBus:
@@ -421,9 +486,9 @@ resourceaggregate:
         url: ""
         jetstream: false
         tls:
-#          caPool: "/secrets/public/rootca.crt"
-#          keyFile: "/secrets/private/cert.key"
-#          certFile: "/secrets/public/cert.crt"
+#          caPool: ""
+#          keyFile: ""
+#          certFile: ""
           useSystemCAPool: false
     eventStore:
       # tries to create the snapshot event after n events
@@ -440,9 +505,9 @@ resourceaggregate:
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
         tls:
-#          caPool: "/secrets/public/rootca.crt"
-#          keyFile: "/secrets/private/cert.key"
-#          certFile: "/secrets/public/cert.crt"
+#          caPool: ""
+#          keyFile: ""
+#          certFile: ""
           useSystemCAPool: false
     authorizationServer:
       pullFrequency: 15s
@@ -451,9 +516,9 @@ resourceaggregate:
       grpc:
         address: ""
         tls:
-#          caPool: "/secrets/public/rootca.crt"
-#          keyFile: "/secrets/private/cert.key"
-#          certFile: "/secrets/public/cert.crt"
+#          caPool: ""
+#          keyFile: ""
+#          certFile: ""
           useSystemCAPool: false
         keepAlive:
           time: 10s
@@ -473,71 +538,85 @@ resourceaggregate:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-#            caPool: "/secrets/public/rootca.crt"
-#            keyFile: "/secrets/private/cert.key"
-#            certFile: "/secrets/public/cert.crt"
+#            caPool: ""
+#            keyFile: ""
+#            certFile: ""
             useSystemCAPool: false
 
 # CoAP gateway parameters
 coapgateway:
-  # Enable coap-gateway component
+  # Enable coap-gateway service
   enabled: true
   # Name of component. Used in label selectors
   name: coap-gateway
   # Full name to override
   fullnameOverride:
+  # Number of replicas
   replicas: 1
   # Additional labels for coap-gateway deployment
-  deploymentLabels: {}
+  deploymentLabels: { }
   # Additional annotations for coap-gateway deployment
-  deploymentAnnotations: {}
+  deploymentAnnotations: { }
   # Pod security context
-  podSecurityContext: {}
+  podSecurityContext: { }
   # Labels for coap-gateway pod
-  podLabels: {}
+  podLabels: { }
   # Annotations for coap-gateway pod
-  podAnnotations: {}
+  podAnnotations: { }
   service:
-    type: ClusterIP
+    type: LoadBalancer
     # Labels for coap-gateway service
-    labels: {}
+    labels: { }
     # Annotations for coap-gateway service
-    annotations: {}
+    annotations: { }
+  # RBAC configuration
+  rbac:
+    # Create RBAC config
+    enabled: true
+    # Name of coap-gateway SA
+    serviceAccountName: coap-gateway
+    # template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+  # Security context for pod
+  securityContext: { }
+  # Image pull secrets
+  imagePullSecrets: { }
+  # Restart policy for pod
+  restartPolicy: Always
   # Init containers definition
-  initContainers: {}
+  initContainersTpl: { }
   image:
     # Image registry
-    registry: docker.io
+    registry:
     # Image repository
     repository: plgd/coap-gateway
     # Image tag.
     tag:
     # Image pull policy
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     # Image pull secrets
-    pullSecrets: {}
-  # Default coap-gateway port
-  port: 5684
+    imagePullSecrets: { }
   # Liveness probe. coap-gateway doesn't have any default liveness probe
-  livenessProbe: {}
+  livenessProbe: { }
   # Readiness probe. coap-gateway doesn't have aby default readiness probe
-  readinessProbe: {}
+  readinessProbe: { }
   # Resources limit
-  resources: {}
+  resources: { }
   # Node selector
-  nodeSelector: {}
+  nodeSelector: { }
   # Affinity definition
-  affinity: {}
+  affinity: { }
   # Toleration definition
-  tolerations: {}
+  tolerations: { }
   # Optional extra volumes
-  extraVolumes: {}
+  extraVolumes: { }
   # Optional extra volume mounts
-  extraVolumeMounts: {}
+  extraVolumeMounts: { }
   config:
     fileName: service.yaml
     volume: config
     mountPath: /config
+  port: 5684
   log:
     debug: true
     dumpCoapMessages: true
@@ -632,3 +711,201 @@ coapgateway:
     size: "2097152"
     maxIdleTime: "10m"
 
+authorization:
+  # Enable authorization service
+  enabled: true
+  # Name of component. Used in label selectors
+  name: authorization
+  # Full name to override
+  fullnameOverride:
+  # Number of replicas
+  replicas: 1
+  # Additional labels for authorization deployment
+  deploymentLabels: {}
+  # Additional annotations for authorization deployment
+  deploymentAnnotations: {}
+  # Pod security context
+  podSecurityContext: {}
+  # Labels for authorization pod
+  podLabels: {}
+  # Annotations for authorization pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # Labels for authorization service
+    labels: {}
+    # Annotations for authorization service
+    annotations: {}
+  # RBAC configuration
+  rbac:
+    # Create RBAC config
+    enabled: true
+    # Name of authorization SA
+    serviceAccountName: authorization
+    # template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+
+  # Security context for pod
+  securityContext: {}
+  # Image pull secrets
+  imagePullSecrets: {}
+  # Restart policy for pod
+  restartPolicy: Always
+  # Init containers definition
+  initContainersTpl: {}
+  image:
+    # Image registry
+    registry:
+    # Image repository
+    repository: plgd/authorization
+    # Image tag.
+    tag:
+    # Image pull policy
+    pullPolicy: IfNotPresent
+    # Image pull secrets
+    imagePullSecrets: {}
+  # Liveness probe. authorization doesn't have any default liveness probe
+  livenessProbe: {}
+  # Readiness probe. authorization doesn't have aby default readiness probe
+  readinessProbe: {}
+  # Resources limit
+  resources: {}
+  # Node selector
+  nodeSelector: {}
+  # Affinity definition
+  affinity: {}
+  # Toleration definition
+  tolerations: {}
+  # Optional extra volumes
+  extraVolumes: {}
+  # Optional extra volume mounts
+  extraVolumeMounts: {}
+  domain: api.plgd-cloud.local
+  ingress:
+    enabled: false
+    annotations: {}
+#      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+#      ingress.kubernetes.io/force-ssl-redirect: "true"
+#      kubernetes.io/ingress.class: nginx
+#    tls:
+#    - hosts:
+#        - api.test.local
+#      secretName: testsecret-tls
+#    rules:
+#    - host: api.test.local
+#      http:
+#        paths:
+#        - path: /
+#          pathType: Prefix
+#          backend:
+#            service:
+#              name: my-authorization-serve
+#              port:
+#                number: 9898
+  # Service port
+  port:
+    grpc: 9100
+    http: 9101
+  config:
+    fileName: service.yaml
+    volume: config
+    mountPath: /config
+  # for more information follow: https://github.com/plgd-dev/cloud/tree/v2/authorization
+  log:
+    debug: false
+  apis:
+    grpc:
+      address:
+      enforcementPolicy:
+        minTime: 5s
+        permitWithoutStream: true
+      keepAlive:
+        # 0s - means infinity
+        maxConnectionIdle: 0s
+        # 0s - means infinity
+        maxConnectionAge: 0s
+        # 0s - means infinity
+        maxConnectionAgeGrace: 0s
+        time: 2h
+        timeout: 20s
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: true
+      authorization:
+        authority:
+        audience:
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: false
+    http:
+      address:
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: false
+  oauthClients:
+    device:
+      provider: "plgd"
+      clientID: ""
+      clientSecret: ""
+      scopes: []
+      authorizationURL: ""
+      audience: ""
+      tokenURL: ""
+      redirectURL: ""
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+    client:
+      clientID: ""
+      scopes: []
+      authorizationURL: ""
+      audience: ""
+      redirectURL: ""
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+  clients:
+    eventBus:
+      nats:
+        url: ""
+        jetstream: false
+        tls:
+          useSystemCAPool: false
+    storage:
+      ownerClaim: sub
+      mongoDB:
+        uri:
+        database: "ownersDevices"
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false

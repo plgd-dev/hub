@@ -1,12 +1,11 @@
 {{- if .Values.resourcedirectory.enabled }}
-{{- $resourceDirectoryClientCert := "/certs/client" }}
-{{- $resourceDirectoryServiceCert := "/certs/service" }}
+{{- $rdCert := "/certs" }}
 apiVersion: v1
 kind: Secret
 metadata:
   name: {{ include "plgd-cloud.resourcedirectory.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
-data:
+stringData:
   {{ .Values.resourcedirectory.config.fileName }}: |
     {{- with .Values.resourcedirectory }}
     log:
@@ -25,7 +24,7 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-cloud.certificateConfig" (list $ $tls $resourceDirectoryServiceCert ) | indent 8 }}
+          {{- include "plgd-cloud.certificateConfig" (list $ $tls $rdCert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           authority: {{ .apis.grpc.authorization.authority }}
@@ -38,47 +37,50 @@ data:
             timeout: {{ .apis.grpc.authorization.http.timeout }}
             tls:
               {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $resourceDirectoryServiceCert ) | indent 12 }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $rdCert ) | indent 12 }}
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
         nats:
-          url: {{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          url: {{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           jetstream: {{ .clients.eventBus.nats.jetstream }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $resourceDirectoryServiceCert ) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
         mongoDB:
-          uri: {{- include "plgd-cloud.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
+          uri:{{ printf " " }}{{- include "plgd-cloud.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
           database: {{ .clients.eventStore.mongoDB.database }}
           batchSize: {{ .clients.eventStore.mongoDB.batchSize }}
           maxPoolSize: {{ .clients.eventStore.mongoDB.maxPoolSize }}
           maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $resourceDirectoryServiceCert ) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
       authorizationServer:
         pullFrequency: {{ .clients.authorizationServer.pullFrequency }}
         cacheExpiration: {{ .clients.authorizationServer.cacheExpiration }}
         ownerClaim: {{ .clients.authorizationServer.ownerClaim }}
         grpc:
-          address: {{ .clients.authorizationServer.grpc.address }}
+          {{- $authorizationServer := .clients.authorizationServer.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.authorizationAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
             time: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
             timeout: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.authorizationServer.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.authorizationServer.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $resourceDirectoryClientCert ) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $rdCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
         oauth:
           clientID: {{ .clients.authorizationServer.oauth.clientID }}
           clientSecret: {{ .clients.authorizationServer.oauth.clientSecret }}
           scopes:
-          {{- .clients.authorizationServer.oauth.scopes | toYaml }}
+          {{- range .clients.authorizationServer.oauth.scopes  }}
+            - {{ . | quote }}
+          {{- end }}
           tokenURL: {{ .clients.authorizationServer.oauth.tokenURL }}
           audience: {{ .clients.authorizationServer.oauth.audience }}
           verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
@@ -90,7 +92,7 @@ data:
             timeout: {{ .clients.authorizationServer.oauth.http.timeout }}
             tls:
               {{- $oauthHttpClientTls := .clients.authorizationServer.oauth.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $resourceDirectoryClientCert ) | indent 12 }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $rdCert ) | indent 12 }}
               useSystemCAPool: {{ .clients.authorizationServer.oauth.http.tls.useSystemCAPool }}
     publicConfiguration:
       caPool: {{ .publicConfiguration.caPool }}

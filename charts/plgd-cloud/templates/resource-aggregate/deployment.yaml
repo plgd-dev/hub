@@ -1,6 +1,5 @@
 {{- if .Values.resourceaggregate.enabled }}
-{{- $resourceAggregateClientCert := "/certs/internal" }}
-{{- $resourceAggregateServiceCert := "/certs/service" }}
+{{- $rdServiceCert := "/certs" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.coapgateway.replicas }}
+  replicas: {{ .Values.resourceaggregate.replicas }}
   selector:
     matchLabels:
       {{- include "plgd-cloud.resourceaggregate.selectorLabels" . | nindent 6 }}
@@ -29,9 +28,21 @@ spec:
       labels:
         {{- include "plgd-cloud.resourceaggregate.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.resourceaggregate.initContainers }}
+      {{- with .Values.resourceaggregate.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.resourceaggregate.rbac.enabled }}
+      serviceAccountName: {{ .Values.resourceaggregate.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.resourceaggregate.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.resourceaggregate.restartPolicy }}
+      {{- if .Values.resourceaggregate.initContainersTpl }}
       initContainers:
-      {{- toYaml . | nindent 8 }}
+      {{- tpl .Values.resourceaggregate.initContainersTpl . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Values.resourceaggregate.name }}
@@ -40,8 +51,14 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           image: {{ include "plgd-cloud.resourceaggregate.image" . | quote }}
-          imagePullPolicy: {{ .Values.resourceaggregate.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.resourcedirectory.image.pullPolicy }}
+          {{- if .Values.resourceaggregate.command }}
           command:
+          {{- range .Values.resourceaggregate.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
             - "--config"
             - {{  printf "%s/%s" .Values.resourceaggregate.config.mountPath .Values.resourceaggregate.config.fileName | quote }}
           ports:
@@ -63,23 +80,17 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.resourceaggregate.config.mountPath }}
               name: {{ .Values.resourceaggregate.config.volume }}
-            {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
-            - name: internal-crt
-              mountPath: {{ $resourceAggregateClientCert }}
-            {{- end }}
             {{- if ( include "plgd-cloud.resourceaggregate.createServiceCertByCm" . ) }}
             - name: service-crt
-              mountPath: {{ $resourceAggregateServiceCert }}
+              mountPath: {{ $rdServiceCert }}
             {{- end }}
             {{- with .Values.resourceaggregate.extraVolumes }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        {{- if ( include "plgd-cloud.createInternalCertByCm" . ) }}
-        - name: internal-crt
+        - name: {{ .Values.resourcedirectory.config.volume }}
           secret:
-            secretName: {{ include "plgd-cloud.internalCertName" . }}
-        {{- end }}
+            secretName: {{ include "plgd-cloud.resourceaggregate.configSecretName" . }}
         {{- if ( include "plgd-cloud.resourceaggregate.createServiceCertByCm" . ) }}
         - name: service-crt
           secret:

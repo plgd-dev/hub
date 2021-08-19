@@ -1,12 +1,11 @@
 {{- if .Values.coapgateway.enabled }}
-{{- $coapGatewayClientCert := "/certs/client" }}
-{{- $coapGatewayServiceCert := "/certs/service" }}
+{{- $coapGatewayServiceCert := "/certs" }}
 apiVersion: v1
 kind: Secret
 metadata:
   name: {{ include "plgd-cloud.coapgateway.configSecretName" . }}
   namespace: {{ .Release.Namespace }}
-data:
+stringData:
   {{ .Values.coapgateway.config.fileName }}: |
     {{- with .Values.coapgateway }}
     log:
@@ -33,30 +32,33 @@ data:
     clients:
       eventBus:
         nats:
-          url: {{ .clients.eventBus.nats.url }}
+          url: {{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           pendingLimits:
             msgLimit: {{ .clients.eventBus.nats.pendingLimits.msgLimit }}
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $coapGatewayClientCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       authorizationServer:
         grpc:
-          address: {{ .clients.authorizationServer.grpc.address }}
+          {{- $authorizationServer := .clients.authorizationServer.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.authorizationAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
             time: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
             timeout: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.authorizationServer.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.authorizationServer.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $coapGatewayClientCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
         oauth:
           clientID: {{ .clients.authorizationServer.oauth.clientID }}
           clientSecret: {{ .clients.authorizationServer.oauth.clientSecret }}
           scopes:
-          {{- .clients.authorizationServer.oauth.scopes | toYaml }}
+          {{- range .clients.authorizationServer.oauth.scopes  }}
+            - {{ . | quote }}
+          {{- end }}
           tokenURL: {{ .clients.authorizationServer.oauth.tokenURL }}
           audience: {{ .clients.authorizationServer.oauth.audience }}
           verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
@@ -68,32 +70,34 @@ data:
             timeout: {{ .clients.authorizationServer.oauth.http.timeout }}
             tls:
               {{- $oauthHttpClientTls := .clients.authorizationServer.oauth.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $coapGatewayClientCert) | indent 12 }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $coapGatewayServiceCert) | indent 12 }}
               useSystemCAPool: {{ .clients.authorizationServer.oauth.http.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
-          address: {{ .clients.resourceAggregate.grpc.address }}
+          {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
           keepAlive:
             time: {{ .clients.resourceAggregate.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceAggregate.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $raClientTls $coapGatewayClientCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $raClientTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
         deviceStatusExpiration:
           enabled: {{ .clients.resourceAggregate.deviceStatusExpiration.enabled }}
           expiresIn: {{ .clients.resourceAggregate.deviceStatusExpiration.expiresIn }}
       resourceDirectory:
         grpc:
-          address: {{ .clients.resourceDirectory.grpc.address }}
+          {{- $resourceDirectory := .clients.resourceDirectory.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.resourceDirectoryAddress" (list $ $resourceDirectory ) | quote }}
           keepAlive:
             time: {{ .clients.resourceDirectory.grpc.keepAlive.time }}
             timeout: {{ .clients.resourceDirectory.grpc.keepAlive.timeout }}
             permitWithoutStream: {{ .clients.resourceDirectory.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $rdClientTls := .clients.resourceDirectory.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $rdClientTls $coapGatewayClientCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $rdClientTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceDirectory.grpc.tls.useSystemCAPool }}
     taskQueue:
       goPoolSize: {{ .taskQueue.goPoolSize }}
