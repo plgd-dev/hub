@@ -108,8 +108,8 @@ func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn,
 	c := &ownerCache{
 		owners:     kitSync.NewMap(),
 		conn:       conn,
-		errFunc:    errFunc,
 		ownerClaim: ownerClaim,
+		errFunc:    errFunc,
 		asClient:   asClient,
 		expiration: expiration,
 		done:       make(chan struct{}),
@@ -165,21 +165,23 @@ func getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClie
 	return ownerDevices, nil
 }
 
-// Subscribe register onEvents handler and creates NATS subscription, if not exists.
-// To free subscription call close function.
-func (c *ownerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
-	var s *ownerSubject
-	c.owners.LoadOrStoreWithFunc(owner, func(value interface{}) interface{} {
+func (c *ownerCache) getLockedOwnerSubject(owner string) *ownerSubject {
+	val, _ := c.owners.LoadOrStoreWithFunc(owner, func(value interface{}) interface{} {
 		v := value.(*ownerSubject)
 		v.Lock()
-		s = v
 		return v
 	}, func() interface{} {
 		v := newOwnerSubject(time.Now().Add(c.expiration))
 		v.Lock()
-		s = v
 		return v
 	})
+	return val.(*ownerSubject)
+}
+
+// Subscribe register onEvents handler and creates NATS subscription, if not exists.
+// To free subscription call close function.
+func (c *ownerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
+	s := c.getLockedOwnerSubject(owner)
 
 	closeFunc := func() {}
 	if onEvent != nil {
@@ -191,8 +193,7 @@ func (c *ownerCache) Subscribe(owner string, onEvent func(e *events.Event)) (clo
 	}
 	if s.subscription == nil {
 		err := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
-			err := s.Handle(msg)
-			if err != nil {
+			if err := s.Handle(msg); err != nil {
 				c.errFunc(err)
 			}
 		})
@@ -212,22 +213,11 @@ func (c *ownerCache) Update(ctx context.Context) (added []string, removed []stri
 	if err != nil {
 		return nil, nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	var s *ownerSubject
-	c.owners.LoadOrStoreWithFunc(owner, func(value interface{}) interface{} {
-		v := value.(*ownerSubject)
-		v.Lock()
-		s = v
-		return v
-	}, func() interface{} {
-		v := newOwnerSubject(time.Now().Add(c.expiration))
-		v.Lock()
-		s = v
-		return v
-	})
+
+	s := c.getLockedOwnerSubject(owner)
 	defer s.Unlock()
 	err = s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
-		err := s.Handle(msg)
-		if err != nil {
+		if err := s.Handle(msg); err != nil {
 			c.errFunc(err)
 		}
 	})
@@ -267,26 +257,32 @@ func (c *ownerCache) GetDevices(owner string) (devices []string, ok bool) {
 	return devices, s.validUntil.After(now)
 }
 
-func (c *ownerCache) checkExpiration() {
+func (c *ownerCache) getExpiredOwnerSubjects(t time.Time) []string {
 	expiredOwners := make([]string, 0, 32)
-	now := time.Now()
 	c.owners.Range(func(key, value interface{}) bool {
 		s := value.(*ownerSubject)
 		s.Lock()
 		defer s.Unlock()
 		if len(s.handlers) > 0 {
-			if s.validUntil.Before(now) {
-				//expire devices in cache - user need to get UpdateDevices to get refresh it
+			if s.validUntil.Before(t) {
+				//expire devices in cache - user needs to call UpdateDevices to refresh them
 				s.devices = s.devices[:0]
 				s.devicesSynced = false
 			}
 			return true
 		}
-		if s.validUntil.Before(now) {
+		if s.validUntil.Before(t) {
 			expiredOwners = append(expiredOwners, key.(string))
 		}
 		return true
 	})
+	return expiredOwners
+}
+
+func (c *ownerCache) checkExpiration() {
+	now := time.Now()
+	expiredOwners := c.getExpiredOwnerSubjects(now)
+
 	for _, o := range expiredOwners {
 		var unsubscribeSubscription *nats.Subscription
 		c.owners.ReplaceWithFunc(o, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
@@ -306,8 +302,7 @@ func (c *ownerCache) checkExpiration() {
 			return s, false
 		})
 		if unsubscribeSubscription != nil {
-			err := unsubscribeSubscription.Unsubscribe()
-			if err != nil {
+			if err := unsubscribeSubscription.Unsubscribe(); err != nil {
 				c.errFunc(fmt.Errorf("cannot unsubscribe owner('%v'): %w", o, err))
 			}
 		}

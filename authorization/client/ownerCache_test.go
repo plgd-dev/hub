@@ -200,5 +200,4 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 	cacheDevices, ok = cache.GetDevices(owner)
 	assert.Empty(t, cacheDevices)
 	assert.False(t, ok)
-
 }
