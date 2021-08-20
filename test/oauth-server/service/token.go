@@ -33,107 +33,124 @@ type Token struct {
 	UserID       string
 }
 
-func generateAccessToken(clientID string, lifeTime time.Duration, host string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
+func makeAccessToken(clientID string, host string, issuedAt, expires time.Time) (jwt.Token, error) {
 	token := jwt.New()
-	now := time.Now()
-	expires := now.Add(lifeTime)
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
 	}
 	if err := token.Set(jwt.AudienceKey, host+"/"); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
 	}
-	if err := token.Set(jwt.IssuedAtKey, now); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
+	if err := token.Set(jwt.IssuedAtKey, issuedAt); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
 	}
 	if err := token.Set(jwt.ExpirationKey, expires); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
 	}
 	if err := token.Set(TokenScopeKey, []string{"openid", "r:deviceinformation:*", "r:resources:*", "w:resources:*", "w:subscriptions:*"}); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", TokenScopeKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", TokenScopeKey, err)
 	}
 	if err := token.Set(uri.ClientIDKey, clientID); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", uri.ClientIDKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", uri.ClientIDKey, err)
 	}
 	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
-	}
-	buf, err := json.Encode(token)
-	if err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to encode token: %s", err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
 	}
 
+	return token, nil
+}
+
+func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error) {
 	hdr := jws.NewHeaders()
-	if err = hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm()); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jws.AlgorithmKey, err)
+	if err := hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm()); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %w", jws.AlgorithmKey, err)
 	}
-	if err = hdr.Set(jws.TypeKey, `JWT`); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jws.TypeKey, err)
+	if err := hdr.Set(jws.TypeKey, `JWT`); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %w", jws.TypeKey, err)
 	}
-	kid := jwkKey.KeyID()
-	if err = hdr.Set(jws.KeyIDKey, kid); err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to set %v: %w", jws.KeyIDKey, err)
+	if err := hdr.Set(jws.KeyIDKey, jwkKey.KeyID()); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %w", jws.KeyIDKey, err)
 	}
-	payload, err := jws.Sign(buf, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
+	payload, err := jws.Sign(data, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
 	if err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to create UserToken: %s", err)
+		return nil, fmt.Errorf("failed to create UserToken: %w", err)
+	}
+	return payload, nil
+}
+
+func generateAccessToken(clientID string, lifeTime time.Duration, host string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
+	now := time.Now()
+	expires := now.Add(lifeTime)
+	token, err := makeAccessToken(clientID, host, now, expires)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to make token: %w", err)
+	}
+
+	buf, err := json.Encode(token)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to encode token: %w", err)
+	}
+
+	payload, err := makeJWTPayload(key, jwkKey, buf)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to make payload: %w", err)
 	}
 	return string(payload), expires, nil
 }
 
-func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string, key *rsa.PrivateKey, jwkKey jwk.Key) (string, error) {
+func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Time) (jwt.Token, error) {
 	token := jwt.New()
-	now := time.Now()
-	expires := now.Add(lifeTime)
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.SubjectKey, err)
 	}
 	if err := token.Set(jwt.AudienceKey, clientID); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.AudienceKey, err)
 	}
-	if err := token.Set(jwt.IssuedAtKey, now); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
+	if err := token.Set(jwt.IssuedAtKey, issuedAt); err != nil {
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuedAtKey, err)
 	}
 	if err := token.Set(jwt.ExpirationKey, expires); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.ExpirationKey, err)
 	}
 	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
 	}
 	if err := token.Set(uri.NonceKey, nonce); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", uri.NonceKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", uri.NonceKey, err)
 	}
 	if err := token.Set(TokenNicknameKey, "test"); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", TokenNicknameKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", TokenNicknameKey, err)
 	}
 	if err := token.Set(TokenNameKey, "test@test.com"); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", TokenNameKey, err)
+		return nil, fmt.Errorf("failed to set %v: %w", TokenNameKey, err)
 	}
 	if err := token.Set(TokenPictureKey, "https://s.gravatar.com/avatar/319673928161fae8216e9a2225cff4b6?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png"); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", TokenPictureKey, err)
-	}
-	//,\"updated_at\":\"2021-02-24T08:13:30.677Z\",\"email\":\"dnaik@infinera.com\",\"email_verified\":true,
-	buf, err := json.Encode(token)
-	if err != nil {
-		return "", fmt.Errorf("failed to encode token: %s", err)
+		return nil, fmt.Errorf("failed to set %v: %w", TokenPictureKey, err)
 	}
 
-	hdr := jws.NewHeaders()
-	if err = hdr.Set(jws.AlgorithmKey, jwkKey.Algorithm()); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jws.AlgorithmKey, err)
-	}
-	if err = hdr.Set(jws.TypeKey, `JWT`); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jws.TypeKey, err)
-	}
-	if err = hdr.Set(jws.KeyIDKey, jwkKey.KeyID()); err != nil {
-		return "", fmt.Errorf("failed to set %v: %w", jws.KeyIDKey, err)
-	}
-	payload, err := jws.Sign(buf, jwa.SignatureAlgorithm(jwkKey.Algorithm()), key, jws.WithHeaders(hdr))
+	return token, nil
+}
+
+func generateIDToken(clientID string, lifeTime time.Duration, host, nonce string, key *rsa.PrivateKey, jwkKey jwk.Key) (string, error) {
+	now := time.Now()
+	expires := now.Add(lifeTime)
+	token, err := makeIDToken(clientID, host, nonce, now, expires)
 	if err != nil {
-		return "", fmt.Errorf("failed to create UserToken: %s", err)
+		return "", fmt.Errorf("failed to make token: %w", err)
 	}
+
+	buf, err := json.Encode(token)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode token: %w", err)
+	}
+
+	payload, err := makeJWTPayload(key, jwkKey, buf)
+	if err != nil {
+		return "", fmt.Errorf("failed to make payload: %w", err)
+	}
+
 	return string(payload), nil
 }
 

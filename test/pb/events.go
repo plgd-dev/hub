@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//gocyclo:ignore
 func GetWrappedEvent(value *pb.GetEventsResponse) interface{} {
 	if event := value.GetDeviceMetadataSnapshotTaken(); event != nil {
 		return event
