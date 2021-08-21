@@ -16,21 +16,17 @@ const { INFINITY, MS, NS } = commandTimeoutUnits
 const MINIMAL_MS_VALUE = 100
 
 const convertValueToNs = (value, unit) =>
-  parseInt(
-    time(value)
-      .from(unit === INFINITY ? NS : unit)
-      .to(NS)
-      .value.toFixed(0)
-  )
+  +time(value)
+    .from(unit === INFINITY ? NS : unit)
+    .to(NS)
+    .value.toFixed(0)
 
 const convertValueFromTo = (value, unitFrom, unitTo) =>
   time(value)
     .from(unitFrom === INFINITY ? NS : unitFrom)
     .to(unitTo === INFINITY ? NS : unitTo).value
 
-const normalizeValue = value => {
-  return +value.toFixed(5)
-}
+const normalizeValue = value => +value.toFixed(5)
 
 const hasError = (value, unit) => {
   const baseUnit = unit === INFINITY ? NS : unit
