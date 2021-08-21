@@ -10,12 +10,14 @@ import { NotFoundPage } from '@/containers/not-found-page'
 import { useIsMounted } from '@/common/hooks'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 import { showSuccessToast } from '@/components/toast'
+import { useAppConfig } from '@/containers/app'
 
 import { ThingsDetails } from './_things-details'
 import { ThingsResources } from './_things-resources'
 import { ThingsDetailsHeader } from './_things-details-header'
 import { ThingsDetailsTitle } from './_things-details-title'
 import { ThingsResourcesModal } from './_things-resources-modal'
+import { CommanTimeoutControl } from './_command-timeout-control'
 import {
   thingsStatuses,
   defaultNewResource,
@@ -41,6 +43,8 @@ import {
 import { useThingDetails, useThingsResources } from './hooks'
 import { messages as t } from './things-i18n'
 
+import './things-details.scss'
+
 export const ThingsDetailsPage = () => {
   const { formatMessage: _ } = useIntl()
   const { id, href } = useParams()
@@ -49,6 +53,11 @@ export const ThingsDetailsPage = () => {
   const [loadingResource, setLoadingResource] = useState(false)
   const [savingResource, setSavingResource] = useState(false)
   const [deleteResourceHref, setDeleteResourceHref] = useState()
+  const {
+    wellKnownConfig: { defaultTimeToLive },
+  } = useAppConfig()
+  const [ttl, setTtl] = useState(defaultTimeToLive)
+  const [ttlHasError, setTtlHasError] = useState(false)
   const isMounted = useIsMounted()
   const { data, updateData, loading, error } = useThingDetails(id)
   const {
@@ -208,7 +217,7 @@ export const ThingsDetailsPage = () => {
 
     try {
       await updateThingsResourceApi(
-        { deviceId: id, href, currentInterface },
+        { deviceId: id, href, currentInterface, ttl },
         resourceDataUpdate
       )
 
@@ -238,7 +247,7 @@ export const ThingsDetailsPage = () => {
 
     try {
       await createThingsResourceApi(
-        { deviceId: id, href, currentInterface },
+        { deviceId: id, href, currentInterface, ttl },
         resourceDataCreate
       )
 
@@ -263,7 +272,11 @@ export const ThingsDetailsPage = () => {
     setLoadingResource(true)
 
     try {
-      await deleteThingsResourceApi({ deviceId: id, href: deleteResourceHref })
+      await deleteThingsResourceApi({
+        deviceId: id,
+        href: deleteResourceHref,
+        ttl,
+      })
 
       if (isMounted.current) {
         showSuccessToast({
@@ -380,6 +393,16 @@ export const ThingsDetailsPage = () => {
         isUnregistered={isUnregistered}
         deviceId={id}
         deviceName={deviceName}
+        confirmDisabled={ttlHasError}
+        ttlControl={
+          <CommanTimeoutControl
+            defaultValue={ttl}
+            onChange={setTtl}
+            disabled={loadingResource}
+            ttlHasError={ttlHasError}
+            onTtlHasError={setTtlHasError}
+          />
+        }
       />
 
       <ConfirmModal
@@ -391,10 +414,23 @@ export const ThingsDetailsPage = () => {
             {`${_(t.delete)} ${deleteResourceHref}`}
           </>
         }
-        body={_(t.deleteResourceMessage)}
+        body={
+          <>
+            {_(t.deleteResourceMessage)}
+            <CommanTimeoutControl
+              defaultValue={ttl}
+              onChange={setTtl}
+              disabled={loadingResource}
+              ttlHasError={ttlHasError}
+              onTtlHasError={setTtlHasError}
+              isDelete
+            />
+          </>
+        }
         confirmButtonText={_(t.delete)}
         loading={loadingResource}
         onClose={closeDeleteModal}
+        confirmDisabled={ttlHasError}
       >
         {_(t.delete)}
       </ConfirmModal>

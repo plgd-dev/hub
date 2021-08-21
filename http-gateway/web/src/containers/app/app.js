@@ -1,5 +1,5 @@
 import { hot } from 'react-hot-loader/root'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import classNames from 'classnames'
 import { Router } from 'react-router-dom'
@@ -22,6 +22,7 @@ import { history } from '@/store/history'
 import { security } from '@/common/services/security'
 import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
+import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
@@ -37,11 +38,49 @@ const App = ({ config }) => {
   } = useAuth0()
   const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
   const { formatMessage: _ } = useIntl()
+  const [wellKnownConfig, setWellKnownConfig] = useState(null)
+  const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
 
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
   security.setDefaultAudience(config.audience)
   security.setHttpGatewayAddress(config.httpGatewayAddress)
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !wellKnownConfig &&
+      isAuthenticated &&
+      !wellKnownConfigFetched
+    ) {
+      setWellKnownConfigFetched(true)
+
+      const fetchWellKnownConfig = async () => {
+        try {
+          const wellKnown = await fetchApi(
+            `${config.httpGatewayAddress}/api/.well-known/ocfcloud-configuration`
+          )
+
+          setWellKnownConfig(wellKnown)
+        } catch (e) {
+          // throw new Error(
+          //   'Could not retrieve the well-known ocfcloud configuration.'
+          // )
+
+          // Temporary set hardcoded ttl to config
+          setWellKnownConfig({ defaultTimeToLive: 0 })
+        }
+      }
+
+      fetchWellKnownConfig()
+    }
+  }, [
+    isLoading,
+    isAuthenticated,
+    wellKnownConfig,
+    wellKnownConfigFetched,
+    config.httpGatewayAddress,
+  ])
 
   // Render an error box with an auth error
   if (error) {
@@ -62,7 +101,7 @@ const App = ({ config }) => {
     )
   }
 
-  if (isLoading) {
+  if (isLoading || !wellKnownConfig) {
     return renderLoader()
   }
 
@@ -79,7 +118,7 @@ const App = ({ config }) => {
   }
 
   return (
-    <AppContext.Provider value={{ ...config, collapsed }}>
+    <AppContext.Provider value={{ ...config, collapsed, wellKnownConfig }}>
       <Router history={history}>
         <InitServices />
         <Helmet

@@ -14,7 +14,7 @@ import { messages as t } from './things-i18n'
 
 // Returns the extension for resources API for the selected interface
 export const interfaceGetParam = currentInterface =>
-  currentInterface ? `?resourceInterface=${currentInterface}` : ''
+  currentInterface ? `resourceInterface=${currentInterface}` : ''
 
 // Return true if a resource contains the oic.if.create interface, meaning a new resource can be created from this resource
 export const canCreateResource = interfaces =>
@@ -154,15 +154,17 @@ const deDensisfy = objectToDeDensify => {
   const { href, ...rest } = objectToDeDensify
 
   const keys = Object.keys(rest)
-  return keys.map(thisKey => {
-    const value = objectToDeDensify[thisKey]
-    if (value.subRows) {
-      value.subRows = deDensisfy(value.subRows)
-    }
-    return value
-  }).sort((a, b) => {
-    return compareIgnoreCase(a.href, b.href)
-  })
+  return keys
+    .map(thisKey => {
+      const value = objectToDeDensify[thisKey]
+      if (value.subRows) {
+        value.subRows = deDensisfy(value.subRows)
+      }
+      return value
+    })
+    .sort((a, b) => {
+      return compareIgnoreCase(a.href, b.href)
+    })
 }
 
 // A recursive function for creating a tree structure from the href attribute

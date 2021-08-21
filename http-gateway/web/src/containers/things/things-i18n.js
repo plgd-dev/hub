@@ -282,4 +282,12 @@ export const messages = defineMessages({
     id: 'things.disabled',
     defaultMessage: 'Disabled',
   },
+  commandTimeout: {
+    id: 'things.commandTimeout',
+    defaultMessage: 'Command Timeout',
+  },
+  minimalValueIs: {
+    id: 'things.minimalValueIs',
+    defaultMessage: 'Minimal value is {minimalValue}.',
+  },
 })
