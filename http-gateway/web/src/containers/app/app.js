@@ -22,7 +22,7 @@ import { history } from '@/store/history'
 import { security } from '@/common/services/security'
 import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
-import { fetchApi } from '@/common/services'
+// import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
@@ -36,7 +36,7 @@ const App = ({ config }) => {
     loginWithRedirect,
     getAccessTokenSilently,
   } = useAuth0()
-  const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
+  const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
   const { formatMessage: _ } = useIntl()
   const [wellKnownConfig, setWellKnownConfig] = useState(null)
   const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
@@ -54,25 +54,23 @@ const App = ({ config }) => {
       !wellKnownConfigFetched
     ) {
       setWellKnownConfigFetched(true)
+      setWellKnownConfig({ defaultTimeToLive: 0 })
 
-      const fetchWellKnownConfig = async () => {
-        try {
-          const wellKnown = await fetchApi(
-            `${config.httpGatewayAddress}/api/.well-known/ocfcloud-configuration`
-          )
+      // const fetchWellKnownConfig = async () => {
+      //   try {
+      //     const wellKnown = await fetchApi(
+      //       `${config.httpGatewayAddress}/api/.well-known/ocfcloud-configuration`
+      //     )
 
-          setWellKnownConfig(wellKnown)
-        } catch (e) {
-          // throw new Error(
-          //   'Could not retrieve the well-known ocfcloud configuration.'
-          // )
+      //     setWellKnownConfig(wellKnown)
+      //   } catch (e) {
+      //     throw new Error(
+      //       'Could not retrieve the well-known ocfcloud configuration.'
+      //     )
+      //   }
+      // }
 
-          // Temporary set hardcoded ttl to config
-          setWellKnownConfig({ defaultTimeToLive: 0 })
-        }
-      }
-
-      fetchWellKnownConfig()
+      // fetchWellKnownConfig()
     }
   }, [
     isLoading,

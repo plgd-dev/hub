@@ -96,16 +96,6 @@ export const ThingsResourcesModal = ({
   const renderBody = () => {
     return (
       <>
-        <Label title={_(t.deviceId)} inline>
-          {deviceId}
-        </Label>
-        <Label title={isUpdateModal ? _(t.types) : _(t.supportedTypes)} inline>
-          <div className="align-items-end badges-box-vertical">
-            {data?.types?.map?.(type => <Badge key={type}>{type}</Badge>) ||
-              '-'}
-          </div>
-        </Label>
-
         {data && isUpdateModal && (
           <Label title="" inline>
             <ThingsResourcesModalNotifications
@@ -116,6 +106,16 @@ export const ThingsResourcesModal = ({
             />
           </Label>
         )}
+
+        <Label title={_(t.deviceId)} inline>
+          {deviceId}
+        </Label>
+        <Label title={isUpdateModal ? _(t.types) : _(t.supportedTypes)} inline>
+          <div className="align-items-end badges-box-vertical">
+            {data?.types?.map?.(type => <Badge key={type}>{type}</Badge>) ||
+              '-'}
+          </div>
+        </Label>
 
         {isUpdateModal && (
           <Label title={_(t.interfaces)} inline>

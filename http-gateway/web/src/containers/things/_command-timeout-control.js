@@ -11,25 +11,25 @@ import { TextField } from '@/components/text-field'
 import { commandTimeoutUnits } from './constants'
 import { messages as t } from './things-i18n'
 
-const { INFINITY, MS, NS } = commandTimeoutUnits
+const { INFINITE, MS, NS } = commandTimeoutUnits
 
 const MINIMAL_MS_VALUE = 100
 
 const convertValueToNs = (value, unit) =>
   +time(value)
-    .from(unit === INFINITY ? NS : unit)
+    .from(unit === INFINITE ? NS : unit)
     .to(NS)
     .value.toFixed(0)
 
 const convertValueFromTo = (value, unitFrom, unitTo) =>
   time(value)
-    .from(unitFrom === INFINITY ? NS : unitFrom)
-    .to(unitTo === INFINITY ? NS : unitTo).value
+    .from(unitFrom === INFINITE ? NS : unitFrom)
+    .to(unitTo === INFINITE ? NS : unitTo).value
 
 const normalizeValue = value => +value.toFixed(5)
 
 const hasError = (value, unit) => {
-  const baseUnit = unit === INFINITY ? NS : unit
+  const baseUnit = unit === INFINITE ? NS : unit
 
   const valueMs = time(value)
     .from(baseUnit)
@@ -54,7 +54,7 @@ export const CommanTimeoutControl = ({
   isDelete,
 }) => {
   const { formatMessage: _ } = useIntl()
-  const [unit, setUnit] = useState(defaultValue === 0 ? INFINITY : MS)
+  const [unit, setUnit] = useState(defaultValue === 0 ? INFINITE : MS)
   const [inputValue, setInputValue] = useState(
     convertAndNormalizeValueFromTo(defaultValue, NS, MS)
   )
@@ -68,14 +68,14 @@ export const CommanTimeoutControl = ({
 
   const handleOnUnitChange = ({ value: unitValue }) => {
     const newInputValue =
-      unitValue === INFINITY
+      unitValue === INFINITE
         ? 0
         : convertAndNormalizeValueFromTo(inputValue, unit, unitValue)
     setInputValue(newInputValue)
     setUnit(unitValue)
     onChange(convertValueToNs(newInputValue, unitValue))
 
-    if (unitValue === INFINITY) {
+    if (unitValue === INFINITE) {
       onTtlHasError(false)
     }
   }
@@ -104,8 +104,8 @@ export const CommanTimeoutControl = ({
 
     if (floatValue === 0 || value === '') {
       onChange(0)
-      // Change the dropdown to Infinity when provided 0 as value
-      // setUnit(INFINITY)
+      // Change the dropdown to INFINITE when provided 0 as value
+      // setUnit(INFINITE)
     } else if (isFinite(floatValue) && floatValue > 0) {
       const newValue = normalizeValue(floatValue, unit)
       setInputValue(newValue)
@@ -127,14 +127,17 @@ export const CommanTimeoutControl = ({
       })}
     >
       <div className="ttl-label-content d-flex justify-content-end">
-        <TextField
-          className={classNames('ttl-value-input', { error: ttlHasError })}
-          value={inputValue}
-          onChange={handleOnValueChange}
-          onBlur={handleOnValueBlur}
-          placeholder="Infinity"
-          disabled={disabled || unit === INFINITY}
-        />
+        {unit !== INFINITE && (
+          <TextField
+            className={classNames('ttl-value-input', { error: ttlHasError })}
+            value={inputValue}
+            onChange={handleOnValueChange}
+            onBlur={handleOnValueBlur}
+            placeholder="INFINITE"
+            disabled={disabled || unit === INFINITE}
+          />
+        )}
+
         <Select
           className="ttl-unit-dropdown"
           isDisabled={disabled}

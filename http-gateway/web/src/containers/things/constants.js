@@ -58,7 +58,7 @@ export const defaultNewResource = {
 }
 
 export const commandTimeoutUnits = {
-  INFINITY: 'Infinity',
+  INFINITE: 'Infinite',
   MS: 'ms',
   S: 's',
   M: 'min',
