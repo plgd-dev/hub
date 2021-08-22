@@ -2,48 +2,21 @@ import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
 import isFinite from 'lodash/isFinite'
-import { time } from 'units-converter'
 import classNames from 'classnames'
 
 import { Select } from '@/components/select'
 import { Label } from '@/components/label'
 import { TextField } from '@/components/text-field'
 import { commandTimeoutUnits } from './constants'
+import {
+  convertValueToNs,
+  hasCommandTimeoutError,
+  convertAndNormalizeValueFromTo,
+  normalizeToFixedFloatValue,
+} from './utils'
 import { messages as t } from './things-i18n'
 
 const { INFINITE, MS, NS } = commandTimeoutUnits
-
-const MINIMAL_MS_VALUE = 100
-
-const convertValueToNs = (value, unit) =>
-  +time(value)
-    .from(unit === INFINITE ? NS : unit)
-    .to(NS)
-    .value.toFixed(0)
-
-const convertValueFromTo = (value, unitFrom, unitTo) =>
-  time(value)
-    .from(unitFrom === INFINITE ? NS : unitFrom)
-    .to(unitTo === INFINITE ? NS : unitTo).value
-
-const normalizeValue = value => +value.toFixed(5)
-
-const hasError = (value, unit) => {
-  const baseUnit = unit === INFINITE ? NS : unit
-
-  const valueMs = time(value)
-    .from(baseUnit)
-    .to(MS).value
-
-  if (valueMs < MINIMAL_MS_VALUE && value !== 0) {
-    return true
-  }
-
-  return false
-}
-
-const convertAndNormalizeValueFromTo = (value, unitFrom, unitTo) =>
-  normalizeValue(convertValueFromTo(value, unitFrom, unitTo))
 
 export const CommanTimeoutControl = ({
   defaultValue,
@@ -84,14 +57,14 @@ export const CommanTimeoutControl = ({
     const onlyZerosRegex = /^0+$/
     const value = event.target.value.trim()
     const floatValue = parseFloat(value)
-    const containsOneOrNoneDot = (value.match(/./g) || []).length <= 1
-    const isValidNumber = isFinite(floatValue) || containsOneOrNoneDot
+    const containsOneOrNoDot = (value.match(/./g) || []).length <= 1
+    const isValidNumber = isFinite(floatValue) || containsOneOrNoDot
     const finiteFloatValue = isValidNumber ? value : 0
     const newInputValue = !!finiteFloatValue?.match?.(onlyZerosRegex)
       ? 0
       : finiteFloatValue
 
-    if (value === '' || containsOneOrNoneDot || newInputValue >= 0) {
+    if (value === '' || containsOneOrNoDot || newInputValue >= 0) {
       setInputValue(newInputValue)
     }
 
@@ -104,14 +77,12 @@ export const CommanTimeoutControl = ({
 
     if (floatValue === 0 || value === '') {
       onChange(0)
-      // Change the dropdown to INFINITE when provided 0 as value
-      // setUnit(INFINITE)
     } else if (isFinite(floatValue) && floatValue > 0) {
-      const newValue = normalizeValue(floatValue, unit)
+      const newValue = normalizeToFixedFloatValue(floatValue, unit)
       setInputValue(newValue)
       onChange(convertValueToNs(newValue, unit))
 
-      if (hasError(newValue, unit)) {
+      if (hasCommandTimeoutError(newValue, unit)) {
         onTtlHasError(true)
       }
     }

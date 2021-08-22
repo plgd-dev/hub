@@ -66,6 +66,8 @@ export const commandTimeoutUnits = {
   NS: 'ns',
 }
 
+export const MINIMAL_TTL_VALUE_MS = 100
+
 export const NO_DEVICE_NAME = '<no-name>'
 
 // Websocket keys
