@@ -232,7 +232,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleUpdateResourceErrors(error, _)
+        handleUpdateResourceErrors(error, { id, href }, _)
         setSavingResource(false)
       }
     }
@@ -262,7 +262,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleCreateResourceErrors(error, _)
+        handleCreateResourceErrors(error, { id, href }, _)
         setSavingResource(false)
       }
     }
@@ -289,7 +289,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleDeleteResourceErrors(error, _)
+        handleDeleteResourceErrors(error, { id, href: deleteResourceHref }, _)
         setLoadingResource(false)
         closeDeleteModal()
       }

@@ -37,20 +37,27 @@ export const getDeviceChangeResourceHref = links =>
     ?.href
 
 // Handle the errors occurred during resource update
-export const handleUpdateResourceErrors = (error, _) => {
+export const handleUpdateResourceErrors = (
+  error,
+  { id: deviceId, href },
+  _
+) => {
   const errorMessage = getApiErrorMessage(error)
 
   if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
     // Resource update went through, but it will be applied once the device comes online
     showWarningToast({
-      title: _(t.resourceUpdateSuccess),
+      title: _(t.resourceUpdate),
       message: _(t.resourceWasUpdatedOffline),
     })
   } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
     // Command timeout
     showWarningToast({
       title: _(t.resourceUpdate),
-      message: `${_(t.update)} ${_(t.commandOnResourceExpired)}`,
+      message: `${_(t.update)} ${_(t.commandOnResourceExpired, {
+        deviceId,
+        href,
+      })}`,
     })
   } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
     // JSON validation error
@@ -67,20 +74,27 @@ export const handleUpdateResourceErrors = (error, _) => {
 }
 
 // Handle the errors occurred during resource create
-export const handleCreateResourceErrors = (error, _) => {
+export const handleCreateResourceErrors = (
+  error,
+  { id: deviceId, href },
+  _
+) => {
   const errorMessage = getApiErrorMessage(error)
 
   if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
     // Resource create went through, but it will be applied once the device comes online
     showWarningToast({
-      title: _(t.resourceCreateSuccess),
+      title: _(t.resourceCreate),
       message: _(t.resourceWasCreatedOffline),
     })
   } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
     // Command timeout
     showWarningToast({
       title: _(t.resourceCreate),
-      message: `${_(t.create)} ${_(t.commandOnResourceExpired)}`,
+      message: `${_(t.create)} ${_(t.commandOnResourceExpired, {
+        deviceId,
+        href,
+      })}`,
     })
   } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
     // JSON validation error
@@ -122,20 +136,27 @@ export const handleFetchResourceErrors = (error, _) =>
   })
 
 // Handle the errors occurred during resource fetch
-export const handleDeleteResourceErrors = (error, _) => {
+export const handleDeleteResourceErrors = (
+  error,
+  { id: deviceId, href },
+  _
+) => {
   const errorMessage = getApiErrorMessage(error)
 
   if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
     // Resource update went through, but it will be applied once the device comes online
     showWarningToast({
-      title: _(t.resourceDeleteSuccess),
+      title: _(t.resourceDelete),
       message: _(t.resourceWasDeletedOffline),
     })
   } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
     // Command timeout
     showWarningToast({
       title: _(t.resourceDelete),
-      message: `${_(t.delete)} ${_(t.commandOnResourceExpired)}`,
+      message: `${_(t.delete)} ${_(t.commandOnResourceExpired, {
+        deviceId,
+        href,
+      })}`,
     })
   } else {
     showErrorToast({

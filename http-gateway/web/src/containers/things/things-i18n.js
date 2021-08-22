@@ -151,7 +151,7 @@ export const messages = defineMessages({
   },
   commandOnResourceExpired: {
     id: 'things.commandOnResourceExpired',
-    defaultMessage: 'command on resource has expired.',
+    defaultMessage: 'command on resource {deviceId}{href} has expired.',
     description: 'Continuos message for command expiration, keep the first letter lowercase!',
   },
   resourceUpdateError: {
