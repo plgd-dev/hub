@@ -49,8 +49,8 @@ const App = ({ config }) => {
   useEffect(() => {
     if (
       !isLoading &&
-      !wellKnownConfig &&
       isAuthenticated &&
+      !wellKnownConfig &&
       !wellKnownConfigFetched
     ) {
       setWellKnownConfigFetched(true)
@@ -99,10 +99,6 @@ const App = ({ config }) => {
     )
   }
 
-  if (isLoading || !wellKnownConfig) {
-    return renderLoader()
-  }
-
   // If the loading is finished but still unauthenticated, it means the user is not logged in.
   // Calling the loginWithRedirect will make a rediret to the login page where the user can login.
   if (!isLoading && !isAuthenticated) {
@@ -112,6 +108,10 @@ const App = ({ config }) => {
       },
     })
 
+    return renderLoader()
+  }
+
+  if (isLoading || !wellKnownConfig) {
     return renderLoader()
   }
 

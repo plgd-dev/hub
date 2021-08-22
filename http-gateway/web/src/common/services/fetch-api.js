@@ -1,11 +1,18 @@
 import axios from 'axios'
+import { time } from 'units-converter'
 
 import { security } from './security'
 
 const CANCEL_REQUEST_DEADLINE_MS = 10000
 
+export const errorCodes = {
+  COMMAND_EXPIRED: 'CommandExpired',
+  DEADLINE_EXCEEDED: 'DeadlineExceeded',
+  INVALID_ARGUMENT: 'InvalidArgument',
+}
+
 export const fetchApi = async (url, options = {}) => {
-  const { audience, scope, body, ...fetchOptions } = options
+  const { audience, scope, body, timeToLive, ...fetchOptions } = options
   const defaultAudience = security.getDefaultAudience()
   // Access token must be gathered and set as a Bearer header in all requests
   const accessToken = await security.getAccessTokenSilently()({
@@ -23,6 +30,11 @@ export const fetchApi = async (url, options = {}) => {
   }
   // Cancel token source needed for cancelling the request
   const cancelTokenSource = axios.CancelToken.source()
+  const cancelDeadlineMs = timeToLive
+    ? time(timeToLive)
+        .from('ns')
+        .to('ms').value + 500
+    : CANCEL_REQUEST_DEADLINE_MS
 
   // We are returning a Promise because we want to be able to cancel the request after a certain time
   return new Promise((resolve, reject) => {
@@ -30,7 +42,7 @@ export const fetchApi = async (url, options = {}) => {
     const deadlineTimer = setTimeout(() => {
       // Cancel the request
       cancelTokenSource.cancel()
-    }, CANCEL_REQUEST_DEADLINE_MS)
+    }, cancelDeadlineMs)
 
     axios({
       ...oAuthSettings,
@@ -47,7 +59,11 @@ export const fetchApi = async (url, options = {}) => {
 
         // A middleware for checking if the error was caused by cancellation of the request, if so, throw a DeadlineExceeded error
         if (axios.isCancel(error)) {
-          return reject(new Error('DeadlineExceeded'))
+          const cancelError =
+            cancelDeadlineMs < CANCEL_REQUEST_DEADLINE_MS
+              ? errorCodes.COMMAND_EXPIRED
+              : errorCodes.DEADLINE_EXCEEDED
+          return reject(new Error(cancelError))
         }
 
         // Rethrow the error

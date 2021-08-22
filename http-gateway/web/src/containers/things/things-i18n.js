@@ -134,6 +134,26 @@ export const messages = defineMessages({
     defaultMessage: 'Resource update successful',
     description: 'Title of the toast message on resource update success.',
   },
+  resourceUpdate: {
+    id: 'things.resourceUpdate',
+    defaultMessage: 'Resource update',
+    description: 'Title of the toast message on resource update expired.',
+  },
+  resourceCreate: {
+    id: 'things.resourceCreate',
+    defaultMessage: 'Resource creation',
+    description: 'Title of the toast message on resource creation expired.',
+  },
+  resourceDelete: {
+    id: 'things.resourceDelete',
+    defaultMessage: 'Resource deletion',
+    description: 'Title of the toast message on resource deletion expired.',
+  },
+  commandOnResourceExpired: {
+    id: 'things.commandOnResourceExpired',
+    defaultMessage: 'command on resource has expired.',
+    description: 'Continuos message for command expiration, keep the first letter lowercase!',
+  },
   resourceUpdateError: {
     id: 'things.resourceUpdateError',
     defaultMessage: 'Failed to update a resource',

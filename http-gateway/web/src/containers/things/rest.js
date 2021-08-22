@@ -54,7 +54,7 @@ export const updateThingsResourceApi = (
     }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
       currentInterface
     )}`,
-    { method: 'PUT', body: data }
+    { method: 'PUT', body: data, timeToLive: ttl }
   )
 }
 
@@ -73,7 +73,7 @@ export const createThingsResourceApi = (
     }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
       currentInterface
     )}`,
-    { method: 'POST', body: data }
+    { method: 'POST', body: data, timeToLive: ttl }
   )
 }
 
@@ -87,7 +87,7 @@ export const deleteThingsResourceApi = ({ deviceId, href, ttl }) => {
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
     }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
-    { method: 'DELETE' }
+    { method: 'DELETE', timeToLive: ttl }
   )
 }
 

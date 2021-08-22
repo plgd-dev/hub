@@ -232,7 +232,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleUpdateResourceErrors(error, isOnline, _)
+        handleUpdateResourceErrors(error, _)
         setSavingResource(false)
       }
     }
@@ -262,7 +262,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleCreateResourceErrors(error, isOnline, _)
+        handleCreateResourceErrors(error, _)
         setSavingResource(false)
       }
     }
@@ -289,7 +289,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleDeleteResourceErrors(error, isOnline, _)
+        handleDeleteResourceErrors(error, _)
         setLoadingResource(false)
         closeDeleteModal()
       }
@@ -329,7 +329,7 @@ export const ThingsDetailsPage = () => {
       }
     } catch (error) {
       if (error && isMounted.current) {
-        handleShadowSynchronizationErrors(error, isOnline, _)
+        handleShadowSynchronizationErrors(error, _)
         setShadowSyncLoading(false)
       }
     }
@@ -398,7 +398,7 @@ export const ThingsDetailsPage = () => {
           <CommanTimeoutControl
             defaultValue={ttl}
             onChange={setTtl}
-            disabled={loadingResource}
+            disabled={loadingResource || savingResource}
             ttlHasError={ttlHasError}
             onTtlHasError={setTtlHasError}
           />
