@@ -4,6 +4,7 @@ import { time } from 'units-converter'
 import { security } from './security'
 
 const CANCEL_REQUEST_DEADLINE_MS = 10000
+const COMMAND_TIMEOUT_THRESHOLD_MS = 500
 
 export const errorCodes = {
   COMMAND_EXPIRED: 'CommandExpired',
@@ -33,7 +34,7 @@ export const fetchApi = async (url, options = {}) => {
   const cancelDeadlineMs = timeToLive
     ? time(timeToLive)
         .from('ns')
-        .to('ms').value + 500
+        .to('ms').value + COMMAND_TIMEOUT_THRESHOLD_MS
     : CANCEL_REQUEST_DEADLINE_MS
 
   // We are returning a Promise because we want to be able to cancel the request after a certain time
