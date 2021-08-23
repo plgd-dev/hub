@@ -9,8 +9,9 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
@@ -53,7 +54,7 @@ func WithMarshaler(dataMarshaler MarshalerFunc) MarshalerOpt {
 }
 
 // New creates new publisher with proto marshaller.
-func New(config Config, logger log.Logger, opts ...Option) (*Publisher, error) {
+func New(config client.ConfigPublisher, logger log.Logger, opts ...Option) (*Publisher, error) {
 	cfg := options{
 		dataMarshaler: json.Marshal,
 	}
@@ -61,7 +62,7 @@ func New(config Config, logger log.Logger, opts ...Option) (*Publisher, error) {
 		o.apply(&cfg)
 	}
 
-	certManager, err := client.New(config.TLS, logger)
+	certManager, err := cmClient.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

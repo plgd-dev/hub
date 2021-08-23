@@ -7,7 +7,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 type Config struct {
@@ -62,7 +62,7 @@ type ClientsConfig struct {
 
 type EventBusConfig struct {
 	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize"`
-	NATS       subscriber.Config `yaml:"nats" json:"nats"`
+	NATS       natsClient.Config `yaml:"nats" json:"nats"`
 }
 
 func (c *EventBusConfig) Validate() error {

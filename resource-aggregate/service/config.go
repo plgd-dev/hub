@@ -9,7 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	client2 "github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
 )
 
@@ -45,7 +45,7 @@ func (c *APIsConfig) Validate() error {
 }
 
 type EventBusConfig struct {
-	NATS publisher.Config `yaml:"nats" json:"nats"`
+	NATS natsClient.ConfigPublisher `yaml:"nats" json:"nats"`
 }
 
 func (c *EventBusConfig) Validate() error {

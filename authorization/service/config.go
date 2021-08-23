@@ -6,7 +6,7 @@ import (
 	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/kit/config"
 )
 
@@ -55,7 +55,7 @@ func (c *ClientsConfig) Validate() error {
 }
 
 type EventBusConfig struct {
-	NATS publisher.Config `yaml:"nats" json:"nats"`
+	NATS natsClient.ConfigPublisher `yaml:"nats" json:"nats"`
 }
 
 func (c *EventBusConfig) Validate() error {
