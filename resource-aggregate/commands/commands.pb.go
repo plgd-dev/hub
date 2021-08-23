@@ -20,35 +20,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐
-// │OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│
-// └──────────┘          └───┬───┘                         └────────┬─────────┘               └─────────┘               └──────┘
-//     ┌┴┐                   │                                      ┌┴┐            UpdateDeviceMetadataRequest             ┌┴┐
-//     │ │                   │                                      │ │ <──────────────────────────────────────────────────│ │
-//     │ │                   │                                      │ │                            │                       │ │
-//     │ │                   │                                      │ │            UpdateDeviceMetadataResponse            │ │
-//     │ │                   │                                      │ │ ──────────────────────────────────────────────────>│ │
-//     │ │                   │                                      └┬┘                            │                       │ │
-//     │ │                   │                                      │ DeviceMetadataUpdatePending  │                       │ │
-//     │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│                       │ │
-//     │ │                   │                                      │                              │                       │ │
-//     │ │                  ┌┴┐                     DeviceMetadataUpdatePending                    │                       │ │
-//     │ │                  │ │ <─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                       │ │
-//     │ │                  │ │                                     │                              │                       │ │
-//     │ │                  │ │ ConfirmDeviceMetadataUpdateRequest  ┌┴┐                            │                       │ │
-//     │ │                  │ │ ───────────────────────────────────>│ │                            │                       │ │
-//     │ │                  └┬┘                                     │ │                            │                       │ │
-//     │ │                   │ConfirmDeviceMetadataUpdateResponse   │ │                            │                       │ │
-//     │ │                   │<──────────────────────────────────── │ │                            │                       │ │
-//     │ │                   │                                      └┬┘                            │                       │ │
-//     │ │                   │                                      │    DeviceMetadataUpdated     │                       │ │
-//     │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>│                       │ │
-//     └┬┘                   │                                      │                              │                       └┬┘
-//      │                    │                                      │                              │ DeviceMetadataUpdated │
-//      │                    │                                      │                              │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─>
-// ┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐
-// │OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│
-// └──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘
 type ShadowSynchronization int32
 
 const (

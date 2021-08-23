@@ -16,6 +16,8 @@ import (
 )
 
 func TestRequestHandler_GetClientConfiguration(t *testing.T) {
+	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto()
+	expected.CurrentTime = 0
 	tests := []struct {
 		name    string
 		wantErr bool
@@ -23,7 +25,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			want: rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto(),
+			want: expected,
 		},
 	}
 
@@ -49,6 +51,8 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 				require.NoError(t, err)
 				require.NotEmpty(t, got.CloudCertificateAuthorities)
 				got.CloudCertificateAuthorities = ""
+				require.NotEqual(t, int64(0), got.CurrentTime)
+				got.CurrentTime = 0
 				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
 		})

@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -18,6 +17,8 @@ import (
 )
 
 func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
+	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto()
+	expected.CurrentTime = 0
 	tests := []struct {
 		name    string
 		wantErr bool
@@ -25,7 +26,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			want: rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto(),
+			want: expected,
 		},
 	}
 
@@ -40,8 +41,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%v/"+uri.ClientConfiguration, testCfg.HTTP_GW_HOST), nil)
-			require.NoError(t, err)
+			request := httpgwTest.NewRequest(http.MethodGet, uri.ClientConfiguration, nil).Accept("" /*uri.ApplicationProtoJsonContentType*/).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -64,6 +64,8 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEmpty(t, got.CloudCertificateAuthorities)
 			got.CloudCertificateAuthorities = ""
+			require.NotEqual(t, int64(0), got.CurrentTime)
+			got.CurrentTime = 0
 			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
 		})
 	}

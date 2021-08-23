@@ -16,4 +16,8 @@ message ClientConfigurationResponse {
     string cloud_url  = 6;
     string cloud_authorization_provider = 7;
     string cloud_certificate_authorities = 8;
+    // exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0 - means forever.
+    int64 default_command_time_to_live = 9;
+    // provides a current time of server in nanoseconds.
+    int64 current_time = 10;
 }

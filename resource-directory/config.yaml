@@ -107,3 +107,4 @@ publicConfiguration:
   cloudID: ""
   cloudURL: ""
   cloudAuthorizationProvider: "plgd"
+  defaultCommandTTL: "0s"

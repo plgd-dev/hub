@@ -746,6 +746,14 @@ components:
         cloudCertificateAuthorities:
           description: Public key of the certificate authority issuing the plgd identity certificates.
           type: string
+        defaultCommandTimeToLive:
+          description: Exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0 - means forever.
+          type: integer
+          format: int64
+        currentTime:
+          description: Current time of server in nanoseconds.
+          type: integer
+          format: int64
       example:
         accessTokenUrl: 'https://api.try.plgd.cloud/api/authz/token'
         authCodeUrl: 'https://api.try.plgd.cloud/api/authz/code'
@@ -754,6 +762,8 @@ components:
         cloudId: 'adebc667-1f2b-41e3-bf5c-6d6eabc68cc6'
         cloudUrl: 'coaps+tcp://try.plgd.cloud:5684'
         cloudAuthorizationProvider: 'plgd'
+        currentTime: 1629728394151716523
+        defaultCommandTimeToLive: 0
         cloudCertificateAuthorities: |
           -----BEGIN CERTIFICATE-----
           MIIBRTCB66ADAgECAhAYrP/8939ZQulrospE3RuHMAoGCCqGSM49BAMCMBIxEDAO
@@ -764,6 +774,7 @@ components:
           Af8wCgYIKoZIzj0EAwIDSQAwRgIhAIyyCjzD8YzCNSY6YbnLgJ7TaXz5HPE0Eyqm
           gfQCLUhwAiEAmfMN+GW05NyB3n5OxYHqVmHGDZJ8rHUUBCPJ3WbCweM=
           -----END CERTIFICATE-----
+
     CommandType:
       type: string
       enum:
