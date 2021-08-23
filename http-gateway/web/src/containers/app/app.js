@@ -1,5 +1,5 @@
 import { hot } from 'react-hot-loader/root'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import classNames from 'classnames'
 import { Router } from 'react-router-dom'
@@ -22,6 +22,7 @@ import { history } from '@/store/history'
 import { security } from '@/common/services/security'
 import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
+// import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
@@ -35,13 +36,49 @@ const App = ({ config }) => {
     loginWithRedirect,
     getAccessTokenSilently,
   } = useAuth0()
-  const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
+  const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', true)
   const { formatMessage: _ } = useIntl()
+  const [wellKnownConfig, setWellKnownConfig] = useState(null)
+  const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
 
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
   security.setDefaultAudience(config.audience)
   security.setHttpGatewayAddress(config.httpGatewayAddress)
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      isAuthenticated &&
+      !wellKnownConfig &&
+      !wellKnownConfigFetched
+    ) {
+      setWellKnownConfigFetched(true)
+      setWellKnownConfig({ defaultTimeToLive: 0 })
+
+      // const fetchWellKnownConfig = async () => {
+      //   try {
+      //     const wellKnown = await fetchApi(
+      //       `${config.httpGatewayAddress}/api/.well-known/ocfcloud-configuration`
+      //     )
+
+      //     setWellKnownConfig(wellKnown)
+      //   } catch (e) {
+      //     throw new Error(
+      //       'Could not retrieve the well-known ocfcloud configuration.'
+      //     )
+      //   }
+      // }
+
+      // fetchWellKnownConfig()
+    }
+  }, [
+    isLoading,
+    isAuthenticated,
+    wellKnownConfig,
+    wellKnownConfigFetched,
+    config.httpGatewayAddress,
+  ])
 
   // Render an error box with an auth error
   if (error) {
@@ -62,10 +99,6 @@ const App = ({ config }) => {
     )
   }
 
-  if (isLoading) {
-    return renderLoader()
-  }
-
   // If the loading is finished but still unauthenticated, it means the user is not logged in.
   // Calling the loginWithRedirect will make a rediret to the login page where the user can login.
   if (!isLoading && !isAuthenticated) {
@@ -78,8 +111,12 @@ const App = ({ config }) => {
     return renderLoader()
   }
 
+  if (isLoading || !wellKnownConfig) {
+    return renderLoader()
+  }
+
   return (
-    <AppContext.Provider value={{ ...config, collapsed }}>
+    <AppContext.Provider value={{ ...config, collapsed, wellKnownConfig }}>
       <Router history={history}>
         <InitServices />
         <Helmet

@@ -57,6 +57,17 @@ export const defaultNewResource = {
   },
 }
 
+export const commandTimeoutUnits = {
+  INFINITE: 'Infinite',
+  MS: 'ms',
+  S: 's',
+  M: 'min',
+  H: 'h',
+  NS: 'ns',
+}
+
+export const MINIMAL_TTL_VALUE_MS = 100
+
 export const NO_DEVICE_NAME = '<no-name>'
 
 // Websocket keys

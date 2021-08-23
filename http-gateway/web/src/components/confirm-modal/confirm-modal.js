@@ -16,6 +16,8 @@ export const ConfirmModal = ({
   loading,
   show,
   onClose,
+  data,
+  confirmDisabled,
   ...rest
 }) => {
   const { formatMessage: _ } = useIntl()
@@ -28,9 +30,9 @@ export const ConfirmModal = ({
         </Button>
         <Button
           variant="primary"
-          onClick={() => onConfirm(onClose)}
+          onClick={() => onConfirm(onClose, data)}
           loading={loading}
-          disabled={loading}
+          disabled={loading || confirmDisabled}
         >
           {confirmButtonText || _(t.confirm)}
         </Button>
@@ -62,6 +64,8 @@ ConfirmModal.propTypes = {
   confirmButtonText: PropTypes.string,
   cancelButtonText: PropTypes.string,
   loading: PropTypes.bool,
+  confirmDisabled: PropTypes.bool,
+  data: PropTypes.object,
 }
 
 ConfirmModal.defaultProps = {
@@ -69,4 +73,6 @@ ConfirmModal.defaultProps = {
   cancelButtonText: null,
   show: false,
   loading: false,
+  confirmDisabled: false,
+  data: {},
 }

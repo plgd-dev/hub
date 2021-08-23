@@ -49,9 +49,9 @@ export const messages = defineMessages({
     id: 'things.thingResourcesNotFoundMessage',
     defaultMessage: 'Thing resources for device with ID "{id}" does not exist.',
   },
-  location: {
-    id: 'things.location',
-    defaultMessage: 'Location',
+  href: {
+    id: 'things.href',
+    defaultMessage: 'Href',
   },
   resources: {
     id: 'things.resources',
@@ -133,6 +133,26 @@ export const messages = defineMessages({
     id: 'things.resourceUpdateSuccess',
     defaultMessage: 'Resource update successful',
     description: 'Title of the toast message on resource update success.',
+  },
+  resourceUpdate: {
+    id: 'things.resourceUpdate',
+    defaultMessage: 'Resource update',
+    description: 'Title of the toast message on resource update expired.',
+  },
+  resourceCreate: {
+    id: 'things.resourceCreate',
+    defaultMessage: 'Resource creation',
+    description: 'Title of the toast message on resource creation expired.',
+  },
+  resourceDelete: {
+    id: 'things.resourceDelete',
+    defaultMessage: 'Resource deletion',
+    description: 'Title of the toast message on resource deletion expired.',
+  },
+  commandOnResourceExpired: {
+    id: 'things.commandOnResourceExpired',
+    defaultMessage: 'command on resource {deviceId}{href} has expired.',
+    description: 'Continuos message for command expiration, keep the first letter lowercase!',
   },
   resourceUpdateError: {
     id: 'things.resourceUpdateError',
@@ -281,5 +301,13 @@ export const messages = defineMessages({
   disabled: {
     id: 'things.disabled',
     defaultMessage: 'Disabled',
+  },
+  commandTimeout: {
+    id: 'things.commandTimeout',
+    defaultMessage: 'Command Timeout',
+  },
+  minimalValueIs: {
+    id: 'things.minimalValueIs',
+    defaultMessage: 'Minimal value is {minimalValue}.',
   },
 })

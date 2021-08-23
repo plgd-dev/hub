@@ -29,7 +29,7 @@ export const ThingsResourcesTree = ({
   const columns = useMemo(
     () => [
       {
-        Header: _(t.location),
+        Header: _(t.href),
         accessor: 'href',
         Cell: ({ value, row }) => {
           const {

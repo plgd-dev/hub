@@ -1,20 +1,25 @@
+import { time } from 'units-converter'
 import { getApiErrorMessage } from '@/common/utils'
 import { showErrorToast, showWarningToast } from '@/components/toast'
 import { compareIgnoreCase } from '@/components/table/utils'
+import { errorCodes } from '@/common/services/fetch-api'
 import {
   knownInterfaces,
   knownResourceTypes,
-  errorCodes,
   THINGS_WS_KEY,
   THINGS_RESOURCE_REGISTRATION_WS_KEY,
   THINGS_RESOURCE_UPDATE_WS_KEY,
   shadowSynchronizationStates,
+  commandTimeoutUnits,
+  MINIMAL_TTL_VALUE_MS,
 } from './constants'
 import { messages as t } from './things-i18n'
 
+const { INFINITE, MS, NS } = commandTimeoutUnits
+
 // Returns the extension for resources API for the selected interface
 export const interfaceGetParam = currentInterface =>
-  currentInterface ? `?resourceInterface=${currentInterface}` : ''
+  currentInterface ? `resourceInterface=${currentInterface}` : ''
 
 // Return true if a resource contains the oic.if.create interface, meaning a new resource can be created from this resource
 export const canCreateResource = interfaces =>
@@ -32,14 +37,27 @@ export const getDeviceChangeResourceHref = links =>
     ?.href
 
 // Handle the errors occurred during resource update
-export const handleUpdateResourceErrors = (error, isOnline, _) => {
+export const handleUpdateResourceErrors = (
+  error,
+  { id: deviceId, href },
+  _
+) => {
   const errorMessage = getApiErrorMessage(error)
 
-  if (!isOnline && errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
+  if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
     // Resource update went through, but it will be applied once the device comes online
     showWarningToast({
-      title: _(t.resourceUpdateSuccess),
+      title: _(t.resourceUpdate),
       message: _(t.resourceWasUpdatedOffline),
+    })
+  } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
+    // Command timeout
+    showWarningToast({
+      title: _(t.resourceUpdate),
+      message: `${_(t.update)} ${_(t.commandOnResourceExpired, {
+        deviceId,
+        href,
+      })}`,
     })
   } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
     // JSON validation error
@@ -56,14 +74,27 @@ export const handleUpdateResourceErrors = (error, isOnline, _) => {
 }
 
 // Handle the errors occurred during resource create
-export const handleCreateResourceErrors = (error, isOnline, _) => {
+export const handleCreateResourceErrors = (
+  error,
+  { id: deviceId, href },
+  _
+) => {
   const errorMessage = getApiErrorMessage(error)
 
-  if (!isOnline && errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
+  if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
     // Resource create went through, but it will be applied once the device comes online
     showWarningToast({
-      title: _(t.resourceCreateSuccess),
+      title: _(t.resourceCreate),
       message: _(t.resourceWasCreatedOffline),
+    })
+  } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
+    // Command timeout
+    showWarningToast({
+      title: _(t.resourceCreate),
+      message: `${_(t.create)} ${_(t.commandOnResourceExpired, {
+        deviceId,
+        href,
+      })}`,
     })
   } else if (errorMessage?.includes?.(errorCodes.INVALID_ARGUMENT)) {
     // JSON validation error
@@ -80,10 +111,10 @@ export const handleCreateResourceErrors = (error, isOnline, _) => {
 }
 
 // Handle the errors occurred shadowSynchronization set
-export const handleShadowSynchronizationErrors = (error, isOnline, _) => {
+export const handleShadowSynchronizationErrors = (error, _) => {
   const errorMessage = getApiErrorMessage(error)
 
-  if (!isOnline && errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
+  if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
     // Shadow synchronization set went through, but it will be applied once the device comes online
     showWarningToast({
       title: _(t.shadowSynchronization),
@@ -105,14 +136,27 @@ export const handleFetchResourceErrors = (error, _) =>
   })
 
 // Handle the errors occurred during resource fetch
-export const handleDeleteResourceErrors = (error, isOnline, _) => {
+export const handleDeleteResourceErrors = (
+  error,
+  { id: deviceId, href },
+  _
+) => {
   const errorMessage = getApiErrorMessage(error)
 
-  if (!isOnline && errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
+  if (errorMessage?.includes?.(errorCodes.DEADLINE_EXCEEDED)) {
     // Resource update went through, but it will be applied once the device comes online
     showWarningToast({
-      title: _(t.resourceDeleteSuccess),
+      title: _(t.resourceDelete),
       message: _(t.resourceWasDeletedOffline),
+    })
+  } else if (errorMessage?.includes?.(errorCodes.COMMAND_EXPIRED)) {
+    // Command timeout
+    showWarningToast({
+      title: _(t.resourceDelete),
+      message: `${_(t.delete)} ${_(t.commandOnResourceExpired, {
+        deviceId,
+        href,
+      })}`,
     })
   } else {
     showErrorToast({
@@ -154,15 +198,17 @@ const deDensisfy = objectToDeDensify => {
   const { href, ...rest } = objectToDeDensify
 
   const keys = Object.keys(rest)
-  return keys.map(thisKey => {
-    const value = objectToDeDensify[thisKey]
-    if (value.subRows) {
-      value.subRows = deDensisfy(value.subRows)
-    }
-    return value
-  }).sort((a, b) => {
-    return compareIgnoreCase(a.href, b.href)
-  })
+  return keys
+    .map(thisKey => {
+      const value = objectToDeDensify[thisKey]
+      if (value.subRows) {
+        value.subRows = deDensisfy(value.subRows)
+      }
+      return value
+    })
+    .sort((a, b) => {
+      return compareIgnoreCase(a.href, b.href)
+    })
 }
 
 // A recursive function for creating a tree structure from the href attribute
@@ -213,6 +259,40 @@ export const getLastPartOfAResourceHref = href => {
   const values = href.split('/').filter(t => t)
   return values[values.length - 1]
 }
+
+// Converts a value to ns (if the unit is Infinite, it defaults to ns)
+export const convertValueToNs = (value, unit) =>
+  +time(value)
+    .from(unit === INFINITE ? NS : unit)
+    .to(NS)
+    .value.toFixed(0)
+
+// Converts a value from a given unit to a provided unit (if the unit is Infinite, it defaults to ns)
+export const convertValueFromTo = (value, unitFrom, unitTo) =>
+  time(value)
+    .from(unitFrom === INFINITE ? NS : unitFrom)
+    .to(unitTo === INFINITE ? NS : unitTo).value
+
+// Normalizes a given value to a fixed float number
+export const normalizeToFixedFloatValue = value => +value.toFixed(5)
+
+// Return true if there is a command timeout error based on the provided value and unit
+export const hasCommandTimeoutError = (value, unit) => {
+  const baseUnit = unit === INFINITE ? NS : unit
+
+  const valueMs = time(value)
+    .from(baseUnit)
+    .to(MS).value
+
+  if (valueMs < MINIMAL_TTL_VALUE_MS && value !== 0) {
+    return true
+  }
+
+  return false
+}
+
+export const convertAndNormalizeValueFromTo = (value, unitFrom, unitTo) =>
+  normalizeToFixedFloatValue(convertValueFromTo(value, unitFrom, unitTo))
 
 // Returns a boolean wether the shadow synchronization is enabled
 export const shadowSynchronizationEnabled = shadowSynchronization =>

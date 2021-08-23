@@ -36,54 +36,58 @@ export const getThingsResourcesApi = ({
   fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}/resources${href}${interfaceGetParam(currentInterface)}`
+    }/${deviceId}/resources${href}?${interfaceGetParam(currentInterface)}`
   )
 
 /**
  * Update things RESOURCE Rest Api endpoint
- * @param {*} params { deviceId, href - resource href, currentInterface - interface }
+ * @param {*} params { deviceId, href - resource href, currentInterface - interface, ttl - timeToLive }
  * @param {*} data
  */
 export const updateThingsResourceApi = (
-  { deviceId, href, currentInterface = null },
+  { deviceId, href, currentInterface = null, ttl },
   data
 ) => {
   return fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}/resources${href}${interfaceGetParam(currentInterface)}`,
-    { method: 'PUT', body: data }
+    }/${deviceId}/resources${href}?timeToLive=${ttl}&${interfaceGetParam(
+      currentInterface
+    )}`,
+    { method: 'PUT', body: data, timeToLive: ttl }
   )
 }
 
 /**
  * Create things RESOURCE Rest Api endpoint
- * @param {*} params { deviceId, href - resource href, currentInterface - interface }
+ * @param {*} params { deviceId, href - resource href, currentInterface - interface, ttl - timeToLive }
  * @param {*} data
  */
 export const createThingsResourceApi = (
-  { deviceId, href, currentInterface = null },
+  { deviceId, href, currentInterface = null, ttl },
   data
 ) => {
   return fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}/resource-links${href}${interfaceGetParam(currentInterface)}`,
-    { method: 'POST', body: data }
+    }/${deviceId}/resource-links${href}?timeToLive=${ttl}&${interfaceGetParam(
+      currentInterface
+    )}`,
+    { method: 'POST', body: data, timeToLive: ttl }
   )
 }
 
 /**
  * Delete things RESOURCE Rest Api endpoint
- * @param {*} params { deviceId, href - resource href, currentInterface - interface }
+ * @param {*} params { deviceId, href - resource href, ttl - timeToLive }
  * @param {*} data
  */
-export const deleteThingsResourceApi = ({ deviceId, href }) => {
+export const deleteThingsResourceApi = ({ deviceId, href, ttl }) => {
   return fetchApi(
     `${security.getHttpGatewayAddress()}${
       thingsApiEndpoints.THINGS
-    }/${deviceId}/resource-links${href}`,
-    { method: 'DELETE' }
+    }/${deviceId}/resource-links${href}?timeToLive=${ttl}`,
+    { method: 'DELETE', timeToLive: ttl }
   )
 }
 

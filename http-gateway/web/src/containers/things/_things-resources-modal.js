@@ -30,6 +30,8 @@ export const ThingsResourcesModal = ({
   updateResource,
   createResource,
   type,
+  ttlControl,
+  confirmDisabled,
 }) => {
   const { formatMessage: _ } = useIntl()
   const editor = useRef()
@@ -45,21 +47,18 @@ export const ThingsResourcesModal = ({
     initialInterfaceValue
   )
 
-  useEffect(
-    () => {
-      setJsonData(resourceData)
+  useEffect(() => {
+    setJsonData(resourceData)
 
-      if (resourceData) {
-        // Set the retrieved JSON object to the editor
-        if (typeof resourceData === 'object') {
-          editor?.current?.set(resourceData)
-        } else if (typeof resourceData === 'string') {
-          editor?.current?.setText(resourceData)
-        }
+    if (resourceData) {
+      // Set the retrieved JSON object to the editor
+      if (typeof resourceData === 'object') {
+        editor?.current?.set(resourceData)
+      } else if (typeof resourceData === 'string') {
+        editor?.current?.setText(resourceData)
       }
-    },
-    [resourceData]
-  )
+    }
+  }, [resourceData])
 
   const handleRetrieve = () => {
     fetchResource({
@@ -97,6 +96,17 @@ export const ThingsResourcesModal = ({
   const renderBody = () => {
     return (
       <>
+        {data && isUpdateModal && (
+          <Label title="" inline>
+            <ThingsResourcesModalNotifications
+              deviceId={deviceId}
+              deviceName={deviceName}
+              href={data?.href}
+              isUnregistered={isUnregistered}
+            />
+          </Label>
+        )}
+
         <Label title={_(t.deviceId)} inline>
           {deviceId}
         </Label>
@@ -107,18 +117,6 @@ export const ThingsResourcesModal = ({
           </div>
         </Label>
 
-        {data &&
-          isUpdateModal && (
-            <Label title="" inline>
-              <ThingsResourcesModalNotifications
-                deviceId={deviceId}
-                deviceName={deviceName}
-                href={data?.href}
-                isUnregistered={isUnregistered}
-              />
-            </Label>
-          )}
-
         {isUpdateModal && (
           <Label title={_(t.interfaces)} inline>
             <div className="align-items-end badges-box-vertical">
@@ -127,6 +125,8 @@ export const ThingsResourcesModal = ({
             </div>
           </Label>
         )}
+
+        {ttlControl}
 
         <div className="m-t-20 m-b-0">
           {jsonData && (
@@ -179,7 +179,7 @@ export const ThingsResourcesModal = ({
             variant="primary"
             onClick={handleSubmit}
             loading={loading}
-            disabled={disabled || interfaceJsonError}
+            disabled={disabled || interfaceJsonError || confirmDisabled}
           >
             {isUpdateModal ? updateLabel : createLabel}
           </Button>
@@ -219,6 +219,8 @@ ThingsResourcesModal.propTypes = {
   isDeviceOnline: PropTypes.bool.isRequired,
   isUnregistered: PropTypes.bool.isRequired,
   type: PropTypes.oneOf([CREATE_RESOURCE, UPDATE_RESOURCE]),
+  ttlControl: PropTypes.element.isRequired,
+  confirmDisabled: PropTypes.bool.isRequired,
 }
 
 ThingsResourcesModal.defaultProps = {
