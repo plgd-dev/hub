@@ -197,6 +197,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.HandleFunc(uri.AliasDevicePendingMetadataUpdates, requestHandler.getPendingMetadataUpdates).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevicePendingMetadataUpdate, requestHandler.cancelPendingMetadataUpdate).Methods(http.MethodDelete)
 	r.HandleFunc(uri.AliasDeviceEvents, requestHandler.getEvents).Methods(http.MethodGet)
+	r.HandleFunc(uri.ClientConfiguration, requestHandler.getCloudConfiguration).Methods(http.MethodGet)
 
 	r.PathPrefix(uri.Devices).Methods(http.MethodPost).MatcherFunc(resourceLinksMatcher).HandlerFunc(requestHandler.createResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.getResourcePendingCommands)
@@ -216,17 +217,9 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 		wsproxy.WithPingControl(requestHandler.config.APIs.HTTP.WebSocket.PingFrequency),
 		wsproxy.WithRequestMutator(func(incoming, outgoing *http.Request) *http.Request {
 			outgoing.Method = http.MethodPost
-			accept := incoming.Header.Get("Accept")
+			accept := getAccept(incoming)
 			if accept != "" {
-				outgoing.Header.Set("Accept", accept)
-			}
-			accept = incoming.Header.Get("accept")
-			if accept != "" {
-				outgoing.Header.Set("Accept", accept)
-			}
-			accept = incoming.URL.Query().Get(uri.AcceptQueryKey)
-			if accept != "" {
-				outgoing.Header.Set("Accept", accept)
+				outgoing.Header.Set(uri.AcceptHeaderKey, accept)
 			}
 			return outgoing
 		}))

@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
 )
@@ -130,14 +131,15 @@ func (c *AuthorizationServerConfig) Validate() error {
 }
 
 type PublicConfiguration struct {
-	CAPool                     string `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
-	TokenURL                   string `yaml:"tokenURL" json:"tokenURL"`
-	AuthorizationURL           string `yaml:"authorizationURL" json:"authorizationURL"`
-	OwnerClaim                 string `yaml:"ownerClaim" json:"ownerClaim"`
-	SigningServerAddress       string `yaml:"signingServerAddress" json:"signingServerAddress"`
-	CloudID                    string `yaml:"cloudID" json:"cloudID"`
-	CloudURL                   string `yaml:"cloudURL" json:"cloudURL"`
-	CloudAuthorizationProvider string `yaml:"cloudAuthorizationProvider" json:"cloudAuthorizationProvider"`
+	CAPool                     string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
+	TokenURL                   string        `yaml:"tokenURL" json:"tokenURL"`
+	AuthorizationURL           string        `yaml:"authorizationURL" json:"authorizationURL"`
+	OwnerClaim                 string        `yaml:"ownerClaim" json:"ownerClaim"`
+	SigningServerAddress       string        `yaml:"signingServerAddress" json:"signingServerAddress"`
+	CloudID                    string        `yaml:"cloudID" json:"cloudID"`
+	CloudURL                   string        `yaml:"cloudURL" json:"cloudURL"`
+	CloudAuthorizationProvider string        `yaml:"cloudAuthorizationProvider" json:"cloudAuthorizationProvider"`
+	DefaultCommandTTL          time.Duration `yaml:"defaultCommandTTL" json:"defaultCommandTTL"`
 
 	cloudCertificateAuthorities string `yaml:"-"`
 }
@@ -171,6 +173,8 @@ func (c PublicConfiguration) ToProto() *pb.ClientConfigurationResponse {
 		CloudUrl:                    c.CloudURL,
 		CloudAuthorizationProvider:  c.CloudAuthorizationProvider,
 		CloudCertificateAuthorities: c.cloudCertificateAuthorities,
+		DefaultCommandTimeToLive:    int64(c.DefaultCommandTTL),
+		CurrentTime:                 pkgTime.UnixNano(time.Now()),
 	}
 }
 

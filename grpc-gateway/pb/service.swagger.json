@@ -1246,6 +1246,16 @@
         },
         "cloudCertificateAuthorities": {
           "type": "string"
+        },
+        "defaultCommandTimeToLive": {
+          "type": "string",
+          "format": "int64",
+          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0 - means forever."
+        },
+        "currentTime": {
+          "type": "string",
+          "format": "int64",
+          "description": "provides a current time of server in nanoseconds."
         }
       }
     },
@@ -1848,8 +1858,7 @@
         "ENABLED",
         "DISABLED"
       ],
-      "default": "UNSET",
-      "title": "┌──────────┐          ┌───────┐                         ┌──────────────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───┬───┘                         └────────┬─────────┘               └─────────┘               └──────┘\n    ┌┴┐                   │                                      ┌┴┐            UpdateDeviceMetadataRequest             ┌┴┐\n    │ │                   │                                      │ │ \u003c──────────────────────────────────────────────────│ │\n    │ │                   │                                      │ │                            │                       │ │\n    │ │                   │                                      │ │            UpdateDeviceMetadataResponse            │ │\n    │ │                   │                                      │ │ ──────────────────────────────────────────────────\u003e│ │\n    │ │                   │                                      └┬┘                            │                       │ │\n    │ │                   │                                      │ DeviceMetadataUpdatePending  │                       │ │\n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │\n    │ │                   │                                      │                              │                       │ │\n    │ │                  ┌┴┐                     DeviceMetadataUpdatePending                    │                       │ │\n    │ │                  │ │ \u003c─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                       │ │\n    │ │                  │ │                                     │                              │                       │ │\n    │ │                  │ │ ConfirmDeviceMetadataUpdateRequest  ┌┴┐                            │                       │ │\n    │ │                  │ │ ───────────────────────────────────\u003e│ │                            │                       │ │\n    │ │                  └┬┘                                     │ │                            │                       │ │\n    │ │                   │ConfirmDeviceMetadataUpdateResponse   │ │                            │                       │ │\n    │ │                   │\u003c──────────────────────────────────── │ │                            │                       │ │\n    │ │                   │                                      └┬┘                            │                       │ │\n    │ │                   │                                      │    DeviceMetadataUpdated     │                       │ │\n    │ │                   │                                      │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e│                       │ │\n    └┬┘                   │                                      │                              │                       └┬┘\n     │                    │                                      │                              │ DeviceMetadataUpdated │\n     │                    │                                      │                              │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\u003e\n┌──────────┐          ┌───┴───┐                         ┌────────┴─────────┐               ┌─────────┐               ┌──────┐\n│OCF Server│          │Gateway│                         │Resource Aggregate│               │Event Bus│               │Client│\n└──────────┘          └───────┘                         └──────────────────┘               └─────────┘               └──────┘"
+      "default": "UNSET"
     },
     "resourceaggregatepbStatus": {
       "type": "string",

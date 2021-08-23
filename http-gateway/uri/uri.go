@@ -29,6 +29,7 @@ const (
 
 	CorrelationIDHeaderKey = "Correlation-Id"
 	ContentTypeHeaderKey   = "Content-Type"
+	AcceptHeaderKey        = "Accept"
 
 	ResourcesPathKey              = "resources"
 	ResourceLinksPathKey          = "resource-links"

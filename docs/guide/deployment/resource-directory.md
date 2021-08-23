@@ -234,6 +234,7 @@ This will be served by HTTP Gateway API as defined [here](https://github.com/plg
 | `publicConfiguration.cloudID` | string | `Cloud ID which is stored in coap-gw certificate.` | `""` |
 | `publicConfiguration.cloudURL` | string | `Cloud URL for onboard device.` | `""` |
 | `publicConfiguration.cloudAuthorizationProvider` | string | `OAuth authorization provider for onboard device.` | `""` |
+| `publicConfiguration.defaultCommandTTL` | string | `Exposes default command time to live for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0s - means forever.` | `"0s"` |
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
 
