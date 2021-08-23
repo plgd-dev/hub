@@ -179,9 +179,18 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 		p.logger.Warnln("error upgrading websocket:", err)
 		return
 	}
+
+	logConnErr := func(msg string, err error) {
+		if isClosedConnError(err) {
+			p.logger.Debugln(msg, err)
+			return
+		}
+		p.logger.Warnln(msg, err)
+	}
+
 	defer func() {
 		if err := conn.Close(); err != nil {
-			p.logger.Warnln("error closing websocket connection:", err)
+			logConnErr("error closing websocket connection:", err)
 		}
 	}()
 
@@ -233,11 +242,11 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		if p.pingInterval > 0 && p.pingWait > 0 && p.pongWait > 0 {
 			if err := conn.SetReadDeadline(time.Now().Add(p.pongWait)); err != nil {
-				p.logger.Warnln("[write] failed to set read deadline:", err)
+				logConnErr("[write] failed to set read deadline:", err)
 			}
 			conn.SetPongHandler(func(string) error {
 				if err := conn.SetReadDeadline(time.Now().Add(p.pongWait)); err != nil {
-					p.logger.Warnln("[write] failed to set read deadline:", err)
+					logConnErr("[write] failed to set read deadline:", err)
 				}
 				return nil
 			})
@@ -255,11 +264,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 			p.logger.Debugln("[read] reading from socket.")
 			_, payload, err := conn.ReadMessage()
 			if err != nil {
-				if isClosedConnError(err) {
-					p.logger.Debugln("[read] websocket closed:", err)
-					return
-				}
-				p.logger.Warnln("error reading websocket message:", err)
+				logConnErr("[read] error reading websocket message:", err)
 				return
 			}
 			p.logger.Debugln("[read] read payload:", string(payload))
@@ -284,7 +289,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				ticker.Stop()
 				if err := conn.Close(); err != nil {
-					p.logger.Warnln("[write] failed to close websocket connection:", err)
+					logConnErr("[write] failed to close websocket connection:", err)
 				}
 			}()
 		} else {
