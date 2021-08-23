@@ -11,7 +11,6 @@ import (
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/authorization/events"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/strings"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -91,7 +90,7 @@ func (d *ownerSubject) subscribeLocked(owner string, subscribe func(subj string,
 	return nil
 }
 
-type ownerCache struct {
+type OwnerCache struct {
 	owners     *kitSync.Map
 	conn       *nats.Conn
 	ownerClaim string
@@ -104,8 +103,8 @@ type ownerCache struct {
 	wg   sync.WaitGroup
 }
 
-func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn, asClient pbAS.AuthorizationServiceClient, errFunc ErrFunc) *ownerCache {
-	c := &ownerCache{
+func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn, asClient pbAS.AuthorizationServiceClient, errFunc ErrFunc) *OwnerCache {
+	c := &OwnerCache{
 		owners:     kitSync.NewMap(),
 		conn:       conn,
 		ownerClaim: ownerClaim,
@@ -122,7 +121,7 @@ func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn,
 	return c
 }
 
-func (c *ownerCache) makeCloseFunc(owner string, id uint64) func() {
+func (c *OwnerCache) makeCloseFunc(owner string, id uint64) func() {
 	return func() {
 		c.owners.ReplaceWithFunc(owner, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
 			if !oldLoaded {
@@ -141,14 +140,14 @@ func (c *ownerCache) makeCloseFunc(owner string, id uint64) func() {
 	}
 }
 
-func getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) ([]string, error) {
+func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) ([]string, error) {
 	getUserDevicesClient, err := asClient.GetUserDevices(ctx, &pbAS.GetUserDevicesRequest{})
 	if err != nil {
 		return nil, status.Errorf(status.Convert(err).Code(), "cannot get users devices: %v", err)
 	}
 	defer func() {
 		if err := getUserDevicesClient.CloseSend(); err != nil {
-			log.Errorf("failed to close send direction of get users devices stream: %v", err)
+			c.errFunc(fmt.Errorf("cannot close send direction of get users devices stream: %v", err))
 		}
 	}()
 	ownerDevices := make([]string, 0, 32)
@@ -165,7 +164,7 @@ func getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClie
 	return ownerDevices, nil
 }
 
-func (c *ownerCache) getLockedOwnerSubject(owner string) *ownerSubject {
+func (c *OwnerCache) getLockedOwnerSubject(owner string) *ownerSubject {
 	val, _ := c.owners.LoadOrStoreWithFunc(owner, func(value interface{}) interface{} {
 		v := value.(*ownerSubject)
 		v.Lock()
@@ -180,7 +179,7 @@ func (c *ownerCache) getLockedOwnerSubject(owner string) *ownerSubject {
 
 // Subscribe register onEvents handler and creates NATS subscription, if not exists.
 // To free subscription call close function.
-func (c *ownerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
+func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
 	s := c.getLockedOwnerSubject(owner)
 
 	closeFunc := func() {}
@@ -208,7 +207,7 @@ func (c *ownerCache) Subscribe(owner string, onEvent func(e *events.Event)) (clo
 }
 
 // Update updates devices in cache and subscribe to NATS for updating them.
-func (c *ownerCache) Update(ctx context.Context) (added []string, removed []string, err error) {
+func (c *OwnerCache) Update(ctx context.Context) (added []string, removed []string, err error) {
 	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, c.ownerClaim)
 	if err != nil {
 		return nil, nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
@@ -225,7 +224,7 @@ func (c *ownerCache) Update(ctx context.Context) (added []string, removed []stri
 		return nil, nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
 	now := time.Now()
-	devices, err := getOwnerDevices(ctx, c.asClient)
+	devices, err := c.getOwnerDevices(ctx, c.asClient)
 	if err != nil {
 		return nil, nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
@@ -236,7 +235,7 @@ func (c *ownerCache) Update(ctx context.Context) (added []string, removed []stri
 
 // GetDevices provides the owner of the cached device. If the cache does not expire, the cache expiration is extended.
 // When ok == false you need to Update to refresh cache.
-func (c *ownerCache) GetDevices(owner string) (devices []string, ok bool) {
+func (c *OwnerCache) GetDevices(owner string) (devices []string, ok bool) {
 	var s *ownerSubject
 	now := time.Now()
 	c.owners.LoadWithFunc(owner, func(value interface{}) interface{} {
@@ -257,7 +256,7 @@ func (c *ownerCache) GetDevices(owner string) (devices []string, ok bool) {
 	return devices, s.validUntil.After(now)
 }
 
-func (c *ownerCache) getExpiredOwnerSubjects(t time.Time) []string {
+func (c *OwnerCache) getExpiredOwnerSubjects(t time.Time) []string {
 	expiredOwners := make([]string, 0, 32)
 	c.owners.Range(func(key, value interface{}) bool {
 		s := value.(*ownerSubject)
@@ -279,7 +278,7 @@ func (c *ownerCache) getExpiredOwnerSubjects(t time.Time) []string {
 	return expiredOwners
 }
 
-func (c *ownerCache) checkExpiration() {
+func (c *OwnerCache) checkExpiration() {
 	now := time.Now()
 	expiredOwners := c.getExpiredOwnerSubjects(now)
 
@@ -309,7 +308,7 @@ func (c *ownerCache) checkExpiration() {
 	}
 }
 
-func (c *ownerCache) run() {
+func (c *OwnerCache) run() {
 	ticker := time.NewTicker(c.expiration / 2)
 	defer ticker.Stop()
 	for {
@@ -322,7 +321,7 @@ func (c *ownerCache) run() {
 	}
 }
 
-func (c *ownerCache) Close() {
+func (c *OwnerCache) Close() {
 	close(c.done)
 	c.wg.Wait()
 }

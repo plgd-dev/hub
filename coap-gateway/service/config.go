@@ -60,6 +60,7 @@ type COAPConfig struct {
 	Addr                     string                  `yaml:"address" json:"address"`
 	ExternalAddress          string                  `yaml:"externalAddress" json:"externalAddress"`
 	MaxMessageSize           int                     `yaml:"maxMessageSize" json:"maxMessageSize" default:"262144"`
+	CacheExpiration          time.Duration           `yaml:"cacheExpiration" json:"cacheExpiration" default:"10m"`
 	GoroutineSocketHeartbeat time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat" default:"4s"`
 	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
 	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
@@ -76,6 +77,9 @@ func (c *COAPConfig) Validate() error {
 	}
 	if c.MaxMessageSize <= 64 {
 		return fmt.Errorf("maxMessageSize('%v')", c.MaxMessageSize)
+	}
+	if c.CacheExpiration <= 0 {
+		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
 	}
 	if c.GoroutineSocketHeartbeat <= 0 {
 		return fmt.Errorf("goroutineSocketHeartbeat('%v')", c.GoroutineSocketHeartbeat)
