@@ -11,11 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/security/jwt"
-	kitSync "github.com/plgd-dev/kit/sync"
-
-	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
-
+	"github.com/nats-io/nats.go"
+	authClient "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
@@ -23,6 +20,8 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
+	"github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -33,6 +32,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/net/monitor/inactivity"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	kitSync "github.com/plgd-dev/kit/sync"
 
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -62,6 +62,7 @@ type Service struct {
 	provider                *authorization.PlgdProvider
 	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
+	ownerCache              *authClient.OwnerCache
 }
 
 type DialCertManager = interface {
@@ -232,6 +233,18 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
 
+	natsConn, err := nats.Connect(config.Clients.Eventbus.NATS.URL, config.Clients.Eventbus.NATS.Options...)
+	if err != nil {
+		resourceSubscriber.Close()
+		return nil, fmt.Errorf("cannot create NATS client: %w", err)
+	}
+	resourceSubscriber.AddCloseFunc(natsConn.Close)
+
+	ownerCache := authClient.NewOwnerCache("sub", config.APIs.COAP.CacheExpiration, natsConn, asClient, func(err error) {
+		log.Errorf("ownerCache error: %w", err)
+	})
+	resourceSubscriber.AddCloseFunc(ownerCache.Close)
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	s := Service{
@@ -258,6 +271,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		cancel: cancel,
 
 		userDeviceSubscriptions: kitSync.NewMap(),
+		ownerCache:              ownerCache,
 	}
 
 	if err := s.setupCoapServer(); err != nil {

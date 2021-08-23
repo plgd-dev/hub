@@ -6,6 +6,7 @@ apis:
     address: "0.0.0.0:5684"
     externalAddress: ""
     maxMessageSize: 262144
+    cacheExpiration: 10m
     goroutineSocketHeartbeat: "4s"
     keepAlive:
       timeout: 20s
