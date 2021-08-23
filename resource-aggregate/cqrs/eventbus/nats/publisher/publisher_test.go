@@ -12,6 +12,7 @@ import (
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/test/config"
@@ -28,9 +29,11 @@ func TestPublisher(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	publisher, err := publisher.New(publisher.Config{
-		URL: "nats://localhost:4222",
-		TLS: config.MakeTLSClientConfig(),
+	publisher, err := publisher.New(natsClient.ConfigPublisher{
+		Config: natsClient.Config{
+			URL: "nats://localhost:4222",
+			TLS: config.MakeTLSClientConfig(),
+		},
 	}, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
@@ -71,9 +74,11 @@ func TestPublisherJetStream(t *testing.T) {
 	defer func() {
 		_ = js.DeleteStream(s.Config.Name)
 	}()
-	publisher, err := publisher.New(publisher.Config{
-		URL:       "nats://localhost:4222",
-		TLS:       config.MakeTLSClientConfig(),
+	publisher, err := publisher.New(natsClient.ConfigPublisher{
+		Config: natsClient.Config{
+			URL: "nats://localhost:4222",
+			TLS: config.MakeTLSClientConfig(),
+		},
 		JetStream: true,
 	}, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)

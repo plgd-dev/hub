@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
 )
 
@@ -61,7 +61,7 @@ type ClientsConfig struct {
 
 type EventBusConfig struct {
 	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize" envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
-	NATS       subscriber.Config `yaml:"nats" json:"nats"`
+	NATS       natsClient.Config `yaml:"nats" json:"nats"`
 }
 
 func (c *EventBusConfig) Validate() error {

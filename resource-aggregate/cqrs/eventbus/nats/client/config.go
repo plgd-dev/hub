@@ -1,4 +1,4 @@
-package subscriber
+package client
 
 import (
 	"fmt"
@@ -26,8 +26,12 @@ type Config struct {
 	URL           string              `yaml:"url" json:"url"  default:"nats://localhost:4222"`
 	TLS           client.Config       `yaml:"tls" json:"tls"`
 	PendingLimits PendingLimitsConfig `yaml:"pendingLimits" json:"pendingLimits"`
+	Options       []nats.Option       `yaml:"-" json:"-"`
+}
 
-	Options []nats.Option `yaml:"-" json:"-"`
+type ConfigPublisher struct {
+	JetStream bool `yaml:"jetstream" json:"jetstream"`
+	Config    `yaml:",inline" json:",inline"`
 }
 
 func (c *Config) Validate() error {

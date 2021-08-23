@@ -11,7 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 //Config represent application configuration
@@ -148,7 +148,7 @@ func (c *TLSConfig) Validate() error {
 }
 
 type EventBusConfig struct {
-	NATS subscriber.Config `yaml:"nats" json:"nats"`
+	NATS natsClient.Config `yaml:"nats" json:"nats"`
 }
 
 func (c *EventBusConfig) Validate() error {

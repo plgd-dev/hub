@@ -16,8 +16,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
@@ -109,17 +108,19 @@ func MakeHttpClientConfig() httpClient.Config {
 	}
 }
 
-func MakePublisherConfig() publisher.Config {
-	return publisher.Config{
-		URL: NATS_URL,
-		TLS: MakeTLSClientConfig(),
+func MakePublisherConfig() natsClient.ConfigPublisher {
+	return natsClient.ConfigPublisher{
+		Config: natsClient.Config{
+			URL: NATS_URL,
+			TLS: MakeTLSClientConfig(),
+		},
 	}
 }
 
-func MakeSubscriberConfig() subscriber.Config {
-	return subscriber.Config{
+func MakeSubscriberConfig() natsClient.Config {
+	return natsClient.Config{
 		URL: NATS_URL,
-		PendingLimits: subscriber.PendingLimitsConfig{
+		PendingLimits: natsClient.PendingLimitsConfig{
 			MsgLimit:   524288,
 			BytesLimit: 67108864,
 		},

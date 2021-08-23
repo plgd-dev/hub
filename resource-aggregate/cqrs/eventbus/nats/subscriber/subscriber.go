@@ -10,9 +10,10 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 
 	nats "github.com/nats-io/nats.go"
-	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
@@ -35,7 +36,7 @@ type Subscriber struct {
 	conn            *nats.Conn
 	goroutinePoolGo eventbus.GoroutinePoolGoFunc
 	closeFunc       []func()
-	pendingLimits   PendingLimitsConfig
+	pendingLimits   natsClient.PendingLimitsConfig
 
 	lock        sync.Mutex
 	reconnectId uint64
@@ -94,7 +95,7 @@ type Observer struct {
 	subs            map[string]*nats.Subscription
 	ctx             context.Context
 	cancel          context.CancelFunc
-	pendingLimits   PendingLimitsConfig
+	pendingLimits   natsClient.PendingLimitsConfig
 }
 
 type options struct {
@@ -135,7 +136,7 @@ func WithGoPool(goroutinePoolGo eventbus.GoroutinePoolGoFunc) GoroutinePoolGoOpt
 }
 
 // NewSubscriber create new subscriber with proto unmarshaller.
-func New(config Config, logger log.Logger, opts ...Option) (*Subscriber, error) {
+func New(config natsClient.Config, logger log.Logger, opts ...Option) (*Subscriber, error) {
 	cfg := options{
 		dataUnmarshaler: json.Unmarshal,
 		goroutinePoolGo: nil,
@@ -143,7 +144,7 @@ func New(config Config, logger log.Logger, opts ...Option) (*Subscriber, error) 
 	for _, o := range opts {
 		o.apply(&cfg)
 	}
-	certManager, err := client.New(config.TLS, logger)
+	certManager, err := cmClient.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
@@ -158,7 +159,7 @@ func New(config Config, logger log.Logger, opts ...Option) (*Subscriber, error) 
 }
 
 // NewSubscriber creates a subscriber.
-func newSubscriber(config Config, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger log.Logger, options ...nats.Option) (*Subscriber, error) {
+func newSubscriber(config natsClient.Config, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger log.Logger, options ...nats.Option) (*Subscriber, error) {
 	if eventUnmarshaler == nil {
 		return nil, fmt.Errorf("invalid eventUnmarshaler")
 	}

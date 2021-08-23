@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
 type TaskProcessorConfig struct {
@@ -32,7 +32,7 @@ type Config struct {
 	JwksURL               string              `envconfig:"JWKS_URL"`
 	OwnerClaim            string              `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
 	OAuth                 manager.Config      `envconfig:"OAUTH"`
-	Nats                  subscriber.Config
+	Nats                  natsClient.Config
 }
 
 //String return string representation of Config
