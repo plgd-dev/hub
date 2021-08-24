@@ -107,4 +107,4 @@ publicConfiguration:
   cloudID: ""
   cloudURL: ""
   cloudAuthorizationProvider: "plgd"
-  defaultCommandTTL: "0s"
+  defaultCommandTimeToLive: "0s"

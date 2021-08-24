@@ -139,7 +139,7 @@ type PublicConfiguration struct {
 	CloudID                    string        `yaml:"cloudID" json:"cloudID"`
 	CloudURL                   string        `yaml:"cloudURL" json:"cloudURL"`
 	CloudAuthorizationProvider string        `yaml:"cloudAuthorizationProvider" json:"cloudAuthorizationProvider"`
-	DefaultCommandTTL          time.Duration `yaml:"defaultCommandTTL" json:"defaultCommandTTL"`
+	DefaultCommandTimeToLive   time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
 
 	cloudCertificateAuthorities string `yaml:"-"`
 }
@@ -173,7 +173,7 @@ func (c PublicConfiguration) ToProto() *pb.ClientConfigurationResponse {
 		CloudUrl:                    c.CloudURL,
 		CloudAuthorizationProvider:  c.CloudAuthorizationProvider,
 		CloudCertificateAuthorities: c.cloudCertificateAuthorities,
-		DefaultCommandTimeToLive:    int64(c.DefaultCommandTTL),
+		DefaultCommandTimeToLive:    int64(c.DefaultCommandTimeToLive),
 		CurrentTime:                 pkgTime.UnixNano(time.Now()),
 	}
 }

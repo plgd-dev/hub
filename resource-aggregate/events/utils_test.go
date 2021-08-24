@@ -109,8 +109,8 @@ func TestEqualResource(t *testing.T) {
 	resSupportedTypes2 := createResource()
 	resSupportedTypes2.SupportedContentTypes = []string{"contentType2"}
 
-	resTTL := createResource()
-	resTTL.ValidUntil = 0
+	resTimeToLive := createResource()
+	resTimeToLive.ValidUntil = 0
 
 	resPoliciesNil := createResource()
 	resPoliciesNil.Policies = nil
@@ -207,7 +207,7 @@ func TestEqualResource(t *testing.T) {
 			name: "Different Time To Live",
 			args: args{
 				res1: &res,
-				res2: &resTTL,
+				res2: &resTimeToLive,
 			},
 			want: false,
 		},
