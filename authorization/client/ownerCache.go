@@ -143,11 +143,11 @@ func (c *OwnerCache) makeCloseFunc(owner string, id uint64) func() {
 func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) ([]string, error) {
 	getUserDevicesClient, err := asClient.GetUserDevices(ctx, &pbAS.GetUserDevicesRequest{})
 	if err != nil {
-		return nil, status.Errorf(status.Convert(err).Code(), "cannot get users devices: %v", err)
+		return nil, status.Errorf(status.Convert(err).Code(), "cannot get owners devices: %v", err)
 	}
 	defer func() {
 		if err := getUserDevicesClient.CloseSend(); err != nil {
-			c.errFunc(fmt.Errorf("cannot close send direction of get users devices stream: %v", err))
+			c.errFunc(fmt.Errorf("cannot close send direction of get owners devices stream: %v", err))
 		}
 	}()
 	ownerDevices := make([]string, 0, 32)
@@ -157,7 +157,7 @@ func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbAS.Authoriz
 			break
 		}
 		if err != nil {
-			return nil, status.Errorf(status.Convert(err).Code(), "cannot get users devices: %v", err)
+			return nil, status.Errorf(status.Convert(err).Code(), "cannot get owners devices: %v", err)
 		}
 		ownerDevices = append(ownerDevices, userDevice.DeviceId)
 	}
@@ -249,10 +249,6 @@ func (c *OwnerCache) getLockedOwnerSubject(owner string) (*ownerSubject, bool) {
 		s.Unlock()
 		return nil, false
 	}
-	if s.validUntil.Before(now) {
-		s.Unlock()
-		return nil, false
-	}
 	s.validUntil = now.Add(c.expiration)
 	return s, true
 }
@@ -285,7 +281,7 @@ func (c *OwnerCache) OwnsDevice(owner, deviceID string) CacheResult {
 		return NeedsUpdate
 	}
 	defer s.Unlock()
-	if strings.Contains(s.devices, deviceID) {
+	if s.devices.Contains(deviceID) {
 		return Found
 	}
 	return NotFound
