@@ -142,25 +142,19 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceLinksSnapshotTaken(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceLinksSnapshotTaken(ctx, &s)
 		case (&ResourceLinksPublished{}).EventType():
 			var s ResourceLinksPublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if _, err := e.HandleEventResourceLinksPublished(ctx, &s); err != nil {
-				return err
-			}
+			_, _ = e.HandleEventResourceLinksPublished(ctx, &s)
 		case (&ResourceLinksUnpublished{}).EventType():
 			var s ResourceLinksUnpublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if _, err := e.HandleEventResourceLinksUnpublished(ctx, &s); err != nil {
-				return err
-			}
+			_, _ = e.HandleEventResourceLinksUnpublished(ctx, &s)
 		}
 	}
 	return iter.Err()

@@ -131,25 +131,19 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleDeviceMetadataSnapshotTaken(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleDeviceMetadataSnapshotTaken(ctx, &s)
 		case (&DeviceMetadataUpdated{}).EventType():
 			var s DeviceMetadataUpdated
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if _, err := e.HandleDeviceMetadataUpdated(ctx, &s, false); err != nil {
-				return err
-			}
+			_, _ = e.HandleDeviceMetadataUpdated(ctx, &s, false)
 		case (&DeviceMetadataUpdatePending{}).EventType():
 			var s DeviceMetadataUpdatePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleDeviceMetadataUpdatePending(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleDeviceMetadataUpdatePending(ctx, &s)
 		}
 	}
 	return iter.Err()

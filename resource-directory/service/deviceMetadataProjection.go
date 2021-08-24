@@ -90,6 +90,7 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	var anyEventProcessed bool
+nextEvent:
 	for {
 		eu, ok := iter.Next(ctx)
 		if !ok {
@@ -130,7 +131,7 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 				return err
 			}
 			if err := p.data.HandleDeviceMetadataUpdatePending(ctx, &e); err != nil {
-				return err
+				goto nextEvent
 			}
 			onDeviceMetadataUpdatePending = true
 			p.data.DeviceId = e.GetDeviceId()
