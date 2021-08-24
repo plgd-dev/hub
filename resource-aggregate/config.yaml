@@ -46,7 +46,7 @@ clients:
         useSystemCAPool: false
   eventStore:
     # replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.
-    defaultCommandTTL: 0s
+    defaultCommandTimeToLive: 0s
     # tries to create the snapshot event after n events
     snapshotThreshold: 16
     # limits number of try to store event

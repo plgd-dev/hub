@@ -165,7 +165,7 @@ Plgd cloud uses MongoDB database as a event store.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.eventStore.defaultCommandTTL` | string | `Replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.` | `"0s"` |
+| `clients.eventStore.defaultCommandTimeToLive` | string | `Replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.` | `"0s"` |
 | `clients.eventStore.snapshotThreshold` | int | `Tries to create the snapshot event after n events.` | `16` |
 | `clients.eventStore.occMaxRetry` | int | `Limits number of try to store event.` | `8` |
 | `clients.eventStore.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |

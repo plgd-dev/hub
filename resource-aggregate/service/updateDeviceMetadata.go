@@ -45,14 +45,14 @@ func (a *aggregate) UpdateDeviceMetadata(ctx context.Context, request *commands.
 	return
 }
 
-func checkTTLForDefault(defaultTTL time.Duration, reqTTL int64) int64 {
-	if defaultTTL == 0 {
-		return reqTTL
+func checkTimeToLiveForDefault(defaultTimeToLive time.Duration, reqTimeToLive int64) int64 {
+	if defaultTimeToLive == 0 {
+		return reqTimeToLive
 	}
-	if reqTTL != 0 {
-		return reqTTL
+	if reqTimeToLive != 0 {
+		return reqTimeToLive
 	}
-	return int64(defaultTTL)
+	return int64(defaultTimeToLive)
 }
 
 func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *commands.UpdateDeviceMetadataRequest) (*commands.UpdateDeviceMetadataResponse, error) {
@@ -60,7 +60,7 @@ func (r RequestHandler) UpdateDeviceMetadata(ctx context.Context, request *comma
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
-	request.TimeToLive = checkTTLForDefault(r.config.Clients.Eventstore.DefaultCommandTTL, request.GetTimeToLive())
+	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
 	resID := commands.NewResourceID(request.GetDeviceId(), commands.StatusHref)
 	aggregate, err := NewAggregate(resID, r.config.Clients.Eventstore.SnapshotThreshold, r.eventstore, DeviceMetadataFactoryModel, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))

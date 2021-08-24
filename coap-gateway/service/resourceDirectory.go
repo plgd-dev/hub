@@ -30,7 +30,7 @@ func makeWkRd() wkRd {
 	}
 }
 
-func fixTTL(w wkRd) wkRd {
+func fixTimeToLive(w wkRd) wkRd {
 	// set time to live properly
 	if w.TimeToLive < 0 {
 		w.TimeToLive = w.TimeToLiveLegacy
@@ -84,7 +84,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	w = fixTTL(w)
+	w = fixTimeToLive(w)
 	for i, link := range w.Links {
 		w.Links[i].DeviceID = w.DeviceID
 		w.Links[i].Href = fixHref(link.Href)
