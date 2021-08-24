@@ -47,10 +47,6 @@ func makeConfig(t *testing.T) Config {
 }
 
 func newTestService(t *testing.T) (*Server, func()) {
-	return newTestServiceWithProviders(t)
-}
-
-func newTestServiceWithProviders(t *testing.T) (*Server, func()) {
 	cfg := makeConfig(t)
 
 	logger, err := log.NewLogger(cfg.Log)
