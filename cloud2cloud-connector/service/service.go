@@ -162,7 +162,9 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	go func() {
 		defer wg.Done()
 		if err := taskProcessor.Run(ctx, subscriptionManager); err != nil {
-			log.Errorf("failed to process subscriptionManager tasks: %v", err)
+			if !kitNetGrpc.IsContextCanceled(err) {
+				log.Errorf("failed to process subscriptionManager tasks: %w", err)
+			}
 		}
 	}()
 	wg.Add(1)

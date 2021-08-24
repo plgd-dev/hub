@@ -7,11 +7,13 @@ import (
 	"math/rand"
 	"time"
 
+	authClient "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgStrings "github.com/plgd-dev/cloud/pkg/strings"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -34,6 +36,9 @@ type CoapSignInResp struct {
 
 /// Check that all required request fields are set
 func (request CoapSignInReq) checkOAuthRequest() error {
+	if request.DeviceID == "" {
+		return fmt.Errorf("invalid device id")
+	}
 	if request.UserID == "" {
 		return fmt.Errorf("invalid user id")
 	}
@@ -165,6 +170,22 @@ func setNewDeviceSubscriber(ctx context.Context, client *Client, deviceID string
 	return nil
 }
 
+func ownsDevice(ownerCache *authClient.OwnerCache, ctx context.Context, owner, deviceID string) (bool, error) {
+	res := ownerCache.OwnsDevice(owner, deviceID)
+	if res == authClient.NeedsUpdate {
+		devices, _, err := ownerCache.Update(ctx)
+		if err != nil {
+			return false, err
+		}
+		if pkgStrings.Contains(devices, deviceID) {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	return res == authClient.Found, nil
+}
+
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
@@ -203,6 +224,20 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
+
+	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
+	valid, err := ownsDevice(client.server.ownerCache, ctx, signIn.UserID, signIn.DeviceID)
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+		return
+	}
+	if !valid {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: access to device('%s') denied", signIn.DeviceID), coapCodes.Unauthorized)
+		return
+	}
+
+	// TODO: Subscribe to device (ownerCache.Subscribe)
+	//	-> onEvent callback -> check if event == Unregistered && event.owner == token.owner && strings.Contains(event.deviceIds, deviceId) then client.Close()
 
 	authCtx := authorizationContext{
 		DeviceID:    signIn.DeviceID,
