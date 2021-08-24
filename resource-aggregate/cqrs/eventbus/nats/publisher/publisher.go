@@ -55,20 +55,20 @@ func WithMarshaler(dataMarshaler MarshalerFunc) MarshalerOpt {
 
 // New creates new publisher with proto marshaller.
 func New(config client.ConfigPublisher, logger log.Logger, opts ...Option) (*Publisher, error) {
-	cfg := options{
-		dataMarshaler: json.Marshal,
-	}
-	for _, o := range opts {
-		o.apply(&cfg)
-	}
-
 	certManager, err := cmClient.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
 	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()))
-	p, err := newPublisher(config.URL, config.JetStream, cfg.dataMarshaler, config.Options...)
+	conn, err := nats.Connect(config.URL, config.Options...)
 	if err != nil {
+		certManager.Close()
+		return nil, fmt.Errorf("cannot create nats connection: %w", err)
+	}
+
+	p, err := NewWithNATS(conn, config.JetStream, opts...)
+	if err != nil {
+		conn.Close()
 		certManager.Close()
 		return nil, err
 	}
@@ -76,17 +76,27 @@ func New(config client.ConfigPublisher, logger log.Logger, opts ...Option) (*Pub
 	return p, nil
 }
 
-// NewPublisher creates a publisher.
-func newPublisher(url string, jetstream bool, eventMarshaler MarshalerFunc, options ...nats.Option) (*Publisher, error) {
-	conn, err := nats.Connect(url, options...)
-	if err != nil {
-		return nil, fmt.Errorf("cannot connect to server: %w", err)
+// Create publisher with existing NATS connection
+func NewWithNATS(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
+	cfg := options{
+		dataMarshaler: json.Marshal,
 	}
+	for _, o := range opts {
+		o.apply(&cfg)
+	}
+	p, err := newPublisher(conn, jetstream, cfg.dataMarshaler)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+// NewPublisher creates a publisher.
+func newPublisher(conn *nats.Conn, jetstream bool, eventMarshaler MarshalerFunc) (*Publisher, error) {
 	publish := conn.Publish
 	if jetstream {
 		js, err := conn.JetStream()
 		if err != nil {
-			conn.Close()
 			return nil, fmt.Errorf("cannot get jetstream context: %w", err)
 		}
 		publish = func(subj string, data []byte) error {

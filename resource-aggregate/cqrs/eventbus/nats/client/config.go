@@ -48,3 +48,14 @@ func (c *Config) Validate() error {
 	}
 	return nil
 }
+
+func (c *ConfigPublisher) Validate() error {
+	if c.URL == "" {
+		return fmt.Errorf("url('%v')", c.URL)
+	}
+	err := c.TLS.Validate()
+	if err != nil {
+		return fmt.Errorf("tls.%w", err)
+	}
+	return nil
+}

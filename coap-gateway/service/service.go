@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nats-io/nats.go"
 	authClient "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
@@ -23,6 +22,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -46,6 +46,7 @@ type Service struct {
 
 	KeepaliveOnInactivity   func(cc inactivity.ClientConn)
 	BlockWiseTransferSZX    blockwise.SZX
+	natsClient              *natsClient.Client
 	raClient                *raClient.Client
 	asClient                pbAS.AuthorizationServiceClient
 	rdClient                pbGRPC.GrpcGatewayClient
@@ -77,15 +78,26 @@ type ListenCertManager = interface {
 func New(ctx context.Context, config Config, logger log.Logger) (*Service, error) {
 	p, err := queue.New(config.TaskQueue)
 	if err != nil {
-		return nil, fmt.Errorf("cannot job queue %w", err)
+		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	resourceSubscriber, err := subscriber.New(config.Clients.Eventbus.NATS, logger, subscriber.WithGoPool(func(f func()) error { return p.Submit(f) }), subscriber.WithUnmarshaler(utils.Unmarshal))
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
 		p.Release()
+		return nil, fmt.Errorf("cannot create nats client: %w", err)
+	}
+	nats.AddCloseFunc(p.Release)
+
+	resourceSubscriber, err := subscriber.NewWithNATS(nats.GetConn(),
+		config.Clients.Eventbus.NATS.PendingLimits,
+		logger,
+		subscriber.WithGoPool(func(f func()) error { return p.Submit(f) }),
+		subscriber.WithUnmarshaler(utils.Unmarshal))
+	if err != nil {
+		nats.Close()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
 	}
-	resourceSubscriber.AddCloseFunc(p.Release)
+	nats.AddCloseFunc(resourceSubscriber.Close)
 
 	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
 	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
@@ -104,10 +116,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	raConn, err := grpcClient.New(config.Clients.ResourceAggregate.Connection, logger)
 	if err != nil {
-		resourceSubscriber.Close()
+		nats.Close()
 		return nil, fmt.Errorf("cannot create connection to resource aggregate: %w", err)
 	}
-	resourceSubscriber.AddCloseFunc(func() {
+	nats.AddCloseFunc(func() {
 		err := raConn.Close()
 		if err != nil {
 			if kitNetGrpc.IsContextCanceled(err) {
@@ -120,10 +132,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	asConn, err := grpcClient.New(config.Clients.AuthServer.Connection, logger)
 	if err != nil {
-		resourceSubscriber.Close()
+		nats.Close()
 		return nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
 	}
-	resourceSubscriber.AddCloseFunc(func() {
+	nats.AddCloseFunc(func() {
 		err := asConn.Close()
 		if err != nil {
 			if kitNetGrpc.IsContextCanceled(err) {
@@ -136,10 +148,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	rdConn, err := grpcClient.New(config.Clients.ResourceDirectory.Connection, logger)
 	if err != nil {
-		resourceSubscriber.Close()
+		nats.Close()
 		return nil, fmt.Errorf("cannot create connection to resource directory: %w", err)
 	}
-	resourceSubscriber.AddCloseFunc(func() {
+	nats.AddCloseFunc(func() {
 		err := rdConn.Close()
 		if err != nil {
 			if kitNetGrpc.IsContextCanceled(err) {
@@ -154,10 +166,10 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	if !config.APIs.COAP.TLS.Enabled {
 		l, err := net.NewTCPListener("tcp", config.APIs.COAP.Addr)
 		if err != nil {
-			resourceSubscriber.Close()
+			nats.Close()
 			return nil, fmt.Errorf("cannot create tcp listener: %w", err)
 		}
-		resourceSubscriber.AddCloseFunc(func() {
+		nats.AddCloseFunc(func() {
 			if err := l.Close(); err != nil {
 				log.Errorf("failed to close tcp listener: %w", err)
 			}
@@ -166,16 +178,16 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	} else {
 		coapsTLS, err := certManagerServer.New(config.APIs.COAP.TLS.Embedded, logger)
 		if err != nil {
-			resourceSubscriber.Close()
+			nats.Close()
 			return nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 		}
-		resourceSubscriber.AddCloseFunc(coapsTLS.Close)
+		nats.AddCloseFunc(coapsTLS.Close)
 		l, err := net.NewTLSListener("tcp", config.APIs.COAP.Addr, coapsTLS.GetTLSConfig())
 		if err != nil {
-			resourceSubscriber.Close()
+			nats.Close()
 			return nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
 		}
-		resourceSubscriber.AddCloseFunc(func() {
+		nats.AddCloseFunc(func() {
 			if err := l.Close(); err != nil {
 				log.Errorf("failed to close tcp-tls listener: %w", err)
 			}
@@ -216,7 +228,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		case "bert":
 			blockWiseTransferSZX = blockwise.SZXBERT
 		default:
-			resourceSubscriber.Close()
+			nats.Close()
 			return nil, fmt.Errorf("invalid value BlockWiseTransferSZX %v", config.APIs.COAP.BlockwiseTransfer.SZX)
 		}
 	}
@@ -224,26 +236,19 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	provider, err := authorization.NewPlgdProvider(ctx, config.APIs.COAP.Authorization,
 		logger, config.Clients.AuthServer.OwnerClaim, "query", "offline", "code")
 	if err != nil {
-		resourceSubscriber.Close()
+		nats.Close()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
-	resourceSubscriber.AddCloseFunc(provider.Close)
+	nats.AddCloseFunc(provider.Close)
 
 	keyCache := jwt.NewKeyCacheWithHttp(provider.OpenID.JWKSURL, provider.HTTPClient.HTTP())
 
 	jwtValidator := jwt.NewValidatorWithKeyCache(keyCache)
 
-	natsConn, err := nats.Connect(config.Clients.Eventbus.NATS.URL, config.Clients.Eventbus.NATS.Options...)
-	if err != nil {
-		resourceSubscriber.Close()
-		return nil, fmt.Errorf("cannot create NATS client: %w", err)
-	}
-	resourceSubscriber.AddCloseFunc(natsConn.Close)
-
-	ownerCache := authClient.NewOwnerCache("sub", config.APIs.COAP.CacheExpiration, natsConn, asClient, func(err error) {
+	ownerCache := authClient.NewOwnerCache("sub", config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), asClient, func(err error) {
 		log.Errorf("ownerCache error: %w", err)
 	})
-	resourceSubscriber.AddCloseFunc(ownerCache.Close)
+	nats.AddCloseFunc(ownerCache.Close)
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -252,6 +257,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		BlockWiseTransferSZX:  blockWiseTransferSZX,
 		KeepaliveOnInactivity: onInactivity,
 
+		natsClient:            nats,
 		raClient:              raClient,
 		asClient:              asClient,
 		rdClient:              rdClient,
@@ -473,7 +479,7 @@ func (server *Service) serveWithHandlingSignal() error {
 		defer wg.Done()
 		err = server.coapServer.Serve(server.listener)
 		server.cancel()
-		server.resourceSubscriber.Close()
+		server.natsClient.Close()
 	}(server)
 
 	signal.Notify(server.sigs,

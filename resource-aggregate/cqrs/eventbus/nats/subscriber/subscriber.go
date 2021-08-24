@@ -135,22 +135,22 @@ func WithGoPool(goroutinePoolGo eventbus.GoroutinePoolGoFunc) GoroutinePoolGoOpt
 	}
 }
 
-// NewSubscriber create new subscriber with proto unmarshaller.
+// Create new subscriber with proto unmarshaller.
 func New(config natsClient.Config, logger log.Logger, opts ...Option) (*Subscriber, error) {
-	cfg := options{
-		dataUnmarshaler: json.Unmarshal,
-		goroutinePoolGo: nil,
-	}
-	for _, o := range opts {
-		o.apply(&cfg)
-	}
 	certManager, err := cmClient.New(config.TLS, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
 	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()), nats.MaxReconnects(-1))
-	s, err := newSubscriber(config, cfg.dataUnmarshaler, cfg.goroutinePoolGo, logger, config.Options...)
+	conn, err := nats.Connect(config.URL, config.Options...)
 	if err != nil {
+		certManager.Close()
+		return nil, fmt.Errorf("cannot create nats connection: %w", err)
+	}
+
+	s, err := NewWithNATS(conn, config.PendingLimits, logger, opts...)
+	if err != nil {
+		conn.Close()
 		certManager.Close()
 		return nil, err
 	}
@@ -158,22 +158,34 @@ func New(config natsClient.Config, logger log.Logger, opts ...Option) (*Subscrib
 	return s, nil
 }
 
-// NewSubscriber creates a subscriber.
-func newSubscriber(config natsClient.Config, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger log.Logger, options ...nats.Option) (*Subscriber, error) {
+// Create publisher with existing NATS connection
+func NewWithNATS(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, logger log.Logger, opts ...Option) (*Subscriber, error) {
+	cfg := options{
+		dataUnmarshaler: json.Unmarshal,
+		goroutinePoolGo: nil,
+	}
+	for _, o := range opts {
+		o.apply(&cfg)
+	}
+
+	s, err := newSubscriber(conn, pendingLimits, cfg.dataUnmarshaler, cfg.goroutinePoolGo, logger)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func newSubscriber(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger log.Logger) (*Subscriber, error) {
 	if eventUnmarshaler == nil {
 		return nil, fmt.Errorf("invalid eventUnmarshaler")
 	}
 
-	conn, err := nats.Connect(config.URL, options...)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create client: %w", err)
-	}
 	s := Subscriber{
 		dataUnmarshaler: eventUnmarshaler,
 		logger:          logger,
 		conn:            conn,
 		goroutinePoolGo: goroutinePoolGo,
-		pendingLimits:   config.PendingLimits,
+		pendingLimits:   pendingLimits,
 		reconnect:       make([]reconnect, 0, 8),
 	}
 	conn.SetReconnectHandler(s.reconnectedHandler)
