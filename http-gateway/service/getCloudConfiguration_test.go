@@ -14,7 +14,6 @@ import (
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
-	testCfg "github.com/plgd-dev/cloud/test/config"
 )
 
 func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
@@ -31,7 +30,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)
