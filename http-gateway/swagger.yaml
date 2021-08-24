@@ -25,7 +25,7 @@ paths:
         - 'Configuration'
       summary: 'Converts OAuth redirect response to body'
       description: |
-        Converts oauth redirect response to body as JSON. It used for getting device onboarding authorzation code as redirect.
+        Converts oauth redirect response to body as JSON. It is used for getting device onboarding authorization code as redirect.
       responses:
         200:
           description: OAuth response
@@ -44,7 +44,7 @@ paths:
         - 'Configuration'
       summary: 'Converts OAuth redirect response to body'
       description: |
-        Converts oauth redirect response to body as JSON. It used for getting device onboarding authorzation code as redirect.
+        Converts oauth redirect response to body as JSON. It is used for getting device onboarding authorization code as redirect.
       responses:
         200:
           description: OAuth response
