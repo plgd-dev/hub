@@ -45,7 +45,7 @@ func TestMakeSortedSlice(t *testing.T) {
 	}
 }
 
-func TestInsert(t *testing.T) {
+func TestSortedInsert(t *testing.T) {
 	type args struct {
 		slice SortedSlice
 		elems []string
@@ -97,13 +97,13 @@ func TestInsert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Insert(tt.args.slice, tt.args.elems...)
+			got := tt.args.slice.Insert(tt.args.elems...)
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestContains(t *testing.T) {
+func TestSortedContains(t *testing.T) {
 	type args struct {
 		slice SortedSlice
 		s     string
@@ -132,12 +132,12 @@ func TestContains(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, Contains(tt.args.slice, tt.args.s))
+			require.Equal(t, tt.want, tt.args.slice.Contains(tt.args.s))
 		})
 	}
 }
 
-func TestRemove(t *testing.T) {
+func TestSortedRemove(t *testing.T) {
 	type args struct {
 		slice SortedSlice
 		elems []string
@@ -197,13 +197,13 @@ func TestRemove(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Remove(tt.args.slice, tt.args.elems...)
+			got := tt.args.slice.Remove(tt.args.elems...)
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestDifference(t *testing.T) {
+func TestSortedDifference(t *testing.T) {
 	type args struct {
 		first  SortedSlice
 		second SortedSlice
@@ -272,7 +272,7 @@ func TestDifference(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Difference(tt.args.first, tt.args.second)
+			got := tt.args.first.Difference(tt.args.second)
 			require.Equal(t, tt.want, got)
 		})
 	}

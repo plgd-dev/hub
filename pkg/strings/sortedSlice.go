@@ -25,29 +25,29 @@ func MakeSortedSlice(slice []string) SortedSlice {
 }
 
 // Get elements of the first slice not contained in the second
-func Difference(first, second SortedSlice) SortedSlice {
+func (slice SortedSlice) Difference(second SortedSlice) SortedSlice {
 	var diff SortedSlice
 	var j int
-	for i := range first {
-		for (j < len(second)) && (second[j] < first[i]) {
+	for i := range slice {
+		for (j < len(second)) && (second[j] < slice[i]) {
 			j++
 		}
 		if j == len(second) {
-			diff = append(diff, first[i:]...)
+			diff = append(diff, slice[i:]...)
 			break
 		}
-		if second[j] != first[i] {
-			diff = append(diff, first[i])
+		if second[j] != slice[i] {
+			diff = append(diff, slice[i])
 		}
 	}
 
 	return diff
 }
 
-func Insert(slice SortedSlice, elems ...string) SortedSlice {
+func (slice SortedSlice) Insert(elems ...string) SortedSlice {
 	for _, v := range elems {
 		i := sort.SearchStrings([]string(slice), v)
-		if Contains(slice, v) {
+		if slice.Contains(v) {
 			continue
 		}
 		slice = append(slice, "")
@@ -57,12 +57,12 @@ func Insert(slice SortedSlice, elems ...string) SortedSlice {
 	return slice
 }
 
-func Contains(slice SortedSlice, s string) bool {
+func (slice SortedSlice) Contains(s string) bool {
 	i := sort.SearchStrings([]string(slice), s)
 	return i < len(slice) && slice[i] == s
 }
 
-func Remove(slice SortedSlice, elems ...string) SortedSlice {
+func (slice SortedSlice) Remove(elems ...string) SortedSlice {
 	deleted := 0
 	for _, v := range elems {
 		i := sort.SearchStrings([]string(slice), v)
