@@ -197,7 +197,8 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r.HandleFunc(uri.AliasDevicePendingMetadataUpdates, requestHandler.getPendingMetadataUpdates).Methods(http.MethodGet)
 	r.HandleFunc(uri.AliasDevicePendingMetadataUpdate, requestHandler.cancelPendingMetadataUpdate).Methods(http.MethodDelete)
 	r.HandleFunc(uri.AliasDeviceEvents, requestHandler.getEvents).Methods(http.MethodGet)
-	r.HandleFunc(uri.ClientConfiguration, requestHandler.getCloudConfiguration).Methods(http.MethodGet)
+	r.HandleFunc(uri.CloudConfiguration, requestHandler.getCloudConfiguration).Methods(http.MethodGet)
+	r.HandleFunc(uri.OAuthCallback, oauthCallback)
 
 	r.PathPrefix(uri.Devices).Methods(http.MethodPost).MatcherFunc(resourceLinksMatcher).HandlerFunc(requestHandler.createResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.getResourcePendingCommands)
@@ -228,7 +229,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	})
 
 	// api grpc-proxy
-	r.Handle(uri.ClientConfiguration, requestHandler.mux)
+	r.Handle(uri.CloudConfiguration, requestHandler.mux)
 	r.PathPrefix(uri.API + "/").HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		requestHandler.mux.ServeHTTP(rw, r)
 	})

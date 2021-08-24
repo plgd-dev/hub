@@ -152,20 +152,21 @@ OAuth2.0 Client is used to issuing an authorization code used by the Onboarding 
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `api.coap.authorization.client.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
-| `api.coap.authorization.client.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
-| `api.coap.authorization.client.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `api.coap.authorization.client.authority` | string | `Endpoint of OAuth provider.` | `""` |
-| `api.coap.authorization.client.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
-| `api.coap.authorization.client.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `api.coap.authorization.client.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `api.coap.authorization.client.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `api.coap.authorization.client.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `api.coap.authorization.client.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `api.coap.authorization.client.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `api.coap.authorization.client.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `api.coap.authorization.client.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `api.coap.authorization.client.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `api.coap.authorization.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
+| `api.coap.authorization.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `api.coap.authorization.scopes` | string | `Comma separated list of required scopes.` | `""` |
+| `api.coap.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `api.coap.authorization.audience` | string | `Audience of OAuth provider.` | `""` |
+| `api.coap.authorization.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
+| `api.coap.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `api.coap.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `api.coap.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `api.coap.authorization.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `api.coap.authorization.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `api.coap.authorization.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `api.coap.authorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `api.coap.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `api.coap.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ::: tip Audience
 You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.

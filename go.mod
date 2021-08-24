@@ -3,12 +3,10 @@ module github.com/plgd-dev/cloud
 go 1.16
 
 require (
-	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/snappy v0.0.4
-	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
@@ -29,7 +27,6 @@ require (
 	github.com/plgd-dev/sdk v0.0.0-20210726094740-ef7dbae58d81
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/valyala/fasthttp v1.29.0
 	go.mongodb.org/mongo-driver v1.7.1
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0

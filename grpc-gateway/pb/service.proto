@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocf.cloud.grpcgateway.pb;
 
-import "github.com/plgd-dev/cloud/grpc-gateway/pb/clientConfiguration.proto";
+import "github.com/plgd-dev/cloud/grpc-gateway/pb/cloudConfiguration.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/devices.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/events.proto";
 import "github.com/plgd-dev/cloud/grpc-gateway/pb/getDevicesMetadata.proto";
@@ -111,8 +111,8 @@ service GrpcGateway {
     };
   }
 
-  // Get client configuration
-  rpc GetClientConfiguration(ClientConfigurationRequest) returns (ClientConfigurationResponse) {
+  // Get cloud configuration
+  rpc GetCloudConfiguration(CloudConfigurationRequest) returns (CloudConfigurationResponse) {
     option (google.api.http) = {
       get: "/.well-known/ocfcloud-configuration"
     };

@@ -19,7 +19,6 @@ export MOCKED_OAUTH_SERVER_ADDRESS="localhost:${MOCKED_OAUTH_SERVER_PORT}"
 export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
 export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
 export AUTHORIZATION_ADDRESS="localhost:${AUTHORIZATION_PORT}"
-export AUTHORIZATION_HTTP_ADDRESS="localhost:${AUTHORIZATION_HTTP_PORT}"
 export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
 export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
 
@@ -79,40 +78,23 @@ fi
 if [ -z "${OAUTH_AUDIENCE}" ]
 then
   export OAUTH_AUDIENCE=test
-  export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
-  export SDK_OAUTH_AUDIENCE=${FQDN}:${NGINX_PORT}
-else
-  export OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
-  export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
-  export SDK_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 fi
+export SERVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
+export DEVICE_OAUTH_AUDIENCE=${OAUTH_AUDIENCE}
 
+export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/v1/oauth/callback
 if [ -z "${OAUTH_ENDPOINT_AUTH_URL}" ]
 then
-  export DEVICE_OAUTH_ENDPOINT_AUTH_URL="https://localhost:${MOCKED_OAUTH_SERVER_PORT}/authorize"
-  export OAUTH_ENDPOINT_CODE_URL="https://localhost:${MOCKED_OAUTH_SERVER_PORT}/authorize"
   export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL="https://${FQDN}:${NGINX_PORT}/authorize?client_id=test"
 else
-  export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
-  export SDK_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
-  export DEVICE_OAUTH_ENDPOINT_AUTH_URL=${OAUTH_ENDPOINT_AUTH_URL}
-  export OAUTH_ENDPOINT_CODE_URL=${OAUTH_ENDPOINT_AUTH_URL}
-  export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=https://${FQDN}:${NGINX_PORT}/api/authz/code
+  export SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL=${OAUTH_ENDPOINT_AUTH_URL}
 fi
 
 if [ -z "${OAUTH_ENDPOINT_TOKEN_URL}" ]
 then
-  export DEVICE_OAUTH_ENDPOINT_TOKEN_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/oauth/token
-  export SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL="https://${FQDN}:${NGINX_PORT}/oauth/token?client_id=test&audience=test"
   export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=https://localhost:${MOCKED_OAUTH_SERVER_PORT}/oauth/token
-  export SDK_OAUTH_ENDPOINT_AUTH_URL="https://${FQDN}:${NGINX_PORT}/oauth/token"
 else
-  export DEVICE_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
-  export SDK_OAUTH_REDIRECT_URL=https://${FQDN}:${NGINX_PORT}/api/authz/callback
-  export DEVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
-  export SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL=https://${FQDN}:${NGINX_PORT}/api/authz/token
   export SERVICE_OAUTH_ENDPOINT_TOKEN_URL=${OAUTH_ENDPOINT_TOKEN_URL}
-  export SDK_OAUTH_ENDPOINT_AUTH_URL=${OAUTH_ENDPOINT_AUTH_URL}
 fi
 
 if [ -z "${OAUTH_ENDPOINT}" ]
@@ -128,12 +110,9 @@ fi
 if [ -z "${OAUTH_CLIENT_ID}" ]
 then
   export DEVICE_OAUTH_CLIENT_ID=test
-  export SDK_OAUTH_CLIENT_ID=test
   export OAUTH_CLIENT_ID=test
 else
   export DEVICE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
-  export SDK_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
-  export OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
 fi
 export DEVICE_OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
 
@@ -476,26 +455,10 @@ cat /configs/authorization.yaml | yq e "\
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.http.address = \"${AUTHORIZATION_HTTP_ADDRESS}\" |
   .clients.storage.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
-  .clients.eventBus.nats.jetstream = ${JETSTREAM} |
-  .oauthClients.device.provider = \"${DEVICE_PROVIDER}\" |
-  .oauthClients.device.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .oauthClients.device.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
-  .oauthClients.device.authorizationURL = \"${DEVICE_OAUTH_ENDPOINT_AUTH_URL}\" |
-  .oauthClients.device.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
-  .oauthClients.device.tokenURL = \"${DEVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
-  .oauthClients.device.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
-  .oauthClients.device.audience = \"${SDK_OAUTH_AUDIENCE}\" |
-  .oauthClients.device.http.tls.useSystemCAPool = true |
-  .oauthClients.client.clientID = \"${SDK_OAUTH_CLIENT_ID}\" |
-  .oauthClients.client.authorizationURL = \"${SDK_OAUTH_ENDPOINT_AUTH_URL}\" |
-  .oauthClients.client.redirectURL = \"${SDK_OAUTH_REDIRECT_URL}\" |
-  .oauthClients.client.audience = \"${SDK_OAUTH_AUDIENCE}\" |
-  .oauthClients.client.http.tls.useSystemCAPool = true |
-  .oauthClients.client.scopes=[ \"${SDK_OAUTH_SCOPES}\" ]
+  .clients.eventBus.nats.jetstream = ${JETSTREAM}
 " - > /data/authorization.yaml
 
 echo "starting authorization"
@@ -512,10 +475,10 @@ fi
 i=0
 while true; do
   i=$((i+1))
-  if openssl s_client -connect ${AUTHORIZATION_HTTP_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+  if openssl s_client -connect ${AUTHORIZATION_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
     break
   fi
-  echo "Try to reconnect to authorization service(${AUTHORIZATION_HTTP_ADDRESS}) $i"
+  echo "Try to reconnect to authorization service(${AUTHORIZATION_ADDRESS}) $i"
   sleep 1
 done
 
@@ -576,8 +539,12 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
   .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
-  .publicConfiguration.tokenURL = \"${SERVICE_CLIENT_CONFIGURATION_ACCESSTOKENURL}\" |
-  .publicConfiguration.authorizationURL = \"${SERVICE_CLIENT_CONFIGURATION_AUTHCODEURL}\" |
+  .publicConfiguration.deviceAuthorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .publicConfiguration.deviceAuthorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
+  .publicConfiguration.deviceAuthorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
+  .publicConfiguration.deviceAuthorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .publicConfiguration.deviceAuthorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
+  .publicConfiguration.deviceAuthorization.http.tls.useSystemCAPool = true |
   .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
   .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
   .publicConfiguration.signingServerAddress = \"${FQDN_NGINX_HTTPS}\" |
@@ -620,10 +587,12 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
   .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
   .apis.coap.authorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .apis.coap.authorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.authorizationServer.ownerClaim = \"${OWNER_CLAIM}\" |
   .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/coap-gateway-unsecure.yaml
 
@@ -653,10 +622,12 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.authorization.clientSecret = \"${DEVICE_OAUTH_CLIENT_SECRET}\" |
   .apis.coap.authorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
   .apis.coap.authorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
+  .apis.coap.authorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.coap.authorization.http.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.authorizationServer.ownerClaim = \"${OWNER_CLAIM}\" |
   .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/coap-gateway-secure.yaml
 
@@ -751,6 +722,7 @@ cat /configs/certificate-authority.yaml | yq e "\
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .signer.keyFile = \"${CA_POOL_CERT_KEY_PATH}\" |
   .signer.certFile = \"${CA_POOL_CERT_PATH}\"
 " - > /data/certificate-authority.yaml

@@ -26,7 +26,7 @@ Assuming you have an account in the Auth0 OAuth as a service, you need to create
     e. Switch to **Permissions** tab and add `openid` scope to the list
 1. Create new **Regular Web Application** in the Application section
     a. Make sure **Token Endpoint Authentication Method** is set to `None`
-    b. Add `https://{FQDN}:{NGINX_PORT}` and `https://{FQDN}:{NGINX_PORT}/api/authz/callback` to **Allowed Callback URLs**
+    b. Add `https://{FQDN}:{NGINX_PORT}` and `https://{FQDN}:{NGINX_PORT}/api/v1/oauth/callback` to **Allowed Callback URLs**
     c. Add `https://{FQDN}:{NGINX_PORT}` to **Allowed Logout URLs**
     d. Add `https://{FQDN}:{NGINX_PORT}` to **Allowed Web Origins**
     e. Open **Advanced Settings**, switch to **OAuth** tab and paste here the API Id from the step 1d

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/plgd-dev/cloud/authorization/uri"
 	"github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/stretchr/testify/require"
 )

@@ -19,6 +19,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CloudConfiguration'
+  '/api/v1/oauth/callback':
+    get:
+      tags:
+        - 'Configuration'
+      summary: 'Converts OAuth redirect response to body'
+      description: |
+        Converts oauth redirect response to body as JSON. It used for getting device onboarding authorzation code as redirect.
+      responses:
+        200:
+          description: OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthResponse'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
+    post:
+      tags:
+        - 'Configuration'
+      summary: 'Converts OAuth redirect response to body'
+      description: |
+        Converts oauth redirect response to body as JSON. It used for getting device onboarding authorzation code as redirect.
+      responses:
+        200:
+          description: OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthResponse'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          $ref: '#/components/responses/forbidden'
   '/api/v1/devices':
     get:
       tags:
@@ -717,13 +756,15 @@ components:
           type: string
         correlationId:
           type: string
+    OAuthResponse:
+      properties:
+        code:
+          description: Device onboarding code
+          type: string
     CloudConfiguration:
       type: object
       properties:
-        accessTokenUrl:
-          description: URL to get an access token to authorize an access to the plgd API.
-          type: string
-        authCodeUrl:
+        deviceOnboardingCodeUrl:
           description: URL to get an authorization code, required for device registration at the plgd cloud.
           type: string
         jwtClaimOwnerId:
@@ -755,8 +796,7 @@ components:
           type: integer
           format: int64
       example:
-        accessTokenUrl: 'https://api.try.plgd.cloud/api/authz/token'
-        authCodeUrl: 'https://api.try.plgd.cloud/api/authz/code'
+        deviceOnboardingCodeUrl: 'https://auth.plgd.cloud/authorize?audience=http://try.plgd.cloud/'
         jwtClaimOwnerId: 'sub'
         signingServerAddress: 'api.try.plgd.cloud:443'
         cloudId: 'adebc667-1f2b-41e3-bf5c-6d6eabc68cc6'

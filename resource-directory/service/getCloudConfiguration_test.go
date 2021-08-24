@@ -12,16 +12,17 @@ import (
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
+	"github.com/plgd-dev/cloud/test/config"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 )
 
-func TestRequestHandler_GetClientConfiguration(t *testing.T) {
-	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto()
+func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
+	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto(config.MakeAuthURL())
 	expected.CurrentTime = 0
 	tests := []struct {
 		name    string
 		wantErr bool
-		want    *pb.ClientConfigurationResponse
+		want    *pb.CloudConfigurationResponse
 	}{
 		{
 			name: "valid",
@@ -44,7 +45,7 @@ func TestRequestHandler_GetClientConfiguration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctxWithoutToken := context.Background()
-			got, err := c.GetClientConfiguration(ctxWithoutToken, &pb.ClientConfigurationRequest{})
+			got, err := c.GetCloudConfiguration(ctxWithoutToken, &pb.CloudConfigurationRequest{})
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

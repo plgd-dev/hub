@@ -59,21 +59,6 @@ apis:
       keyFile: "/data/certs/http.key"
       certFile: "/data/certs/http.crt"
 ...
-  http:
-    address: "0.0.0.0:9085"
-    tls:
-      caPool: "/data/certs/root_ca.crt"
-      keyFile: "/data/certs/http.key"
-      certFile: "/data/certs/http.crt"
-    authorization:
-      authority: "https://auth.example.com/authorize"
-      audience: "https://api.example.com"
-      http:
-        tls:
-          caPool: "/data/certs/root_ca.crt"
-          keyFile: "/data/certs/http.key"
-          certFile: "/data/certs/http.crt"
-...
 clients:
   eventBus:
     nats:
@@ -82,25 +67,6 @@ clients:
         caPool: "/data/certs/root_ca.crt"
         keyFile: "/data/certs/http.key"
         certFile: "/data/certs/http.crt"
-...
-oauthClients:
-  device:
-    provider: "plgd"
-    clientID: "ij12OJj2J23K8KJs"
-    clientSecret: "654hkja12asd123d"
-    scopes: "profile,openid,offline_access"
-    authorizationURL: "https://auth.example.com/authorize"
-    tokenURL: "https://auth.example.com/oauth/token"
-    audience: "https://api.example.com"
-    redirectURL: "https://localhost:9085/api/authz/callback"
-...
-  client:
-    clientID: "412dsFf53Sj6$"
-    clientSecret: "235Jgdf65jsd4Shls"
-    scopes: "openid"
-    authorizationURL: "https://auth.example.com/authorize"
-    audience: "https://api.example.com"
-    redirectURL: "https://localhost:9085/api/authz/callback"
 ...
 ```
 
@@ -149,72 +115,6 @@ gRPC API of the Authorization Server service as defined [here](https://github.co
 | `api.grpc.authorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.grpc.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-
-### HTTP API
-HTTP API of the Authorization Server service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/authorization/uri/uri.go)
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `api.http.address` | string | `Listen specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
-| `api.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `api.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `api.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `api.http.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
-
-### OAuth2.0 Client for Device
->Configured OAuth2.0 client is used to request an authorization code used for onboarding and exchange it for the token during the [device registration](https://plgd.dev/guide/architecture/component-overview.html#coap-gateway).
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `oauthClients.device.provider` | string | `Value which comes from the device during the sign-up ("apn").` | `"generic"` |
-| `oauthClients.device.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
-| `oauthClients.device.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
-| `oauthClients.device.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `oauthClients.device.authorizationURL` | string | `Authorization endpoint of OAuth provider.` | `""` |
-| `oauthClients.device.tokenURL` | string | `Token endpoint of OAuth provider.` | `""` |
-| `oauthClients.device.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
-| `oauthClients.device.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
-| `oauthClients.device.responseType` | string | `One of "code/token".` | `"code"` |
-| `oauthClients.device.responseMode` | string | `One of "query/post_form".` | `"post_form"` |
-| `oauthClients.device.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `oauthClients.device.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `oauthClients.device.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `oauthClients.device.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `oauthClients.device.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `oauthClients.device.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `oauthClients.device.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `oauthClients.device.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `oauthClients.device.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-
-::: tip Audience 
-You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
-:::
-
-### OAuth2.0 Client for UI and SDK
->Configured OAuth2.0 client is used by the mobile application or SDK to request a token used to authorize all calls they execute against other plgd APIs.
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `oauthClients.client.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
-| `oauthClients.client.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
-| `oauthClients.client.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `oauthClients.client.authorizationURL` | string | `Authorization endpoint of OAuth provider.` | `""` |
-| `oauthClients.client.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
-| `oauthClients.client.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
-| `oauthClients.client.responseMode` | string | `One of "query/post_form".` | `"post_form"` |
-| `oauthClients.client.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
-| `oauthClients.client.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
-| `oauthClients.client.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
-| `oauthClients.client.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
-| `oauthClients.client.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
-| `oauthClients.client.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
-| `oauthClients.client.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
-| `oauthClients.client.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
-| `oauthClients.client.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-
-::: tip Audience 
-You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
-:::
 
 ### Event Bus
 Plgd cloud uses NATS messaging system as a event bus.
