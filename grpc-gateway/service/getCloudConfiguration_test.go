@@ -55,7 +55,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 				require.NotEqual(t, int64(0), got.CurrentTime)
 				got.CurrentTime = 0
 				require.NotEmpty(t, got.DeviceOnboardingCodeUrl)
-				expected.DeviceOnboardingCodeUrl = ""
+				got.DeviceOnboardingCodeUrl = ""
 				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
 		})
