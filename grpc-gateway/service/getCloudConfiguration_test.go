@@ -18,6 +18,7 @@ import (
 func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto(config.MakeAuthURL())
 	expected.CurrentTime = 0
+	expected.DeviceOnboardingCodeUrl = ""
 	tests := []struct {
 		name    string
 		wantErr bool
@@ -53,6 +54,8 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 				got.CloudCertificateAuthorities = ""
 				require.NotEqual(t, int64(0), got.CurrentTime)
 				got.CurrentTime = 0
+				require.NotEmpty(t, got.DeviceOnboardingCodeUrl)
+				expected.DeviceOnboardingCodeUrl = ""
 				test.CheckProtobufs(t, tt.want, got, test.RequireToCheckFunc(require.Equal))
 			}
 		})
