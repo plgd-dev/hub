@@ -135,8 +135,8 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 	assert.Empty(t, removed)
 
 	cacheDevices, ok = cache.GetDevices(owner)
-	assert.Equal(t, devices[:2], cacheDevices)
 	assert.True(t, ok)
+	assert.Equal(t, devices[:2], cacheDevices)
 
 	deleted, err := c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: devices[:1],
