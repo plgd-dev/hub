@@ -22,7 +22,7 @@ import { history } from '@/store/history'
 import { security } from '@/common/services/security'
 import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
-// import { fetchApi } from '@/common/services'
+import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
@@ -54,23 +54,22 @@ const App = ({ config }) => {
       !wellKnownConfigFetched
     ) {
       setWellKnownConfigFetched(true)
-      setWellKnownConfig({ defaultTimeToLive: 0 })
 
-      // const fetchWellKnownConfig = async () => {
-      //   try {
-      //     const wellKnown = await fetchApi(
-      //       `${config.httpGatewayAddress}/api/.well-known/ocfcloud-configuration`
-      //     )
+      const fetchWellKnownConfig = async () => {
+        try {
+          const { data: wellKnown } = await fetchApi(
+            `${config.httpGatewayAddress}/.well-known/ocfcloud-configuration`
+          )
 
-      //     setWellKnownConfig(wellKnown)
-      //   } catch (e) {
-      //     throw new Error(
-      //       'Could not retrieve the well-known ocfcloud configuration.'
-      //     )
-      //   }
-      // }
+          setWellKnownConfig(wellKnown)
+        } catch (e) {
+          throw new Error(
+            'Could not retrieve the well-known ocfcloud configuration.'
+          )
+        }
+      }
 
-      // fetchWellKnownConfig()
+      fetchWellKnownConfig()
     }
   }, [
     isLoading,

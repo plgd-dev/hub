@@ -21,6 +21,7 @@ export const ThingsDetailsTitle = ({
   loading,
   isOnline,
   links,
+  ttl,
   ...rest
 }) => {
   const { formatMessage: _ } = useIntl()
@@ -55,7 +56,7 @@ export const ThingsDetailsTitle = ({
 
       try {
         const { data } = await updateThingsResourceApi(
-          { deviceId, href },
+          { deviceId, href, ttl },
           {
             n: inputTitle,
           }
@@ -147,6 +148,7 @@ ThingsDetailsTitle.propTypes = {
   updateDeviceName: PropTypes.func.isRequired,
   isOnline: PropTypes.bool.isRequired,
   links: PropTypes.arrayOf(thingResourceShape),
+  ttl: PropTypes.number.isRequired,
 }
 
 ThingsDetailsTitle.defaultProps = {
