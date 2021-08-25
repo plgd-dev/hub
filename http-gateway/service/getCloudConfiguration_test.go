@@ -13,16 +13,17 @@ import (
 	"github.com/plgd-dev/cloud/http-gateway/uri"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/config"
 )
 
 func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
-	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto()
+	expected := rdTest.MakeConfig(t).ExposedCloudConfiguration.ToProto(config.MakeAuthURL())
 	expected.CurrentTime = 0
+	expected.DeviceOnboardingCodeUrl = ""
 	tests := []struct {
 		name    string
 		wantErr bool
-		want    *pb.ClientConfigurationResponse
+		want    *pb.CloudConfigurationResponse
 	}{
 		{
 			name: "valid",
@@ -30,7 +31,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)
@@ -41,7 +42,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, uri.ClientConfiguration, nil).Accept("" /*uri.ApplicationProtoJsonContentType*/).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, uri.CloudConfiguration, nil).Accept("" /*uri.ApplicationProtoJsonContentType*/).Build()
 			trans := http.DefaultTransport.(*http.Transport).Clone()
 			trans.TLSClientConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -55,7 +56,7 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 				_ = resp.Body.Close()
 			}()
 
-			var got pb.ClientConfigurationResponse
+			var got pb.CloudConfigurationResponse
 			err = Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -66,6 +67,8 @@ func TestRequestHandler_GetCloudConfiguration(t *testing.T) {
 			got.CloudCertificateAuthorities = ""
 			require.NotEqual(t, int64(0), got.CurrentTime)
 			got.CurrentTime = 0
+			require.NotEmpty(t, got.DeviceOnboardingCodeUrl)
+			got.DeviceOnboardingCodeUrl = ""
 			test.CheckProtobufs(t, tt.want, &got, test.RequireToCheckFunc(require.Equal))
 		})
 	}

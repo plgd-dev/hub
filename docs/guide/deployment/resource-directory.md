@@ -222,19 +222,35 @@ You might have one client, but multiple APIs in the OAuth system. What you want 
 
 ### Public Configuration
 These configurations are `Coap Cloud Conf` information for device registration to plgd cloud as well as root CA certificate, certificate authority address to get identity certificate for ssl connection to plgd cloud before device registration.
-This will be served by HTTP Gateway API as defined [here](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go#L14) and also see [cloud-configuration](https://try.plgd.cloud/.well-known/ocfcloud-configuration).
+This will be served by HTTP Gateway API as defined [here](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go#L14) and also see [cloud-configuration](https://try.plgd.cloud/.well-known/cloud-configuration).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `publicConfiguration.caPool` | string | `File path to root CA which was used to sign coap-gw certificate.` | `""` |
-| `publicConfiguration.tokenURL` | string | `URL where user can get OAuth token via implicit flow.` | `""` |
-| `publicConfiguration.authorizationURL` | string | `URL where user can get OAuth authorization code for the device.` | `""` |
 | `publicConfiguration.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `publicConfiguration.signingServerAddress` | string | `Address of ceritificate authority for plgd-dev/sdk.` | `""` |
 | `publicConfiguration.cloudID` | string | `Cloud ID which is stored in coap-gw certificate.` | `""` |
 | `publicConfiguration.cloudURL` | string | `Cloud URL for onboard device.` | `""` |
 | `publicConfiguration.cloudAuthorizationProvider` | string | `OAuth authorization provider for onboard device.` | `""` |
-| `publicConfiguration.defaultCommandTimeToLive` | string | `Exposes default command time to live for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0s - means forever.` | `"0s"` |
+| `publicConfiguration.defaultCommandTimeToLive` | string | `Exposes default command time to live for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0s - means forever.` | `"0s"` |
+| `publicConfiguration.deviceAuthorization.clientID` | string | `Client ID to exchange an authorization code for an access token. Must be same as in coap-gateway configuration.` | `""` |
+| `publicConfiguration.deviceAuthorization.scopes` | string | `Comma separated list of required scopes. Must be same as in coap-gateway configuration.` | `""` |
+| `publicConfiguration.deviceAuthorization.authority` | string | `Endpoint of OAuth provider. Must be same as in coap-gateway configuration.` | `""` |
+| `publicConfiguration.deviceAuthorization.audience` | string | `Audience of OAuth provider. Must be same as in coap-gateway configuration.` | `""` |
+| `publicConfiguration.deviceAuthorization.redirectURL` | string | `Redirect url used to obtain device access token. Must be same as in coap-gateway configuration.` | `""` |
+| `publicConfiguration.deviceAuthorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `publicConfiguration.deviceAuthorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `publicConfiguration.deviceAuthorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `publicConfiguration.deviceAuthorization.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `publicConfiguration.deviceAuthorization.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `publicConfiguration.deviceAuthorization.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `publicConfiguration.deviceAuthorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `publicConfiguration.deviceAuthorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `publicConfiguration.deviceAuthorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+::: tip Audience
+You might have one client, but multiple APIs in the OAuth system. What you want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
+:::
 
 > Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
 

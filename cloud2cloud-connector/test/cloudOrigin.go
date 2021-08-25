@@ -15,7 +15,6 @@ import (
 )
 
 const AUTH_HOST = "localhost:30000"
-const AUTH_HTTP_HOST = "localhost:30001"
 const RESOURCE_AGGREGATE_HOST = "localhost:30003"
 const RESOURCE_DIRECTORY_HOST = "localhost:30004"
 const C2C_CONNECTOR_HOST = "localhost:30006"
@@ -42,7 +41,6 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 
 	authCfg := authService.MakeConfig(t)
 	authCfg.APIs.GRPC.Addr = AUTH_HOST
-	authCfg.APIs.HTTP.Addr = AUTH_HTTP_HOST
 	authCfg.Clients.Storage.MongoDB.Database = cloudConnectorDB
 	authShutdown := authService.New(t, authCfg)
 

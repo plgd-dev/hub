@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-directory/service"
 	"github.com/plgd-dev/cloud/test/config"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,8 +30,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
 
 	cfg.ExposedCloudConfiguration.CAPool = config.CA_POOL
-	cfg.ExposedCloudConfiguration.TokenURL = "https://localhost/oauth/token?client_id=test&audience=test"
-	cfg.ExposedCloudConfiguration.AuthorizationURL = "AuthCodeUrl"
+	cfg.ExposedCloudConfiguration.DeviceAuthorization = config.MakeDeviceAuthorization()
 	cfg.ExposedCloudConfiguration.CloudID = "cloudID"
 	cfg.ExposedCloudConfiguration.CloudAuthorizationProvider = "plgd"
 	cfg.ExposedCloudConfiguration.CloudURL = "CloudUrl"

@@ -43,14 +43,13 @@ const (
 	APIWS string = API + "/ws"
 
 	// ocfcloud configuration
-	ClientConfiguration = "/.well-known/ocfcloud-configuration"
+	CloudConfiguration = "/.well-known/cloud-configuration"
 
 	// oauth configuration for ui
 	OAuthConfiguration = "/auth_config.json"
 
-	//certificate-authority
-	CertificaAuthority     = API + "/certificate-authority"
-	CertificaAuthoritySign = CertificaAuthority + "/sign"
+	// oauth callback for print response to body
+	OAuthCallback = API + "/oauth/callback"
 
 	// (GRPC + HTTP) GET /api/v1/devices -> rpc GetDevices
 	// (GRPC + HTTP) DELETE /api/v1/devices -> rpc DeleteDevices

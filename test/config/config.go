@@ -5,6 +5,9 @@ import (
 	"time"
 
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/cloud/coap-gateway/authorization"
+	"github.com/plgd-dev/cloud/coap-gateway/authorization/oauth"
+	httpUri "github.com/plgd-dev/cloud/http-gateway/uri"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	httpClient "github.com/plgd-dev/cloud/pkg/net/http/client"
@@ -21,7 +24,6 @@ import (
 )
 
 const AUTH_HOST = "localhost:20000"
-const AUTH_HTTP_HOST = "localhost:20001"
 const GW_HOST = "localhost:20002"
 const RESOURCE_AGGREGATE_HOST = "localhost:20003"
 const RESOURCE_DIRECTORY_HOST = "localhost:20004"
@@ -153,4 +155,20 @@ func MakeOAuthConfig() manager.ConfigV2 {
 		HTTP:                        MakeHttpClientConfig(),
 		VerifyServiceTokenFrequency: time.Second * 10,
 	}
+}
+
+func MakeDeviceAuthorization() authorization.Config {
+	return authorization.Config{
+		Authority: "https://" + OAUTH_SERVER_HOST,
+		Config: oauth.Config{
+			ClientID:    OAUTH_MANAGER_CLIENT_ID,
+			Audience:    OAUTH_MANAGER_AUDIENCE,
+			RedirectURL: "https://" + HTTP_GW_HOST + httpUri.OAuthCallback,
+		},
+		HTTP: MakeHttpClientConfig(),
+	}
+}
+
+func MakeAuthURL() string {
+	return "https://" + OAUTH_SERVER_HOST + uri.Authorize
 }

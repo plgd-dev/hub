@@ -1,16 +1,9 @@
 package persistence
 
-import (
-	"time"
-)
-
 // AuthorizedDevice comprises device's authorization details.
 type AuthorizedDevice struct {
-	DeviceID     string    `db:"device_id"`
-	Owner        string    `db:"owner"`
-	AccessToken  string    `db:"access_token"`
-	RefreshToken string    `db:"refresh_token"`
-	Expiry       time.Time `db:"expiry"`
+	DeviceID string `db:"device_id"`
+	Owner    string `db:"owner"`
 }
 
 type Iterator interface {

@@ -30,8 +30,7 @@ func New(t *testing.T, config service.Config) func() {
 	}()
 
 	return func() {
-		err := auth.Shutdown()
-		require.NoError(t, err)
+		auth.Shutdown()
 		wg.Wait()
 	}
 }

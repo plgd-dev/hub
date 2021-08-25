@@ -33,8 +33,8 @@ type GrpcGatewayClient interface {
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error)
 	// Subscribe to events
 	SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error)
-	// Get client configuration
-	GetClientConfiguration(ctx context.Context, in *ClientConfigurationRequest, opts ...grpc.CallOption) (*ClientConfigurationResponse, error)
+	// Get cloud configuration
+	GetCloudConfiguration(ctx context.Context, in *CloudConfigurationRequest, opts ...grpc.CallOption) (*CloudConfigurationResponse, error)
 	// Delete resource at the device.
 	DeleteResource(ctx context.Context, in *DeleteResourceRequest, opts ...grpc.CallOption) (*DeleteResourceResponse, error)
 	// Create resource at the device.
@@ -215,9 +215,9 @@ func (x *grpcGatewaySubscribeToEventsClient) Recv() (*Event, error) {
 	return m, nil
 }
 
-func (c *grpcGatewayClient) GetClientConfiguration(ctx context.Context, in *ClientConfigurationRequest, opts ...grpc.CallOption) (*ClientConfigurationResponse, error) {
-	out := new(ClientConfigurationResponse)
-	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration", in, out, opts...)
+func (c *grpcGatewayClient) GetCloudConfiguration(ctx context.Context, in *CloudConfigurationRequest, opts ...grpc.CallOption) (*CloudConfigurationResponse, error) {
+	out := new(CloudConfigurationResponse)
+	err := c.cc.Invoke(ctx, "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetCloudConfiguration", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -383,8 +383,8 @@ type GrpcGatewayServer interface {
 	UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error)
 	// Subscribe to events
 	SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error
-	// Get client configuration
-	GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error)
+	// Get cloud configuration
+	GetCloudConfiguration(context.Context, *CloudConfigurationRequest) (*CloudConfigurationResponse, error)
 	// Delete resource at the device.
 	DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error)
 	// Create resource at the device.
@@ -429,8 +429,8 @@ func (UnimplementedGrpcGatewayServer) UpdateResource(context.Context, *UpdateRes
 func (UnimplementedGrpcGatewayServer) SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToEvents not implemented")
 }
-func (UnimplementedGrpcGatewayServer) GetClientConfiguration(context.Context, *ClientConfigurationRequest) (*ClientConfigurationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetClientConfiguration not implemented")
+func (UnimplementedGrpcGatewayServer) GetCloudConfiguration(context.Context, *CloudConfigurationRequest) (*CloudConfigurationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCloudConfiguration not implemented")
 }
 func (UnimplementedGrpcGatewayServer) DeleteResource(context.Context, *DeleteResourceRequest) (*DeleteResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteResource not implemented")
@@ -612,20 +612,20 @@ func (x *grpcGatewaySubscribeToEventsServer) Recv() (*SubscribeToEvents, error) 
 	return m, nil
 }
 
-func _GrpcGateway_GetClientConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ClientConfigurationRequest)
+func _GrpcGateway_GetCloudConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloudConfigurationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcGatewayServer).GetClientConfiguration(ctx, in)
+		return srv.(GrpcGatewayServer).GetCloudConfiguration(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration",
+		FullMethod: "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetCloudConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcGatewayServer).GetClientConfiguration(ctx, req.(*ClientConfigurationRequest))
+		return srv.(GrpcGatewayServer).GetCloudConfiguration(ctx, req.(*CloudConfigurationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -803,8 +803,8 @@ var GrpcGateway_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GrpcGateway_UpdateResource_Handler,
 		},
 		{
-			MethodName: "GetClientConfiguration",
-			Handler:    _GrpcGateway_GetClientConfiguration_Handler,
+			MethodName: "GetCloudConfiguration",
+			Handler:    _GrpcGateway_GetCloudConfiguration_Handler,
 		},
 		{
 			MethodName: "DeleteResource",

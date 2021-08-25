@@ -63,7 +63,11 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		},
 		{
 			Method: http.MethodGet,
-			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.ClientConfiguration)),
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.CloudConfiguration)),
+		},
+		{
+			Method: http.MethodGet,
+			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.OAuthCallback)),
 		},
 	}
 	if config.UI.Enabled {
