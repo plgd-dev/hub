@@ -59,7 +59,7 @@ const App = ({ config }) => {
       // const fetchWellKnownConfig = async () => {
       //   try {
       //     const wellKnown = await fetchApi(
-      //       `${config.httpGatewayAddress}/api/.well-known/ocfcloud-configuration`
+      //       `${config.httpGatewayAddress}/api/.well-known/cloud-configuration`
       //     )
 
       //     setWellKnownConfig(wellKnown)

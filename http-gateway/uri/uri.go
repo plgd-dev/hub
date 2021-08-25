@@ -43,7 +43,7 @@ const (
 	APIWS string = API + "/ws"
 
 	// ocfcloud configuration
-	CloudConfiguration = "/.well-known/ocfcloud-configuration"
+	CloudConfiguration = "/.well-known/cloud-configuration"
 
 	// oauth configuration for ui
 	OAuthConfiguration = "/auth_config.json"

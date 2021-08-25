@@ -5,7 +5,7 @@ info:
 servers:
   - url: 'https://try.plgd.cloud'
 paths:
-  '/.well-known/ocfcloud-configuration':
+  '/.well-known/cloud-configuration':
     get:
       tags:
         - 'Configuration'
@@ -19,26 +19,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CloudConfiguration'
-  '/api/v1/oauth/callback':
-    get:
-      tags:
-        - 'Configuration'
-      summary: 'Converts OAuth redirect response to body'
-      description: |
-        Converts oauth redirect response to body as JSON. It is used for getting device onboarding authorization code as redirect.
-      responses:
-        200:
-          description: OAuth response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OAuthResponse'
-        400:
-          $ref: '#/components/responses/badRequest'
-        401:
-          $ref: '#/components/responses/unauthorized'
-        403:
-          $ref: '#/components/responses/forbidden'
     post:
       tags:
         - 'Configuration'

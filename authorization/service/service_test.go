@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -91,11 +90,8 @@ func newTestDevice() *persistence.AuthorizedDevice {
 
 func newTestDeviceWithIDAndOwner(deviceID, owner string) *persistence.AuthorizedDevice {
 	return &persistence.AuthorizedDevice{
-		DeviceID:     deviceID,
-		Owner:        owner,
-		AccessToken:  testAccessToken,
-		RefreshToken: "testRefreshToken",
-		Expiry:       time.Now().Add(time.Hour),
+		DeviceID: deviceID,
+		Owner:    owner,
 	}
 }
 

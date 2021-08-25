@@ -72,7 +72,7 @@ type CloudConfigurationResponse struct {
 	CloudUrl                    string `protobuf:"bytes,6,opt,name=cloud_url,json=cloudUrl,proto3" json:"cloud_url,omitempty"`
 	CloudAuthorizationProvider  string `protobuf:"bytes,7,opt,name=cloud_authorization_provider,json=cloudAuthorizationProvider,proto3" json:"cloud_authorization_provider,omitempty"`
 	CloudCertificateAuthorities string `protobuf:"bytes,8,opt,name=cloud_certificate_authorities,json=cloudCertificateAuthorities,proto3" json:"cloud_certificate_authorities,omitempty"`
-	// exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0 - means forever.
+	// exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever.
 	DefaultCommandTimeToLive int64 `protobuf:"varint,9,opt,name=default_command_time_to_live,json=defaultCommandTimeToLive,proto3" json:"default_command_time_to_live,omitempty"`
 }
 

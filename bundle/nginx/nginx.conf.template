@@ -63,7 +63,7 @@ http {
       proxy_ssl_trusted_certificate   /data/certs/root_ca.crt;
       proxy_ssl_verify                on;
     }
-    location ~ ^(/|/api/v1/devices|/api/v1/ws/devices|/.well-known/ocfcloud-configuration|/auth_config.json) {
+    location ~ ^(/|/api/v1/devices|/api/v1/ws/devices|/.well-known/cloud-configuration|/auth_config.json) {
       set $upstream_http_gateway https://127.0.0.1:REPLACE_HTTP_GATEWAY_PORT;
       proxy_pass                     $upstream_http_gateway;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;

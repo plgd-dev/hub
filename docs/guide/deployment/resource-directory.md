@@ -222,7 +222,7 @@ You might have one client, but multiple APIs in the OAuth system. What you want 
 
 ### Public Configuration
 These configurations are `Coap Cloud Conf` information for device registration to plgd cloud as well as root CA certificate, certificate authority address to get identity certificate for ssl connection to plgd cloud before device registration.
-This will be served by HTTP Gateway API as defined [here](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go#L14) and also see [cloud-configuration](https://try.plgd.cloud/.well-known/ocfcloud-configuration).
+This will be served by HTTP Gateway API as defined [here](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go#L14) and also see [cloud-configuration](https://try.plgd.cloud/.well-known/cloud-configuration).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

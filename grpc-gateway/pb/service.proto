@@ -114,7 +114,7 @@ service GrpcGateway {
   // Get cloud configuration
   rpc GetCloudConfiguration(CloudConfigurationRequest) returns (CloudConfigurationResponse) {
     option (google.api.http) = {
-      get: "/.well-known/ocfcloud-configuration"
+      get: "/.well-known/cloud-configuration"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Cloud" ]

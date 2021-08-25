@@ -30,7 +30,7 @@
     "application/protojson"
   ],
   "paths": {
-    "/.well-known/ocfcloud-configuration": {
+    "/.well-known/cloud-configuration": {
       "get": {
         "summary": "Get cloud configuration",
         "operationId": "GrpcGateway_GetCloudConfiguration",
@@ -1252,7 +1252,7 @@
         "defaultCommandTimeToLive": {
           "type": "string",
           "format": "int64",
-          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0 - means forever."
+          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
         }
       }
     },
