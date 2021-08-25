@@ -120,11 +120,10 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksUnpublished(ctx con
 	return unpublished, nil
 }
 
-func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s *ResourceLinksSnapshotTaken) error {
+func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(ctx context.Context, s *ResourceLinksSnapshotTaken) {
 	e.Resources = s.GetResources()
 	e.DeviceId = s.GetDeviceId()
 	e.EventMetadata = s.GetEventMetadata()
-	return nil
 }
 
 func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
@@ -142,25 +141,19 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceLinksSnapshotTaken(ctx, &s); err != nil {
-				return err
-			}
+			e.HandleEventResourceLinksSnapshotTaken(ctx, &s)
 		case (&ResourceLinksPublished{}).EventType():
 			var s ResourceLinksPublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if _, err := e.HandleEventResourceLinksPublished(ctx, &s); err != nil {
-				return err
-			}
+			_, _ = e.HandleEventResourceLinksPublished(ctx, &s)
 		case (&ResourceLinksUnpublished{}).EventType():
 			var s ResourceLinksUnpublished
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if _, err := e.HandleEventResourceLinksUnpublished(ctx, &s); err != nil {
-				return err
-			}
+			_, _ = e.HandleEventResourceLinksUnpublished(ctx, &s)
 		}
 	}
 	return iter.Err()

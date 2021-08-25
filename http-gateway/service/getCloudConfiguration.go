@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -31,7 +33,7 @@ func (requestHandler *RequestHandler) getCloudConfiguration(w http.ResponseWrite
 		requestHandler.mux.ServeHTTP(w, r)
 		return
 	}
-	resp, err := requestHandler.client.GrpcGatewayClient().GetClientConfiguration(r.Context(), &pb.ClientConfigurationRequest{})
+	resp, err := requestHandler.client.GrpcGatewayClient().GetCloudConfiguration(r.Context(), &pb.CloudConfigurationRequest{})
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot get cloud configuration: %w", err))
 		return
@@ -55,6 +57,21 @@ func (requestHandler *RequestHandler) getCloudConfiguration(w http.ResponseWrite
 			num, err := strconv.ParseInt(s, 10, 64)
 			if err == nil {
 				decoded[key] = num
+				continue
+			}
+			hostQuery := strings.SplitN(s, "?", 2)
+			if len(hostQuery) < 2 {
+				// we cannot call QueryUnescape over schema otherwise "coaps+tcp" will be unescaped to "coaps tcp".
+				continue
+			}
+			unescaped, err := url.QueryUnescape(hostQuery[1])
+			if err == nil {
+				query := bytes.Replace([]byte(unescaped), []byte("\\u003c"), []byte("<"), -1)
+				query = bytes.Replace(query, []byte("\\u003e"), []byte(">"), -1)
+				query = bytes.Replace(query, []byte("\\u0026"), []byte("&"), -1)
+				hostQuery[1] = string(query)
+				decoded[key] = strings.Join(hostQuery, "?")
+				continue
 			}
 		}
 	}

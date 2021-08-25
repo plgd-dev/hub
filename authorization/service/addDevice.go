@@ -98,11 +98,8 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	}
 
 	d := persistence.AuthorizedDevice{
-		DeviceID:     request.DeviceId,
-		Owner:        owner,
-		AccessToken:  "",
-		RefreshToken: "",
-		Expiry:       time.Time{},
+		DeviceID: request.DeviceId,
+		Owner:    owner,
 	}
 
 	if err := tx.Persist(&d); err != nil {

@@ -57,7 +57,7 @@ func makeAuthFunc(validator kitNetGrpc.Validator) func(ctx context.Context, meth
 	})
 	return func(ctx context.Context, method string) (context.Context, error) {
 		switch method {
-		case "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetClientConfiguration":
+		case "/ocf.cloud.grpcgateway.pb.GrpcGateway/GetCloudConfiguration":
 			return ctx, nil
 		}
 		token, _ := kitNetGrpc.TokenFromMD(ctx)

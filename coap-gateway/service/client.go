@@ -728,6 +728,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 	authCtx, err := client.GetAuthorizationContext()
 	if err != nil {
 		log.Errorf("unable to load authorization context during resource links publish for device: %w", err)
+		return
 	}
 
 	resp, err := client.server.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
@@ -742,6 +743,7 @@ func (client *Client) unpublishResourceLinks(ctx context.Context, hrefs []string
 		// unpublish resource is not critical -> resource can be still accessible
 		// next resource update will return 'not found' what triggers a publish again
 		log.Errorf("error occurred during resource links unpublish for device %v: %w", authCtx.GetDeviceID(), err)
+		return
 	}
 
 	client.cancelResourcesObservations(ctx, resp.UnpublishedHrefs)

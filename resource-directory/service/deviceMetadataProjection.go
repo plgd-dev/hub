@@ -130,7 +130,7 @@ func (p *deviceMetadataProjection) Handle(ctx context.Context, iter eventstore.I
 				return err
 			}
 			if err := p.data.HandleDeviceMetadataUpdatePending(ctx, &e); err != nil {
-				return err
+				continue
 			}
 			onDeviceMetadataUpdatePending = true
 			p.data.DeviceId = e.GetDeviceId()

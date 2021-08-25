@@ -1,9 +1,13 @@
 package events_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	commands "github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -93,6 +97,40 @@ func TestDeviceMetadataSnapshotTaken_CheckInitialized(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.want, tt.args.event.CheckInitialized())
+		})
+	}
+}
+
+func TestDeviceMetadataSnapshotTaken_Handle(t *testing.T) {
+	type args struct {
+		events *iterator
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "shadowSyncPending, updated",
+			args: args{
+				events: newIterator([]eventstore.EventUnmarshaler{
+					test.MakeDeviceMetadataUpdatePending("a", &events.DeviceMetadataUpdatePending_ShadowSynchronization{
+						ShadowSynchronization: commands.ShadowSynchronization_ENABLED,
+					}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), time.Now().Add(-time.Second)),
+					test.MakeDeviceMetadataUpdated("a", &commands.ConnectionStatus{}, commands.ShadowSynchronization_ENABLED, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), false),
+				}),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := events.NewDeviceMetadataSnapshotTaken()
+			err := e.Handle(context.TODO(), tt.args.events)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }

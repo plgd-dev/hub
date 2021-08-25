@@ -30,15 +30,15 @@
     "application/protojson"
   ],
   "paths": {
-    "/.well-known/ocfcloud-configuration": {
+    "/.well-known/cloud-configuration": {
       "get": {
-        "summary": "Get client configuration",
-        "operationId": "GrpcGateway_GetClientConfiguration",
+        "summary": "Get cloud configuration",
+        "operationId": "GrpcGateway_GetCloudConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbClientConfigurationResponse"
+              "$ref": "#/definitions/pbCloudConfigurationResponse"
             }
           },
           "default": {
@@ -1220,13 +1220,15 @@
         }
       }
     },
-    "pbClientConfigurationResponse": {
+    "pbCloudConfigurationResponse": {
       "type": "object",
       "properties": {
-        "accessTokenUrl": {
-          "type": "string"
+        "currentTime": {
+          "type": "string",
+          "format": "int64",
+          "description": "provides a current time of server in nanoseconds."
         },
-        "authCodeUrl": {
+        "deviceOnboardingCodeUrl": {
           "type": "string"
         },
         "jwtClaimOwnerId": {
@@ -1250,12 +1252,7 @@
         "defaultCommandTimeToLive": {
           "type": "string",
           "format": "int64",
-          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is zero value in the request. 0 - means forever."
-        },
-        "currentTime": {
-          "type": "string",
-          "format": "int64",
-          "description": "provides a current time of server in nanoseconds."
+          "description": "exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever."
         }
       }
     },

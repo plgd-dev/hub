@@ -62,8 +62,8 @@ type gatewayHandler struct {
 	deviceName string
 }
 
-func (h *gatewayHandler) GetClientConfiguration(context.Context, *pb.ClientConfigurationRequest) (*pb.ClientConfigurationResponse, error) {
-	return &pb.ClientConfigurationResponse{
+func (h *gatewayHandler) GetCloudConfiguration(context.Context, *pb.CloudConfigurationRequest) (*pb.CloudConfigurationResponse, error) {
+	return &pb.CloudConfigurationResponse{
 		CloudId: "abc",
 	}, nil
 }

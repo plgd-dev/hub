@@ -23,6 +23,7 @@ apis:
       clientSecret: ""
       scopes: []
       authority: ""
+      audience: ""
       redirectURL: ""
       http:
         maxIdleConns: 16

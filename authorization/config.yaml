@@ -34,51 +34,6 @@ apis:
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
-  http:
-    address: "0.0.0.0:9101"
-    tls:
-      caPool: "/secrets/public/rootca.crt"
-      keyFile: "/secrets/private/cert.key"
-      certFile: "/secrets/public/cert.crt"
-      clientCertificateRequired: true
-oauthClients:
-  device:
-    provider: "plgd"
-    clientID: ""
-    clientSecret: ""
-    scopes: []
-    authorizationURL: ""
-    audience: ""
-    tokenURL: ""
-    redirectURL: "" 
-    http:
-      maxIdleConns: 16
-      maxConnsPerHost: 32
-      maxIdleConnsPerHost: 16
-      idleConnTimeout: 30s
-      timeout: 10s
-      tls:
-        caPool: "/secrets/public/rootca.crt"
-        keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
-        useSystemCAPool: false
-  client:
-    clientID: ""
-    scopes: []
-    authorizationURL: ""
-    audience: ""
-    redirectURL: ""
-    http:
-      maxIdleConns: 16
-      maxConnsPerHost: 32
-      maxIdleConnsPerHost: 16
-      idleConnTimeout: 30s
-      timeout: 10s
-      tls:
-        caPool: "/secrets/public/rootca.crt"
-        keyFile: "/secrets/private/cert.key"
-        certFile: "/secrets/public/cert.crt"
-        useSystemCAPool: false
 clients:
   eventBus:
     nats:

@@ -332,7 +332,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Cont
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) error {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) {
 	e.ResourceId = snapshot.GetResourceId()
 	e.LatestResourceChange = snapshot.GetLatestResourceChange()
 	e.EventMetadata = snapshot.GetEventMetadata()
@@ -341,8 +341,6 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx c
 	e.ResourceRetrievePendings = snapshot.GetResourceRetrievePendings()
 	e.ResourceUpdatePendings = snapshot.GetResourceUpdatePendings()
 	e.ResourceDeletePendings = snapshot.GetResourceDeletePendings()
-
-	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
@@ -360,81 +358,61 @@ func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceStateSnapshotTaken(ctx, &s); err != nil {
-				return err
-			}
+			e.HandleEventResourceStateSnapshotTaken(ctx, &s)
 		case (&ResourceUpdatePending{}).EventType():
 			var s ResourceUpdatePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceUpdatePending(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceUpdatePending(ctx, &s)
 		case (&ResourceUpdated{}).EventType():
 			var s ResourceUpdated
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceUpdated(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceUpdated(ctx, &s)
 		case (&ResourceCreatePending{}).EventType():
 			var s ResourceCreatePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceCreatePending(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceCreatePending(ctx, &s)
 		case (&ResourceCreated{}).EventType():
 			var s ResourceCreated
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceCreated(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceCreated(ctx, &s)
 		case (&ResourceChanged{}).EventType():
 			var s ResourceChanged
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if _, err := e.HandleEventResourceChanged(ctx, &s); err != nil {
-				return err
-			}
+			_, _ = e.HandleEventResourceChanged(ctx, &s)
 		case (&ResourceDeleted{}).EventType():
 			var s ResourceDeleted
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceDeleted(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceDeleted(ctx, &s)
 		case (&ResourceDeletePending{}).EventType():
 			var s ResourceDeletePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceDeletePending(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceDeletePending(ctx, &s)
 		case (&ResourceRetrieved{}).EventType():
 			var s ResourceRetrieved
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceRetrieved(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceRetrieved(ctx, &s)
 		case (&ResourceRetrievePending{}).EventType():
 			var s ResourceRetrievePending
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			if err := e.HandleEventResourceRetrievePending(ctx, &s); err != nil {
-				return err
-			}
+			_ = e.HandleEventResourceRetrievePending(ctx, &s)
 		}
 	}
 	return iter.Err()

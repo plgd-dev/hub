@@ -5,18 +5,14 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
-	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
-	deviceIDKey     = "_id"
-	ownerKey        = "owner"
-	accessTokenKey  = "accesstoken"
-	refreshTokenKey = "refreshtoken"
-	expiryKey       = "expiry"
+	deviceIDKey = "_id"
+	ownerKey    = "owner"
 )
 
 // PersistenceTx prevents data race for a sequence of read and write operations.
@@ -179,9 +175,6 @@ func (i *iterator) Next(s *persistence.AuthorizedDevice) bool {
 	}
 	s.DeviceID = sub[deviceIDKey].(string)
 	s.Owner = sub[ownerKey].(string)
-	s.AccessToken = sub[accessTokenKey].(string)
-	s.Expiry = pkgTime.Unix(0, sub[expiryKey].(int64))
-	s.RefreshToken = sub[refreshTokenKey].(string)
 
 	return true
 }
@@ -201,11 +194,8 @@ func (i *iterator) Close() {
 
 func makeRecord(d *persistence.AuthorizedDevice) bson.M {
 	return bson.M{
-		deviceIDKey:     d.DeviceID,
-		ownerKey:        d.Owner,
-		accessTokenKey:  d.AccessToken,
-		refreshTokenKey: d.RefreshToken,
-		expiryKey:       pkgTime.UnixNano(d.Expiry),
+		deviceIDKey: d.DeviceID,
+		ownerKey:    d.Owner,
 	}
 }
 
