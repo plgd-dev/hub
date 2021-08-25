@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -96,12 +97,13 @@ func MakeAuditContext(userID string, correlationID string) *commands.AuditContex
 	}
 }
 
-func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceUpdatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
 	e := events.ResourceUpdatePending{
 		ResourceId:    resourceId,
 		Content:       content,
 		AuditContext:  auditContext,
 		EventMetadata: eventMetadata,
+		ValidUntil:    pkgTime.UnixNano(validUntil),
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
@@ -145,6 +147,56 @@ func MakeResourceUpdated(resourceId *commands.ResourceId, status commands.Status
 	)
 }
 
+func MakeResourceCreatePending(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+	e := events.ResourceCreatePending{
+		ResourceId:    resourceId,
+		Content:       content,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ValidUntil:    pkgTime.UnixNano(validUntil),
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceCreatePending{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ResourceCreatePending); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}
+
+func MakeResourceCreated(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+	e := events.ResourceCreated{
+		ResourceId:    resourceId,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceCreated{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ResourceCreated); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}
+
 func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.ResourceChanged{
 		ResourceId:    resourceId,
@@ -169,12 +221,13 @@ func MakeResourceChangedEvent(resourceId *commands.ResourceId, content *commands
 	)
 }
 
-func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceRetrievePending(resourceId *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
 	e := events.ResourceRetrievePending{
 		ResourceId:        resourceId,
 		ResourceInterface: resourceInterface,
 		AuditContext:      auditContext,
 		EventMetadata:     eventMetadata,
+		ValidUntil:        pkgTime.UnixNano(validUntil),
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
@@ -218,6 +271,55 @@ func MakeResourceRetrieved(resourceId *commands.ResourceId, status commands.Stat
 	)
 }
 
+func MakeResourceDeletePending(resourceId *commands.ResourceId, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+	e := events.ResourceDeletePending{
+		ResourceId:    resourceId,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ValidUntil:    pkgTime.UnixNano(validUntil),
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceDeletePending{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ResourceDeletePending); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}
+
+func MakeResourceDeleted(resourceId *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+	e := events.ResourceDeleted{
+		ResourceId:    resourceId,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.ResourceDeleted{}).EventType(),
+		e.GetResourceId().ToUUID(),
+		e.GetResourceId().GetDeviceId(),
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.ResourceDeleted); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}
+
 func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
 	e := events.NewResourceStateSnapshotTaken()
 	e.ResourceId = resourceId
@@ -235,6 +337,57 @@ func MakeResourceStateSnapshotTaken(resourceId *commands.ResourceId, latestResou
 		func(v interface{}) error {
 			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
 				x.CopyData(e)
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}
+
+func MakeDeviceMetadataUpdatePending(deviceID string, shadowSync *events.DeviceMetadataUpdatePending_ShadowSynchronization, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
+	e := events.DeviceMetadataUpdatePending{
+		DeviceId:      deviceID,
+		UpdatePending: shadowSync,
+		EventMetadata: eventMetadata,
+		AuditContext:  auditContext,
+		ValidUntil:    pkgTime.UnixNano(validUntil),
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.DeviceMetadataUpdatePending{}).EventType(),
+		commands.MakeStatusResourceUUID(deviceID),
+		e.GetDeviceId(),
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.DeviceMetadataUpdatePending); ok {
+				x.CopyData(&e)
+				return nil
+			}
+			return fmt.Errorf("cannot unmarshal event")
+		},
+	)
+}
+
+func MakeDeviceMetadataUpdated(deviceID string, status *commands.ConnectionStatus, shadowSynchronization commands.ShadowSynchronization, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, canceled bool) eventstore.EventUnmarshaler {
+	e := events.DeviceMetadataUpdated{
+		DeviceId:              deviceID,
+		Status:                status,
+		ShadowSynchronization: shadowSynchronization,
+		AuditContext:          auditContext,
+		EventMetadata:         eventMetadata,
+		Canceled:              canceled,
+	}
+	return eventstore.NewLoadedEvent(
+		e.GetEventMetadata().GetVersion(),
+		(&events.DeviceMetadataUpdated{}).EventType(),
+		commands.MakeStatusResourceUUID(deviceID),
+		e.GetDeviceId(),
+		false,
+		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
+		func(v interface{}) error {
+			if x, ok := v.(*events.DeviceMetadataUpdated); ok {
+				x.CopyData(&e)
 				return nil
 			}
 			return fmt.Errorf("cannot unmarshal event")

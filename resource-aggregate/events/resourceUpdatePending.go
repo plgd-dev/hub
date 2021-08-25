@@ -47,6 +47,7 @@ func (e *ResourceUpdatePending) CopyData(event *ResourceUpdatePending) {
 	e.Content = event.GetContent()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.ValidUntil = event.GetValidUntil()
 }
 
 func (e *ResourceUpdatePending) CheckInitialized() bool {

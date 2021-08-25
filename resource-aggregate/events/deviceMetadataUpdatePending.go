@@ -47,6 +47,7 @@ func (e *DeviceMetadataUpdatePending) CopyData(event *DeviceMetadataUpdatePendin
 	e.UpdatePending = event.GetUpdatePending()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.ValidUntil = event.GetValidUntil()
 }
 
 func (e *DeviceMetadataUpdatePending) CheckInitialized() bool {

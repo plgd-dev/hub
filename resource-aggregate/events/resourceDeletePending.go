@@ -45,6 +45,7 @@ func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.ResourceId = event.GetResourceId()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.ValidUntil = event.GetValidUntil()
 }
 
 func (e *ResourceDeletePending) CheckInitialized() bool {

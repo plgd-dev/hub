@@ -332,7 +332,7 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceDeleted(ctx context.Cont
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) error {
+func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx context.Context, snapshot *ResourceStateSnapshotTaken) {
 	e.ResourceId = snapshot.GetResourceId()
 	e.LatestResourceChange = snapshot.GetLatestResourceChange()
 	e.EventMetadata = snapshot.GetEventMetadata()
@@ -341,8 +341,6 @@ func (e *ResourceStateSnapshotTaken) HandleEventResourceStateSnapshotTaken(ctx c
 	e.ResourceRetrievePendings = snapshot.GetResourceRetrievePendings()
 	e.ResourceUpdatePendings = snapshot.GetResourceUpdatePendings()
 	e.ResourceDeletePendings = snapshot.GetResourceDeletePendings()
-
-	return nil
 }
 
 func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
@@ -360,7 +358,7 @@ func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleEventResourceStateSnapshotTaken(ctx, &s)
+			e.HandleEventResourceStateSnapshotTaken(ctx, &s)
 		case (&ResourceUpdatePending{}).EventType():
 			var s ResourceUpdatePending
 			if err := eu.Unmarshal(&s); err != nil {

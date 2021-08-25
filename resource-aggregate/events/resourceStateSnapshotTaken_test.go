@@ -1,15 +1,101 @@
 package events_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
+
+type iterator struct {
+	idx    int
+	events []eventstore.EventUnmarshaler
+}
+
+func newIterator(events []eventstore.EventUnmarshaler) *iterator {
+	return &iterator{
+		events: events,
+	}
+}
+
+func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool) {
+	if i.idx < len(i.events) {
+		e := i.events[i.idx]
+		i.idx++
+		return e, true
+	}
+	return nil, false
+}
+func (i *iterator) Err() error {
+	return nil
+}
+
+func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
+	type args struct {
+		events *iterator
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "createPending, created",
+			args: args{
+				events: newIterator([]eventstore.EventUnmarshaler{
+					test.MakeResourceCreatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0"), time.Now().Add(-time.Second)),
+					test.MakeResourceCreated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "0")),
+				}),
+			},
+		},
+		{
+			name: "retrievePending, retrieved",
+			args: args{
+				events: newIterator([]eventstore.EventUnmarshaler{
+					test.MakeResourceRetrievePending(commands.NewResourceID("a", "/a"), "", events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "1"), time.Now().Add(-time.Second)),
+					test.MakeResourceRetrieved(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "1")),
+				}),
+			},
+		},
+		{
+			name: "updatePending, updated",
+			args: args{
+				events: newIterator([]eventstore.EventUnmarshaler{
+					test.MakeResourceUpdatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "2"), time.Now().Add(-time.Second)),
+					test.MakeResourceUpdated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "2")),
+				}),
+			},
+		},
+		{
+			name: "retrievePending, retrieved",
+			args: args{
+				events: newIterator([]eventstore.EventUnmarshaler{
+					test.MakeResourceDeletePending(commands.NewResourceID("a", "/a"), events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "3"), time.Now().Add(-time.Second)),
+					test.MakeResourceDeleted(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0), commands.NewAuditContext("userID", "3")),
+				}),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := events.NewResourceStateSnapshotTaken()
+			err := e.Handle(context.TODO(), tt.args.events)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
 
 func TestEqual(t *testing.T) {
 	res := events.ResourceChanged{
