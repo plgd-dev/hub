@@ -40,8 +40,24 @@ func (slice SortedSlice) Difference(second SortedSlice) SortedSlice {
 			diff = append(diff, slice[i])
 		}
 	}
-
 	return diff
+}
+
+func (slice SortedSlice) Intersection(second SortedSlice) SortedSlice {
+	var inter SortedSlice
+	var j int
+	for i := range slice {
+		for (j < len(second)) && (second[j] < slice[i]) {
+			j++
+		}
+		if j == len(second) {
+			break
+		}
+		if second[j] == slice[i] {
+			inter = append(inter, slice[i])
+		}
+	}
+	return inter
 }
 
 func (slice SortedSlice) Insert(elems ...string) SortedSlice {

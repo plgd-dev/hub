@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMakeSortedSlice(t *testing.T) {
+func TestSortedSlice_MakeSortedSlice(t *testing.T) {
 	type args struct {
 		v []string
 	}
@@ -45,7 +45,7 @@ func TestMakeSortedSlice(t *testing.T) {
 	}
 }
 
-func TestSortedInsert(t *testing.T) {
+func TestSortedSlice_Insert(t *testing.T) {
 	type args struct {
 		slice SortedSlice
 		elems []string
@@ -103,7 +103,7 @@ func TestSortedInsert(t *testing.T) {
 	}
 }
 
-func TestSortedContains(t *testing.T) {
+func TestSortedSlice_Contains(t *testing.T) {
 	type args struct {
 		slice SortedSlice
 		s     string
@@ -137,7 +137,7 @@ func TestSortedContains(t *testing.T) {
 	}
 }
 
-func TestSortedRemove(t *testing.T) {
+func TestSortedSlice_Remove(t *testing.T) {
 	type args struct {
 		slice SortedSlice
 		elems []string
@@ -203,7 +203,7 @@ func TestSortedRemove(t *testing.T) {
 	}
 }
 
-func TestSortedDifference(t *testing.T) {
+func TestSortedSlice_Difference(t *testing.T) {
 	type args struct {
 		first  SortedSlice
 		second SortedSlice
@@ -274,6 +274,68 @@ func TestSortedDifference(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.args.first.Difference(tt.args.second)
 			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestSortedSlice_Intersection(t *testing.T) {
+	type args struct {
+		second SortedSlice
+	}
+	tests := []struct {
+		name  string
+		slice SortedSlice
+		args  args
+		want  SortedSlice
+	}{
+		{
+			name:  "Empty",
+			slice: nil,
+			args:  args{},
+			want:  nil,
+		},
+		{
+			name:  "Left empty",
+			slice: nil,
+			args: args{
+				second: SortedSlice{"1"},
+			},
+			want: nil,
+		},
+		{
+			name:  "Right empty",
+			slice: SortedSlice{"1"},
+			want:  nil,
+		},
+		{
+			name:  "Identical",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				second: SortedSlice{"1", "2", "3"},
+			},
+			want: SortedSlice{"1", "2", "3"},
+		},
+		{
+			name:  "Left subset",
+			slice: SortedSlice{"1", "3"},
+			args: args{
+				second: SortedSlice{"1", "2", "3"},
+			},
+			want: SortedSlice{"1", "3"},
+		},
+		{
+			name:  "Right subset",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				second: SortedSlice{"1", "2"},
+			},
+			want: SortedSlice{"1", "2"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.slice.Intersection(tt.args.second)
+			require.Equal(t, got, tt.want)
 		})
 	}
 }
