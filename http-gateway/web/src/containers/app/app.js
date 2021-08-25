@@ -40,6 +40,7 @@ const App = ({ config }) => {
   const { formatMessage: _ } = useIntl()
   const [wellKnownConfig, setWellKnownConfig] = useState(null)
   const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
+  const [configError, setConfigError] = useState(null)
 
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
@@ -53,18 +54,19 @@ const App = ({ config }) => {
       !wellKnownConfig &&
       !wellKnownConfigFetched
     ) {
-      setWellKnownConfigFetched(true)
-
       const fetchWellKnownConfig = async () => {
         try {
           const { data: wellKnown } = await fetchApi(
             `${config.httpGatewayAddress}/.well-known/ocfcloud-configuration`
           )
 
+          setWellKnownConfigFetched(true)
           setWellKnownConfig(wellKnown)
         } catch (e) {
-          throw new Error(
-            'Could not retrieve the well-known ocfcloud configuration.'
+          setConfigError(
+            new Error(
+              'Could not retrieve the well-known ocfcloud configuration.'
+            )
           )
         }
       }
@@ -80,10 +82,10 @@ const App = ({ config }) => {
   ])
 
   // Render an error box with an auth error
-  if (error) {
+  if (error || configError) {
     return (
       <div className="client-error-message">
-        {`${_(t.authError)}: ${error.message}`}
+        {`${_(t.authError)}: ${error?.message || configError?.message}`}
       </div>
     )
   }
