@@ -48,6 +48,7 @@ func (e *DeviceMetadataUpdated) CopyData(event *DeviceMetadataUpdated) {
 	e.ShadowSynchronization = event.GetShadowSynchronization()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.Canceled = event.GetCanceled()
 }
 
 func (e *DeviceMetadataUpdated) CheckInitialized() bool {

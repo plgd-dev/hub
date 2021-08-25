@@ -87,11 +87,10 @@ func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdated(ctx context.Co
 	return true, nil
 }
 
-func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) error {
+func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataSnapshotTaken(ctx context.Context, s *DeviceMetadataSnapshotTaken) {
 	e.DeviceId = s.GetDeviceId()
 	e.DeviceMetadataUpdated = s.GetDeviceMetadataUpdated()
 	e.EventMetadata = s.GetEventMetadata()
-	return nil
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(ctx context.Context, updatePending *DeviceMetadataUpdatePending) error {
@@ -131,7 +130,7 @@ func (e *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 			if err := eu.Unmarshal(&s); err != nil {
 				return status.Errorf(codes.Internal, "%v", err)
 			}
-			_ = e.HandleDeviceMetadataSnapshotTaken(ctx, &s)
+			e.HandleDeviceMetadataSnapshotTaken(ctx, &s)
 		case (&DeviceMetadataUpdated{}).EventType():
 			var s DeviceMetadataUpdated
 			if err := eu.Unmarshal(&s); err != nil {
