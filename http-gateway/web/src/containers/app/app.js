@@ -57,7 +57,7 @@ const App = ({ config }) => {
       const fetchWellKnownConfig = async () => {
         try {
           const { data: wellKnown } = await fetchApi(
-            `${config.httpGatewayAddress}/.well-known/ocfcloud-configuration`
+            `${config.httpGatewayAddress}/.well-known/cloud-configuration`
           )
 
           setWellKnownConfigFetched(true)
