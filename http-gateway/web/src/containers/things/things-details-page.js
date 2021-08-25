@@ -54,9 +54,9 @@ export const ThingsDetailsPage = () => {
   const [savingResource, setSavingResource] = useState(false)
   const [deleteResourceHref, setDeleteResourceHref] = useState()
   const {
-    wellKnownConfig: { defaultTimeToLive },
+    wellKnownConfig: { defaultCommandTimeToLive },
   } = useAppConfig()
-  const [ttl, setTtl] = useState(defaultTimeToLive)
+  const [ttl, setTtl] = useState(defaultCommandTimeToLive)
   const [ttlHasError, setTtlHasError] = useState(false)
   const isMounted = useIsMounted()
   const { data, updateData, loading, error } = useThingDetails(id)
@@ -363,6 +363,7 @@ export const ThingsDetailsPage = () => {
         deviceName={deviceName}
         deviceId={id}
         links={resources}
+        ttl={ttl}
       />
       <ThingsDetails
         data={data}

@@ -22,7 +22,7 @@ import { history } from '@/store/history'
 import { security } from '@/common/services/security'
 import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
-// import { fetchApi } from '@/common/services'
+import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
 import './app.scss'
 
@@ -40,6 +40,7 @@ const App = ({ config }) => {
   const { formatMessage: _ } = useIntl()
   const [wellKnownConfig, setWellKnownConfig] = useState(null)
   const [wellKnownConfigFetched, setWellKnownConfigFetched] = useState(false)
+  const [configError, setConfigError] = useState(null)
 
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
@@ -53,24 +54,24 @@ const App = ({ config }) => {
       !wellKnownConfig &&
       !wellKnownConfigFetched
     ) {
-      setWellKnownConfigFetched(true)
-      setWellKnownConfig({ defaultTimeToLive: 0 })
+      const fetchWellKnownConfig = async () => {
+        try {
+          const { data: wellKnown } = await fetchApi(
+            `${config.httpGatewayAddress}/.well-known/cloud-configuration`
+          )
 
-      // const fetchWellKnownConfig = async () => {
-      //   try {
-      //     const wellKnown = await fetchApi(
-      //       `${config.httpGatewayAddress}/api/.well-known/cloud-configuration`
-      //     )
+          setWellKnownConfigFetched(true)
+          setWellKnownConfig(wellKnown)
+        } catch (e) {
+          setConfigError(
+            new Error(
+              'Could not retrieve the well-known ocfcloud configuration.'
+            )
+          )
+        }
+      }
 
-      //     setWellKnownConfig(wellKnown)
-      //   } catch (e) {
-      //     throw new Error(
-      //       'Could not retrieve the well-known ocfcloud configuration.'
-      //     )
-      //   }
-      // }
-
-      // fetchWellKnownConfig()
+      fetchWellKnownConfig()
     }
   }, [
     isLoading,
@@ -81,10 +82,10 @@ const App = ({ config }) => {
   ])
 
   // Render an error box with an auth error
-  if (error) {
+  if (error || configError) {
     return (
       <div className="client-error-message">
-        {`${_(t.authError)}: ${error.message}`}
+        {`${_(t.authError)}: ${error?.message || configError?.message}`}
       </div>
     )
   }

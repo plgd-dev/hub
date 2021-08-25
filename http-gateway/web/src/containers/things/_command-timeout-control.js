@@ -135,7 +135,7 @@ export const CommanTimeoutControl = ({
 }
 
 CommanTimeoutControl.propTypes = {
-  defaultValue: PropTypes.number.isRequired,
+  defaultValue: PropTypes.number,
   onChange: PropTypes.func.isRequired,
   disabled: PropTypes.bool.isRequired,
   ttlHasError: PropTypes.bool.isRequired,
@@ -145,4 +145,5 @@ CommanTimeoutControl.propTypes = {
 
 CommanTimeoutControl.defaultProps = {
   isDelete: false,
+  defaultValue: 0,
 }
