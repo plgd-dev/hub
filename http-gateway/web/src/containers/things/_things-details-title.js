@@ -148,7 +148,7 @@ ThingsDetailsTitle.propTypes = {
   updateDeviceName: PropTypes.func.isRequired,
   isOnline: PropTypes.bool.isRequired,
   links: PropTypes.arrayOf(thingResourceShape),
-  ttl: PropTypes.number.isRequired,
+  ttl: PropTypes.number,
 }
 
 ThingsDetailsTitle.defaultProps = {
@@ -156,4 +156,5 @@ ThingsDetailsTitle.defaultProps = {
   deviceName: null,
   deviceId: null,
   links: [],
+  ttl: 0,
 }
