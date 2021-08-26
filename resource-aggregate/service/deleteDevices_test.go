@@ -10,6 +10,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
@@ -33,9 +34,12 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 		require.NoError(t, err)
 		_ = eventstore.Close(ctx)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/plgd-dev/cloud/authorization/persistence"
 	"github.com/plgd-dev/cloud/pkg/log"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/cloud/test/config"
 
 	"github.com/stretchr/testify/assert"
@@ -51,7 +51,7 @@ func newTestService(t *testing.T) (*Server, func()) {
 	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
 
-	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger)
+	naClient, publisher, err := test.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, logger)
 	require.NoError(t, err)
 
 	s, err := NewServer(context.Background(), cfg, logger, publisher)
@@ -65,6 +65,7 @@ func newTestService(t *testing.T) (*Server, func()) {
 	return s, func() {
 		s.Shutdown()
 		publisher.Close()
+		naClient.Close()
 		wg.Wait()
 	}
 }

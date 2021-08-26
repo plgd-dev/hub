@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/pkg/strings"
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	cqrsEventStore "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
@@ -44,31 +45,32 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	if err != nil {
 		return nil, fmt.Errorf("cannot create mongodb eventstore %w", err)
 	}
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
-	if err != nil {
+	closeEventStore := func() {
 		err := eventstore.Close(ctx)
 		if err != nil {
 			logger.Errorf("error occurs during closing of connection to mongodb: %w", err)
 		}
+	}
+	naClient, err := natsClient.New(config.Clients.Eventbus.NATS.Config, logger)
+	if err != nil {
+		closeEventStore()
+		return nil, fmt.Errorf("cannot create nats client %w", err)
+	}
+	publisher, err := publisher.New(naClient.GetConn(), config.Clients.Eventbus.NATS.JetStream, publisher.WithMarshaler(utils.Marshal))
+	if err != nil {
+		closeEventStore()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
+	naClient.AddCloseFunc(publisher.Close)
 
 	service, err := NewService(ctx, config, logger, eventstore, publisher)
 	if err != nil {
-		err := eventstore.Close(ctx)
-		if err != nil {
-			logger.Errorf("error occurs during closing of connection to mongodb: %w", err)
-		}
+		closeEventStore()
 		publisher.Close()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
-	service.AddCloseFunc(func() {
-		err := eventstore.Close(ctx)
-		if err != nil {
-			logger.Errorf("error occurs during closing of connection to mongodb: %w", err)
-		}
-	})
-	service.AddCloseFunc(publisher.Close)
+	service.AddCloseFunc(closeEventStore)
+	service.AddCloseFunc(naClient.Close)
 
 	return service, nil
 }

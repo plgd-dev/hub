@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
@@ -24,10 +25,13 @@ func TestSubscriberReconnect(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	pub, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	naClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub)
-	defer pub.Close()
+	defer func() {
+		pub.Close()
+		naClient.Close()
+	}()
 
 	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
 	require.NotNil(t, subscriber)
@@ -80,10 +84,13 @@ func TestSubscriberReconnect(t *testing.T) {
 	case <-ctx.Done():
 		require.NoError(t, fmt.Errorf("Timeout"))
 	}
-	pub1, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub1)
-	defer pub1.Close()
+	defer func() {
+		pub1.Close()
+		naClient1.Close()
+	}()
 	err = pub1.Publish(ctx, topics[0:1], aggregateID1Path.GroupId, aggregateID1Path.AggregateId, eventsToPublish[1])
 	require.NoError(t, err)
 	event0, err = m0.waitForEvent(timeout)

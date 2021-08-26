@@ -6,17 +6,17 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
+	"github.com/plgd-dev/cloud/authorization/persistence/mongodb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 )
 
 // Provider defines interface for authentification against auth service
@@ -74,31 +74,36 @@ func NewServer(ctx context.Context, cfg Config, logger log.Logger, publisher *pu
 
 // New creates the service's HTTP server.
 func New(ctx context.Context, cfg Config, logger log.Logger) (*Server, error) {
-
-	publisher, err := publisher.New(cfg.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, err := client.New(cfg.Clients.Eventbus.NATS.Config, logger)
 	if err != nil {
+		return nil, fmt.Errorf("cannot create nats client %w", err)
+	}
+	publisher, err := publisher.New(naClient.GetConn(), cfg.Clients.Eventbus.NATS.JetStream, publisher.WithMarshaler(utils.Marshal))
+	if err != nil {
+		naClient.Close()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
+	naClient.AddCloseFunc(publisher.Close)
 	validator, err := validator.New(ctx, cfg.APIs.GRPC.Authorization, logger)
 	if err != nil {
-		publisher.Close()
+		naClient.Close()
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 	opts, err := server.MakeDefaultOptions(NewAuth(validator, cfg.Clients.Storage.OwnerClaim), logger)
 	if err != nil {
 		validator.Close()
-		publisher.Close()
+		naClient.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 
 	s, err := NewServer(ctx, cfg, logger, publisher, opts...)
 	if err != nil {
 		validator.Close()
-		publisher.Close()
+		naClient.Close()
 		return nil, fmt.Errorf("cannot create server: %w", err)
 	}
 	s.grpcServer.AddCloseFunc(validator.Close)
-	s.grpcServer.AddCloseFunc(publisher.Close)
+	s.grpcServer.AddCloseFunc(naClient.Close)
 	return s, nil
 }
 
