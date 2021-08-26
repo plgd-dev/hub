@@ -8,21 +8,20 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/plgd-dev/cloud/resource-directory/service"
-	"github.com/plgd-dev/cloud/test/config"
-	"github.com/plgd-dev/go-coap/v2/message"
-
-	cbor "github.com/plgd-dev/kit/codec/cbor"
-
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/cloud/resource-directory/service"
+	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/go-coap/v2/message"
+	cbor "github.com/plgd-dev/kit/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -117,8 +116,16 @@ func TestDeviceDirectory_GetDevices(t *testing.T) {
 	require.NoError(t, err)
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	resourceSubscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
+	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+		logger,
+		subscriber.WithGoPool(pool.Submit),
+		subscriber.WithUnmarshaler(utils.Unmarshal),
+	)
 	require.NoError(t, err)
+	defer func() {
+		resourceSubscriber.Close()
+		naClient.Close()
+	}()
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 
 	subscriptions := service.NewSubscriptions()

@@ -58,6 +58,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	publisher, err := publisher.New(naClient.GetConn(), config.Clients.Eventbus.NATS.JetStream, publisher.WithMarshaler(utils.Marshal))
 	if err != nil {
+		naClient.Close()
 		closeEventStore()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
@@ -65,8 +66,8 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 
 	service, err := NewService(ctx, config, logger, eventstore, publisher)
 	if err != nil {
+		naClient.Close()
 		closeEventStore()
-		publisher.Close()
 		return nil, fmt.Errorf("cannot create nats publisher %w", err)
 	}
 	service.AddCloseFunc(closeEventStore)

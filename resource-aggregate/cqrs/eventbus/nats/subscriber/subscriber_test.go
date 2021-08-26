@@ -27,18 +27,25 @@ func TestSubscriber(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	naClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, publisher)
 	defer func() {
 		publisher.Close()
-		naClient.Close()
+		naPubClient.Close()
 	}()
 
-	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
-	require.NotNil(t, subscriber)
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+		logger,
+		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
+		subscriber.WithUnmarshaler(json.Unmarshal),
+	)
 	require.NoError(t, err)
-	defer subscriber.Close()
+	require.NotNil(t, subscriber)
+	defer func() {
+		subscriber.Close()
+		naSubClient.Close()
+	}()
 
 	acceptanceTest(t, context.Background(), timeout, publishTopics, subscriberTopics, publisher, subscriber)
 }

@@ -11,19 +11,19 @@ import (
 
 	"google.golang.org/grpc"
 
+	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	connectorStore "github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/kit/log"
-	"google.golang.org/grpc/credentials"
-
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
+	"github.com/plgd-dev/kit/log"
+	"google.golang.org/grpc/credentials"
 )
 
 //Server handle HTTP request
@@ -40,6 +40,7 @@ type Server struct {
 	dialCertManager   DialCertManager
 	listenCertManager ListenCertManager
 	db                connectorStore.Store
+	naClient          *natsClient.Client
 	sub               *subscriber.Subscriber
 }
 
@@ -137,8 +138,11 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 	if err != nil {
 		log.Fatalf("cannot create logger: %v", err)
 	}
-
-	sub, err := subscriber.New(config.Nats, logger.Sugar(), subscriber.WithUnmarshaler(utils.Unmarshal))
+	naClient, err := natsClient.New(config.Nats, logger.Sugar())
+	if err != nil {
+		log.Fatalf("cannot create nats client: %v", err)
+	}
+	sub, err := subscriber.New(naClient.GetConn(), config.Nats.PendingLimits, logger.Sugar(), subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		log.Fatalf("cannot create subscriber: %v", err)
 	}
@@ -198,6 +202,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 		dialCertManager:   dialCertManager,
 		listenCertManager: listenCertManager,
 		db:                db,
+		naClient:          naClient,
 		sub:               sub,
 	}
 
@@ -207,6 +212,7 @@ func New(config Config, dialCertManager DialCertManager, listenCertManager Liste
 // Serve starts the service's HTTP server and blocks.
 func (s *Server) Serve() error {
 	defer func() {
+		s.naClient.Close()
 		s.sub.Close()
 		if err := s.raConn.Close(); err != nil {
 			log.Errorf("failed to close ResourceAggregate connection: %v", err)

@@ -88,7 +88,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(p.Release)
 
-	resourceSubscriber, err := subscriber.NewWithNATS(nats.GetConn(),
+	resourceSubscriber, err := subscriber.New(nats.GetConn(),
 		config.Clients.Eventbus.NATS.PendingLimits,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { return p.Submit(f) }),
