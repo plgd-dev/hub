@@ -6,12 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/plgd-dev/cloud/pkg/log"
-
 	nats "github.com/nats-io/nats.go"
-	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/pb"
 	"google.golang.org/protobuf/proto"
 )
@@ -53,46 +49,15 @@ func WithMarshaler(dataMarshaler MarshalerFunc) MarshalerOpt {
 	}
 }
 
-// New creates new publisher with proto marshaller.
-func New(config client.ConfigPublisher, logger log.Logger, opts ...Option) (*Publisher, error) {
-	certManager, err := cmClient.New(config.TLS, logger)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create cert manager: %w", err)
-	}
-	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()))
-	conn, err := nats.Connect(config.URL, config.Options...)
-	if err != nil {
-		certManager.Close()
-		return nil, fmt.Errorf("cannot create nats connection: %w", err)
-	}
-
-	p, err := NewWithNATS(conn, config.JetStream, opts...)
-	if err != nil {
-		conn.Close()
-		certManager.Close()
-		return nil, err
-	}
-	p.AddCloseFunc(certManager.Close)
-	return p, nil
-}
-
-// Create publisher with existing NATS connection
-func NewWithNATS(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
+// Create publisher with existing NATS connection and proto marshaller
+func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 	cfg := options{
 		dataMarshaler: json.Marshal,
 	}
 	for _, o := range opts {
 		o.apply(&cfg)
 	}
-	p, err := newPublisher(conn, jetstream, cfg.dataMarshaler)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
-}
 
-// NewPublisher creates a publisher.
-func newPublisher(conn *nats.Conn, jetstream bool, eventMarshaler MarshalerFunc) (*Publisher, error) {
 	publish := conn.Publish
 	if jetstream {
 		js, err := conn.JetStream()
@@ -106,7 +71,7 @@ func newPublisher(conn *nats.Conn, jetstream bool, eventMarshaler MarshalerFunc)
 	}
 
 	return &Publisher{
-		dataMarshaler: eventMarshaler,
+		dataMarshaler: cfg.dataMarshaler,
 		conn:          conn,
 		publish:       publish,
 	}, nil
@@ -160,9 +125,7 @@ func (p *Publisher) Flush(ctx context.Context) error {
 	return p.conn.Flush()
 }
 
-// Close close connection to nats
 func (p *Publisher) Close() {
-	p.conn.Close()
 	for _, f := range p.closeFunc {
 		f()
 	}

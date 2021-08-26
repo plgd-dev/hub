@@ -15,6 +15,7 @@ import (
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,19 +30,18 @@ func TestPublisher(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	publisher, err := publisher.New(natsClient.ConfigPublisher{
+	naClient, publisher, err := test.NewClientAndPublisher(natsClient.ConfigPublisher{
 		Config: natsClient.Config{
 			URL: "nats://localhost:4222",
 			TLS: config.MakeTLSClientConfig(),
 		},
 	}, logger, publisher.WithMarshaler(json.Marshal))
-	require.NoError(t, err)
-	assert.NotNil(t, publisher)
-	defer publisher.Close()
-
 	assert.NoError(t, err)
 	assert.NotNil(t, publisher)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
 	assert.NotNil(t, subscriber)
@@ -74,7 +74,7 @@ func TestPublisherJetStream(t *testing.T) {
 	defer func() {
 		_ = js.DeleteStream(s.Config.Name)
 	}()
-	publisher, err := publisher.New(natsClient.ConfigPublisher{
+	naClient, publisher, err := test.NewClientAndPublisher(natsClient.ConfigPublisher{
 		Config: natsClient.Config{
 			URL: "nats://localhost:4222",
 			TLS: config.MakeTLSClientConfig(),
@@ -83,11 +83,10 @@ func TestPublisherJetStream(t *testing.T) {
 	}, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
-	defer publisher.Close()
-
-	assert.NoError(t, err)
-	assert.NotNil(t, publisher)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
 	assert.NotNil(t, subscriber)

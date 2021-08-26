@@ -11,6 +11,7 @@ import (
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/service"
@@ -105,9 +106,12 @@ func TestRequestHandler_PublishResource(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
@@ -210,9 +214,12 @@ func TestRequestHandler_UnpublishResource(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 
@@ -282,9 +289,12 @@ func TestRequestHandler_NotifyResourceChanged(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
@@ -367,9 +377,12 @@ func TestRequestHandler_UpdateResourceContent(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
@@ -450,9 +463,12 @@ func TestRequestHandler_ConfirmResourceUpdate(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
@@ -530,9 +546,12 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
@@ -613,9 +632,12 @@ func TestRequestHandler_ConfirmResourceRetrieve(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
@@ -696,9 +718,12 @@ func TestRequestHandler_DeleteResource(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
@@ -779,9 +804,12 @@ func TestRequestHandler_ConfirmResourceDelete(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))
@@ -862,9 +890,12 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	for _, tt := range test {
@@ -945,9 +976,12 @@ func TestRequestHandler_ConfirmResourceCreate(t *testing.T) {
 		err := eventstore.Close(ctx)
 		assert.NoError(t, err)
 	}()
-	publisher, err := publisher.New(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	requestHandler := service.NewRequestHandler(config, eventstore, publisher, mockGetUserDevices)
 	_, err = requestHandler.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resID, 0))

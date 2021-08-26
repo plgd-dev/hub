@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test/config"
@@ -50,10 +51,13 @@ func TestProjection(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	publisher, err := publisher.New(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
-	defer publisher.Close()
+	defer func() {
+		publisher.Close()
+		naClient.Close()
+	}()
 
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
