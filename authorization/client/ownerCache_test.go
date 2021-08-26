@@ -16,7 +16,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	clientCertManager "github.com/plgd-dev/cloud/pkg/security/certManager/client"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
@@ -40,9 +40,12 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), log.Get())
+	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), log.Get())
 	require.NoError(t, err)
-	defer subscriber.Close()
+	defer func() {
+		subscriber.Close()
+		naClient.Close()
+	}()
 
 	token := oauthService.GetServiceToken(t)
 

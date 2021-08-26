@@ -11,6 +11,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	mockEvents "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
@@ -58,8 +59,17 @@ func TestResourceDirectory_GetResourceLinks(t *testing.T) {
 	require.NoError(t, err)
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	resourceSubscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
+	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+		logger,
+		subscriber.WithGoPool(pool.Submit),
+		subscriber.WithUnmarshaler(utils.Unmarshal),
+	)
 	require.NoError(t, err)
+	defer func() {
+		resourceSubscriber.Close()
+		naClient.Close()
+	}()
+
 	ctx := kitNetGrpc.CtxWithIncomingToken(context.Background(), "b")
 
 	subscriptions := service.NewSubscriptions()

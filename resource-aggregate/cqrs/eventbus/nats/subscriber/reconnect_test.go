@@ -25,18 +25,24 @@ func TestSubscriberReconnect(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	naClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
+	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub)
 	defer func() {
 		pub.Close()
-		naClient.Close()
+		naPubClient.Close()
 	}()
 
-	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
-	require.NotNil(t, subscriber)
+	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+		logger,
+		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
+		subscriber.WithUnmarshaler(json.Unmarshal))
 	require.NoError(t, err)
-	defer subscriber.Close()
+	require.NotNil(t, subscriber)
+	defer func() {
+		subscriber.Close()
+		naSubClient.Close()
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

@@ -8,20 +8,19 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,26 +50,29 @@ func TestProjection(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	naClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
+	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
 		publisher.Close()
-		naClient.Close()
+		naPubClient.Close()
 	}()
 
 	pool, err := ants.NewPool(16)
 	require.NoError(t, err)
 	defer pool.Release()
 
-	subscriber, err := subscriber.New(config.MakeSubscriberConfig(),
+	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(),
 		logger,
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, subscriber)
-	defer subscriber.Close()
+	defer func() {
+		subscriber.Close()
+		naSubClient.Close()
+	}()
 
 	ctx := context.Background()
 	ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, "test")
@@ -85,7 +87,7 @@ func TestProjection(t *testing.T) {
 	require.NotNil(t, store)
 
 	defer func() {
-		err = store.Clear(ctx)
+		err := store.Clear(ctx)
 		require.NoError(t, err)
 		_ = store.Close(ctx)
 	}()
@@ -175,6 +177,7 @@ func TestProjection(t *testing.T) {
 			EventMetadata: &events.EventMetadata{},
 		}, nil
 	}, nil)
+	require.NoError(t, err)
 
 	evs, err = a3.HandleCommand(ctx, &commandPub3)
 	require.NoError(t, err)

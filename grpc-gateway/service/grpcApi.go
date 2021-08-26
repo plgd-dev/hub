@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
+	naClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 
@@ -55,7 +56,19 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc closeFunc
 
-	resourceSubscriber, err := subscriber.New(config.Eventbus.NATS, logger, subscriber.WithGoPool(goroutinePoolGo), subscriber.WithUnmarshaler(utils.Unmarshal))
+	natsClient, err := naClient.New(config.Eventbus.NATS, logger)
+	if err != nil {
+		closeFunc.Close()
+		return nil, fmt.Errorf("cannot create nats client: %w", err)
+	}
+	closeFunc = append(closeFunc, natsClient.Close)
+
+	resourceSubscriber, err := subscriber.New(natsClient.GetConn(),
+		config.Eventbus.NATS.PendingLimits,
+		logger,
+		subscriber.WithGoPool(goroutinePoolGo),
+		subscriber.WithUnmarshaler(utils.Unmarshal),
+	)
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)

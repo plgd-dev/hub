@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 
 	nats "github.com/nats-io/nats.go"
-	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
@@ -135,31 +134,8 @@ func WithGoPool(goroutinePoolGo eventbus.GoroutinePoolGoFunc) GoroutinePoolGoOpt
 	}
 }
 
-// Create new subscriber with proto unmarshaller.
-func New(config natsClient.Config, logger log.Logger, opts ...Option) (*Subscriber, error) {
-	certManager, err := cmClient.New(config.TLS, logger)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create cert manager: %w", err)
-	}
-	config.Options = append(config.Options, nats.Secure(certManager.GetTLSConfig()), nats.MaxReconnects(-1))
-	conn, err := nats.Connect(config.URL, config.Options...)
-	if err != nil {
-		certManager.Close()
-		return nil, fmt.Errorf("cannot create nats connection: %w", err)
-	}
-
-	s, err := NewWithNATS(conn, config.PendingLimits, logger, opts...)
-	if err != nil {
-		conn.Close()
-		certManager.Close()
-		return nil, err
-	}
-	s.AddCloseFunc(certManager.Close)
-	return s, nil
-}
-
-// Create publisher with existing NATS connection
-func NewWithNATS(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, logger log.Logger, opts ...Option) (*Subscriber, error) {
+// Create publisher with existing NATS connection and proto marshaller
+func New(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, logger log.Logger, opts ...Option) (*Subscriber, error) {
 	cfg := options{
 		dataUnmarshaler: json.Unmarshal,
 		goroutinePoolGo: nil,
@@ -168,29 +144,21 @@ func NewWithNATS(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, 
 		o.apply(&cfg)
 	}
 
-	s, err := newSubscriber(conn, pendingLimits, cfg.dataUnmarshaler, cfg.goroutinePoolGo, logger)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func newSubscriber(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo eventbus.GoroutinePoolGoFunc, logger log.Logger) (*Subscriber, error) {
-	if eventUnmarshaler == nil {
+	if cfg.dataUnmarshaler == nil {
 		return nil, fmt.Errorf("invalid eventUnmarshaler")
 	}
 
-	s := Subscriber{
-		dataUnmarshaler: eventUnmarshaler,
+	s := &Subscriber{
+		dataUnmarshaler: cfg.dataUnmarshaler,
 		logger:          logger,
 		conn:            conn,
-		goroutinePoolGo: goroutinePoolGo,
+		goroutinePoolGo: cfg.goroutinePoolGo,
 		pendingLimits:   pendingLimits,
 		reconnect:       make([]reconnect, 0, 8),
 	}
 	conn.SetReconnectHandler(s.reconnectedHandler)
 
-	return &s, nil
+	return s, nil
 }
 
 // Subscribe creates a observer that listen on events from topics.
@@ -205,9 +173,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, subscriptionId string, topic
 	return observer, nil
 }
 
-// Close closes subscriber.
 func (s *Subscriber) Close() {
-	s.conn.Close()
 	for _, f := range s.closeFunc {
 		f()
 	}

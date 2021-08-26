@@ -22,6 +22,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	natsTest "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/cloud/test"
@@ -115,8 +116,12 @@ func TestRequestHandler_UpdateDeviceMetadata(t *testing.T) {
 
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
-	s, err := subscriber.New(testCfg.MakeSubscriberConfig(), logger, subscriber.WithUnmarshaler(utils.Unmarshal))
+	naClient, s, err := natsTest.NewClientAndSubscriber(testCfg.MakeSubscriberConfig(), logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
+	defer func() {
+		s.Close()
+		naClient.Close()
+	}()
 	tmp := uuid.New()
 	v := NewContentChangedFilter()
 	obs, err := s.Subscribe(ctx, tmp.String(), utils.GetDeviceSubject(deviceID), v)

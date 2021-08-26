@@ -12,7 +12,7 @@ import (
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
-	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/test"
@@ -30,8 +30,8 @@ func TestPublisher(t *testing.T) {
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 
-	naClient, publisher, err := test.NewClientAndPublisher(natsClient.ConfigPublisher{
-		Config: natsClient.Config{
+	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
+		Config: client.Config{
 			URL: "nats://localhost:4222",
 			TLS: config.MakeTLSClientConfig(),
 		},
@@ -40,13 +40,19 @@ func TestPublisher(t *testing.T) {
 	assert.NotNil(t, publisher)
 	defer func() {
 		publisher.Close()
-		naClient.Close()
+		naPubClient.Close()
 	}()
 
-	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
-	assert.NotNil(t, subscriber)
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+		logger,
+		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
+		subscriber.WithUnmarshaler(json.Unmarshal))
 	assert.NoError(t, err)
-	defer subscriber.Close()
+	assert.NotNil(t, subscriber)
+	defer func() {
+		subscriber.Close()
+		naSubClient.Close()
+	}()
 
 	acceptanceTest(t, context.Background(), timeout, waitForSubscription, topics, publisher, subscriber)
 }
@@ -74,8 +80,8 @@ func TestPublisherJetStream(t *testing.T) {
 	defer func() {
 		_ = js.DeleteStream(s.Config.Name)
 	}()
-	naClient, publisher, err := test.NewClientAndPublisher(natsClient.ConfigPublisher{
-		Config: natsClient.Config{
+	naPubClient, publisher, err := test.NewClientAndPublisher(client.ConfigPublisher{
+		Config: client.Config{
 			URL: "nats://localhost:4222",
 			TLS: config.MakeTLSClientConfig(),
 		},
@@ -85,13 +91,19 @@ func TestPublisherJetStream(t *testing.T) {
 	assert.NotNil(t, publisher)
 	defer func() {
 		publisher.Close()
-		naClient.Close()
+		naPubClient.Close()
 	}()
 
-	subscriber, err := subscriber.New(config.MakeSubscriberConfig(), logger, subscriber.WithGoPool(func(f func()) error { go f(); return nil }), subscriber.WithUnmarshaler(json.Unmarshal))
-	assert.NotNil(t, subscriber)
+	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(),
+		logger,
+		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
+		subscriber.WithUnmarshaler(json.Unmarshal))
 	assert.NoError(t, err)
-	defer subscriber.Close()
+	assert.NotNil(t, subscriber)
+	defer func() {
+		subscriber.Close()
+		naSubClient.Close()
+	}()
 
 	acceptanceTest(t, context.Background(), timeout, waitForSubscription, topics, publisher, subscriber)
 }

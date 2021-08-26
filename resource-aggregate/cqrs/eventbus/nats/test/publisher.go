@@ -14,6 +14,7 @@ func NewClientAndPublisher(config client.ConfigPublisher, logger log.Logger, opt
 
 	p, err := publisher.New(c.GetConn(), config.JetStream, opts...)
 	if err != nil {
+		c.Close()
 		return nil, nil, err
 	}
 

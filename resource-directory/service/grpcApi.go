@@ -14,14 +14,15 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
+	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	naClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils/notification"
 
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -119,7 +120,19 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 		}
 	})
 
-	resourceSubscriber, err := subscriber.New(config.Eventbus.NATS, logger, subscriber.WithGoPool(goroutinePoolGo), subscriber.WithUnmarshaler(utils.Unmarshal))
+	natsClient, err := naClient.New(config.Eventbus.NATS, logger)
+	if err != nil {
+		closeFunc.Close()
+		return nil, fmt.Errorf("cannot create nats client: %w", err)
+	}
+	closeFunc = append(closeFunc, natsClient.Close)
+
+	resourceSubscriber, err := subscriber.New(natsClient.GetConn(),
+		config.Eventbus.NATS.PendingLimits,
+		logger,
+		subscriber.WithGoPool(goroutinePoolGo),
+		subscriber.WithUnmarshaler(utils.Unmarshal),
+	)
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create eventbus subscriber: %w", err)
