@@ -183,7 +183,8 @@ func (c *OwnerCache) getOwnerDevices(ctx context.Context, asClient pbAS.Authoriz
 	return ownerDevices, nil
 }
 
-func (c *OwnerCache) getOrCreateLockedOwnerSubject(owner string) *ownerSubject {
+// Create or get owner subject, lock it, execute function and unlock it
+func (c *OwnerCache) executeOnLockedOwnerSubject(owner string, fn func(*ownerSubject) error) error {
 	val, _ := c.owners.LoadOrStoreWithFunc(owner, func(value interface{}) interface{} {
 		v := value.(*ownerSubject)
 		v.Lock()
@@ -193,35 +194,40 @@ func (c *OwnerCache) getOrCreateLockedOwnerSubject(owner string) *ownerSubject {
 		v.Lock()
 		return v
 	})
-	return val.(*ownerSubject)
+	s := val.(*ownerSubject)
+	defer s.Unlock()
+	return fn(s)
 }
 
 // Subscribe register onEvents handler and creates NATS subscription, if not exists.
 // To free subscription call close function.
 func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
-	s := c.getOrCreateLockedOwnerSubject(owner)
-
 	closeFunc := func() {}
-	if onEvent != nil {
-		handlerId := atomic.AddUint64(&c.handlerID, 1)
-		for !s.AddHandlerLocked(handlerId, onEvent) {
-			handlerId = atomic.AddUint64(&c.handlerID, 1)
-		}
-		closeFunc = c.makeCloseFunc(owner, handlerId)
-	}
-	if s.subscription == nil {
-		err := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
-			if err := s.Handle(msg); err != nil {
-				c.errFunc(err)
+	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
+		if onEvent != nil {
+			handlerId := atomic.AddUint64(&c.handlerID, 1)
+			for !s.AddHandlerLocked(handlerId, onEvent) {
+				handlerId = atomic.AddUint64(&c.handlerID, 1)
 			}
-		})
-		if err != nil {
-			s.Unlock()
-			closeFunc()
-			return nil, err
+			closeFunc = c.makeCloseFunc(owner, handlerId)
 		}
+		if s.subscription == nil {
+			err := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
+				if err := s.Handle(msg); err != nil {
+					c.errFunc(err)
+				}
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		closeFunc()
+		return nil, err
 	}
-	s.Unlock()
+
 	return closeFunc, nil
 }
 
@@ -232,14 +238,21 @@ func (c *OwnerCache) Update(ctx context.Context) (added []string, removed []stri
 		return nil, nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
 
-	s := c.getOrCreateLockedOwnerSubject(owner)
-	defer s.Unlock()
+	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
+		added, removed, err = s.syncDevicesLocked(ctx, owner, c)
+		return err
+	})
 
-	return s.syncDevicesLocked(ctx, owner, c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return added, removed, nil
 }
 
-// Returns locked, non-expired owner subject from cache
-func (c *OwnerCache) getValidLockedOwnerSubject(owner string) (*ownerSubject, bool) {
+// GetDevices provides the owner of the cached device. If the cache does not expire, the cache expiration is extended.
+// When ok == false you need to Update to refresh cache.
+func (c *OwnerCache) GetDevices(owner string) (devices []string, ok bool) {
 	var s *ownerSubject
 	now := time.Now()
 	c.owners.LoadWithFunc(owner, func(value interface{}) interface{} {
@@ -250,22 +263,11 @@ func (c *OwnerCache) getValidLockedOwnerSubject(owner string) (*ownerSubject, bo
 	if s == nil {
 		return nil, false
 	}
+	defer s.Unlock()
 	if !s.devicesSynced {
-		s.Unlock()
 		return nil, false
 	}
 	s.validUntil = now.Add(c.expiration)
-	return s, true
-}
-
-// GetDevices provides the owner of the cached device. If the cache does not expire, the cache expiration is extended.
-// When ok == false you need to Update to refresh cache.
-func (c *OwnerCache) GetDevices(owner string) (devices []string, ok bool) {
-	s, ok := c.getValidLockedOwnerSubject(owner)
-	if !ok {
-		return nil, false
-	}
-	defer s.Unlock()
 
 	devices = make([]string, len(s.devices))
 	copy(devices, s.devices)
@@ -279,16 +281,21 @@ func (c *OwnerCache) OwnsDevices(ctx context.Context, devices []string) ([]strin
 		return nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
 	}
 
-	s := c.getOrCreateLockedOwnerSubject(owner)
-	defer s.Unlock()
-	if !s.devicesSynced {
-		if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
-			return nil, err
-		}
-	}
-
 	deviceIds := strings.MakeSortedSlice(devices)
-	return s.devices.Intersection(deviceIds), nil
+	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
+		if !s.devicesSynced {
+			if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
+				return err
+			}
+		}
+		deviceIds = s.devices.Intersection(deviceIds)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return deviceIds, nil
 }
 
 // Convenience method to check if given device is owned by user

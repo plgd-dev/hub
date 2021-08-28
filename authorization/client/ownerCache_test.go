@@ -20,14 +20,13 @@ import (
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
 	oauthService "github.com/plgd-dev/cloud/test/oauth-server/test"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 )
 
-func Test_ownerCache_Subscribe(t *testing.T) {
+func TestOwnerCache_Subscribe(t *testing.T) {
 	test.ClearDB(context.Background(), t)
 
 	devices := []string{"device1", "device2", "device3"}
@@ -39,13 +38,6 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
-
-	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), log.Get())
-	require.NoError(t, err)
-	defer func() {
-		subscriber.Close()
-		naClient.Close()
-	}()
 
 	token := oauthService.GetServiceToken(t)
 
@@ -75,6 +67,13 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 	ctx = kitNetGrpc.CtxWithIncomingToken(ctx, token)
 	owner, err := kitNetGrpc.ParseOwnerFromJwtToken("sub", token)
 	require.NoError(t, err)
+
+	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), log.Get())
+	require.NoError(t, err)
+	defer func() {
+		subscriber.Close()
+		naClient.Close()
+	}()
 
 	cache := authClient.NewOwnerCache("sub", time.Second, subscriber.Conn(), c, func(err error) { fmt.Printf("%v\n", err) })
 	defer cache.Close()
@@ -141,6 +140,10 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, devices[:2], cacheDevices)
 
+	ownedDevices, err := cache.OwnsDevices(ctx, devices)
+	require.NoError(t, err)
+	assert.Equal(t, cacheDevices, ownedDevices)
+
 	deleted, err := c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: devices[:1],
 		UserId:    owner,
@@ -158,10 +161,18 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 	assert.Equal(t, devices[0:1], sub2unregisteredDevices)
 	lock.Unlock()
 
+	ok, err = cache.OwnsDevice(ctx, devices[0])
+	require.NoError(t, err)
+	assert.False(t, ok)
+
 	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[0], UserId: owner})
 	require.NoError(t, err)
 	cacheDevices, ok = cache.GetDevices(owner)
 	assert.Equal(t, devices[:2], cacheDevices)
+	assert.True(t, ok)
+
+	ok, err = cache.OwnsDevice(ctx, devices[0])
+	require.NoError(t, err)
 	assert.True(t, ok)
 
 	// check cleanup cache
@@ -203,4 +214,14 @@ func Test_ownerCache_Subscribe(t *testing.T) {
 	cacheDevices, ok = cache.GetDevices(owner)
 	assert.Empty(t, cacheDevices)
 	assert.False(t, ok)
+
+	_, err = c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+		DeviceIds: devices[1:],
+		UserId:    owner,
+	})
+	require.NoError(t, err)
+	time.Sleep(time.Second)
+	ownedDevices, err = cache.OwnsDevices(ctx, devices[1:])
+	require.NoError(t, err)
+	assert.Empty(t, ownedDevices)
 }
