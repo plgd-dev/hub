@@ -1,12 +1,21 @@
 package service_test
 
 import (
+	"context"
+	"crypto/tls"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	test "github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type TestCoapSignInResponse struct {
@@ -48,6 +57,51 @@ func TestSignInPostHandler(t *testing.T) {
 	}
 }
 
+func TestSignInDeviceSubscriptionHandler(t *testing.T) {
+	shutdown := setUp(t)
+	defer shutdown()
+
+	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetServiceToken(t))
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	cancelCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	co := testCoapDial(t, testCfg.GW_HOST)
+	if co == nil {
+		return
+	}
+	defer func() {
+		_ = co.Close()
+	}()
+
+	co.AddOnClose(func() {
+		cancel()
+	})
+
+	signUpResp := testSignUp(t, CertIdentity, co)
+	testSignIn(t, CertIdentity, signUpResp, co)
+	_, err = c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
+		DeviceIdFilter: []string{CertIdentity},
+	})
+	require.NoError(t, err)
+
+	<-cancelCtx.Done()
+	require.True(t, cancelCtx.Err() == context.Canceled)
+
+	co1 := testCoapDial(t, testCfg.GW_HOST)
+	_, code := runSignIn(t, CertIdentity, signUpResp, co1)
+	require.Equal(t, coapCodes.Unauthorized, code)
+	_ = co1.Close()
+}
+
 func TestSignOutPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
@@ -61,7 +115,7 @@ func TestSignOutPostHandler(t *testing.T) {
 	}()
 
 	signUpResp := testSignUp(t, CertIdentity, co)
-	testSignIn(t, signUpResp, co)
+	testSignIn(t, CertIdentity, signUpResp, co)
 
 	tbl := []testEl{
 		{"Changed (uid from ctx)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + signUpResp.AccessToken + `", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false},

@@ -11,27 +11,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-
+	"github.com/kelseyhightower/envconfig"
+	authTest "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
-
-	"github.com/plgd-dev/kit/security/certManager"
-
+	test "github.com/plgd-dev/cloud/test"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-
-	"github.com/kelseyhightower/envconfig"
-	authTest "github.com/plgd-dev/cloud/authorization/test"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	raTest "github.com/plgd-dev/cloud/resource-aggregate/test"
-	test "github.com/plgd-dev/cloud/test"
-	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -125,9 +122,9 @@ func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapS
 	return signUpResp
 }
 
-func testSignIn(t *testing.T, r service.CoapSignUpResponse, co *tcp.ClientConn) service.CoapSignInResp {
+func runSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) (*service.CoapSignInResp, codes.Code) {
 	signInReq := service.CoapSignInReq{
-		DeviceID:    CertIdentity,
+		DeviceID:    deviceID,
 		UserID:      r.UserID,
 		AccessToken: r.AccessToken,
 		Login:       true,
@@ -151,16 +148,26 @@ func testSignIn(t *testing.T, r service.CoapSignUpResponse, co *tcp.ClientConn) 
 	require.NoError(t, err)
 	defer pool.ReleaseMessage(resp)
 
-	require.Equal(t, codes.Changed, resp.Code())
 	var signInResp service.CoapSignInResp
-	err = cbor.ReadFrom(resp.Body(), &signInResp)
-	require.NoError(t, err)
-	return signInResp
+	if resp.Code() == codes.Changed {
+		err = cbor.ReadFrom(resp.Body(), &signInResp)
+		require.NoError(t, err)
+		return &signInResp, resp.Code()
+	}
+
+	return nil, resp.Code()
+}
+
+func testSignIn(t *testing.T, deviceID string, r service.CoapSignUpResponse, co *tcp.ClientConn) service.CoapSignInResp {
+	signInResp, code := runSignIn(t, deviceID, r, co)
+	require.Equal(t, codes.Changed, code)
+	require.NotNil(t, signInResp)
+	return *signInResp
 }
 
 func testSignUpIn(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignInResp {
 	resp := testSignUp(t, deviceID, co)
-	return testSignIn(t, resp, co)
+	return testSignIn(t, deviceID, resp, co)
 }
 
 func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn) {
@@ -174,6 +181,7 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 	ctx, cancel := context.WithTimeout(co.Context(), TestExchangeTimeout)
 	defer cancel()
 	req := pool.AcquireMessage(ctx)
+	defer pool.ReleaseMessage(req)
 	token, err := message.GetToken()
 	require.NoError(t, err)
 	req.SetCode(test.in.code)
@@ -193,6 +201,7 @@ func testPostHandler(t *testing.T, path string, test testEl, co *tcp.ClientConn)
 		}
 		require.NoError(t, err)
 	}
+	defer pool.ReleaseMessage(resp)
 	testValidateResp(t, test, resp)
 }
 
@@ -304,6 +313,7 @@ func setUp(t *testing.T, withoutTLS ...bool) func() {
 	auShutdown := authTest.SetUp(t)
 	raShutdown := raTest.SetUp(t)
 	rdShutdown := rdTest.SetUp(t)
+	grpcShutdown := grpcgwTest.New(t, grpcgwTest.MakeConfig(t))
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	if len(withoutTLS) > 0 {
 		coapgwCfg.APIs.COAP.TLS.Enabled = false
@@ -311,6 +321,7 @@ func setUp(t *testing.T, withoutTLS ...bool) func() {
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	return func() {
 		gwShutdown()
+		grpcShutdown()
 		rdShutdown()
 		raShutdown()
 		auShutdown()
