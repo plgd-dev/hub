@@ -131,6 +131,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		log.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", signOffData.deviceID)
 	}
 
+	client.unsubscribeFromDeviceEvents()
 	respAS, err := client.server.asClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
 		UserId:    signOffData.userID,

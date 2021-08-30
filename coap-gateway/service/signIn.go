@@ -7,11 +7,13 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/plgd-dev/cloud/authorization/events"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcgwClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/strings"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -168,6 +170,84 @@ func setNewDeviceSubscriber(ctx context.Context, client *Client, deviceID string
 	return nil
 }
 
+type updateType int
+
+const (
+	updateTypeNone    updateType = 0
+	updateTypeNew     updateType = 1
+	updateTypeChanged updateType = 2
+)
+
+func (client *Client) updateAuthorizationContext(deviceId, userId, accessToken string, validUntil time.Time) updateType {
+	authCtx := authorizationContext{
+		DeviceID:    deviceId,
+		UserID:      userId,
+		AccessToken: accessToken,
+		Expire:      validUntil,
+	}
+	oldAuthCtx := client.SetAuthorizationContext(&authCtx)
+
+	if oldAuthCtx.GetDeviceID() == "" {
+		return updateTypeNew
+	}
+	if oldAuthCtx.GetDeviceID() != deviceId || oldAuthCtx.GetUserID() != userId {
+		return updateTypeChanged
+	}
+	return updateTypeNone
+}
+
+func (client *Client) updateBySignInData(ctx context.Context, upd updateType, deviceId, userId string) error {
+	if upd == updateTypeChanged {
+		client.cancelResourceSubscriptions(true)
+		if err := client.closeDeviceSubscriber(); err != nil {
+			log.Errorf("failed to close previous device connection: %w", err)
+		}
+		client.cleanObservedResources()
+		client.unsubscribeFromDeviceEvents()
+	}
+
+	if upd != updateTypeNone {
+		if err := client.loadShadowSynchronization(ctx, deviceId); err != nil {
+			return fmt.Errorf("cannot load shadow synchronization for device %v: %w", deviceId, err)
+		}
+
+		if err := setNewDeviceSubscriber(ctx, client, deviceId); err != nil {
+			return fmt.Errorf("cannot set device subscriber: %w", err)
+		}
+	}
+
+	if err := client.server.devicesStatusUpdater.Add(client); err != nil {
+		return fmt.Errorf("cannot update cloud device status: %w", err)
+	}
+
+	return nil
+}
+
+func subscribeAndValidateDeviceAccess(ctx context.Context, client *Client, userId, deviceId string, subscribe bool) (bool, error) {
+	// subscribe to updates before checking cache, so when the device gets removed during sign in
+	// the client will always be closed
+	if subscribe {
+		if err := client.subscribeToDeviceEvents(userId, func(e *events.Event) {
+			evt := e.GetDevicesUnregistered()
+			if evt == nil {
+				return
+			}
+			if evt.Owner != userId {
+				return
+			}
+			if strings.Contains(evt.DeviceIds, deviceId) {
+				if err := client.Close(); err != nil {
+					log.Errorf("sign in error: cannot close client: %w", err)
+				}
+			}
+		}); err != nil {
+			return false, fmt.Errorf("cannot subscribe to device events: %w", err)
+		}
+	}
+
+	return client.server.ownerCache.OwnsDevice(ctx, deviceId)
+}
+
 // https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.session.swagger.json
 func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	logErrorAndCloseClient := func(err error, code coapCodes.Code) {
@@ -198,17 +278,10 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
-
-	expiresIn := validUntilToExpiresIn(validUntil)
-
-	accept, out, err := getSignInContent(expiresIn, req.Options)
-	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
-		return
-	}
+	upd := client.updateAuthorizationContext(signIn.DeviceID, signIn.UserID, signIn.AccessToken, validUntil)
 
 	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
-	valid, err := client.server.ownerCache.OwnsDevice(ctx, signIn.DeviceID)
+	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, signIn.DeviceID, upd != updateTypeNone)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
@@ -218,50 +291,18 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		return
 	}
 
-	// TODO: Subscribe to device (ownerCache.Subscribe)
-	//	-> onEvent callback -> check if event == Unregistered && event.owner == token.owner && strings.Contains(event.deviceIds, deviceId) then client.Close()
-
-	authCtx := authorizationContext{
-		DeviceID:    signIn.DeviceID,
-		UserID:      signIn.UserID,
-		AccessToken: signIn.AccessToken,
-		Expire:      validUntil,
-	}
-	req.Context = kitNetGrpc.CtxWithToken(req.Context, signIn.AccessToken)
-
-	oldAuthCtx := client.SetAuthorizationContext(&authCtx)
-	err = client.server.devicesStatusUpdater.Add(client)
+	expiresIn := validUntilToExpiresIn(validUntil)
+	accept, out, err := getSignInContent(expiresIn, req.Options)
 	if err != nil {
-		// Events from resources of device will be comes but device is offline. To recover cloud state, client need to reconnect to cloud.
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: cannot update cloud device status: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
 		return
 	}
 
-	newDevice := false
-
-	switch {
-	case oldAuthCtx.GetDeviceID() == "":
-		newDevice = true
-	case oldAuthCtx.GetDeviceID() != signIn.DeviceID || oldAuthCtx.GetUserID() != signIn.UserID:
-		client.cancelResourceSubscriptions(true)
-		if err := client.closeDeviceSubscriber(); err != nil {
-			log.Errorf("failed to close device %v connection: %w", oldAuthCtx.GetDeviceID(), err)
-		}
-		newDevice = true
-		client.cleanObservedResources()
+	if err := client.updateBySignInData(ctx, upd, signIn.DeviceID, signIn.UserID); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+		return
 	}
 
-	if newDevice {
-		if err := client.loadShadowSynchronization(req.Context, signIn.DeviceID); err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot load shadow synchronization for device %v: %w", signIn.DeviceID, err), coapCodes.InternalServerError)
-			return
-		}
-
-		if err := setNewDeviceSubscriber(req.Context, client, signIn.DeviceID); err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
-			return
-		}
-	}
 	if validUntil.IsZero() {
 		client.server.expirationClientCache.Set(signIn.DeviceID, nil, time.Millisecond)
 	} else {
@@ -276,7 +317,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		if client.shadowSynchronization == commands.ShadowSynchronization_DISABLED {
 			return
 		}
-		client.registerObservationsForPublishedResourcesLocked(req.Context, signIn.DeviceID)
+		client.registerObservationsForPublishedResourcesLocked(ctx, signIn.DeviceID)
 	}); err != nil {
 		log.Errorf("sign in error: failed to register resource observations for device %v: %v", signIn.DeviceID, err)
 	}

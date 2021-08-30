@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	authEvents "github.com/plgd-dev/cloud/authorization/events"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -101,9 +102,10 @@ type Client struct {
 
 	resourceSubscriptions *kitSync.Map // [token]
 
-	mutex            sync.Mutex
-	authCtx          *authorizationContext
-	deviceSubscriber *grpcClient.DeviceSubscriber
+	mutex                   sync.Mutex
+	authCtx                 *authorizationContext
+	deviceSubscriber        *grpcClient.DeviceSubscriber
+	closeEventSubscriptions func()
 }
 
 //newClient create and initialize client
@@ -275,7 +277,7 @@ func (client *Client) getTrackedResources(deviceID string, instanceIDs []int64) 
 	return matches
 }
 
-func (client *Client) removeResource(deviceID string, instanceID int64) {
+func (client *Client) removeResourceLocked(deviceID string, instanceID int64) {
 	if device, ok := client.observedResources[deviceID]; ok {
 		delete(device, instanceID)
 		if len(client.observedResources[deviceID]) == 0 {
@@ -337,7 +339,7 @@ func (client *Client) popTrackedObservation(hrefs []string) []*tcp.Observation {
 		if obs != nil {
 			observartions = append(observartions, obs)
 		}
-		client.removeResource(deviceID, instanceID)
+		client.removeResourceLocked(deviceID, instanceID)
 		log.Debugf("canceling observation on resource %v", deviceID+href)
 	}
 	return observartions
@@ -407,13 +409,12 @@ func (client *Client) CleanUp() *authorizationContext {
 	log.Debugf("cleanUp client %v for device %v", client.coapConn.RemoteAddr(), authCtx.GetDeviceID())
 
 	client.server.devicesStatusUpdater.Remove(client)
-	client.observedResourcesLock.Lock()
-	defer client.observedResourcesLock.Unlock()
-	client.cleanObservedResourcesLocked()
+	client.cleanObservedResources()
 	client.cancelResourceSubscriptions(false)
 	if err := client.closeDeviceSubscriber(); err != nil {
 		log.Errorf("cleanUp error: failed to close device %v connection: %w", authCtx.GetDeviceID(), err)
 	}
+	client.unsubscribeFromDeviceEvents()
 
 	return client.SetAuthorizationContext(nil)
 }
@@ -883,9 +884,30 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 		client.setShadowSynchronization(sendConfirmCtx, event.GetDeviceId(), previous)
 	}
 	return err
-
 }
 
 func (c *Client) ValidateToken(ctx context.Context, token string) (jwtClaims, error) {
 	return c.server.ValidateToken(ctx, token)
+}
+
+func (c *Client) subscribeToDeviceEvents(owner string, onEvent func(e *authEvents.Event)) error {
+	close, err := c.server.ownerCache.Subscribe(owner, onEvent)
+	if err != nil {
+		return err
+	}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.closeEventSubscriptions = close
+	return nil
+}
+
+func (c *Client) unsubscribeFromDeviceEvents() {
+	close := func() {}
+	c.mutex.Lock()
+	if c.closeEventSubscriptions != nil {
+		close = c.closeEventSubscriptions
+		c.closeEventSubscriptions = nil
+	}
+	c.mutex.Unlock()
+	close()
 }
