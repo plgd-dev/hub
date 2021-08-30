@@ -13,10 +13,11 @@ import {
   hasCommandTimeoutError,
   convertAndNormalizeValueFromTo,
   normalizeToFixedFloatValue,
+  findClosestUnit,
 } from './utils'
 import { messages as t } from './things-i18n'
 
-const { INFINITE, MS, NS } = commandTimeoutUnits
+const { INFINITE, NS } = commandTimeoutUnits
 
 export const CommanTimeoutControl = ({
   defaultValue,
@@ -27,9 +28,10 @@ export const CommanTimeoutControl = ({
   isDelete,
 }) => {
   const { formatMessage: _ } = useIntl()
-  const [unit, setUnit] = useState(defaultValue === 0 ? INFINITE : MS)
+  const closestUnit = findClosestUnit(defaultValue)
+  const [unit, setUnit] = useState(defaultValue === 0 ? INFINITE : closestUnit)
   const [inputValue, setInputValue] = useState(
-    convertAndNormalizeValueFromTo(defaultValue, NS, MS)
+    convertAndNormalizeValueFromTo(defaultValue, NS, closestUnit)
   )
 
   const units = Object.values(commandTimeoutUnits)

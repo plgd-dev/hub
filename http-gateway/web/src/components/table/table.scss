@@ -51,6 +51,11 @@ $table_row_height: 60px;
             }
           }
         }
+
+        // &.selectable-column {
+        //   padding-right: 0 !important;
+        //   max-width: 16px;
+        // }
       }
     }
 
@@ -74,6 +79,13 @@ $table_row_height: 60px;
           background-color: rgba($secondary_20, 0.4);
         }
       }
+    }
+  }
+
+  &.with-selectable-rows {
+    td:first-child,
+    th:first-child {
+      padding-right: 0 !important;
     }
   }
 

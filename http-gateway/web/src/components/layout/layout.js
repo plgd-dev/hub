@@ -52,7 +52,7 @@ export const Layout = props => {
                 })}
               />
             )}
-            <div>{header}</div>
+            <div className="layout-header-right">{header}</div>
           </div>
         )}
         <div className={classNames('layout-content', { split: isSplit })}>

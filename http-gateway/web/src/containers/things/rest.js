@@ -24,6 +24,21 @@ export const getThingApi = deviceId =>
   )
 
 /**
+ * Delete a set of things by their IDs Rest Api endpoint
+ * @param {*} params deviceIds
+ * @param {*} data
+ */
+export const deleteThingsApi = deviceIds =>
+  fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      thingsApiEndpoints.THINGS
+    }?${deviceIds.map(id => `deviceIdFilter=${id}`).join('&')}`,
+    {
+      method: 'DELETE',
+    }
+  )
+
+/**
  * Get things RESOURCES Rest Api endpoint
  * @param {*} params { deviceId, href - resource href, currentInterface - interface }
  * @param {*} data

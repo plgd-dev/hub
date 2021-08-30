@@ -1,0 +1,39 @@
+@import '@/common/styles/colors.scss';
+
+label.plgd-checkbox {
+  position: relative;
+  margin: 0;
+  cursor: pointer;
+
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid $primary_100;
+    background-color: transparent;
+
+    i {
+      font-size: 10px;
+      color: $light_100;
+    }
+  }
+
+  input {
+    display: none;
+
+    &:checked,
+    &:indeterminate {
+      + .checkbox-item {
+        background-color: $primary_100;
+      }
+    }
+
+    &:not(:checked):not(:indeterminate) {
+      + .checkbox-item i {
+        display: none;
+      }
+    }
+  }
+}

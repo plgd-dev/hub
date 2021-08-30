@@ -1,4 +1,5 @@
-import { useTable, useSortBy, usePagination } from 'react-table'
+import { useEffect } from 'react'
+import { useTable, useSortBy, usePagination, useRowSelect } from 'react-table'
 import BTable from 'react-bootstrap/Table'
 import PropTypes from 'prop-types'
 import classNames from 'classnames'
@@ -12,11 +13,15 @@ export const Table = ({
   className,
   columns,
   data,
+  onRowsSelect,
+  primaryAttribute,
   defaultSortBy,
   defaultPageSize,
   autoFillEmptyRows,
   getRowProps = defaultPropGetter,
   paginationProps,
+  bottomControls,
+  unselectRowsToken,
 }) => {
   const {
     getTableProps,
@@ -25,7 +30,6 @@ export const Table = ({
     prepareRow,
     page,
 
-    // Pagination
     canPreviousPage,
     canNextPage,
     pageOptions,
@@ -34,7 +38,11 @@ export const Table = ({
     nextPage,
     previousPage,
     setPageSize,
-    state: { pageIndex, pageSize },
+
+    selectedFlatRows,
+    toggleAllRowsSelected,
+
+    state: { pageIndex, pageSize, selectedRowIds },
   } = useTable(
     {
       columns,
@@ -52,10 +60,25 @@ export const Table = ({
         },
       },
       autoResetPage: false,
+      autoResetSelectedRows: false,
     },
     useSortBy,
-    usePagination
+    usePagination,
+    useRowSelect
   )
+
+  // Calls the onRowsSelect handler after a row was selected/unselected,
+  // so that the parent can store the current selection.
+  useEffect(() => {
+    if (onRowsSelect && selectedRowIds && primaryAttribute) {
+      onRowsSelect(selectedFlatRows.map(d => d.original[primaryAttribute]))
+    }
+  }, [selectedRowIds, primaryAttribute]) // eslint-disable-line
+
+  // Any time the unselectRowsToken is changed, all rows are gonna be unselected
+  useEffect(() => {
+    toggleAllRowsSelected(false)
+  }, [unselectRowsToken]) // eslint-disable-line
 
   return (
     <>
@@ -73,6 +96,11 @@ export const Table = ({
                         .style,
                       ...column.style,
                     }}
+                    className={classNames(
+                      column.getHeaderProps(column.getSortByToggleProps())
+                        .className,
+                      column.className
+                    )}
                   >
                     <div className="th-div">
                       {column.render('Header')}
@@ -121,9 +149,9 @@ export const Table = ({
         </BTable>
       </div>
 
-      {pageCount > 0 && (
-        <div className="table-bottom-controls">
-          <div />
+      <div className="table-bottom-controls">
+        {bottomControls || <div />}
+        {pageCount > 0 && (
           <Pagination
             {...paginationProps}
             canPreviousPage={canPreviousPage}
@@ -138,8 +166,8 @@ export const Table = ({
             pageSize={pageSize}
             pageLength={page.length}
           />
-        </div>
-      )}
+        )}
+      </div>
     </>
   )
 }
@@ -178,6 +206,10 @@ Table.propTypes = {
   autoFillEmptyRows: PropTypes.bool, // Fill empty rows to match the pageSize (to keep the table always the same size)
   className: PropTypes.string,
   paginationProps: PropTypes.object,
+  onRowsSelect: PropTypes.func,
+  primaryAttribute: PropTypes.string,
+  bottomControls: PropTypes.node,
+  unselectRowsToken: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 }
 
 Table.defaultProps = {
@@ -186,4 +218,8 @@ Table.defaultProps = {
   autoFillEmptyRows: false,
   className: null,
   paginationProps: {},
+  onRowsSelect: null,
+  primaryAttribute: null,
+  bottomControls: null,
+  unselectRowsToken: null,
 }
