@@ -132,6 +132,22 @@ func (s *DevicesSubscription) ID() string {
 	return s.subscriptionID
 }
 
+func (s *DevicesSubscription) handleEvent(e *pb.Event) error {
+	if ct := e.GetDeviceMetadataUpdated(); ct != nil {
+		return s.deviceMetadataUpdatedHandler.HandleDeviceMetadataUpdated(s.client.Context(), ct)
+	}
+
+	if ct := e.GetDeviceRegistered(); ct != nil {
+		return s.deviceRegisteredHandler.HandleDeviceRegistered(s.client.Context(), ct)
+	}
+
+	if ct := e.GetDeviceUnregistered(); ct != nil {
+		return s.deviceUnregisteredHandler.HandleDeviceUnregistered(s.client.Context(), ct)
+	}
+
+	return fmt.Errorf("unknown event occurs %T on recv devices events: %+v", e, e)
+}
+
 func (s *DevicesSubscription) runRecv() {
 	cancelAndHandlerError := func(err error) {
 		errors := make([]error, 0, 2)
@@ -168,26 +184,8 @@ func (s *DevicesSubscription) runRecv() {
 			return
 		}
 
-		if ct := ev.GetDeviceMetadataUpdated(); ct != nil {
-			err = s.deviceMetadataUpdatedHandler.HandleDeviceMetadataUpdated(s.client.Context(), ct)
-			if err != nil {
-				cancelAndHandlerError(err)
-				return
-			}
-		} else if ct := ev.GetDeviceRegistered(); ct != nil {
-			err = s.deviceRegisteredHandler.HandleDeviceRegistered(s.client.Context(), ct)
-			if err != nil {
-				cancelAndHandlerError(err)
-				return
-			}
-		} else if ct := ev.GetDeviceUnregistered(); ct != nil {
-			err = s.deviceUnregisteredHandler.HandleDeviceUnregistered(s.client.Context(), ct)
-			if err != nil {
-				cancelAndHandlerError(err)
-				return
-			}
-		} else {
-			cancelAndHandlerError(fmt.Errorf("unknown event occurs %T on recv devices events: %+v", ev, ev))
+		if err := s.handleEvent(ev); err != nil {
+			cancelAndHandlerError(err)
 			return
 		}
 	}

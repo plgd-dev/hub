@@ -9,7 +9,7 @@ import (
 	"github.com/plgd-dev/sdk/schema"
 )
 
-type deviceSubsciptionHandler struct {
+type deviceSubscriptionHandler struct {
 	subData   *SubscriptionData
 	emitEvent emitEventFunc
 }
@@ -20,7 +20,7 @@ func fixResourceLink(r schema.ResourceLink) schema.ResourceLink {
 	return r
 }
 
-func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, val *raEvents.ResourceLinksPublished) error {
+func (h *deviceSubscriptionHandler) HandleResourcePublished(ctx context.Context, val *raEvents.ResourceLinksPublished) error {
 	toSend := make([]schema.ResourceLink, 0, 32)
 	for _, l := range val.GetResources() {
 		toSend = append(toSend, fixResourceLink(l.ToSchema()))
@@ -30,7 +30,7 @@ func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, 
 	}
 	remove, err := h.emitEvent(ctx, events.EventType_ResourcesPublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
 	if err != nil {
-		log.Errorf("deviceSubsciptionHandler.HandleResourcePublished: cannot emit event: %v", err)
+		log.Errorf("deviceSubscriptionHandler.HandleResourcePublished: cannot emit event: %v", err)
 	}
 	if remove {
 		return err
@@ -38,7 +38,7 @@ func (h *deviceSubsciptionHandler) HandleResourcePublished(ctx context.Context, 
 	return nil
 }
 
-func (h *deviceSubsciptionHandler) HandleResourceUnpublished(ctx context.Context, val *raEvents.ResourceLinksUnpublished) error {
+func (h *deviceSubscriptionHandler) HandleResourceUnpublished(ctx context.Context, val *raEvents.ResourceLinksUnpublished) error {
 	toSend := make([]schema.ResourceLink, 0, 32)
 	for _, l := range val.GetHrefs() {
 		toSend = append(toSend, fixResourceLink(schema.ResourceLink{
@@ -51,7 +51,7 @@ func (h *deviceSubsciptionHandler) HandleResourceUnpublished(ctx context.Context
 	}
 	remove, err := h.emitEvent(ctx, events.EventType_ResourcesUnpublished, h.subData.Data(), h.subData.IncrementSequenceNumber, toSend)
 	if err != nil {
-		log.Errorf("deviceSubsciptionHandler.HandleResourceUnpublished: cannot emit event: %v", err)
+		log.Errorf("deviceSubscriptionHandler.HandleResourceUnpublished: cannot emit event: %v", err)
 	}
 	if remove {
 		return err
@@ -60,7 +60,7 @@ func (h *deviceSubsciptionHandler) HandleResourceUnpublished(ctx context.Context
 }
 
 type resourcePublishedHandler struct {
-	h *deviceSubsciptionHandler
+	h *deviceSubscriptionHandler
 }
 
 func (h *resourcePublishedHandler) HandleResourcePublished(ctx context.Context, val *raEvents.ResourceLinksPublished) error {
@@ -68,7 +68,7 @@ func (h *resourcePublishedHandler) HandleResourcePublished(ctx context.Context, 
 }
 
 type resourceUnpublishedHandler struct {
-	h *deviceSubsciptionHandler
+	h *deviceSubscriptionHandler
 }
 
 func (h *resourceUnpublishedHandler) HandleResourceUnpublished(ctx context.Context, val *raEvents.ResourceLinksUnpublished) error {

@@ -197,7 +197,7 @@ func (s *SubscriptionData) createResourceSubscription(ctx context.Context, emitE
 }
 
 func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
-	devHandler := deviceSubsciptionHandler{
+	devHandler := deviceSubscriptionHandler{
 		subData:   s,
 		emitEvent: emitEvent,
 	}
@@ -214,7 +214,7 @@ func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEve
 			h: &devHandler,
 		}
 	default:
-		return nil, fmt.Errorf("createDeviceSubsription: unsupported subscription eventypes %+v", s.data.EventTypes)
+		return nil, fmt.Errorf("createDeviceSubscription: unsupported subscription eventypes %+v", s.data.EventTypes)
 	}
 	return client.NewDeviceSubscription(ctx, s.data.DeviceID, closeEventHandler, eventHandler, s.gwClient)
 }
