@@ -7,8 +7,13 @@ import { ConfirmModal } from '@/components/confirm-modal'
 import { Layout } from '@/components/layout'
 import { getApiErrorMessage } from '@/common/utils'
 import { useIsMounted } from '@/common/hooks'
+import { Emitter } from '@/common/services/emitter'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
+import {
+  THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
+  RESET_COUNTER,
+} from './constants'
 import { useThingsList } from './hooks'
 import { ThingsList } from './_things-list'
 import { ThingsListHeader } from './_things-list-header'
@@ -50,7 +55,12 @@ export const ThingsListPage = () => {
 
   const handleRefresh = () => {
     refresh()
+
+    // Unselect all rows from the table
     setUnselectRowsToken(prevValue => prevValue + 1)
+
+    // Reset the counter on the Refresh button
+    Emitter.emit(THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, RESET_COUNTER)
   }
 
   const deleteDevices = async () => {
@@ -123,11 +133,9 @@ export const ThingsListPage = () => {
           </>
         }
         body={
-          <>
-            {selectedDevicesCount > 1
-              ? _(t.deleteDevicesMessage, { count: selectedDevicesCount })
-              : _(t.deleteDeviceMessage)}
-          </>
+          selectedDevicesCount > 1
+            ? _(t.deleteDevicesMessage, { count: selectedDevicesCount })
+            : _(t.deleteDeviceMessage)
         }
         confirmButtonText={_(t.delete)}
         loading={loadingOrDeleting}

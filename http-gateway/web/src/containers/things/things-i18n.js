@@ -332,7 +332,7 @@ export const messages = defineMessages({
   },
   thingsDeletedMessage: {
     id: 'things.thingsDeletedMessage',
-    defaultMessage: 'The selected things were successfully deleted.',
+    defaultMessage: 'The selected Things were successfully deleted.',
   },
   thingDeleted: {
     id: 'things.thingDeleted',
@@ -341,16 +341,16 @@ export const messages = defineMessages({
   },
   thingWasDeleted: {
     id: 'things.thingWasDeleted',
-    defaultMessage: 'Things {name} was successfully deleted.',
+    defaultMessage: 'Thing {name} was successfully deleted.',
   },
   thingsDeletionError: {
     id: 'things.thingsDeletion',
-    defaultMessage: 'Failed to delete selected things.',
+    defaultMessage: 'Failed to delete selected Things.',
     description: 'Title of the toast message on things deleted failed.',
   },
   thingDeletionError: {
     id: 'things.thingDeletionError',
-    defaultMessage: 'Failed to delete this thing.',
+    defaultMessage: 'Failed to delete this Thing.',
     description: 'Title of the toast message on things deleted failed.',
   },
 })
