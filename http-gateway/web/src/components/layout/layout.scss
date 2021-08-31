@@ -14,6 +14,11 @@
     height: 40px;
     width: 100%;
     margin-bottom: 15px;
+
+    .layout-header-right {
+      display: flex;
+      align-items: center;
+    }
   }
 
   .layout-content {

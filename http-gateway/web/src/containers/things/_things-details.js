@@ -60,7 +60,7 @@ export const ThingsDetails = memo(
               }
               checked={isShadowSynchronizationEnabled}
               onChange={setShadowSynchronization}
-              disabled={shadowSyncLoading}
+              disabled={shadowSyncLoading || isUnregistered}
             />
           </LabelWithLoading>
         </Col>

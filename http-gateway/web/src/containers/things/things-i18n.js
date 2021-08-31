@@ -77,6 +77,10 @@ export const messages = defineMessages({
     id: 'things.creating',
     defaultMessage: 'Creating',
   },
+  details: {
+    id: 'things.details',
+    defaultMessage: 'Details',
+  },
   retrieve: {
     id: 'things.retrieve',
     defaultMessage: 'Retrieve',
@@ -100,7 +104,17 @@ export const messages = defineMessages({
   deleteResourceMessage: {
     id: 'things.deleteResourceMessage',
     defaultMessage:
-      'Are you sure you want to delete this resource? This action cannot be undone.',
+      'Are you sure you want to delete this Resource? This action cannot be undone.',
+  },
+  deleteDeviceMessage: {
+    id: 'things.deleteDeviceMessage',
+    defaultMessage:
+      'Are you sure you want to delete this Thing? This action cannot be undone.',
+  },
+  deleteDevicesMessage: {
+    id: 'things.deleteDevicesMessage',
+    defaultMessage:
+      'Are you sure you want to delete these {count} Things? This action cannot be undone.',
   },
   resourceWasUpdated: {
     id: 'things.resourceWasUpdated',
@@ -152,7 +166,8 @@ export const messages = defineMessages({
   commandOnResourceExpired: {
     id: 'things.commandOnResourceExpired',
     defaultMessage: 'command on resource {deviceId}{href} has expired.',
-    description: 'Continuos message for command expiration, keep the first letter lowercase!',
+    description:
+      'Continuos message for command expiration, keep the first letter lowercase!',
   },
   resourceUpdateError: {
     id: 'things.resourceUpdateError',
@@ -309,5 +324,33 @@ export const messages = defineMessages({
   minimalValueIs: {
     id: 'things.minimalValueIs',
     defaultMessage: 'Minimal value is {minimalValue}.',
+  },
+  thingsDeleted: {
+    id: 'things.thingsDeleted',
+    defaultMessage: 'Things deleted',
+    description: 'Title of the toast message on things deleted success.',
+  },
+  thingsDeletedMessage: {
+    id: 'things.thingsDeletedMessage',
+    defaultMessage: 'The selected Things were successfully deleted.',
+  },
+  thingDeleted: {
+    id: 'things.thingDeleted',
+    defaultMessage: 'Thing deleted',
+    description: 'Title of the toast message on thing deleted success.',
+  },
+  thingWasDeleted: {
+    id: 'things.thingWasDeleted',
+    defaultMessage: 'Thing {name} was successfully deleted.',
+  },
+  thingsDeletionError: {
+    id: 'things.thingsDeletion',
+    defaultMessage: 'Failed to delete selected Things.',
+    description: 'Title of the toast message on things deleted failed.',
+  },
+  thingDeletionError: {
+    id: 'things.thingDeletionError',
+    defaultMessage: 'Failed to delete this Thing.',
+    description: 'Title of the toast message on things deleted failed.',
   },
 })

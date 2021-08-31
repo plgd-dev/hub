@@ -30,14 +30,20 @@ export const ThingsResources = ({
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center">
-        <h2 className={classNames(greyedOutClassName)}>{_(t.resources)}</h2>
+      <div
+        className={classNames(
+          'd-flex justify-content-between align-items-center',
+          greyedOutClassName
+        )}
+      >
+        <h2>{_(t.resources)}</h2>
         <div className="d-flex justify-content-end align-items-center">
           <Switch
             id="toggle-tree-view"
             label={_(t.treeView)}
             checked={treeViewActive}
             onChange={() => setTreeViewActive(!treeViewActive)}
+            disabled={isUnregistered}
           />
         </div>
       </div>

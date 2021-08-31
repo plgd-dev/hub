@@ -15,7 +15,7 @@ import {
 } from './constants'
 import { messages as t } from './things-i18n'
 
-const { INFINITE, MS, NS } = commandTimeoutUnits
+const { INFINITE, NS, MS, S, M, H } = commandTimeoutUnits
 
 // Returns the extension for resources API for the selected interface
 export const interfaceGetParam = currentInterface =>
@@ -166,6 +166,16 @@ export const handleDeleteResourceErrors = (
   }
 }
 
+// Handle the errors occurred during devices delete
+export const handleDeleteDevicesErrors = (error, _, singular = false) => {
+  const errorMessage = getApiErrorMessage(error)
+
+  showErrorToast({
+    title: !singular ? _(t.thingsDeletionError) : _(t.thingDeletionError),
+    message: errorMessage,
+  })
+}
+
 // Updates the device data with an object of { deviceId, status, shadowSynchronization } which came from the WS events.
 export const updateThingsDataStatus = (
   data,
@@ -275,6 +285,21 @@ export const convertValueFromTo = (value, unitFrom, unitTo) =>
 
 // Normalizes a given value to a fixed float number
 export const normalizeToFixedFloatValue = value => +value.toFixed(5)
+
+// Return a unit for the value which is the "nicest" after a conversion from ns
+export const findClosestUnit = value => {
+  const fromValue = time(value).from(NS)
+
+  if (fromValue.to(MS).value < 1000) {
+    return MS
+  } else if (fromValue.to(S).value < 60) {
+    return S
+  } else if (fromValue.to(M).value < 60) {
+    return M
+  } else {
+    return H
+  }
+}
 
 // Return true if there is a command timeout error based on the provided value and unit
 export const hasCommandTimeoutError = (value, unit) => {

@@ -9,6 +9,7 @@ import { Switch } from '@/components/switch'
 import {
   THINGS_STATUS_WS_KEY,
   THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
+  RESET_COUNTER,
 } from './constants'
 import { isNotificationActive, toggleActiveNotification } from './slice'
 import { messages as t } from './things-i18n'
@@ -22,16 +23,17 @@ export const ThingsListHeader = ({ loading, refresh }) => {
   useEmitter(
     THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
     numberOfNewChanges => {
-      setNumberOfChanges(numberOfChanges + numberOfNewChanges)
+      setNumberOfChanges(
+        numberOfNewChanges === RESET_COUNTER
+          ? 0
+          : numberOfChanges + numberOfNewChanges
+      )
     }
   )
 
   const refreshThings = () => {
     // Re-fetch the devices list
     refresh()
-
-    // Reset the numberOfChanges counter
-    setNumberOfChanges(0)
   }
 
   return (

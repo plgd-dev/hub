@@ -81,3 +81,6 @@ export const THINGS_RESOURCE_UPDATE_WS_KEY = `${THINGS_WS_KEY}.${RESOURCE_WS_KEY
 // Emitter Event keys
 export const THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY =
   'things-registered-unregistered-count'
+
+// Constant used in the THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY when reseting the counter
+export const RESET_COUNTER = 'reset-counter'

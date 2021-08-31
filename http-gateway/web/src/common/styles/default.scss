@@ -79,6 +79,7 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 
 .grayed-out {
   opacity: 0.4;
+  cursor: default !important;
 }
 
 .plgd-tooltip.tooltip {

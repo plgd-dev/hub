@@ -77,6 +77,13 @@ $table_row_height: 60px;
     }
   }
 
+  &.with-selectable-rows {
+    td:first-child,
+    th:first-child {
+      padding-right: 0 !important;
+    }
+  }
+
   + .table-bottom-controls {
     width: 100%;
     margin-top: 20px;
