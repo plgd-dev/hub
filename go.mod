@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/fsnotify/fsnotify v1.4.9
+	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-querystring v1.1.0
