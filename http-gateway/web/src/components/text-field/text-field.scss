@@ -1,0 +1,12 @@
+@import '@/common/styles/colors.scss';
+
+input[type='text'].form-control {
+  &:disabled {
+    &:hover {
+      border-color: $secondary_20;
+    }
+
+    color: rgba($secondary_40, 0.5);
+    background-color: hsl(0, 0%, 95%);
+  }
+}

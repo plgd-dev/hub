@@ -4,14 +4,6 @@ import { thingsApiEndpoints } from './constants'
 import { interfaceGetParam } from './utils'
 
 /**
- * Get a things Rest Api endpoint
- * @param {*} params { deviceId }
- * @param {*} data
- */
-export const getThingsApi = () =>
-  fetchApi(`${security.getHttpGatewayAddress()}${thingsApiEndpoints.THINGS}}`)
-
-/**
  * Get a single thing by its ID Rest Api endpoint
  * @param {*} params { deviceId }
  * @param {*} data

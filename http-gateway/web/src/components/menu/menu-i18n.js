@@ -9,6 +9,14 @@ export const messages = defineMessages({
     id: 'menu.things',
     defaultMessage: 'Things',
   },
+  pendingCommands: {
+    id: 'menu.pendingCommands',
+    defaultMessage: 'Pending Commands',
+  },
+  resourceLinks: {
+    id: 'menu.resourceLinks',
+    defaultMessage: 'Resource Links',
+  },
   services: {
     id: 'menu.services',
     defaultMessage: 'Services',

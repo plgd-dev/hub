@@ -139,6 +139,13 @@ export const ThingsList = ({
           'grayed-out': row.original?.status === UNREGISTERED,
         }),
       })}
+      getColumnProps={column => {
+        if (column.id === 'actions') {
+          return { style: { textAlign: 'center' } }
+        }
+
+        return {}
+      }}
       primaryAttribute="id"
       onRowsSelect={setSelectedDevices}
       bottomControls={

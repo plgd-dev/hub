@@ -19,6 +19,8 @@ export const Table = ({
   defaultPageSize,
   autoFillEmptyRows,
   getRowProps = defaultPropGetter,
+  getColumnProps = defaultPropGetter,
+  getCellProps = defaultPropGetter,
   paginationProps,
   bottomControls,
   unselectRowsToken,
@@ -80,6 +82,11 @@ export const Table = ({
     toggleAllRowsSelected(false)
   }, [unselectRowsToken]) // eslint-disable-line
 
+  // When the defaultPageSize is changed, update the pageSize in the table
+  useEffect(() => {
+    setPageSize(defaultPageSize)
+  }, [defaultPageSize]) // eslint-disable-line
+
   return (
     <>
       <div className={classNames('plgd-table', className)}>
@@ -128,7 +135,18 @@ export const Table = ({
                 <tr {...row.getRowProps(getRowProps(row))}>
                   {row.cells.map(cell => {
                     return (
-                      <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                      <td
+                        {...cell.getCellProps([
+                          {
+                            className: cell.column.className,
+                            style: cell.column.style,
+                          },
+                          getColumnProps(cell.column),
+                          getCellProps(cell),
+                        ])}
+                      >
+                        {cell.render('Cell')}
+                      </td>
                     )
                   })}
                 </tr>

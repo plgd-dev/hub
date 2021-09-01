@@ -82,6 +82,10 @@ $sides: (top, bottom, left, right); // Leave this variable alone
   cursor: default !important;
 }
 
+.tooltiped-text {
+  color: $primary_100;
+}
+
 .plgd-tooltip.tooltip {
   &.show {
     opacity: 1;
