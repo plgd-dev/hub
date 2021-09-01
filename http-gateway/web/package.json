@@ -39,8 +39,8 @@
     "web-vitals": "^0.2.4"
   },
   "devDependencies": {
-    "@formatjs/cli": "^3.2.0",
-    "babel-plugin-formatjs": "^9.2.5",
+    "@formatjs/cli": "^4.0.0",
+    "babel-plugin-formatjs": "^10.0.0",
     "react-hot-loader": "^4.13.0",
     "shelljs": "^0.8.4"
   },
