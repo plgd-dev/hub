@@ -36,7 +36,7 @@
     "redux-batched-actions": "^0.5.0",
     "units-converter": "^1.0.3",
     "uuid": "^8.3.2",
-    "web-vitals": "^0.2.4"
+    "web-vitals": "^2.0.0"
   },
   "devDependencies": {
     "@formatjs/cli": "^3.2.0",
