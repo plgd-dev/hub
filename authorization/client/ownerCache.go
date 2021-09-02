@@ -199,8 +199,8 @@ func (c *OwnerCache) executeOnLockedOwnerSubject(owner string, fn func(*ownerSub
 	return fn(s)
 }
 
-// Subscribe register onEvents handler and creates NATS subscription, if not exists.
-// To free subscription call close function.
+// Subscribe register onEvents handler and creates a NATS subscription, if it does not exist.
+// To free subscription call the returned close function.
 func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (close func(), err error) {
 	closeFunc := func() {}
 	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
@@ -252,26 +252,28 @@ func (c *OwnerCache) Update(ctx context.Context) (added []string, removed []stri
 
 // GetDevices provides the owner of the cached device. If the cache does not expire, the cache expiration is extended.
 // When ok == false you need to Update to refresh cache.
-func (c *OwnerCache) GetDevices(owner string) (devices []string, ok bool) {
-	var s *ownerSubject
+func (c *OwnerCache) GetDevices(ctx context.Context) (devices []string, err error) {
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, c.ownerClaim)
+	if err != nil {
+		return nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
+	}
 	now := time.Now()
-	c.owners.LoadWithFunc(owner, func(value interface{}) interface{} {
-		s = value.(*ownerSubject)
-		s.Lock()
-		return s
-	})
-	if s == nil {
-		return nil, false
+	if err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
+		if !s.devicesSynced {
+			if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
+				return err
+			}
+		} else {
+			s.validUntil = now.Add(c.expiration)
+		}
+		devices = make([]string, len(s.devices))
+		copy(devices, s.devices)
+		return nil
+	}); err != nil {
+		return nil, err
 	}
-	defer s.Unlock()
-	if !s.devicesSynced {
-		return nil, false
-	}
-	s.validUntil = now.Add(c.expiration)
 
-	devices = make([]string, len(s.devices))
-	copy(devices, s.devices)
-	return devices, true
+	return devices, nil
 }
 
 // Check provided list of device ids and return only ids owned by the user
@@ -282,7 +284,7 @@ func (c *OwnerCache) OwnsDevices(ctx context.Context, devices []string) ([]strin
 	}
 
 	deviceIds := strings.MakeSortedSlice(devices)
-	err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
+	if err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
 		if !s.devicesSynced {
 			if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
 				return err
@@ -290,11 +292,10 @@ func (c *OwnerCache) OwnsDevices(ctx context.Context, devices []string) ([]strin
 		}
 		deviceIds = s.devices.Intersection(deviceIds)
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
+
 	return deviceIds, nil
 }
 

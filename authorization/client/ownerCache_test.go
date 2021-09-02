@@ -75,7 +75,8 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 		naClient.Close()
 	}()
 
-	cache := authClient.NewOwnerCache("sub", time.Second, subscriber.Conn(), c, func(err error) { fmt.Printf("%v\n", err) })
+	cacheExpiration := time.Second
+	cache := authClient.NewOwnerCache("sub", cacheExpiration, subscriber.Conn(), c, func(err error) { fmt.Printf("%v\n", err) })
 	defer cache.Close()
 
 	// test 2 subscription to same owner
@@ -113,15 +114,12 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	})
 	require.NoError(t, err)
 	time.Sleep(time.Millisecond * 100)
+
 	for _, d := range devices[:2] {
 		_, err := c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: d, UserId: owner})
 		require.NoError(t, err)
 	}
-
 	time.Sleep(time.Millisecond * 100)
-	cacheDevices, ok := cache.GetDevices(owner)
-	assert.Empty(t, cacheDevices)
-	assert.False(t, ok)
 
 	lock.Lock()
 	sort.Strings(sub1registeredDevices)
@@ -130,14 +128,20 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	assert.Equal(t, devices[:2], sub2registeredDevices)
 	lock.Unlock()
 
+	cacheDevices, err := cache.GetDevices(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, devices[:2], cacheDevices)
+	// expire data
+	time.Sleep(cacheExpiration * 2)
+
 	// check update
 	added, removed, err := cache.Update(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, devices[:2], added)
 	assert.Empty(t, removed)
 
-	cacheDevices, ok = cache.GetDevices(owner)
-	assert.True(t, ok)
+	cacheDevices, err = cache.GetDevices(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, devices[:2], cacheDevices)
 
 	ownedDevices, err := cache.OwnsDevices(ctx, devices)
@@ -149,10 +153,16 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 		UserId:    owner,
 	})
 	require.NoError(t, err)
-	require.Equal(t, devices[:1], deleted.DeviceIds)
-	cacheDevices, ok = cache.GetDevices(owner)
+	assert.Equal(t, devices[:1], deleted.DeviceIds)
+
+	// check update - after expiration
+	added, removed, err = cache.Update(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, added)
+	assert.Empty(t, removed)
+	cacheDevices, err = cache.GetDevices(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, devices[1:2], cacheDevices)
-	assert.True(t, ok)
 
 	lock.Lock()
 	sort.Strings(sub1unregisteredDevices)
@@ -161,66 +171,57 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	assert.Equal(t, devices[0:1], sub2unregisteredDevices)
 	lock.Unlock()
 
-	ok, err = cache.OwnsDevice(ctx, devices[0])
+	ok, err := cache.OwnsDevice(ctx, devices[0])
 	require.NoError(t, err)
 	assert.False(t, ok)
 
 	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[0], UserId: owner})
 	require.NoError(t, err)
-	cacheDevices, ok = cache.GetDevices(owner)
+	cacheDevices, err = cache.GetDevices(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, devices[:2], cacheDevices)
-	assert.True(t, ok)
 
 	ok, err = cache.OwnsDevice(ctx, devices[0])
 	require.NoError(t, err)
 	assert.True(t, ok)
 
-	// check cleanup cache
-	sub1Close()
-	time.Sleep(time.Second * 2)
-	cacheDevices, ok = cache.GetDevices(owner)
-	assert.Empty(t, cacheDevices)
-	assert.False(t, ok)
-	sub2Close()
-	cacheDevices, ok = cache.GetDevices(owner)
-	assert.Empty(t, cacheDevices)
-	assert.False(t, ok)
-
 	// cache without subscription to events
+	sub1Close()
+	sub2Close()
+	time.Sleep(cacheExpiration * 2)
 	added, removed, err = cache.Update(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, devices[:2], added)
 	assert.Empty(t, removed)
 
-	cacheDevices, ok = cache.GetDevices(owner)
+	// update or refresh by GetDevices after expiration
+	time.Sleep(cacheExpiration * 2)
+	cacheDevices, err = cache.GetDevices(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, devices[:2], cacheDevices)
-	assert.True(t, ok)
 
+	// updated by GetDevices, Update does nothing
 	added, removed, err = cache.Update(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, added)
 	assert.Empty(t, removed)
-	cacheDevices, ok = cache.GetDevices(owner)
+	cacheDevices, err = cache.GetDevices(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, devices[:2], cacheDevices)
-	assert.True(t, ok)
+
 	_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: devices[2], UserId: owner})
 	require.NoError(t, err)
 	time.Sleep(time.Millisecond * 100)
-	cacheDevices, ok = cache.GetDevices(owner)
+	cacheDevices, err = cache.GetDevices(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, devices[:3], cacheDevices)
-	assert.True(t, ok)
-
-	time.Sleep(time.Second * 2)
-	cacheDevices, ok = cache.GetDevices(owner)
-	assert.Empty(t, cacheDevices)
-	assert.False(t, ok)
 
 	_, err = c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: devices[1:],
 		UserId:    owner,
 	})
 	require.NoError(t, err)
-	time.Sleep(time.Second)
+	time.Sleep(cacheExpiration * 2)
 	ownedDevices, err = cache.OwnsDevices(ctx, devices[1:])
 	require.NoError(t, err)
 	assert.Empty(t, ownedDevices)
