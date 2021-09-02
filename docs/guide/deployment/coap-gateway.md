@@ -194,8 +194,6 @@ Client configurations to internally connect to Authorization Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `clients.authorizationServer.pullFrequency` | string | `Frequency to pull changed user device.` | `15s` |
-| `clients.authorizationServer.cacheExpiration` | string | `Expiration time of cached user device.` | `1m` |
 | `clients.authorizationServer.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
 | `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |

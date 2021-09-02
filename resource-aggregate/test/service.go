@@ -15,10 +15,9 @@ import (
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
 
-	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.RESOURCE_AGGREGATE_HOST)
+	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
+	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.RESOURCE_AGGREGATE_HOST)
 
-	cfg.Clients.AuthServer.CacheExpiration = time.Second
-	cfg.Clients.AuthServer.PullFrequency = time.Millisecond * 500
 	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
 	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()

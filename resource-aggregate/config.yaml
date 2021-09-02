@@ -2,6 +2,7 @@ log:
   debug: false
 apis:
   grpc:
+    ownerCacheExpiration: 1m
     address: "0.0.0.0:9100"
     enforcementPolicy:
       minTime: 5s
@@ -66,8 +67,6 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
   authorizationServer:
-    pullFrequency: 15s 
-    cacheExpiration: 1m
     ownerClaim: sub
     grpc:
       address: ""
@@ -97,4 +96,4 @@ clients:
           caPool: "/secrets/public/rootca.crt"
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false   
+          useSystemCAPool: false

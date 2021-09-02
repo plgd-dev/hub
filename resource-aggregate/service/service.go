@@ -17,7 +17,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/cloud/pkg/strings"
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -88,7 +87,7 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 
-	grpcServer, err := server.New(config.APIs.GRPC, logger, opts...)
+	grpcServer, err := server.New(config.APIs.GRPC.Config, logger, opts...)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)
@@ -114,24 +113,24 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 
 	authClient := pbAS.NewAuthorizationServiceClient(asConn.GRPC())
 
-	userDevicesManager := clientAS.NewUserDevicesManager(userDevicesChanged, authClient, config.Clients.AuthServer.PullFrequency, config.Clients.AuthServer.CacheExpiration, func(err error) { log.Errorf("resource-aggregate: error occurs during receiving devices: %v", err) })
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, logger)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create nats client: %w", err)
+	}
+	grpcServer.AddCloseFunc(nats.Close)
+
+	ownerCache := clientAS.NewOwnerCache("sub", config.APIs.GRPC.OwnerCacheExpiration, nats.GetConn(), authClient, func(err error) {
+		log.Errorf("ownerCache error: %w", err)
+	})
+	grpcServer.AddCloseFunc(ownerCache.Close)
+
 	requestHandler := NewRequestHandler(config, eventStore, publisher, func(ctx context.Context, owner string, deviceIDs []string) ([]string, error) {
 		getAllDevices := len(deviceIDs) == 0
 		if !getAllDevices {
-			if ok := userDevicesManager.ChecksUserDevices(owner, deviceIDs); ok {
-				return deviceIDs, nil
-			}
+			return ownerCache.GetSelectedDevices(ctx, deviceIDs)
 		}
-		ownedDevices, err := userDevicesManager.UpdateUserDevices(ctx, owner)
-		if err != nil {
-			return nil, err
-		}
-		if getAllDevices {
-			return ownedDevices, nil
-		}
-		return strings.Intersection(deviceIDs, ownedDevices), nil
+		return ownerCache.GetDevices(ctx)
 	})
-	grpcServer.AddCloseFunc(userDevicesManager.Close)
 	RegisterResourceAggregateServer(grpcServer.Server, requestHandler)
 
 	return &Service{
