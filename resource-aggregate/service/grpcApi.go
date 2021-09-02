@@ -27,10 +27,6 @@ type RequestHandler struct {
 	getUserDevicesFunc getUserDevicesFunc
 }
 
-func userDevicesChanged(ctx context.Context, owner string, addedDevices, removedDevices, currentDevices map[string]bool) {
-	log.Debugf("userDevicesChanged %v: added: %+v removed: %+v current: %+v\n", owner, addedDevices, removedDevices, currentDevices)
-}
-
 //NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(config Config, eventstore EventStore, publisher eventbus.Publisher, getUserDevicesFunc getUserDevicesFunc) *RequestHandler {
 	return &RequestHandler{
