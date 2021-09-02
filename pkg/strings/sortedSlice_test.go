@@ -339,3 +339,141 @@ func TestSortedSlice_Intersection(t *testing.T) {
 		})
 	}
 }
+
+func TestSortedSlice_Equal(t *testing.T) {
+	type args struct {
+		second SortedSlice
+	}
+	tests := []struct {
+		name  string
+		slice SortedSlice
+		args  args
+		want  bool
+	}{
+		{
+			name:  "Empty",
+			slice: nil,
+			args:  args{},
+			want:  true,
+		},
+		{
+			name:  "First slice longer",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				second: SortedSlice{"1", "2"},
+			},
+			want: false,
+		},
+		{
+			name:  "Second slice longer",
+			slice: SortedSlice{"1", "2"},
+			args: args{
+				second: SortedSlice{"1", "2", "3"},
+			},
+			want: false,
+		},
+		{
+			name:  "Same length (different)",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				second: SortedSlice{"1", "2", "42"},
+			},
+			want: false,
+		},
+		{
+			name:  "Same length (equal)",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				second: SortedSlice{"1", "2", "3"},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.slice.Equal(tt.args.second)
+			require.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func TestSortedSlice_IsSuperslice(t *testing.T) {
+	type args struct {
+		s SortedSlice
+	}
+	tests := []struct {
+		name  string
+		slice SortedSlice
+		args  args
+		want  bool
+	}{
+		{
+			name:  "Both empty",
+			slice: nil,
+			args:  args{},
+			want:  true,
+		},
+		{
+			name:  "Left empty",
+			slice: nil,
+			args: args{
+				s: SortedSlice{"1", "2", "3"},
+			},
+			want: false,
+		},
+		{
+			name:  "Right empty",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				s: nil,
+			},
+			want: true,
+		},
+		{
+			name:  "Single element",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				s: SortedSlice{"2"},
+			},
+			want: true,
+		},
+		{
+			name:  "Equal",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				s: SortedSlice{"1", "2", "3"},
+			},
+			want: true,
+		},
+		{
+			name:  "Subset",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				s: SortedSlice{"0", "1", "2", "3"},
+			},
+			want: false,
+		},
+		{
+			name:  "Superset",
+			slice: SortedSlice{"0", "1", "2", "3", "4", "5"},
+			args: args{
+				s: SortedSlice{"0", "2", "3", "5"},
+			},
+			want: true,
+		},
+		{
+			name:  "Not superset",
+			slice: SortedSlice{"1", "2", "3"},
+			args: args{
+				s: SortedSlice{"1", "42"},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.slice.IsSuperslice(tt.args.s)
+			require.Equal(t, got, tt.want)
+		})
+	}
+}
