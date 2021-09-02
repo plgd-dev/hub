@@ -16,14 +16,10 @@ metadata:
 spec:
   type: {{ .Values.authorization.service.type | default "ClusterIP" }}
   ports:
-    - port: {{ .Values.authorization.port.grpc }}
+    - port: {{ .Values.authorization.port }}
       targetPort: grpc
       protocol: TCP
       name: grpc
-    - port: {{ .Values.authorization.port.http }}
-      targetPort: http
-      protocol: TCP
-      name: http
   selector:
   {{- include "plgd-cloud.authorization.selectorLabels" . | nindent 4 }}
 {{- end }}

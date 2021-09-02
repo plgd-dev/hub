@@ -20,8 +20,8 @@
 {{- end }}
 
 {{- define "plgd-cloud.authorization.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.fullname" . -}}
-  {{- printf "%s-authorization-crt" $fullName -}}
+  {{- $fullName := include "plgd-cloud.authorization.fullname" . -}}
+  {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
 {{- define "plgd-cloud.authorization.domainCertName" -}}

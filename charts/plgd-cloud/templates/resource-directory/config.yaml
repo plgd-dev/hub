@@ -27,8 +27,8 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $rdCert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
-          authority: {{ .apis.grpc.authorization.authority }}
-          audience: {{ .apis.grpc.authorization.audience }}
+          authority:{{ printf " " }}{{ required "resourcedirectory.apis.grpc.authorization.authority or global.authority is required " ( $.Values.global.authority | default .apis.grpc.authorization.authority ) | quote }}
+          audience:{{ printf " " }}{{ required "resourcedirectory.apis.grpc.authorization.audience or global.audience is required " ( $.Values.global.audience | default .apis.grpc.authorization.audience ) | quote }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
@@ -41,14 +41,19 @@ stringData:
               useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
     clients:
       eventBus:
+        goPoolSize: {{ .clients.eventBus.goPoolSize }}
         nats:
           url: {{ printf " " }}{{- include "plgd-cloud.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           jetstream: {{ .clients.eventBus.nats.jetstream }}
+          pendingLimits:
+            msgLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.msgLimit }}
+            bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $rdCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
+        cacheExpiration: {{ .clients.eventStore.cacheExpiration }}
         mongoDB:
           uri:{{ printf " " }}{{- include "plgd-cloud.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
           database: {{ .clients.eventStore.mongoDB.database }}
@@ -75,14 +80,18 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $rdCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
         oauth:
-          clientID: {{ .clients.authorizationServer.oauth.clientID }}
-          clientSecret: {{ .clients.authorizationServer.oauth.clientSecret }}
+          clientID:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.clientID or global.authorizationServer.oauth.clientID is required " ( .clients.authorizationServer.oauth.clientID  | default $.Values.global.authorizationServer.oauth.clientID ) | quote }}
+          clientSecret:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.clientSecret or global.authorizationServer.oauth.clientSecret is required " ( .clients.authorizationServer.oauth.clientSecret | default $.Values.global.authorizationServer.oauth.clientSecret ) | quote }}
+          {{- if ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
           scopes:
-          {{- range .clients.authorizationServer.oauth.scopes  }}
+          {{- range  ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
             - {{ . | quote }}
           {{- end }}
-          tokenURL: {{ .clients.authorizationServer.oauth.tokenURL }}
-          audience: {{ .clients.authorizationServer.oauth.audience }}
+          {{- else }}
+          scopes: []
+          {{- end }}
+          tokenURL:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.tokenURL or global.authorizationServer.oauth.tokenURL is required " ( .clients.authorizationServer.oauth.tokenURL | default $.Values.global.authorizationServer.oauth.tokenURL ) | quote }}
+          audience:{{ printf " " }}{{ required "resourcedirectory.clients.authorizationServer.oauth.audience or global.audience is required " ( .clients.authorizationServer.oauth.audience | default $.Values.global.audience ) | quote }}
           verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
           http:
             maxIdleConns: {{ .clients.authorizationServer.oauth.http.maxIdleConns }}
@@ -95,13 +104,36 @@ stringData:
               {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $rdCert ) | indent 12 }}
               useSystemCAPool: {{ .clients.authorizationServer.oauth.http.tls.useSystemCAPool }}
     publicConfiguration:
-      caPool: {{ .publicConfiguration.caPool }}
-      tokenURL: {{ .publicConfiguration.tokenURL }}
-      authorizationURL: {{ .publicConfiguration.authorizationURL }}
-      ownerClaim: {{ .publicConfiguration.ownerClaim }}
-      signingServerAddress: {{ .publicConfiguration.signingServerAddress }}
-      cloudID: {{ .publicConfiguration.cloudID }}
-      cloudURL: {{ .publicConfiguration.cloudURL }}
-      cloudAuthorizationProvider: {{ .publicConfiguration.cloudAuthorizationProvider }}
+      caPool: {{ .publicConfiguration.caPool | default "/certs/ca.crt" | quote }}
+      deviceAuthorization:
+        clientID:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.clientID or global.device.oauth.clientID is required " ( .publicConfiguration.deviceAuthorization.clientID | default $.Values.global.device.oauth.clientID  ) | quote }}
+        {{- if ( .publicConfiguration.deviceAuthorization.scopes | default $.Values.global.device.oauth.scopes ) }}
+        scopes:
+        {{- range  ( .publicConfiguration.deviceAuthorization.scopes | default $.Values.global.device.oauth.scopes ) }}
+          - {{ . | quote }}
+        {{- end }}
+        {{- else }}
+        scopes: []
+        {{- end }}
+        authority:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.authority or global.authority is required " ( .publicConfiguration.deviceAuthorization.authority | default $.Values.global.authority ) | quote }}
+        audience:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.audience or global.audienceis required " ( .publicConfiguration.deviceAuthorization.audience | default $.Values.global.audience ) | quote }}
+        redirectURL:{{ printf " " }}{{ required "resourcedirectory.publicConfiguration.deviceAuthorization.redirectURL or global.device.oauth.redirectURL is required " ( .publicConfiguration.deviceAuthorization.redirectURL | default $.Values.global.device.oauth.redirectURL ) | quote }}
+        http:
+          maxIdleConns: {{ .publicConfiguration.deviceAuthorization.http.maxIdleConns }}
+          maxConnsPerHost: {{ .publicConfiguration.deviceAuthorization.http.maxConnsPerHost }}
+          maxIdleConnsPerHost: {{ .publicConfiguration.deviceAuthorization.http.maxIdleConnsPerHost }}
+          idleConnTimeout: {{ .publicConfiguration.deviceAuthorization.http.idleConnTimeout }}
+          timeout: {{ .publicConfiguration.deviceAuthorization.http.timeout }}
+          tls:
+            {{- $deviceCfgTls := .publicConfiguration.deviceAuthorization.http.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $deviceCfgTls $rdCert ) | indent 10 }}
+            useSystemCAPool: {{ .publicConfiguration.deviceAuthorization.http.tls.useSystemCAPool }}
+      tokenURL: {{ required "resourcedirectory.publicConfiguration.tokenURL is required" .publicConfiguration.tokenURL | quote }}
+      authorizationURL: {{ required "resourcedirectory.publicConfiguration.authorizationURL is required" .publicConfiguration.authorizationURL | quote }}
+      ownerClaim: {{ .publicConfiguration.ownerClaim | default "sub" | quote }}
+      signingServerAddress: {{ .publicConfiguration.signingServerAddress | default ( printf "api.%s:443" $.Values.global.dnsName ) | quote }}
+      cloudID: {{ .publicConfiguration.cloudID | default $.Values.coapgateway.cloudId | quote }}
+      cloudURL: {{ .publicConfiguration.cloudURL | default (printf "coaps+tcp://%s:%v" $.Values.global.dnsName $.Values.coapgateway.port ) | quote }}
+      cloudAuthorizationProvider: {{ .publicConfiguration.cloudAuthorizationProvider | default "plgd" | quote }}
   {{- end }}
 {{- end }}

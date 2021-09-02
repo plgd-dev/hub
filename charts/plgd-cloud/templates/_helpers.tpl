@@ -76,23 +76,6 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-cloud.coapgateway.image" -}}
-    {{- $registryName := .Values.coapgateway.image.registry | default "" -}}
-    {{- $repositoryName := .Values.coapgateway.image.repository -}}
-    {{- $tag := .Values.coapgateway.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
-{{- define  "plgd-cloud.coapgateway.configSecretName" -}}
-    {{- $fullName :=  include "plgd-cloud.coapgateway.fullname" . -}}
-    {{- printf "%s-cfg" $fullName }}
-{{- end -}}
-
-{{- define  "plgd-cloud.resourceaggregate.configSecretName" -}}
-    {{- $fullName :=  include "plgd-cloud.resourceaggregate.fullname" . -}}
-    {{- printf "%s-cfg" $fullName }}
-{{- end -}}
-
 {{- define "plgd-cloud.certificateConfig" }}
   {{- $ := index . 0 }}
   {{- $certDefinition := index . 1 }}
@@ -114,7 +97,6 @@ If release name contains chart name it will be used as a full name.
   {{- end }}
 {{- end }}
 
-
 {{- define "plgd-cloud.createInternalCertByCm" }}
     {{- $natsTls := .Values.coapgateway.clients.eventBus.nats.tls.certFile }}
     {{- $authClientTls := .Values.coapgateway.clients.authorizationServer.grpc.tls.certFile }}
@@ -126,34 +108,6 @@ If release name contains chart name it will be used as a full name.
     {{- else }}
     {{- printf "true" }}
     {{- end }}
-{{- end }}
-
-{{- define "plgd-cloud.coapgateway.createServiceCertByCm" }}
-    {{- $serviceTls := .Values.coapgateway.apis.coap.tls.certFile }}
-    {{- if $serviceTls }}
-    {{- printf "false" }}
-    {{- else }}
-    {{- printf "true" }}
-    {{- end }}
-{{- end }}
-
-{{- define "plgd-cloud.resourceaggregate.createServiceCertByCm" }}
-    {{- $serviceTls := .Values.resourceaggregate.apis.grpc.tls.certFile }}
-    {{- if $serviceTls }}
-    {{- printf "false" }}
-    {{- else }}
-    {{- printf "true" }}
-    {{- end }}
-{{- end }}
-
-{{- define "plgd-cloud.coapgateway.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.coapgateway.fullname" . -}}
-  {{- printf "%s-crt" $fullName -}}
-{{- end }}
-
-{{- define "plgd-cloud.resourceaggregate.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.resourceaggregate.fullname" . -}}
-  {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
 {{- define "plgd-cloud.certmanager.coapIssuerName" -}}
@@ -239,7 +193,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- else if $mongoUri }}
   {{- printf "%s" $mongoUri }}
   {{- else }}
-  {{- printf "mongodb-0.mongodb-headless.%s.svc.%s:27017" $.Release.Namespace $.Values.cluster.dns }}
+  {{- printf "mongodb://mongodb-0.mongodb-headless.%s.svc.%s:27017" $.Release.Namespace $.Values.cluster.dns }}
   {{- end }}
 {{- end }}
 
@@ -250,7 +204,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- printf "%s" $address }}
   {{- else }}
   {{- $authorizationServer := include "plgd-cloud.authorization.fullname" $ }}
-  {{- printf "%s.%s.svc.%s:%v" $authorizationServer $.Release.Namespace $.Values.cluster.dns $.Values.authorization.port.grpc }}
+  {{- printf "%s.%s.svc.%s:%v" $authorizationServer $.Release.Namespace $.Values.cluster.dns $.Values.authorization.port }}
   {{- end }}
 {{- end }}
 
@@ -273,5 +227,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- else }}
   {{- $raServer := include "plgd-cloud.resourceaggregate.fullname" $ }}
   {{- printf "%s.%s.svc.%s:%v" $raServer $.Release.Namespace $.Values.cluster.dns $.Values.resourcedirectory.port }}
+  {{- end }}
+{{- end }}
+
+{{- define  "plgd-cloud.globalDomain" }}
+  {{- $ := index . 0 }}
+  {{- $address := index . 1 }}
+  {{- $subDomainPrefix := index . 2 }}
+  {{- if $address }}
+  {{- printf "%s" $address }}
+  {{- else }}
+  {{- printf "%s%s" $subDomainPrefix $.Values.global.dnsName }}
   {{- end }}
 {{- end }}

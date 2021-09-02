@@ -64,22 +64,4 @@ Cert-manager integration for internal certificates
 | certmanager.internal.cert.duration  | Certificate duration  | 8760h | 
 | certmanager.internal.cert.renewBefore  | Certificate renew before  | 360h | 
 | certmanager.internal.cert.key.algorithm  | Type of cert key  | ECDSA | 
-| certmanager.internal.cert.key.size  | Size of cert key  | 256 | 
-
-Cert-manager integration for external certificates
-
-| Name  | Description  | Default  |
-|---|---|---|
-| certmanager.external.issuer.labels  | Labels  | {}  | 
-| certmanager.external.issuer.annotations  | Labels  | {}  | 
-| certmanager.external.issuer.name  | Name of issuer |   | 
-| certmanager.external.issuer.kind  | Kind of issuer  |   | 
-| certmanager.external.issuer.spec  | Spec. In case this value is specified. New issuer will be created  | {} | 
-| certmanager.external.cert.labels  | Labels  | {} | 
-| certmanager.external.cert.annotations  | Labels  | {} | 
-| certmanager.external.cert.duration  | Certificate duration  | 8760h | 
-| certmanager.external.cert.renewBefore  | Certificate renew before  | 360h | 
-| certmanager.external.cert.key.algorithm  | Type of cert key  | ECDSA | 
-| certmanager.external.cert.key.size  | Size of cert key  | 256 | 
-
-
+| certmanager.internal.cert.key.size  | Size of cert key  | 256 |

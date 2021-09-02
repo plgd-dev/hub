@@ -18,15 +18,15 @@ metadata:
   {{- end }}
 spec:
   secretName: {{ $serviceCertName }}
-  commonName: {{ printf "uuid:%s" (required "coapgateway.cloudId is required parameter" .Values.coapgateway.cloudId ) }}
+  commonName: {{ printf "uuid:%s" (required "coapgateway.cloudId is required parameter" .Values.coapgateway.cloudId ) | quote }}
   privateKey:
     algorithm: {{ .Values.certmanager.coap.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
     size: {{ .Values.certmanager.coap.cert.key.size | default .Values.certmanager.default.cert.key.size }}
   usages:
     - server auth
     - client auth
-  dnsNames:
-    - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace   .Values.cluster.dns }}
+  ipAddresses:
+    - 127.0.0.1
   duration: {{ .Values.certmanager.coap.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.coap.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

@@ -8,7 +8,25 @@ global:
   # Override nats uri for every plgd-cloud services
   natsUri:
   # Create new secret with ca chain and map chain into services mouth path
-  caChain:
+  dnsName:
+  cloudId:
+  authority:
+  audience:
+  authorizationServer:
+    oauth:
+      clientID:
+      clientSecret:
+      scopes: []
+      tokenURL:
+  device:
+    oauth:
+      clientID:
+      clientSecret:
+      scopes: []
+      tokenURL:
+      redirectURL:
+
+
 # External nats dependency
 nats:
   enabled: true
@@ -176,23 +194,6 @@ certmanager:
       key:
         algorithm:
         size:
-  external:
-    issuer:
-      # In case you want to create your own coap-gateway service issuer
-#      labels: {}
-#      annotations: {}
-      name:
-      kind:
-      spec:
-    cert:
-#      labels: { }
-#      annotations: { }
-      duration:
-      renewBefore:
-      key:
-        algorithm:
-        size:
-
 
 resourcedirectory:
   # Enable resource-directory service
@@ -222,7 +223,7 @@ resourcedirectory:
   # RBAC configuration
   rbac:
     # Create RBAC config
-    enabled: true
+    enabled: false
     # Name of resource-directory SA
     serviceAccountName: resource-directory
     # template definition for Role/binding etc..
@@ -287,7 +288,7 @@ resourcedirectory:
       tls:
         clientCertificateRequired: true
       authorization:
-        authority: "sdfsdf"
+        authority: ""
         audience: ""
         http:
           maxIdleConns: 16
@@ -305,12 +306,12 @@ resourcedirectory:
         url: ""
         jetstream: false
         pendingLimits:
-          msgLimit: 524288
-          bytesLimit: 67108864
+          msgLimit: "524288"
+          bytesLimit: "67108864"
         tls:
-#          caPool:
-#          keyFile:
-#          certFile:
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
     eventStore:
       # expiration time of cached resource in projection
@@ -325,9 +326,9 @@ resourcedirectory:
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
         tls:
-#          caPool:
-#          keyFile:
-#          certFile:
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
     authorizationServer:
       pullFrequency: 15s
@@ -336,17 +337,17 @@ resourcedirectory:
       grpc:
         address: ""
         tls:
-#          caPool:
-#          keyFile:
-#          certFile:
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
         keepAlive:
           time: 10s
           timeout: 20s
           permitWithoutStream: true
       oauth:
-        clientID: ""
-        clientSecret: ""
+        clientID:
+        clientSecret:
         scopes: []
         tokenURL: ""
         audience: ""
@@ -358,12 +359,29 @@ resourcedirectory:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-#            caPool:
-#            keyFile:
-#            certFile:
+            caPool:
+            keyFile:
+            certFile:
             useSystemCAPool: false
   publicConfiguration:
     caPool:
+    deviceAuthorization:
+      clientID: ""
+      scopes: []
+      authority: ""
+      audience: ""
+      redirectURL: ""
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
     tokenURL:
     authorizationURL:
     ownerClaim:
@@ -400,7 +418,7 @@ resourceaggregate:
   # RBAC configuration
   rbac:
     # Create RBAC config
-    enabled: true
+    enabled: false
     # Name of resource-aggregate SA
     serviceAccountName: resource-aggregate
     # template definition for Role/binding etc..
@@ -462,9 +480,9 @@ resourceaggregate:
         time: 2h
         timeout: 20s
       tls:
-#        caPool: ""
-#        keyFile: ""
-#        certFile: ""
+        caPool: ""
+        keyFile: ""
+        certFile: ""
         clientCertificateRequired: true
       authorization:
         authority: ""
@@ -476,21 +494,25 @@ resourceaggregate:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-#            caPool: ""
-#            keyFile: ""
-#            certFile: ""
+            caPool: ""
+            keyFile: ""
+            certFile: ""
             useSystemCAPool: false
   clients:
     eventBus:
       nats:
         url: ""
         jetstream: false
+        pendingLimits:
+          msgLimit: 524288
+          bytesLimit: 67108864
         tls:
-#          caPool: ""
-#          keyFile: ""
-#          certFile: ""
+          caPool: ""
+          keyFile: ""
+          certFile: ""
           useSystemCAPool: false
     eventStore:
+      defaultCommandTTL: 0s
       # tries to create the snapshot event after n events
       snapshotThreshold: 16
       # limits number of try to store event
@@ -505,9 +527,9 @@ resourceaggregate:
         # close connection when idle time reach the value.
         maxConnIdleTime: 4m0s
         tls:
-#          caPool: ""
-#          keyFile: ""
-#          certFile: ""
+          caPool: ""
+          keyFile: ""
+          certFile: ""
           useSystemCAPool: false
     authorizationServer:
       pullFrequency: 15s
@@ -516,9 +538,9 @@ resourceaggregate:
       grpc:
         address: ""
         tls:
-#          caPool: ""
-#          keyFile: ""
-#          certFile: ""
+          caPool: ""
+          keyFile: ""
+          certFile: ""
           useSystemCAPool: false
         keepAlive:
           time: 10s
@@ -538,9 +560,9 @@ resourceaggregate:
           idleConnTimeout: 30s
           timeout: 10s
           tls:
-#            caPool: ""
-#            keyFile: ""
-#            certFile: ""
+            caPool: ""
+            keyFile: ""
+            certFile: ""
             useSystemCAPool: false
 
 # CoAP gateway parameters
@@ -572,7 +594,7 @@ coapgateway:
   # RBAC configuration
   rbac:
     # Create RBAC config
-    enabled: true
+    enabled: false
     # Name of coap-gateway SA
     serviceAccountName: coap-gateway
     # template definition for Role/binding etc..
@@ -618,13 +640,14 @@ coapgateway:
     mountPath: /config
   port: 5684
   log:
-    debug: true
+    debug: false
     dumpCoapMessages: true
   cloudId:
   apis:
     coap:
       externalAddress: ""
       maxMessageSize: 262144
+      ownerCacheExpiration: 1m
       goroutineSocketHeartbeat: "4s"
       keepAlive:
         timeout: 20s
@@ -633,10 +656,29 @@ coapgateway:
         blockSize: "1024"
       tls:
         enabled: true
-        caPool: {}
-        keyFile: {}
-        certFile: {}
+        caPool:
+        keyFile:
+        certFile:
         clientCertificateRequired: true
+      authorization:
+        clientID:
+        clientSecret:
+        scopes: []
+        authority:
+        audience:
+        redirectURL:
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: true
+
   clients:
     eventBus:
       nats:
@@ -645,11 +687,12 @@ coapgateway:
           msgLimit: "524288"
           bytesLimit: "67108864"
         tls:
-          caPool: {}
-          keyFile: {}
-          certFile: {}
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
     authorizationServer:
+      ownerClaim: sub
       grpc:
         address: ""
         keepAlive:
@@ -657,28 +700,10 @@ coapgateway:
           timeout: 20s
           permitWithoutStream: true
         tls:
-          caPool: {}
-          keyFile: {}
-          certFile: {}
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
-      oauth:
-        clientID: ""
-        clientSecret: ""
-        scopes: []
-        tokenURL: ""
-        audience: ""
-        verifyServiceTokenFrequency: 10s
-        http:
-          maxIdleConns: 10
-          maxConnsPerHost: 10
-          maxIdleConnsPerHost: 10
-          idleConnTimeout: 5s
-          timeout: 2s
-          tls:
-            caPool: {}
-            keyFile: {}
-            certFile: {}
-            useSystemCAPool: false
     resourceAggregate:
       grpc:
         address: ""
@@ -687,9 +712,9 @@ coapgateway:
           timeout: 20s
           permitWithoutStream: true
         tls:
-          caPool: {}
-          keyFile: {}
-          certFile: {}
+          caPool:
+          keyFile:
+          certFile:
           useSystemCAPool: false
       deviceStatusExpiration:
         enabled: false
@@ -739,7 +764,7 @@ authorization:
   # RBAC configuration
   rbac:
     # Create RBAC config
-    enabled: true
+    enabled: false
     # Name of authorization SA
     serviceAccountName: authorization
     # template definition for Role/binding etc..
@@ -780,32 +805,7 @@ authorization:
   extraVolumes: {}
   # Optional extra volume mounts
   extraVolumeMounts: {}
-  domain: api.plgd-cloud.local
-  ingress:
-    enabled: false
-    annotations: {}
-#      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-#      ingress.kubernetes.io/force-ssl-redirect: "true"
-#      kubernetes.io/ingress.class: nginx
-#    tls:
-#    - hosts:
-#        - api.test.local
-#      secretName: testsecret-tls
-#    rules:
-#    - host: api.test.local
-#      http:
-#        paths:
-#        - path: /
-#          pathType: Prefix
-#          backend:
-#            service:
-#              name: my-authorization-serve
-#              port:
-#                number: 9898
-  # Service port
-  port:
-    grpc: 9100
-    http: 9101
+  port: 9100
   config:
     fileName: service.yaml
     volume: config
@@ -847,51 +847,6 @@ authorization:
             keyFile:
             certFile:
             useSystemCAPool: false
-    http:
-      address:
-      tls:
-        caPool:
-        keyFile:
-        certFile:
-        clientCertificateRequired: false
-  oauthClients:
-    device:
-      provider: "plgd"
-      clientID: ""
-      clientSecret: ""
-      scopes: []
-      authorizationURL: ""
-      audience: ""
-      tokenURL: ""
-      redirectURL: ""
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool:
-          keyFile:
-          certFile:
-          useSystemCAPool: false
-    client:
-      clientID: ""
-      scopes: []
-      authorizationURL: ""
-      audience: ""
-      redirectURL: ""
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool:
-          keyFile:
-          certFile:
-          useSystemCAPool: false
   clients:
     eventBus:
       nats:

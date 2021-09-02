@@ -15,7 +15,7 @@
     {{- $registryName := .Values.coapgateway.image.registry | default "" -}}
     {{- $repositoryName := .Values.coapgateway.image.repository -}}
     {{- $tag := .Values.coapgateway.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s/%s:%s" $registryName $repositoryName  $tag -}}
+    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}
 
 {{- define  "plgd-cloud.coapgateway.configSecretName" -}}
@@ -33,8 +33,8 @@
 {{- end }}
 
 {{- define "plgd-cloud.coapgateway.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.fullname" . -}}
-  {{- printf "%s-coap-gateway-crt" $fullName -}}
+  {{- $fullName := include "plgd-cloud.coapgateway.fullname" . -}}
+  {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
 {{- define "plgd-cloud.coapgateway.selectorLabels" -}}

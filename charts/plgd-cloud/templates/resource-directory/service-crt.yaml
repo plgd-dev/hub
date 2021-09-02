@@ -1,7 +1,7 @@
-{{- $createServiceCert := include "plgd-cloud.resourceaggregate.serviceCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.resourceaggregate.enabled }}
-{{- $serviceCertName := include "plgd-cloud.resourceaggregate.serviceCertName" . }}
-{{- $serviceDns := include "plgd-cloud.resourceaggregate.fullname" . }}
+{{- $createServiceCert := include "plgd-cloud.resourcedirectory.serviceCertName" . }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.resourcedirectory.enabled }}
+{{- $serviceCertName := include "plgd-cloud.resourcedirectory.serviceCertName" . }}
+{{- $serviceDns := include "plgd-cloud.resourcedirectory.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -25,7 +25,8 @@ spec:
     - server auth
     - client auth
   dnsNames:
-    - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace .Values.cluster.dns }}
+    - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace .Values.cluster.dns | quote }}
+    - {{ $serviceDns | quote }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

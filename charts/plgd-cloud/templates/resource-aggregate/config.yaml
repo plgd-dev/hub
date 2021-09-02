@@ -27,8 +27,8 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $raCert) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
-          authority: {{ .apis.grpc.authorization.authority }}
-          audience: {{ .apis.grpc.authorization.audience }}
+          authority:{{ printf " " }}{{ required "resourceaggregate.apis.grpc.authorization.authority or global.authority is required " ( $.Values.global.authority | default .apis.grpc.authorization.authority ) | quote }}
+          audience:{{ printf " " }}{{ required "resourceaggregate.apis.grpc.authorization.audience or global.audience is required " ( $.Values.global.audience | default .apis.grpc.authorization.audience ) | quote }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
@@ -49,6 +49,7 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
+        defaultCommandTTL: {{ .clients.eventStore.defaultCommandTTL }}
         snapshotThreshold: {{ .clients.eventStore.snapshotThreshold }}
         occMaxRetry: {{ .clients.eventStore.occMaxRetry }}
         mongoDB:
@@ -66,7 +67,8 @@ stringData:
         cacheExpiration: {{ .clients.authorizationServer.cacheExpiration }}
         ownerClaim: {{ .clients.authorizationServer.ownerClaim }}
         grpc:
-          address: {{ .clients.authorizationServer.grpc.address }}
+          {{- $authorizationServer := .clients.authorizationServer.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-cloud.authorizationAddress" (list $ $authorizationServer ) | quote }}
           keepAlive:
             time: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
             timeout: {{ .clients.authorizationServer.grpc.keepAlive.timeout }}
@@ -76,14 +78,18 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $raCert) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
         oauth:
-          clientID: {{ .clients.authorizationServer.oauth.clientID }}
-          clientSecret: {{ .clients.authorizationServer.oauth.clientSecret }}
+          clientID:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.clientID or global.authorizationServer.oauth.clientID is required " ( .clients.authorizationServer.oauth.clientID  | default $.Values.global.authorizationServer.oauth.clientID ) | quote }}
+          clientSecret:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.clientSecret or global.authorizationServer.oauth.clientSecret is required " ( .clients.authorizationServer.oauth.clientSecret | default $.Values.global.authorizationServer.oauth.clientSecret ) | quote }}
+          {{- if ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
           scopes:
-          {{- range .clients.authorizationServer.oauth.scopes  }}
+          {{- range  ( .clients.authorizationServer.oauth.scopes | default $.Values.global.authorizationServer.oauth.scopes ) }}
             - {{ . | quote }}
           {{- end }}
-          tokenURL: {{ .clients.authorizationServer.oauth.tokenURL }}
-          audience: {{ .clients.authorizationServer.oauth.audience }}
+          {{- else }}
+          scopes: []
+          {{- end }}
+          tokenURL:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.tokenURL or global.authorizationServer.oauth.tokenURL is required " ( .clients.authorizationServer.oauth.tokenURL | default $.Values.global.authorizationServer.oauth.tokenURL ) | quote }}
+          audience:{{ printf " " }}{{ required "resourceaggregate.clients.authorizationServer.oauth.audience or global.audience is required " ( .clients.authorizationServer.oauth.audience | default $.Values.global.audience ) | quote }}
           verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
           http:
             maxIdleConns: {{ .clients.authorizationServer.oauth.http.maxIdleConns }}

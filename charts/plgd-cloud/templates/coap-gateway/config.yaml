@@ -14,8 +14,9 @@ stringData:
     apis:
       coap:
         address: {{ printf "0.0.0.0:%v" .port | quote }}
-        externalAddress: {{ .apis.coap.externalAddress }}
+        externalAddress: {{ .apis.coap.externalAddress  | default (printf "%s:%v" $.Values.global.dnsName $.Values.coapgateway.port ) | quote }}
         maxMessageSize: {{ .apis.coap.maxMessageSize }}
+        ownerCacheExpiration: {{ .apis.coap.ownerCacheExpiration }}
         goroutineSocketHeartbeat: {{ .apis.coap.goroutineSocketHeartbeat | quote }}
         keepAlive:
           timeout: {{ .apis.coap.keepAlive.timeout }}
@@ -29,6 +30,30 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $coapGatewayServiceCert) | indent 8 }}
           clientCertificateRequired: {{ .apis.coap.tls.clientCertificateRequired }}
           {{- end }}
+        authorization:
+          clientID:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.clientID or global.device.oauth.clientID is required " (  .apis.coap.authorization.clientID | default $.Values.global.device.oauth.clientID  ) | quote }}
+          clientSecret:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.clientSecret or global.device.oauth.clientSecret is required " ( .apis.coap.authorization.clientSecret | default $.Values.global.device.oauth.clientSecret ) | quote }}
+          {{- if ( $.Values.global.device.oauth.scopes | default .apis.coap.authorization.scopes ) }}
+          scopes:
+          {{- range  ( $.Values.global.device.oauth.scopes | default .apis.coap.authorization.scopes ) }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- else }}
+          scopes: []
+          {{- end }}
+          authority:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.authority or global.authority is required " ( .apis.coap.authorization.authority | default $.Values.global.authority ) | quote }}
+          audience:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.audience or global.audienceis required " ( .apis.coap.authorization.audience | default $.Values.global.audience ) | quote }}
+          redirectURL:{{ printf " " }}{{ required "coapgateway.apis.coap.authorization.redirectURL or global.device.oauth.redirectURL is required " ( .apis.coap.authorization.redirectURL | default $.Values.global.device.oauth.redirectURL ) | quote }}
+          http:
+            maxIdleConns: {{ .apis.coap.authorization.http.maxIdleConns }}
+            maxConnsPerHost: {{ .apis.coap.authorization.http.maxConnsPerHost }}
+            maxIdleConnsPerHost: {{ .apis.coap.authorization.http.maxIdleConnsPerHost }}
+            idleConnTimeout: {{ .apis.coap.authorization.http.idleConnTimeout }}
+            timeout: {{ .apis.coap.authorization.http.timeout }}
+            tls:
+              {{- $oauthCoapTls := .apis.coap.authorization.http.tls }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $oauthCoapTls $coapGatewayServiceCert) | indent 12 }}
+              useSystemCAPool: true
     clients:
       eventBus:
         nats:
@@ -41,6 +66,7 @@ stringData:
             {{- include "plgd-cloud.certificateConfig" (list $ $natsTls $coapGatewayServiceCert) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       authorizationServer:
+        ownerClaim: {{ .clients.authorizationServer.ownerClaim }}
         grpc:
           {{- $authorizationServer := .clients.authorizationServer.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-cloud.authorizationAddress" (list $ $authorizationServer ) | quote }}
@@ -50,28 +76,8 @@ stringData:
             permitWithoutStream: {{ .clients.authorizationServer.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.authorizationServer.grpc.tls }}
-            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $coapGatewayServiceCert) | indent 10 }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $authClientTls $coapGatewayServiceCert ) | indent 10 }}
             useSystemCAPool: {{ .clients.authorizationServer.grpc.tls.useSystemCAPool }}
-        oauth:
-          clientID: {{ .clients.authorizationServer.oauth.clientID }}
-          clientSecret: {{ .clients.authorizationServer.oauth.clientSecret }}
-          scopes:
-          {{- range .clients.authorizationServer.oauth.scopes  }}
-            - {{ . | quote }}
-          {{- end }}
-          tokenURL: {{ .clients.authorizationServer.oauth.tokenURL }}
-          audience: {{ .clients.authorizationServer.oauth.audience }}
-          verifyServiceTokenFrequency: {{ .clients.authorizationServer.oauth.verifyServiceTokenFrequency }}
-          http:
-            maxIdleConns: {{ .clients.authorizationServer.oauth.http.maxIdleConns }}
-            maxConnsPerHost: {{ .clients.authorizationServer.oauth.http.maxConnsPerHost }}
-            maxIdleConnsPerHost: {{ .clients.authorizationServer.oauth.http.maxIdleConnsPerHost }}
-            idleConnTimeout: {{ .clients.authorizationServer.oauth.http.idleConnTimeout }}
-            timeout: {{ .clients.authorizationServer.oauth.http.timeout }}
-            tls:
-              {{- $oauthHttpClientTls := .clients.authorizationServer.oauth.http.tls }}
-              {{- include "plgd-cloud.certificateConfig" (list $ $oauthHttpClientTls $coapGatewayServiceCert) | indent 12 }}
-              useSystemCAPool: {{ .clients.authorizationServer.oauth.http.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}

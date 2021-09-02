@@ -63,10 +63,7 @@ spec:
             - {{  printf "%s/%s" .Values.authorization.config.mountPath .Values.authorization.config.fileName | quote }}
           ports:
             - name: grpc
-              containerPort: {{ .Values.authorization.port.grpc }}
-              protocol: TCP
-            - name: http
-              containerPort: {{ .Values.authorization.port.http }}
+              containerPort: {{ .Values.authorization.port }}
               protocol: TCP
           {{- with .Values.authorization.livenessProbe }}
           livenessProbe:

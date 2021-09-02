@@ -20,8 +20,8 @@
 {{- end }}
 
 {{- define "plgd-cloud.resourceaggregate.serviceCertName" -}}
-  {{- $fullName := include "plgd-cloud.fullname" . -}}
-  {{- printf "%s-resource-aggregate-crt" $fullName -}}
+  {{- $fullName := include "plgd-cloud.resourceaggregate.fullname" . -}}
+  {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
 {{- define "plgd-cloud.resourceaggregate.selectorLabels" -}}
