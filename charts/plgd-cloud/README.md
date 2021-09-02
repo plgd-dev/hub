@@ -1,16 +1,73 @@
 
-## Configuration
+## plgd-cloud helm chart
 
 The following tables lists the configurable parameters of the plgd-cloud chart and their default values.
 
-### Required parameters
+#### Provisioned services
+
+- [coap-gateway](https://github.com/plgd-dev/cloud/tree/v2/coap-gateway)
+- [authorization](https://github.com/plgd-dev/cloud/tree/v2/authorization)
+- [resource-aggregate](https://github.com/plgd-dev/cloud/tree/v2/resource-aggregate)
+- [resource-directory](https://github.com/plgd-dev/cloud/tree/v2/resource-directory)
+
+## Requirements
+
+- [cert-manager](https://artifacthub.io/packages/helm/cert-manager/cert-manager)
+
+## Parameters
+
+### Required
 
 | Name  | Description  |  
 |---|---|
 | coapgateway.cloudId  | CloudId used during coap-gateway service certificate generation. |
 
+### Coap-gateway
 
-### Cert-manager
+In order to configure coap-gateway service, see [cloud/coap-gateway](https://github.com/plgd-dev/cloud/tree/v2/coap-gateway)
+and [cloud/coap-gateway/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/coap-gateway/config.yaml).
+All parameter can be configured with `coapgateway.` prefix.
+
+| Name  | Description  | Default  |
+| coapgateway.enabled  | Enable coap-gateway  | `true` |
+| coapgateway.name  | Name of component. Used in label selectors  | `coap-gateway` |
+| coapgateway.fullnameOverride  | Full name to override  |  |
+| coapgateway.replicas  | Number of replicas  | `1` |
+| coapgateway.deploymentLabels  | Deployment extra labels  | `{}` |
+| coapgateway.deploymentAnnotations  |Additional annotations for coap-gateway deployment | `{}` |
+| coapgateway.podSecurityContext  | Pod security context | `{}` |
+| coapgateway.podLabels  | Labels for coap-gateway pod | `{}` |
+| coapgateway.podAnnotations  | Annotations for coap-gateway pod | `{}` |
+| coapgateway.service.type  | Service type | `LoadBalancer` |
+| coapgateway.service.labels  | Service labels | `{}` |
+| coapgateway.service.annotations  | Service annotations | `{}` |
+| coapgateway.rbac.enabled  | Enable RBAC | `false` |
+| coapgateway.rbac.serviceAccountName  | Name of coap-gateway SA | `coap-gateway` |
+| coapgateway.rbac.roleBindingDefinitionTpl  | Role binding definition resolved as template | `{}` |
+| coapgateway.securityContext  | Security context for pod | `{}` |
+| coapgateway.imagePullSecrets  | Image pull secrets | `{}` |
+| coapgateway.restartPolicy  | Restart policy for pod | `{}` |
+| coapgateway.initContainersTpl  | Init containers definition resolved as template | `{}` |
+| coapgateway.image.registry  | Registry name |  |
+| coapgateway.image.repository  | Repository name | `plgd/coap-gateway` |
+| coapgateway.image.tag  | Tag name | `plgd/coap-gateway` |
+| coapgateway.image.tag  | Tag name | `plgd/coap-gateway` |
+| coapgateway.image.imagePullSecrets  | Pull secrets | `{}` |
+| coapgateway.livenessProbe  | Liveness probe | `{}` |
+| coapgateway.readinessProbe  | Readiness  probe | `{}` |
+| coapgateway.resources  | Resource  limit | `{}` |
+| coapgateway.nodeSelector  | Node selector | `{}` |
+| coapgateway.tolerations  | Toleration  | `{}` |
+| coapgateway.affinity  | Affinity | `{}` |
+| coapgateway.extraVolumes  | Extra volume | `{}` |
+| coapgateway.extraVolumeMounts  | Extra volume mounts | `{}` |
+| coapgateway.config.fileName  | Name of config file for service | `service.yaml` |
+| coapgateway.config.volume  | Name of volume for service | `config` |
+| coapgateway.config.volume  | Mount path for config | `/config` |
+| coapgateway.port  | Service port | `5584` |
+| coapgateway.cloudId  | Cloud ID |  |
+
+### Cert-manager integration
 
 For issuing internal and external certificate, [cert-manager.io](https://cert-manager.io/) is used as default option and 
 integration can be extended with following values:

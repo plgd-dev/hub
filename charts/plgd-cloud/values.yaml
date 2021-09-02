@@ -598,7 +598,7 @@ coapgateway:
     # Name of coap-gateway SA
     serviceAccountName: coap-gateway
     # template definition for Role/binding etc..
-    roleBindingDefitionTpl:
+    roleBindingDefinitionTpl:
   # Security context for pod
   securityContext: { }
   # Image pull secrets

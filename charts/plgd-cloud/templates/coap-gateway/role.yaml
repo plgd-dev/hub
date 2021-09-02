@@ -1,3 +1,3 @@
-{{- if and .Values.coapgateway.rbac.enabled .Values.coapgateway.rbac.roleBindingDefitionTpl }}
-{{- tpl .Values.coapgateway.rbac.roleBindingDefitionTpl $ }}
+{{- if and .Values.coapgateway.rbac.enabled .Values.coapgateway.rbac.roleBindingDefinitionTpl }}
+{{- tpl .Values.coapgateway.rbac.roleBindingDefinitionTpl $ }}
 {{- end }}
