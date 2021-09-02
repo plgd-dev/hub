@@ -277,7 +277,7 @@ func (c *OwnerCache) GetDevices(ctx context.Context) (devices []string, err erro
 }
 
 // Check provided list of device ids and return only ids owned by the user
-func (c *OwnerCache) OwnsDevices(ctx context.Context, devices []string) ([]string, error) {
+func (c *OwnerCache) GetSelectedDevices(ctx context.Context, devices []string) ([]string, error) {
 	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, c.ownerClaim)
 	if err != nil {
 		return nil, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
@@ -299,13 +299,33 @@ func (c *OwnerCache) OwnsDevices(ctx context.Context, devices []string) ([]strin
 	return deviceIds, nil
 }
 
-// Convenience method to check if given device is owned by user
-func (c *OwnerCache) OwnsDevice(ctx context.Context, deviceID string) (bool, error) {
-	devices, err := c.OwnsDevices(ctx, []string{deviceID})
+// Check if all provided devices are owned by the user
+func (c *OwnerCache) OwnsDevices(ctx context.Context, devices []string) (bool, error) {
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, c.ownerClaim)
 	if err != nil {
+		return false, kitNetGrpc.ForwardFromError(codes.InvalidArgument, err)
+	}
+
+	equalDevices := false
+	deviceIds := strings.MakeSortedSlice(devices)
+	if err = c.executeOnLockedOwnerSubject(owner, func(s *ownerSubject) error {
+		if !s.devicesSynced {
+			if _, _, err := s.syncDevicesLocked(ctx, owner, c); err != nil {
+				return err
+			}
+		}
+		equalDevices = s.devices.IsSubslice(deviceIds)
+		return nil
+	}); err != nil {
 		return false, err
 	}
-	return len(devices) == 1, nil
+
+	return equalDevices, nil
+}
+
+// Convenience method to check if given device is owned by the user
+func (c *OwnerCache) OwnsDevice(ctx context.Context, deviceID string) (bool, error) {
+	return c.OwnsDevices(ctx, []string{deviceID})
 }
 
 func (c *OwnerCache) getExpiredOwnerSubjects(t time.Time) []string {

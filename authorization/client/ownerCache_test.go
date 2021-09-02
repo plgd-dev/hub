@@ -121,6 +121,10 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	}
 	time.Sleep(time.Millisecond * 100)
 
+	ok, err := cache.OwnsDevices(ctx, devices)
+	require.NoError(t, err)
+	assert.False(t, ok)
+
 	lock.Lock()
 	sort.Strings(sub1registeredDevices)
 	sort.Strings(sub2registeredDevices)
@@ -144,9 +148,13 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, devices[:2], cacheDevices)
 
-	ownedDevices, err := cache.OwnsDevices(ctx, devices)
+	ownedDevices, err := cache.GetSelectedDevices(ctx, devices)
 	require.NoError(t, err)
 	assert.Equal(t, cacheDevices, ownedDevices)
+
+	ok, err = cache.OwnsDevices(ctx, ownedDevices)
+	require.NoError(t, err)
+	assert.True(t, ok)
 
 	deleted, err := c.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: devices[:1],
@@ -171,7 +179,7 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	assert.Equal(t, devices[0:1], sub2unregisteredDevices)
 	lock.Unlock()
 
-	ok, err := cache.OwnsDevice(ctx, devices[0])
+	ok, err = cache.OwnsDevice(ctx, devices[0])
 	require.NoError(t, err)
 	assert.False(t, ok)
 
@@ -222,7 +230,7 @@ func TestOwnerCache_Subscribe(t *testing.T) {
 	})
 	require.NoError(t, err)
 	time.Sleep(cacheExpiration * 2)
-	ownedDevices, err = cache.OwnsDevices(ctx, devices[1:])
+	ownedDevices, err = cache.GetSelectedDevices(ctx, devices[1:])
 	require.NoError(t, err)
 	assert.Empty(t, ownedDevices)
 }
