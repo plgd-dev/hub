@@ -73,4 +73,25 @@ export const messages = defineMessages({
     id: 'pendingCommands.expired',
     defaultMessage: 'expired',
   },
+  confirm: {
+    id: 'pendingCommands.confirm',
+    defaultMessage: 'Confirm',
+  },
+  doYouWantToCancelThisCommand: {
+    id: 'pendingCommands.doYouWantToCancelThisCommand',
+    defaultMessage:
+      'Are you sure you want to cancel this pending command? This action cannot be undone.',
+  },
+  cancelPendingCommand: {
+    id: 'pendingCommands.cancelPendingCommand',
+    defaultMessage: 'Cancel Pending Command',
+  },
+  commandContent: {
+    id: 'pendingCommands.commandContent',
+    defaultMessage: 'command content',
+  },
+  discard: {
+    id: 'pendingCommands.discard',
+    defaultMessage: 'Discard',
+  },
 })

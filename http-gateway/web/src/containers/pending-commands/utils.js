@@ -1,3 +1,5 @@
+import { time } from 'units-converter'
+
 import { Emitter } from '@/common/services/emitter'
 
 import {
@@ -9,7 +11,7 @@ import {
 } from './constants'
 import { messages as t } from './pending-commands-i18n'
 
-const { UNKNOWN, OK, ACCEPTED, CANCELED, CREATED } = pendingCommandStatuses
+const { OK, ACCEPTED, CANCELED, CREATED } = pendingCommandStatuses
 
 export const convertPendingCommandsList = list =>
   list?.map(command => {
@@ -17,7 +19,7 @@ export const convertPendingCommandsList = list =>
     const { status, ...rest } = command[commandType]
 
     return {
-      status: status || UNKNOWN,
+      status: status || null,
       commandType,
       ...rest,
     }
@@ -53,22 +55,20 @@ export const handleEmitUpdatedCommandEvents = eventData => {
       deviceId: resourceId?.deviceId,
       href: resourceId?.href,
       status: status,
-      commandType,
     })
   }
 }
 
 // Updates the pending commands data with an object of
-// { deviceId, href, correlationId, status, commandType } which came from the WS events.
+// { deviceId, href, correlationId, status } which came from the WS events.
 export const updatePendingCommandsDataStatus = (
   data,
-  { deviceId, href, correlationId, status, commandType }
+  { deviceId, href, correlationId, status }
 ) => {
   return data?.map(command => {
-    const rowCommandType = getCommandTypeFromEvent(command)
+    const commandType = Object.keys(command)[0]
 
     if (
-      rowCommandType === commandType &&
       command[commandType].resourceId.href === href &&
       command[commandType].resourceId.deviceId === deviceId &&
       command[commandType].auditContext.correlationId === correlationId
@@ -85,12 +85,24 @@ export const updatePendingCommandsDataStatus = (
   })
 }
 
+// validUntil - ns, currentTime - ms
+export const hasCommandExpired = (validUntil, currentTime) => {
+  const validUntilMs = time(validUntil)
+    .from('ns')
+    .to('ms').value
+
+  return validUntilMs < currentTime
+}
+
 export const getPendingCommandStatusColorAndLabel = (
   status,
   validUntil,
   currentTime
 ) => {
-  if (![OK, ACCEPTED, CREATED].includes(status) && validUntil < currentTime) {
+  if (
+    ![OK, ACCEPTED, CREATED].includes(status) &&
+    hasCommandExpired(validUntil, currentTime)
+  ) {
     return {
       color: 'red',
       label: t.expired,
@@ -98,7 +110,7 @@ export const getPendingCommandStatusColorAndLabel = (
   }
 
   switch (status) {
-    case UNKNOWN:
+    case null:
       return {
         color: 'orange',
         label: t.pending,

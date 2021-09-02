@@ -38,3 +38,22 @@ export const pendingCommandStatuses = {
   CREATED: 'CREATED',
   CANCELED: 'CANCELED',
 }
+
+export const PENDING_COMMANDS_LIST_REFRESH_INTERVAL_MS = 7000
+
+export const dateFormat = {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+}
+
+export const timeFormat = {
+  hour: 'numeric',
+  minute: 'numeric',
+}
+
+export const timeFormatLong = {
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+}

@@ -1,15 +1,16 @@
-// import { fetchApi, security } from '@/common/services'
+import { fetchApi, security } from '@/common/services'
 
-// import { pendingCommandsApiEndpoints } from './constants'
+import { pendingCommandsApiEndpoints } from './constants'
 
-// /**
-//  * Get a pending commands Rest Api endpoint
-//  * @param {*} params { deviceId }
-//  * @param {*} data
-//  */
-// export const getPendingCommandsApi = () =>
-//   fetchApi(
-//     `${security.getHttpGatewayAddress()}${
-//       pendingCommandsApiEndpoints.PENDING_COMMANDS
-//     }}`
-//   )
+/**
+ * Cancel a pending command Rest Api endpoint
+ * @param {*} params { deviceId, href, correlationId }
+ * @param {*} data
+ */
+export const cancelPendingCommandApi = ({ deviceId, href, correlationId }) =>
+  fetchApi(
+    `${security.getHttpGatewayAddress()}${
+      pendingCommandsApiEndpoints.PENDING_COMMANDS
+    }?resourceId.deviceId=${deviceId}&resourceId.href=${href}&correlationIdFilter=${correlationId}`,
+    { method: 'DELETE' }
+  )

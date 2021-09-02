@@ -60,14 +60,18 @@ export const ThingsList = ({
           if (row.original?.metadata?.status?.value === UNREGISTERED) {
             return <span>{deviceName}</span>
           }
-          return <Link to={`/things/${row.original?.id}`}>{deviceName}</Link>
+          return (
+            <Link to={`/things/${row.original?.id}`}>
+              <span className="no-wrap-text">{deviceName}</span>
+            </Link>
+          )
         },
-        style: { width: '33%' },
+        style: { width: '100%' },
       },
       {
         Header: 'ID',
         accessor: 'id',
-        style: { width: '100%' },
+        style: { maxWidth: '350px', width: '100%' },
         Cell: ({ value }) => {
           return <span className="no-wrap-text">{value}</span>
         },
@@ -75,7 +79,6 @@ export const ThingsList = ({
       {
         Header: _(t.shadowSynchronization),
         accessor: 'metadata.shadowSynchronization',
-        style: { minWidth: '220px' },
         Cell: ({ value }) => {
           const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(
             value

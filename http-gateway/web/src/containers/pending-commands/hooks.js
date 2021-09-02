@@ -22,7 +22,6 @@ export const usePendingCommandsList = () => {
 
   // Add a new pending command when a WS event is emitted
   useEmitter(NEW_PENDING_COMMAND_WS_KEY, newCommand => {
-    console.log(newCommand)
     updateData((data || []).concat(newCommand))
   })
 
