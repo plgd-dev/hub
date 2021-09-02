@@ -1,4 +1,5 @@
 # Resource Aggregate
+
 Resource Aggregate translates commands to events, stores them to database and publishes them to messaging system.
 
 ## Docker Image
@@ -8,18 +9,21 @@ docker pull plgd/resource-aggregate:latest
 ```
 
 ## Docker Run
+
 ### How to make certificates
+
 Before you run docker image of plgd/resource-aggregate, you make sure certificates exists on `.tmp/certs` folder.
 If not exists, you can create certificates from plgd/bundle image by following step only once.
+
 ```bash
 # Create local folder for certificates and run plgd/bundle image to execute shell.
 mkdir -p $(pwd).tmp/certs
 docker run -it \
-	--network=host \
-	-v $(pwd)/.tmp/certs:/certs \
-	-e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
-	--entrypoint /bin/bash \
-	plgd/bundle:latest
+  --network=host \
+  -v $(pwd)/.tmp/certs:/certs \
+  -e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
+  --entrypoint /bin/bash \
+  plgd/bundle:latest
 
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
@@ -28,15 +32,18 @@ certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outK
 # Exit shell.
 exit
 ```
+
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-http.crt	http.key	root_ca.crt	root_ca.key
+http.crt  http.key  root_ca.crt  root_ca.key
 ```
 
 ### How to get configuration file
+
 A configuration template is available on [resource-aggregate/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/config.yaml).
 You can also see `config.yaml` configuration file on the `resource-aggregate` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
+
 ```bash
 # Copy & paste configuration template from the link and save the file named `resource-aggregate.yaml` on the local folder.
 vi resource-aggregate.yaml
@@ -46,10 +53,12 @@ curl https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/config.yaml --
 ```
 
 ### Edit configuration file
+
 You can edit configuration file such as server port, certificates, OAuth provider and so on.
 Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
 
 See an example of address, tls, event bus/store and OAuth config on the followings.
+
 ```yaml
 ...
 apis:
@@ -103,16 +112,19 @@ clients:
 ```
 
 ### Run docker image
+
 You can run plgd/resource-aggregate image using certificates and configuration file on the folder you made certificates.
+
 ```bash
 docker run -d --network=host \
-	--name=resource-aggregate \
-	-v $(pwd)/.tmp/certs:/data/certs \
-	-v $(pwd)/resource-aggregate.yaml:/data/resource-aggregate.yaml \
-	plgd/resource-aggregate:latest --config=/data/resource-aggregate.yaml
+  --name=resource-aggregate \
+  -v $(pwd)/.tmp/certs:/data/certs \
+  -v $(pwd)/resource-aggregate.yaml:/data/resource-aggregate.yaml \
+  plgd/resource-aggregate:latest --config=/data/resource-aggregate.yaml
 ```
 
 ## YAML Configuration
+
 ### Logging
 
 | Property | Type | Description | Default |
@@ -120,10 +132,12 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### gRPC API
+
 gRPC API of the Resource Aggregate service as defined [here](https://github.com/plgd-dev/cloud/blob/v2/resource-aggregate/service/service_grpc.pb.go#L20).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
+| `api.grpc.ownerCacheExpiration` | string | `Time limit of how long to keep subscribed to device updates after last use of the given cache item.` | `1m` |
 | `api.grpc.address` | string | `Listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
 | `api.grpc.enforcementPolicy.minTime` | string | `The minimum amount of time a client should wait before sending a keepalive ping. Otherwise the server close connection.` | `5s`|
 | `api.grpc.enforcementPolicy.permitWithoutStream` | bool |  `If true, server allows keepalive pings even when there are no active streams(RPCs). Otherwise the server close connection.`  | `true` |
@@ -149,18 +163,20 @@ gRPC API of the Resource Aggregate service as defined [here](https://github.com/
 | `api.grpc.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Event Bus
+
 Plgd cloud uses NATS messaging system as a event bus.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
-| `clients.eventBus.nats.jetstream `| bool | `If true, events will be published to jetstream.` | `false` |
+| `clients.eventBus.nats.jetstream`| bool | `If true, events will be published to jetstream.` | `false` |
 | `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
 | `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
 | `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
 | `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Event Store
+
 Plgd cloud uses MongoDB database as a event store.
 
 | Property | Type | Description | Default |
@@ -179,6 +195,7 @@ Plgd cloud uses MongoDB database as a event store.
 | `clients.eventStore.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### Authorization Server Client
+
 Client configurations to internally connect to Authorization Server service.
 
 | Property | Type | Description | Default |
@@ -196,7 +213,8 @@ Client configurations to internally connect to Authorization Server service.
 | `clients.authorizationServer.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### OAuth2.0 Service Client
->Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against other plgd APIs.
+
+Configured OAuth2.0 client is used by internal service to request a token used to authorize all calls they execute against other plgd APIs.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |

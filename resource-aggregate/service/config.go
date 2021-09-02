@@ -33,15 +33,27 @@ func (c *Config) Validate() error {
 }
 
 type APIsConfig struct {
-	GRPC grpcServer.Config `yaml:"grpc" json:"grpc"`
+	GRPC GRPCConfig `yaml:"grpc" json:"grpc"`
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.GRPC.Validate()
+	err := c.GRPC.Config.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
 	return nil
+}
+
+type GRPCConfig struct {
+	OwnerCacheExpiration time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration" default:"10m"`
+	grpcServer.Config    `yaml:",inline" json:",inline"`
+}
+
+func (c *GRPCConfig) Validate() error {
+	if c.OwnerCacheExpiration <= 0 {
+		return fmt.Errorf("ownerCacheExpiration('%v')", c.OwnerCacheExpiration)
+	}
+	return c.Config.Validate()
 }
 
 type EventBusConfig struct {
@@ -74,20 +86,12 @@ func (c *EventStoreConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
-	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency" default:"15s"`
-	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration" default:"1m"`
-	OwnerClaim      string           `yaml:"ownerClaim" json:"ownerClaim"`
-	Connection      client.Config    `yaml:"grpc" json:"grpc"`
-	OAuth           client2.ConfigV2 `yaml:"oauth" json:"oauth"`
+	OwnerClaim string           `yaml:"ownerClaim" json:"ownerClaim"`
+	Connection client.Config    `yaml:"grpc" json:"grpc"`
+	OAuth      client2.ConfigV2 `yaml:"oauth" json:"oauth"`
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
-	if c.PullFrequency <= 0 {
-		return fmt.Errorf("pullFrequency('%v')", c.PullFrequency)
-	}
-	if c.CacheExpiration <= 0 {
-		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
-	}
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
