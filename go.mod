@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/fsnotify/fsnotify v1.4.9
+	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-querystring v1.1.0
@@ -18,8 +18,8 @@ require (
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lestrrat-go/jwx v1.2.5
-	github.com/nats-io/nats.go v1.11.0
+	github.com/lestrrat-go/jwx v1.2.6
+	github.com/nats-io/nats.go v1.12.0
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210720210042-9b9018ae0577
@@ -30,10 +30,10 @@ require (
 	go.mongodb.org/mongo-driver v1.7.1
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.0
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
-	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5
+	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
+	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/genproto v0.0.0-20210816143620-e15ff196659d
+	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2
 	google.golang.org/grpc v1.40.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1
