@@ -60,7 +60,7 @@ type ClientsConfig struct {
 }
 
 type EventBusConfig struct {
-	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize" envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
+	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize"`
 	NATS       natsClient.Config `yaml:"nats" json:"nats"`
 }
 
@@ -76,7 +76,7 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type EventStoreConfig struct {
-	ProjectionCacheExpiration time.Duration           `yaml:"cacheExpiration" json:"cacheExpiration" envconfig:"CACHE_EXPIRATION" default:"1m"`
+	ProjectionCacheExpiration time.Duration           `yaml:"cacheExpiration" json:"cacheExpiration"`
 	Connection                eventstoreConfig.Config `yaml:",inline" json:",inline"`
 }
 
@@ -104,8 +104,8 @@ func (c *ClientsConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
-	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency" default:"15s"`
-	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration" default:"1m"`
+	PullFrequency   time.Duration    `yaml:"pullFrequency" json:"pullFrequency"`
+	CacheExpiration time.Duration    `yaml:"cacheExpiration" json:"cacheExpiration"`
 	OwnerClaim      string           `yaml:"ownerClaim" json:"ownerClaim"`
 	Connection      client.Config    `yaml:"grpc" json:"grpc"`
 	OAuth           manager.ConfigV2 `yaml:"oauth" json:"oauth"`

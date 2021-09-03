@@ -44,7 +44,7 @@ func (c *APIsConfig) Validate() error {
 }
 
 type GRPCConfig struct {
-	OwnerCacheExpiration time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration" default:"10m"`
+	OwnerCacheExpiration time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
 	grpcServer.Config    `yaml:",inline" json:",inline"`
 }
 
@@ -68,8 +68,8 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type EventStoreConfig struct {
-	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold" default:"16"`
-	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry" default:"8"`
+	SnapshotThreshold            int                     `yaml:"snapshotThreshold" json:"snapshotThreshold"`
+	ConcurrencyExceptionMaxRetry int                     `yaml:"occMaxRetry" json:"occMaxRetry"`
 	DefaultCommandTimeToLive     time.Duration           `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
 	Connection                   eventstoreConfig.Config `yaml:",inline" json:",inline"`
 }

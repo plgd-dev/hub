@@ -23,7 +23,7 @@ func (c *PendingLimitsConfig) Validate() error {
 }
 
 type Config struct {
-	URL           string              `yaml:"url" json:"url"  default:"nats://localhost:4222"`
+	URL           string              `yaml:"url" json:"url"`
 	TLS           client.Config       `yaml:"tls" json:"tls"`
 	PendingLimits PendingLimitsConfig `yaml:"pendingLimits" json:"pendingLimits"`
 	Options       []nats.Option       `yaml:"-" json:"-"`

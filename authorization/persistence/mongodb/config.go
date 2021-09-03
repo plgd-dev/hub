@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	URI      string        `yaml:"uri" json:"uri" default:"mongodb://localhost:27017"`
-	Database string        `yaml:"database" json:"database" default:"authorization"`
+	URI      string        `yaml:"uri" json:"uri"`
+	Database string        `yaml:"database" json:"database"`
 	TLS      client.Config `yaml:"tls" json:"tls"`
 }
 

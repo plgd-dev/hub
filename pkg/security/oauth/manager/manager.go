@@ -33,7 +33,7 @@ type Manager struct {
 
 // NewManagerFromConfiguration creates a new oauth manager which refreshing token.
 func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, error) {
-	cfg := config.ToClientCrendtials()
+	cfg := config.ToClientCredentials()
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.MaxIdleConns = 100
 	t.MaxConnsPerHost = 100
@@ -80,7 +80,7 @@ func New(config ConfigV2, logger log.Logger) (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http client: %w", err)
 	}
-	m, err := new(config.ToClientCrendtials(), http.HTTP(), config.HTTP.Timeout, config.VerifyServiceTokenFrequency)
+	m, err := new(config.ToClientCredentials(), http.HTTP(), config.HTTP.Timeout, config.VerifyServiceTokenFrequency)
 	if err != nil {
 		return nil, err
 	}

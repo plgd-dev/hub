@@ -21,8 +21,8 @@ type Config struct {
 	TickFrequency  time.Duration `envconfig:"TICK_FREQUENCY" env:"TICK_FREQUENCY" long:"tick-frequency" description:"how frequently we should check whether our token needs renewal" default:"15s"`
 }
 
-// ToClientCrendtials converts to clientcredentials.Config
-func (c Config) ToClientCrendtials() clientcredentials.Config {
+// ToClientCredentials converts to clientcredentials.Config
+func (c Config) ToClientCredentials() clientcredentials.Config {
 	v := make(url.Values)
 	if c.Audience != "" {
 		v.Set("audience", c.Audience)
