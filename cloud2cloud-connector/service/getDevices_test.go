@@ -165,7 +165,8 @@ func testRequestHandler_GetDevices(t *testing.T, events store.Events) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	const timeoutWithPull = testCfg.TEST_TIMEOUT + time.Second*10 // longer timeout is needed because of the 10s sleep in setUp
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutWithPull)
 	defer cancel()
 	tearDown := setUp(ctx, t, deviceID, events)
 	defer tearDown()
