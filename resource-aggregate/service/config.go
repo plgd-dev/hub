@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	client2 "github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	eventstoreConfig "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/config"
 )
@@ -86,24 +85,18 @@ func (c *EventStoreConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
-	OwnerClaim string           `yaml:"ownerClaim" json:"ownerClaim"`
-	Connection client.Config    `yaml:"grpc" json:"grpc"`
-	OAuth      client2.ConfigV2 `yaml:"oauth" json:"oauth"`
+	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
+	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
-	err := c.OAuth.Validate()
-	if err != nil {
-		return fmt.Errorf("oauth.%w", err)
-	}
-	err = c.Connection.Validate()
-	if err != nil {
+	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
-	return err
+	return nil
 }
 
 type ClientsConfig struct {
