@@ -20,7 +20,6 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
-	cfg.Clients.AuthServer.OAuth = config.MakeOAuthConfig()
 
 	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
 

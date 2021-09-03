@@ -11,12 +11,9 @@ import (
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
-	"github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
 	cqrsEventBus "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -24,7 +21,6 @@ import (
 	cqrsMaintenance "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/maintenance"
 	mongodb "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
-	"google.golang.org/grpc"
 )
 
 type EventStore interface {
@@ -94,13 +90,7 @@ func NewService(ctx context.Context, config Config, logger log.Logger, eventStor
 	}
 	grpcServer.AddCloseFunc(validator.Close)
 
-	oauthMgr, err := manager.New(config.Clients.AuthServer.OAuth, logger)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create oauth manager: %w", err)
-	}
-	grpcServer.AddCloseFunc(oauthMgr.Close)
-
-	asConn, err := client.New(config.Clients.AuthServer.Connection, logger, grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(oauthMgr.GetToken)))
+	asConn, err := client.New(config.Clients.AuthServer.Connection, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to authorization server: %w", err)
 	}
@@ -174,29 +164,4 @@ func (s *Service) Shutdown() {
 
 func (s *Service) AddCloseFunc(f func()) {
 	s.server.AddCloseFunc(f)
-}
-
-func NewAuth(validator kitNetGrpc.Validator, ownerClaim string) kitNetGrpc.AuthInterceptors {
-	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
-		return jwt.NewScopeClaims()
-	})
-	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
-		ctx, err := interceptor(ctx, method)
-		if err != nil {
-			log.Errorf("auth interceptor: %v", err)
-			return ctx, err
-		}
-		owner, err := kitNetGrpc.OwnerFromMD(ctx)
-		if err != nil {
-			owner, err = kitNetGrpc.OwnerFromTokenMD(ctx, ownerClaim)
-			if err == nil {
-				ctx = kitNetGrpc.CtxWithIncomingOwner(ctx, owner)
-			}
-		}
-		if err != nil {
-			log.Errorf("auth cannot get owner: %v", err)
-			return ctx, err
-		}
-		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
-	})
 }

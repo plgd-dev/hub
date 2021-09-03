@@ -78,6 +78,12 @@ func NewAuth(validator kitNetGrpc.Validator, opts ...Option) kitNetGrpc.AuthInte
 			log.Errorf("auth cannot get owner: %v", err)
 			return ctx, err
 		}
-		return kitNetGrpc.CtxWithOwner(ctx, owner), nil
+		ctx = kitNetGrpc.CtxWithOwner(ctx, owner)
+
+		if token, err := kitNetGrpc.TokenFromMD(ctx); err == nil {
+			ctx = kitNetGrpc.CtxWithToken(ctx, token)
+		}
+
+		return ctx, nil
 	})
 }

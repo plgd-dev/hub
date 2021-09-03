@@ -493,12 +493,7 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
   .clients.eventBus.nats.jetstream = ${JETSTREAM} |
   .clients.authorizationServer.ownerClaim = \"${SERVICE_OWNER_CLAIM}\" |
-  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\" |
-  .clients.authorizationServer.oauth.clientID = \"${SERVICE_OAUTH_CLIENT_ID}\" |
-  .clients.authorizationServer.oauth.clientSecret = \"${SERVICE_OAUTH_CLIENT_SECRET}\" |
-  .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
-  .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\"
+  .clients.authorizationServer.grpc.address = \"${AUTHORIZATION_ADDRESS}\"
 " - > /data/resource-aggregate.yaml
 
 echo "starting resource-aggregate"
