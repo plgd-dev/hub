@@ -281,7 +281,6 @@ func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
 		log.Errorf("cannot get event: %w", err)
 		return
 	}
-	fmt.Printf("handleEvent: EventType %+v", ev)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.closed {
@@ -425,7 +424,6 @@ func (s *Sub) sendDevicesRegisteredLocked(deviceIDs []string) error {
 }
 
 func (s *Sub) initResourceChangedLocked(deviceIDs []string) error {
-	fmt.Printf("initResourceChangedLocked %v\n", deviceIDs)
 	if !isFilteredBit(s.filter, FilterBitmaskResourceChanged) {
 		return nil
 	}
@@ -443,18 +441,15 @@ func (s *Sub) initResourceChangedLocked(deviceIDs []string) error {
 	if err != nil {
 		return errFunc(fmt.Errorf("cannot get resources: %w", err))
 	}
-	fmt.Printf("initResourceChangedLocked.GetResources %v\n", deviceIDs)
 	for {
 		recv, err := resourcesClient.Recv()
 		if err == io.EOF {
-			fmt.Printf("initResourceChangedLocked.GetResources.EOF %v\n", deviceIDs)
 			return nil
 		}
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot receive resource: %w", err))
 		}
 		if recv.GetData() == nil {
-			fmt.Printf("initResourceChangedLocked no-data: %+v\n", recv)
 			// event doesn't contains data - resource is not initialized yet
 			continue
 		}
@@ -650,7 +645,7 @@ func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
 		}
 		ev, deduplicateEvent := pendingCommandToEvent(recv)
 		if err == nil {
-			errFunc(fmt.Errorf("unknown recv command %T", recv.GetCommand()))
+			s.errFunc(errFunc(fmt.Errorf("unknown recv command %T", recv.GetCommand())))
 			continue
 		}
 		ev.CorrelationId = s.correlationID

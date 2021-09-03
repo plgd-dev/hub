@@ -26,7 +26,6 @@ import (
 	raservice "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/cloud/test"
 	"github.com/plgd-dev/cloud/test/config"
-	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
@@ -207,7 +206,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)
@@ -215,21 +214,21 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	token := oauthTest.GetServiceToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(testCfg.RESOURCE_DIRECTORY_HOST), log.Get())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
 	}()
 	rdc := pb.NewGrpcGatewayClient(rdConn.GRPC())
 
-	asConn, err := grpcClient.New(config.MakeGrpcClientConfig(testCfg.AUTH_HOST), log.Get())
+	asConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.AUTH_HOST), log.Get())
 	require.NoError(t, err)
 	defer func() {
 		_ = asConn.Close()
 	}()
 	asc := authpb.NewAuthorizationServiceClient(asConn.GRPC())
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	pool, err := ants.NewPool(1)
@@ -472,7 +471,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 
 func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := test.SetUp(ctx, t)
@@ -480,21 +479,21 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	token := oauthTest.GetServiceToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
 
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(testCfg.RESOURCE_DIRECTORY_HOST), log.Get())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
 	}()
 	rdc := pb.NewGrpcGatewayClient(rdConn.GRPC())
 
-	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(testCfg.RESOURCE_AGGREGATE_HOST), log.Get())
+	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), log.Get())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
 	}()
 	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
 
-	asConn, err := grpcClient.New(config.MakeGrpcClientConfig(testCfg.AUTH_HOST), log.Get())
+	asConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.AUTH_HOST), log.Get())
 	require.NoError(t, err)
 	defer func() {
 		_ = asConn.Close()
@@ -528,7 +527,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, testCfg.GW_HOST, nil)
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.GW_HOST, nil)
 
 	check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
 		SubscriptionId: s.Id(),
@@ -553,7 +552,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	})
 	check(t, waitForEvent(ctx, t, recvChan), test.ResourceLinkToPublishEvent(deviceID, correlationID, test.GetAllBackendResourceLinks()))
 
-	for _ = range test.GetAllBackendResourceLinks() {
+	for range test.GetAllBackendResourceLinks() {
 		check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
 			SubscriptionId: s.Id(),
 			Type: &pb.Event_ResourceChanged{
