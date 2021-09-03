@@ -26,7 +26,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
-	server, err := server.New(config.APIs.GRPC, logger, opts...)
+	server, err := server.New(config.APIs.GRPC.Config, logger, opts...)
 
 	if err != nil {
 		validator.Close()
@@ -41,7 +41,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	server.AddCloseFunc(pool.Release)
 
-	if err := AddHandler(ctx, server, config.Clients, logger, pool.Submit); err != nil {
+	if err := AddHandler(ctx, server, config, logger, pool.Submit); err != nil {
 		server.Close()
 		return nil, err
 	}

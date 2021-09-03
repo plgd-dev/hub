@@ -3,6 +3,7 @@ log:
 apis:
   grpc:
     address: "0.0.0.0:9100"
+    ownerCacheExpiration: 1m
     enforcementPolicy:
       minTime: 5s
       permitWithoutStream: true
@@ -36,6 +37,7 @@ apis:
           useSystemCAPool: false
 clients:
   authorizationServer:
+    ownerClaim: sub
     grpc:
       address: ""
       tls:

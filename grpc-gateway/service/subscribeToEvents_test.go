@@ -43,16 +43,9 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 					Type: &pb.Event_OperationProcessed_{
 						OperationProcessed: &pb.Event_OperationProcessed{
 							ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-								Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+								Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
+								Message: "invalid action('<nil>')",
 							},
-						},
-					},
-					CorrelationId: "testToken",
-				},
-				{
-					Type: &pb.Event_SubscriptionCanceled_{
-						SubscriptionCanceled: &pb.Event_SubscriptionCanceled{
-							Reason: "not supported",
 						},
 					},
 					CorrelationId: "testToken",

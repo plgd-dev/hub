@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -30,7 +31,23 @@ func (c *Config) Validate() error {
 
 // Config represent application configuration
 type APIsConfig struct {
-	GRPC server.Config `yaml:"grpc" json:"grpc"`
+	GRPC GRPCConfig `yaml:"grpc" json:"grpc"`
+}
+
+type GRPCConfig struct {
+	OwnerCacheExpiration        time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration" default:"10m"`
+	SubscriptionCacheExpiration time.Duration `yaml:"subscriptionCacheExpiration" json:"subscriptionCacheExpiration" default:"10m"`
+	server.Config               `yaml:",inline" json:",inline"`
+}
+
+func (c *GRPCConfig) Validate() error {
+	if c.OwnerCacheExpiration <= 0 {
+		return fmt.Errorf("ownerCacheExpiration('%v')", c.OwnerCacheExpiration)
+	}
+	if c.SubscriptionCacheExpiration <= 0 {
+		return fmt.Errorf("subscriptionCacheExpiration('%v')", c.OwnerCacheExpiration)
+	}
+	return c.Config.Validate()
 }
 
 func (c *APIsConfig) Validate() error {
@@ -42,10 +59,14 @@ func (c *APIsConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
+	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
 	Connection client.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
+	if c.OwnerClaim == "" {
+		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
 	err := c.Connection.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)

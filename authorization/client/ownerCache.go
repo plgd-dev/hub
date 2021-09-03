@@ -140,6 +140,10 @@ func NewOwnerCache(ownerClaim string, expiration time.Duration, conn *nats.Conn,
 	return c
 }
 
+func (c *OwnerCache) OwnerClaim() string {
+	return c.ownerClaim
+}
+
 func (c *OwnerCache) makeCloseFunc(owner string, id uint64) func() {
 	return func() {
 		c.owners.ReplaceWithFunc(owner, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {

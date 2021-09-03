@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/service"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -13,9 +14,12 @@ import (
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
-	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.GRPC_HOST)
+	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.GRPC_HOST)
+	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
+	cfg.APIs.GRPC.SubscriptionCacheExpiration = time.Minute
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 
+	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
 	cfg.Clients.Eventbus.GoPoolSize = 16

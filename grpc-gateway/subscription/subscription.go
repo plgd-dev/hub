@@ -39,8 +39,9 @@ type Sub struct {
 	filteredResourceIDs   strings.Set
 	resourceDirectory     pb.GrpcGatewayClient
 	closed                bool
+	deduplicateInitEvents map[string]uint64
 
-	sync.Mutex
+	mutex sync.Mutex
 }
 
 func isFilteredDevice(filteredDeviceIDs strings.Set, deviceID string) bool {
@@ -269,8 +270,6 @@ var eventToHandler = map[string]resourceEventHandler{
 }
 
 func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
-	log.Debug("handleEvent: EventType %v", eu)
-
 	handler, ok := eventToHandler[eu.EventType()]
 	if !ok {
 		log.Errorf("unhandled event type %v", eu.EventType())
@@ -282,8 +281,9 @@ func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
 		log.Errorf("cannot get event: %w", err)
 		return
 	}
-	s.Lock()
-	defer s.Unlock()
+	fmt.Printf("handleEvent: EventType %+v", ev)
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if s.closed {
 		return
 	}
@@ -307,6 +307,9 @@ func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
 		if !isFilteredEventype(s.filter, eu.EventType()) {
 			continue
 		}
+		if s.isDuplicatedInitEvent(eu) {
+			continue
+		}
 		s.handleEvent(eu)
 	}
 
@@ -314,8 +317,8 @@ func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
 }
 
 func (s *Sub) SetContext(ctx context.Context) {
-	s.Lock()
-	defer s.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	s.ctx = ctx
 }
 
@@ -323,13 +326,13 @@ func (s *Sub) Id() string {
 	return s.id
 }
 
-func (s *Sub) Init(ownerCache *client.OwnerCache, ownerClaim string) error {
-	owner, err := grpc.OwnerFromTokenMD(s.ctx, ownerClaim)
+func (s *Sub) Init(ownerCache *client.OwnerCache) error {
+	owner, err := grpc.OwnerFromTokenMD(s.ctx, ownerCache.OwnerClaim())
 	if err != nil {
 		return grpc.ForwardFromError(codes.InvalidArgument, err)
 	}
-	s.Lock()
-	defer s.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	close, err := ownerCache.Subscribe(owner, s.onOwnerEvent)
 	if err != nil {
 		_ = s.close()
@@ -390,7 +393,7 @@ func (s *Sub) initEventSubscriptionsLocked(deviceIDs []string) error {
 		if _, ok := s.devicesEventsObserver[deviceID]; ok {
 			continue
 		}
-		obs, err := s.eventsSub.Subscribe(s.ctx, s.id, utils.GetDeviceSubject(deviceID), s)
+		obs, err := s.eventsSub.Subscribe(s.ctx, deviceID+"."+s.id, utils.GetDeviceSubject(deviceID), s)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -422,34 +425,48 @@ func (s *Sub) sendDevicesRegisteredLocked(deviceIDs []string) error {
 }
 
 func (s *Sub) initResourceChangedLocked(deviceIDs []string) error {
+	fmt.Printf("initResourceChangedLocked %v\n", deviceIDs)
 	if !isFilteredBit(s.filter, FilterBitmaskResourceChanged) {
 		return nil
 	}
 	errFunc := func(err error) error {
 		return fmt.Errorf("cannot init resources changed events for devices %v: %w", deviceIDs, err)
 	}
+	deviceIdFilter := deviceIDs
+	if len(s.req.GetResourceIdFilter()) > 0 {
+		deviceIdFilter = nil
+	}
 	resourcesClient, err := s.resourceDirectory.GetResources(s.ctx, &pb.GetResourcesRequest{
-		DeviceIdFilter:   deviceIDs,
+		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: s.req.GetResourceIdFilter(),
 	})
 	if err != nil {
 		return errFunc(fmt.Errorf("cannot get resources: %w", err))
 	}
+	fmt.Printf("initResourceChangedLocked.GetResources %v\n", deviceIDs)
 	for {
 		recv, err := resourcesClient.Recv()
 		if err == io.EOF {
+			fmt.Printf("initResourceChangedLocked.GetResources.EOF %v\n", deviceIDs)
 			return nil
 		}
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot receive resource: %w", err))
 		}
-		err = s.send(&pb.Event{
+		if recv.GetData() == nil {
+			fmt.Printf("initResourceChangedLocked no-data: %+v\n", recv)
+			// event doesn't contains data - resource is not initialized yet
+			continue
+		}
+		ev := &pb.Event{
 			SubscriptionId: s.id,
 			CorrelationId:  s.correlationID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: recv.GetData(),
 			},
-		})
+		}
+		s.fillDeduplicateInitEvent(ev.GetResourceChanged())
+		err = s.send(ev)
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot send a resource: %w", err))
 		}
@@ -477,13 +494,15 @@ func (s *Sub) initDeviceMetadataUpdatedLocked(deviceIDs []string) error {
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot receive devices metadata: %w", err))
 		}
-		err = s.send(&pb.Event{
+		ev := &pb.Event{
 			SubscriptionId: s.id,
 			CorrelationId:  s.correlationID,
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: recv,
 			},
-		})
+		}
+		s.fillDeduplicateInitEvent(ev.GetDeviceMetadataUpdated())
+		err = s.send(ev)
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot send a devices metadata: %w", err))
 		}
@@ -511,53 +530,88 @@ func (s *Sub) initResourcesPublishedLocked(deviceIDs []string) error {
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot receive resource links: %w", err))
 		}
-		err = s.send(&pb.Event{
+		ev := &pb.Event{
 			SubscriptionId: s.id,
 			CorrelationId:  s.correlationID,
 			Type: &pb.Event_ResourcePublished{
 				ResourcePublished: recv,
 			},
-		})
+		}
+		s.fillDeduplicateInitEvent(ev.GetResourcePublished())
+		err = s.send(ev)
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot send a resource links: %w", err))
 		}
 	}
 }
 
-func pendingCommandToEvent(cmd *pb.PendingCommand) *pb.Event {
+func pendingCommandToEvent(cmd *pb.PendingCommand) (*pb.Event, event) {
 	switch c := cmd.GetCommand().(type) {
 	case *pb.PendingCommand_DeviceMetadataUpdatePending:
 		return &pb.Event{
 			Type: &pb.Event_DeviceMetadataUpdatePending{
 				DeviceMetadataUpdatePending: c.DeviceMetadataUpdatePending,
 			},
-		}
+		}, c.DeviceMetadataUpdatePending
 	case *pb.PendingCommand_ResourceCreatePending:
 		return &pb.Event{
 			Type: &pb.Event_ResourceCreatePending{
 				ResourceCreatePending: c.ResourceCreatePending,
 			},
-		}
+		}, c.ResourceCreatePending
 	case *pb.PendingCommand_ResourceDeletePending:
 		return &pb.Event{
 			Type: &pb.Event_ResourceDeletePending{
 				ResourceDeletePending: c.ResourceDeletePending,
 			},
-		}
+		}, c.ResourceDeletePending
 	case *pb.PendingCommand_ResourceRetrievePending:
 		return &pb.Event{
 			Type: &pb.Event_ResourceRetrievePending{
 				ResourceRetrievePending: c.ResourceRetrievePending,
 			},
-		}
+		}, c.ResourceRetrievePending
 	case *pb.PendingCommand_ResourceUpdatePending:
 		return &pb.Event{
 			Type: &pb.Event_ResourceUpdatePending{
 				ResourceUpdatePending: c.ResourceUpdatePending,
 			},
-		}
+		}, c.ResourceUpdatePending
 	}
-	return nil
+	return nil, nil
+}
+
+type event = interface {
+	EventType() string
+	AggregateID() string
+	Version() uint64
+}
+
+func deduplicateEventKey(ev event) string {
+	return ev.AggregateID() + ev.EventType()
+}
+
+func (s *Sub) isDuplicatedInitEvent(ev event) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	key := deduplicateEventKey(ev)
+	version, ok := s.deduplicateInitEvents[key]
+	if !ok {
+		return false
+	}
+	if version >= ev.Version() {
+		return true
+	}
+	delete(s.deduplicateInitEvents, key)
+	return false
+}
+
+func (s *Sub) fillDeduplicateInitEvent(v event) {
+	key := deduplicateEventKey(v)
+	version, ok := s.deduplicateInitEvents[key]
+	if !ok || version < v.Version() {
+		s.deduplicateInitEvents[key] = v.Version()
+	}
 }
 
 func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
@@ -572,8 +626,14 @@ func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
 	errFunc := func(err error) error {
 		return fmt.Errorf("cannot init pending commands for devices %v: %w", deviceIDs, err)
 	}
+
+	deviceIdFilter := deviceIDs
+	if len(s.req.GetResourceIdFilter()) > 0 {
+		deviceIdFilter = nil
+	}
+
 	pendingCommands, err := s.resourceDirectory.GetPendingCommands(s.ctx, &pb.GetPendingCommandsRequest{
-		DeviceIdFilter:   deviceIDs,
+		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: s.req.GetResourceIdFilter(),
 		CommandFilter:    BitmaskToFilterPendingsCommands(s.filter),
 	})
@@ -588,13 +648,16 @@ func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot receive pending command: %w", err))
 		}
-		ev := pendingCommandToEvent(recv)
+		ev, deduplicateEvent := pendingCommandToEvent(recv)
 		if err == nil {
 			errFunc(fmt.Errorf("unknown recv command %T", recv.GetCommand()))
 			continue
 		}
 		ev.CorrelationId = s.correlationID
 		ev.SubscriptionId = s.id
+
+		s.fillDeduplicateInitEvent(deduplicateEvent)
+
 		err = s.send(ev)
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot send a pending command: %w", err))
@@ -646,8 +709,8 @@ func (s *Sub) onUnregisteredEvent(e *ownerEvents.DevicesUnregistered) {
 }
 
 func (s *Sub) onOwnerEvent(e *ownerEvents.Event) {
-	s.Lock()
-	defer s.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if s.closed {
 		return
 	}
@@ -678,12 +741,18 @@ func (s *Sub) close() error {
 }
 
 func (s *Sub) Close() error {
-	s.Lock()
-	defer s.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if s.closed {
 		return nil
 	}
 	return s.close()
+}
+
+func (s *Sub) CleanUpDeduplicationInitEventsCache() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.deduplicateInitEvents = make(map[string]uint64)
 }
 
 func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirectory pb.GrpcGatewayClient, send SendEventFunc, correlationID string, errFunc ErrFunc, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
@@ -723,5 +792,6 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 		errFunc:               errFunc,
 		correlationID:         correlationID,
 		devicesEventsObserver: make(map[string]eventbus.Observer),
+		deduplicateInitEvents: make(map[string]uint64),
 	}
 }

@@ -250,7 +250,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 				result = append(result, e)
 				return nil
 			}, tt.args.sub.GetCorrelationId(), func(err error) { t.Log(err) }, tt.args.sub.GetCreateSubscription())
-			err := s.Init(ownerCache, ownerClaim)
+			err := s.Init(ownerCache)
 			require.NoError(t, err)
 			defer func() {
 				err := s.Close()
@@ -521,7 +521,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		}
 		return nil
 	}, correlationID, func(err error) { t.Log(err) }, &pb.SubscribeToEvents_CreateSubscription{})
-	err = s.Init(ownerCache, ownerClaim)
+	err = s.Init(ownerCache)
 	require.NoError(t, err)
 	defer func() {
 		err := s.Close()
