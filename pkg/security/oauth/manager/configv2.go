@@ -39,8 +39,8 @@ func (c *ConfigV2) Validate() error {
 	return nil
 }
 
-// ToClientCrendtials converts to clientcredentials.Config
-func (c ConfigV2) ToClientCrendtials() clientcredentials.Config {
+// ToClientCredentials converts to clientcredentials.Config
+func (c ConfigV2) ToClientCredentials() clientcredentials.Config {
 	v := make(url.Values)
 	if c.Audience != "" {
 		v.Set("audience", c.Audience)

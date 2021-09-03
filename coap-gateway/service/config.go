@@ -59,9 +59,9 @@ func (c *APIsConfig) Validate() error {
 type COAPConfig struct {
 	Addr                     string                  `yaml:"address" json:"address"`
 	ExternalAddress          string                  `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize           int                     `yaml:"maxMessageSize" json:"maxMessageSize" default:"262144"`
-	OwnerCacheExpiration     time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration" default:"10m"`
-	GoroutineSocketHeartbeat time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat" default:"4s"`
+	MaxMessageSize           int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
+	OwnerCacheExpiration     time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	GoroutineSocketHeartbeat time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
 	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
 	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
 	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
@@ -120,8 +120,8 @@ func (c *KeepAlive) Validate() error {
 }
 
 type BlockwiseTransferConfig struct {
-	Enabled bool   `yaml:"enabled" json:"enabled" default:"true"`
-	SZX     string `yaml:"blockSize" json:"blockSize" default:"1024"`
+	Enabled bool   `yaml:"enabled" json:"enabled"`
+	SZX     string `yaml:"blockSize" json:"blockSize"`
 }
 
 func (c *BlockwiseTransferConfig) Validate() error {
