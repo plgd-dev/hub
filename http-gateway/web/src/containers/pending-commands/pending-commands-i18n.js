@@ -90,8 +90,12 @@ export const messages = defineMessages({
     id: 'pendingCommands.commandContent',
     defaultMessage: 'command content',
   },
-  discard: {
-    id: 'pendingCommands.discard',
-    defaultMessage: 'Discard',
+  yes: {
+    id: 'pendingCommands.yes',
+    defaultMessage: 'Yes',
+  },
+  no: {
+    id: 'pendingCommands.no',
+    defaultMessage: 'No',
   },
 })

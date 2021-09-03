@@ -319,8 +319,8 @@ export const PendingCommandsList = ({ onLoading }) => {
           </>
         }
         body={_(t.doYouWantToCancelThisCommand)}
-        confirmButtonText={_(t.cancel)}
-        cancelButtonText={_(t.discard)}
+        confirmButtonText={_(t.yes)}
+        cancelButtonText={_(t.no)}
         loading={canceling}
         onClose={onCloseCancelModal}
       />
