@@ -1,0 +1,18 @@
+@import '@/common/styles/colors.scss';
+
+.cancel-action {
+  color: $primary_100;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.json-object-box {
+  padding: 10px;
+  background-color: $light_200;
+  max-height: 500px;
+  overflow: auto;
+
+  pre {
+    margin: 0;
+  }
+}

@@ -2,6 +2,7 @@ import { Switch, Route } from 'react-router-dom'
 
 import { Dashboard } from '@/containers/dashboard'
 import { ThingsListPage, ThingsDetailsPage } from '@/containers/things'
+import { PendingCommandsListPage } from '@/containers/pending-commands'
 import { Notifications } from '@/containers/notifications'
 import { Configuration } from '@/containers/configuration'
 import { NotFoundPage } from '@/containers/not-found-page'
@@ -17,6 +18,9 @@ export const Routes = () => {
       </Route>
       <Route path={['/things/:id', '/things/:id/:href*']} exact>
         <ThingsDetailsPage />
+      </Route>
+      <Route path="/pending-commands" exact>
+        <PendingCommandsListPage />
       </Route>
       <Route path="/notifications">
         <Notifications />
