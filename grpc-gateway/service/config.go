@@ -35,8 +35,8 @@ type APIsConfig struct {
 }
 
 type GRPCConfig struct {
-	OwnerCacheExpiration        time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration" default:"10m"`
-	SubscriptionCacheExpiration time.Duration `yaml:"subscriptionCacheExpiration" json:"subscriptionCacheExpiration" default:"10m"`
+	OwnerCacheExpiration        time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionCacheExpiration time.Duration `yaml:"subscriptionCacheExpiration" json:"subscriptionCacheExpiration"`
 	server.Config               `yaml:",inline" json:",inline"`
 }
 

@@ -148,6 +148,8 @@ gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-d
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `api.grpc.address` | string | `Listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
+| `api.grpc.ownerCacheExpiration` | string | `Time limit of how long to keep subscribed to device updates after last use of the given cache item.` | `1m` |
+| `api.grpc.subscriptionCacheExpiration` | string | `Time limit of how long to keep initialized events in subscription cache for duplicating events.` | `1m` |
 | `api.grpc.enforcementPolicy.minTime` | string | `The minimum amount of time a client should wait before sending a keepalive ping. Otherwise the server close connection.` | `5s`|
 | `api.grpc.enforcementPolicy.permitWithoutStream` | bool |  `If true, server allows keepalive pings even when there are no active streams(RPCs). Otherwise the server close connection.`  | `true` |
 | `api.grpc.keepAlive.maxConnectionIdle` | string | `A duration for the amount of time after which an idle connection would be closed by sending a GoAway. 0s means infinity.` | `0s` |
@@ -177,6 +179,7 @@ Client configurations to internally connect to Authorization Server service.
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
+| `clients.authorizationServer.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
 | `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
 | `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
