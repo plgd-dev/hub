@@ -1,32 +1,45 @@
-package mongodb
+package mongodb_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/kit/security/certManager"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
+	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
-func newStore(ctx context.Context, t *testing.T, cfg Config) *Store {
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+func newTestStore(t *testing.T) (*mongodb.Store, func()) {
+	cfg := test.MakeConfig(t)
+
+	logger, err := log.NewLogger(cfg.Log)
 	require.NoError(t, err)
-	defer dialCertManager.Close()
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-	s, err := NewStore(ctx, cfg, WithTLS(tlsConfig))
+
+	certManager, err := client.New(cfg.Clients.Storage.MongoDB.TLS, logger)
 	require.NoError(t, err)
-	return s
+
+	ctx := context.Background()
+	s, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig())
+	require.NoError(t, err)
+
+	return s, func() {
+		err := s.Clear(ctx)
+		require.NoError(t, err)
+		_ = s.Close(ctx)
+		certManager.Close()
+	}
 }
 
 func TestStore_SaveSubscription(t *testing.T) {
+	oauthShutdown := oauthTest.SetUp(t)
+	defer oauthShutdown()
+	token := oauthTest.GetServiceToken(t)
+
 	type args struct {
 		sub store.Subscription
 	}
@@ -48,8 +61,8 @@ func TestStore_SaveSubscription(t *testing.T) {
 					DeviceID:       "deviceid",
 					Href:           "resourcehref",
 					SigningSecret:  "signingSecret",
-					UserID:         "userID",
 					Type:           store.Type_Resource,
+					AccessToken:    token,
 				},
 			},
 		},
@@ -66,8 +79,8 @@ func TestStore_SaveSubscription(t *testing.T) {
 					DeviceID:       "deviceid",
 					Href:           "resourcehref",
 					SigningSecret:  "signingSecret",
-					UserID:         "userID",
 					Type:           store.Type_Resource,
+					AccessToken:    token,
 				},
 			},
 		},
@@ -83,9 +96,9 @@ func TestStore_SaveSubscription(t *testing.T) {
 					SequenceNumber: 0,
 					DeviceID:       "deviceid",
 					Href:           "resourcehref",
-					UserID:         "userID",
 					SigningSecret:  "signingSecret",
 					Type:           store.Type_Resource,
+					AccessToken:    token,
 				},
 			},
 		},
@@ -102,39 +115,35 @@ func TestStore_SaveSubscription(t *testing.T) {
 					DeviceID:       "deviceid",
 					Href:           "resourcehref",
 					SigningSecret:  "signingSecret",
-					UserID:         "userID",
 					Type:           store.Type_Resource,
+					AccessToken:    token,
 				},
 			},
 			wantErr: true,
 		},
 	}
 
-	var cfg Config
-	err := envconfig.Process("", &cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	s := newStore(ctx, t, cfg)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(t, err)
-		_ = s.Close(ctx)
-	}()
+	s, cleanUp := newTestStore(t)
+	defer cleanUp()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := s.SaveSubscription(context.Background(), tt.args.sub)
+			err := s.SaveSubscription(ctx, tt.args.sub)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-
 		})
 	}
 }
 
 func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
+	oauthShutdown := oauthTest.SetUp(t)
+	defer oauthShutdown()
+	token := oauthTest.GetServiceToken(t)
+
 	sub := store.Subscription{
 		ID:             "id",
 		URL:            "url",
@@ -145,8 +154,8 @@ func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
 		DeviceID:       "deviceid",
 		Href:           "resourcehref",
 		SigningSecret:  "signingSecret",
-		UserID:         "userID",
 		Type:           store.Type_Resource,
+		AccessToken:    token,
 	}
 
 	type args struct {
@@ -181,18 +190,11 @@ func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
 		},
 	}
 
-	var cfg Config
-	err := envconfig.Process("", &cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	s := newStore(ctx, t, cfg)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(t, err)
-		_ = s.Close(ctx)
-	}()
+	s, cleanUp := newTestStore(t)
+	defer cleanUp()
 
-	err = s.SaveSubscription(context.Background(), sub)
+	err := s.SaveSubscription(context.Background(), sub)
 	require.NoError(t, err)
 
 	for _, tt := range tests {
@@ -209,6 +211,10 @@ func TestStore_IncrementSubscriptionSequenceNumber(t *testing.T) {
 }
 
 func TestStore_PopSubscription(t *testing.T) {
+	oauthShutdown := oauthTest.SetUp(t)
+	defer oauthShutdown()
+	token := oauthTest.GetServiceToken(t)
+
 	sub := store.Subscription{
 		ID:             "id1",
 		URL:            "url",
@@ -219,8 +225,8 @@ func TestStore_PopSubscription(t *testing.T) {
 		DeviceID:       "deviceid",
 		Href:           "resourcehref",
 		SigningSecret:  "signingSecret",
-		UserID:         "userID",
 		Type:           store.Type_Resource,
+		AccessToken:    token,
 	}
 
 	type args struct {
@@ -248,18 +254,11 @@ func TestStore_PopSubscription(t *testing.T) {
 		},
 	}
 
-	var cfg Config
-	err := envconfig.Process("", &cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	s := newStore(ctx, t, cfg)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(t, err)
-		_ = s.Close(ctx)
-	}()
+	s, cleanUp := newTestStore(t)
+	defer cleanUp()
 
-	err = s.SaveSubscription(context.Background(), sub)
+	err := s.SaveSubscription(context.Background(), sub)
 	require.NoError(t, err)
 
 	for _, tt := range tests {
@@ -291,6 +290,10 @@ func (h *testResourceHandler) Handle(ctx context.Context, iter store.Subscriptio
 }
 
 func TestStore_LoadSubscriptions(t *testing.T) {
+	oauthShutdown := oauthTest.SetUp(t)
+	defer oauthShutdown()
+	token := oauthTest.GetServiceToken(t)
+
 	sub := store.Subscription{
 		ID:             "id",
 		URL:            "url",
@@ -301,8 +304,8 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 		DeviceID:       "deviceid",
 		Href:           "resourcehref",
 		SigningSecret:  "signingSecret",
-		UserID:         "userID",
 		Type:           store.Type_Resource,
+		AccessToken:    token,
 	}
 
 	type args struct {
@@ -354,18 +357,11 @@ func TestStore_LoadSubscriptions(t *testing.T) {
 		},
 	}
 
-	var cfg Config
-	err := envconfig.Process("", &cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	s := newStore(ctx, t, cfg)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(t, err)
-		_ = s.Close(ctx)
-	}()
+	s, cleanUp := newTestStore(t)
+	defer cleanUp()
 
-	err = s.SaveSubscription(context.Background(), sub)
+	err := s.SaveSubscription(context.Background(), sub)
 	require.NoError(t, err)
 
 	for _, tt := range tests {

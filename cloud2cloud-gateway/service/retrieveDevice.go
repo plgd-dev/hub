@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
+	"github.com/gorilla/mux"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/cbor"
@@ -104,7 +106,6 @@ func unmarshalContent(c *commands.Content) (interface{}, error) {
 }
 
 func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []string, deviceIdFilter []string) (map[string][]Representation, error) {
-
 	client, err := rh.rdClient.GetResources(ctx, &pbGRPC.GetResourcesRequest{
 		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: resourceIdFilter,
@@ -214,7 +215,13 @@ func (rh *RequestHandler) RetrieveDeviceWithContentQuery(ctx context.Context, w 
 }
 
 func (rh *RequestHandler) RetrieveDevice(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.retrieveWithCallback(w, r, rh.RetrieveDeviceWithContentQuery)
+	encoder, err := getResponseWriterEncoder(strings.Split(r.Header.Get("Accept"), ","))
+	if err != nil {
+		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve device: %w", err), http.StatusBadRequest, w)
+		return
+	}
+
+	statusCode, err := rh.RetrieveDeviceWithContentQuery(r.Context(), w, mux.Vars(r), getContentQueryValue(r.URL), encoder)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve device: %w", err), statusCode, w)
 	}

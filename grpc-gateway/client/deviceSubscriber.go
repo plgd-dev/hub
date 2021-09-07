@@ -313,7 +313,7 @@ func (s *DeviceSubscriber) coldStartPendingCommandsLocked(h *DeviceSubscriptionH
 	return nil
 }
 
-func (s *DeviceSubscriber) SubscribeToPendingCommands(ctx context.Context, h *DeviceSubscriptionHandlers) {
+func (s *DeviceSubscriber) SubscribeToPendingCommands(h *DeviceSubscriptionHandlers) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.pendingCommandsHandler = h

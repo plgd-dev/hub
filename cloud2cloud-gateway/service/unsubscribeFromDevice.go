@@ -9,14 +9,10 @@ import (
 )
 
 func (rh *RequestHandler) unsubscribe(w http.ResponseWriter, r *http.Request) (int, error) {
-	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
-	}
 	routeVars := mux.Vars(r)
 	subscriptionID := routeVars[subscriptionIDKey]
 
-	sub, err := rh.subMgr.PullOut(r.Context(), subscriptionID, userID)
+	sub, err := rh.subMgr.PullOut(r.Context(), subscriptionID)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}

@@ -16,12 +16,7 @@ func (rh *RequestHandler) subscribeToDevice(w http.ResponseWriter, r *http.Reque
 	routeVars := mux.Vars(r)
 	deviceID := routeVars[deviceIDKey]
 
-	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
-	}
-
-	s, code, err := rh.makeSubscription(w, r, store.Type_Device, userID, []events.EventType{
+	s, code, err := rh.makeSubscription(w, r, store.Type_Device, []events.EventType{
 		events.EventType_ResourcesPublished,
 		events.EventType_ResourcesUnpublished,
 	})

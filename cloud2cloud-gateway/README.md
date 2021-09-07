@@ -1,1 +1,1 @@
-../docs/guide/architecture/6-cloud2cloud-gateway.md
+../docs/guide/deployment/cloud2cloud-gateway.md

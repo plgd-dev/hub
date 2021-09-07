@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	extJwt "github.com/dgrijalva/jwt-go"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 )
 
@@ -45,6 +46,13 @@ func TokenFromCtx(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("token not found")
 }
 
+func ParseToken(auth string) (string, error) {
+	if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
+		return auth[7:], nil
+	}
+	return "", fmt.Errorf("cannot parse bearer: prefix 'Bearer ' not found")
+}
+
 func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
 	return func(ctx context.Context, method, uri string) (context.Context, error) {
 		token, err := TokenFromCtx(ctx)
@@ -65,18 +73,26 @@ func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor
 }
 
 // CreateAuthMiddleware creates middleware for authorization
-func CreateAuthMiddleware(authInterceptor Interceptor, onUnauthorizedAccessFunc OnUnauthorizedAccessFunc) func(next netHttp.Handler) netHttp.Handler {
+// TODO: get rid of appendToken parameter after c2c-connector is reworked
+func CreateAuthMiddleware(authInterceptor Interceptor, onUnauthorizedAccessFunc OnUnauthorizedAccessFunc, appendToken bool) func(next netHttp.Handler) netHttp.Handler {
 	return func(next netHttp.Handler) netHttp.Handler {
 		return netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
 			switch r.RequestURI {
 			case "/": // health check
 				next.ServeHTTP(w, r)
 			default:
-				ctx := CtxWithToken(r.Context(), r.Header.Get("Authorization"))
+				token := r.Header.Get("Authorization")
+				ctx := CtxWithToken(r.Context(), token)
 				_, err := authInterceptor(ctx, r.Method, r.RequestURI)
 				if err != nil {
 					onUnauthorizedAccessFunc(ctx, w, r, err)
 					return
+				}
+
+				if appendToken {
+					if rawToken, err := ParseToken(token); err == nil {
+						r = r.WithContext(grpc.CtxWithToken(r.Context(), rawToken))
+					}
 				}
 				next.ServeHTTP(w, r)
 			}

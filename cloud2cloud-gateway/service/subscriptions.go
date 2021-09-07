@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
 	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
 	kitSync "github.com/plgd-dev/kit/sync"
@@ -219,39 +219,36 @@ func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEve
 	return client.NewDeviceSubscription(ctx, s.data.DeviceID, closeEventHandler, eventHandler, s.gwClient)
 }
 
-func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID, userID string) (store.Subscription, error)) error {
+func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID string) (store.Subscription, error)) error {
 	if s.Subscription() != nil {
 		return fmt.Errorf("is already connected")
 	}
-	closeEventHandler := closeEventHandler{
+	h := closeEventHandler{
 		ctx:       ctx,
 		deleteSub: deleteSub,
 		data:      s,
 		emitEvent: emitEvent,
 	}
 
-	ctx = kitNetGrpc.CtxWithOwner(ctx, s.Data().UserID)
-	var err error
-	var sub Subscription
+	var createSubscriptionFunc func(context.Context, emitEventFunc, *closeEventHandler) (Subscription, error)
 	switch s.data.Type {
 	case store.Type_Devices:
-		sub, err = s.createDevicesSubscription(ctx, emitEvent, &closeEventHandler)
-		if err != nil {
-			return err
-		}
+		createSubscriptionFunc = s.createDevicesSubscription
 	case store.Type_Device:
-		sub, err = s.createDeviceSubscription(ctx, emitEvent, &closeEventHandler)
-		if err != nil {
-			return err
-		}
+		createSubscriptionFunc = s.createDeviceSubscription
 	case store.Type_Resource:
-		sub, err = s.createResourceSubscription(ctx, emitEvent, &closeEventHandler)
-		if err != nil {
-			return err
-		}
+		createSubscriptionFunc = s.createResourceSubscription
 	default:
 		return fmt.Errorf("unsupported subscription type: %v", store.Type_Device)
 	}
+
+	sub, err := createSubscriptionFunc(ctx, emitEvent, &h)
+	if err != nil {
+		// TODO: ak err je grpc unauthenticated -> cancel subscription
+		// test-case?
+		return err
+	}
+
 	s.Store(sub)
 	return nil
 }
@@ -274,7 +271,7 @@ func (s *SubscriptionData) SetInitialized(ctx context.Context) error {
 type closeEventHandler struct {
 	ctx       context.Context
 	emitEvent emitEventFunc
-	deleteSub func(ctx context.Context, subID, userID string) (store.Subscription, error)
+	deleteSub func(ctx context.Context, subID string) (store.Subscription, error)
 	data      *SubscriptionData
 }
 
@@ -290,7 +287,7 @@ func (h *closeEventHandler) Error(err error) {
 		return
 	}
 	if !strings.Contains(err.Error(), "transport is closing") {
-		sub, errSub := h.deleteSub(h.ctx, data.ID, data.UserID)
+		sub, errSub := h.deleteSub(h.ctx, data.ID)
 		if errSub == nil {
 			if err2 := cancelSubscription(h.ctx, h.emitEvent, sub); err2 != nil {
 				log.Errorf("cannot cancel resource subscription for %v: %w", sub.ID, err2)
@@ -367,7 +364,11 @@ func (s *SubscriptionManager) Connect(ID string) error {
 			return fmt.Errorf("already connected")
 		}
 	}
-	return sub.Connect(s.ctx, s.emitEvent, s.PullOut)
+	ctx := s.ctx
+	if sub.data.AccessToken != "" {
+		ctx = grpc.CtxWithToken(ctx, sub.data.AccessToken)
+	}
+	return sub.Connect(ctx, s.emitEvent, s.PullOut)
 }
 
 func (s *SubscriptionManager) Store(ctx context.Context, sub store.Subscription) error {
@@ -379,16 +380,13 @@ func (s *SubscriptionManager) Store(ctx context.Context, sub store.Subscription)
 	return nil
 }
 
-func (s *SubscriptionManager) Load(ID, userID string) (store.Subscription, bool) {
+func (s *SubscriptionManager) Load(ID string) (store.Subscription, bool) {
 	subDataRaw, ok := s.subscriptions.Load(ID)
 	if !ok {
 		return store.Subscription{}, false
 	}
 	subData := subDataRaw.(*SubscriptionData)
 	data := subData.Data()
-	if data.UserID != userID {
-		return store.Subscription{}, false
-	}
 	return data, true
 }
 
@@ -399,20 +397,9 @@ func cancelSubscription(ctx context.Context, emitEvent emitEventFunc, sub store.
 	return err
 }
 
-func (s *SubscriptionManager) PullOut(ctx context.Context, ID, userID string) (store.Subscription, error) {
-	var found bool
-	subDataRaw, ok := s.subscriptions.ReplaceWithFunc(ID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, delete bool) {
-		if !oldLoaded {
-			return nil, true
-		}
-		data := oldValue.(*SubscriptionData)
-		if data.Data().UserID != userID {
-			return oldValue, false
-		}
-		found = true
-		return nil, true
-	})
-	if !ok || !found {
+func (s *SubscriptionManager) PullOut(ctx context.Context, ID string) (store.Subscription, error) {
+	subDataRaw, ok := s.subscriptions.PullOut(ID)
+	if !ok {
 		return store.Subscription{}, fmt.Errorf("not found")
 	}
 	sub, err := s.store.PopSubscription(ctx, ID)
@@ -421,7 +408,7 @@ func (s *SubscriptionManager) PullOut(ctx context.Context, ID, userID string) (s
 	}
 	subData := subDataRaw.(*SubscriptionData)
 	subscription := subData.Subscription()
-	if subscription == nil {
+	if subscription != nil {
 		wait, err := subscription.Cancel()
 		if err == nil {
 			wait()

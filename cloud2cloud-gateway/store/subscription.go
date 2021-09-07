@@ -22,7 +22,7 @@ type Subscription struct {
 	DeviceID       string // filled for device and resource events
 	Href           string // filled for resource events
 	SequenceNumber uint64
-	UserID         string
 	SigningSecret  string
 	Initialized    bool // need to send initialize events
+	AccessToken    string
 }
