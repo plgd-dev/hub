@@ -2,7 +2,6 @@ package subscription_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -248,7 +247,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			s := subscription.New(ctx, resourceSubscriber, rdc, func(e *pb.Event) error {
 				result = append(result, e)
 				return nil
-			}, tt.args.sub.GetCorrelationId(), func(err error) { t.Log(err) }, tt.args.sub.GetCreateSubscription())
+			}, tt.args.sub.GetCorrelationId(), 0, func(err error) { t.Log(err) }, tt.args.sub.GetCreateSubscription())
 			err := s.Init(ownerCache)
 			require.NoError(t, err)
 			defer func() {
@@ -519,7 +518,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 		case <-ctx.Done():
 		}
 		return nil
-	}, correlationID, func(err error) { t.Log(err) }, &pb.SubscribeToEvents_CreateSubscription{})
+	}, correlationID, 10, func(err error) { t.Log(err) }, &pb.SubscribeToEvents_CreateSubscription{})
 	err = s.Init(ownerCache)
 	require.NoError(t, err)
 	defer func() {
@@ -603,8 +602,8 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				CorrelationId: correlationID,
 			})
 			run = false
-		default:
-			require.NoError(t, fmt.Errorf("unexpected event %+v", ev))
+		case ctx.Err() != nil:
+			require.NoError(t, err)
 		}
 	}
 

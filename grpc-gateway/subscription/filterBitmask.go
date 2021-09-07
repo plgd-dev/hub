@@ -72,41 +72,26 @@ func BitmaskToFilterPendingsCommands(bitmask FilterBitmask) []pb.GetPendingComma
 	return res
 }
 
+var eventsToBitmask = map[pb.SubscribeToEvents_CreateSubscription_Event]FilterBitmask{
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING:        FilterBitmaskResourceCreatePending,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATED:               FilterBitmaskResourceCreated,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING:      FilterBitmaskResourceRetrievePending,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED:             FilterBitmaskResourceRetrieved,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING:        FilterBitmaskResourceUpdatePending,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED:               FilterBitmaskResourceUpdated,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING:        FilterBitmaskResourceDeletePending,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETED:               FilterBitmaskResourceDeleted,
+	pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING: FilterBitmaskDeviceMetadataUpdatePending,
+	pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED:        FilterBitmaskDeviceMetadataUpdated,
+	pb.SubscribeToEvents_CreateSubscription_REGISTERED:                     FilterBitmaskDeviceRegistered,
+	pb.SubscribeToEvents_CreateSubscription_UNREGISTERED:                   FilterBitmaskDeviceUnregistered,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED:             FilterBitmaskResourcesPublished,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED:           FilterBitmaskResourcesUnpublished,
+	pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED:               FilterBitmaskResourceChanged,
+}
+
 func EventFilterToBitmask(f pb.SubscribeToEvents_CreateSubscription_Event) FilterBitmask {
-	bitmask := FilterBitmask(0)
-	switch f {
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING:
-		bitmask |= FilterBitmaskResourceCreatePending
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATED:
-		bitmask |= FilterBitmaskResourceCreated
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING:
-		bitmask |= FilterBitmaskResourceRetrievePending
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED:
-		bitmask |= FilterBitmaskResourceRetrieved
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING:
-		bitmask |= FilterBitmaskResourceUpdatePending
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED:
-		bitmask |= FilterBitmaskResourceUpdated
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING:
-		bitmask |= FilterBitmaskResourceDeletePending
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETED:
-		bitmask |= FilterBitmaskResourceDeleted
-	case pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING:
-		bitmask |= FilterBitmaskDeviceMetadataUpdatePending
-	case pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED:
-		bitmask |= FilterBitmaskDeviceMetadataUpdated
-	case pb.SubscribeToEvents_CreateSubscription_REGISTERED:
-		bitmask |= FilterBitmaskDeviceRegistered
-	case pb.SubscribeToEvents_CreateSubscription_UNREGISTERED:
-		bitmask |= FilterBitmaskDeviceUnregistered
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED:
-		bitmask |= FilterBitmaskResourcesPublished
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED:
-		bitmask |= FilterBitmaskResourcesUnpublished
-	case pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED:
-		bitmask |= FilterBitmaskResourceChanged
-	}
-	return bitmask
+	return eventsToBitmask[f]
 }
 
 func EventsFilterToBitmask(commandFilter []pb.SubscribeToEvents_CreateSubscription_Event) FilterBitmask {

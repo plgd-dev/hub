@@ -37,6 +37,7 @@ type APIsConfig struct {
 type GRPCConfig struct {
 	OwnerCacheExpiration        time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
 	SubscriptionCacheExpiration time.Duration `yaml:"subscriptionCacheExpiration" json:"subscriptionCacheExpiration"`
+	SubscriptionBufferSize      int           `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
 	server.Config               `yaml:",inline" json:",inline"`
 }
 
@@ -46,6 +47,9 @@ func (c *GRPCConfig) Validate() error {
 	}
 	if c.SubscriptionCacheExpiration <= 0 {
 		return fmt.Errorf("subscriptionCacheExpiration('%v')", c.OwnerCacheExpiration)
+	}
+	if c.SubscriptionBufferSize < 0 {
+		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
 	}
 	return c.Config.Validate()
 }

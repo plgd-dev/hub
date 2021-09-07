@@ -323,12 +323,11 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 
-	fmt.Printf("waiting for online\n")
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		var endLoop bool
-		fmt.Printf("ev %v\n", ev)
+
 		if ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID && ev.GetDeviceMetadataUpdated().GetStatus().IsOnline() {
 			endLoop = true
 		}
@@ -370,12 +369,12 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	for _, link := range ResourceLinksToResources(deviceID, expectedResources) {
 		expectedLinks[link.GetHref()] = link
 	}
-	fmt.Printf("waiting for publishing\n")
+
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		ev.SubscriptionId = ""
-		fmt.Printf("ev %+v\n", ev)
+
 		for _, l := range ev.GetResourcePublished().GetResources() {
 			expLink := expectedLinks[l.GetHref()]
 			l.ValidUntil = 0
@@ -454,9 +453,8 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			},
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
-		fmt.Printf("waiting for resource %v\n", e.GetResourceChanged().GetResourceId().ToString())
+
 		ev, err = client.Recv()
-		fmt.Printf("waiting for resource %v DONE\n", e.GetResourceChanged().GetResourceId().ToString())
 		require.NoError(t, err)
 		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
 		//require.Equal(t, e, ev)

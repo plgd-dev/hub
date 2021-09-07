@@ -17,6 +17,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.GRPC_HOST)
 	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 	cfg.APIs.GRPC.SubscriptionCacheExpiration = time.Minute
+	cfg.APIs.GRPC.SubscriptionBufferSize = 1000
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 
 	cfg.Clients.AuthServer.OwnerClaim = config.OWNER_CLAIM

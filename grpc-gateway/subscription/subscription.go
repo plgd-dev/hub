@@ -41,7 +41,10 @@ type Sub struct {
 	closed                bool
 	deduplicateInitEvents map[string]uint64
 
-	mutex sync.Mutex
+	eventsCache   chan eventbus.EventUnmarshaler
+	done          chan struct{}
+	mutex         sync.Mutex
+	eventsCacheWg sync.WaitGroup
 }
 
 func isFilteredDevice(filteredDeviceIDs strings.Set, deviceID string) bool {
@@ -86,7 +89,7 @@ func isFilteredEventype(filteredEventTypes FilterBitmask, eventType string) bool
 	return isFilteredBit(filteredEventTypes, bit)
 }
 
-func (s *Sub) deinitDevice(deviceID string) error {
+func (s *Sub) deinitDeviceLocked(deviceID string) error {
 	devicesEventsObserver, ok := s.devicesEventsObserver[deviceID]
 	if !ok {
 		return nil
@@ -270,6 +273,9 @@ var eventToHandler = map[string]resourceEventHandler{
 }
 
 func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
+	if !s.isFiltered(eu) {
+		return
+	}
 	handler, ok := eventToHandler[eu.EventType()]
 	if !ok {
 		log.Errorf("unhandled event type %v", eu.EventType())
@@ -281,17 +287,24 @@ func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
 		log.Errorf("cannot get event: %w", err)
 		return
 	}
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if s.closed {
-		return
-	}
 	ev.CorrelationId = s.correlationID
 	ev.SubscriptionId = s.id
 	err = s.send(ev)
 	if err != nil {
 		log.Errorf("cannot send event %v: %w", ev, err)
 	}
+}
+
+func (s *Sub) isFiltered(ev event) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if s.isDuplicatedInitEventLocked(ev) {
+		return false
+	}
+	if s.closed {
+		return false
+	}
+	return true
 }
 
 func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
@@ -306,10 +319,12 @@ func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
 		if !isFilteredEventype(s.filter, eu.EventType()) {
 			continue
 		}
-		if s.isDuplicatedInitEvent(eu) {
-			continue
+
+		select {
+		case <-s.done:
+			return nil
+		case s.eventsCache <- eu:
 		}
-		s.handleEvent(eu)
 	}
 
 	return iter.Err()
@@ -325,41 +340,57 @@ func (s *Sub) Id() string {
 	return s.id
 }
 
-func (s *Sub) Init(ownerCache *client.OwnerCache) error {
+func (s *Sub) initOwnerSubscription(ownerCache *client.OwnerCache) ([]string, error) {
 	owner, err := grpc.OwnerFromTokenMD(s.ctx, ownerCache.OwnerClaim())
 	if err != nil {
-		return grpc.ForwardFromError(codes.InvalidArgument, err)
+		return nil, grpc.ForwardFromError(codes.InvalidArgument, err)
 	}
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	close, err := ownerCache.Subscribe(owner, s.onOwnerEvent)
 	if err != nil {
-		_ = s.close()
-		return err
+		_ = s.closeLocked()
+		return nil, err
 	}
 	devices, err := ownerCache.GetDevices(s.ctx)
 	if err != nil {
 		close()
-		_ = s.close()
-		return err
+		_ = s.closeLocked()
+		return nil, err
 	}
 	s.ownerSubClose = close
-	devices = s.filterDevices(devices)
 	err = s.initEventSubscriptionsLocked(devices)
 	if err != nil {
 		close()
-		_ = s.close()
+		_ = s.closeLocked()
+		return nil, err
+	}
+	return devices, nil
+}
+
+func (s *Sub) start() {
+	s.eventsCacheWg.Add(1)
+	go func() {
+		defer s.eventsCacheWg.Done()
+		s.run()
+	}()
+}
+
+func (s *Sub) Init(ownerCache *client.OwnerCache) error {
+	devices, err := s.initOwnerSubscription(ownerCache)
+	if err != nil {
 		return err
 	}
 	if !s.req.GetIncludeCurrentState() {
+		s.start()
 		return nil
 	}
 	var initEventFuncs = []func([]string) error{
-		s.sendDevicesRegisteredLocked,
-		s.initDeviceMetadataUpdatedLocked,
-		s.initResourcesPublishedLocked,
-		s.initResourceChangedLocked,
-		s.initPendingCommandsLocked,
+		s.sendDevicesRegistered,
+		s.initDeviceMetadataUpdated,
+		s.initResourcesPublished,
+		s.initResourceChanged,
+		s.initPendingCommands,
 	}
 	var errors []error
 	for _, f := range initEventFuncs {
@@ -369,10 +400,10 @@ func (s *Sub) Init(ownerCache *client.OwnerCache) error {
 		}
 	}
 	if len(errors) > 0 {
-		close()
-		_ = s.close()
+		_ = s.Close()
 		return fmt.Errorf("%v", errors)
 	}
+	s.start()
 	return nil
 }
 
@@ -404,7 +435,7 @@ func (s *Sub) initEventSubscriptionsLocked(deviceIDs []string) error {
 	return nil
 }
 
-func (s *Sub) sendDevicesRegisteredLocked(deviceIDs []string) error {
+func (s *Sub) sendDevicesRegistered(deviceIDs []string) error {
 	if !isFilteredBit(s.filter, FilterBitmaskDeviceRegistered) {
 		return nil
 	}
@@ -423,7 +454,7 @@ func (s *Sub) sendDevicesRegisteredLocked(deviceIDs []string) error {
 	return nil
 }
 
-func (s *Sub) initResourceChangedLocked(deviceIDs []string) error {
+func (s *Sub) initResourceChanged(deviceIDs []string) error {
 	if !isFilteredBit(s.filter, FilterBitmaskResourceChanged) {
 		return nil
 	}
@@ -468,7 +499,7 @@ func (s *Sub) initResourceChangedLocked(deviceIDs []string) error {
 	}
 }
 
-func (s *Sub) initDeviceMetadataUpdatedLocked(deviceIDs []string) error {
+func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string) error {
 	if !isFilteredBit(s.filter, FilterBitmaskDeviceMetadataUpdated) {
 		return nil
 	}
@@ -504,7 +535,7 @@ func (s *Sub) initDeviceMetadataUpdatedLocked(deviceIDs []string) error {
 	}
 }
 
-func (s *Sub) initResourcesPublishedLocked(deviceIDs []string) error {
+func (s *Sub) initResourcesPublished(deviceIDs []string) error {
 	if !isFilteredBit(s.filter, FilterBitmaskResourcesPublished) {
 		return nil
 	}
@@ -586,9 +617,7 @@ func deduplicateEventKey(ev event) string {
 	return ev.AggregateID() + ev.EventType()
 }
 
-func (s *Sub) isDuplicatedInitEvent(ev event) bool {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (s *Sub) isDuplicatedInitEventLocked(ev event) bool {
 	key := deduplicateEventKey(ev)
 	version, ok := s.deduplicateInitEvents[key]
 	if !ok {
@@ -597,7 +626,6 @@ func (s *Sub) isDuplicatedInitEvent(ev event) bool {
 	if version >= ev.Version() {
 		return true
 	}
-	delete(s.deduplicateInitEvents, key)
 	return false
 }
 
@@ -609,7 +637,7 @@ func (s *Sub) fillDeduplicateInitEvent(v event) {
 	}
 }
 
-func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
+func (s *Sub) initPendingCommands(deviceIDs []string) error {
 	if !isFilteredBit(s.filter,
 		FilterBitmaskDeviceMetadataUpdatePending|
 			FilterBitmaskResourceCreatePending|
@@ -660,7 +688,7 @@ func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
 	}
 }
 
-func (s *Sub) onRegisteredEvent(e *ownerEvents.DevicesRegistered) {
+func (s *Sub) onRegisteredEventLocked(e *ownerEvents.DevicesRegistered) {
 	devices := s.filterDevices(e.GetDeviceIds())
 	if len(devices) == 0 {
 		return
@@ -670,19 +698,19 @@ func (s *Sub) onRegisteredEvent(e *ownerEvents.DevicesRegistered) {
 		s.errFunc(err)
 		return
 	}
-	err = s.sendDevicesRegisteredLocked(devices)
+	err = s.sendDevicesRegistered(devices)
 	if err != nil {
 		s.errFunc(err)
 	}
 }
 
-func (s *Sub) onUnregisteredEvent(e *ownerEvents.DevicesUnregistered) {
+func (s *Sub) onUnregisteredEventLocked(e *ownerEvents.DevicesUnregistered) {
 	devices := s.filterDevices(e.GetDeviceIds())
 	if len(devices) == 0 {
 		return
 	}
 	for _, deviceID := range devices {
-		err := s.deinitDevice(deviceID)
+		err := s.deinitDeviceLocked(deviceID)
 		if err != nil {
 			s.errFunc(fmt.Errorf("cannot deinit device %v: %w", deviceID, err))
 		}
@@ -711,14 +739,19 @@ func (s *Sub) onOwnerEvent(e *ownerEvents.Event) {
 	}
 	switch {
 	case e.GetDevicesRegistered() != nil:
-		s.onRegisteredEvent(e.GetDevicesRegistered())
+		s.onRegisteredEventLocked(e.GetDevicesRegistered())
 	case e.GetDevicesUnregistered() != nil:
-		s.onUnregisteredEvent(e.GetDevicesUnregistered())
+		s.onUnregisteredEventLocked(e.GetDevicesUnregistered())
 	}
 }
 
-func (s *Sub) close() error {
+func (s *Sub) closeLocked() error {
+	if s.closed {
+		return nil
+	}
 	s.closed = true
+	close(s.done)
+	s.eventsCacheWg.Wait()
 	if s.ownerSubClose != nil {
 		s.ownerSubClose()
 	}
@@ -738,10 +771,7 @@ func (s *Sub) close() error {
 func (s *Sub) Close() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.closed {
-		return nil
-	}
-	return s.close()
+	return s.closeLocked()
 }
 
 func (s *Sub) CleanUpDeduplicationInitEventsCache() {
@@ -750,7 +780,18 @@ func (s *Sub) CleanUpDeduplicationInitEventsCache() {
 	s.deduplicateInitEvents = make(map[string]uint64)
 }
 
-func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirectory pb.GrpcGatewayClient, send SendEventFunc, correlationID string, errFunc ErrFunc, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+func (s *Sub) run() {
+	for {
+		select {
+		case <-s.done:
+			return
+		case eu := <-s.eventsCache:
+			s.handleEvent(eu)
+		}
+	}
+}
+
+func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirectory pb.GrpcGatewayClient, send SendEventFunc, correlationID string, cacheSize int, errFunc ErrFunc, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
 	filteredResourceIDs := strings.MakeSet()
 	for _, r := range req.GetResourceIdFilter() {
 		v := commands.ResourceIdFromString(r)
@@ -788,5 +829,7 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 		correlationID:         correlationID,
 		devicesEventsObserver: make(map[string]eventbus.Observer),
 		deduplicateInitEvents: make(map[string]uint64),
+		eventsCache:           make(chan eventbus.EventUnmarshaler, cacheSize),
+		done:                  make(chan struct{}),
 	}
 }

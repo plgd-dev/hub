@@ -23,6 +23,7 @@ type subscriptions struct {
 	ownerCache               *asClient.OwnerCache
 	resourceDirectoryClient  pb.GrpcGatewayClient
 	subscriptionCleanUpCache *cache.Cache
+	subscriptionBufferSize   int
 
 	subs map[string]*subscription.Sub
 }
@@ -32,6 +33,7 @@ func newSubscriptions(
 	resourceSubscriber *subscriber.Subscriber,
 	ownerCache *asClient.OwnerCache,
 	subscriptionCleanUpCache *cache.Cache,
+	subscriptionBufferSize int,
 	send func(e *pb.Event) error) *subscriptions {
 	return &subscriptions{
 		subs:                     make(map[string]*subscription.Sub),
@@ -40,6 +42,7 @@ func newSubscriptions(
 		resourceSubscriber:       resourceSubscriber,
 		ownerCache:               ownerCache,
 		subscriptionCleanUpCache: subscriptionCleanUpCache,
+		subscriptionBufferSize:   subscriptionBufferSize,
 	}
 }
 
@@ -54,7 +57,7 @@ func (s *subscriptions) close() {
 }
 
 func (s *subscriptions) createSubscription(ctx context.Context, req *pb.SubscribeToEvents) error {
-	sub := subscription.New(ctx, s.resourceSubscriber, s.resourceDirectoryClient, s.send, req.GetCorrelationId(), func(err error) {
+	sub := subscription.New(ctx, s.resourceSubscriber, s.resourceDirectoryClient, s.send, req.GetCorrelationId(), s.subscriptionBufferSize, func(err error) {
 		log.Errorf("error occurs during processing event by subscription: %v", err)
 	}, req.GetCreateSubscription())
 	err := s.send(&pb.Event{
@@ -154,7 +157,7 @@ func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsS
 		return srv.Send(e)
 	}
 
-	subs := newSubscriptions(r.resourceDirectoryClient, r.resourceSubscriber, r.ownerCache, r.subscriptionCleanUpCache, send)
+	subs := newSubscriptions(r.resourceDirectoryClient, r.resourceSubscriber, r.ownerCache, r.subscriptionCleanUpCache, r.config.APIs.GRPC.SubscriptionBufferSize, send)
 	defer subs.close()
 
 	for {
