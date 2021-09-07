@@ -12,33 +12,30 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/security/certManager"
-	"go.uber.org/atomic"
-
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/kit/security"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
-
+	"github.com/kelseyhightower/envconfig"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/atomic"
 
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/security"
+	"github.com/plgd-dev/kit/security/certManager"
 	"github.com/plgd-dev/sdk/local"
 	"github.com/plgd-dev/sdk/schema"
 	"github.com/plgd-dev/sdk/schema/acl"
-
-	"github.com/kelseyhightower/envconfig"
-
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
 
 	"github.com/plgd-dev/sdk/local/core"
 	"github.com/stretchr/testify/assert"
@@ -731,8 +728,11 @@ func (c *HTTPRequestBuilder) AddQuery(key, value string) *HTTPRequestBuilder {
 	return c
 }
 
-func (c *HTTPRequestBuilder) AddHeader(key, value string) *HTTPRequestBuilder {
-	c.header[key] = value
+func (c *HTTPRequestBuilder) Accept(accept string) *HTTPRequestBuilder {
+	if accept == "" {
+		return c
+	}
+	c.header["Accept"] = accept
 	return c
 }
 
@@ -774,6 +774,36 @@ func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
 	return resp
 }
 
+func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string) interface{} {
+	var data interface{}
+	readFrom := func(w io.Reader, v interface{}) error {
+		return fmt.Errorf("not supported")
+	}
+	switch contentType {
+	case message.AppJSON.String():
+		readFrom = json.ReadFrom
+	case message.AppCBOR.String(), message.AppOcfCbor.String():
+		readFrom = cbor.ReadFrom
+	case "text/plain":
+		readFrom = func(w io.Reader, v interface{}) error {
+			b, err := ioutil.ReadAll(w)
+			if err != nil {
+				return err
+			}
+			val := reflect.ValueOf(v)
+			if val.Kind() != reflect.Ptr {
+				return fmt.Errorf("some: check must be a pointer")
+			}
+			val.Elem().Set(reflect.ValueOf(string(b)))
+			return nil
+		}
+	}
+	err := readFrom(w, &data)
+	require.NoError(t, err)
+
+	return data
+}
+
 func ProtobufToInterface(t *testing.T, val interface{}) interface{} {
 	expJSON, err := json.Encode(val)
 	require.NoError(t, err)
@@ -809,5 +839,4 @@ func NATSSStart(ctx context.Context, t *testing.T) {
 func NATSSStop(ctx context.Context, t *testing.T) {
 	err := exec.CommandContext(ctx, "docker", "stop", "nats").Run()
 	require.NoError(t, err)
-
 }

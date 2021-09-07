@@ -116,7 +116,7 @@ func (c *DevicesSubscription) Add(deviceID string, linkedAccount store.LinkedAcc
 			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		},
 	})
-	deviceSubscriber.SubscribeToPendingCommands(kitNetGrpc.CtxWithOwner(c.ctx, linkedAccount.UserID), h)
+	deviceSubscriber.SubscribeToPendingCommands(h)
 
 	s.Store(deviceSubscriber)
 	return nil

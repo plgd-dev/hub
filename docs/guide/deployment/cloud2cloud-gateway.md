@@ -42,7 +42,7 @@ Follow [OCF Cloud API For Cloud Services Specification](https://openconnectivity
 
 To authorize the user, your app must send the user to the authorization URL.
 
-#### Try pluggedin.cloud
+#### Authorize with try.plgd.cloud
 
 ```bash
 https://auth.plgd.cloud/authorize?
@@ -54,8 +54,6 @@ https://auth.plgd.cloud/authorize?
     state=STATE
 ```
 
-#### Response
-
 If all goes well, you'll receive an HTTP 302 response. The authorization code is included at the end of the URL:
 
 ```url
@@ -66,7 +64,7 @@ http://localhost:8080/callback?code=s65bpdt-ry7QEh6O&state=STATE
 
 Now that you have an Authorization Code, you must exchange it for tokens. Using the extracted Authorization Code (code) from the previous step, you will need to POST to the token URL.
 
-#### Try pluggedin.cloud
+#### Request Tokens with try.plgd.cloud
 
 ```bash
 curl --request POST \
@@ -78,8 +76,6 @@ curl --request POST \
   --data code={YOUR_AUTHORIZATION_CODE} \
   --data 'redirect_uri=http://localhost:8080/callback'
 ```
-
-#### Response
 
 If all goes well, you'll receive an HTTP 200 response with a payload containing access_token, refresh_token, scope, expires_in and token_type values:
 

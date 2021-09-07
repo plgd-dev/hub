@@ -11,11 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	cache "github.com/patrickmn/go-cache"
 	authClient "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
@@ -33,14 +35,11 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitSync "github.com/plgd-dev/kit/sync"
-
-	cache "github.com/patrickmn/go-cache"
-	"github.com/plgd-dev/cloud/pkg/log"
 )
 
 var authCtxKey = "AuthCtx"
 
-//Service a configuration of coapgateway
+// Service is a configuration of coap-gateway
 type Service struct {
 	config Config
 
@@ -64,14 +63,6 @@ type Service struct {
 	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
 	ownerCache              *authClient.OwnerCache
-}
-
-type DialCertManager = interface {
-	GetClientTLSConfig() *tls.Config
-}
-
-type ListenCertManager = interface {
-	GetServerTLSConfig() *tls.Config
 }
 
 // New creates server.

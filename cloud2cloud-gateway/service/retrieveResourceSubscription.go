@@ -8,19 +8,15 @@ import (
 )
 
 func (rh *RequestHandler) retrieveSubscription(w http.ResponseWriter, r *http.Request) (int, error) {
-	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
-	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot parse authorization header: %w", err)
-	}
 	routeVars := mux.Vars(r)
 	subscriptionID := routeVars[subscriptionIDKey]
 
-	_, ok := rh.subMgr.Load(subscriptionID, userID)
+	_, ok := rh.subMgr.Load(subscriptionID)
 	if !ok {
 		return http.StatusNotFound, fmt.Errorf("not found")
 	}
 
-	err = jsonResponseWriterEncoder(w, SubscriptionResponse{
+	err := jsonResponseWriterEncoder(w, SubscriptionResponse{
 		SubscriptionID: subscriptionID,
 	}, http.StatusOK)
 	if err != nil {

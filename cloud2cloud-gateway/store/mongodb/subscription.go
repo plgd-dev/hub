@@ -6,10 +6,10 @@ import (
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const subscriptionsCName = "subscriptions"
@@ -49,9 +49,9 @@ type DBSub struct {
 	DeviceID       string `bson:"deviceid"`
 	Href           string `bson:"href"`
 	SequenceNumber uint64 `bson:"sequencenumber"`
-	UserID         string `bson:"userid"`
 	SigningSecret  string
 	Initialized    bool `bson:"initialized"`
+	AccessToken    string
 }
 
 func makeDBSub(sub store.Subscription) DBSub {
@@ -65,13 +65,13 @@ func makeDBSub(sub store.Subscription) DBSub {
 		DeviceID:       sub.DeviceID,
 		Href:           sub.Href,
 		SequenceNumber: sub.SequenceNumber,
-		UserID:         sub.UserID,
 		SigningSecret:  sub.SigningSecret,
 		Initialized:    sub.Initialized,
+		AccessToken:    sub.AccessToken,
 	}
 }
 
-func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) error {
+func validateSubscription(sub store.Subscription) error {
 	if sub.ID == "" {
 		return fmt.Errorf("invalid ID")
 	}
@@ -84,9 +84,10 @@ func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) er
 	if sub.SigningSecret == "" {
 		return fmt.Errorf("invalid SigningSecret")
 	}
-	if sub.UserID == "" {
-		return fmt.Errorf("invalid UserID")
+	if sub.AccessToken == "" {
+		return fmt.Errorf("invalid AccessToken")
 	}
+
 	switch sub.Type {
 	case store.Type_Devices:
 		if sub.DeviceID != "" {
@@ -111,6 +112,14 @@ func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) er
 		}
 	default:
 		return fmt.Errorf("not supported Type %v", sub.Type)
+	}
+
+	return nil
+}
+
+func (s *Store) SaveSubscription(ctx context.Context, sub store.Subscription) error {
+	if err := validateSubscription(sub); err != nil {
+		return fmt.Errorf("cannot save resource subscription: %w", err)
 	}
 	DBSub := makeDBSub(sub)
 	col := s.client.Database(s.DBName()).Collection(subscriptionsCName)
@@ -229,8 +238,8 @@ func convertToSubscription(sub DBSub) (s store.Subscription) {
 	s.DeviceID = sub.DeviceID
 	s.Href = sub.Href
 	s.SequenceNumber = sub.SequenceNumber
-	s.UserID = sub.UserID
 	s.SigningSecret = sub.SigningSecret
+	s.AccessToken = sub.AccessToken
 	return
 }
 

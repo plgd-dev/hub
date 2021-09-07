@@ -1,31 +1,169 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
-	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats"
+	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store/mongodb"
+	"github.com/plgd-dev/cloud/pkg/config"
+	"github.com/plgd-dev/cloud/pkg/log"
+	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
+	"github.com/plgd-dev/cloud/pkg/net/listener"
+	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
+	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
-//Config represent application configuration
+// Config represents application configuration
 type Config struct {
-	Addr                  string         `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
-	ResourceDirectoryAddr string         `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
-	FQDN                  string         `envconfig:"FQDN" default:"cloud2cloud.pluggedin.cloud"`
-	ReconnectInterval     time.Duration  `envconfig:"RECONNECT_INTERVAL" default:"10s"`
-	JwksURL               string         `envconfig:"JWKS_URL"`
-	OAuth                 manager.Config `envconfig:"OAUTH"`
-	EmitEventTimeout      time.Duration  `envconfig:"EMIT_EVENT_TIMEOUT" default:"5s"`
-	ResourceAggregateAddr string         `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
-	GoRoutinePoolSize     int            `envconfig:"GOROUTINE_POOL_SIZE" default:"16"`
-	OwnerClaim            string         `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
-	Nats                  nats.Config
+	Log       log.Config    `yaml:"log" json:"log"`
+	APIs      APIsConfig    `yaml:"apis" json:"apis"`
+	Clients   ClientsConfig `yaml:"clients" json:"clients"`
+	TaskQueue queue.Config  `yaml:"taskQueue" json:"taskQueue"`
 }
 
-//String return string representation of Config
+func (c *Config) Validate() error {
+	if err := c.APIs.Validate(); err != nil {
+		return fmt.Errorf("apis.%w", err)
+	}
+	if err := c.Clients.Validate(); err != nil {
+		return fmt.Errorf("clients.%w", err)
+	}
+	if err := c.TaskQueue.Validate(); err != nil {
+		return fmt.Errorf("taskQueue.%w", err)
+	}
+	return nil
+}
+
+type APIsConfig struct {
+	HTTP HTTPConfig `yaml:"http" json:"http"`
+}
+
+func (c *APIsConfig) Validate() error {
+	if err := c.HTTP.Validate(); err != nil {
+		return fmt.Errorf("http.%w", err)
+	}
+	return nil
+}
+
+type HTTPConfig struct {
+	Connection    listener.Config  `yaml:",inline" json:",inline"`
+	Authorization validator.Config `yaml:"authorization" json:"authorization"`
+}
+
+func (c *HTTPConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return err
+	}
+	if err := c.Authorization.Validate(); err != nil {
+		return fmt.Errorf("authorization('%w')", err)
+	}
+	return nil
+}
+
+type ClientsConfig struct {
+	Eventbus          EventBusConfig          `yaml:"eventBus" json:"eventBus"`
+	ResourceAggregate ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
+	ResourceDirectory ResourceDirectoryConfig `yaml:"resourceDirectory" json:"resourceDirectory"`
+	Storage           StorageConfig           `yaml:"storage" json:"storage"`
+	Subscription      SubscriptionConfig      `yaml:"subscription" json:"subscription"`
+}
+
+func (c *ClientsConfig) Validate() error {
+	if err := c.Eventbus.Validate(); err != nil {
+		return fmt.Errorf("eventBus.%w", err)
+	}
+	if err := c.ResourceAggregate.Validate(); err != nil {
+		return fmt.Errorf("resourceAggregate.%w", err)
+	}
+	if err := c.ResourceDirectory.Validate(); err != nil {
+		return fmt.Errorf("resourceDirectory.%w", err)
+	}
+	if err := c.Storage.Validate(); err != nil {
+		return fmt.Errorf("storage.%w", err)
+	}
+	if err := c.Subscription.Validate(); err != nil {
+		return fmt.Errorf("subscription.%w", err)
+	}
+	return nil
+}
+
+type ResourceAggregateConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *ResourceAggregateConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
+type ResourceDirectoryConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *ResourceDirectoryConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
+type EventBusConfig struct {
+	NATS natsClient.Config `yaml:"nats" json:"nats"`
+}
+
+func (c *EventBusConfig) Validate() error {
+	if err := c.NATS.Validate(); err != nil {
+		return fmt.Errorf("nats.%w", err)
+	}
+	return nil
+}
+
+type StorageConfig struct {
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+}
+
+func (c *StorageConfig) Validate() error {
+	if err := c.MongoDB.Validate(); err != nil {
+		return fmt.Errorf("mongoDB.%w", err)
+	}
+	return nil
+}
+
+type SubscriptionConfig struct {
+	HTTP HTTPSubscriptionConfig `yaml:"http" json:"http"`
+}
+
+func (c *SubscriptionConfig) Validate() error {
+	if err := c.HTTP.Validate(); err != nil {
+		return fmt.Errorf("http.%w", err)
+	}
+	return nil
+}
+
+type HTTPSubscriptionConfig struct {
+	ReconnectInterval time.Duration   `yaml:"reconnectInterval" json:"reconnectInterval"`
+	EmitEventTimeout  time.Duration   `yaml:"emitEventTimeout" json:"emitEventTimeout"`
+	TLS               cmClient.Config `yaml:"tls" json:"tls"`
+}
+
+func (c *HTTPSubscriptionConfig) Validate() error {
+	if c.ReconnectInterval <= 0 {
+		return fmt.Errorf("reconnectInterval('%v')", c.ReconnectInterval)
+	}
+	if c.EmitEventTimeout <= 0 {
+		return fmt.Errorf("emitEventTimeout('%v')", c.EmitEventTimeout)
+	}
+	if err := c.TLS.Validate(); err != nil {
+		return fmt.Errorf("tls.%w", err)
+	}
+	return nil
+}
+
+// Return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }

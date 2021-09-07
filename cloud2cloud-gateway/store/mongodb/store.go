@@ -19,29 +19,9 @@ type Store struct {
 	dbPrefix string
 }
 
-type Config struct {
-	Host         string `envconfig:"SUBSTORE_MONGO_HOST" default:"localhost:27017"`
-	DatabaseName string `envconfig:"SUBSTORE_MONGO_DATABASE" default:"cloud2cloudGateway"`
-	tlsCfg       *tls.Config
-}
-
-// Option provides the means to use function call chaining
-type Option func(Config) Config
-
-// WithTLS configures connection to use TLS
-func WithTLS(cfg *tls.Config) Option {
-	return func(c Config) Config {
-		c.tlsCfg = cfg
-		return c
-	}
-}
-
 // NewStore creates a new Store.
-func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
-	for _, o := range opts {
-		cfg = o(cfg)
-	}
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://"+cfg.Host).SetTLSConfig(cfg.tlsCfg))
+func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) {
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(tls))
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
@@ -49,8 +29,11 @@ func NewStore(ctx context.Context, cfg Config, opts ...Option) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
-
-	return NewStoreWithSession(ctx, client, cfg.DatabaseName)
+	s, err := NewStoreWithSession(ctx, client, cfg.Database)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 
 // NewStoreWithSession creates a new Store with a session.

@@ -8,7 +8,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/log"
@@ -82,10 +81,6 @@ func sendResponse(w http.ResponseWriter, processed *raEvents.ResourceUpdated) (i
 }
 
 func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.Request) (int, error) {
-	_, userID, err := parseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
-	if err != nil {
-		return http.StatusUnauthorized, fmt.Errorf("cannot get access token: %w", err)
-	}
 	correlationUUID, err := uuid.NewV4()
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot create correlationID: %w", err)
@@ -116,7 +111,7 @@ func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.R
 		},
 	}
 
-	updatedEvent, err := rh.raClient.SyncUpdateResource(kitNetGrpc.CtxWithOwner(r.Context(), userID), updateCommand)
+	updatedEvent, err := rh.raClient.SyncUpdateResource(r.Context(), updateCommand)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot update resource content: %w", err)
 	}
