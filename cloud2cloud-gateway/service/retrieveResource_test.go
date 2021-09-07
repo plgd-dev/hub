@@ -3,18 +3,8 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
-	"reflect"
 	"testing"
-	"time"
-
-	"github.com/plgd-dev/go-coap/v2/message"
-
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -22,13 +12,12 @@ import (
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
-
-const TEST_TIMEOUT = time.Second * 30
 
 func TestRequestHandler_RetrieveResource(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -93,12 +82,13 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			},
 			wantCode:        http.StatusBadRequest,
 			wantContentType: "text/plain",
-			want:            "cannot retrieve resource: cannot retrieve: invalid accept header([application/invalid])",
+			want:            "cannot retrieve resource: invalid accept header([application/invalid])",
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
 	defer cancel()
+
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
@@ -117,7 +107,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).AddHeader("Accept", tt.args.accept).Build(ctx, t)
+			req := test.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).Build(ctx, t)
 			resp := test.DoHTTPRequest(t, req)
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer func() {
@@ -125,31 +115,7 @@ func TestRequestHandler_RetrieveResource(t *testing.T) {
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
 			if tt.want != nil {
-				var got interface{}
-				readFrom := func(w io.Reader, v interface{}) error {
-					return fmt.Errorf("not supported")
-				}
-				switch tt.wantContentType {
-				case message.AppJSON.String():
-					readFrom = json.ReadFrom
-				case message.AppCBOR.String(), message.AppOcfCbor.String():
-					readFrom = cbor.ReadFrom
-				case "text/plain":
-					readFrom = func(w io.Reader, v interface{}) error {
-						b, err := ioutil.ReadAll(w)
-						if err != nil {
-							return err
-						}
-						val := reflect.ValueOf(v)
-						if val.Kind() != reflect.Ptr {
-							return fmt.Errorf("some: check must be a pointer")
-						}
-						val.Elem().Set(reflect.ValueOf(string(b)))
-						return nil
-					}
-				}
-				err = readFrom(resp.Body, &got)
-				require.NoError(t, err)
+				got := test.ReadHTTPResponse(t, resp.Body, tt.wantContentType)
 				require.Equal(t, tt.want, got)
 			}
 		})

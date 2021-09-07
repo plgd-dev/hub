@@ -47,9 +47,11 @@ type ClientsConfig struct {
 }
 
 func (c *ClientsConfig) Validate() error {
-	err := c.Storage.Validate()
-	if err != nil {
+	if err := c.Storage.Validate(); err != nil {
 		return fmt.Errorf("storage.%w", err)
+	}
+	if err := c.Eventbus.Validate(); err != nil {
+		return fmt.Errorf("eventBus.%w", err)
 	}
 	return nil
 }

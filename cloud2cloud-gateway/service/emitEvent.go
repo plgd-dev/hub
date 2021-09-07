@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,21 +10,28 @@ import (
 	"time"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
-
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
-	"github.com/plgd-dev/kit/log"
+	"github.com/plgd-dev/cloud/pkg/log"
+	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 )
 
 type incrementSubscriptionSequenceNumberFunc func(ctx context.Context) (uint64, error)
 type emitEventFunc func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error)
 
-func createEmitEventFunc(tls *tls.Config, timeout time.Duration) emitEventFunc {
+func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, logger log.Logger) (emitEventFunc, func(), error) {
+	certManager, err := cmClient.New(cfg, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
+	}
+	closeFunc := func() {
+		certManager.Close()
+	}
 	trans := netHttp.DefaultTransport.(*netHttp.Transport).Clone()
-	trans.TLSClientConfig = tls
+	trans.TLSClientConfig = certManager.GetTLSConfig()
 	client := netHttp.Client{
 		Transport: trans,
 	}
-	return func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error) {
+	emitFunc := func(ctx context.Context, eventType events.EventType, s store.Subscription, incrementSubscriptionSequenceNumber incrementSubscriptionSequenceNumberFunc, rep interface{}) (remove bool, err error) {
 		log.Debugf("emitEvent: %v: %+v", eventType, s)
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
@@ -102,4 +108,6 @@ func createEmitEventFunc(tls *tls.Config, timeout time.Duration) emitEventFunc {
 		}
 		return eventType == events.EventType_SubscriptionCanceled, nil
 	}
+
+	return emitFunc, closeFunc, nil
 }

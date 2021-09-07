@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/gorilla/mux"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 )
@@ -46,7 +48,13 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 }
 
 func (rh *RequestHandler) RetrieveResource(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.retrieveWithCallback(w, r, rh.RetrieveResourceWithContentQuery)
+	encoder, err := getResponseWriterEncoder(strings.Split(r.Header.Get("Accept"), ","))
+	if err != nil {
+		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource: %w", err), http.StatusBadRequest, w)
+		return
+	}
+
+	statusCode, err := rh.RetrieveResourceWithContentQuery(r.Context(), w, mux.Vars(r), getContentQueryValue(r.URL), encoder)
 	if err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot retrieve resource: %w", err), statusCode, w)
 	}

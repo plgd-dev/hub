@@ -141,7 +141,7 @@ func getSignInContent(expiresIn int64, options message.Options) (message.MediaTy
 	return accept, out, nil
 }
 
-func setNewDeviceSubscriber(ctx context.Context, client *Client, deviceID string) error {
+func setNewDeviceSubscriber(client *Client, deviceID string) error {
 	deviceSubscriber, err := grpcgwClient.NewDeviceSubscriber(client.GetContext, deviceID, func() func() (when time.Time, err error) {
 		var count uint64
 		maxRand := client.server.config.APIs.COAP.KeepAlive.Timeout / 2
@@ -166,7 +166,7 @@ func setNewDeviceSubscriber(ctx context.Context, client *Client, deviceID string
 		}
 	}
 	h := grpcgwClient.NewDeviceSubscriptionHandlers(client)
-	deviceSubscriber.SubscribeToPendingCommands(ctx, h)
+	deviceSubscriber.SubscribeToPendingCommands(h)
 	return nil
 }
 
@@ -211,7 +211,7 @@ func (client *Client) updateBySignInData(ctx context.Context, upd updateType, de
 			return fmt.Errorf("cannot load shadow synchronization for device %v: %w", deviceId, err)
 		}
 
-		if err := setNewDeviceSubscriber(ctx, client, deviceId); err != nil {
+		if err := setNewDeviceSubscriber(client, deviceId); err != nil {
 			return fmt.Errorf("cannot set device subscriber: %w", err)
 		}
 	}
