@@ -323,6 +323,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 	CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 
+	fmt.Printf("waiting for online\n")
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
@@ -369,6 +370,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	for _, link := range ResourceLinksToResources(deviceID, expectedResources) {
 		expectedLinks[link.GetHref()] = link
 	}
+	fmt.Printf("waiting for publishing\n")
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
@@ -452,7 +454,9 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			},
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
+		fmt.Printf("waiting for resource %v\n", e.GetResourceChanged().GetResourceId().ToString())
 		ev, err = client.Recv()
+		fmt.Printf("waiting for resource %v DONE\n", e.GetResourceChanged().GetResourceId().ToString())
 		require.NoError(t, err)
 		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
 		//require.Equal(t, e, ev)

@@ -613,7 +613,7 @@ func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
 	if !isFilteredBit(s.filter,
 		FilterBitmaskDeviceMetadataUpdatePending|
 			FilterBitmaskResourceCreatePending|
-			FilterBitmaskResourceRetrieved|
+			FilterBitmaskResourceRetrievePending|
 			FilterBitmaskResourceUpdatePending|
 			FilterBitmaskResourceDeletePending) {
 		return nil
@@ -644,7 +644,7 @@ func (s *Sub) initPendingCommandsLocked(deviceIDs []string) error {
 			return errFunc(fmt.Errorf("cannot receive pending command: %w", err))
 		}
 		ev, deduplicateEvent := pendingCommandToEvent(recv)
-		if err == nil {
+		if ev == nil {
 			s.errFunc(errFunc(fmt.Errorf("unknown recv command %T", recv.GetCommand())))
 			continue
 		}
