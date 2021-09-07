@@ -66,7 +66,7 @@ func testRequestHandler_GetResourceFromDevice(t *testing.T, events store.Events)
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT*2)
 	defer cancel()
 
 	tearDown := setUp(ctx, t, deviceID, events)
