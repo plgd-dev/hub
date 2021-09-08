@@ -10,3 +10,19 @@ input[type='text'].form-control {
     background-color: hsl(0, 0%, 95%);
   }
 }
+
+::-webkit-input-placeholder {
+  color: rgba($secondary_40, 0.5) !important;
+}
+
+::-moz-placeholder {
+  color: rgba($secondary_40, 0.5) !important;
+}
+
+::-ms-placeholder {
+  color: rgba($secondary_40, 0.5) !important;
+}
+
+::placeholder {
+  color: rgba($secondary_40, 0.5) !important;
+}

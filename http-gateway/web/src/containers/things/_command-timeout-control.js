@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useIntl } from 'react-intl'
 import isFinite from 'lodash/isFinite'
@@ -21,6 +21,7 @@ const { INFINITE, NS } = commandTimeoutUnits
 
 export const CommanTimeoutControl = ({
   defaultValue,
+  defaultTtlValue,
   onChange,
   disabled,
   ttlHasError,
@@ -28,7 +29,18 @@ export const CommanTimeoutControl = ({
   isDelete,
 }) => {
   const { formatMessage: _ } = useIntl()
-  const closestUnit = findClosestUnit(defaultValue)
+  const closestUnit = useMemo(
+    () => findClosestUnit(defaultValue),
+    [defaultValue]
+  )
+  const closestDefaultTtl = useMemo(() => {
+    const unit = findClosestUnit(defaultTtlValue)
+    return {
+      unit,
+      value: convertAndNormalizeValueFromTo(defaultTtlValue, NS, unit),
+    }
+  }, [defaultTtlValue])
+
   const [unit, setUnit] = useState(defaultValue === 0 ? INFINITE : closestUnit)
   const [inputValue, setInputValue] = useState(
     convertAndNormalizeValueFromTo(defaultValue, NS, closestUnit)
@@ -38,7 +50,7 @@ export const CommanTimeoutControl = ({
     .filter(unit => unit !== NS)
     .map(unit => ({
       value: unit,
-      label: unit,
+      label: unit === INFINITE ? _(t.default) : unit,
     }))
 
   const handleOnUnitChange = ({ value: unitValue }) => {
@@ -99,16 +111,20 @@ export const CommanTimeoutControl = ({
         'delete-modal': isDelete,
       })}
     >
-      <div className="ttl-label-content d-flex justify-content-end">
-        {unit !== INFINITE && (
+      <div className="ttl-label-content d-flex align-items-center justify-content-end">
+        {unit !== INFINITE ? (
           <TextField
             className={classNames('ttl-value-input', { error: ttlHasError })}
             value={inputValue}
             onChange={handleOnValueChange}
             onBlur={handleOnValueBlur}
-            placeholder="INFINITE"
+            placeholder={`${_(t.default)} (${closestDefaultTtl.value}${
+              closestDefaultTtl.unit
+            })`}
             disabled={disabled || unit === INFINITE}
           />
+        ) : (
+          <span className="m-r-10">{`${closestDefaultTtl.value}${closestDefaultTtl.unit}`}</span>
         )}
 
         <Select
@@ -138,6 +154,7 @@ export const CommanTimeoutControl = ({
 
 CommanTimeoutControl.propTypes = {
   defaultValue: PropTypes.number,
+  defaultTtlValue: PropTypes.number,
   onChange: PropTypes.func.isRequired,
   disabled: PropTypes.bool.isRequired,
   ttlHasError: PropTypes.bool.isRequired,
@@ -148,4 +165,5 @@ CommanTimeoutControl.propTypes = {
 CommanTimeoutControl.defaultProps = {
   isDelete: false,
   defaultValue: 0,
+  defaultTtlValue: 0,
 }

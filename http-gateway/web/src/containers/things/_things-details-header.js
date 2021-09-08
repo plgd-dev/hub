@@ -28,9 +28,8 @@ export const ThingsDetailsHeader = ({
 }) => {
   const { formatMessage: _ } = useIntl()
   const dispatch = useDispatch()
-  const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(
-    deviceId
-  )
+  const resourceRegistrationObservationWSKey =
+    getResourceRegistrationNotificationKey(deviceId)
   const thingNotificationKey = getThingNotificationKey(deviceId)
   const notificationsEnabled = useRef(false)
   notificationsEnabled.current = useSelector(
@@ -117,13 +116,23 @@ export const ThingsDetailsHeader = ({
     <div
       className={classNames('d-flex align-items-center', greyedOutClassName)}
     >
+      <Button
+        className="m-r-30"
+        variant="secondary"
+        icon="fa-trash-alt"
+        onClick={handleOpenDeleteDeviceModal}
+        disabled={isUnregistered}
+      >
+        {_(t.delete)}
+      </Button>
+
       <Switch
         disabled={isUnregistered}
         className={classNames({ shimmering: !deviceId })}
         id="status-notifications"
         label={_(t.notifications)}
         checked={notificationsEnabled.current}
-        onChange={e => {
+        onChange={(e) => {
           if (e.target.checked) {
             // Request browser notifications
             // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
@@ -134,15 +143,6 @@ export const ThingsDetailsHeader = ({
           dispatch(toggleActiveNotification(thingNotificationKey))
         }}
       />
-      <Button
-        className="m-l-30"
-        variant="secondary"
-        icon="fa-trash-alt"
-        onClick={handleOpenDeleteDeviceModal}
-        disabled={isUnregistered}
-      >
-        {_(t.delete)}
-      </Button>
 
       <ConfirmModal
         onConfirm={handleDeleteDevice}

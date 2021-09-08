@@ -98,4 +98,8 @@ export const messages = defineMessages({
     id: 'pendingCommands.no',
     defaultMessage: 'No',
   },
+  forever: {
+    id: 'pendingCommands.forever',
+    defaultMessage: 'Forever',
+  },
 })

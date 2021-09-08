@@ -87,6 +87,8 @@ export const updatePendingCommandsDataStatus = (
 
 // validUntil - ns, currentTime - ms
 export const hasCommandExpired = (validUntil, currentTime) => {
+  if (validUntil === '0') return false
+
   const validUntilMs = time(validUntil)
     .from('ns')
     .to('ms').value

@@ -221,6 +221,8 @@ export const PendingCommandsList = ({ onLoading }) => {
         accessor: 'validUntil',
         disableSortBy: true,
         Cell: ({ value }) => {
+          if (value === '0') return _(t.forever)
+
           const date = new Date(
             time(value)
               .from('ns')

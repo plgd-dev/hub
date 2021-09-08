@@ -17,7 +17,7 @@ export const Footer = memo(() => {
       >
         {_(t.API)}
       </a>
-      <a href="https://plgd.dev/guide" target="_blank" rel="noopener">
+      <a href="https://plgd.dev/documentation" target="_blank" rel="noopener">
         {_(t.docs)}
       </a>
       <a

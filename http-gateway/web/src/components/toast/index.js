@@ -42,6 +42,7 @@ export const ToastContainer = () => {
       newestOnTop
       autoClose={TOAST_HIDE_TIME}
       hideProgressBar
+      icon={false}
     />
   )
 }
