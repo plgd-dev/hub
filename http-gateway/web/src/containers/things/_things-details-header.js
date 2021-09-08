@@ -132,7 +132,7 @@ export const ThingsDetailsHeader = ({
         id="status-notifications"
         label={_(t.notifications)}
         checked={notificationsEnabled.current}
-        onChange={(e) => {
+        onChange={e => {
           if (e.target.checked) {
             // Request browser notifications
             // (browsers will explicitly disallow notification permission requests not triggered in response to a user gesture,
