@@ -11,6 +11,7 @@ import (
 	authEvents "github.com/plgd-dev/cloud/authorization/events"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/grpc-gateway/subscription"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -137,17 +138,16 @@ func (client *Client) Context() context.Context {
 	return client.coapConn.Context()
 }
 
-func (client *Client) cancelResourceSubscription(token string, wantWait bool) (bool, error) {
-	s, ok := grpcClient.ToResourceSubscription(client.resourceSubscriptions.PullOut(token))
+func (client *Client) cancelResourceSubscription(token string) (bool, error) {
+	s, ok := client.resourceSubscriptions.PullOut(token)
 	if !ok {
 		return false, nil
 	}
-	wait, err := s.Cancel()
+	sub := s.(*subscription.Sub)
+
+	err := sub.Close()
 	if err != nil {
 		return false, err
-	}
-	if wantWait {
-		wait()
 	}
 	return true, nil
 }

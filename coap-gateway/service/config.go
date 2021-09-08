@@ -57,15 +57,17 @@ func (c *APIsConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	Addr                     string                  `yaml:"address" json:"address"`
-	ExternalAddress          string                  `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize           int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
-	OwnerCacheExpiration     time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
-	GoroutineSocketHeartbeat time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
-	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
-	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
-	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
-	Authorization            authorization.Config    `yaml:"authorization" json:"authorization"`
+	Addr                        string                  `yaml:"address" json:"address"`
+	ExternalAddress             string                  `yaml:"externalAddress" json:"externalAddress"`
+	MaxMessageSize              int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
+	OwnerCacheExpiration        time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionCacheExpiration time.Duration           `yaml:"subscriptionCacheExpiration" json:"subscriptionCacheExpiration"`
+	SubscriptionBufferSize      int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
+	GoroutineSocketHeartbeat    time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
+	KeepAlive                   KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
+	BlockwiseTransfer           BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
+	TLS                         TLSConfig               `yaml:"tls" json:"tls"`
+	Authorization               authorization.Config    `yaml:"authorization" json:"authorization"`
 }
 
 func (c *COAPConfig) Validate() error {
@@ -83,6 +85,12 @@ func (c *COAPConfig) Validate() error {
 	}
 	if c.GoroutineSocketHeartbeat <= 0 {
 		return fmt.Errorf("goroutineSocketHeartbeat('%v')", c.GoroutineSocketHeartbeat)
+	}
+	if c.SubscriptionCacheExpiration <= 0 {
+		return fmt.Errorf("subscriptionCacheExpiration('%v')", c.OwnerCacheExpiration)
+	}
+	if c.SubscriptionBufferSize < 0 {
+		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
 	}
 	err := c.KeepAlive.Validate()
 	if err != nil {

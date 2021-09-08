@@ -7,6 +7,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message/codes"
 )
@@ -23,8 +24,12 @@ func NewAuthInterceptor() Interceptor {
 		if e == nil {
 			return ctx, fmt.Errorf("invalid authorization context")
 		}
-		expire := e.(*authorizationContext)
-		return ctx, expire.IsValid()
+		authCtx := e.(*authorizationContext)
+		err := authCtx.IsValid()
+		if err != nil {
+			return ctx, err
+		}
+		return grpc.CtxWithIncomingToken(grpc.CtxWithToken(ctx, authCtx.GetAccessToken()), authCtx.GetAccessToken()), nil
 	}
 }
 

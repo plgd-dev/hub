@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/strings"
+	"go.uber.org/atomic"
 	"google.golang.org/grpc/codes"
 )
 
@@ -38,7 +39,7 @@ type Sub struct {
 	filteredDeviceIDs     strings.Set
 	filteredResourceIDs   strings.Set
 	resourceDirectory     pb.GrpcGatewayClient
-	closed                bool
+	closed                atomic.Bool
 	deduplicateInitEvents map[string]uint64
 
 	eventsCache   chan eventbus.EventUnmarshaler
@@ -296,15 +297,12 @@ func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
 }
 
 func (s *Sub) isFiltered(ev event) bool {
+	if s.closed.Load() {
+		return false
+	}
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.isDuplicatedInitEventLocked(ev) {
-		return false
-	}
-	if s.closed {
-		return false
-	}
-	return true
+	return !s.isDuplicatedInitEventLocked(ev)
 }
 
 func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
@@ -734,7 +732,7 @@ func (s *Sub) onUnregisteredEventLocked(e *ownerEvents.DevicesUnregistered) {
 func (s *Sub) onOwnerEvent(e *ownerEvents.Event) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.closed {
+	if s.closed.Load() {
 		return
 	}
 	switch {
@@ -745,18 +743,21 @@ func (s *Sub) onOwnerEvent(e *ownerEvents.Event) {
 	}
 }
 
-func (s *Sub) closeLocked() error {
-	if s.closed {
-		return nil
-	}
-	s.closed = true
-	close(s.done)
-	s.eventsCacheWg.Wait()
-	if s.ownerSubClose != nil {
-		s.ownerSubClose()
-	}
+func (s *Sub) setClosed() bool {
+	return s.closed.CAS(false, true)
+}
+
+func (s *Sub) pullOutDevicesEventsObserver() map[string]eventbus.Observer {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	devicesEventsObserver := s.devicesEventsObserver
+	s.devicesEventsObserver = make(map[string]eventbus.Observer)
+	return devicesEventsObserver
+}
+
+func cleanUpDevicesEventsObservers(devicesEventsObserver map[string]eventbus.Observer) error {
 	var errors []error
-	for _, obs := range s.devicesEventsObserver {
+	for _, obs := range devicesEventsObserver {
 		err := obs.Close()
 		if err != nil {
 			errors = append(errors, err)
@@ -768,10 +769,27 @@ func (s *Sub) closeLocked() error {
 	return nil
 }
 
+func (s *Sub) cleanUp(devicesEventsObserver map[string]eventbus.Observer) error {
+	close(s.done)
+	s.eventsCacheWg.Wait()
+	if s.ownerSubClose != nil {
+		s.ownerSubClose()
+	}
+	return cleanUpDevicesEventsObservers(devicesEventsObserver)
+}
+
+func (s *Sub) closeLocked() error {
+	if !s.setClosed() {
+		return nil
+	}
+	return s.cleanUp(s.devicesEventsObserver)
+}
+
 func (s *Sub) Close() error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	return s.closeLocked()
+	if !s.setClosed() {
+		return nil
+	}
+	return s.cleanUp(s.pullOutDevicesEventsObserver())
 }
 
 func (s *Sub) CleanUpDeduplicationInitEventsCache() {
@@ -792,18 +810,23 @@ func (s *Sub) run() {
 }
 
 func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirectory pb.GrpcGatewayClient, send SendEventFunc, correlationID string, cacheSize int, errFunc ErrFunc, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+	bitmask := EventsFilterToBitmask(req.GetEventFilter())
 	filteredResourceIDs := strings.MakeSet()
-	for _, r := range req.GetResourceIdFilter() {
-		v := commands.ResourceIdFromString(r)
-		if v != nil {
-			filteredResourceIDs.Add(v.ToUUID())
-		}
-	}
 	filteredDeviceIDs := strings.MakeSet(req.GetDeviceIdFilter()...)
 	for _, r := range req.GetResourceIdFilter() {
 		v := commands.ResourceIdFromString(r)
-		if v != nil {
-			filteredDeviceIDs.Add(v.GetDeviceId())
+		if v == nil {
+			continue
+		}
+		filteredResourceIDs.Add(v.ToUUID())
+		filteredDeviceIDs.Add(v.GetDeviceId())
+		if len(req.GetEventFilter()) > 0 {
+			if bitmask&(FilterBitmaskDeviceMetadataUpdatePending|FilterBitmaskDeviceMetadataUpdated) != 0 {
+				filteredResourceIDs.Add(commands.MakeStatusResourceUUID(v.GetDeviceId()))
+			}
+			if bitmask&(FilterBitmaskResourcesPublished|FilterBitmaskResourcesUnpublished) != 0 {
+				filteredResourceIDs.Add(commands.MakeLinksResourceUUID(v.GetDeviceId()))
+			}
 		}
 	}
 	id := uuid.NewString()

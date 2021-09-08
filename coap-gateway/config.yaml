@@ -7,6 +7,8 @@ apis:
     externalAddress: ""
     maxMessageSize: 262144
     ownerCacheExpiration: 1m
+    subscriptionCacheExpiration: 1m
+    subscriptionBufferSize: 1000
     goroutineSocketHeartbeat: "4s"
     keepAlive:
       timeout: 20s
