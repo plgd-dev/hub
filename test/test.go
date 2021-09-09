@@ -25,6 +25,7 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/pkg/fn"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -219,6 +220,58 @@ func SetUp(ctx context.Context, t *testing.T, opts ...SetUpOption) (TearDown fun
 		authShutdown()
 		oauthShutdown()
 	}
+}
+
+type SetUpServicesConfig uint16
+
+const (
+	SetUpServicesOAuth SetUpServicesConfig = 1 << iota
+	SetUpServicesAuth
+	SetUpServicesCertificateAuthority
+	SetUpServicesCloud2CloudGateway
+	SetUpServicesCoapGateway
+	SetUpServicesGrpcGateway
+	SetUpServicesResourceAggregate
+	SetUpServicesResourceDirectory
+)
+
+func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServicesConfig) func() {
+	var tearDown fn.FuncList
+
+	ClearDB(ctx, t)
+	if servicesConfig&SetUpServicesOAuth != 0 {
+		oauthShutdown := oauthTest.SetUp(t)
+		tearDown.AddFunc(oauthShutdown)
+	}
+	if servicesConfig&SetUpServicesAuth != 0 {
+		authShutdown := authService.SetUp(t)
+		tearDown.AddFunc(authShutdown)
+	}
+	if servicesConfig&SetUpServicesCertificateAuthority != 0 {
+		caShutdown := caService.SetUp(t)
+		tearDown.AddFunc(caShutdown)
+	}
+	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
+		c2cgwShutdown := c2cgwService.SetUp(t)
+		tearDown.AddFunc(c2cgwShutdown)
+	}
+	if servicesConfig&SetUpServicesCoapGateway != 0 {
+		secureGWShutdown := coapgwTest.SetUp(t)
+		tearDown.AddFunc(secureGWShutdown)
+	}
+	if servicesConfig&SetUpServicesGrpcGateway != 0 {
+		grpcShutdown := grpcgwTest.SetUp(t)
+		tearDown.AddFunc(grpcShutdown)
+	}
+	if servicesConfig&SetUpServicesResourceAggregate != 0 {
+		raShutdown := raService.SetUp(t)
+		tearDown.AddFunc(raShutdown)
+	}
+	if servicesConfig&SetUpServicesResourceDirectory != 0 {
+		rdShutdown := rdTest.SetUp(t)
+		tearDown.AddFunc(rdShutdown)
+	}
+	return tearDown.ToFunction()
 }
 
 func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, deviceID string) {
