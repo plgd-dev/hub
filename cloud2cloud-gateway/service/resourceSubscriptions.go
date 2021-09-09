@@ -10,22 +10,22 @@ import (
 	"github.com/plgd-dev/kit/log"
 )
 
-type resourceSubsciptionHandler struct {
+type resourceSubscriptionHandler struct {
 	subData   *SubscriptionData
 	emitEvent emitEventFunc
 }
 
-func (h *resourceSubsciptionHandler) HandleResourceContentChanged(ctx context.Context, val *raEvents.ResourceChanged) error {
+func (h *resourceSubscriptionHandler) HandleResourceContentChanged(ctx context.Context, val *raEvents.ResourceChanged) error {
 	if val.GetStatus() != commands.Status_OK && val.GetStatus() != commands.Status_UNKNOWN {
-		return fmt.Errorf("resourceSubsciptionHandler.HandleResourceContentChanged: cannot emit event for bad status %v of response", val.GetStatus())
+		return fmt.Errorf("resourceSubscriptionHandler.HandleResourceContentChanged: cannot emit event for bad status %v of response", val.GetStatus())
 	}
 	rep, err := unmarshalContent(val.GetContent())
 	if err != nil {
-		return fmt.Errorf("resourceSubsciptionHandler.HandleResourceContentChanged: cannot emit event: cannot unmarshal content: %w", err)
+		return fmt.Errorf("resourceSubscriptionHandler.HandleResourceContentChanged: cannot emit event: cannot unmarshal content: %w", err)
 	}
 	remove, err := h.emitEvent(ctx, events.EventType_ResourceChanged, h.subData.Data(), h.subData.IncrementSequenceNumber, rep)
 	if err != nil {
-		log.Errorf("resourceSubsciptionHandler.HandleResourceContentChanged: cannot emit event: %v", err)
+		log.Errorf("resourceSubscriptionHandler.HandleResourceContentChanged: cannot emit event: %v", err)
 	}
 	if remove {
 		return err

@@ -48,7 +48,8 @@ func TestRequestHandler_SubscribeToDevice(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	token := oauthTest.GetServiceToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -111,7 +112,7 @@ func TestRequestHandler_SubscribeToDevice(t *testing.T) {
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetServiceToken(t)).Accept(accept).Build(ctx, t)
+	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
 	resp := test.DoHTTPRequest(t, req)
 	assert.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
