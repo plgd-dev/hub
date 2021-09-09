@@ -471,9 +471,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
-	coapgwCfg := coapgwTest.MakeConfig(t)
-
-	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg))
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
