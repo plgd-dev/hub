@@ -43,6 +43,7 @@ type Sub struct {
 	deduplicateInitEvents map[string]uint64
 
 	eventsCache   chan eventbus.EventUnmarshaler
+	ownerCache    chan *ownerEvents.Event
 	done          chan struct{}
 	mutex         sync.Mutex
 	eventsCacheWg sync.WaitGroup
@@ -338,29 +339,38 @@ func (s *Sub) Id() string {
 	return s.id
 }
 
-func (s *Sub) initOwnerSubscription(ownerCache *client.OwnerCache) ([]string, error) {
+func (s *Sub) subscribeToOwnerEvents(ownerCache *client.OwnerCache) error {
 	owner, err := grpc.OwnerFromTokenMD(s.ctx, ownerCache.OwnerClaim())
 	if err != nil {
-		return nil, grpc.ForwardFromError(codes.InvalidArgument, err)
+		return grpc.ForwardFromError(codes.InvalidArgument, err)
+	}
+	close, err := ownerCache.Subscribe(owner, s.onOwnerEvent)
+	if err != nil {
+		return err
 	}
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	close, err := ownerCache.Subscribe(owner, s.onOwnerEvent)
+	s.ownerSubClose = close
+	return nil
+}
+
+func (s *Sub) initOwnerSubscription(ownerCache *client.OwnerCache) ([]string, error) {
+	err := s.subscribeToOwnerEvents(ownerCache)
 	if err != nil {
-		_ = s.closeLocked()
+		_ = s.Close()
 		return nil, err
 	}
 	devices, err := ownerCache.GetDevices(s.ctx)
 	if err != nil {
-		close()
-		_ = s.closeLocked()
+		_ = s.Close()
 		return nil, err
 	}
-	s.ownerSubClose = close
+
+	s.mutex.Lock()
 	err = s.initEventSubscriptionsLocked(devices)
+	s.mutex.Unlock()
 	if err != nil {
-		close()
-		_ = s.closeLocked()
+		_ = s.Close()
 		return nil, err
 	}
 	return devices, nil
@@ -424,6 +434,7 @@ func (s *Sub) initEventSubscriptionsLocked(deviceIDs []string) error {
 		obs, err := s.eventsSub.Subscribe(s.ctx, deviceID+"."+s.id, utils.GetDeviceSubject(deviceID), s)
 		if err != nil {
 			errors = append(errors, err)
+			continue
 		}
 		s.devicesEventsObserver[deviceID] = obs
 	}
@@ -730,6 +741,13 @@ func (s *Sub) onUnregisteredEventLocked(e *ownerEvents.DevicesUnregistered) {
 }
 
 func (s *Sub) onOwnerEvent(e *ownerEvents.Event) {
+	select {
+	case <-s.done:
+	case s.ownerCache <- e:
+	}
+}
+
+func (s *Sub) handleOwnerEvent(e *ownerEvents.Event) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.closed.Load() {
@@ -778,13 +796,6 @@ func (s *Sub) cleanUp(devicesEventsObserver map[string]eventbus.Observer) error 
 	return cleanUpDevicesEventsObservers(devicesEventsObserver)
 }
 
-func (s *Sub) closeLocked() error {
-	if !s.setClosed() {
-		return nil
-	}
-	return s.cleanUp(s.devicesEventsObserver)
-}
-
 func (s *Sub) Close() error {
 	if !s.setClosed() {
 		return nil
@@ -803,8 +814,10 @@ func (s *Sub) run() {
 		select {
 		case <-s.done:
 			return
-		case eu := <-s.eventsCache:
-			s.handleEvent(eu)
+		case event := <-s.eventsCache:
+			s.handleEvent(event)
+		case ownerEvent := <-s.ownerCache:
+			s.handleOwnerEvent(ownerEvent)
 		}
 	}
 }
@@ -853,6 +866,7 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 		devicesEventsObserver: make(map[string]eventbus.Observer),
 		deduplicateInitEvents: make(map[string]uint64),
 		eventsCache:           make(chan eventbus.EventUnmarshaler, cacheSize),
+		ownerCache:            make(chan *ownerEvents.Event, cacheSize),
 		done:                  make(chan struct{}),
 	}
 }
