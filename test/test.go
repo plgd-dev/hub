@@ -52,6 +52,7 @@ import (
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/service"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
+	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
 
@@ -247,22 +248,6 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 		authShutdown := authService.SetUp(t)
 		tearDown.AddFunc(authShutdown)
 	}
-	if servicesConfig&SetUpServicesCertificateAuthority != 0 {
-		caShutdown := caService.SetUp(t)
-		tearDown.AddFunc(caShutdown)
-	}
-	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
-		c2cgwShutdown := c2cgwService.SetUp(t)
-		tearDown.AddFunc(c2cgwShutdown)
-	}
-	if servicesConfig&SetUpServicesCoapGateway != 0 {
-		secureGWShutdown := coapgwTest.SetUp(t)
-		tearDown.AddFunc(secureGWShutdown)
-	}
-	if servicesConfig&SetUpServicesGrpcGateway != 0 {
-		grpcShutdown := grpcgwTest.SetUp(t)
-		tearDown.AddFunc(grpcShutdown)
-	}
 	if servicesConfig&SetUpServicesResourceAggregate != 0 {
 		raShutdown := raService.SetUp(t)
 		tearDown.AddFunc(raShutdown)
@@ -270,6 +255,22 @@ func SetUpServices(ctx context.Context, t *testing.T, servicesConfig SetUpServic
 	if servicesConfig&SetUpServicesResourceDirectory != 0 {
 		rdShutdown := rdTest.SetUp(t)
 		tearDown.AddFunc(rdShutdown)
+	}
+	if servicesConfig&SetUpServicesGrpcGateway != 0 {
+		grpcShutdown := grpcgwTest.SetUp(t)
+		tearDown.AddFunc(grpcShutdown)
+	}
+	if servicesConfig&SetUpServicesCloud2CloudGateway != 0 {
+		c2cgwShutdown := c2cgwService.SetUp(t)
+		tearDown.AddFunc(c2cgwShutdown)
+	}
+	if servicesConfig&SetUpServicesCertificateAuthority != 0 {
+		caShutdown := caService.SetUp(t)
+		tearDown.AddFunc(caShutdown)
+	}
+	if servicesConfig&SetUpServicesCoapGateway != 0 {
+		secureGWShutdown := coapgwTest.SetUp(t)
+		tearDown.AddFunc(secureGWShutdown)
 	}
 	return tearDown.ToFunction()
 }
@@ -312,7 +313,7 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *local.Client, devic
 	require.NoError(t, err)
 }
 
-func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
+func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientId, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
 	client, err := NewSDKClient()
 	require.NoError(t, err)
 	defer func() {
@@ -323,7 +324,7 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 
 	setAccessForCloud(ctx, t, client, deviceID)
 
-	code := oauthTest.GetDeviceAuthorizationCode(t)
+	code := oauthTest.GetDeviceAuthorizationCodeForClient(t, clientId)
 	err = client.OnboardDevice(ctx, deviceID, "plgd", "coaps+tcp://"+gwHost, code, "sid")
 	require.NoError(t, err)
 
@@ -340,6 +341,10 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		time.Sleep(time.Second * 2)
 	}
+}
+
+func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, gwHost string, expectedResources []schema.ResourceLink) (string, func()) {
+	return OnboardDevSimForClient(ctx, t, c, service.ClientTest, deviceID, gwHost, expectedResources)
 }
 
 func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, expectedResources []schema.ResourceLink) {

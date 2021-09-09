@@ -151,12 +151,12 @@ func GetServiceToken(t *testing.T) string {
 	return GetServiceTokenForClient(t, service.ClientTest)
 }
 
-func GetDeviceAuthorizationCode(t *testing.T) string {
+func GetDeviceAuthorizationCodeForClient(t *testing.T, clientId string) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
 	require.NoError(t, err)
-	q.Add(uri.ClientIDKey, service.ClientTest)
+	q.Add(uri.ClientIDKey, clientId)
 	u.RawQuery = q.Encode()
 	getReq := NewRequest(http.MethodGet, u.String(), nil).Build()
 	res := HTTPDo(t, getReq, false)
@@ -171,4 +171,8 @@ func GetDeviceAuthorizationCode(t *testing.T) string {
 	code := body[uri.CodeKey]
 	require.NotEmpty(t, code)
 	return code
+}
+
+func GetDeviceAuthorizationCode(t *testing.T) string {
+	return GetDeviceAuthorizationCodeForClient(t, service.ClientTest)
 }

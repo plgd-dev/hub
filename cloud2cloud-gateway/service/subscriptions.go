@@ -296,8 +296,14 @@ func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc,
 
 	sub, err := createSubscriptionFunc(ctx, emitEvent, &h)
 	if err != nil {
-		// TODO: ak err je grpc unauthenticated -> cancel subscription
-		// test-case?
+		if status.Convert(err).Code() == codes.Unauthenticated {
+			subToCancel, errSub := deleteSub(ctx, s.data.ID)
+			if errSub == nil {
+				if err2 := cancelSubscription(ctx, emitEvent, subToCancel); err2 != nil {
+					log.Errorf("cannot cancel subscription %v: %w", subToCancel.ID, err2)
+				}
+			}
+		}
 		return err
 	}
 
@@ -342,7 +348,7 @@ func (h *closeEventHandler) Error(err error) {
 		sub, errSub := h.deleteSub(h.ctx, data.ID)
 		if errSub == nil {
 			if err2 := cancelSubscription(h.ctx, h.emitEvent, sub); err2 != nil {
-				log.Errorf("cannot cancel resource subscription for %v: %w", sub.ID, err2)
+				log.Errorf("cannot cancel subscription %v: %w", sub.ID, err2)
 			}
 		}
 		return

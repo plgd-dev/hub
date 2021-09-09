@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/cloud/http-gateway/test"
 	"github.com/plgd-dev/cloud/http-gateway/uri"
@@ -273,9 +272,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
-	coapgwCfg := coapgwTest.MakeConfig(t)
-
-	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg))
+	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
 	token := oauthTest.GetServiceToken(t)

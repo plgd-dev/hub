@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	router "github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
@@ -19,11 +20,13 @@ import (
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/test"
 	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -116,4 +119,107 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	} else {
 		require.Empty(t, v)
 	}
+}
+
+func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), testCfg.TEST_TIMEOUT)
+	defer cancel()
+
+	services := test.SetUpServicesOAuth | test.SetUpServicesAuth | test.SetUpServicesCertificateAuthority |
+		test.SetUpServicesResourceAggregate | test.SetUpServicesResourceDirectory | test.SetUpServicesGrpcGateway |
+		test.SetUpServicesCoapGateway
+	tearDown := test.SetUpServices(ctx, t, services)
+	defer tearDown()
+	c2cgwShutdown := c2cTest.SetUp(t)
+
+	token := oauthTest.GetServiceTokenForClient(t, oauthService.ClientTestShortExpiration)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+
+	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewGrpcGatewayClient(conn)
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthService.ClientTestShortExpiration, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	eventsServer, cleanUpEventsServer := c2cTest.NewTestListener(t)
+	defer cleanUpEventsServer()
+
+	var cancelled, subscribed atomic.Bool
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r := router.NewRouter()
+		r.StrictSlash(true)
+		r.HandleFunc("/events", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h, err := events.ParseEventHeader(r)
+			assert.NoError(t, err)
+			defer func() {
+				_ = r.Body.Close()
+			}()
+			_, err = ioutil.ReadAll(r.Body)
+			assert.NoError(t, err)
+			if h.EventType == events.EventType_ResourceChanged {
+				w.WriteHeader(http.StatusOK)
+				subscribed.Store(true)
+				return
+			}
+			if h.EventType == events.EventType_SubscriptionCanceled {
+				w.WriteHeader(http.StatusOK)
+				cancelled.Store(true)
+				return
+			}
+			assert.Fail(t, "invalid EventType: %v", h.EventType)
+		})).Methods("POST")
+		_ = http.Serve(eventsServer, r)
+	}()
+
+	uri := "https://" + testCfg.C2C_GW_HOST + uri.Devices + "/" + deviceID + "/light/1/subscriptions"
+	_, port, err := net.SplitHostPort(eventsServer.Addr().String())
+	require.NoError(t, err)
+
+	sub := events.SubscriptionRequest{
+		URL:           "https://localhost:" + port + "/events",
+		EventTypes:    events.EventTypes{events.EventType_ResourceChanged},
+		SigningSecret: "a",
+	}
+	fmt.Printf("%v\n", uri)
+
+	data, err := json.Encode(sub)
+	require.NoError(t, err)
+	accept := message.AppJSON.String()
+	req := test.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := test.DoHTTPRequest(t, req)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	require.Equal(t, message.AppJSON.String(), resp.Header.Get("Content-Type"))
+	v, err := ioutil.ReadAll(resp.Body)
+	fmt.Printf("body %v\n", string(v))
+	require.NoError(t, err)
+
+	// let access token expire
+	time.Sleep(time.Second * 10)
+	assert.True(t, subscribed.Load())
+	// stop and start c2c-gw and let it try reestablish resource subscription with expired token
+	c2cgwShutdown()
+	c2cgwShutdown = c2cTest.SetUp(t)
+
+	// give enough time to wait for cancel subscription response
+	time.Sleep(time.Second * 5)
+	err = eventsServer.Close()
+	assert.NoError(t, err)
+	assert.True(t, cancelled.Load())
+	defer func() {
+		wg.Wait()
+		c2cgwShutdown()
+	}()
 }
