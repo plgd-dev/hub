@@ -41,6 +41,11 @@ ARG service=oauth-server
 WORKDIR $root_directory/test/$service
 RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
 
+#cloud2cloud-gateway
+ARG service=cloud2cloud-gateway
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static" -o /go/bin/$service ./cmd/service
+
 
 #certificate-generator
 ARG service=kit
@@ -92,6 +97,8 @@ COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/bundle/jetstream.json 
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY --from=build-web /web/build /usr/local/var/www
+COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
+COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
 COPY run.sh /usr/local/bin/run.sh
 COPY nginx /nginx
 
@@ -121,6 +128,7 @@ ENV RESOURCE_DIRECTORY_PORT=9082
 ENV AUTHORIZATION_PORT=9081
 ENV GRPC_GATEWAY_PORT=9084
 ENV HTTP_GATEWAY_PORT=9086
+ENV CLOUD2CLOUD_GATEWAY_PORT=9085
 ENV MONGO_PORT=10000
 ENV NATS_PORT=10001
 
