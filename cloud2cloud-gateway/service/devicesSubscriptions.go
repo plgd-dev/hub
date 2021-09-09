@@ -10,7 +10,7 @@ import (
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
-type devicesSubsciptionHandler struct {
+type devicesSubscriptionHandler struct {
 	subData   *SubscriptionData
 	emitEvent emitEventFunc
 }
@@ -23,7 +23,7 @@ func makeDevicesRepresentation(deviceIDs []string) []map[string]string {
 	return devices
 }
 
-func (h *devicesSubsciptionHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
+func (h *devicesSubscriptionHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
 	if val.GetStatus() == nil {
 		return nil
 	}
@@ -34,7 +34,7 @@ func (h *devicesSubsciptionHandler) HandleDeviceMetadataUpdated(ctx context.Cont
 
 	remove, err := h.emitEvent(ctx, status, h.subData.Data(), h.subData.IncrementSequenceNumber, makeDevicesRepresentation([]string{val.GetDeviceId()}))
 	if err != nil {
-		log.Errorf("devicesSubsciptionHandler.HandleDeviceMetadataUpdated: cannot emit event: %v", err)
+		log.Errorf("devicesSubscriptionHandler.HandleDeviceMetadataUpdated: cannot emit event: %v", err)
 	}
 	if remove {
 		return err
@@ -42,10 +42,10 @@ func (h *devicesSubsciptionHandler) HandleDeviceMetadataUpdated(ctx context.Cont
 	return nil
 }
 
-func (h *devicesSubsciptionHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
+func (h *devicesSubscriptionHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
 	remove, err := h.emitEvent(ctx, events.EventType_DevicesRegistered, h.subData.Data(), h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceIds()))
 	if err != nil {
-		log.Errorf("devicesSubsciptionHandler.HandleDeviceRegistered: cannot emit event: %v", err)
+		log.Errorf("devicesSubscriptionHandler.HandleDeviceRegistered: cannot emit event: %v", err)
 	}
 	if remove {
 		return err
@@ -53,10 +53,10 @@ func (h *devicesSubsciptionHandler) HandleDeviceRegistered(ctx context.Context, 
 	return nil
 }
 
-func (h *devicesSubsciptionHandler) HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error {
+func (h *devicesSubscriptionHandler) HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error {
 	remove, err := h.emitEvent(ctx, events.EventType_DevicesUnregistered, h.subData.Data(), h.subData.IncrementSequenceNumber, makeDevicesRepresentation(val.GetDeviceIds()))
 	if err != nil {
-		log.Errorf("devicesSubsciptionHandler.HandleDeviceUnregistered: cannot emit event: %v", err)
+		log.Errorf("devicesSubscriptionHandler.HandleDeviceUnregistered: cannot emit event: %v", err)
 	}
 	if remove {
 		return err
@@ -65,7 +65,7 @@ func (h *devicesSubsciptionHandler) HandleDeviceUnregistered(ctx context.Context
 }
 
 type devicesOnlineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func isOnline(val *raEvents.DeviceMetadataUpdated) bool {
@@ -83,7 +83,7 @@ func (h *devicesOnlineHandler) HandleDeviceMetadataUpdated(ctx context.Context, 
 }
 
 type devicesOfflineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesOfflineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
@@ -94,7 +94,7 @@ func (h *devicesOfflineHandler) HandleDeviceMetadataUpdated(ctx context.Context,
 }
 
 type devicesOnlineOfflineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesOnlineOfflineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
@@ -102,7 +102,7 @@ func (h *devicesOnlineOfflineHandler) HandleDeviceMetadataUpdated(ctx context.Co
 }
 
 type devicesRegisteredHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesRegisteredHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
@@ -110,7 +110,7 @@ func (h *devicesRegisteredHandler) HandleDeviceRegistered(ctx context.Context, v
 }
 
 type devicesUnregisteredHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesUnregisteredHandler) HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error {
@@ -118,7 +118,7 @@ func (h *devicesUnregisteredHandler) HandleDeviceUnregistered(ctx context.Contex
 }
 
 type devicesRegisteredUnregisteredHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesRegisteredUnregisteredHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
@@ -130,7 +130,7 @@ func (h *devicesRegisteredUnregisteredHandler) HandleDeviceUnregistered(ctx cont
 }
 
 type devicesRegisteredOnlineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesRegisteredOnlineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
@@ -145,7 +145,7 @@ func (h *devicesRegisteredOnlineHandler) HandleDeviceRegistered(ctx context.Cont
 }
 
 type devicesRegisteredOfflineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesRegisteredOfflineHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
@@ -153,7 +153,7 @@ func (h *devicesRegisteredOfflineHandler) HandleDeviceRegistered(ctx context.Con
 }
 
 type devicesUnregisteredOnlineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesUnregisteredOnlineHandler) HandleDeviceOnline(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
@@ -168,7 +168,7 @@ func (h *devicesUnregisteredOnlineHandler) HandleDeviceUnregistered(ctx context.
 }
 
 type devicesUnregisteredOfflineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesUnregisteredOfflineHandler) HandleDeviceUnregistered(ctx context.Context, val *pb.Event_DeviceUnregistered) error {
@@ -176,7 +176,7 @@ func (h *devicesUnregisteredOfflineHandler) HandleDeviceUnregistered(ctx context
 }
 
 type devicesRegisteredOnlineOfflineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesRegisteredOnlineOfflineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
@@ -188,7 +188,7 @@ func (h *devicesRegisteredOnlineOfflineHandler) HandleDeviceRegistered(ctx conte
 }
 
 type devicesUnregisteredOnlineOfflineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesUnregisteredOnlineOfflineHandler) HandleDeviceMetadataUpdated(ctx context.Context, val *raEvents.DeviceMetadataUpdated) error {
@@ -200,7 +200,7 @@ func (h *devicesUnregisteredOnlineOfflineHandler) HandleDeviceUnregistered(ctx c
 }
 
 type devicesRegisteredUnregisteredOfflineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesRegisteredUnregisteredOfflineHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
@@ -212,7 +212,7 @@ func (h *devicesRegisteredUnregisteredOfflineHandler) HandleDeviceUnregistered(c
 }
 
 type devicesRegisteredUnregisteredOnlineHandler struct {
-	h *devicesSubsciptionHandler
+	h *devicesSubscriptionHandler
 }
 
 func (h *devicesRegisteredUnregisteredOnlineHandler) HandleDeviceRegistered(ctx context.Context, val *pb.Event_DeviceRegistered) error {
