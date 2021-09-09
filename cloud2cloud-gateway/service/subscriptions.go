@@ -53,114 +53,144 @@ func (s *SubscriptionData) Store(sub Subscription) {
 	s.sub = sub
 }
 
-func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
-	devsHandler := devicesSubsciptionHandler{
+func (s *SubscriptionData) getEventsToEmitForDevicesSubscription(ctx context.Context) ([]events.EventType, error) {
+	sendEmptyOffline := true
+	sendEmptyOnline := true
+	anyDevice := false
+	client, err := s.gwClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{})
+	if err != nil {
+		return nil, err
+	}
+	for {
+		d, err := client.Recv()
+		if err == io.EOF {
+			break
+		}
+		if status.Convert(err).Code() == codes.NotFound {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		anyDevice = true
+		if d.GetStatus().IsOnline() {
+			sendEmptyOnline = false
+		} else {
+			sendEmptyOffline = false
+		}
+	}
+	var eventTypes []events.EventType
+	if s.data.EventTypes.Has(events.EventType_DevicesRegistered) && !anyDevice {
+		eventTypes = append(eventTypes, events.EventType_DevicesRegistered)
+	}
+	if s.data.EventTypes.Has(events.EventType_DevicesUnregistered) {
+		eventTypes = append(eventTypes, events.EventType_DevicesUnregistered)
+	}
+	if s.data.EventTypes.Has(events.EventType_DevicesOnline) && sendEmptyOnline {
+		eventTypes = append(eventTypes, events.EventType_DevicesOnline)
+	}
+	if s.data.EventTypes.Has(events.EventType_DevicesOffline) && sendEmptyOffline {
+		eventTypes = append(eventTypes, events.EventType_DevicesOffline)
+	}
+	return eventTypes, nil
+}
+
+func (s *SubscriptionData) getDevicesOnlineOfflineEventHandler(emitEvent emitEventFunc) interface{} {
+	devsHandler := devicesSubscriptionHandler{
+		subData:   s,
+		emitEvent: emitEvent,
+	}
+	switch {
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		return &devsHandler
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered):
+		return &devicesRegisteredOnlineOfflineHandler{
+			h: &devsHandler,
+		}
+	case s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		return &devicesUnregisteredOnlineOfflineHandler{
+			h: &devsHandler,
+		}
+	}
+
+	return &devicesOnlineOfflineHandler{
+		h: &devsHandler,
+	}
+}
+
+func (s *SubscriptionData) getDevicesOnlineEventHandler(emitEvent emitEventFunc) interface{} {
+	devsHandler := devicesSubscriptionHandler{
 		subData:   s,
 		emitEvent: emitEvent,
 	}
 
-	if !s.data.Initialized {
-		sendEmptyOffline := true
-		sendEmptyOnline := true
-		anyDevice := false
-		client, err := s.gwClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{})
-		if err != nil {
-			return nil, err
+	switch {
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		return &devicesRegisteredUnregisteredOnlineHandler{
+			h: &devsHandler,
 		}
-		for {
-			d, err := client.Recv()
-			if err == io.EOF {
-				break
-			}
-			if status.Convert(err).Code() == codes.NotFound {
-				break
-			}
-			if err != nil {
-				return nil, err
-			}
-			anyDevice = true
-			if d.GetStatus().IsOnline() {
-				sendEmptyOnline = false
-			} else {
-				sendEmptyOffline = false
-			}
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered):
+		return &devicesRegisteredOnlineHandler{
+			h: &devsHandler,
 		}
-		if s.data.EventTypes.Has(events.EventType_DevicesRegistered) && !anyDevice {
-			_, err := emitEvent(ctx, events.EventType_DevicesRegistered, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
-			if err != nil {
-				return nil, err
-			}
+	case s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		return &devicesUnregisteredOnlineHandler{
+			h: &devsHandler,
 		}
-		if s.data.EventTypes.Has(events.EventType_DevicesUnregistered) {
-			_, err := emitEvent(ctx, events.EventType_DevicesUnregistered, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
-			if err != nil {
-				return nil, err
-			}
+	}
+
+	return &devicesOnlineHandler{
+		h: &devsHandler,
+	}
+}
+
+func (s *SubscriptionData) getDevicesOfflineEventHandler(emitEvent emitEventFunc) interface{} {
+	devsHandler := devicesSubscriptionHandler{
+		subData:   s,
+		emitEvent: emitEvent,
+	}
+
+	switch {
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		return &devicesRegisteredUnregisteredOfflineHandler{
+			h: &devsHandler,
 		}
-		if s.data.EventTypes.Has(events.EventType_DevicesOnline) && sendEmptyOnline {
-			_, err := emitEvent(ctx, events.EventType_DevicesOnline, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
-			if err != nil {
-				return nil, err
-			}
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered):
+		return &devicesRegisteredOfflineHandler{
+			h: &devsHandler,
 		}
-		if s.data.EventTypes.Has(events.EventType_DevicesOffline) && sendEmptyOffline {
-			_, err := emitEvent(ctx, events.EventType_DevicesOffline, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
-			if err != nil {
-				return nil, err
-			}
+	case s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		return &devicesUnregisteredOfflineHandler{
+			h: &devsHandler,
 		}
-		err = s.SetInitialized(ctx)
-		if err != nil {
-			return nil, err
-		}
+	}
+
+	return &devicesOfflineHandler{
+		h: &devsHandler,
+	}
+}
+
+func (s *SubscriptionData) getEventHandlerForDevicesSubscription(emitEvent emitEventFunc) (interface{}, error) {
+	devsHandler := devicesSubscriptionHandler{
+		subData:   s,
+		emitEvent: emitEvent,
+	}
+
+	isOnlineEvent := s.data.EventTypes.Has(events.EventType_DevicesOnline)
+	isOfflineEvent := s.data.EventTypes.Has(events.EventType_DevicesOffline)
+	switch {
+	case isOnlineEvent && isOfflineEvent:
+		return s.getDevicesOnlineOfflineEventHandler(emitEvent), nil
+	case isOnlineEvent:
+		return s.getDevicesOnlineEventHandler(emitEvent), nil
+	case isOfflineEvent:
+		return s.getDevicesOfflineEventHandler(emitEvent), nil
 	}
 
 	var eventHandler interface{}
 	switch {
-	case s.data.EventTypes.Has(events.EventType_DevicesOnline) && s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
-		eventHandler = &devsHandler
-	case s.data.EventTypes.Has(events.EventType_DevicesOnline) && s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesRegistered):
-		eventHandler = &devicesRegisteredOnlineOfflineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOnline) && s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
-		eventHandler = &devicesUnregisteredOnlineOfflineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOnline) && s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
-		eventHandler = &devicesRegisteredUnregisteredOnlineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
-		eventHandler = &devicesRegisteredUnregisteredOfflineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesRegistered):
-		eventHandler = &devicesRegisteredOfflineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
-		eventHandler = &devicesUnregisteredOfflineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOffline) && s.data.EventTypes.Has(events.EventType_DevicesOnline):
-		eventHandler = &devicesOnlineOfflineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOnline) && s.data.EventTypes.Has(events.EventType_DevicesRegistered):
-		eventHandler = &devicesRegisteredOnlineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOnline) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
-		eventHandler = &devicesUnregisteredOnlineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOnline):
-		eventHandler = &devicesOnlineHandler{
-			h: &devsHandler,
-		}
-	case s.data.EventTypes.Has(events.EventType_DevicesOffline):
-		eventHandler = &devicesOfflineHandler{
+	case s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
+		eventHandler = &devicesRegisteredUnregisteredHandler{
 			h: &devsHandler,
 		}
 	case s.data.EventTypes.Has(events.EventType_DevicesRegistered):
@@ -171,18 +201,40 @@ func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEv
 		eventHandler = &devicesUnregisteredHandler{
 			h: &devsHandler,
 		}
-	case s.data.EventTypes.Has(events.EventType_DevicesRegistered) && s.data.EventTypes.Has(events.EventType_DevicesUnregistered):
-		eventHandler = &devicesRegisteredUnregisteredHandler{
-			h: &devsHandler,
-		}
 	default:
-		return nil, fmt.Errorf("createDevicesSubsription: unsupported subscription eventypes %+v", s.data.EventTypes)
+		return nil, fmt.Errorf("createDevicesSubscription: unsupported subscription event types %+v", s.data.EventTypes)
+	}
+	return eventHandler, nil
+}
+
+func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
+	if !s.data.Initialized {
+		eventTypes, err := s.getEventsToEmitForDevicesSubscription(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, e := range eventTypes {
+			_, err := emitEvent(ctx, e, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		err = s.SetInitialized(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	eventHandler, err := s.getEventHandlerForDevicesSubscription(emitEvent)
+	if err != nil {
+		return nil, err
 	}
 	return client.NewDevicesSubscription(ctx, closeEventHandler, eventHandler, s.gwClient)
 }
 
 func (s *SubscriptionData) createResourceSubscription(ctx context.Context, emitEvent emitEventFunc, closeEventHandler *closeEventHandler) (Subscription, error) {
-	resHandler := resourceSubsciptionHandler{
+	resHandler := resourceSubscriptionHandler{
 		subData:   s,
 		emitEvent: emitEvent,
 	}
