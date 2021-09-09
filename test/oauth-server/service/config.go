@@ -72,6 +72,11 @@ var clients = ClientsConfig{
 		AuthorizationCodeLifetime: time.Minute * 10,
 		AccessTokenLifetime:       time.Hour,
 	},
+	{
+		ID:                        ClientTestShortExpiration,
+		AuthorizationCodeLifetime: time.Second * 10,
+		AccessTokenLifetime:       time.Second * 10,
+	},
 }
 
 // Config represents application configuration
@@ -113,6 +118,7 @@ type OAuthSignerConfig struct {
 }
 
 const ClientTest = "test"
+const ClientTestShortExpiration = "testShortExpiration"
 
 func (c *OAuthSignerConfig) Validate() error {
 	if c.IDTokenKeyFile == "" {
