@@ -46,7 +46,7 @@ func (c *GRPCConfig) Validate() error {
 		return fmt.Errorf("ownerCacheExpiration('%v')", c.OwnerCacheExpiration)
 	}
 	if c.SubscriptionCacheExpiration <= 0 {
-		return fmt.Errorf("subscriptionCacheExpiration('%v')", c.OwnerCacheExpiration)
+		return fmt.Errorf("subscriptionCacheExpiration('%v')", c.SubscriptionCacheExpiration)
 	}
 	if c.SubscriptionBufferSize < 0 {
 		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
