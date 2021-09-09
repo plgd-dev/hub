@@ -124,10 +124,10 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 	return resp
 }
 
-func GetServiceToken(t *testing.T) string {
+func GetServiceTokenForClient(t *testing.T, clientId string) string {
 	reqBody := map[string]string{
 		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
-		uri.ClientIDKey: service.ClientTest,
+		uri.ClientIDKey: clientId,
 		"audience":      "localhost",
 	}
 	d, err := json.Encode(reqBody)
@@ -145,6 +145,10 @@ func GetServiceToken(t *testing.T) string {
 	token := body["access_token"]
 	require.NotEmpty(t, token)
 	return token
+}
+
+func GetServiceToken(t *testing.T) string {
+	return GetServiceTokenForClient(t, service.ClientTest)
 }
 
 func GetDeviceAuthorizationCode(t *testing.T) string {
