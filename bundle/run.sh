@@ -21,6 +21,7 @@ export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
 export AUTHORIZATION_ADDRESS="localhost:${AUTHORIZATION_PORT}"
 export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
 export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
+export CLOUD2CLOUD_GATEWAY_ADDRESS="localhost:${CLOUD2CLOUD_GATEWAY_PORT}"
 
 export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
@@ -301,6 +302,26 @@ while read -r line; do
   cp $KEY_FILE ${file}
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/certificate-authority.yaml | sort | uniq)
 
+## cloud2cloud-gateway
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CA_POOL ${file}
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $CERT_FILE ${file}
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  cp $KEY_FILE ${file}
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
+
 
 mkdir -p ${OAUTH_KEYS_PATH}
 openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
@@ -317,6 +338,7 @@ sed -i "s/REPLACE_GRPC_GATEWAY_PORT/$GRPC_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.co
 sed -i "s/REPLACE_MOCKED_OAUTH_SERVER_PORT/$MOCKED_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_CERTIFICATE_AUTHORITY_PORT/$CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
 sed -i "s/REPLACE_AUTHORIZATION_HTTP_PORT/$AUTHORIZATION_HTTP_PORT/g" ${NGINX_PATH}/nginx.conf
+sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
 
 # nats
 echo "starting nats-server"
@@ -742,6 +764,42 @@ while true; do
   sleep 1
 done
 
+# cloud2cloud-gateway
+## configuration
+cat /configs/cloud2cloud-gateway.yaml | yq e "\
+  .apis.http.address = \"${CLOUD2CLOUD_GATEWAY_ADDRESS}\" |
+  .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.http.authorization.http.tls.useSystemCAPool = true |
+  .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
+  .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
+  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.subscription.http.tls.useSystemCAPool = true
+" - > /data/cloud2cloud-gateway.yaml
+
+echo "starting cloud2cloud-gateway"
+cloud2cloud-gateway --config=/data/cloud2cloud-gateway.yaml >$LOGS_PATH/cloud2cloud-gateway.log 2>&1 &
+status=$?
+cloud2cloud_gw_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start cloud2cloud-gateway: $status"
+  sync
+  cat $LOGS_PATH/cloud2cloud-gateway.log
+  exit $status
+fi
+
+# waiting for http-gateway. Without wait, sometimes auth service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${CLOUD2CLOUD_GATEWAY_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${DIAL_FILE_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to cloud2cloud-gateway(${CLOUD2CLOUD_GATEWAY_ADDRESS}) $i"
+  sleep 1
+done
+
 
 echo "Open browser at https://${DOMAIN}"
 
@@ -833,6 +891,13 @@ while sleep 10; do
     echo "nginx has already exited."
     sync
     cat $LOGS_PATH/nginx.log
+    exit 1
+  fi
+  ps aux |grep $cloud2cloud_gw_pid |grep -q -v grep
+  if [ $? -ne 0 ]; then
+    echo "cloud2cloud-gateway has already exited."
+    sync
+    cat $LOGS_PATH/cloud2cloud-gateway.log
    exit 1
   fi
 done
