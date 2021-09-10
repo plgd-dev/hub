@@ -7,8 +7,224 @@ Provides devices to another cloud.
 ## Docker Image
 
 ```bash
-docker pull plgd/cloud2cloud-gateway:vnext
+docker pull plgd/cloud2cloud-gateway:latest
 ```
+
+## Docker Run
+
+### How to make certificates
+
+Before you run the docker image of plgd/cloud2cloud-gateway, you make sure that certificates exist in `.tmp/certs` folder.
+If they do not exist, you can create certificates from the plgd/bundle image by executing the following step once:
+
+```bash
+# Create a local folder for certificates and run the plgd/bundle image to execute a shell.
+mkdir -p $(pwd).tmp/certs
+docker run -it \
+  --network=host \
+  -v $(pwd)/.tmp/certs:/certs \
+  -e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
+  --entrypoint /bin/bash \
+  plgd/bundle:latest
+
+# Copy & paste the commands below to the bash shell of the plgd/bundle container.
+certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
+certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outKey=/certs/http.key --cert.subject.cn=localhost --cert.san.domain=localhost --signerCert=/certs/root_ca.crt --signerKey=/certs/root_ca.key
+
+# Exit the shell.
+exit
+```
+
+```bash
+# See common certificates for plgd cloud services.
+ls .tmp/certs
+http.crt  http.key  root_ca.crt  root_ca.key
+```
+
+### How to get configuration file
+
+A configuration template is available in [cloud2cloud-gateway/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/cloud2cloud-gateway/config.yaml).
+You can also see the `config.yaml` configuration file in the `cloud2cloud-gateway` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
+
+```bash
+# Copy & paste the configuration template from the link and save the file as `cloud2cloud-gateway.yaml` to a local folder.
+vi cloud2cloud-gateway.yaml
+
+# Or download the configuration template with curl.
+curl https://github.com/plgd-dev/cloud/blob/v2/cloud2cloud-gateway/config.yaml --output cloud2cloud-gateway.yaml
+```
+
+### Edit configuration file
+
+You can edit values in the configuration file such as server port, certificates, OAuth provider and so on.
+Read more details about how to configure the OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
+
+The following example shows configuration of address, tls, event bus and service clients.
+
+```yaml
+...
+apis:
+  http:
+    address: "0.0.0.0:9086"
+    tls:
+      caPool: "/data/certs/root_ca.crt"
+      keyFile: "/data/certs/http.key"
+      certFile: "/data/certs/http.crt"
+      clientCertificateRequired: false
+    authorization:
+      authority: "https://auth.example.com/authorize"
+      audience: "https://api.example.com"
+      http:
+        tls:
+          caPool: "/data/certs/root_ca.crt"
+          keyFile: "/data/certs/http.key"
+          certFile: "/data/certs/http.crt"
+...
+clients:
+  eventBus:
+    nats:
+      url: "nats://localhost:4222"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
+  resourceAggregate:
+    grpc:
+      address: "localhost:9083"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
+  resourceDirectory:
+    grpc:
+      address: "localhost:9082"
+      tls:
+        caPool: "/data/certs/root_ca.crt"
+        keyFile: "/data/certs/http.key"
+        certFile: "/data/certs/http.crt"
+...
+```
+
+### Run docker image
+
+You can run the plgd/cloud2cloud image using certificates and configuration file in the folder you made certificates in.
+
+```bash
+docker run -d --network=host \
+  --name=cloud2cloud \
+  -v $(pwd)/.tmp/certs:/data/certs \
+  -v $(pwd)/cloud2cloud.yaml:/data/cloud2cloud.yaml \
+  plgd/cloud2cloud-gateway:latest --config=/data/cloud2cloud-gateway.yaml
+```
+
+## YAML Configuration
+
+### Logging
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `log.debug` | bool | `Set to true if you would like to see extra information in logs.` | `false` |
+
+### HTTP API
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `apis.http.address` | string | `Listen specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
+| `apis.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `apis.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `apis.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `apis.http.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
+| `apis.http.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `apis.http.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
+| `apis.http.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
+| `apis.http.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |
+| `apis.http.authorization.http.maxIdleConnsPerHost` | int | `If non-zero, controls the maximum idle (keep-alive) connections to keep per-host. If zero, DefaultMaxIdleConnsPerHost is used.` | `16` |
+| `apis.http.authorization.http.idleConnTimeout` | string | `The maximum amount of time an idle (keep-alive) connection will remain idle before closing itself. Zero means no limit.` | `30s` |
+| `apis.http.authorization.http.timeout` | string | `A time limit for requests made by this Client. A Timeout of zero means no timeout.` | `10s` |
+| `apis.http.authorization.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `apis.http.authorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `apis.http.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `apis.http.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Event Bus
+
+Plgd cloud uses NATS messaging system as an event bus.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.eventBus.nats.url` | string | `URL to nats messaging system.` | `"nats://localhost:4222"` |
+| `clients.eventBus.nats.pendingLimits.msgLimit` | int | `Limit number of messages in queue. -1 means unlimited` | `524288` |
+| `clients.eventBus.nats.pendingLimits.bytesLimit` | int | `Limit buffer size of queue. -1 means unlimited` | `67108864` |
+| `clients.eventBus.nats.tls.caPool` | string | `root certificate the root certificate in PEM format.` |  `""` |
+| `clients.eventBus.nats.tls.keyFile` | string | `File name of private key in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.certFile` | string | `File name of certificate in PEM format.` | `""` |
+| `clients.eventBus.nats.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Resource Aggregate Client
+
+Client configurations to internally connect to the Resource Aggregate service.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.resourceAggregate.grpc.address` | string | `Resource aggregate service address.` | `"127.0.0.1:9100"` |
+| `clients.resourceAggregate.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.resourceAggregate.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.resourceAggregate.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+| `clients.resourceAggregate.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.resourceAggregate.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.resourceAggregate.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.resourceAggregate.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Resource Directory Client
+
+Client configurations to internally connect to the Resource Directory service.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.resourceDirectory.grpc.address` | string | `Resource directory service address.` | `"127.0.0.1:9100"` |
+| `clients.resourceDirectory.grpc.keepAlive.time` | string | `After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.` | `10s` |
+| `clients.resourceDirectory.grpc.keepAlive.timeout` | string | `After having pinged for keepalive check, the client waits for a duration of Timeout and if no activity is seen even after that the connection is closed.` | `20s` |
+| `clients.resourceDirectory.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
+| `clients.resourceDirectory.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.resourceDirectory.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.resourceDirectory.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.resourceDirectory.grpc.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Storage
+
+Plgd cloud uses MongoDB database as the owner's device store.
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.storage.mongoDB.uri` | string | `URI to mongo database.` | `"mongodb://localhost:27017"` |
+| `clients.storage.mongoDB.database` | string | `Name of database.` | `"ownersDevices"` |
+| `clients.storage.mongoDB.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.storage.mongoDB.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.storage.mongoDB.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.storage.mongoDB.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Subscription
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `clients.subscription.http.reconnectInterval` | string | `try to reconnect after interval to resource-directory when connection was closed` | `"10s"` |
+| `clients.subscription.http.emitEventTimeout` | string | `timeout for send event` | `"5s"` |
+| `clients.subscription.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
+| `clients.subscription.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
+| `clients.subscription.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
+| `clients.subscription.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+
+### Task Queue
+
+| Property | Type | Description | Default |
+| ---------- | -------- | -------------- | ------- |
+| `taskQueue.goPoolSize` | int | `Maximum number of running goroutine instances.` | `1600` |
+| `taskQueue.size` | int | `Size of queue. If it exhausted, submit returns error.` | `2097152` |
+| `taskQueue.maxIdleTime` | string | `Sets up the interval time of cleaning up goroutines. Zero means never cleanup.` | `10m` |
+
+> Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".
 
 ## API
 
@@ -120,9 +336,9 @@ curl --request POST \
 
 ### Device Onboarding
 
-To be able to see the devices through the `pluggedin.cloud` C2C API, first you need to onboard the device. When you have your device ready, go to the `https://pluggedin.cloud` and click `TRY`. This redirects you to the `pluggedin.cloud Portal`.
+To be able to see the devices through the `try.plgd.cloud` C2C API, first you need to onboard the device. When you have your device ready, go to the `https://plgd.dev` website and click `Try Live`. This redirects you to the `try.plgd.cloud Portal`.
 
-First thing you need is an authorization code. In the `pluggedin.cloud Portal` go to `Devices` and click `Onboard Device`. This displays you the code needed to onboard the device. Values which should be set to the [coapcloudconf](https://github.com/openconnectivityfoundation/cloud-services/blob/c2c/swagger2.0/oic.r.coapcloudconf.swagger.json) device resource are:
+First thing you need is an authorization code. In the `try.plgd.cloud Portal` go to `Devices` and click `Onboard Device`. This displays you the code needed to onboard the device. Values which should be set to the [coapcloudconf](https://github.com/openconnectivityfoundation/cloud-services/blob/c2c/swagger2.0/oic.r.coapcloudconf.swagger.json) device resource are:
 
 #### Unsecured device
 
@@ -159,44 +375,3 @@ JCYVaa2Spbg=
 ```
 
 - `ACL for Cloud (Subject: adebc667-1f2b-41e3-bf5c-6d6eabc68cc6) must be set with full access to all published resources in device.`
-
-## Configuration
-
-| Option | ENV variable | Type | Description | Default |
-| ------ | --------- | ----------- | ------- | ------- |
-| `-` | `ADDRESS` | string | `listen address` | `"0.0.0.0:9100"` |
-| `-` | `RESOURCE_DIRECTORY_ADDRESS` | string | `resource directory address` | `"127.0.0.1:9100"` |
-| `-` | `JWKS_URL` | string | `url to get JSON Web Key` | `""` |
-| `-` | `SERVICE_RECONNECT_INTERVAL` | string | `try to reconnect after interval to resource-directory when connection was closed` | `"10s"` |
-| `-` | `SERVICE_OAUTH_ENDPOINT_TOKEN_URL` | string | `url to get service access token via OAUTH client credential flow` | `""` |
-| `-` | `SERVICE_OAUTH_CLIENT_ID` | string | `client id for authentication to get access token` | `""` |
-| `-` | `SERVICE_OAUTH_CLIENT_SECRET` | string | `secret for authentication to get access token` | `""` |
-| `-` | `SERVICE_OAUTH_AUDIENCE` | string | `refer to the resource servers that should accept the token` | `""` |
-| `-` | `EMIT_EVENT_TIMEOUT` | string | `timeout for send event` | `"5s"` |
-| `-` | `DIAL_TYPE` | string | `defines how to obtain dial TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `DIAL_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `DIAL_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `DIAL_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `DIAL_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `DIAL_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `DIAL_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `DIAL_FILE_CA_POOL` | string | `path to pem file of CAs` |  `""` |
-| `-` | `DIAL_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `DIAL_FILE_CERT_DIR_PATH` | string | `path to directory which contains DIAL_FILE_CERT_KEY_NAME and DIAL_FILE_CERT_NAME` | `""` |
-| `-` | `DIAL_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `DIAL_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_TYPE` | string | `defines how to obtain listen TLS certificates - options: acme|file` | `"acme"` |
-| `-` | `LISTEN_ACME_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_ACME_DIRECTORY_URL` | string |  `url of acme directory` | `""` |
-| `-` | `LISTEN_ACME_DOMAINS` | string | `list of domains for which will be in certificate provided from acme` | `""` |
-| `-` | `LISTEN_ACME_REGISTRATION_EMAIL` | string | `registration email for acme` | `""` |
-| `-` | `LISTEN_ACME_TICK_FREQUENCY` | string | `interval of validate certificate` | `""` |
-| `-` | `LISTEN_ACME_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `LISTEN_FILE_CA_POOL` | string | `path to pem file of CAs` | `""` |
-| `-` | `LISTEN_FILE_CERT_KEY_NAME` | string | `name of pem certificate key file` | `""` |
-| `-` | `LISTEN_FILE_CERT_DIR_PATH` | string | `path to directory which contains LISTEN_FILE_CERT_KEY_NAME and LISTEN_FILE_CERT_NAME` | `""` |
-| `-` | `LISTEN_FILE_CERT_NAME` | string | `name of pem certificate file` | `""` |
-| `-` | `LISTEN_FILE_USE_SYSTEM_CERTIFICATION_POOL` | bool | `load CAs from system` | `false` |
-| `-` | `SUBSTORE_MONGO_HOST` | string | `host of mongo database - uri without scheme` | `"localhost:27017"` |
-| `-` | `SUBSTORE_MONGO_DATABASE` | string | `name of database` | `"cloud2cloudGateway"` |
-| `-` | `LOG_ENABLE_DEBUG` | bool | `debug logging` | `false` |
