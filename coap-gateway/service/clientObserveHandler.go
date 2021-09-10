@@ -2,21 +2,22 @@ package service
 
 import (
 	"bytes"
-	"context"
 	"fmt"
-	"io"
+	"sync/atomic"
 	"time"
 
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
-	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
+	"github.com/plgd-dev/cloud/grpc-gateway/subscription"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/strings"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -70,85 +71,110 @@ func SendResourceContentToObserver(client *Client, resourceChanged *events.Resou
 	decodeMsgToDebug(client, msg, "SEND-NOTIFICATION")
 }
 
-func startResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) {
-	userIdsFilter := []string(nil)
-	if authCtx.GetUserID() != "" {
-		userIdsFilter = []string{authCtx.GetUserID()}
-	}
-	getUserDevicesClient, err := client.server.asClient.GetUserDevices(req.Context, &pbAS.GetUserDevicesRequest{
-		UserIdsFilter:   userIdsFilter,
-		DeviceIdsFilter: []string{deviceID},
+type resourceSubscription struct {
+	client   *Client
+	token    message.Token
+	authCtx  *authorizationContext
+	deviceID string
+	href     string
+
+	seqNum uint32
+	sub    *subscription.Sub
+}
+
+func (s *resourceSubscription) cancelSubscription(code coapCodes.Code) {
+	err := s.client.server.taskQueue.Submit(func() {
+		if _, err := s.client.cancelResourceSubscription(s.token.String()); err != nil {
+			log.Errorf("failed to cancel resource /%v%v subscription: %w", s.deviceID, s.href, err)
+		}
+		s.client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %v", s.authCtx.GetDeviceID(), s.deviceID, s.href, code), code, s.token)
 	})
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.InternalServerError, req.Token)
+		log.Errorf("failed to cancel resource /%v%v subscription: %w", s.deviceID, s.href, err)
+	}
+}
+
+func (s *resourceSubscription) eventHandler(e *pb.Event) error {
+	switch {
+	case e.GetResourceUnpublished() != nil:
+		if !strings.Contains(e.GetResourceUnpublished().GetHrefs(), s.href) {
+			return nil
+		}
+		s.cancelSubscription(coapCodes.ServiceUnavailable)
+	case e.GetDeviceUnregistered() != nil:
+		s.cancelSubscription(coapCodes.ServiceUnavailable)
+	case e.GetResourceChanged() != nil:
+		if e.GetResourceChanged().GetStatus() != commands.Status_OK {
+			s.cancelSubscription(coapconv.StatusToCoapCode(e.GetResourceChanged().GetStatus(), coapconv.Retrieve))
+			return nil
+		}
+		SendResourceContentToObserver(s.client, e.GetResourceChanged(), atomic.AddUint32(&s.seqNum, 1), s.token)
+		return nil
+	}
+	return nil
+}
+
+func (s *resourceSubscription) Init() error {
+	return s.sub.Init(s.client.server.ownerCache)
+}
+
+func (s *resourceSubscription) Close() error {
+	return s.sub.Close()
+}
+
+func newResourceSubscription(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID string, href string) *resourceSubscription {
+	r := &resourceSubscription{
+		client:   client,
+		token:    req.Token,
+		authCtx:  authCtx,
+		deviceID: deviceID,
+		href:     href,
+		seqNum:   2,
+	}
+	res := &commands.ResourceId{DeviceId: deviceID, Href: href}
+	sub := subscription.New(req.Context, client.server.resourceSubscriber, client.server.rdClient, r.eventHandler, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, client.server.config.APIs.COAP.SubscriptionCacheExpiration, func(err error) {
+		log.Errorf("error occurs during processing event for /%v%v by subscription: %w", deviceID, href, err)
+	}, &pb.SubscribeToEvents_CreateSubscription{
+		ResourceIdFilter:    []string{res.ToString()},
+		EventFilter:         []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
+		IncludeCurrentState: true,
+	})
+	r.sub = sub
+	return r
+}
+
+func startResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) {
+	ok, err := client.server.ownerCache.OwnsDevice(req.Context, deviceID)
+	if err != nil {
+		code := codes.InvalidArgument
+		s, ok := status.FromError(err)
+		if ok {
+			code = s.Code()
+		}
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapconv.GrpcCode2CoapCode(code, coapconv.Retrieve), req.Token)
 		return
 	}
-	var found bool
-	defer func() {
-		if err := getUserDevicesClient.CloseSend(); err != nil {
-			log.Errorf("failed to close user devices client: %w", err)
-		}
-	}()
-	for {
-		userDev, err := getUserDevicesClient.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), req.Token)
-			return
-		}
-		if userDev.DeviceId == deviceID {
-			found = true
-			break
-		}
-	}
-	if !found {
+	if !ok {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: unauthorized access", authCtx.GetDeviceID(), deviceID, href), coapCodes.Unauthorized, req.Token)
 		return
 	}
 	token := req.Token.String()
-	if _, err := client.cancelResourceSubscription(token, true); err != nil {
-		log.Errorf("failed to cancel resource /%v%v subscription: %w", deviceID, href, err)
-	}
-
-	seqNum := uint32(2)
-	h := resourceSubscriptionHandlers{
-		onChange: func(ctx context.Context, resourceChanged *events.ResourceChanged) error {
-			if resourceChanged.GetStatus() != commands.Status_OK {
-				if _, err := client.cancelResourceSubscription(token, false); err != nil {
-					log.Errorf("failed to cancel resource /%v%v subscription: %w", deviceID, href, err)
-				}
-				client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %v", authCtx.GetDeviceID(), deviceID, href, resourceChanged.GetStatus()), coapconv.StatusToCoapCode(resourceChanged.GetStatus(), coapconv.Retrieve), req.Token)
-				return nil
-			}
-			SendResourceContentToObserver(client, resourceChanged, seqNum, req.Token)
-			seqNum++
-			return nil
-		},
-		onError: func(err error) {
-			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v, device response: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.Unauthorized, req.Token)
-			client.resourceSubscriptions.Delete(token)
-		},
-		onClose: func() {
-			log.Debugf("resource /%v%v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", deviceID, href)
-			client.resourceSubscriptions.Delete(token)
-		},
-	}
-
-	sub, err := grpcClient.NewResourceSubscription(req.Context, commands.NewResourceID(deviceID, href), &h, &h, client.server.rdClient)
-	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
-		return
-	}
-
+	sub := newResourceSubscription(req, client, authCtx, deviceID, href)
 	_, loaded := client.resourceSubscriptions.LoadOrStore(token, sub)
 	if loaded {
-		if _, err := sub.Cancel(); err != nil {
-			log.Errorf("failed to cancel resource /%v%v subscription: %w", deviceID, href, err)
+		if err := sub.Close(); err != nil {
+			log.Errorf("failed to close resource /%v%v subscription: %w", deviceID, href, err)
 		}
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: resource subscription with token %v already exist", authCtx.GetDeviceID(), deviceID, href, token), coapCodes.BadRequest, req.Token)
 		return
+	}
+	err = sub.Init()
+	if err != nil {
+		_, _ = client.resourceSubscriptions.PullOut(token)
+		if err := sub.Close(); err != nil {
+			log.Errorf("failed to close resource /%v%v subscription: %w", deviceID, href, err)
+		}
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 	}
 
 	// response will be send from projection
@@ -156,7 +182,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 
 func stopResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) {
 	token := req.Token.String()
-	cancelled, err := client.cancelResourceSubscription(token, true)
+	cancelled, err := client.cancelResourceSubscription(token)
 	if err != nil {
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot stop resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
@@ -170,7 +196,7 @@ func stopResourceObservation(req *mux.Message, client *Client, authCtx *authoriz
 
 func clientResetObservationHandler(req *mux.Message, client *Client) {
 	token := req.Token.String()
-	cancelled, err := client.cancelResourceSubscription(token, true)
+	cancelled, err := client.cancelResourceSubscription(token)
 	if err != nil {
 		log.Errorf("cannot reset resource observation: %v", err)
 		return

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
-	"sort"
 	"testing"
 	"time"
 
@@ -27,58 +26,6 @@ import (
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
-
-type sortPendingCommand []*pb.PendingCommand
-
-func (a sortPendingCommand) Len() int      { return len(a) }
-func (a sortPendingCommand) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortPendingCommand) Less(i, j int) bool {
-	toKey := func(v *pb.PendingCommand) string {
-		switch {
-		case v.GetResourceCreatePending() != nil:
-			return v.GetResourceCreatePending().GetResourceId().GetDeviceId() + v.GetResourceCreatePending().GetResourceId().GetHref()
-		case v.GetResourceRetrievePending() != nil:
-			return v.GetResourceRetrievePending().GetResourceId().GetDeviceId() + v.GetResourceRetrievePending().GetResourceId().GetHref()
-		case v.GetResourceUpdatePending() != nil:
-			return v.GetResourceUpdatePending().GetResourceId().GetDeviceId() + v.GetResourceUpdatePending().GetResourceId().GetHref()
-		case v.GetResourceDeletePending() != nil:
-			return v.GetResourceDeletePending().GetResourceId().GetDeviceId() + v.GetResourceDeletePending().GetResourceId().GetHref()
-		case v.GetDeviceMetadataUpdatePending() != nil:
-			return v.GetDeviceMetadataUpdatePending().GetDeviceId()
-		}
-		return ""
-	}
-
-	return toKey(a[i]) < toKey(a[j])
-}
-
-func cmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCommand) {
-	require.Len(t, got, len(want))
-
-	sort.Sort(sortPendingCommand(want))
-	sort.Sort(sortPendingCommand(got))
-
-	for idx := range want {
-		switch {
-		case got[idx].GetResourceCreatePending() != nil:
-			got[idx].GetResourceCreatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceCreatePending().EventMetadata = nil
-		case got[idx].GetResourceRetrievePending() != nil:
-			got[idx].GetResourceRetrievePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceRetrievePending().EventMetadata = nil
-		case got[idx].GetResourceUpdatePending() != nil:
-			got[idx].GetResourceUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceUpdatePending().EventMetadata = nil
-		case got[idx].GetResourceDeletePending() != nil:
-			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
-			got[idx].GetResourceDeletePending().EventMetadata = nil
-		case got[idx].GetDeviceMetadataUpdatePending() != nil:
-			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
-			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
-		}
-		test.CheckProtobufs(t, want[idx], got[idx], test.RequireToCheckFunc(require.Equal))
-	}
-}
 
 func TestRequestHandler_GetPendingCommands(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
@@ -481,7 +428,7 @@ func TestRequestHandler_GetPendingCommands(t *testing.T) {
 					require.NoError(t, err)
 					values = append(values, value)
 				}
-				cmpPendingCmds(t, tt.want, values)
+				test.CmpPendingCmds(t, tt.want, values)
 			}
 		})
 	}

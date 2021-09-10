@@ -382,7 +382,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		var endLoop bool
-		fmt.Printf("ev %v\n", ev)
+
 		if ev.GetDeviceMetadataUpdated().GetDeviceId() == deviceID && ev.GetDeviceMetadataUpdated().GetStatus().IsOnline() {
 			endLoop = true
 		}
@@ -424,11 +424,12 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	for _, link := range ResourceLinksToResources(deviceID, expectedResources) {
 		expectedLinks[link.GetHref()] = link
 	}
+
 	for {
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		ev.SubscriptionId = ""
-		fmt.Printf("ev %+v\n", ev)
+
 		for _, l := range ev.GetResourcePublished().GetResources() {
 			expLink := expectedLinks[l.GetHref()]
 			l.ValidUntil = 0
@@ -507,6 +508,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 			},
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
+
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
@@ -897,4 +899,56 @@ func NATSSStart(ctx context.Context, t *testing.T) {
 func NATSSStop(ctx context.Context, t *testing.T) {
 	err := exec.CommandContext(ctx, "docker", "stop", "nats").Run()
 	require.NoError(t, err)
+}
+
+type SortPendingCommand []*pb.PendingCommand
+
+func (a SortPendingCommand) Len() int      { return len(a) }
+func (a SortPendingCommand) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a SortPendingCommand) Less(i, j int) bool {
+	toKey := func(v *pb.PendingCommand) string {
+		switch {
+		case v.GetResourceCreatePending() != nil:
+			return v.GetResourceCreatePending().GetResourceId().GetDeviceId() + v.GetResourceCreatePending().GetResourceId().GetHref()
+		case v.GetResourceRetrievePending() != nil:
+			return v.GetResourceRetrievePending().GetResourceId().GetDeviceId() + v.GetResourceRetrievePending().GetResourceId().GetHref()
+		case v.GetResourceUpdatePending() != nil:
+			return v.GetResourceUpdatePending().GetResourceId().GetDeviceId() + v.GetResourceUpdatePending().GetResourceId().GetHref()
+		case v.GetResourceDeletePending() != nil:
+			return v.GetResourceDeletePending().GetResourceId().GetDeviceId() + v.GetResourceDeletePending().GetResourceId().GetHref()
+		case v.GetDeviceMetadataUpdatePending() != nil:
+			return v.GetDeviceMetadataUpdatePending().GetDeviceId()
+		}
+		return ""
+	}
+
+	return toKey(a[i]) < toKey(a[j])
+}
+
+func CmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCommand) {
+	require.Len(t, got, len(want))
+
+	sort.Sort(SortPendingCommand(want))
+	sort.Sort(SortPendingCommand(got))
+
+	for idx := range want {
+		switch {
+		case got[idx].GetResourceCreatePending() != nil:
+			got[idx].GetResourceCreatePending().AuditContext.CorrelationId = ""
+			got[idx].GetResourceCreatePending().EventMetadata = nil
+		case got[idx].GetResourceRetrievePending() != nil:
+			got[idx].GetResourceRetrievePending().AuditContext.CorrelationId = ""
+			got[idx].GetResourceRetrievePending().EventMetadata = nil
+		case got[idx].GetResourceUpdatePending() != nil:
+			got[idx].GetResourceUpdatePending().AuditContext.CorrelationId = ""
+			got[idx].GetResourceUpdatePending().EventMetadata = nil
+		case got[idx].GetResourceDeletePending() != nil:
+			got[idx].GetResourceDeletePending().AuditContext.CorrelationId = ""
+			got[idx].GetResourceDeletePending().EventMetadata = nil
+		case got[idx].GetDeviceMetadataUpdatePending() != nil:
+			got[idx].GetDeviceMetadataUpdatePending().AuditContext.CorrelationId = ""
+			got[idx].GetDeviceMetadataUpdatePending().EventMetadata = nil
+		}
+		CheckProtobufs(t, want[idx], got[idx], RequireToCheckFunc(require.Equal))
+	}
 }

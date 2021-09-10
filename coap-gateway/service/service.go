@@ -384,14 +384,12 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 				log.Errorf("coap server error: %w", err)
 			}
 		}
-		_, err := server.authInterceptor(ctx, r.Code, "/"+path)
+		ctx, err := server.authInterceptor(ctx, r.Code, "/"+path)
 		if err != nil {
 			logErrorAndCloseClient(fmt.Errorf("cannot handle request to path '%v': %w", path, err), coapCodes.Unauthorized)
 			return
 		}
-		if authCtx != nil {
-			r.Context = kitNetGrpc.CtxWithToken(r.Context, authCtx.GetAccessToken())
-		}
+		r.Context = ctx
 		next.ServeCOAP(w, r)
 	})
 }

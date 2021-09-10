@@ -86,6 +86,7 @@ func (s *subscription) update(ctx context.Context, currentDevices map[string]boo
 		s.isInitialized.Store(d, true)
 	}
 
+	//nolint:staticcheck // SA1019 deprecated feature
 	if init && !s.devicesEvent.GetIncludeCurrentState() {
 		for _, deviceID := range filteredDevices {
 			s.initializeResource(commands.NewResourceID(deviceID, commands.ResourceLinksHref), true)

@@ -137,17 +137,16 @@ func (client *Client) Context() context.Context {
 	return client.coapConn.Context()
 }
 
-func (client *Client) cancelResourceSubscription(token string, wantWait bool) (bool, error) {
-	s, ok := grpcClient.ToResourceSubscription(client.resourceSubscriptions.PullOut(token))
+func (client *Client) cancelResourceSubscription(token string) (bool, error) {
+	s, ok := client.resourceSubscriptions.PullOut(token)
 	if !ok {
 		return false, nil
 	}
-	wait, err := s.Cancel()
+	sub := s.(*resourceSubscription)
+
+	err := sub.Close()
 	if err != nil {
 		return false, err
-	}
-	if wantWait {
-		wait()
 	}
 	return true, nil
 }

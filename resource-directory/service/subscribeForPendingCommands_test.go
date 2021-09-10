@@ -2,27 +2,26 @@ package service_test
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	caService "github.com/plgd-dev/cloud/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
+	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test"
-	testCfg "github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test/config"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/go-coap/v2/message"
 )
@@ -337,16 +336,24 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
 
-	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: test.GetRootCertificatePool(t),
-	})))
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)
-	c := pb.NewGrpcGatewayClient(conn)
+	defer func() {
+		_ = rdConn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(rdConn.GRPC())
+
+	grpcConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get())
+	require.NoError(t, err)
+	defer func() {
+		_ = grpcConn.Close()
+	}()
+	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
 
 	client, err := c.SubscribeToEvents(ctx)
 	require.NoError(t, err)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	secureGWShutdown()
@@ -354,7 +361,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	create := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
+		_, err := grpcClient.CreateResource(ctx, &pb.CreateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -372,7 +379,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	retrieve := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
+		_, err := grpcClient.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 			ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
 			TimeToLive: int64(timeToLive),
 		})
@@ -384,7 +391,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	update := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		_, err := grpcClient.UpdateResource(ctx, &pb.UpdateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, "/light/1"),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -402,7 +409,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	delete := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
+		_, err := grpcClient.DeleteResource(ctx, &pb.DeleteResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 			TimeToLive: int64(timeToLive),
 		})
@@ -414,7 +421,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	updateDeviceMetadata := func(timeToLive time.Duration) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		_, err := grpcClient.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
 			DeviceId:              deviceID,
 			ShadowSynchronization: pb.UpdateDeviceMetadataRequest_DISABLED,
 			TimeToLive:            int64(timeToLive),
@@ -471,7 +478,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					values = append(values, &pb.PendingCommand{Command: &pb.PendingCommand_DeviceMetadataUpdatePending{DeviceMetadataUpdatePending: ev.GetDeviceMetadataUpdatePending()}})
 				}
 			}
-			cmpPendingCmds(t, tt.want, values)
+			test.CmpPendingCmds(t, tt.want, values)
 			err = client.Send(&pb.SubscribeToEvents{
 				CorrelationId: "testToken",
 				Action: &pb.SubscribeToEvents_CancelSubscription_{

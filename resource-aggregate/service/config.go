@@ -36,7 +36,7 @@ type APIsConfig struct {
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.GRPC.Config.Validate()
+	err := c.GRPC.Validate()
 	if err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}

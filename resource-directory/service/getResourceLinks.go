@@ -13,9 +13,9 @@ func (r *RequestHandler) GetResourceLinks(req *pb.GetResourceLinksRequest, srv p
 	if err != nil {
 		return log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Unauthenticated, "cannot get resource links: %v", err))
 	}
-	deviceIDs, err := r.userDevicesManager.GetUserDevices(srv.Context(), owner)
+	deviceIDs, err := r.GetUserDevices(srv.Context(), owner)
 	if err != nil {
-		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get devices contents: %v", err))
+		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get resource links: %v", err))
 	}
 
 	rd := NewResourceDirectory(r.resourceProjection, deviceIDs)

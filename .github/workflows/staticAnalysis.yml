@@ -16,15 +16,6 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
-      - name: Install and run staticcheck
-        run: |
-          # add executables installed with go get to PATH
-          # TODO: this will hopefully be fixed by
-          # https://github.com/actions/setup-go/issues/14
-          export PATH=${PATH}:`go env GOPATH`/bin
-          go get honnef.co/go/tools/cmd/staticcheck@latest
-          staticcheck ./...
-
       - name: Install and run ineffassign
         run: |
           export PATH=${PATH}:`go env GOPATH`/bin

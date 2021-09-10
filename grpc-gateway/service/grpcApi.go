@@ -6,6 +6,7 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 
+	asClient "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
@@ -35,10 +36,13 @@ type RequestHandler struct {
 	authorizationClient     pbAS.AuthorizationServiceClient
 	resourceDirectoryClient pb.GrpcGatewayClient
 	resourceAggregateClient *raClient.Client
+	resourceSubscriber      *subscriber.Subscriber
+	ownerCache              *asClient.OwnerCache
+	config                  Config
 	closeFunc               closeFunc
 }
 
-func AddHandler(ctx context.Context, svr *server.Server, config ClientsConfig, logger log.Logger, goroutinePoolGo func(func()) error) error {
+func AddHandler(ctx context.Context, svr *server.Server, config Config, logger log.Logger, goroutinePoolGo func(func()) error) error {
 	handler, err := NewRequestHandlerFromConfig(ctx, config, logger, goroutinePoolGo)
 	if err != nil {
 		return err
@@ -53,10 +57,10 @@ func Register(server *grpc.Server, handler *RequestHandler) {
 	pb.RegisterGrpcGatewayServer(server, handler)
 }
 
-func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
+func NewRequestHandlerFromConfig(ctx context.Context, config Config, logger log.Logger, goroutinePoolGo func(func()) error) (*RequestHandler, error) {
 	var closeFunc closeFunc
 
-	natsClient, err := naClient.New(config.Eventbus.NATS, logger)
+	natsClient, err := naClient.New(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
@@ -64,7 +68,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 	closeFunc = append(closeFunc, natsClient.Close)
 
 	resourceSubscriber, err := subscriber.New(natsClient.GetConn(),
-		config.Eventbus.NATS.PendingLimits,
+		config.Clients.Eventbus.NATS.PendingLimits,
 		logger,
 		subscriber.WithGoPool(goroutinePoolGo),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
@@ -75,7 +79,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 	}
 	closeFunc = append(closeFunc, resourceSubscriber.Close)
 
-	authorizationConn, err := client.New(config.AuthServer.Connection, logger)
+	authorizationConn, err := client.New(config.Clients.AuthServer.Connection, logger)
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create connection to authorization server: %w", err)
@@ -88,7 +92,12 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 	})
 	authorizationClient := pbAS.NewAuthorizationServiceClient(authorizationConn.GRPC())
 
-	rdConn, err := client.New(config.ResourceDirectory.Connection, logger)
+	ownerCache := asClient.NewOwnerCache(config.Clients.AuthServer.OwnerClaim, config.APIs.GRPC.OwnerCacheExpiration, natsClient.GetConn(), authorizationClient, func(err error) {
+		log.Errorf("error occurs during processing event by ownerCache: %v", err)
+	})
+	closeFunc = append(closeFunc, ownerCache.Close)
+
+	rdConn, err := client.New(config.Clients.ResourceDirectory.Connection, logger)
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot connect to resource-directory: %w", err)
@@ -101,7 +110,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 	})
 	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
 
-	raConn, err := client.New(config.ResourceAggregate.Connection, logger)
+	raConn, err := client.New(config.Clients.ResourceAggregate.Connection, logger)
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot connect to resource-aggregate: %w", err)
@@ -118,6 +127,9 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, logg
 		authorizationClient,
 		resourceDirectoryClient,
 		resourceAggregateClient,
+		resourceSubscriber,
+		ownerCache,
+		config,
 		closeFunc,
 	), nil
 }
@@ -127,12 +139,18 @@ func NewRequestHandler(
 	authorizationClient pbAS.AuthorizationServiceClient,
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceAggregateClient *raClient.Client,
+	resourceSubscriber *subscriber.Subscriber,
+	ownerCache *asClient.OwnerCache,
+	config Config,
 	closeFunc closeFunc,
 ) *RequestHandler {
 	return &RequestHandler{
 		authorizationClient:     authorizationClient,
 		resourceDirectoryClient: resourceDirectoryClient,
 		resourceAggregateClient: resourceAggregateClient,
+		resourceSubscriber:      resourceSubscriber,
+		ownerCache:              ownerCache,
+		config:                  config,
 		closeFunc:               closeFunc,
 	}
 }

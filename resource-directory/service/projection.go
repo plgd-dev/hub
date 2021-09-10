@@ -54,7 +54,7 @@ func NewProjection(ctx context.Context, name string, store eventstore.EventStore
 	return &Projection{Projection: projection, cache: cache}, nil
 }
 
-func (p *Projection) getModels(ctx context.Context, resourceID *commands.ResourceId) ([]eventstore.Model, error) {
+func (p *Projection) getModels(ctx context.Context, resourceID *commands.ResourceId, expectedModels int) ([]eventstore.Model, error) {
 	created, err := p.Register(ctx, resourceID.GetDeviceId())
 	if err != nil {
 		return nil, fmt.Errorf("cannot register to projection for %v: %w", resourceID, err)
@@ -72,7 +72,7 @@ func (p *Projection) getModels(ctx context.Context, resourceID *commands.Resourc
 		}(resourceID.GetDeviceId())
 	}
 	m := p.Models(resourceID)
-	if !created && len(m) == 0 {
+	if !created && len(m) < expectedModels {
 		err := p.ForceUpdate(ctx, resourceID)
 		if err == nil {
 			m = p.Models(resourceID)
@@ -84,7 +84,7 @@ func (p *Projection) getModels(ctx context.Context, resourceID *commands.Resourc
 func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeFilter strings.Set) (map[string]*events.ResourceLinksSnapshotTaken, error) {
 	devicesResourceLinks := make(map[string]*events.ResourceLinksSnapshotTaken)
 	for deviceID := range deviceIDFilter {
-		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.ResourceLinksHref))
+		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.ResourceLinksHref), 1)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func (p *Projection) GetResourceLinks(ctx context.Context, deviceIDFilter, typeF
 func (p *Projection) GetDevicesMetadata(ctx context.Context, deviceIDFilter strings.Set) (map[string]*events.DeviceMetadataSnapshotTaken, error) {
 	devicesMetadata := make(map[string]*events.DeviceMetadataSnapshotTaken)
 	for deviceID := range deviceIDFilter {
-		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.StatusHref))
+		models, err := p.getModels(ctx, commands.NewResourceID(deviceID, commands.StatusHref), 1)
 		if err != nil {
 			return nil, err
 		}
@@ -149,6 +149,7 @@ func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter
 		}
 
 		anyDeviceResourceFound := false
+		expectedModels := len(rl[deviceID].GetResources()) + 2 // for metadata and resourcelinks
 		resources[deviceID] = make(map[string]*Resource)
 		if hrefs == nil {
 			// case when client requests all device resources
@@ -171,7 +172,7 @@ func (p *Projection) GetResourcesWithLinks(ctx context.Context, resourceIDFilter
 		}
 
 		if anyDeviceResourceFound {
-			m, err := p.getModels(ctx, commands.NewResourceID(deviceID, ""))
+			m, err := p.getModels(ctx, commands.NewResourceID(deviceID, ""), expectedModels)
 			if err != nil {
 				return nil, err
 			}

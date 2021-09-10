@@ -22,6 +22,8 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.ExternalAddress = config.GW_HOST
 	cfg.APIs.COAP.MaxMessageSize = 256 * 1024
 	cfg.APIs.COAP.OwnerCacheExpiration = time.Minute
+	cfg.APIs.COAP.SubscriptionCacheExpiration = time.Minute
+	cfg.APIs.COAP.SubscriptionBufferSize = 1000
 	cfg.APIs.COAP.GoroutineSocketHeartbeat = time.Millisecond * 300
 	cfg.APIs.COAP.KeepAlive.Timeout = time.Second * 20
 	cfg.APIs.COAP.BlockwiseTransfer.Enabled = true
