@@ -52,6 +52,7 @@ clients:
         useSystemCAPool: false
   authorizationServer:
     ownerClaim: sub
+    deviceIdClaim: ""
     grpc:
       address: ""
       keepAlive:

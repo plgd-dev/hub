@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"os"
 	"os/signal"
@@ -35,6 +36,7 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitSync "github.com/plgd-dev/kit/sync"
+	"github.com/plgd-dev/sdk/pkg/net/coap"
 )
 
 var authCtxKey = "AuthCtx"
@@ -50,6 +52,7 @@ type Service struct {
 	asClient                pbAS.AuthorizationServiceClient
 	rdClient                pbGRPC.GrpcGatewayClient
 	expirationClientCache   *cache.Cache
+	tlsDeviceIDCache        *cache.Cache
 	coapServer              *tcp.Server
 	listener                tcp.Listener
 	authInterceptor         Interceptor
@@ -63,6 +66,44 @@ type Service struct {
 	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
 	ownerCache              *authClient.OwnerCache
+}
+
+func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) (string, error) {
+	if len(chain) == 0 {
+		return "", fmt.Errorf("empty chain")
+	}
+	certificate := chain[0]
+	intermediateCAPool := x509.NewCertPool()
+	for i := 1; i < len(chain); i++ {
+		intermediateCAPool.AddCert(chain[i])
+	}
+	_, err := certificate.Verify(x509.VerifyOptions{
+		Roots:         capool,
+		Intermediates: intermediateCAPool,
+		CurrentTime:   time.Now(),
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+	})
+	if err != nil {
+		return "", err
+	}
+	// verify EKU manually
+	ekuHasClient := false
+	ekuHasServer := false
+	for _, eku := range certificate.ExtKeyUsage {
+		if eku == x509.ExtKeyUsageClientAuth {
+			ekuHasClient = true
+		}
+		if eku == x509.ExtKeyUsageServerAuth {
+			ekuHasServer = true
+		}
+	}
+	if !ekuHasClient {
+		return "", fmt.Errorf("not contains ExtKeyUsageClientAuth")
+	}
+	if !ekuHasServer {
+		return "", fmt.Errorf("not contains ExtKeyUsageServerAuth")
+	}
+	return coap.GetDeviceIDFromIndetityCertificate(certificate)
 }
 
 // New creates server.
@@ -90,6 +131,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 	nats.AddCloseFunc(resourceSubscriber.Close)
 
+	tlsDeviceIDCache := cache.New(config.APIs.COAP.KeepAlive.Timeout, config.APIs.COAP.KeepAlive.Timeout/2)
 	expirationClientCache := cache.New(cache.NoExpiration, time.Minute)
 	expirationClientCache.OnEvicted(func(deviceID string, c interface{}) {
 		if c == nil {
@@ -173,7 +215,33 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 			return nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 		}
 		nats.AddCloseFunc(coapsTLS.Close)
-		l, err := net.NewTLSListener("tcp", config.APIs.COAP.Addr, coapsTLS.GetTLSConfig())
+		tlsCfgForClient := coapsTLS.GetTLSConfig()
+		var tlsCfg tls.Config
+		tlsCfg.GetConfigForClient = func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
+			return &tls.Config{
+				GetCertificate: tlsCfgForClient.GetCertificate,
+				MinVersion:     tlsCfgForClient.MinVersion,
+				ClientAuth:     tlsCfgForClient.ClientAuth,
+				ClientCAs:      tlsCfgForClient.ClientCAs,
+				VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+					var errors []error
+					var deviceID string
+					for _, chain := range verifiedChains {
+						deviceID, err = verifyChain(chain, tlsCfgForClient.ClientCAs)
+						if err == nil {
+							tlsDeviceIDCache.SetDefault(chi.Conn.RemoteAddr().String(), deviceID)
+							return nil
+						}
+						errors = append(errors, err)
+					}
+					if len(errors) > 0 {
+						return fmt.Errorf("%v", errors)
+					}
+					return fmt.Errorf("empty chains")
+				},
+			}, nil
+		}
+		l, err := net.NewTLSListener("tcp", config.APIs.COAP.Addr, &tlsCfg)
 		if err != nil {
 			nats.Close()
 			return nil, fmt.Errorf("cannot create tcp-tls listener: %w", err)
@@ -253,6 +321,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		asClient:              asClient,
 		rdClient:              rdClient,
 		expirationClientCache: expirationClientCache,
+		tlsDeviceIDCache:      tlsDeviceIDCache,
 		listener:              listener,
 		authInterceptor:       NewAuthInterceptor(),
 		devicesStatusUpdater:  NewDevicesStatusUpdater(ctx, config.Clients.ResourceAggregate.DeviceStatusExpiration),
@@ -293,7 +362,7 @@ func getDeviceID(client *Client) string {
 func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc func(req *mux.Message, client *Client)) {
 	client, ok := s.Client().Context().Value(clientKey).(*Client)
 	if !ok || client == nil {
-		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn))
+		client = newClient(server, s.Client().ClientConn().(*tcp.ClientConn), "")
 	}
 	err := server.taskQueue.Submit(func() {
 		switch req.Code {
@@ -346,7 +415,12 @@ func defaultHandler(req *mux.Message, client *Client) {
 const clientKey = "client"
 
 func (server *Service) coapConnOnNew(coapConn *tcp.ClientConn, tlscon *tls.Conn) {
-	client := newClient(server, coapConn)
+	var tlsDeviceID string
+	v, ok := server.tlsDeviceIDCache.Get(coapConn.RemoteAddr().String())
+	if ok {
+		tlsDeviceID = v.(string)
+	}
+	client := newClient(server, coapConn, tlsDeviceID)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
 		client.OnClose()
@@ -357,7 +431,7 @@ func (server *Service) loggingMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
 		}
 		tmp, err := pool.ConvertFrom(r.Message)
 		if err != nil {
@@ -373,7 +447,7 @@ func (server *Service) authMiddleware(next mux.Handler) mux.Handler {
 	return mux.HandlerFunc(func(w mux.ResponseWriter, r *mux.Message) {
 		client, ok := w.Client().Context().Value(clientKey).(*Client)
 		if !ok {
-			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn))
+			client = newClient(server, w.Client().ClientConn().(*tcp.ClientConn), "")
 		}
 		authCtx, _ := client.GetAuthorizationContext()
 		ctx := context.WithValue(r.Context, &authCtxKey, authCtx)
@@ -480,6 +554,8 @@ func (server *Service) serveWithHandlingSignal() error {
 
 	server.coapServer.Stop()
 	wg.Wait()
+
+	server.tlsDeviceIDCache.Flush()
 
 	return err
 }

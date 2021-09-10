@@ -95,6 +95,18 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
+	claim, err := client.ValidateToken(req.Context, token.AccessToken)
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
+		return
+	}
+
+	err = client.server.VerifyDeviceID(client.tlsDeviceID, claim)
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
+		return
+	}
+
 	owner := token.Owner
 	if owner == "" {
 		owner = refreshToken.UserID
@@ -111,16 +123,17 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	}
 
 	validUntil := pkgTime.Unix(0, expire)
+	deviceID := client.server.GetDeviceID(claim, client.tlsDeviceID, refreshToken.DeviceID)
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token for %v: %w", refreshToken.DeviceID, err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token for %v: %w", deviceID, err), coapCodes.InternalServerError)
 		return
 	}
 
 	if _, err := client.GetAuthorizationContext(); err == nil {
 		authCtx := authorizationContext{
-			DeviceID:    refreshToken.DeviceID,
+			DeviceID:    deviceID,
 			UserID:      owner,
 			AccessToken: token.AccessToken,
 			Expire:      validUntil,
@@ -128,9 +141,9 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		client.SetAuthorizationContext(&authCtx)
 
 		if validUntil.IsZero() {
-			client.server.expirationClientCache.Set(refreshToken.DeviceID, nil, time.Millisecond)
+			client.server.expirationClientCache.Set(deviceID, nil, time.Millisecond)
 		} else {
-			client.server.expirationClientCache.Set(refreshToken.DeviceID, client, time.Second*time.Duration(expiresIn))
+			client.server.expirationClientCache.Set(deviceID, client, time.Second*time.Duration(expiresIn))
 		}
 	}
 

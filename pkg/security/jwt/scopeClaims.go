@@ -3,6 +3,7 @@ package jwt
 import (
 	"fmt"
 	"regexp"
+	"time"
 )
 
 type ScopeClaims struct {
@@ -23,7 +24,7 @@ func NewRegexpScopeClaims(scope ...*regexp.Regexp) *ScopeClaims {
 }
 
 func (c *ScopeClaims) Valid() error {
-	if err := c.Claims.Valid(); err != nil {
+	if err := c.Claims.ValidTimes(time.Now()); err != nil {
 		return err
 	}
 	if len(c.requiredScopes) == 0 {
@@ -33,7 +34,7 @@ func (c *ScopeClaims) Valid() error {
 	for _, reg := range c.requiredScopes {
 		notMatched[reg.String()] = true
 	}
-	for _, scope := range c.GetScope() {
+	for _, scope := range c.Scope() {
 		for _, requiredScope := range c.requiredScopes {
 			if requiredScope.MatchString(scope) {
 				delete(notMatched, requiredScope.String())

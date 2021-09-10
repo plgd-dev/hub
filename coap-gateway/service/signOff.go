@@ -109,26 +109,34 @@ func signOffHandler(req *mux.Message, client *Client) {
 
 	jwtClaims, err := client.ValidateToken(req.Context, signOffData.accessToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.Unauthorized)
 		return
 	}
 
-	if err := jwtClaims.validateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOffData.userID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.InternalServerError)
+	err = client.server.VerifyDeviceID(client.tlsDeviceID, jwtClaims)
+	if err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.Unauthorized)
 		return
 	}
+
+	if err := jwtClaims.ValidateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOffData.userID); err != nil {
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %v", err), coapCodes.Unauthorized)
+		return
+	}
+
+	deviceID := client.server.GetDeviceID(jwtClaims, client.tlsDeviceID, signOffData.deviceID)
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, signOffData.accessToken)
-	deviceIds := []string{signOffData.deviceID}
+	deviceIds := []string{deviceID}
 	respRA, err := client.server.raClient.DeleteDevices(ctx, &commands.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
 	})
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.Unauthorized)
 		return
 	}
 	if len(respRA.GetDeviceIds()) != 1 {
-		log.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", signOffData.deviceID)
+		log.Errorf("sign off error: failed to remove documents for device('%v') from eventstore", deviceID)
 	}
 
 	client.unsubscribeFromDeviceEvents()
@@ -141,7 +149,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		return
 	}
 	if len(respAS.GetDeviceIds()) != 1 {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: cannot remove device %v from user", signOffData.deviceID), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: cannot remove device %v from user", deviceID), coapCodes.InternalServerError)
 		return
 	}
 

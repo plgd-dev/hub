@@ -164,8 +164,9 @@ func (c *EventBusConfig) Validate() error {
 }
 
 type AuthorizationServerConfig struct {
-	OwnerClaim string        `yaml:"ownerClaim" json:"ownerClaim"`
-	Connection client.Config `yaml:"grpc" json:"grpc"`
+	OwnerClaim    string        `yaml:"ownerClaim" json:"ownerClaim"`
+	DeviceIDClaim string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	Connection    client.Config `yaml:"grpc" json:"grpc"`
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
