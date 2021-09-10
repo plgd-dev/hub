@@ -1,4 +1,5 @@
 # HTTP Gateway
+
 HTTP Gateway exposes the client's [REST API](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/v2/http-gateway/swagger.yaml) to manage the user's devices, as well as the Web UI known as [plgd Dashboard](...).
 
 ## Docker Image
@@ -8,18 +9,21 @@ docker pull plgd/http-gateway:latest
 ```
 
 ## Docker Run
+
 ### How to make certificates
+
 Before you run docker image of plgd/http-gateway, you make sure certificates exists on `.tmp/certs` folder.
 If not exists, you can create certificates from plgd/bundle image by following step only once.
+
 ```bash
 # Create local folder for certificates and run plgd/bundle image to execute shell.
 mkdir -p $(pwd).tmp/certs
 docker run -it \
-	--network=host \
-	-v $(pwd)/.tmp/certs:/certs \
-	-e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
-	--entrypoint /bin/bash \
-	plgd/bundle:latest
+  --network=host \
+  -v $(pwd)/.tmp/certs:/certs \
+  -e CLOUD_SID=00000000-0000-0000-0000-000000000001 \
+  --entrypoint /bin/bash \
+  plgd/bundle:latest
 
 # Copy & paste below commands on the bash shell of plgd/bundle container.
 certificate-generator --cmd.generateRootCA --outCert=/certs/root_ca.crt --outKey=/certs/root_ca.key --cert.subject.cn=RootCA
@@ -28,15 +32,18 @@ certificate-generator --cmd.generateCertificate --outCert=/certs/http.crt --outK
 # Exit shell.
 exit
 ```
+
 ```bash
 # See common certificates for plgd cloud services.
 ls .tmp/certs
-http.crt	http.key	root_ca.crt	root_ca.key
+http.crt  http.key  root_ca.crt  root_ca.key
 ```
 
 ### How to get configuration file
+
 A configuration template is available on [http-gateway/config.yaml](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/config.yaml).
 You can also see `config.yaml` configuration file on the `http-gateway` folder by downloading `git clone https://github.com/plgd-dev/cloud.git`.
+
 ```bash
 # Copy & paste configuration template from the link and save the file named `http-gateway.yaml` on the local folder.
 vi http-gateway.yaml
@@ -45,11 +52,13 @@ vi http-gateway.yaml
 curl https://github.com/plgd-dev/cloud/blob/v2/http-gateway/config.yaml --output http-gateway.yaml
 ```
 
-### Edit configuration file 
+### Edit configuration file
+
 You can edit configuration file such as server port, certificates, OAuth provider and so on.
-Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0). 
+Read more detail about how to configure OAuth Provider [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/authorization.md#how-to-configure-auth0).
 
 See an example of address, tls, event bus and service clients config on the followings.
+
 ```yaml
 ...
 apis:
@@ -89,17 +98,20 @@ ui:
     httpGatewayAddress: "https://www.example.com"
 ```
 
-### Run docker image 
+### Run docker image
+
 You can run plgd/http-gateway image using certificates and configuration file on the folder you made certificates.
+
 ```bash
 docker run -d --network=host \
-	--name=http-gateway \
-	-v $(pwd)/.tmp/certs:/data/certs \
-	-v $(pwd)/http-gateway.yaml:/data/http-gateway.yaml \
-	plgd/http-gateway:latest --config=/data/http-gateway.yaml
+  --name=http-gateway \
+  -v $(pwd)/.tmp/certs:/data/certs \
+  -v $(pwd)/http-gateway.yaml:/data/http-gateway.yaml \
+  plgd/http-gateway:latest --config=/data/http-gateway.yaml
 ```
 
 ## YAML Configuration
+
 ### Logging
 
 | Property | Type | Description | Default |
@@ -107,6 +119,7 @@ docker run -d --network=host \
 | `log.debug` | bool | `Set to true if you would like to see extra information on logs.` | `false` |
 
 ### HTTP API
+
 APIs of the HTTP Gateway service as defined [uri](https://github.com/plgd-dev/cloud/blob/v2/http-gateway/uri/uri.go) and [swagger](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/plgd-dev/cloud/v2/http-gateway/swagger.yaml) for REST API.
 
 | Property | Type | Description | Default |
@@ -131,6 +144,7 @@ APIs of the HTTP Gateway service as defined [uri](https://github.com/plgd-dev/cl
 | `api.http.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
 
 ### GRPC Gateway Client
+
 Client configurations to internally connect to GRPC Gateway service.
 
 | Property | Type | Description | Default |
@@ -145,6 +159,7 @@ Client configurations to internally connect to GRPC Gateway service.
 | `clients.grpcGateway.grpc.keepAlive.permitWithoutStream` | bool | `If true, client sends keepalive pings even with no active RPCs. If false, when there are no active RPCs, Time and Timeout will be ignored and no keepalive pings will be sent.` | `false` |
 
 ### Web UI
+
 These configurations are for `PLGD Dashboard` as described in [here](https://github.com/plgd-dev/cloud/blob/v2/docs/guide/developing/dashboard.md).
 
 | Property | Type | Description | Default |
