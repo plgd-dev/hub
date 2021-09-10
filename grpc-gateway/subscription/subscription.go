@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/authorization/client"
@@ -25,8 +26,13 @@ import (
 type SendEventFunc = func(e *pb.Event) error
 type ErrFunc = func(err error)
 
+type deduplicateEvent struct {
+	version    uint64
+	validUntil *time.Time
+}
+
 type Sub struct {
-	ctx                   context.Context
+	ctx                   atomic.Value
 	filter                FilterBitmask
 	send                  SendEventFunc
 	req                   *pb.SubscribeToEvents_CreateSubscription
@@ -34,18 +40,18 @@ type Sub struct {
 	correlationID         string
 	errFunc               ErrFunc
 	eventsSub             *subscriber.Subscriber
-	ownerSubClose         func()
+	expiration            time.Duration
+	ownerSubClose         atomic.Value
 	devicesEventsObserver map[string]eventbus.Observer
 	filteredDeviceIDs     strings.Set
 	filteredResourceIDs   strings.Set
 	resourceDirectory     pb.GrpcGatewayClient
 	closed                atomic.Bool
-	deduplicateInitEvents map[string]uint64
+	deduplicateEvents     map[string]deduplicateEvent
 
 	eventsCache   chan eventbus.EventUnmarshaler
 	ownerCache    chan *ownerEvents.Event
 	done          chan struct{}
-	mutex         sync.Mutex
 	eventsCacheWg sync.WaitGroup
 }
 
@@ -301,9 +307,7 @@ func (s *Sub) isFiltered(ev event) bool {
 	if s.closed.Load() {
 		return false
 	}
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	return !s.isDuplicatedInitEventLocked(ev)
+	return !s.isDuplicatedEvent(ev)
 }
 
 func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
@@ -330,9 +334,11 @@ func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
 }
 
 func (s *Sub) SetContext(ctx context.Context) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.ctx = ctx
+	s.ctx.Store(ctx)
+}
+
+func (s *Sub) Context() context.Context {
+	return s.ctx.Load().(context.Context)
 }
 
 func (s *Sub) Id() string {
@@ -340,7 +346,7 @@ func (s *Sub) Id() string {
 }
 
 func (s *Sub) subscribeToOwnerEvents(ownerCache *client.OwnerCache) error {
-	owner, err := grpc.OwnerFromTokenMD(s.ctx, ownerCache.OwnerClaim())
+	owner, err := grpc.OwnerFromTokenMD(s.Context(), ownerCache.OwnerClaim())
 	if err != nil {
 		return grpc.ForwardFromError(codes.InvalidArgument, err)
 	}
@@ -348,10 +354,17 @@ func (s *Sub) subscribeToOwnerEvents(ownerCache *client.OwnerCache) error {
 	if err != nil {
 		return err
 	}
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.ownerSubClose = close
+	s.setOwnerSubClose(close)
 	return nil
+}
+
+func (s *Sub) setOwnerSubClose(close func()) {
+	s.ownerSubClose.Store(close)
+}
+
+func (s *Sub) closeOwnerSub() {
+	c := s.ownerSubClose.Load().(func())
+	c()
 }
 
 func (s *Sub) initOwnerSubscription(ownerCache *client.OwnerCache) ([]string, error) {
@@ -360,15 +373,13 @@ func (s *Sub) initOwnerSubscription(ownerCache *client.OwnerCache) ([]string, er
 		_ = s.Close()
 		return nil, err
 	}
-	devices, err := ownerCache.GetDevices(s.ctx)
+	devices, err := ownerCache.GetDevices(s.Context())
 	if err != nil {
 		_ = s.Close()
 		return nil, err
 	}
 
-	s.mutex.Lock()
-	err = s.initEventSubscriptionsLocked(devices)
-	s.mutex.Unlock()
+	devices, err = s.initEventSubscriptions(devices)
 	if err != nil {
 		_ = s.Close()
 		return nil, err
@@ -384,16 +395,11 @@ func (s *Sub) start() {
 	}()
 }
 
-func (s *Sub) Init(ownerCache *client.OwnerCache) error {
-	devices, err := s.initOwnerSubscription(ownerCache)
-	if err != nil {
-		return err
-	}
+func (s *Sub) initEvents(devices []string) error {
 	if !s.req.GetIncludeCurrentState() {
-		s.start()
 		return nil
 	}
-	var initEventFuncs = []func([]string) error{
+	var initEventFuncs = []func(devices []string, validUntil *time.Time) error{
 		s.sendDevicesRegistered,
 		s.initDeviceMetadataUpdated,
 		s.initResourcesPublished,
@@ -401,15 +407,31 @@ func (s *Sub) Init(ownerCache *client.OwnerCache) error {
 		s.initPendingCommands,
 	}
 	var errors []error
+	var validUntil time.Time
+	start := time.Now()
 	for _, f := range initEventFuncs {
-		err := f(devices)
+		err := f(devices, &validUntil)
 		if err != nil {
 			errors = append(errors, err)
 		}
 	}
+	now := time.Now()
+	validUntil = now.Add(now.Sub(start) + s.expiration)
 	if len(errors) > 0 {
-		_ = s.Close()
 		return fmt.Errorf("%v", errors)
+	}
+	return nil
+}
+
+func (s *Sub) Init(ownerCache *client.OwnerCache) error {
+	devices, err := s.initOwnerSubscription(ownerCache)
+	if err != nil {
+		return err
+	}
+	err = s.initEvents(devices)
+	if err != nil {
+		_ = s.Close()
+		return err
 	}
 	s.start()
 	return nil
@@ -425,29 +447,32 @@ func (s *Sub) filterDevices(devices []string) []string {
 	return filteredDevices
 }
 
-func (s *Sub) initEventSubscriptionsLocked(deviceIDs []string) error {
+func (s *Sub) initEventSubscriptions(deviceIDs []string) ([]string, error) {
 	var errors []error
+	filteredDevices := make([]string, 0, len(deviceIDs))
 	for _, deviceID := range deviceIDs {
 		if _, ok := s.devicesEventsObserver[deviceID]; ok {
 			continue
 		}
-		obs, err := s.eventsSub.Subscribe(s.ctx, deviceID+"."+s.id, utils.GetDeviceSubject(deviceID), s)
+		obs, err := s.eventsSub.Subscribe(s.Context(), deviceID+"."+s.id, utils.GetDeviceSubject(deviceID), s)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
 		s.devicesEventsObserver[deviceID] = obs
+		filteredDevices = append(filteredDevices, deviceID)
 	}
 	if len(errors) > 0 {
-		return fmt.Errorf("cannot init events subscription for devices[%v]: %v", deviceIDs, errors)
+		return filteredDevices, fmt.Errorf("cannot init events subscription for devices[%v]: %v", deviceIDs, errors)
 	}
-	return nil
+	return filteredDevices, nil
 }
 
-func (s *Sub) sendDevicesRegistered(deviceIDs []string) error {
+func (s *Sub) sendDevicesRegistered(deviceIDs []string, validUntil *time.Time) error {
 	if !isFilteredBit(s.filter, FilterBitmaskDeviceRegistered) {
 		return nil
 	}
+
 	err := s.send(&pb.Event{
 		SubscriptionId: s.id,
 		CorrelationId:  s.correlationID,
@@ -463,7 +488,7 @@ func (s *Sub) sendDevicesRegistered(deviceIDs []string) error {
 	return nil
 }
 
-func (s *Sub) initResourceChanged(deviceIDs []string) error {
+func (s *Sub) initResourceChanged(deviceIDs []string, validUntil *time.Time) error {
 	if !isFilteredBit(s.filter, FilterBitmaskResourceChanged) {
 		return nil
 	}
@@ -474,7 +499,7 @@ func (s *Sub) initResourceChanged(deviceIDs []string) error {
 	if len(s.req.GetResourceIdFilter()) > 0 {
 		deviceIdFilter = nil
 	}
-	resourcesClient, err := s.resourceDirectory.GetResources(s.ctx, &pb.GetResourcesRequest{
+	resourcesClient, err := s.resourceDirectory.GetResources(s.Context(), &pb.GetResourcesRequest{
 		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: s.req.GetResourceIdFilter(),
 	})
@@ -500,7 +525,7 @@ func (s *Sub) initResourceChanged(deviceIDs []string) error {
 				ResourceChanged: recv.GetData(),
 			},
 		}
-		s.fillDeduplicateInitEvent(ev.GetResourceChanged())
+		s.fillDeduplicateEvent(ev.GetResourceChanged(), validUntil)
 		err = s.send(ev)
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot send a resource: %w", err))
@@ -508,14 +533,14 @@ func (s *Sub) initResourceChanged(deviceIDs []string) error {
 	}
 }
 
-func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string) error {
+func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string, validUntil *time.Time) error {
 	if !isFilteredBit(s.filter, FilterBitmaskDeviceMetadataUpdated) {
 		return nil
 	}
 	errFunc := func(err error) error {
 		return fmt.Errorf("cannot init devices metadata for devices %v: %w", deviceIDs, err)
 	}
-	linksClient, err := s.resourceDirectory.GetDevicesMetadata(s.ctx, &pb.GetDevicesMetadataRequest{
+	linksClient, err := s.resourceDirectory.GetDevicesMetadata(s.Context(), &pb.GetDevicesMetadataRequest{
 		DeviceIdFilter: deviceIDs,
 	})
 	if err != nil {
@@ -536,7 +561,7 @@ func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string) error {
 				DeviceMetadataUpdated: recv,
 			},
 		}
-		s.fillDeduplicateInitEvent(ev.GetDeviceMetadataUpdated())
+		s.fillDeduplicateEvent(ev.GetDeviceMetadataUpdated(), validUntil)
 		err = s.send(ev)
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot send a devices metadata: %w", err))
@@ -544,14 +569,14 @@ func (s *Sub) initDeviceMetadataUpdated(deviceIDs []string) error {
 	}
 }
 
-func (s *Sub) initResourcesPublished(deviceIDs []string) error {
+func (s *Sub) initResourcesPublished(deviceIDs []string, validUntil *time.Time) error {
 	if !isFilteredBit(s.filter, FilterBitmaskResourcesPublished) {
 		return nil
 	}
 	errFunc := func(err error) error {
 		return fmt.Errorf("cannot init resources published events for devices %v: %w", deviceIDs, err)
 	}
-	linksClient, err := s.resourceDirectory.GetResourceLinks(s.ctx, &pb.GetResourceLinksRequest{
+	linksClient, err := s.resourceDirectory.GetResourceLinks(s.Context(), &pb.GetResourceLinksRequest{
 		DeviceIdFilter: deviceIDs,
 	})
 	if err != nil {
@@ -572,7 +597,7 @@ func (s *Sub) initResourcesPublished(deviceIDs []string) error {
 				ResourcePublished: recv,
 			},
 		}
-		s.fillDeduplicateInitEvent(ev.GetResourcePublished())
+		s.fillDeduplicateEvent(ev.GetResourcePublished(), validUntil)
 		err = s.send(ev)
 		if err != nil {
 			return errFunc(fmt.Errorf("cannot send a resource links: %w", err))
@@ -626,27 +651,30 @@ func deduplicateEventKey(ev event) string {
 	return ev.AggregateID() + ev.EventType()
 }
 
-func (s *Sub) isDuplicatedInitEventLocked(ev event) bool {
+func (s *Sub) isDuplicatedEvent(ev event) bool {
 	key := deduplicateEventKey(ev)
-	version, ok := s.deduplicateInitEvents[key]
+	dedupEvent, ok := s.deduplicateEvents[key]
 	if !ok {
 		return false
 	}
-	if version >= ev.Version() {
+	if dedupEvent.version >= ev.Version() {
 		return true
 	}
 	return false
 }
 
-func (s *Sub) fillDeduplicateInitEvent(v event) {
+func (s *Sub) fillDeduplicateEvent(v event, validUntil *time.Time) {
 	key := deduplicateEventKey(v)
-	version, ok := s.deduplicateInitEvents[key]
-	if !ok || version < v.Version() {
-		s.deduplicateInitEvents[key] = v.Version()
+	dedupEvent, ok := s.deduplicateEvents[key]
+	if !ok || dedupEvent.version < v.Version() {
+		s.deduplicateEvents[key] = deduplicateEvent{
+			version:    v.Version(),
+			validUntil: validUntil,
+		}
 	}
 }
 
-func (s *Sub) initPendingCommands(deviceIDs []string) error {
+func (s *Sub) initPendingCommands(deviceIDs []string, validUntil *time.Time) error {
 	if !isFilteredBit(s.filter,
 		FilterBitmaskDeviceMetadataUpdatePending|
 			FilterBitmaskResourceCreatePending|
@@ -664,7 +692,7 @@ func (s *Sub) initPendingCommands(deviceIDs []string) error {
 		deviceIdFilter = nil
 	}
 
-	pendingCommands, err := s.resourceDirectory.GetPendingCommands(s.ctx, &pb.GetPendingCommandsRequest{
+	pendingCommands, err := s.resourceDirectory.GetPendingCommands(s.Context(), &pb.GetPendingCommandsRequest{
 		DeviceIdFilter:   deviceIdFilter,
 		ResourceIdFilter: s.req.GetResourceIdFilter(),
 		CommandFilter:    BitmaskToFilterPendingsCommands(s.filter),
@@ -688,7 +716,7 @@ func (s *Sub) initPendingCommands(deviceIDs []string) error {
 		ev.CorrelationId = s.correlationID
 		ev.SubscriptionId = s.id
 
-		s.fillDeduplicateInitEvent(deduplicateEvent)
+		s.fillDeduplicateEvent(deduplicateEvent, validUntil)
 
 		err = s.send(ev)
 		if err != nil {
@@ -697,23 +725,32 @@ func (s *Sub) initPendingCommands(deviceIDs []string) error {
 	}
 }
 
-func (s *Sub) onRegisteredEventLocked(e *ownerEvents.DevicesRegistered) {
+func (s *Sub) onRegisteredEvent(e *ownerEvents.DevicesRegistered) {
 	devices := s.filterDevices(e.GetDeviceIds())
+	devices, err := s.initEventSubscriptions(devices)
+	if err != nil {
+		s.errFunc(err)
+		return
+	}
 	if len(devices) == 0 {
 		return
 	}
-	err := s.initEventSubscriptionsLocked(devices)
+	if !s.req.GetIncludeCurrentState() {
+		var validUntil time.Time
+		start := time.Now()
+		err = s.sendDevicesRegistered(devices, &validUntil)
+		now := time.Now()
+		validUntil = now.Add(now.Sub(start) + s.expiration)
+	} else {
+		err = s.initEvents(devices)
+	}
 	if err != nil {
 		s.errFunc(err)
 		return
 	}
-	err = s.sendDevicesRegistered(devices)
-	if err != nil {
-		s.errFunc(err)
-	}
 }
 
-func (s *Sub) onUnregisteredEventLocked(e *ownerEvents.DevicesUnregistered) {
+func (s *Sub) onUnregisteredEvent(e *ownerEvents.DevicesUnregistered) {
 	devices := s.filterDevices(e.GetDeviceIds())
 	if len(devices) == 0 {
 		return
@@ -748,29 +785,19 @@ func (s *Sub) onOwnerEvent(e *ownerEvents.Event) {
 }
 
 func (s *Sub) handleOwnerEvent(e *ownerEvents.Event) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
 	if s.closed.Load() {
 		return
 	}
 	switch {
 	case e.GetDevicesRegistered() != nil:
-		s.onRegisteredEventLocked(e.GetDevicesRegistered())
+		s.onRegisteredEvent(e.GetDevicesRegistered())
 	case e.GetDevicesUnregistered() != nil:
-		s.onUnregisteredEventLocked(e.GetDevicesUnregistered())
+		s.onUnregisteredEvent(e.GetDevicesUnregistered())
 	}
 }
 
 func (s *Sub) setClosed() bool {
 	return s.closed.CAS(false, true)
-}
-
-func (s *Sub) pullOutDevicesEventsObserver() map[string]eventbus.Observer {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	devicesEventsObserver := s.devicesEventsObserver
-	s.devicesEventsObserver = make(map[string]eventbus.Observer)
-	return devicesEventsObserver
 }
 
 func cleanUpDevicesEventsObservers(devicesEventsObserver map[string]eventbus.Observer) error {
@@ -790,39 +817,56 @@ func cleanUpDevicesEventsObservers(devicesEventsObserver map[string]eventbus.Obs
 func (s *Sub) cleanUp(devicesEventsObserver map[string]eventbus.Observer) error {
 	close(s.done)
 	s.eventsCacheWg.Wait()
-	if s.ownerSubClose != nil {
-		s.ownerSubClose()
-	}
+	s.closeOwnerSub()
 	return cleanUpDevicesEventsObservers(devicesEventsObserver)
 }
 
+// Close closes subscription. Be carefull it cause deadlock when you call it from send function.
 func (s *Sub) Close() error {
 	if !s.setClosed() {
 		return nil
 	}
-	return s.cleanUp(s.pullOutDevicesEventsObserver())
+	return s.cleanUp(s.devicesEventsObserver)
 }
 
-func (s *Sub) CleanUpDeduplicationInitEventsCache() {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.deduplicateInitEvents = make(map[string]uint64)
-}
-
-func (s *Sub) run() {
-	for {
-		select {
-		case <-s.done:
-			return
-		case event := <-s.eventsCache:
-			s.handleEvent(event)
-		case ownerEvent := <-s.ownerCache:
-			s.handleOwnerEvent(ownerEvent)
+func (s *Sub) dropExpiredDeduplicateEvents(now time.Time) {
+	for key, val := range s.deduplicateEvents {
+		if val.validUntil == nil || now.After(*val.validUntil) {
+			delete(s.deduplicateEvents, key)
 		}
 	}
 }
 
-func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirectory pb.GrpcGatewayClient, send SendEventFunc, correlationID string, cacheSize int, errFunc ErrFunc, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+func (s *Sub) run() {
+	tick := time.NewTicker(s.expiration)
+	defer tick.Stop()
+	dropDeduplicatesEvents := make(chan time.Time)
+	close(dropDeduplicatesEvents)
+	for {
+		var timeC <-chan time.Time
+		timeC = dropDeduplicatesEvents
+		closeTime := func() bool { return true }
+		if len(s.deduplicateEvents) > 0 {
+			timer := time.NewTimer(time.Second)
+			closeTime = timer.Stop
+			timeC = timer.C
+		}
+		select {
+		case <-s.done:
+			return
+		case now := <-tick.C:
+			s.dropExpiredDeduplicateEvents(now)
+		case event := <-s.eventsCache:
+			s.handleEvent(event)
+		case ownerEvent := <-s.ownerCache:
+			s.handleOwnerEvent(ownerEvent)
+		case <-timeC:
+			closeTime()
+		}
+	}
+}
+
+func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirectory pb.GrpcGatewayClient, send SendEventFunc, correlationID string, cacheSize int, expiration time.Duration, errFunc ErrFunc, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
 	bitmask := EventsFilterToBitmask(req.GetEventFilter())
 	filteredResourceIDs := strings.MakeSet()
 	filteredDeviceIDs := strings.MakeSet(req.GetDeviceIdFilter()...)
@@ -842,6 +886,9 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 			}
 		}
 	}
+	if expiration <= 0 {
+		expiration = time.Second * 60
+	}
 	id := uuid.NewString()
 	if errFunc == nil {
 		errFunc = func(err error) {}
@@ -851,8 +898,13 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 		}
 		errFunc = newErrFunc
 	}
+	var ctxAtomic atomic.Value
+	ctxAtomic.Store(ctx)
+
+	var ctxSubClose atomic.Value
+	ctxSubClose.Store(func() {})
 	return &Sub{
-		ctx:                   ctx,
+		ctx:                   ctxAtomic,
 		filter:                EventsFilterToBitmask(req.GetEventFilter()),
 		send:                  send,
 		req:                   req,
@@ -863,10 +915,12 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 		resourceDirectory:     resourceDirectory,
 		errFunc:               errFunc,
 		correlationID:         correlationID,
+		expiration:            expiration,
 		devicesEventsObserver: make(map[string]eventbus.Observer),
-		deduplicateInitEvents: make(map[string]uint64),
+		deduplicateEvents:     make(map[string]deduplicateEvent),
 		eventsCache:           make(chan eventbus.EventUnmarshaler, cacheSize),
 		ownerCache:            make(chan *ownerEvents.Event, cacheSize),
 		done:                  make(chan struct{}),
+		ownerSubClose:         ctxSubClose,
 	}
 }

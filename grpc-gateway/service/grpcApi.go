@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/pkg/log"
 
 	asClient "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/grpc-gateway/subscription"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/server"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
@@ -35,14 +33,13 @@ func (s closeFunc) Close() {
 // RequestHandler handles incoming requests.
 type RequestHandler struct {
 	pb.UnimplementedGrpcGatewayServer
-	authorizationClient      pbAS.AuthorizationServiceClient
-	resourceDirectoryClient  pb.GrpcGatewayClient
-	resourceAggregateClient  *raClient.Client
-	resourceSubscriber       *subscriber.Subscriber
-	ownerCache               *asClient.OwnerCache
-	config                   Config
-	closeFunc                closeFunc
-	subscriptionCleanUpCache *cache.Cache
+	authorizationClient     pbAS.AuthorizationServiceClient
+	resourceDirectoryClient pb.GrpcGatewayClient
+	resourceAggregateClient *raClient.Client
+	resourceSubscriber      *subscriber.Subscriber
+	ownerCache              *asClient.OwnerCache
+	config                  Config
+	closeFunc               closeFunc
 }
 
 func AddHandler(ctx context.Context, svr *server.Server, config Config, logger log.Logger, goroutinePoolGo func(func()) error) error {
@@ -147,22 +144,14 @@ func NewRequestHandler(
 	config Config,
 	closeFunc closeFunc,
 ) *RequestHandler {
-	subscriptionCleanUpCache := cache.New(config.APIs.GRPC.SubscriptionCacheExpiration, config.APIs.GRPC.SubscriptionCacheExpiration/2)
-	subscriptionCleanUpCache.OnEvicted(func(s string, i interface{}) {
-		if i == nil {
-			return
-		}
-		i.(*subscription.Sub).CleanUpDeduplicationInitEventsCache()
-	})
 	return &RequestHandler{
-		authorizationClient:      authorizationClient,
-		resourceDirectoryClient:  resourceDirectoryClient,
-		resourceAggregateClient:  resourceAggregateClient,
-		resourceSubscriber:       resourceSubscriber,
-		ownerCache:               ownerCache,
-		config:                   config,
-		closeFunc:                closeFunc,
-		subscriptionCleanUpCache: subscriptionCleanUpCache,
+		authorizationClient:     authorizationClient,
+		resourceDirectoryClient: resourceDirectoryClient,
+		resourceAggregateClient: resourceAggregateClient,
+		resourceSubscriber:      resourceSubscriber,
+		ownerCache:              ownerCache,
+		config:                  config,
+		closeFunc:               closeFunc,
 	}
 }
 

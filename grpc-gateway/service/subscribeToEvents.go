@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
-	"github.com/patrickmn/go-cache"
 	asClient "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/subscription"
@@ -18,12 +18,12 @@ import (
 )
 
 type subscriptions struct {
-	send                     func(e *pb.Event) error
-	resourceSubscriber       *subscriber.Subscriber
-	ownerCache               *asClient.OwnerCache
-	resourceDirectoryClient  pb.GrpcGatewayClient
-	subscriptionCleanUpCache *cache.Cache
-	subscriptionBufferSize   int
+	send                        func(e *pb.Event) error
+	resourceSubscriber          *subscriber.Subscriber
+	ownerCache                  *asClient.OwnerCache
+	resourceDirectoryClient     pb.GrpcGatewayClient
+	subscriptionBufferSize      int
+	subscriptionCacheExpiration time.Duration
 
 	subs map[string]*subscription.Sub
 }
@@ -32,23 +32,22 @@ func newSubscriptions(
 	resourceDirectoryClient pb.GrpcGatewayClient,
 	resourceSubscriber *subscriber.Subscriber,
 	ownerCache *asClient.OwnerCache,
-	subscriptionCleanUpCache *cache.Cache,
 	subscriptionBufferSize int,
+	subscriptionCacheExpiration time.Duration,
 	send func(e *pb.Event) error) *subscriptions {
 	return &subscriptions{
-		subs:                     make(map[string]*subscription.Sub),
-		send:                     send,
-		resourceDirectoryClient:  resourceDirectoryClient,
-		resourceSubscriber:       resourceSubscriber,
-		ownerCache:               ownerCache,
-		subscriptionCleanUpCache: subscriptionCleanUpCache,
-		subscriptionBufferSize:   subscriptionBufferSize,
+		subs:                        make(map[string]*subscription.Sub),
+		send:                        send,
+		resourceDirectoryClient:     resourceDirectoryClient,
+		resourceSubscriber:          resourceSubscriber,
+		ownerCache:                  ownerCache,
+		subscriptionBufferSize:      subscriptionBufferSize,
+		subscriptionCacheExpiration: subscriptionCacheExpiration,
 	}
 }
 
 func (s *subscriptions) close() {
 	for _, sub := range s.subs {
-		s.subscriptionCleanUpCache.Delete(sub.Id())
 		err := sub.Close()
 		if err != nil {
 			log.Errorf("cannot close subscription('%v'): %w", sub.Id(), err)
@@ -57,7 +56,7 @@ func (s *subscriptions) close() {
 }
 
 func (s *subscriptions) createSubscription(ctx context.Context, req *pb.SubscribeToEvents) error {
-	sub := subscription.New(ctx, s.resourceSubscriber, s.resourceDirectoryClient, s.send, req.GetCorrelationId(), s.subscriptionBufferSize, func(err error) {
+	sub := subscription.New(ctx, s.resourceSubscriber, s.resourceDirectoryClient, s.send, req.GetCorrelationId(), s.subscriptionBufferSize, s.subscriptionCacheExpiration, func(err error) {
 		log.Errorf("error occurs during processing event by subscription: %v", err)
 	}, req.GetCreateSubscription())
 	err := s.send(&pb.Event{
@@ -91,7 +90,6 @@ func (s *subscriptions) createSubscription(ctx context.Context, req *pb.Subscrib
 		return err
 	}
 	s.subs[sub.Id()] = sub
-	s.subscriptionCleanUpCache.SetDefault(sub.Id(), sub)
 	return nil
 }
 
@@ -117,7 +115,6 @@ func (s *subscriptions) cancelSubscription(ctx context.Context, req *pb.Subscrib
 		return err
 	}
 	delete(s.subs, req.GetCancelSubscription().GetSubscriptionId())
-	s.subscriptionCleanUpCache.Delete(sub.Id())
 	err := sub.Close()
 	err2 := s.send(&pb.Event{
 		SubscriptionId: sub.Id(),
@@ -157,7 +154,7 @@ func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsS
 		return srv.Send(e)
 	}
 
-	subs := newSubscriptions(r.resourceDirectoryClient, r.resourceSubscriber, r.ownerCache, r.subscriptionCleanUpCache, r.config.APIs.GRPC.SubscriptionBufferSize, send)
+	subs := newSubscriptions(r.resourceDirectoryClient, r.resourceSubscriber, r.ownerCache, r.config.APIs.GRPC.SubscriptionBufferSize, r.config.APIs.GRPC.SubscriptionCacheExpiration, send)
 	defer subs.close()
 
 	for {

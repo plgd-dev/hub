@@ -132,7 +132,7 @@ func newResourceSubscription(req *mux.Message, client *Client, authCtx *authoriz
 		seqNum:   2,
 	}
 	res := &commands.ResourceId{DeviceId: deviceID, Href: href}
-	sub := subscription.New(req.Context, client.server.resourceSubscriber, client.server.rdClient, r.eventHandler, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, func(err error) {
+	sub := subscription.New(req.Context, client.server.resourceSubscriber, client.server.rdClient, r.eventHandler, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, client.server.config.APIs.COAP.SubscriptionCacheExpiration, func(err error) {
 		log.Errorf("error occurs during processing event for /%v%v by subscription: %w", deviceID, href, err)
 	}, &pb.SubscribeToEvents_CreateSubscription{
 		ResourceIdFilter:    []string{res.ToString()},
