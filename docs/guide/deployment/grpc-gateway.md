@@ -149,7 +149,6 @@ gRPC API of the gRPC Gateway service as defined [here](https://github.com/plgd-d
 | ---------- | -------- | -------------- | ------- |
 | `api.grpc.address` | string | `Listen specification <host>:<port> for grpc client connection.` | `"0.0.0.0:9100"` |
 | `api.grpc.ownerCacheExpiration` | string | `Time limit of how long to keep subscribed to device updates after last use of the given cache item.` | `1m` |
-| `api.grpc.subscriptionCacheExpiration` | string | `The time limit of how long to keep initialized events in the subscription cache is required for event deduplication.` | `1m` |
 | `api.grpc.subscriptionBufferSize` | int | `The maximum buffer size for one events subscription.` | `1000` |
 | `api.grpc.enforcementPolicy.minTime` | string | `The minimum amount of time a client should wait before sending a keepalive ping. Otherwise the server close connection.` | `5s`|
 | `api.grpc.enforcementPolicy.permitWithoutStream` | bool |  `If true, server allows keepalive pings even when there are no active streams(RPCs). Otherwise the server close connection.`  | `true` |

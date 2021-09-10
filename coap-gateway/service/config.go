@@ -57,10 +57,11 @@ func (c *APIsConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	Addr                        string                  `yaml:"address" json:"address"`
-	ExternalAddress             string                  `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize              int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
-	OwnerCacheExpiration        time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	Addr                 string        `yaml:"address" json:"address"`
+	ExternalAddress      string        `yaml:"externalAddress" json:"externalAddress"`
+	MaxMessageSize       int           `yaml:"maxMessageSize" json:"maxMessageSize"`
+	OwnerCacheExpiration time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	// deprecated by SubscribeToEvents.CreateSubscription.include_current_state
 	SubscriptionCacheExpiration time.Duration           `yaml:"subscriptionCacheExpiration" json:"subscriptionCacheExpiration"`
 	SubscriptionBufferSize      int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
 	GoroutineSocketHeartbeat    time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
@@ -85,9 +86,6 @@ func (c *COAPConfig) Validate() error {
 	}
 	if c.GoroutineSocketHeartbeat <= 0 {
 		return fmt.Errorf("goroutineSocketHeartbeat('%v')", c.GoroutineSocketHeartbeat)
-	}
-	if c.SubscriptionCacheExpiration <= 0 {
-		return fmt.Errorf("subscriptionCacheExpiration('%v')", c.OwnerCacheExpiration)
 	}
 	if c.SubscriptionBufferSize < 0 {
 		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
