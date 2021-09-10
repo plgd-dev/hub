@@ -396,6 +396,7 @@ func (s *Sub) start() {
 }
 
 func (s *Sub) initEvents(devices []string) error {
+	//nolint:staticcheck // SA1019 deprecated feature
 	if !s.req.GetIncludeCurrentState() {
 		return nil
 	}
@@ -735,6 +736,7 @@ func (s *Sub) onRegisteredEvent(e *ownerEvents.DevicesRegistered) {
 	if len(devices) == 0 {
 		return
 	}
+	//nolint:staticcheck // SA1019 deprecated feature
 	if !s.req.GetIncludeCurrentState() {
 		var validUntil time.Time
 		start := time.Now()

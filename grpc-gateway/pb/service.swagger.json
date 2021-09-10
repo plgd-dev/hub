@@ -806,7 +806,7 @@
     },
     "/api/v1/ws/events": {
       "post": {
-        "summary": "Subscribe to events",
+        "summary": "When the client creates a subscription, with include_current_state=true it can send duplicate events.\nSubscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronize events.",
         "operationId": "GrpcGateway_SubscribeToEvents",
         "responses": {
           "200": {

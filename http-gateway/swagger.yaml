@@ -676,7 +676,7 @@ paths:
         - 'Resource Events'
       summary: 'Subscribe to events'
       description: |
-        Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream. If you're interested in the current state right after subscribing, set the includeCurrentState query parameter to true.
+        Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -1450,6 +1450,7 @@ components:
         includeCurrentState:
           type: boolean
           description: 'Sends the current state of events right after subscribing.'
+          deprecated: true
     SubscribeToEventsCreateSubscriptionEvent:
       type: string
       default: 'REGISTERED'
