@@ -398,6 +398,7 @@ export const ThingsDetailsPage = () => {
         ttlControl={
           <CommanTimeoutControl
             defaultValue={ttl}
+            defaultTtlValue={defaultCommandTimeToLive}
             onChange={setTtl}
             disabled={loadingResource || savingResource}
             ttlHasError={ttlHasError}
@@ -420,6 +421,7 @@ export const ThingsDetailsPage = () => {
             {_(t.deleteResourceMessage)}
             <CommanTimeoutControl
               defaultValue={ttl}
+              defaultTtlValue={defaultCommandTimeToLive}
               onChange={setTtl}
               disabled={loadingResource}
               ttlHasError={ttlHasError}

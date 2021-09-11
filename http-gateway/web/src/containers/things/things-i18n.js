@@ -353,4 +353,8 @@ export const messages = defineMessages({
     defaultMessage: 'Failed to delete this Thing.',
     description: 'Title of the toast message on things deleted failed.',
   },
+  default: {
+    id: 'things.default',
+    defaultMessage: 'Default',
+  },
 })

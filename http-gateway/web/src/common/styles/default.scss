@@ -6,7 +6,8 @@ body,
 input,
 textarea,
 select,
-table {
+table,
+.tooltip-inner {
   font-family: 'Mulish', sans-serif;
   font-size: $font_size;
   font-weight: 400;
@@ -19,8 +20,11 @@ a,
   text-decoration: none;
   cursor: pointer;
 
-  &:hover {
+  &:hover:not(.btn) {
     text-decoration: underline;
+  }
+
+  &:hover {
     color: $primary_100;
   }
 }
