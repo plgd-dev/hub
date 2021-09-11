@@ -14,7 +14,7 @@
     "bootstrap": "^4.6.0",
     "classnames": "^2.3.1",
     "cross-env": "^7.0.3",
-    "history": "^4.10.1",
+    "history": "^5.0.0",
     "jsoneditor": "^9.5.5",
     "lodash": "^4.17.21",
     "node-sass": "6.0.1",
