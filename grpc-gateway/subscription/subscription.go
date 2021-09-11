@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,6 +19,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/kit/strings"
 	"go.uber.org/atomic"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 )
 
@@ -46,13 +46,13 @@ type Sub struct {
 	filteredDeviceIDs     strings.Set
 	filteredResourceIDs   strings.Set
 	resourceDirectory     pb.GrpcGatewayClient
-	closed                atomic.Bool
 	deduplicateEvents     map[string]deduplicateEvent
 
 	eventsCache   chan eventbus.EventUnmarshaler
 	ownerCache    chan *ownerEvents.Event
-	done          chan struct{}
-	eventsCacheWg sync.WaitGroup
+	doneCtx       context.Context
+	cancelDoneCtx context.CancelFunc
+	syncGoroutine *semaphore.Weighted
 }
 
 func isFilteredDevice(filteredDeviceIDs strings.Set, deviceID string) bool {
@@ -281,7 +281,7 @@ var eventToHandler = map[string]resourceEventHandler{
 }
 
 func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
-	if !s.isFiltered(eu) {
+	if s.isDuplicatedEvent(eu) {
 		return
 	}
 	handler, ok := eventToHandler[eu.EventType()]
@@ -303,13 +303,6 @@ func (s *Sub) handleEvent(eu eventbus.EventUnmarshaler) {
 	}
 }
 
-func (s *Sub) isFiltered(ev event) bool {
-	if s.closed.Load() {
-		return false
-	}
-	return !s.isDuplicatedEvent(ev)
-}
-
 func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
 	for {
 		eu, ok := iter.Next(ctx)
@@ -324,7 +317,7 @@ func (s *Sub) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
 		}
 
 		select {
-		case <-s.done:
+		case <-s.doneCtx.Done():
 			return nil
 		case s.eventsCache <- eu:
 		}
@@ -387,12 +380,16 @@ func (s *Sub) initOwnerSubscription(ownerCache *client.OwnerCache) ([]string, er
 	return devices, nil
 }
 
-func (s *Sub) start() {
-	s.eventsCacheWg.Add(1)
+func (s *Sub) start() error {
+	err := s.syncGoroutine.Acquire(s.doneCtx, 1)
+	if err != nil {
+		return fmt.Errorf("subscription preliminary ends: %w", err)
+	}
 	go func() {
-		defer s.eventsCacheWg.Done()
+		defer s.syncGoroutine.Release(1)
 		s.run()
 	}()
+	return nil
 }
 
 func (s *Sub) initEvents(devices []string) error {
@@ -434,8 +431,7 @@ func (s *Sub) Init(ownerCache *client.OwnerCache) error {
 		_ = s.Close()
 		return err
 	}
-	s.start()
-	return nil
+	return s.start()
 }
 
 func (s *Sub) filterDevices(devices []string) []string {
@@ -781,25 +777,18 @@ func (s *Sub) onUnregisteredEvent(e *ownerEvents.DevicesUnregistered) {
 
 func (s *Sub) onOwnerEvent(e *ownerEvents.Event) {
 	select {
-	case <-s.done:
+	case <-s.doneCtx.Done():
 	case s.ownerCache <- e:
 	}
 }
 
 func (s *Sub) handleOwnerEvent(e *ownerEvents.Event) {
-	if s.closed.Load() {
-		return
-	}
 	switch {
 	case e.GetDevicesRegistered() != nil:
 		s.onRegisteredEvent(e.GetDevicesRegistered())
 	case e.GetDevicesUnregistered() != nil:
 		s.onUnregisteredEvent(e.GetDevicesUnregistered())
 	}
-}
-
-func (s *Sub) setClosed() bool {
-	return s.closed.CAS(false, true)
 }
 
 func cleanUpDevicesEventsObservers(devicesEventsObserver map[string]eventbus.Observer) error {
@@ -817,15 +806,19 @@ func cleanUpDevicesEventsObservers(devicesEventsObserver map[string]eventbus.Obs
 }
 
 func (s *Sub) cleanUp(devicesEventsObserver map[string]eventbus.Observer) error {
-	close(s.done)
-	s.eventsCacheWg.Wait()
+	s.cancelDoneCtx()
+	// try to wait for goroutine
+	_ = s.syncGoroutine.Acquire(context.Background(), 1)
+	// goroutine ended
+	s.syncGoroutine.Release(1)
 	s.closeOwnerSub()
 	return cleanUpDevicesEventsObservers(devicesEventsObserver)
 }
 
 // Close closes subscription. Be carefull it cause deadlock when you call it from send function.
 func (s *Sub) Close() error {
-	if !s.setClosed() {
+	if s.doneCtx.Err() != nil {
+		// is closed
 		return nil
 	}
 	return s.cleanUp(s.devicesEventsObserver)
@@ -854,7 +847,7 @@ func (s *Sub) run() {
 			timeC = timer.C
 		}
 		select {
-		case <-s.done:
+		case <-s.doneCtx.Done():
 			return
 		case now := <-tick.C:
 			s.dropExpiredDeduplicateEvents(now)
@@ -900,6 +893,9 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 		}
 		errFunc = newErrFunc
 	}
+
+	doneCtx, cancelDoneCtx := context.WithCancel(context.Background())
+
 	var ctxAtomic atomic.Value
 	ctxAtomic.Store(ctx)
 
@@ -922,7 +918,9 @@ func New(ctx context.Context, eventsSub *subscriber.Subscriber, resourceDirector
 		deduplicateEvents:     make(map[string]deduplicateEvent),
 		eventsCache:           make(chan eventbus.EventUnmarshaler, cacheSize),
 		ownerCache:            make(chan *ownerEvents.Event, cacheSize),
-		done:                  make(chan struct{}),
+		doneCtx:               doneCtx,
+		cancelDoneCtx:         cancelDoneCtx,
 		ownerSubClose:         ctxSubClose,
+		syncGoroutine:         semaphore.NewWeighted(1),
 	}
 }
