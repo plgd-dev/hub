@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"sync"
-	"time"
 
 	asClient "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -18,12 +17,11 @@ import (
 )
 
 type subscriptions struct {
-	send                        func(e *pb.Event) error
-	resourceSubscriber          *subscriber.Subscriber
-	ownerCache                  *asClient.OwnerCache
-	resourceDirectoryClient     pb.GrpcGatewayClient
-	subscriptionBufferSize      int
-	subscriptionCacheExpiration time.Duration
+	send                    func(e *pb.Event) error
+	resourceSubscriber      *subscriber.Subscriber
+	ownerCache              *asClient.OwnerCache
+	resourceDirectoryClient pb.GrpcGatewayClient
+	subscriptionBufferSize  int
 
 	subs map[string]*subscription.Sub
 }
@@ -33,16 +31,14 @@ func newSubscriptions(
 	resourceSubscriber *subscriber.Subscriber,
 	ownerCache *asClient.OwnerCache,
 	subscriptionBufferSize int,
-	subscriptionCacheExpiration time.Duration,
 	send func(e *pb.Event) error) *subscriptions {
 	return &subscriptions{
-		subs:                        make(map[string]*subscription.Sub),
-		send:                        send,
-		resourceDirectoryClient:     resourceDirectoryClient,
-		resourceSubscriber:          resourceSubscriber,
-		ownerCache:                  ownerCache,
-		subscriptionBufferSize:      subscriptionBufferSize,
-		subscriptionCacheExpiration: subscriptionCacheExpiration,
+		subs:                    make(map[string]*subscription.Sub),
+		send:                    send,
+		resourceDirectoryClient: resourceDirectoryClient,
+		resourceSubscriber:      resourceSubscriber,
+		ownerCache:              ownerCache,
+		subscriptionBufferSize:  subscriptionBufferSize,
 	}
 }
 
@@ -56,7 +52,7 @@ func (s *subscriptions) close() {
 }
 
 func (s *subscriptions) createSubscription(ctx context.Context, req *pb.SubscribeToEvents) error {
-	sub := subscription.New(ctx, s.resourceSubscriber, s.resourceDirectoryClient, s.send, req.GetCorrelationId(), s.subscriptionBufferSize, s.subscriptionCacheExpiration, func(err error) {
+	sub := subscription.New(ctx, s.resourceSubscriber, s.send, req.GetCorrelationId(), s.subscriptionBufferSize, func(err error) {
 		log.Errorf("error occurs during processing event by subscription: %v", err)
 	}, req.GetCreateSubscription())
 	err := s.send(&pb.Event{
@@ -154,7 +150,7 @@ func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsS
 		return srv.Send(e)
 	}
 
-	subs := newSubscriptions(r.resourceDirectoryClient, r.resourceSubscriber, r.ownerCache, r.config.APIs.GRPC.SubscriptionBufferSize, r.config.APIs.GRPC.SubscriptionCacheExpiration, send)
+	subs := newSubscriptions(r.resourceDirectoryClient, r.resourceSubscriber, r.ownerCache, r.config.APIs.GRPC.SubscriptionBufferSize, send)
 	defer subs.close()
 
 	for {

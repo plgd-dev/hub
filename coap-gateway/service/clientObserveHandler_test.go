@@ -54,7 +54,6 @@ func Test_clientObserveHandler(t *testing.T) {
 			},
 			wantsCode: codes.BadRequest,
 		},
-
 		{
 			name: "observe - not exist resource",
 			args: args{

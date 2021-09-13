@@ -6,6 +6,7 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -73,7 +74,7 @@ func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceI
 	if resourceContentChangedHandler == nil {
 		return nil, fmt.Errorf("invalid handler - it's supports: ResourceContentChangedHandler")
 	}
-	client, err := gwClient.SubscribeToEvents(ctx)
+	client, err := New(gwClient).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +82,8 @@ func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceI
 	err = client.Send(&pb.SubscribeToEvents{
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				ResourceIdFilter:    []string{resourceID.ToString()},
-				EventFilter:         filterEvents,
-				IncludeCurrentState: true,
+				ResourceIdFilter: []string{resourceID.ToString()},
+				EventFilter:      filterEvents,
 			},
 		},
 	})

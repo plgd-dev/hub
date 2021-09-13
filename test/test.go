@@ -24,6 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/atomic"
 
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -348,17 +349,16 @@ func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 }
 
 func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID string, expectedResources []schema.ResourceLink) {
-	client, err := c.SubscribeToEvents(ctx)
+	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Second)
 	require.NoError(t, err)
 
 	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken",
+		CorrelationId: "testToken0",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -367,7 +367,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken",
+		CorrelationId:  "testToken0",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -392,14 +392,13 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 
 	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken",
+		CorrelationId: "testToken1",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 				DeviceIdFilter: []string{deviceID},
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -407,7 +406,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		CorrelationId: "testToken",
+		CorrelationId: "testToken1",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -442,7 +441,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	}
 
 	err = client.Send(&pb.SubscribeToEvents{
-		CorrelationId: "testToken",
+		CorrelationId: "testToken3",
 		Action: &pb.SubscribeToEvents_CancelSubscription_{
 			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 				SubscriptionId: subOnPublishedID,
@@ -455,7 +454,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken",
+		CorrelationId:  "testToken3",
 		Type: &pb.Event_SubscriptionCanceled_{
 			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 		},
@@ -466,7 +465,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
 		SubscriptionId: ev.SubscriptionId,
-		CorrelationId:  "testToken",
+		CorrelationId:  "testToken3",
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -480,7 +479,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	expectedEvents := ResourceLinksToExpectedResourceChangedEvents(deviceID, expectedResources)
 	for _, e := range expectedEvents {
 		err = client.Send(&pb.SubscribeToEvents{
-			CorrelationId: "testToken",
+			CorrelationId: "testToken3",
 			Action: &pb.SubscribeToEvents_CreateSubscription_{
 				CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 					ResourceIdFilter: []string{
@@ -489,7 +488,6 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 		})
@@ -498,7 +496,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent := &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken",
+			CorrelationId:  "testToken3",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -512,11 +510,10 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		ev, err = client.Recv()
 		require.NoError(t, err)
 		require.Equal(t, e.GetResourceChanged().GetResourceId(), ev.GetResourceChanged().GetResourceId())
-		//require.Equal(t, e, ev)
 		require.Equal(t, e.GetResourceChanged().GetStatus(), ev.GetResourceChanged().GetStatus())
 
 		err = client.Send(&pb.SubscribeToEvents{
-			CorrelationId: "testToken",
+			CorrelationId: "testToken4",
 			Action: &pb.SubscribeToEvents_CancelSubscription_{
 				CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 					SubscriptionId: ev.GetSubscriptionId(),
@@ -529,7 +526,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent = &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken",
+			CorrelationId:  "testToken4",
 			Type: &pb.Event_SubscriptionCanceled_{
 				SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 			},
@@ -540,7 +537,7 @@ func waitForDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		require.NoError(t, err)
 		expectedEvent = &pb.Event{
 			SubscriptionId: ev.SubscriptionId,
-			CorrelationId:  "testToken",
+			CorrelationId:  "testToken4",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
 					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{

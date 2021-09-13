@@ -44,9 +44,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 				sub: &pb.SubscribeToEvents{
 					CorrelationId: "testToken",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
-						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-							IncludeCurrentState: true,
-						},
+						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{},
 					},
 				},
 			},
@@ -137,7 +135,6 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -163,7 +160,6 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -193,7 +189,6 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -244,10 +239,10 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var result []*pb.Event
-			s := subscription.New(ctx, resourceSubscriber, rdc, func(e *pb.Event) error {
+			s := subscription.New(ctx, resourceSubscriber, func(e *pb.Event) error {
 				result = append(result, e)
 				return nil
-			}, tt.args.sub.GetCorrelationId(), 0, time.Second, func(err error) { t.Log(err) }, tt.args.sub.GetCreateSubscription())
+			}, tt.args.sub.GetCorrelationId(), 0, func(err error) { t.Log(err) }, tt.args.sub.GetCreateSubscription())
 			err := s.Init(ownerCache)
 			require.NoError(t, err)
 			defer func() {
@@ -512,13 +507,13 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	correlationID := "testToken"
 	recvChan := make(chan *pb.Event, 1)
 
-	s := subscription.New(ctx, resourceSubscriber, rdc, func(e *pb.Event) error {
+	s := subscription.New(ctx, resourceSubscriber, func(e *pb.Event) error {
 		select {
 		case recvChan <- e:
 		case <-ctx.Done():
 		}
 		return nil
-	}, correlationID, 10, time.Second, func(err error) { t.Log(err) }, &pb.SubscribeToEvents_CreateSubscription{})
+	}, correlationID, 10, func(err error) { t.Log(err) }, &pb.SubscribeToEvents_CreateSubscription{})
 	err = s.Init(ownerCache)
 	require.NoError(t, err)
 	defer func() {

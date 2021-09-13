@@ -100,7 +100,6 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -136,7 +135,6 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -176,7 +174,6 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -211,7 +208,14 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(rdConn.GRPC())
 
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	grpcConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get())
+	require.NoError(t, err)
+	defer func() {
+		_ = grpcConn.Close()
+	}()
+	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
@@ -276,6 +280,13 @@ func TestRequestHandler_Issue270(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(rdConn.GRPC())
 
+	grpcConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_HOST), log.Get())
+	require.NoError(t, err)
+	defer func() {
+		_ = grpcConn.Close()
+	}()
+	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
+
 	client, err := c.SubscribeToEvents(ctx)
 	require.NoError(t, err)
 
@@ -286,7 +297,6 @@ func TestRequestHandler_Issue270(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -321,7 +331,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 	}
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 
 	time.Sleep(time.Second * 10)
 
@@ -409,7 +419,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 	}()
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 
 	client, err := c.SubscribeToEvents(ctx)
 	require.NoError(t, err)
@@ -421,7 +431,6 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -492,7 +501,6 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -547,7 +555,6 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})
@@ -743,7 +750,6 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING, pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})

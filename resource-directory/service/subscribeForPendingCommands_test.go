@@ -66,7 +66,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -103,7 +102,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -185,7 +183,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -209,7 +206,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -241,7 +237,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -265,7 +260,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -296,7 +290,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -353,7 +346,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	client, err := c.SubscribeToEvents(ctx)
 	require.NoError(t, err)
 
-	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
+	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, grpcClient, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	secureGWShutdown()

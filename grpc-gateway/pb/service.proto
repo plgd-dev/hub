@@ -99,7 +99,7 @@ service GrpcGateway {
     };
   }
 
-  // When the client creates a subscription, with include_current_state=true it can send duplicate events.
+  // When the client creates a subscription.
   // Subscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronize events.
   rpc SubscribeToEvents(stream ocf.cloud.grpcgateway.pb.SubscribeToEvents) returns (stream Event) {
     option (google.api.http) = {
