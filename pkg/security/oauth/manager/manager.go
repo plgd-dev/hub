@@ -2,17 +2,15 @@ package manager
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	"golang.org/x/oauth2/clientcredentials"
-
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 // Manager holds certificates from filesystem watched for changes
@@ -29,26 +27,6 @@ type Manager struct {
 	done                        chan struct{}
 
 	http *client.Client
-}
-
-// NewManagerFromConfiguration creates a new oauth manager which refreshing token.
-func NewManagerFromConfiguration(config Config, tlsCfg *tls.Config) (*Manager, error) {
-	cfg := config.ToClientCredentials()
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.MaxIdleConns = 100
-	t.MaxConnsPerHost = 100
-	t.MaxIdleConnsPerHost = 1
-	t.IdleConnTimeout = time.Second * 30
-	t.TLSClientConfig = tlsCfg
-	m, err := new(cfg, &http.Client{
-		Transport: t,
-		Timeout:   config.RequestTimeout,
-	}, config.RequestTimeout, config.TickFrequency)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
 }
 
 func new(cfg clientcredentials.Config, httpClient *http.Client, requestTimeout, verifyServiceTokenFrequency time.Duration) (*Manager, error) {

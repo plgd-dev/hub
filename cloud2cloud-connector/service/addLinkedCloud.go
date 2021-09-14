@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-
 	"github.com/plgd-dev/kit/codec/json"
 )
 

@@ -1,42 +1,220 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
+	"github.com/plgd-dev/cloud/pkg/config"
+	"github.com/plgd-dev/cloud/pkg/log"
+	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
+	"github.com/plgd-dev/cloud/pkg/net/listener"
+	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
-type TaskProcessorConfig struct {
-	CacheSize   int           `envconfig:"CACHE_SIZE" default:"2048"`
-	Timeout     time.Duration `envconfig:"TIMEOUT" default:"5s"`
-	MaxParallel int64         `envconfig:"MAX_PARALLEL" default:"128"`
-	Delay       time.Duration `envconfig:"DELAY"` // Used for CTT test with 10s.
-}
-
-//Config represent application configuration
+// Config represents application configuration
 type Config struct {
-	Addr                  string              `envconfig:"ADDRESS" env:"ADDRESS" long:"address" default:"0.0.0.0:9100"`
-	AuthServerAddr        string              `envconfig:"AUTH_SERVER_ADDRESS" default:"127.0.0.1:9100"`
-	ResourceAggregateAddr string              `envconfig:"RESOURCE_AGGREGATE_ADDRESS"  default:"127.0.0.1:9100"`
-	ResourceDirectoryAddr string              `envconfig:"RESOURCE_DIRECTORY_ADDRESS"  default:"127.0.0.1:9100"`
-	OAuthCallback         string              `envconfig:"OAUTH_CALLBACK"`
-	EventsURL             string              `envconfig:"EVENTS_URL"`
-	PullDevicesDisabled   bool                `envconfig:"PULL_DEVICES_DISABLED" default:"false"`
-	PullDevicesInterval   time.Duration       `envconfig:"PULL_DEVICES_INTERVAL" default:"5s"`
-	TaskProcessor         TaskProcessorConfig `envconfig:"TASK_PROCESSOR"`
-	ReconnectInterval     time.Duration       `envconfig:"RECONNECT_INTERVAL" default:"10s"`
-	ResubscribeInterval   time.Duration       `envconfig:"RESUBSCRIBE_INTERVAL" default:"10s"`
-	JwksURL               string              `envconfig:"JWKS_URL"`
-	OwnerClaim            string              `envconfig:"OWNER_CLAIM" env:"OWNER_CLAIM" default:"sub"`
-	OAuth                 manager.Config      `envconfig:"OAUTH"`
-	Nats                  natsClient.Config
+	Log           log.Config          `yaml:"log" json:"log"`
+	APIs          APIsConfig          `yaml:"apis" json:"apis"`
+	Clients       ClientsConfig       `yaml:"clients" json:"clients"`
+	TaskProcessor TaskProcessorConfig `yaml:"taskProcessor" json:"taskProcessor"`
 }
 
-//String return string representation of Config
+func (c *Config) Validate() error {
+	if err := c.APIs.Validate(); err != nil {
+		return fmt.Errorf("apis.%w", err)
+	}
+	if err := c.Clients.Validate(); err != nil {
+		return fmt.Errorf("clients.%w", err)
+	}
+	if err := c.TaskProcessor.Validate(); err != nil {
+		return fmt.Errorf("taskProcessor.%w", err)
+	}
+	return nil
+}
+
+type APIsConfig struct {
+	HTTP HTTPConfig `yaml:"http" json:"http"`
+}
+
+func (c *APIsConfig) Validate() error {
+	if err := c.HTTP.Validate(); err != nil {
+		return fmt.Errorf("http.%w", err)
+	}
+	return nil
+}
+
+type HTTPConfig struct {
+	EventsURL     string            `yaml:"eventsURL" json:"eventsURL"`
+	OAuthCallback string            `yaml:"oauthcallback" json:"oauthcallback"`
+	PullDevices   PullDevicesConfig `yaml:"pullDevices" json:"pullDevices"`
+	Connection    listener.Config   `yaml:",inline" json:",inline"`
+	Authorization validator.Config  `yaml:"authorization" json:"authorization"`
+}
+
+type PullDevicesConfig struct {
+	Disabled bool          `yaml:"disabled" json:"disabled"`
+	Interval time.Duration `yaml:"interval" json:"interval"`
+}
+
+func (c *PullDevicesConfig) Validate() error {
+	if c.Interval <= 0 {
+		return fmt.Errorf("interval('%v')", c.Interval)
+	}
+	return nil
+}
+
+func (c *HTTPConfig) Validate() error {
+	if c.EventsURL == "" {
+		return fmt.Errorf("eventsURL('%v')", c.EventsURL)
+	}
+	if c.OAuthCallback == "" {
+		return fmt.Errorf("oauthcallback('%v')", c.OAuthCallback)
+	}
+	if err := c.PullDevices.Validate(); err != nil {
+		return fmt.Errorf("pullDevices('%w')", err)
+	}
+	if err := c.Connection.Validate(); err != nil {
+		return err
+	}
+	if err := c.Authorization.Validate(); err != nil {
+		return fmt.Errorf("authorization('%w')", err)
+	}
+	return nil
+}
+
+type ClientsConfig struct {
+	AuthServer        AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
+	Eventbus          EventBusConfig            `yaml:"eventBus" json:"eventBus"`
+	ResourceAggregate ResourceAggregateConfig   `yaml:"resourceAggregate" json:"resourceAggregate"`
+	ResourceDirectory ResourceDirectoryConfig   `yaml:"resourceDirectory" json:"resourceDirectory"`
+	Storage           StorageConfig             `yaml:"storage" json:"storage"`
+	Subscription      SubscriptionConfig        `yaml:"subscription" json:"subscription"`
+}
+
+func (c *ClientsConfig) Validate() error {
+	if err := c.AuthServer.Validate(); err != nil {
+		return fmt.Errorf("authorizationServer.%w", err)
+	}
+	if err := c.Eventbus.Validate(); err != nil {
+		return fmt.Errorf("eventBus.%w", err)
+	}
+	if err := c.ResourceAggregate.Validate(); err != nil {
+		return fmt.Errorf("resourceAggregate.%w", err)
+	}
+	if err := c.ResourceDirectory.Validate(); err != nil {
+		return fmt.Errorf("resourceDirectory.%w", err)
+	}
+	if err := c.Storage.Validate(); err != nil {
+		return fmt.Errorf("storage.%w", err)
+	}
+	if err := c.Subscription.Validate(); err != nil {
+		return fmt.Errorf("subscription.%w", err)
+	}
+	return nil
+}
+
+type AuthorizationServerConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *AuthorizationServerConfig) Validate() error {
+	err := c.Connection.Validate()
+	if err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return err
+}
+
+type EventBusConfig struct {
+	NATS natsClient.Config `yaml:"nats" json:"nats"`
+}
+
+func (c *EventBusConfig) Validate() error {
+	if err := c.NATS.Validate(); err != nil {
+		return fmt.Errorf("nats.%w", err)
+	}
+	return nil
+}
+
+type ResourceAggregateConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *ResourceAggregateConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
+type ResourceDirectoryConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *ResourceDirectoryConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
+type StorageConfig struct {
+	MongoDB mongodb.Config `yaml:"mongoDB" json:"mongoDB"`
+}
+
+func (c *StorageConfig) Validate() error {
+	if err := c.MongoDB.Validate(); err != nil {
+		return fmt.Errorf("mongoDB.%w", err)
+	}
+	return nil
+}
+
+type SubscriptionConfig struct {
+	HTTP HTTPSubscriptionConfig `yaml:"http" json:"http"`
+}
+
+func (c *SubscriptionConfig) Validate() error {
+	if err := c.HTTP.Validate(); err != nil {
+		return fmt.Errorf("http.%w", err)
+	}
+	return nil
+}
+
+type HTTPSubscriptionConfig struct {
+	ReconnectInterval   time.Duration `yaml:"reconnectInterval" json:"reconnectInterval"`
+	ResubscribeInterval time.Duration `yaml:"resubscribeInterval" json:"resubscribeInterval"`
+}
+
+func (c *HTTPSubscriptionConfig) Validate() error {
+	if c.ReconnectInterval <= 0 {
+		return fmt.Errorf("reconnectInterval('%v')", c.ReconnectInterval)
+	}
+	if c.ResubscribeInterval <= 0 {
+		return fmt.Errorf("resubscribeInterval('%v')", c.ResubscribeInterval)
+	}
+	return nil
+}
+
+type TaskProcessorConfig struct {
+	CacheSize   int           `yaml:"cacheSize" json:"cacheSize"`
+	Timeout     time.Duration `yaml:"timeout" json:"timeout"`
+	MaxParallel int           `yaml:"maxParallel" json:"maxParallel"`
+	Delay       time.Duration `yaml:"delay" json:"delay"` // Used for CTT test with 10s.
+}
+
+func (c *TaskProcessorConfig) Validate() error {
+	if c.CacheSize <= 0 {
+		return fmt.Errorf("cacheSize('%v')", c.CacheSize)
+	}
+	if c.MaxParallel <= 0 {
+		return fmt.Errorf("maxParallel('%v')", c.MaxParallel)
+	}
+	return nil
+}
+
+// Return string representation of Config
 func (c Config) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return fmt.Sprintf("config: \n%v\n", string(b))
+	return config.ToString(c)
 }

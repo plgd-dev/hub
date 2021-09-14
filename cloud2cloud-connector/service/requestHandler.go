@@ -7,18 +7,13 @@ import (
 	"net/url"
 	"time"
 
+	router "github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
-
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/kit/log"
-
-	router "github.com/gorilla/mux"
-
-	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 )
 
 const cloudIDKey = "CloudId"
@@ -29,18 +24,14 @@ type provisionCacheData struct {
 	linkedCloud   store.LinkedCloud
 }
 
-//RequestHandler for handling incoming request
+// RequestHandler handles incoming requests
 type RequestHandler struct {
-	oauthCallback string
-	store         *Store
-	ownerClaim    string
-
-	asClient pbAS.AuthorizationServiceClient
-	raClient raService.ResourceAggregateClient
-
+	oauthCallback  string
+	store          *Store
+	ownerClaim     string
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
-	triggerTask    func(Task)
+	triggerTask    OnTaskTrigger
 }
 
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
@@ -52,25 +43,19 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 	}
 }
 
-//NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(
 	oauthCallback string,
 	subManager *SubscriptionManager,
-	asClient pbAS.AuthorizationServiceClient,
-	raClient raService.ResourceAggregateClient,
 	store *Store,
-	triggerTask func(Task),
-	ownerClaim string,
+	triggerTask OnTaskTrigger,
 ) *RequestHandler {
 	return &RequestHandler{
 		oauthCallback:  oauthCallback,
 		subManager:     subManager,
-		asClient:       asClient,
-		raClient:       raClient,
 		store:          store,
 		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
 		triggerTask:    triggerTask,
-		ownerClaim:     ownerClaim,
+		ownerClaim:     "sub",
 	}
 }
 

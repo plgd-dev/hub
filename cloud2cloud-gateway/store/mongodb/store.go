@@ -27,7 +27,7 @@ func NewStore(ctx context.Context, cfg Config, tls *tls.Config) (*Store, error) 
 	}
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
-		return nil, fmt.Errorf("could not dial database: %w", err)
+		return nil, fmt.Errorf("could not ping database client: %w", err)
 	}
 	s, err := NewStoreWithSession(ctx, client, cfg.Database)
 	if err != nil {

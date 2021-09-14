@@ -1,11 +1,11 @@
-package mongodb
+package mongodb_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,28 +35,17 @@ func TestStore_InsertLinkedAccount(t *testing.T) {
 		},
 	}
 
-	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
-	require.NoError(err)
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
-	require.NoError(err)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(err)
-		_ = s.Close(ctx)
-	}()
-
-	assert := assert.New(t)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.InsertLinkedAccount(ctx, tt.args.sub)
 			if tt.wantErr {
-				assert.Error(err)
+				assert.Error(t, err)
 			} else {
-				assert.NoError(err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -103,22 +92,11 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 		},
 	}
 
-	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
-	require.NoError(err)
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
-	require.NoError(err)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(err)
-		_ = s.Close(ctx)
-	}()
-
-	assert := assert.New(t)
-
-	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
+	err := s.InsertLinkedAccount(ctx, store.LinkedAccount{
 		ID: "testID",
 
 		LinkedCloudID: "testLinkedCloudID",
@@ -128,15 +106,15 @@ func TestStore_UpdateLinkedAccount(t *testing.T) {
 		},
 		UserID: "userID",
 	})
-	require.NoError(err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.UpdateLinkedAccount(ctx, tt.args.sub)
 			if tt.wantErr {
-				assert.Error(err)
+				assert.Error(t, err)
 			} else {
-				assert.NoError(err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -166,22 +144,11 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 		},
 	}
 
-	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
-	require.NoError(err)
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
-	require.NoError(err)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(err)
-		_ = s.Close(ctx)
-	}()
-
-	assert := assert.New(t)
-
-	err = s.InsertLinkedAccount(ctx, store.LinkedAccount{
+	err := s.InsertLinkedAccount(ctx, store.LinkedAccount{
 		ID: "testID",
 
 		LinkedCloudID: "testLinkedCloudID",
@@ -191,15 +158,15 @@ func TestStore_RemoveLinkedAccount(t *testing.T) {
 		},
 		UserID: "userID",
 	})
-	require.NoError(err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.RemoveLinkedAccount(ctx, tt.args.linkedAccountId)
 			if tt.wantErr {
-				assert.Error(err)
+				assert.Error(t, err)
 			} else {
-				assert.NoError(err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -265,24 +232,13 @@ func TestStore_LoadLinkedAccounts(t *testing.T) {
 		},
 	}
 
-	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
-	require.NoError(err)
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
-	require.NoError(err)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(err)
-		_ = s.Close(ctx)
-	}()
-
-	assert := assert.New(t)
-
 	for _, a := range linkedAccounts {
-		err = s.InsertLinkedAccount(ctx, a)
-		require.NoError(err)
+		err := s.InsertLinkedAccount(ctx, a)
+		require.NoError(t, err)
 	}
 
 	for _, tt := range tests {
@@ -290,10 +246,10 @@ func TestStore_LoadLinkedAccounts(t *testing.T) {
 			var h testLinkedAccountHandler
 			err := s.LoadLinkedAccounts(ctx, tt.args.query, &h)
 			if tt.wantErr {
-				assert.Error(err)
+				assert.Error(t, err)
 			} else {
-				assert.NoError(err)
-				assert.Equal(tt.want, h.accs)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, h.accs)
 			}
 		})
 	}

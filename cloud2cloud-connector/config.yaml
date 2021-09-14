@@ -1,0 +1,83 @@
+log:
+  debug: false
+apis:
+  http:
+    address: "0.0.0.0:9100"
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: false
+    eventsURL: ""
+    oauthcallback: ""
+    pullDevices:
+      disabled: false
+      interval: 5s
+    authorization:
+      authority: ""
+      audience: ""
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: 30s
+        timeout: 10s
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+clients:
+  authorizationServer:
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  eventBus:
+    nats:
+      url: ""
+      pendingLimits:
+        msgLimit: 524288
+        bytesLimit: 67108864
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  resourceDirectory:
+    grpc:
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  storage:
+    mongoDB:
+      uri: "mongodb://localhost:27017"
+      database: "cloud2cloudConnector"
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile:  "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  subscription:
+    http:
+      reconnectInterval: "10s"
+      resubscribeInterval: "10s"
+taskProcessor:
+  CacheSize: 2048
+  Timeout: "5s"
+  MaxParallel: 128
+  Delay: ""

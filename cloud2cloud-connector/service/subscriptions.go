@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
-
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
@@ -49,7 +48,7 @@ type SubscriptionManager struct {
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
 	oauthCallback       string
-	triggerTask         func(Task)
+	triggerTask         OnTaskTrigger
 	interval            time.Duration
 }
 
@@ -60,7 +59,7 @@ func NewSubscriptionManager(
 	store *Store,
 	devicesSubscription *DevicesSubscription,
 	oauthCallback string,
-	triggerTask func(Task),
+	triggerTask OnTaskTrigger,
 	interval time.Duration,
 ) *SubscriptionManager {
 	return &SubscriptionManager{
