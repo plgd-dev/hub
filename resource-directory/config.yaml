@@ -69,6 +69,7 @@ clients:
     pullFrequency: 15s
     cacheExpiration: 1m
     ownerClaim: sub
+    deviceIdClaim: ""
     grpc:
       address: ""
       tls:

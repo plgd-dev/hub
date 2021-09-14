@@ -752,6 +752,9 @@ components:
           description: JWT claim identifying device owner.
           type: string
           default: 'sub'
+        jwtDeviceIdClaim:
+          description: JWT claim identifying device id. Empty means that JWT doesn't contains it.
+          type: string
         signingServerAddress:
           description: Certificate authority endpoint used to sign identity certificates for devices.
           type: string
@@ -776,6 +779,9 @@ components:
           description: Current time of server in nanoseconds.
           type: integer
           format: int64
+        deviceAuthority:
+          description: Endpoint of OAuth provider.
+          type: string
       example:
         deviceOnboardingCodeUrl: 'https://auth.plgd.cloud/authorize?audience=http://try.plgd.cloud/'
         jwtClaimOwnerId: 'sub'

@@ -1228,7 +1228,10 @@
         "deviceOnboardingCodeUrl": {
           "type": "string"
         },
-        "jwtClaimOwnerId": {
+        "jwtOwnerClaim": {
+          "type": "string"
+        },
+        "jwtDeviceIdClaim": {
           "type": "string"
         },
         "signingServerAddress": {
@@ -1244,6 +1247,9 @@
           "type": "string"
         },
         "cloudCertificateAuthorities": {
+          "type": "string"
+        },
+        "deviceAuthority": {
           "type": "string"
         },
         "defaultCommandTimeToLive": {

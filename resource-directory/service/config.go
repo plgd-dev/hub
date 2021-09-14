@@ -136,6 +136,7 @@ type PublicConfiguration struct {
 	CAPool                     string               `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
 	DeviceAuthorization        authorization.Config `yaml:"deviceAuthorization" json:"deviceAuthorization"`
 	OwnerClaim                 string               `yaml:"ownerClaim" json:"ownerClaim"`
+	DeviceIDClaim              string               `yaml:"deviceIdClaim" json:"deviceIdClaim"`
 	SigningServerAddress       string               `yaml:"signingServerAddress" json:"signingServerAddress"`
 	CloudID                    string               `yaml:"cloudID" json:"cloudID"`
 	CloudURL                   string               `yaml:"cloudURL" json:"cloudURL"`
@@ -170,7 +171,8 @@ func (c *PublicConfiguration) Validate() error {
 func (c PublicConfiguration) ToProto(authURL string) *pb.CloudConfigurationResponse {
 	return &pb.CloudConfigurationResponse{
 		DeviceOnboardingCodeUrl:     c.DeviceAuthorization.AuthCodeURL(uuid.NewString(), authURL, ""),
-		JwtClaimOwnerId:             c.OwnerClaim,
+		JwtOwnerClaim:               c.OwnerClaim,
+		JwtDeviceIdClaim:            c.DeviceIDClaim,
 		SigningServerAddress:        c.SigningServerAddress,
 		CloudId:                     c.CloudID,
 		CloudUrl:                    c.CloudURL,
@@ -178,6 +180,7 @@ func (c PublicConfiguration) ToProto(authURL string) *pb.CloudConfigurationRespo
 		CloudCertificateAuthorities: c.cloudCertificateAuthorities,
 		DefaultCommandTimeToLive:    int64(c.DefaultCommandTimeToLive),
 		CurrentTime:                 pkgTime.UnixNano(time.Now()),
+		DeviceAuthority:             c.DeviceAuthorization.Authority,
 	}
 }
 

@@ -228,6 +228,7 @@ This will be served by HTTP Gateway API as defined [here](https://github.com/plg
 | ---------- | -------- | -------------- | ------- |
 | `publicConfiguration.caPool` | string | `File path to root CA which was used to sign coap-gw certificate.` | `""` |
 | `publicConfiguration.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
+| `publicConfiguration.deviceIdClaim` | string | `Claim used to identify device id of the device. Empty means that JWT doesn't contains it.` | `""` |
 | `publicConfiguration.signingServerAddress` | string | `Address of ceritificate authority for plgd-dev/sdk.` | `""` |
 | `publicConfiguration.cloudID` | string | `Cloud ID which is stored in coap-gw certificate.` | `""` |
 | `publicConfiguration.cloudURL` | string | `Cloud URL for onboard device.` | `""` |
