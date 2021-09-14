@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type Validator struct {
@@ -60,6 +60,7 @@ func (v *Validator) ParseWithClaims(token string, claims jwt.Claims) error {
 	if token == "" {
 		return fmt.Errorf("missing token")
 	}
+
 	_, err := jwt.ParseWithClaims(token, claims, v.keys.GetOrFetchKey)
 	if err != nil {
 		return fmt.Errorf("could not parse token: %w", err)

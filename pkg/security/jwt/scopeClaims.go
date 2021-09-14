@@ -6,10 +6,9 @@ import (
 	"time"
 )
 
-type ScopeClaims struct {
-	Claims
-	requiredScopes []*regexp.Regexp
-}
+type ScopeClaims Claims
+
+const PlgdRequiredScope = "plgd:required:scope"
 
 func NewScopeClaims(scope ...string) *ScopeClaims {
 	requiredScopes := make([]*regexp.Regexp, 0, len(scope))
@@ -20,22 +19,34 @@ func NewScopeClaims(scope ...string) *ScopeClaims {
 }
 
 func NewRegexpScopeClaims(scope ...*regexp.Regexp) *ScopeClaims {
-	return &ScopeClaims{requiredScopes: scope}
+	v := make(ScopeClaims)
+	v[PlgdRequiredScope] = scope
+	return &v
 }
 
 func (c *ScopeClaims) Valid() error {
-	if err := c.Claims.ValidTimes(time.Now()); err != nil {
+	v := Claims(*c)
+	if err := v.ValidTimes(time.Now()); err != nil {
 		return err
 	}
-	if len(c.requiredScopes) == 0 {
+	rs, ok := v[PlgdRequiredScope]
+	if !ok {
+		return fmt.Errorf("required scope not found")
+	}
+	if rs == nil {
+		return nil
+	}
+	requiredScopes := rs.([]*regexp.Regexp)
+	if len(requiredScopes) == 0 {
 		return nil
 	}
 	notMatched := make(map[string]bool)
-	for _, reg := range c.requiredScopes {
+	for _, reg := range requiredScopes {
 		notMatched[reg.String()] = true
 	}
-	for _, scope := range c.Scope() {
-		for _, requiredScope := range c.requiredScopes {
+
+	for _, scope := range v.Scope() {
+		for _, requiredScope := range requiredScopes {
 			if requiredScope.MatchString(scope) {
 				delete(notMatched, requiredScope.String())
 			}
@@ -44,9 +55,9 @@ func (c *ScopeClaims) Valid() error {
 	if len(notMatched) == 0 {
 		return nil
 	}
-	requiredScopes := make([]string, 0, len(notMatched))
+	missingRequiredScopes := make([]string, 0, len(notMatched))
 	for scope := range notMatched {
-		requiredScopes = append(requiredScopes, scope)
+		missingRequiredScopes = append(missingRequiredScopes, scope)
 	}
-	return fmt.Errorf("missing scopes: %+v", requiredScopes)
+	return fmt.Errorf("missing scopes: %+v", missingRequiredScopes)
 }

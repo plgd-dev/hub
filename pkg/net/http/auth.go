@@ -7,7 +7,7 @@ import (
 	netHttp "net/http"
 	"strings"
 
-	extJwt "github.com/dgrijalva/jwt-go"
+	extJwt "github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
 )

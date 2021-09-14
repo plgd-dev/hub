@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/pkg/strings"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 )

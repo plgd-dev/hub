@@ -6,7 +6,7 @@ import (
 
 	"github.com/plgd-dev/cloud/pkg/log"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
 	jwtValidator "github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/pkg/security/openid"
