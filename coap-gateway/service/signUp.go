@@ -120,7 +120,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		DeviceId: deviceID,
 		UserId:   token.Owner,
 	}); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot sign up: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot sign up: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Update))
 		return
 	}
 

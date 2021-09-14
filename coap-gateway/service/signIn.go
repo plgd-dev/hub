@@ -291,7 +291,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	ctx := kitNetGrpc.CtxWithToken(kitNetGrpc.CtxWithIncomingToken(req.Context, signIn.AccessToken), signIn.AccessToken)
 	valid, err := subscribeAndValidateDeviceAccess(ctx, client, signIn.UserID, deviceID, upd != updateTypeNone)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
 		return
 	}
 	if !valid {
@@ -302,12 +302,12 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getSignInContent(expiresIn, req.Options)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
 		return
 	}
 
 	if err := client.updateBySignInData(ctx, upd, deviceID, signIn.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %v", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
 		return
 	}
 
@@ -327,7 +327,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		}
 		client.registerObservationsForPublishedResourcesLocked(ctx, deviceID)
 	}); err != nil {
-		log.Errorf("sign in error: failed to register resource observations for device %v: %v", deviceID, err)
+		log.Errorf("sign in error: failed to register resource observations for device %v: %w", deviceID, err)
 	}
 }
 
@@ -368,20 +368,20 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 	if signOut.DeviceID == "" || signOut.UserID == "" || signOut.AccessToken == "" {
 		authCurrentCtx, err := client.GetAuthorizationContext()
 		if err != nil {
-			logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
+			logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
 			return
 		}
 		signOut = signOut.updateOAUthRequestIfEmpty(authCurrentCtx.DeviceID, authCurrentCtx.UserID, authCurrentCtx.AccessToken)
 	}
 
 	if err := signOut.checkOAuthRequest(); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.BadRequest)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.BadRequest)
 		return
 	}
 
 	jwtClaims, err := client.ValidateToken(req.Context, signOut.AccessToken)
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
 		return
 	}
 
@@ -392,12 +392,12 @@ func signOutPostHandler(req *mux.Message, client *Client, signOut CoapSignInReq)
 	}
 
 	if err := jwtClaims.ValidateOwnerClaim(client.server.config.Clients.AuthServer.OwnerClaim, signOut.UserID); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapCodes.InternalServerError)
 		return
 	}
 
 	if err := updateDeviceMetadata(req, client); err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %v", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign out: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Update))
 		return
 	}
 

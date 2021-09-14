@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"google.golang.org/grpc/status"
 )
 
 //handles resource updates and creation
@@ -36,7 +35,7 @@ func clientUpdateHandler(req *mux.Message, client *Client) {
 	code := coapCodes.Changed
 	content, err := clientUpdateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
-		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Update)
+		code = coapconv.GrpcErr2CoapCode(err, coapconv.Update)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle update resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}

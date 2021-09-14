@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -132,7 +133,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		DeviceIds: deviceIds,
 	})
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.Unauthorized)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
 		return
 	}
 	if len(respRA.GetDeviceIds()) != 1 {
@@ -145,7 +146,7 @@ func signOffHandler(req *mux.Message, client *Client) {
 		UserId:    signOffData.userID,
 	})
 	if err != nil {
-		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapCodes.InternalServerError)
+		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Delete))
 		return
 	}
 	if len(respAS.GetDeviceIds()) != 1 {

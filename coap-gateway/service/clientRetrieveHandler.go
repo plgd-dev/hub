@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"google.golang.org/grpc/status"
 )
 
 // URIToDeviceIDHref convert uri to deviceID and href. Expected input "/oic/route/{deviceID}/{Href}".
@@ -65,7 +64,7 @@ func clientRetrieveHandler(req *mux.Message, client *Client) {
 		code = coapCodes.Content
 		content, err = clientRetrieveFromDeviceHandler(req, client, deviceID, href)
 		if err != nil {
-			code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve)
+			code = coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve)
 			client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot retrieve resource /%v%v from device: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 			return
 		}
@@ -90,7 +89,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 		},
 	})
 	if err != nil {
-		return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), err
+		return nil, coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), err
 	}
 	defer func() {
 		if err := RetrieveResourcesClient.CloseSend(); err != nil {
@@ -103,7 +102,7 @@ func clientRetrieveFromResourceShadowHandler(ctx context.Context, client *Client
 			break
 		}
 		if err != nil {
-			return nil, coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), err
+			return nil, coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), err
 		}
 		if resourceValue.GetData().GetResourceId().GetDeviceId() == deviceID && resourceValue.GetData().GetResourceId().GetHref() == href && resourceValue.GetData().Content != nil {
 			return resourceValue.GetData().Content, coapCodes.Content, nil
