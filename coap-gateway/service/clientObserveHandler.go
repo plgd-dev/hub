@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -19,7 +20,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -84,9 +84,9 @@ type resourceSubscription struct {
 	seqNum uint32
 	sub    *subscription.Sub
 
-	mutex *semaphore.Weighted
-
-	version *uint64
+	mutex              sync.Mutex
+	version            uint64
+	versionInitialized bool
 }
 
 func (s *resourceSubscription) cancelSubscription(code coapCodes.Code) {
@@ -101,6 +101,17 @@ func (s *resourceSubscription) cancelSubscription(code coapCodes.Code) {
 	}
 }
 
+func (s *resourceSubscription) isDuplicateEvent(ev *events.ResourceChanged) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if s.versionInitialized && s.version >= ev.GetEventMetadata().GetVersion() {
+		return true
+	}
+	s.versionInitialized = true
+	s.version = ev.GetEventMetadata().GetVersion()
+	return false
+}
+
 func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 	switch {
 	case e.GetResourceUnpublished() != nil:
@@ -112,10 +123,7 @@ func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 		s.cancelSubscription(coapCodes.ServiceUnavailable)
 	case e.GetResourceChanged() != nil:
 		// deduplicate events
-		if s.version == nil {
-			version := e.GetResourceChanged().GetEventMetadata().GetVersion()
-			s.version = &version
-		} else if *s.version >= e.GetResourceChanged().GetEventMetadata().GetVersion() {
+		if s.isDuplicateEvent(e.GetResourceChanged()) {
 			return nil
 		}
 		if e.GetResourceChanged().GetStatus() != commands.Status_OK {
@@ -126,15 +134,6 @@ func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 		return nil
 	}
 	return nil
-}
-
-func (s *resourceSubscription) eventHandlerSync(e *pb.Event) error {
-	err := s.mutex.Acquire(s.client.Context(), 1)
-	if err != nil {
-		return err
-	}
-	s.mutex.Release(1)
-	return s.eventHandler(e)
 }
 
 func (s *resourceSubscription) Init(ctx context.Context) error {
@@ -157,11 +156,9 @@ func (s *resourceSubscription) Init(ctx context.Context) error {
 		}
 		d = resource.Data
 	}
-	err = s.mutex.Acquire(ctx, 1)
 	if err != nil {
 		return err
 	}
-	defer s.mutex.Release(1)
 	err = s.sub.Init(s.client.server.ownerCache)
 	if err != nil {
 		return err
@@ -190,10 +187,9 @@ func newResourceSubscription(req *mux.Message, client *Client, authCtx *authoriz
 		deviceID: deviceID,
 		href:     href,
 		seqNum:   2,
-		mutex:    semaphore.NewWeighted(1),
 	}
 	res := &commands.ResourceId{DeviceId: deviceID, Href: href}
-	sub := subscription.New(req.Context, client.server.resourceSubscriber, r.eventHandlerSync, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, func(err error) {
+	sub := subscription.New(req.Context, client.server.resourceSubscriber, r.eventHandler, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, func(err error) {
 		log.Errorf("error occurs during processing event for /%v%v by subscription: %w", deviceID, href, err)
 	}, &pb.SubscribeToEvents_CreateSubscription{
 		ResourceIdFilter: []string{res.ToString()},

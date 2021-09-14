@@ -91,6 +91,12 @@ func (c *GrpcGateway_SubscribeToEventsClient) SendMsg(m interface{}) error {
 	return c.subClient.SendMsg(m)
 }
 
+func copyEvent(dst, src *pb.Event) {
+	dst.CorrelationId = src.GetCorrelationId()
+	dst.SubscriptionId = src.GetSubscriptionId()
+	dst.Type = src.GetType()
+}
+
 // RecvMsg blocks until it receives a message into m or the stream is
 // done. It returns io.EOF when the stream completes successfully. On
 // any other error, the stream is aborted and the error contains the RPC
@@ -99,29 +105,31 @@ func (c *GrpcGateway_SubscribeToEventsClient) SendMsg(m interface{}) error {
 // It is safe to have a goroutine calling SendMsg and another goroutine
 // calling RecvMsg on the same stream at the same time, but it is not
 // safe to call RecvMsg on the same stream in different goroutines.
+//
+// When new devices appear, it retrieves all current state of filtered events.
+// And for that, duplication of an event can occur.
 func (c *GrpcGateway_SubscribeToEventsClient) RecvMsg(m interface{}) error {
 	for {
 		if len(c.events) > 0 {
 			ev := c.events[0]
 			c.events = c.events[1:]
 			event := m.(*pb.Event)
-			event.CorrelationId = ev.GetCorrelationId()
-			event.SubscriptionId = ev.GetSubscriptionId()
-			event.Type = ev.GetType()
+			copyEvent(event, ev)
 			return nil
 		}
 		start := time.Now()
-		err := c.subClient.RecvMsg(m)
+		event := new(pb.Event)
+		err := c.subClient.RecvMsg(event)
 		if err != nil {
 			return err
 		}
 		timeDiff := time.Since(start)
-		event := m.(*pb.Event)
+		eventOrig := m.(*pb.Event)
+		copyEvent(eventOrig, event)
 		switch ev := event.GetType().(type) {
 		case *pb.Event_OperationProcessed_:
 			s, ok := c.newSubs.LoadAndDelete(event.GetCorrelationId())
 			if ok {
-				// we don't want to store events
 				if ev.OperationProcessed.GetErrorStatus().GetCode() != pb.Event_OperationProcessed_ErrorStatus_OK {
 					return nil
 				}
@@ -181,7 +189,7 @@ func (c *GrpcGateway_SubscribeToEventsClient) send(event *pb.Event) error {
 }
 
 // SubscribeToEventsWithCurrentState creates subscribe to events with included the current state.
-// It can provide duplicity events when lots of events are in the batch.
+// It can provide duplicity events when lots of events are in the batch. The deduplicate is driven by deduplicateExpiration argument.
 // Subscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronizing events.
 func (c *Client) SubscribeToEventsWithCurrentState(ctx context.Context, deduplicateExpiration time.Duration, opts ...grpc.CallOption) (pb.GrpcGateway_SubscribeToEventsClient, error) {
 	subClient, err := c.gateway.SubscribeToEvents(ctx, opts...)
