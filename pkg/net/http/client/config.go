@@ -66,8 +66,7 @@ func (c *Config) Validate() error {
 	if c.Timeout < 0 {
 		return fmt.Errorf("timeout('%v')", c.Timeout)
 	}
-	err := c.TLS.Validate()
-	if err != nil {
+	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
 	}
 	return nil

@@ -23,16 +23,13 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := c.APIs.Validate()
-	if err != nil {
+	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
-	err = c.Clients.Validate()
-	if err != nil {
+	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
-	err = c.ExposedCloudConfiguration.Validate()
-	if err != nil {
+	if err := c.ExposedCloudConfiguration.Validate(); err != nil {
 		return fmt.Errorf("publicConfiguration.%w", err)
 	}
 	return nil
@@ -44,8 +41,7 @@ type APIsConfig struct {
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.GRPC.Validate()
-	if err != nil {
+	if err := c.GRPC.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
 	return nil
@@ -57,6 +53,19 @@ type ClientsConfig struct {
 	AuthServer AuthorizationServerConfig `yaml:"authorizationServer" json:"authorizationServer"`
 }
 
+func (c *ClientsConfig) Validate() error {
+	if err := c.AuthServer.Validate(); err != nil {
+		return fmt.Errorf("authorizationServer.%w", err)
+	}
+	if err := c.Eventbus.Validate(); err != nil {
+		return fmt.Errorf("eventbus.%w", err)
+	}
+	if err := c.Eventstore.Validate(); err != nil {
+		return fmt.Errorf("eventstore.%w", err)
+	}
+	return nil
+}
+
 type EventBusConfig struct {
 	GoPoolSize int               `yaml:"goPoolSize" json:"goPoolSize"`
 	NATS       natsClient.Config `yaml:"nats" json:"nats"`
@@ -66,8 +75,7 @@ func (c *EventBusConfig) Validate() error {
 	if c.GoPoolSize <= 0 {
 		return fmt.Errorf("goPoolSize('%v')", c.GoPoolSize)
 	}
-	err := c.NATS.Validate()
-	if err != nil {
+	if err := c.NATS.Validate(); err != nil {
 		return fmt.Errorf("nats.%w", err)
 	}
 	return nil
@@ -83,22 +91,6 @@ func (c *EventStoreConfig) Validate() error {
 		return fmt.Errorf("cacheExpiration('%v')", c.ProjectionCacheExpiration)
 	}
 	return c.Connection.Validate()
-}
-
-func (c *ClientsConfig) Validate() error {
-	err := c.AuthServer.Validate()
-	if err != nil {
-		return fmt.Errorf("authorizationServer.%w", err)
-	}
-	err = c.Eventbus.Validate()
-	if err != nil {
-		return fmt.Errorf("eventbus.%w", err)
-	}
-	err = c.Eventstore.Validate()
-	if err != nil {
-		return fmt.Errorf("eventstore.%w", err)
-	}
-	return nil
 }
 
 type AuthorizationServerConfig struct {
@@ -119,15 +111,13 @@ func (c *AuthorizationServerConfig) Validate() error {
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
-	err := c.OAuth.Validate()
-	if err != nil {
+	if err := c.OAuth.Validate(); err != nil {
 		return fmt.Errorf("oauth.%w", err)
 	}
-	err = c.Connection.Validate()
-	if err != nil {
+	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
-	return err
+	return nil
 }
 
 type PublicConfiguration struct {
@@ -145,8 +135,14 @@ type PublicConfiguration struct {
 }
 
 func (c *PublicConfiguration) Validate() error {
+	if c.CAPool == "" {
+		return fmt.Errorf("caPool('%v')", c.CAPool)
+	}
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
+	}
+	if c.SigningServerAddress == "" {
+		return fmt.Errorf("signingServerAddress('%v')", c.SigningServerAddress)
 	}
 	if c.CloudID == "" {
 		return fmt.Errorf("cloudID('%v')", c.CloudID)
@@ -161,7 +157,7 @@ func (c *PublicConfiguration) Validate() error {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
 	if c.AuthorizationServer == "" {
-		return fmt.Errorf("authorizationServer('%v')", c.CAPool)
+		return fmt.Errorf("authorizationServer('%v')", c.AuthorizationServer)
 	}
 	return nil
 }

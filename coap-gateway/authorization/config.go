@@ -18,12 +18,10 @@ func (c *Config) Validate() error {
 	if c.Authority == "" {
 		return fmt.Errorf("authority('%v')", c.Authority)
 	}
-	err := c.Config.Validate()
-	if err != nil {
+	if err := c.Config.Validate(); err != nil {
 		return fmt.Errorf("%w", err)
 	}
-	err = c.HTTP.Validate()
-	if err != nil {
+	if err := c.HTTP.Validate(); err != nil {
 		return fmt.Errorf("http.%w", err)
 	}
 	return nil

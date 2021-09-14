@@ -17,12 +17,10 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := c.APIs.Validate()
-	if err != nil {
+	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
-	err = c.Signer.Validate()
-	if err != nil {
+	if err := c.Signer.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
 	return nil
@@ -34,8 +32,7 @@ type APIsConfig struct {
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.GRPC.Validate()
-	if err != nil {
+	if err := c.GRPC.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
 	return nil

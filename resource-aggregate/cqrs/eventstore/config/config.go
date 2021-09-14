@@ -11,8 +11,7 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := c.MongoDB.Validate()
-	if err != nil {
+	if err := c.MongoDB.Validate(); err != nil {
 		return fmt.Errorf("mongoDB.%w", err)
 	}
 	return nil

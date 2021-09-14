@@ -20,16 +20,13 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := c.APIs.Validate()
-	if err != nil {
+	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
-	err = c.Clients.Validate()
-	if err != nil {
+	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
-	err = c.UI.Validate()
-	if err != nil {
+	if err := c.UI.Validate(); err != nil {
 		return fmt.Errorf("ui.%w", err)
 	}
 	return nil
@@ -41,8 +38,7 @@ type APIsConfig struct {
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.HTTP.Validate()
-	if err != nil {
+	if err := c.HTTP.Validate(); err != nil {
 		return fmt.Errorf("http.%w", err)
 	}
 	return nil
@@ -70,12 +66,10 @@ type HTTPConfig struct {
 }
 
 func (c *HTTPConfig) Validate() error {
-	err := c.WebSocket.Validate()
-	if err != nil {
+	if err := c.WebSocket.Validate(); err != nil {
 		return fmt.Errorf("webSocket.%w", err)
 	}
-	err = c.Authorization.Validate()
-	if err != nil {
+	if err := c.Authorization.Validate(); err != nil {
 		return fmt.Errorf("authorization.%w", err)
 	}
 	return c.Connection.Validate()
@@ -90,11 +84,10 @@ type GrpcServerConfig struct {
 }
 
 func (c *GrpcServerConfig) Validate() error {
-	err := c.Connection.Validate()
-	if err != nil {
+	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
-	return err
+	return nil
 }
 
 type EventBusConfig struct {
@@ -103,8 +96,10 @@ type EventBusConfig struct {
 }
 
 func (c *EventBusConfig) Validate() error {
-	err := c.NATS.Validate()
-	if err != nil {
+	if c.GoPoolSize <= 0 {
+		return fmt.Errorf("goPoolSize.%v", c.GoPoolSize)
+	}
+	if err := c.NATS.Validate(); err != nil {
 		return fmt.Errorf("nats.%w", err)
 	}
 	return nil
@@ -113,7 +108,7 @@ func (c *EventBusConfig) Validate() error {
 func (c *ClientsConfig) Validate() error {
 	err := c.GrpcGateway.Validate()
 	if err != nil {
-		return fmt.Errorf("resourceAggregate.%w", err)
+		return fmt.Errorf("grpcGateway.%w", err)
 	}
 
 	return nil
@@ -138,6 +133,9 @@ func (c *OAuthClientConfig) Validate() error {
 	if c.Audience == "" {
 		return fmt.Errorf("audience('%v')", c.Audience)
 	}
+	if c.Scope == "" {
+		return fmt.Errorf("scope('%v')", c.Scope)
+	}
 	if c.HTTPGatewayAddress == "" {
 		return fmt.Errorf("httpGatewayAddress('%v')", c.HTTPGatewayAddress)
 	}
@@ -158,11 +156,10 @@ func (c *UIConfig) Validate() error {
 	if c.Directory == "" {
 		return fmt.Errorf("directory('%v')", c.Directory)
 	}
-	err := c.OAuthClient.Validate()
-	if err != nil {
+	if err := c.OAuthClient.Validate(); err != nil {
 		return fmt.Errorf("oauthClient.%w", err)
 	}
-	return err
+	return nil
 }
 
 //String return string representation of Config

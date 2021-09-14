@@ -120,11 +120,10 @@ type AuthorizationServerConfig struct {
 }
 
 func (c *AuthorizationServerConfig) Validate() error {
-	err := c.Connection.Validate()
-	if err != nil {
+	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
-	return err
+	return nil
 }
 
 type EventBusConfig struct {
@@ -207,6 +206,9 @@ type TaskProcessorConfig struct {
 func (c *TaskProcessorConfig) Validate() error {
 	if c.CacheSize <= 0 {
 		return fmt.Errorf("cacheSize('%v')", c.CacheSize)
+	}
+	if c.Timeout <= 0 {
+		return fmt.Errorf("timeout('%v')", c.Timeout)
 	}
 	if c.MaxParallel <= 0 {
 		return fmt.Errorf("maxParallel('%v')", c.MaxParallel)
