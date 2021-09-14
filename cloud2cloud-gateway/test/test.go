@@ -21,7 +21,7 @@ func MakeStorageConfig() service.StorageConfig {
 	return service.StorageConfig{
 		MongoDB: mongodb.Config{
 			URI:      config.MONGODB_URI,
-			Database: "cloud2cloudGateway",
+			Database: config.C2C_GW_DB,
 			TLS:      config.MakeTLSClientConfig(),
 		},
 	}

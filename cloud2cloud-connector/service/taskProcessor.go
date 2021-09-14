@@ -30,6 +30,8 @@ type Task struct {
 	href          string
 }
 
+type OnTaskTrigger func(Task)
+
 type TaskProcessor struct {
 	tasksChan     chan Task
 	wg            *sync.WaitGroup
@@ -40,12 +42,12 @@ type TaskProcessor struct {
 	delay         time.Duration
 }
 
-func NewTaskProcessor(raClient raService.ResourceAggregateClient, maxParallelGets int64, cacheSize int, timeout, delay time.Duration) *TaskProcessor {
+func NewTaskProcessor(raClient raService.ResourceAggregateClient, maxParallelGets, cacheSize int, timeout, delay time.Duration) *TaskProcessor {
 	return &TaskProcessor{
 		pulledDevices: kitSync.NewMap(),
 		tasksChan:     make(chan Task, cacheSize),
 		wg:            &sync.WaitGroup{},
-		poolGets:      semaphore.NewWeighted(maxParallelGets),
+		poolGets:      semaphore.NewWeighted(int64(maxParallelGets)),
 		timeout:       timeout,
 		raClient:      raClient,
 		delay:         delay,

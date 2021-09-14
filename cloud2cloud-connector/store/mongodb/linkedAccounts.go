@@ -13,16 +13,16 @@ const resLinkedAccountCName = "linkedAccounts"
 
 func validateLinkedAccount(sub store.LinkedAccount) error {
 	if sub.ID == "" {
-		return fmt.Errorf("cannot save linked account: invalid ID")
+		return fmt.Errorf("invalid ID")
 	}
 	if sub.UserID == "" {
-		return fmt.Errorf("cannot save linked account: invalid UserID")
+		return fmt.Errorf("invalid UserID")
 	}
 	if sub.LinkedCloudID == "" {
-		return fmt.Errorf("cannot save linked account: invalid LinkedCloudID")
+		return fmt.Errorf("invalid LinkedCloudID")
 	}
 	if sub.TargetCloud.AccessToken == "" && sub.TargetCloud.RefreshToken == "" {
-		return fmt.Errorf("cannot save linked account: invalid TargetCloud.AccessToken and TargetCloud.RefreshToken")
+		return fmt.Errorf("invalid TargetCloud.AccessToken and TargetCloud.RefreshToken")
 	}
 	return nil
 }
@@ -30,7 +30,7 @@ func validateLinkedAccount(sub store.LinkedAccount) error {
 func (s *Store) InsertLinkedAccount(ctx context.Context, sub store.LinkedAccount) error {
 	err := validateLinkedAccount(sub)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot insert linked account: %w", err)
 	}
 
 	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
@@ -44,16 +44,16 @@ func (s *Store) InsertLinkedAccount(ctx context.Context, sub store.LinkedAccount
 func (s *Store) UpdateLinkedAccount(ctx context.Context, sub store.LinkedAccount) error {
 	err := validateLinkedAccount(sub)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot update linked account: %w", err)
 	}
 
 	col := s.client.Database(s.DBName()).Collection(resLinkedAccountCName)
-	if res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub}); err != nil {
+	res, err := col.UpdateOne(ctx, bson.M{"_id": sub.ID}, bson.M{"$set": sub})
+	if err != nil {
 		return fmt.Errorf("cannot update linked account: %w", err)
-	} else {
-		if res.MatchedCount == 0 {
-			return fmt.Errorf("cannot update linked account: not found")
-		}
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("cannot update linked account: not found")
 	}
 	return nil
 }

@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -17,6 +15,7 @@ import (
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
+	"github.com/plgd-dev/go-coap/v2/message"
 	"github.com/plgd-dev/kit/log"
 )
 

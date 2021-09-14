@@ -7,16 +7,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/plgd-dev/go-coap/v2/message"
-
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/kit/log"
-
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/log"
 )
 
 func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {

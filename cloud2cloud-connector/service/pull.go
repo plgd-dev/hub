@@ -10,14 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/kit/log"
-
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/log"
 	"github.com/plgd-dev/sdk/schema"
 )
 
@@ -38,7 +37,7 @@ type pullDevicesHandler struct {
 	devicesSubscription *DevicesSubscription
 	subscriptionManager *SubscriptionManager
 	oauthCallback       string
-	triggerTask         func(Task)
+	triggerTask         OnTaskTrigger
 }
 
 func getUsersDevices(ctx context.Context, asClient pbAS.AuthorizationServiceClient) (map[string]bool, error) {
@@ -102,7 +101,7 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 	return nil
 }
 
-func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask func(Task)) error {
+func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger) error {
 	var errors []error
 	userID := linkedAccount.UserID
 	for _, link := range dev.Links {
@@ -363,7 +362,7 @@ func pullDevices(ctx context.Context, s *Store,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
 	oauthCallback string,
-	triggerTask func(Task)) error {
+	triggerTask OnTaskTrigger) error {
 
 	data := s.DumpLinkedAccounts()
 	var wg sync.WaitGroup

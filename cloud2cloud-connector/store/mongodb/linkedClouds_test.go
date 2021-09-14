@@ -1,30 +1,15 @@
-package mongodb
+package mongodb_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/kit/security/certManager"
-
-	"github.com/kelseyhightower/envconfig"
 	"github.com/plgd-dev/cloud/authorization/oauth"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func newStore(ctx context.Context, t *testing.T, cfg Config) *Store {
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
-	require.NoError(t, err)
-	defer dialCertManager.Close()
-	tlsConfig := dialCertManager.GetClientTLSConfig()
-	s, err := NewStore(ctx, cfg, WithTLS(tlsConfig))
-	require.NoError(t, err)
-	return s
-}
 
 func TestStore_UpdateLinkedCloud(t *testing.T) {
 	type args struct {
@@ -76,22 +61,11 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 		},
 	}
 
-	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
-	require.NoError(err)
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
-	require.NoError(err)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(err)
-		_ = s.Close(ctx)
-	}()
-
-	assert := assert.New(t)
-
-	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
+	err := s.InsertLinkedCloud(ctx, store.LinkedCloud{
 		ID:   "testID",
 		Name: "testName",
 		Endpoint: store.Endpoint{
@@ -106,15 +80,15 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			TokenURL: "testTokenUrl",
 		},
 	})
-	require.NoError(err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.UpdateLinkedCloud(ctx, tt.args.sub)
 			if tt.wantErr {
-				assert.Error(err)
+				assert.Error(t, err)
 			} else {
-				assert.NoError(err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -145,21 +119,11 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 		},
 	}
 
-	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
-	require.NoError(err)
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(err)
-		_ = s.Close(ctx)
-	}()
-
-	assert := assert.New(t)
-
-	err = s.InsertLinkedCloud(ctx, store.LinkedCloud{
+	err := s.InsertLinkedCloud(ctx, store.LinkedCloud{
 		ID:   "testID",
 		Name: "testName",
 		Endpoint: store.Endpoint{
@@ -173,15 +137,15 @@ func TestStore_RemoveLinkedCloud(t *testing.T) {
 			TokenURL:     "testTokenUrl",
 		},
 	})
-	require.NoError(err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.RemoveLinkedCloud(ctx, tt.args.LinkedCloudId)
 			if tt.wantErr {
-				assert.Error(err)
+				assert.Error(t, err)
 			} else {
-				assert.NoError(err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -265,24 +229,13 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 		},
 	}
 
-	require := require.New(t)
-	var config Config
-	err := envconfig.Process("", &config)
-	require.NoError(err)
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
 	ctx := context.Background()
-	s := newStore(ctx, t, config)
-	require.NoError(err)
-	defer func() {
-		err := s.Clear(ctx)
-		require.NoError(err)
-		_ = s.Close(ctx)
-	}()
-
-	assert := assert.New(t)
-
 	for _, l := range lcs {
-		err = s.InsertLinkedCloud(ctx, l)
-		require.NoError(err)
+		err := s.InsertLinkedCloud(ctx, l)
+		require.NoError(t, err)
 	}
 
 	for _, tt := range tests {
@@ -290,10 +243,10 @@ func TestStore_LoadLinkedClouds(t *testing.T) {
 			var h testLinkedCloudHandler
 			err := s.LoadLinkedClouds(ctx, tt.args.query, &h)
 			if tt.wantErr {
-				assert.Error(err)
+				assert.Error(t, err)
 			} else {
-				assert.NoError(err)
-				assert.Equal(tt.want, h.lcs)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, h.lcs)
 			}
 		})
 	}
