@@ -27,8 +27,7 @@ func (c *Config) Validate() error {
 	if c.Database == "" {
 		return fmt.Errorf("database('%v')", c.Database)
 	}
-	err := c.TLS.Validate()
-	if err != nil {
+	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
 	}
 	return nil

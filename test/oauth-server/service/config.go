@@ -87,12 +87,10 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := c.APIs.Validate()
-	if err != nil {
+	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
-	err = c.OAuthSigner.Validate()
-	if err != nil {
+	if err := c.OAuthSigner.Validate(); err != nil {
 		return fmt.Errorf("oauthSigner.%w", err)
 	}
 	return nil
@@ -104,8 +102,7 @@ type APIsConfig struct {
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.HTTP.Validate()
-	if err != nil {
+	if err := c.HTTP.Validate(); err != nil {
 		return fmt.Errorf("http.%w", err)
 	}
 	return nil

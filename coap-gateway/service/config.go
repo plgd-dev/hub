@@ -23,16 +23,13 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := c.APIs.Validate()
-	if err != nil {
+	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
-	err = c.Clients.Validate()
-	if err != nil {
+	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
-	err = c.TaskQueue.Validate()
-	if err != nil {
+	if err := c.TaskQueue.Validate(); err != nil {
 		return fmt.Errorf("taskQueue.%w", err)
 	}
 	return nil
@@ -49,8 +46,7 @@ type APIsConfig struct {
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.COAP.Validate()
-	if err != nil {
+	if err := c.COAP.Validate(); err != nil {
 		return fmt.Errorf("coap.%w", err)
 	}
 	return nil
@@ -97,20 +93,16 @@ func (c *COAPConfig) Validate() error {
 	if c.SubscriptionBufferSize < 0 {
 		return fmt.Errorf("subscriptionBufferSize('%v')", c.SubscriptionBufferSize)
 	}
-	err := c.KeepAlive.Validate()
-	if err != nil {
+	if err := c.KeepAlive.Validate(); err != nil {
 		return fmt.Errorf("keepAlive.%w", err)
 	}
-	err = c.BlockwiseTransfer.Validate()
-	if err != nil {
+	if err := c.BlockwiseTransfer.Validate(); err != nil {
 		return fmt.Errorf("blockwiseTransfer.%w", err)
 	}
-	err = c.TLS.Validate()
-	if err != nil {
+	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
 	}
-	err = c.Authorization.Validate()
-	if err != nil {
+	if err := c.Authorization.Validate(); err != nil {
 		return fmt.Errorf("authorization.%w", err)
 	}
 	return nil
@@ -153,8 +145,7 @@ func (c *TLSConfig) Validate() error {
 	if !c.Enabled {
 		return nil
 	}
-	err := c.Embedded.Validate()
-	if err != nil {
+	if err := c.Embedded.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -165,8 +156,7 @@ type EventBusConfig struct {
 }
 
 func (c *EventBusConfig) Validate() error {
-	err := c.NATS.Validate()
-	if err != nil {
+	if err := c.NATS.Validate(); err != nil {
 		return fmt.Errorf("nats.%w", err)
 	}
 	return nil
@@ -181,11 +171,10 @@ func (c *AuthorizationServerConfig) Validate() error {
 	if c.OwnerClaim == "" {
 		return fmt.Errorf("ownerClaim('%v')", c.OwnerClaim)
 	}
-	err := c.Connection.Validate()
-	if err != nil {
+	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
-	return err
+	return nil
 }
 
 type ClientsConfig struct {
@@ -196,24 +185,16 @@ type ClientsConfig struct {
 }
 
 func (c *ClientsConfig) Validate() error {
-	err := c.AuthServer.Validate()
-	if err != nil {
+	if err := c.AuthServer.Validate(); err != nil {
 		return fmt.Errorf("authorizationServer.%w", err)
 	}
-	err = c.Eventbus.Validate()
-	if err != nil {
+	if err := c.Eventbus.Validate(); err != nil {
 		return fmt.Errorf("eventbus.%w", err)
 	}
-	err = c.AuthServer.Validate()
-	if err != nil {
-		return fmt.Errorf("authorizationServer.%w", err)
-	}
-	err = c.ResourceAggregate.Validate()
-	if err != nil {
+	if err := c.ResourceAggregate.Validate(); err != nil {
 		return fmt.Errorf("resourceAggregate.%w", err)
 	}
-	err = c.ResourceDirectory.Validate()
-	if err != nil {
+	if err := c.ResourceDirectory.Validate(); err != nil {
 		return fmt.Errorf("resourceDirectory.%w", err)
 	}
 	return nil
@@ -224,11 +205,10 @@ type GrpcServerConfig struct {
 }
 
 func (c *GrpcServerConfig) Validate() error {
-	err := c.Connection.Validate()
-	if err != nil {
+	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
-	return err
+	return nil
 }
 
 type ResourceAggregateConfig struct {
@@ -237,15 +217,13 @@ type ResourceAggregateConfig struct {
 }
 
 func (c *ResourceAggregateConfig) Validate() error {
-	err := c.Connection.Validate()
-	if err != nil {
+	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
-	err = c.DeviceStatusExpiration.Validate()
-	if err != nil {
+	if err := c.DeviceStatusExpiration.Validate(); err != nil {
 		return fmt.Errorf("deviceStatusExpiration.%w", err)
 	}
-	return err
+	return nil
 }
 
 type DeviceStatusExpirationConfig struct {

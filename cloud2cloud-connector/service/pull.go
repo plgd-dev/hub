@@ -113,7 +113,7 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 			Sequence:     uint64(time.Now().UnixNano()),
 		})
 		if err != nil {
-			errors = append(errors, fmt.Errorf("cannot publish respource %+v: %w", link, err))
+			errors = append(errors, fmt.Errorf("cannot publish resource %+v: %w", link, err))
 			continue
 		}
 		if linkedCloud.SupportedSubscriptionsEvents.NeedPullResources() {

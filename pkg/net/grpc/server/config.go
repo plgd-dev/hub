@@ -75,12 +75,10 @@ func (c *Config) Validate() error {
 	if c.Addr == "" {
 		return fmt.Errorf("address('%v')", c.Addr)
 	}
-	err := c.TLS.Validate()
-	if err != nil {
+	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
 	}
-	err = c.Authorization.Validate()
-	if err != nil {
+	if err := c.Authorization.Validate(); err != nil {
 		return fmt.Errorf("authorization.%w", err)
 	}
 	return nil

@@ -18,12 +18,10 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := c.Clients.Validate()
-	if err != nil {
+	if err := c.Clients.Validate(); err != nil {
 		return fmt.Errorf("clients.%w", err)
 	}
-	err = c.APIs.Validate()
-	if err != nil {
+	if err := c.APIs.Validate(); err != nil {
 		return fmt.Errorf("apis.%w", err)
 	}
 	return nil
@@ -34,8 +32,7 @@ type APIsConfig struct {
 }
 
 func (c *APIsConfig) Validate() error {
-	err := c.GRPC.Validate()
-	if err != nil {
+	if err := c.GRPC.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
 	}
 	return nil
@@ -61,8 +58,7 @@ type EventBusConfig struct {
 }
 
 func (c *EventBusConfig) Validate() error {
-	err := c.NATS.Validate()
-	if err != nil {
+	if err := c.NATS.Validate(); err != nil {
 		return fmt.Errorf("nats.%w", err)
 	}
 	return nil

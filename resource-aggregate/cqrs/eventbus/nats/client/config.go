@@ -38,12 +38,10 @@ func (c *Config) Validate() error {
 	if c.URL == "" {
 		return fmt.Errorf("url('%v')", c.URL)
 	}
-	err := c.PendingLimits.Validate()
-	if err != nil {
+	if err := c.PendingLimits.Validate(); err != nil {
 		return fmt.Errorf("pendingLimits.%w", err)
 	}
-	err = c.TLS.Validate()
-	if err != nil {
+	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
 	}
 	return nil
@@ -53,8 +51,7 @@ func (c *ConfigPublisher) Validate() error {
 	if c.URL == "" {
 		return fmt.Errorf("url('%v')", c.URL)
 	}
-	err := c.TLS.Validate()
-	if err != nil {
+	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
 	}
 	return nil
