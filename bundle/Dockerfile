@@ -64,7 +64,7 @@ RUN mkdir -p ./nats
 RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
-FROM node:12 AS build-web
+FROM node:16 AS build-web
 COPY --from=cloud-build /go/src/github.com/plgd-dev/cloud/http-gateway/web /web
 RUN cd /web && npm install && npm run build
 

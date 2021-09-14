@@ -2,7 +2,7 @@ FROM cloud-build AS build
 WORKDIR $GOPATH/src/github.com/plgd-dev/cloud/http-gateway
 RUN go build -o /go/bin/service ./cmd/service
 
-FROM node:12 AS build-web
+FROM node:16 AS build-web
 COPY web /web
 RUN cd /web && npm install && npm run build
 
