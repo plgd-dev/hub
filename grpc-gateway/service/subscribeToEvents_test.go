@@ -16,6 +16,7 @@ import (
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	caService "github.com/plgd-dev/cloud/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -45,7 +46,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "invalid - invalid type subscription",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					CorrelationId: "testToken",
+					CorrelationId: "testToken0",
 				},
 			},
 
@@ -59,7 +60,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					CorrelationId: "testToken",
+					CorrelationId: "testToken0",
 				},
 			},
 		},
@@ -67,13 +68,12 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "devices subscription - registered",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					CorrelationId: "testToken",
+					CorrelationId: "testToken1",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -87,7 +87,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					CorrelationId: "testToken",
+					CorrelationId: "testToken1",
 				},
 				{
 					Type: &pb.Event_DeviceRegistered_{
@@ -95,7 +95,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							DeviceIds: []string{deviceID},
 						},
 					},
-					CorrelationId: "testToken",
+					CorrelationId: "testToken1",
 				},
 			},
 		},
@@ -103,13 +103,12 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "devices subscription - online",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					CorrelationId: "testToken",
+					CorrelationId: "testToken2",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -123,7 +122,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					CorrelationId: "testToken",
+					CorrelationId: "testToken2",
 				},
 				{
 					Type: &pb.Event_DeviceMetadataUpdated{
@@ -134,7 +133,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					CorrelationId: "testToken",
+					CorrelationId: "testToken2",
 				},
 			},
 		},
@@ -142,14 +141,13 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 			name: "device subscription - published",
 			args: args{
 				sub: &pb.SubscribeToEvents{
-					CorrelationId: "testToken",
+					CorrelationId: "testToken3",
 					Action: &pb.SubscribeToEvents_CreateSubscription_{
 						CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
 							DeviceIdFilter: []string{deviceID},
 							EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 								pb.SubscribeToEvents_CreateSubscription_RESOURCE_PUBLISHED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED,
 							},
-							IncludeCurrentState: true,
 						},
 					},
 				},
@@ -163,9 +161,9 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 							},
 						},
 					},
-					CorrelationId: "testToken",
+					CorrelationId: "testToken3",
 				},
-				test.ResourceLinkToPublishEvent(deviceID, "testToken", test.GetAllBackendResourceLinks()),
+				test.ResourceLinkToPublishEvent(deviceID, "testToken3", test.GetAllBackendResourceLinks()),
 			},
 		},
 	}
@@ -188,7 +186,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.SubscribeToEvents(ctx)
+			client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 			require.NoError(t, err)
 			defer func() {
 				err := client.CloseSend()
@@ -237,21 +235,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 		want    []*pb.PendingCommand
 	}{
 		{
-			name: "without currentState",
-			args: args{
-				req: &pb.SubscribeToEvents_CreateSubscription{
-					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,
-						pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING,
-						pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
-						pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
-						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING,
-					},
-				},
-			},
-			want: []*pb.PendingCommand{},
-		},
-		{
 			name: "retrieve by resourceIdFilter",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
@@ -265,7 +248,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -301,7 +283,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -383,7 +364,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -407,7 +387,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -439,7 +418,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -463,7 +441,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -494,7 +471,6 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATE_PENDING,
 					},
-					IncludeCurrentState: true,
 				},
 			},
 			want: []*pb.PendingCommand{
@@ -540,7 +516,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	require.NoError(t, err)
 	c := pb.NewGrpcGatewayClient(conn)
 
-	client, err := c.SubscribeToEvents(ctx)
+	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	require.NoError(t, err)
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.GW_HOST, test.GetAllBackendResourceLinks())
@@ -621,12 +597,13 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	updateDeviceMetadata(time.Millisecond * 500) // for test expired event
 	updateDeviceMetadata(0)                      // for test expired event
 
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fmt.Printf("test %v\n", tt.name)
 			// register for subscription
+			correlationID := fmt.Sprintf("testToken%v", idx)
 			err = client.Send(&pb.SubscribeToEvents{
-				CorrelationId: "testToken",
+				CorrelationId: correlationID,
 				Action: &pb.SubscribeToEvents_CreateSubscription_{
 					CreateSubscription: tt.args.req,
 				},
@@ -644,7 +621,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 						},
 					},
 				},
-				CorrelationId: "testToken",
+				CorrelationId: correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 			subscriptionId := ev.SubscriptionId
@@ -670,7 +647,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 			}
 			test.CmpPendingCmds(t, tt.want, values)
 			err = client.Send(&pb.SubscribeToEvents{
-				CorrelationId: "testToken",
+				CorrelationId: correlationID,
 				Action: &pb.SubscribeToEvents_CancelSubscription_{
 					CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
 						SubscriptionId: subscriptionId,
@@ -687,7 +664,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 				Type: &pb.Event_SubscriptionCanceled_{
 					SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
 				},
-				CorrelationId: "testToken",
+				CorrelationId: correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
@@ -703,7 +680,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 						},
 					},
 				},
-				CorrelationId: "testToken",
+				CorrelationId: correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 		})
@@ -733,7 +710,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(rdConn.GRPC())
 
-	client, err := c.SubscribeToEvents(ctx)
+	client, err := client.New(c).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	require.NoError(t, err)
 
 	err = client.Send(&pb.SubscribeToEvents{
@@ -743,7 +720,6 @@ func TestRequestHandler_Issue270(t *testing.T) {
 				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 					pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 				},
-				IncludeCurrentState: true,
 			},
 		},
 	})

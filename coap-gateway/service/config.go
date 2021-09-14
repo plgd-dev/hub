@@ -57,18 +57,16 @@ func (c *APIsConfig) Validate() error {
 }
 
 type COAPConfig struct {
-	Addr                 string        `yaml:"address" json:"address"`
-	ExternalAddress      string        `yaml:"externalAddress" json:"externalAddress"`
-	MaxMessageSize       int           `yaml:"maxMessageSize" json:"maxMessageSize"`
-	OwnerCacheExpiration time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
-	// deprecated by SubscribeToEvents.CreateSubscription.include_current_state
-	SubscriptionCacheExpiration time.Duration           `yaml:"subscriptionCacheExpiration" json:"subscriptionCacheExpiration"`
-	SubscriptionBufferSize      int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
-	GoroutineSocketHeartbeat    time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
-	KeepAlive                   KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
-	BlockwiseTransfer           BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
-	TLS                         TLSConfig               `yaml:"tls" json:"tls"`
-	Authorization               authorization.Config    `yaml:"authorization" json:"authorization"`
+	Addr                     string                  `yaml:"address" json:"address"`
+	ExternalAddress          string                  `yaml:"externalAddress" json:"externalAddress"`
+	MaxMessageSize           int                     `yaml:"maxMessageSize" json:"maxMessageSize"`
+	OwnerCacheExpiration     time.Duration           `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	SubscriptionBufferSize   int                     `yaml:"subscriptionBufferSize" json:"subscriptionBufferSize"`
+	GoroutineSocketHeartbeat time.Duration           `yaml:"goroutineSocketHeartbeat" json:"goroutineSocketHeartbeat"`
+	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
+	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
+	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
+	Authorization            authorization.Config    `yaml:"authorization" json:"authorization"`
 }
 
 func (c *COAPConfig) Validate() error {

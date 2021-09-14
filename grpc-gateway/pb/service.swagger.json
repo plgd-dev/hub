@@ -957,9 +957,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "includeCurrentState": {
-          "type": "boolean"
         }
       }
     },

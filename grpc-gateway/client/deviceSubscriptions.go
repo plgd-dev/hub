@@ -6,6 +6,7 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/gofrs/uuid"
 	kitSync "github.com/plgd-dev/kit/sync"
@@ -65,7 +66,7 @@ type ResourceCreatedHandler = interface {
 }
 
 func NewDeviceSubscriptions(ctx context.Context, gwClient pb.GrpcGatewayClient, errFunc func(err error)) (*DeviceSubscriptions, error) {
-	client, err := gwClient.SubscribeToEvents(ctx)
+	client, err := New(gwClient).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	if err != nil {
 		return nil, err
 	}
@@ -318,9 +319,8 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 	ev, err := s.doOp(ctx, &pb.SubscribeToEvents{
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				DeviceIdFilter:      []string{deviceID},
-				EventFilter:         filterEvents,
-				IncludeCurrentState: true,
+				DeviceIdFilter: []string{deviceID},
+				EventFilter:    filterEvents,
 			},
 		},
 		CorrelationId: token.String(),

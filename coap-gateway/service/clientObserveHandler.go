@@ -2,7 +2,10 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -80,6 +83,10 @@ type resourceSubscription struct {
 
 	seqNum uint32
 	sub    *subscription.Sub
+
+	mutex              sync.Mutex
+	version            uint64
+	versionInitialized bool
 }
 
 func (s *resourceSubscription) cancelSubscription(code coapCodes.Code) {
@@ -94,6 +101,17 @@ func (s *resourceSubscription) cancelSubscription(code coapCodes.Code) {
 	}
 }
 
+func (s *resourceSubscription) isDuplicateEvent(ev *events.ResourceChanged) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if s.versionInitialized && s.version >= ev.GetEventMetadata().GetVersion() {
+		return true
+	}
+	s.versionInitialized = true
+	s.version = ev.GetEventMetadata().GetVersion()
+	return false
+}
+
 func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 	switch {
 	case e.GetResourceUnpublished() != nil:
@@ -104,6 +122,10 @@ func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 	case e.GetDeviceUnregistered() != nil:
 		s.cancelSubscription(coapCodes.ServiceUnavailable)
 	case e.GetResourceChanged() != nil:
+		// deduplicate events
+		if s.isDuplicateEvent(e.GetResourceChanged()) {
+			return nil
+		}
 		if e.GetResourceChanged().GetStatus() != commands.Status_OK {
 			s.cancelSubscription(coapconv.StatusToCoapCode(e.GetResourceChanged().GetStatus(), coapconv.Retrieve))
 			return nil
@@ -114,8 +136,43 @@ func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 	return nil
 }
 
-func (s *resourceSubscription) Init() error {
-	return s.sub.Init(s.client.server.ownerCache)
+func (s *resourceSubscription) Init(ctx context.Context) error {
+	res := &commands.ResourceId{DeviceId: s.deviceID, Href: s.href}
+	client, err := s.client.server.rdClient.GetResources(ctx, &pb.GetResourcesRequest{
+		ResourceIdFilter: []string{res.ToString()},
+	})
+	if err != nil {
+		return err
+	}
+
+	var d *events.ResourceChanged
+	for {
+		resource, err := client.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		d = resource.Data
+	}
+	if err != nil {
+		return err
+	}
+	err = s.sub.Init(s.client.server.ownerCache)
+	if err != nil {
+		return err
+	}
+	if d == nil {
+		return nil
+	}
+	return s.eventHandler(&pb.Event{
+		SubscriptionId: s.sub.Id(),
+		CorrelationId:  s.sub.CorrelationId(),
+		Type: &pb.Event_ResourceChanged{
+			ResourceChanged: d,
+		},
+	})
 }
 
 func (s *resourceSubscription) Close() error {
@@ -132,12 +189,11 @@ func newResourceSubscription(req *mux.Message, client *Client, authCtx *authoriz
 		seqNum:   2,
 	}
 	res := &commands.ResourceId{DeviceId: deviceID, Href: href}
-	sub := subscription.New(req.Context, client.server.resourceSubscriber, client.server.rdClient, r.eventHandler, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, client.server.config.APIs.COAP.SubscriptionCacheExpiration, func(err error) {
+	sub := subscription.New(req.Context, client.server.resourceSubscriber, r.eventHandler, req.Token.String(), client.server.config.APIs.COAP.SubscriptionBufferSize, func(err error) {
 		log.Errorf("error occurs during processing event for /%v%v by subscription: %w", deviceID, href, err)
 	}, &pb.SubscribeToEvents_CreateSubscription{
-		ResourceIdFilter:    []string{res.ToString()},
-		EventFilter:         []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
-		IncludeCurrentState: true,
+		ResourceIdFilter: []string{res.ToString()},
+		EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
 	})
 	r.sub = sub
 	return r
@@ -168,7 +224,7 @@ func startResourceObservation(req *mux.Message, client *Client, authCtx *authori
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot observe resource /%v%v: resource subscription with token %v already exist", authCtx.GetDeviceID(), deviceID, href, token), coapCodes.BadRequest, req.Token)
 		return
 	}
-	err = sub.Init()
+	err = sub.Init(req.Context)
 	if err != nil {
 		_, _ = client.resourceSubscriptions.PullOut(token)
 		if err := sub.Close(); err != nil {

@@ -86,7 +86,6 @@ message SubscribeToEvents {
     repeated Event event_filter = 1;
     repeated string device_id_filter = 2;
     repeated string resource_id_filter = 3; // format {deviceID}{href}. eg "ae424c58-e517-4494-6de7-583536c48213/oic/d"
-    bool include_current_state = 4 [deprecated = true]; // If you're interested in the current state of events right after subscribing.
   }
   message CancelSubscription {
     string subscription_id = 1;

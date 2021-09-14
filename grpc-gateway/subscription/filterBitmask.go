@@ -24,6 +24,10 @@ const (
 	FilterBitmaskResourcesUnpublished        FilterBitmask = 1 << 14
 )
 
+func IsFilteredBit(filteredEventTypes FilterBitmask, bit FilterBitmask) bool {
+	return filteredEventTypes&bit != 0
+}
+
 var pendingCommandToBitmask = map[pb.GetPendingCommandsRequest_Command]FilterBitmask{
 	pb.GetPendingCommandsRequest_RESOURCE_CREATE:        FilterBitmaskResourceCreatePending,
 	pb.GetPendingCommandsRequest_RESOURCE_RETRIEVE:      FilterBitmaskResourceRetrievePending,

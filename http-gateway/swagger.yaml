@@ -677,6 +677,7 @@ paths:
       summary: 'Subscribe to events'
       description: |
         Open a websocket stream and receive events from devices. The contents of filters in the SubscribeToEvents message determine which events will be sent to the stream.
+        Subscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronizing events.
       security:
         - oauth2:
           - 'plgd.devices'
@@ -1447,10 +1448,6 @@ components:
           type: array
           items:
             type: string
-        includeCurrentState:
-          type: boolean
-          description: 'Sends the current state of events right after subscribing.'
-          deprecated: true
     SubscribeToEventsCreateSubscriptionEvent:
       type: string
       default: 'REGISTERED'

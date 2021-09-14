@@ -6,6 +6,7 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
@@ -68,7 +69,7 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	if deviceMetadataUpdatedHandler == nil && deviceRegisteredHandler == nil && deviceUnregisteredHandler == nil {
 		return nil, fmt.Errorf("invalid handler - it's supports: DeviceMetadataUpdatedHandler, DeviceRegisteredHandler, DeviceUnregisteredHandler")
 	}
-	client, err := gwClient.SubscribeToEvents(ctx)
+	client, err := New(gwClient).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +77,7 @@ func NewDevicesSubscription(ctx context.Context, closeErrorHandler SubscriptionH
 	err = client.Send(&pb.SubscribeToEvents{
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
 			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
-				EventFilter:         filterEvents,
-				IncludeCurrentState: true,
+				EventFilter: filterEvents,
 			},
 		},
 	})
