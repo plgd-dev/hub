@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -81,7 +81,7 @@ func sendResponse(w http.ResponseWriter, processed *raEvents.ResourceUpdated) (i
 }
 
 func (rh *RequestHandler) updateResourceContent(w http.ResponseWriter, r *http.Request) (int, error) {
-	correlationUUID, err := uuid.NewV4()
+	correlationUUID, err := uuid.NewRandom()
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot create correlationID: %w", err)
 	}

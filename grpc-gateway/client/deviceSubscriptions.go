@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	kitSync "github.com/plgd-dev/kit/sync"
 
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -304,7 +304,7 @@ func getSubscribeTypeAndHandler(closeErrorHandler SubscriptionHandler, handle in
 }
 
 func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, closeErrorHandler SubscriptionHandler, handle interface{}) (*Subcription, error) {
-	token, err := uuid.NewV4()
+	token, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("cannot generate token for subscribe")
 	}
@@ -334,7 +334,7 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		if !atomic.CompareAndSwapUint32(&cancelled, 0, 1) {
 			return nil
 		}
-		cancelToken, err := uuid.NewV4()
+		cancelToken, err := uuid.NewRandom()
 		if err != nil {
 			return fmt.Errorf("cannot generate token for cancellation")
 		}

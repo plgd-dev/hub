@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestSubscriberReconnect(t *testing.T) {
-	topics := []string{"test_subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test_subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}
+	topics := []string{"test_subscriber_topic0" + uuid.Must(uuid.NewRandom()).String(), "test_subscriber_topic1" + uuid.Must(uuid.NewRandom()).String()}
 
 	timeout := time.Second * 30
 

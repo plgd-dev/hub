@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -19,7 +19,7 @@ import (
 )
 
 func TestSubscriber(t *testing.T) {
-	publishTopics := []string{"test.subscriber.topic0." + uuid.Must(uuid.NewV4()).String(), "test.subscriber.topic1." + uuid.Must(uuid.NewV4()).String()}
+	publishTopics := []string{"test.subscriber.topic0." + uuid.Must(uuid.NewRandom()).String(), "test.subscriber.topic1." + uuid.Must(uuid.NewRandom()).String()}
 	subscriberTopics := []string{"test.subscriber.topic0.>", "test.subscriber.*.>"}
 
 	timeout := time.Second * 30
@@ -275,7 +275,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, pu
 	require.NoError(t, err)
 	require.Equal(t, eventsToPublish[2], event3)
 
-	topic := "new_topic_" + uuid.Must(uuid.NewV4()).String()
+	topic := "new_topic_" + uuid.Must(uuid.NewRandom()).String()
 	publishTopics = append(publishTopics, topic)
 	err = ob4.SetTopics(ctx, publishTopics)
 	require.NoError(t, err)

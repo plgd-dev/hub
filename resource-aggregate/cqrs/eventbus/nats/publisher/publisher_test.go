@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	nats "github.com/nats-io/nats.go"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
@@ -22,7 +22,7 @@ import (
 )
 
 func TestPublisher(t *testing.T) {
-	topics := []string{"test.subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test.subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}
+	topics := []string{"test.subscriber_topic0" + uuid.Must(uuid.NewRandom()).String(), "test.subscriber_topic1" + uuid.Must(uuid.NewRandom()).String()}
 
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
@@ -58,7 +58,7 @@ func TestPublisher(t *testing.T) {
 }
 
 func TestPublisherJetStream(t *testing.T) {
-	topics := []string{"test.subscriber_topic0" + uuid.Must(uuid.NewV4()).String(), "test.subscriber_topic1" + uuid.Must(uuid.NewV4()).String()}
+	topics := []string{"test.subscriber_topic0" + uuid.Must(uuid.NewRandom()).String(), "test.subscriber_topic1" + uuid.Must(uuid.NewRandom()).String()}
 
 	timeout := time.Second * 30
 	waitForSubscription := time.Millisecond * 100
@@ -336,7 +336,7 @@ func acceptanceTest(t *testing.T, ctx context.Context, timeout time.Duration, wa
 	assert.NoError(t, err)
 	assert.Equal(t, eventsToPublish[2], event3)
 
-	topic := "test.new_topic_" + uuid.Must(uuid.NewV4()).String()
+	topic := "test.new_topic_" + uuid.Must(uuid.NewRandom()).String()
 	topics = append(topics, topic)
 	err = ob4.SetTopics(ctx, topics)
 	time.Sleep(waitForSubscription)

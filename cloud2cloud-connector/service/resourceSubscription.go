@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
@@ -22,7 +22,7 @@ func (s *SubscriptionManager) SubscribeToResource(ctx context.Context, deviceID,
 	if err != nil {
 		return fmt.Errorf("cannot generate signingSecret for device subscription: %w", err)
 	}
-	corID, err := uuid.NewV4()
+	corID, err := uuid.NewRandom()
 	if err != nil {
 		return fmt.Errorf("cannot generate correlationID for device subscription: %w", err)
 	}

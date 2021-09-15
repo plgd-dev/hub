@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -515,7 +515,7 @@ func (s *Subscriptions) SubscribeToEvents(resourceProjection *Projection, srv pb
 			continue
 		}
 
-		subID, err := uuid.NewV4()
+		subID, err := uuid.NewRandom()
 		if err != nil {
 			subRes.GetOperationProcessed().ErrorStatus.Code = pb.Event_OperationProcessed_ErrorStatus_ERROR
 			subRes.GetOperationProcessed().ErrorStatus.Message = fmt.Sprintf("cannot generate subscription ID: %v", err)

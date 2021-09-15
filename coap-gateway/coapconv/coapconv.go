@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/go-coap/v2/tcp"
 
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -193,7 +193,7 @@ func NewConfirmResourceUpdateRequest(resourceID *commands.ResourceId, correlatio
 }
 
 func NewDeleteResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.DeleteResourceRequest, error) {
-	correlationUUID, err := uuid.NewV4()
+	correlationUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create correlationID: %w", err)
 	}
@@ -231,7 +231,7 @@ func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connection
 }
 
 func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.UpdateResourceRequest, error) {
-	correlationUUID, err := uuid.NewV4()
+	correlationUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create correlationID: %w", err)
 	}
@@ -262,7 +262,7 @@ func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 }
 
 func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.RetrieveResourceRequest, error) {
-	correlationUUID, err := uuid.NewV4()
+	correlationUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create correlationID: %w", err)
 	}
@@ -286,7 +286,7 @@ func NewRetrieveResourceRequest(resourceID *commands.ResourceId, req *mux.Messag
 }
 
 func NewCreateResourceRequest(resourceID *commands.ResourceId, req *mux.Message, connectionID string) (*commands.CreateResourceRequest, error) {
-	correlationUUID, err := uuid.NewV4()
+	correlationUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create correlationID: %w", err)
 	}

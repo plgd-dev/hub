@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -210,7 +210,7 @@ func testMakeConfirmDeviceMetadataUpdateRequest(deviceID string, shadowSynchroni
 	r := commands.ConfirmDeviceMetadataUpdateRequest{
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}

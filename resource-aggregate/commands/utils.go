@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	extCodes "github.com/plgd-dev/cloud/grpc-gateway/pb/codes"
 	"google.golang.org/grpc/codes"
 )
@@ -18,12 +18,12 @@ func (r *ResourceId) ToUUID() string {
 	if len(r.Href) == 0 {
 		return ""
 	}
-	return uuid.NewV5(uuid.NamespaceURL, r.DeviceId+r.Href).String()
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href)).String()
 }
 
 // ToUUID converts resource href and device id to unique resource ID
 func (r *Resource) ToUUID() string {
-	return uuid.NewV5(uuid.NamespaceURL, r.DeviceId+r.Href).String()
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href)).String()
 }
 
 // GetResourceID converts resource href and device id to resource id struct
@@ -32,11 +32,11 @@ func (r *Resource) GetResourceID() *ResourceId {
 }
 
 func MakeLinksResourceUUID(deviceID string) string {
-	return uuid.NewV5(uuid.NamespaceURL, deviceID+ResourceLinksHref).String()
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(deviceID+ResourceLinksHref)).String()
 }
 
 func MakeStatusResourceUUID(deviceID string) string {
-	return uuid.NewV5(uuid.NamespaceURL, deviceID+StatusHref).String()
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(deviceID+StatusHref)).String()
 }
 
 func NewResourceID(deviceID, href string) *ResourceId {

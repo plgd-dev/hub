@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 
@@ -36,7 +36,7 @@ func (rh *RequestHandler) addLinkedCloud(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot decode body: %w", err)
 	}
-	uuid, err1 := uuid.NewV4()
+	uuid, err1 := uuid.NewRandom()
 	if err1 != nil {
 		return http.StatusBadRequest, fmt.Errorf("cannot generate uuid %v", err1)
 	}

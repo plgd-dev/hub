@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
@@ -198,7 +198,7 @@ func testMakeCancelPendingCommandsRequest(deviceID string, href string, correlat
 		ResourceId:          commands.NewResourceID(deviceID, href),
 		CorrelationIdFilter: correlationIdFilter,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}

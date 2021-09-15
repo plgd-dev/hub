@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-gateway/store"
@@ -49,7 +49,7 @@ func (rh *RequestHandler) makeSubscription(w http.ResponseWriter, r *http.Reques
 	if len(eventTypes) == 0 {
 		return res, http.StatusBadRequest, fmt.Errorf("invalid eventtypes(%w)", err)
 	}
-	res.ID = uuid.Must(uuid.NewV4()).String()
+	res.ID = uuid.Must(uuid.NewRandom()).String()
 	res.EventTypes = eventTypes
 	res.URL = req.URL
 	res.CorrelationID = r.Header.Get(events.CorrelationIDKey)
