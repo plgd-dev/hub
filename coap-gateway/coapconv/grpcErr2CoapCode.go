@@ -67,5 +67,5 @@ func GrpcErr2CoapCode(err error, operation Operation) coapCodes.Code {
 	if err != nil {
 		grpcCode = pkgGrpc.ErrToStatus(err).Code()
 	}
-	return grpcCode2CoapCode(grpcCode, Retrieve)
+	return grpcCode2CoapCode(grpcCode, operation)
 }

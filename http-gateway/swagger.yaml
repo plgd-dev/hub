@@ -753,7 +753,7 @@ components:
           type: string
           default: 'sub'
         jwtDeviceIdClaim:
-          description: JWT claim identifying device id. Empty means that JWT doesn't contains it.
+          description: JWT claim identifying device id. Empty means that JWT doesn't contain it.
           type: string
         signingServerAddress:
           description: Certificate authority endpoint used to sign identity certificates for devices.
@@ -766,7 +766,7 @@ components:
           description: URL of the device endpoint - plgd CoAP Gateway where the device connects.
           type: string
         cloudAuthorizationProvider:
-          description: Identifer of token issuer which device sends together with the token to the plgd cloud during during its registration.
+          description: Identifier of token issuer which device sends together with the token to the plgd cloud during during its registration.
           type: string
         cloudCertificateAuthorities:
           description: Public key of the certificate authority issuing the plgd identity certificates.
