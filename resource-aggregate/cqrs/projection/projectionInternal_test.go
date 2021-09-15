@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -46,7 +46,7 @@ func TestProjection(t *testing.T) {
 	numEventsInSnapshot := 1
 	waitForSubscription := time.Second * 1
 
-	topics := []string{"test_projection_topic0_" + uuid.Must(uuid.NewV4()).String(), "test_projection_topic1_" + uuid.Must(uuid.NewV4()).String()}
+	topics := []string{"test_projection_topic0_" + uuid.Must(uuid.NewRandom()).String(), "test_projection_topic1_" + uuid.Must(uuid.NewRandom()).String()}
 	logger, err := log.NewLogger(log.Config{})
 	require.NoError(t, err)
 

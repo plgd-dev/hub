@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 )
@@ -40,7 +40,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 		return http.StatusBadRequest, err
 	}
 	linkedAccount.TargetCloud = token
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

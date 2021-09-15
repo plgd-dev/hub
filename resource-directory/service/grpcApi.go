@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
@@ -146,7 +146,7 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 	retrieveNotificationContainer := notification.NewRetrieveNotificationContainer()
 	deleteNotificationContainer := notification.NewDeleteNotificationContainer()
 	createNotificationContainer := notification.NewCreateNotificationContainer()
-	projUUID, err := uuid.NewV4()
+	projUUID, err := uuid.NewRandom()
 	if err != nil {
 		closeFunc.Close()
 		return nil, fmt.Errorf("cannot create uuid for projection %w", err)

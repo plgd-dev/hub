@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 )
 
@@ -38,7 +38,7 @@ func (o *deviceResourcesObservation) Error(err error) {
 }
 
 func (c *Client) ObserveDeviceResources(ctx context.Context, deviceID string, handler DeviceResourcesObservationHandler) (string, error) {
-	ID, err := uuid.NewV4()
+	ID, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
 	}

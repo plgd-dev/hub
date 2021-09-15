@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus"
@@ -148,7 +148,7 @@ type DeviceSubscriber struct {
 type RetryFunc = func() (when time.Time, err error)
 
 func NewDeviceSubscriber(getContext func() (context.Context, context.CancelFunc), deviceID string, factoryRetry func() RetryFunc, rdClient pbGRPC.GrpcGatewayClient, resourceSubscriber *subscriber.Subscriber) (*DeviceSubscriber, error) {
-	uuid, err := uuid.NewV4()
+	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}

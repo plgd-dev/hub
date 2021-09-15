@@ -8,7 +8,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v2/message"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -352,7 +352,7 @@ func testMakePublishResourceRequest(deviceID string, href []string) *commands.Pu
 		Resources: resources,
 		DeviceId:  deviceID,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -364,7 +364,7 @@ func testMakeUnpublishResourceRequest(deviceID string, hrefs []string) *commands
 		Hrefs:    hrefs,
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -404,7 +404,7 @@ func testMakeUpdateResourceRequest(deviceID, href, resourceInterface, correlatio
 			Data: []byte("hello world"),
 		},
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -420,7 +420,7 @@ func testMakeRetrieveResourceRequest(deviceID, href string, correlationID string
 		CorrelationId: correlationID,
 		TimeToLive:    int64(timeToLive),
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -436,7 +436,7 @@ func testMakeDeleteResourceRequest(deviceID, href string, correlationID string, 
 		CorrelationId: correlationID,
 		TimeToLive:    int64(timeToLive),
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -455,7 +455,7 @@ func testMakeCreateResourceRequest(deviceID, href string, correlationID string, 
 		},
 		CorrelationId: correlationID,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -474,7 +474,7 @@ func testMakeConfirmResourceCreateRequest(deviceID, href, correlationID string) 
 		},
 		Status: commands.Status_OK,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -493,7 +493,7 @@ func testMakeConfirmResourceUpdateRequest(deviceID, href, correlationID string) 
 		},
 		Status: commands.Status_OK,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -512,7 +512,7 @@ func testMakeConfirmResourceRetrieveRequest(deviceID, href, correlationID string
 		},
 		Status: commands.Status_OK,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}
@@ -531,7 +531,7 @@ func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string) 
 		},
 		Status: commands.Status_OK,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/sdk/local/core"
@@ -24,7 +24,7 @@ func (c *Client) ObserveResource(
 		cfg = o.applyOnObserve(cfg)
 	}
 
-	ID, err := uuid.NewV4()
+	ID, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
 	}

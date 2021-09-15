@@ -3,13 +3,13 @@ package pb
 import (
 	"context"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"google.golang.org/grpc/peer"
 )
 
 func (req *UpdateResourceRequest) ToRACommand(ctx context.Context) (*commands.UpdateResourceRequest, error) {
-	correlationUUID, err := uuid.NewV4()
+	correlationUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}

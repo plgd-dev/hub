@@ -9,7 +9,7 @@ import (
 	"net/http/httputil"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/patrickmn/go-cache"
@@ -50,7 +50,7 @@ func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 		return nil, fmt.Errorf("cannot marshal public key: %w", err)
 	}
 
-	if err = jwkKey.Set(jwk.KeyIDKey, uuid.NewV5(uuid.NamespaceX500, string(data)).String()); err != nil {
+	if err = jwkKey.Set(jwk.KeyIDKey, uuid.NewSHA1(uuid.NameSpaceX500, data).String()); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", jwk.KeyIDKey, err)
 	}
 	if err = jwkKey.Set(jwk.AlgorithmKey, alg); err != nil {

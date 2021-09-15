@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
@@ -251,7 +251,7 @@ func testMakeUpdateDeviceMetadataRequest(deviceID, correlationID string, online 
 	r := commands.UpdateDeviceMetadataRequest{
 		DeviceId: deviceID,
 		CommandMetadata: &commands.CommandMetadata{
-			ConnectionId: uuid.Must(uuid.NewV4()).String(),
+			ConnectionId: uuid.Must(uuid.NewRandom()).String(),
 			Sequence:     0,
 		},
 		TimeToLive:    int64(timeToLive),
