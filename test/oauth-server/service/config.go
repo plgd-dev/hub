@@ -70,7 +70,7 @@ var clients = ClientsConfig{
 	{
 		ID:                        ClientTest,
 		AuthorizationCodeLifetime: time.Minute * 10,
-		AccessTokenLifetime:       time.Hour,
+		AccessTokenLifetime:       time.Hour * 24,
 	},
 	{
 		ID:                        ClientTestShortExpiration,
