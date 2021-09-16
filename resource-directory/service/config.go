@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -133,15 +131,15 @@ func (c *AuthorizationServerConfig) Validate() error {
 }
 
 type PublicConfiguration struct {
-	CAPool                     string               `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
-	DeviceAuthorization        authorization.Config `yaml:"deviceAuthorization" json:"deviceAuthorization"`
-	OwnerClaim                 string               `yaml:"ownerClaim" json:"ownerClaim"`
-	DeviceIDClaim              string               `yaml:"deviceIdClaim" json:"deviceIdClaim"`
-	SigningServerAddress       string               `yaml:"signingServerAddress" json:"signingServerAddress"`
-	CloudID                    string               `yaml:"cloudID" json:"cloudID"`
-	CloudURL                   string               `yaml:"cloudURL" json:"cloudURL"`
-	CloudAuthorizationProvider string               `yaml:"cloudAuthorizationProvider" json:"cloudAuthorizationProvider"`
-	DefaultCommandTimeToLive   time.Duration        `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
+	CAPool                     string        `yaml:"caPool" json:"caPool" description:"file path to the root certificate in PEM format"`
+	OwnerClaim                 string        `yaml:"ownerClaim" json:"ownerClaim"`
+	DeviceIDClaim              string        `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	SigningServerAddress       string        `yaml:"signingServerAddress" json:"signingServerAddress"`
+	CloudID                    string        `yaml:"cloudID" json:"cloudID"`
+	CloudURL                   string        `yaml:"cloudURL" json:"cloudURL"`
+	CloudAuthorizationProvider string        `yaml:"cloudAuthorizationProvider" json:"cloudAuthorizationProvider"`
+	DefaultCommandTimeToLive   time.Duration `yaml:"defaultCommandTimeToLive" json:"defaultCommandTimeToLive"`
+	AuthorizationServer        string        `yaml:"authorizationServer" json:"authorizationServer"`
 
 	cloudCertificateAuthorities string `yaml:"-"`
 }
@@ -162,15 +160,14 @@ func (c *PublicConfiguration) Validate() error {
 	if c.CAPool == "" {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
-	if err := c.DeviceAuthorization.Validate(); err != nil {
-		return fmt.Errorf("deviceAuthorization.%w", err)
+	if c.AuthorizationServer == "" {
+		return fmt.Errorf("authorizationServer('%v')", c.CAPool)
 	}
 	return nil
 }
 
-func (c PublicConfiguration) ToProto(authURL string) *pb.CloudConfigurationResponse {
+func (c PublicConfiguration) ToProto() *pb.CloudConfigurationResponse {
 	return &pb.CloudConfigurationResponse{
-		DeviceOnboardingCodeUrl:     c.DeviceAuthorization.AuthCodeURL(uuid.NewString(), authURL, ""),
 		JwtOwnerClaim:               c.OwnerClaim,
 		JwtDeviceIdClaim:            c.DeviceIDClaim,
 		SigningServerAddress:        c.SigningServerAddress,
@@ -180,7 +177,7 @@ func (c PublicConfiguration) ToProto(authURL string) *pb.CloudConfigurationRespo
 		CloudCertificateAuthorities: c.cloudCertificateAuthorities,
 		DefaultCommandTimeToLive:    int64(c.DefaultCommandTimeToLive),
 		CurrentTime:                 pkgTime.UnixNano(time.Now()),
-		DeviceAuthority:             c.DeviceAuthorization.Authority,
+		AuthorizationServer:         c.AuthorizationServer,
 	}
 }
 

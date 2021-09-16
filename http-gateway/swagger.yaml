@@ -780,7 +780,7 @@ components:
           type: integer
           format: int64
         deviceAuthority:
-          description: Endpoint of OAuth provider.
+          description: Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.
           type: string
       example:
         deviceOnboardingCodeUrl: 'https://auth.plgd.cloud/authorize?audience=http://try.plgd.cloud/'

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"os"
 	"os/signal"
@@ -36,7 +35,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	kitSync "github.com/plgd-dev/kit/sync"
-	"github.com/plgd-dev/sdk/pkg/net/coap"
 )
 
 var authCtxKey = "AuthCtx"
@@ -66,44 +64,6 @@ type Service struct {
 	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
 	ownerCache              *authClient.OwnerCache
-}
-
-func verifyChain(chain []*x509.Certificate, capool *x509.CertPool) (string, error) {
-	if len(chain) == 0 {
-		return "", fmt.Errorf("empty chain")
-	}
-	certificate := chain[0]
-	intermediateCAPool := x509.NewCertPool()
-	for i := 1; i < len(chain); i++ {
-		intermediateCAPool.AddCert(chain[i])
-	}
-	_, err := certificate.Verify(x509.VerifyOptions{
-		Roots:         capool,
-		Intermediates: intermediateCAPool,
-		CurrentTime:   time.Now(),
-		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-	})
-	if err != nil {
-		return "", err
-	}
-	// verify EKU manually
-	ekuHasClient := false
-	ekuHasServer := false
-	for _, eku := range certificate.ExtKeyUsage {
-		if eku == x509.ExtKeyUsageClientAuth {
-			ekuHasClient = true
-		}
-		if eku == x509.ExtKeyUsageServerAuth {
-			ekuHasServer = true
-		}
-	}
-	if !ekuHasClient {
-		return "", fmt.Errorf("not contains ExtKeyUsageClientAuth")
-	}
-	if !ekuHasServer {
-		return "", fmt.Errorf("not contains ExtKeyUsageServerAuth")
-	}
-	return coap.GetDeviceIDFromIndetityCertificate(certificate)
 }
 
 // New creates server.
@@ -216,30 +176,8 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 		nats.AddCloseFunc(coapsTLS.Close)
 		tlsCfgForClient := coapsTLS.GetTLSConfig()
-		var tlsCfg tls.Config
-		tlsCfg.GetConfigForClient = func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
-			return &tls.Config{
-				GetCertificate: tlsCfgForClient.GetCertificate,
-				MinVersion:     tlsCfgForClient.MinVersion,
-				ClientAuth:     tlsCfgForClient.ClientAuth,
-				ClientCAs:      tlsCfgForClient.ClientCAs,
-				VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-					var errors []error
-					var deviceID string
-					for _, chain := range verifiedChains {
-						deviceID, err = verifyChain(chain, tlsCfgForClient.ClientCAs)
-						if err == nil {
-							tlsDeviceIDCache.SetDefault(chi.Conn.RemoteAddr().String(), deviceID)
-							return nil
-						}
-						errors = append(errors, err)
-					}
-					if len(errors) > 0 {
-						return fmt.Errorf("%v", errors)
-					}
-					return fmt.Errorf("empty chains")
-				},
-			}, nil
+		tlsCfg := tls.Config{
+			GetConfigForClient: MakeGetConfigForClient(tlsCfgForClient, tlsDeviceIDCache),
 		}
 		l, err := net.NewTLSListener("tcp", config.APIs.COAP.Addr, &tlsCfg)
 		if err != nil {

@@ -20,14 +20,15 @@ func TestRequestHandler_getUItoken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, service.ClientTest, "https://localhost:3000", "nonse", http.StatusTemporaryRedirect)
+	code := getAuthorize(t, service.ClientTest, "https://localhost:3000", "nonse", "", http.StatusTemporaryRedirect)
 	token := getToken(t, service.ClientTest, "localhost", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
 		InsecureSkipVerify: true,
 	})
-	_, err := validator.Parse(token["access_token"])
+	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
+	require.Empty(t, accessToken[service.TokenDeviceID])
 	_, err = validator.Parse(token["id_token"])
 	require.NoError(t, err)
 }
@@ -49,10 +50,16 @@ func TestRequestHandler_getDeviceToken(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	code := getAuthorize(t, service.ClientTest, "", "https://localhost:3000", http.StatusTemporaryRedirect)
+	code := getAuthorize(t, service.ClientTest, "", "https://localhost:3000", "abc", http.StatusTemporaryRedirect)
 	token := getToken(t, service.ClientTest, "", code, service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
+	validator := jwt.NewValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs), &tls.Config{
+		InsecureSkipVerify: true,
+	})
+	accessToken, err := validator.Parse(token["access_token"])
+	require.NoError(t, err)
+	require.NotEmpty(t, accessToken[service.TokenDeviceID])
 }
 
 func getToken(t *testing.T, clientID, audience, code string, grantType service.AllowedGrantType, statusCode int) map[string]string {

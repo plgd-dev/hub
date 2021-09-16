@@ -27,7 +27,7 @@ func Test_clientObserveHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
+	co := testCoapDial(t, testCfg.GW_HOST, "")
 	if co == nil {
 		return
 	}
@@ -117,13 +117,13 @@ func Test_clientObserveHandler_closeObservation(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co1 := testCoapDial(t, testCfg.GW_HOST)
+	co1 := testCoapDial(t, testCfg.GW_HOST, "")
 	require.NotEmpty(t, co1)
 	defer func() {
 		_ = co1.Close()
 	}()
 	testPrepareDevice(t, co1)
-	co2 := testCoapDial(t, testCfg.GW_HOST)
+	co2 := testCoapDial(t, testCfg.GW_HOST, "")
 	require.NotEmpty(t, co1)
 	defer func() {
 		_ = co2.Close()

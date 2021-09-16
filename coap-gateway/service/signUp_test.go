@@ -20,7 +20,7 @@ type TestCoapSignUpResponse struct {
 func TestSignUpPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
-	codeEl := oauthTest.GetDeviceAuthorizationCode(t)
+	codeEl := oauthTest.GetDeviceAuthorizationCode(t, "")
 
 	tbl := []testEl{
 		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
@@ -30,7 +30,7 @@ func TestSignUpPostHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST)
+			co := testCoapDial(t, testCfg.GW_HOST, "")
 			if co == nil {
 				return
 			}

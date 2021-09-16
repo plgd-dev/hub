@@ -123,7 +123,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 	}
 
 	validUntil := pkgTime.Unix(0, expire)
-	deviceID := client.server.GetDeviceID(claim, client.tlsDeviceID, refreshToken.DeviceID)
+	deviceID := client.ResolveDeviceID(claim, refreshToken.DeviceID)
 	expiresIn := validUntilToExpiresIn(validUntil)
 	accept, out, err := getRefreshTokenContent(token, expiresIn, req.Options)
 	if err != nil {

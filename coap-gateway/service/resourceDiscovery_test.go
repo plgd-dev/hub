@@ -16,7 +16,7 @@ func Test_resourceDirectoryFind(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
+	co := testCoapDial(t, testCfg.GW_HOST, "")
 	if co == nil {
 		return
 	}

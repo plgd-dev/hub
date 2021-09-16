@@ -28,7 +28,7 @@ func Test_refreshTokenHandler(t *testing.T) {
 
 	for _, test := range tbl {
 		tf := func(t *testing.T) {
-			co := testCoapDial(t, testCfg.GW_HOST)
+			co := testCoapDial(t, testCfg.GW_HOST, "")
 			if co == nil {
 				return
 			}

@@ -150,7 +150,7 @@ gRPC API of the Resource Aggregate service as defined [here](https://github.com/
 | `api.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `api.grpc.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `api.grpc.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
-| `api.grpc.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `api.grpc.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.grpc.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.grpc.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.grpc.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |

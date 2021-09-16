@@ -284,7 +284,7 @@ func signInPostHandler(req *mux.Message, client *Client, signIn CoapSignInReq) {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign in: %w", err), coapCodes.InternalServerError)
 		return
 	}
-	deviceID := client.server.GetDeviceID(jwtClaims, client.tlsDeviceID, signIn.DeviceID)
+	deviceID := client.ResolveDeviceID(jwtClaims, signIn.DeviceID)
 
 	upd := client.updateAuthorizationContext(deviceID, signIn.UserID, signIn.AccessToken, validUntil)
 

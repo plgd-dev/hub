@@ -913,3 +913,13 @@ func (c *Client) unsubscribeFromDeviceEvents() {
 	c.mutex.Unlock()
 	close()
 }
+
+func (c *Client) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) string {
+	if c.server.config.Clients.AuthServer.DeviceIDClaim != "" {
+		return claim.DeviceID(c.server.config.Clients.AuthServer.DeviceIDClaim)
+	}
+	if c.server.config.APIs.COAP.TLS.Enabled && c.server.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
+		return c.tlsDeviceID
+	}
+	return paramDeviceID
+}
