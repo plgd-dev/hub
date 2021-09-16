@@ -23,6 +23,7 @@ apis:
     authorization:
       clientID: ""
       clientSecret: ""
+      deviceIdClaim: ""
       scopes: []
       authority: ""
       audience: ""
@@ -52,7 +53,6 @@ clients:
         useSystemCAPool: false
   authorizationServer:
     ownerClaim: sub
-    deviceIdClaim: ""
     grpc:
       address: ""
       keepAlive:

@@ -230,7 +230,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	provider, err := authorization.NewPlgdProvider(ctx, config.APIs.COAP.Authorization,
+	provider, err := authorization.NewPlgdProvider(ctx, config.APIs.COAP.Authorization.Config,
 		logger, config.Clients.AuthServer.OwnerClaim, "query", "offline", "code")
 	if err != nil {
 		nats.Close()

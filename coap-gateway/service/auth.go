@@ -47,9 +47,9 @@ func (s *Service) ValidateToken(ctx context.Context, token string) (pkgJwt.Claim
 }
 
 func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error {
-	jwtDeviceID := claim.DeviceID(s.config.Clients.AuthServer.DeviceIDClaim)
-	if s.config.Clients.AuthServer.DeviceIDClaim != "" && jwtDeviceID == "" {
-		return fmt.Errorf("access token doesn't contain the required device id claim('%v')", s.config.Clients.AuthServer.DeviceIDClaim)
+	jwtDeviceID := claim.DeviceID(s.config.APIs.COAP.Authorization.DeviceIDClaim)
+	if s.config.APIs.COAP.Authorization.DeviceIDClaim != "" && jwtDeviceID == "" {
+		return fmt.Errorf("access token doesn't contain the required device id claim('%v')", s.config.APIs.COAP.Authorization.DeviceIDClaim)
 	}
 	if !s.config.APIs.COAP.TLS.Enabled {
 		return nil
@@ -60,7 +60,7 @@ func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error 
 	if tlsDeviceID == "" {
 		return fmt.Errorf("certificate of device doesn't contains device id")
 	}
-	if s.config.Clients.AuthServer.DeviceIDClaim == "" {
+	if s.config.APIs.COAP.Authorization.DeviceIDClaim == "" {
 		return nil
 	}
 	if jwtDeviceID != tlsDeviceID {

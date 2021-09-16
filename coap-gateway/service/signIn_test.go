@@ -138,7 +138,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
-	coapgwCfg.Clients.AuthServer.DeviceIDClaim = oauthService.TokenDeviceID
+	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthService.TokenDeviceID
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 

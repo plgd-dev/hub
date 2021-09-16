@@ -156,6 +156,7 @@ OAuth2.0 Client is used to issuing an authorization code used by the Onboarding 
 | ---------- | -------- | -------------- | ------- |
 | `api.coap.authorization.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `api.coap.authorization.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `api.coap.authorization.deviceIdClaim` | string | `Claim used to identify device id of the device. Empty means that JWT doesn't contain it.` | `""` |
 | `api.coap.authorization.scopes` | string | `Comma separated list of required scopes.` | `""` |
 | `api.coap.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.coap.authorization.audience` | string | `Audience of OAuth provider.` | `""` |
@@ -196,7 +197,6 @@ Client configurations to internally connect to Authorization Server service.
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `clients.authorizationServer.ownerClaim` | string | `Claim used to identify owner of the device.` | `"sub"` |
-| `clients.authorizationServer.deviceIdClaim` | string | `Claim used to identify device id of the device. Empty means that JWT doesn't contain it.` | `""` |
 | `clients.authorizationServer.grpc.address` | string | `Authorization service address.` | `"127.0.0.1:9100"` |
 | `clients.authorizationServer.grpc.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `clients.authorizationServer.grpc.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
