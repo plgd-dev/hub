@@ -1,0 +1,49 @@
+{{- if .Values.certificateauthority.enabled }}
+{{- $cert := "/certs" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "plgd-cloud.certificateauthority.configSecretName" . }}
+  namespace: {{ .Release.Namespace }}
+stringData:
+  {{ .Values.certificateauthority.config.fileName }}: |
+    {{- with .Values.certificateauthority }}
+    apis:
+      grpc:
+        address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        enforcementPolicy:
+          minTime: {{ .apis.grpc.enforcementPolicy.minTime }}
+          permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
+        keepAlive:
+          # 0s - means infinity
+          maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          # 0s - means infinity
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          # 0s - means infinity
+          maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
+          time: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          timeout: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+        tls:
+          {{- $tls := .apis.grpc.tls }}
+          {{- include "plgd-cloud.certificateConfig" (list $ $tls $cert ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+        authorization:
+          authority:{{ printf " " }}{{ required "certificateauthority.apis.grpc.authorization.authority or global.authority is required " ( $.Values.global.authority | default .apis.grpc.authorization.authority ) | quote }}
+          audience:{{ printf " " }}{{ required "certificateauthority.apis.grpc.authorization.audience or global.audience is required " ( $.Values.global.audience | default .apis.grpc.authorization.audience ) | quote }}
+          http:
+            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
+            maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
+            maxIdleConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
+            idleConnTimeout: {{ .apis.grpc.authorization.http.idleConnTimeout }}
+            timeout: {{ .apis.grpc.authorization.http.timeout }}
+            tls:
+              {{- $grpcTls := .apis.grpc.authorization.http.tls }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
+              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+    signer:
+      certFile: {{ .signer.certFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.cert ) | quote }}
+      keyFile: {{ .signer.keyFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.key ) | quote }}
+      validFrom: {{ .signer.validFrom | quote }}
+      expiresIn: {{ .signer.expiresIn | quote }}
+  {{- end }}
+{{- end }}

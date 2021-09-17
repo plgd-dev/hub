@@ -1,0 +1,66 @@
+{{- if .Values.httpgateway.enabled }}
+{{- $httpCert := "/certs" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "plgd-cloud.httpgateway.configSecretName" . }}
+  namespace: {{ .Release.Namespace }}
+stringData:
+  {{ .Values.httpgateway.config.fileName }}: |
+    {{- with .Values.httpgateway }}
+    log:
+      debug: {{ .log.debug }}
+    apis:
+      http:
+        address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        tls:
+          {{- $tls := .apis.http.tls }}
+          {{- include "plgd-cloud.certificateConfig" (list $ $tls $httpCert ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+        webSocket:
+          streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
+          pingFrequency: {{ .apis.http.webSocket.pingFrequency }}
+        authorization:
+          authority:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.authority or global.authority is required " ( $.Values.global.authority | default .apis.http.authorization.authority ) | quote }}
+          audience:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.audience or global.audience is required " ( $.Values.global.audience | default .apis.http.authorization.audience ) | quote }}
+          http:
+            maxIdleConns: {{ .apis.http.authorization.http.maxIdleConns }}
+            maxConnsPerHost: {{ .apis.http.authorization.http.maxIdleConnsPerHost }}
+            maxIdleConnsPerHost: {{ .apis.http.authorization.http.maxIdleConnsPerHost }}
+            idleConnTimeout: {{ .apis.http.authorization.http.idleConnTimeout }}
+            timeout: {{ .apis.http.authorization.http.timeout }}
+            tls:
+              {{- $httpTls := .apis.http.authorization.http.tls }}
+              {{- include "plgd-cloud.certificateConfig" (list $ $httpTls $httpCert ) | indent 12 }}
+              useSystemCAPool: {{ .apis.http.authorization.http.tls.useSystemCAPool }}
+    clients:
+      grpcGateway:
+        grpc:
+          address: {{ printf " " }}{{- include "plgd-cloud.grpcGatewayAddress" (list $ .clients.grpcGateway.grpc.address ) | quote }}
+          keepAlive:
+            time: {{ .clients.grpcGateway.grpc.keepAlive.time }}
+            timeout: {{ .clients.grpcGateway.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.grpcGateway.grpc.keepAlive.permitWithoutStream }}
+          tls:
+            {{- $grpcTls := .clients.grpcGateway.grpc.tls }}
+            {{- include "plgd-cloud.certificateConfig" (list $ $grpcTls $httpCert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.grpcGateway.grpc.tls.useSystemCAPool }}
+    ui:
+      enabled: {{ .ui.enabled }}
+      directory: {{ .ui.directory | quote }}
+      oauthClient:
+        {{- if .ui.enabled }}
+        domain: {{ required "httpgateway.ui.oauth.domain is required" .ui.oauthClient.domain | quote }}
+        clientID: {{ required "httpgateway.ui.oauth.clientID is required" .ui.oauthClient.clientID | quote }}
+        audience: {{ required "httpgateway.ui.oauth.audience is required" .ui.oauthClient.audience | quote }}
+        scope: {{ required "httpgateway.ui.oauth.scope is required" .ui.oauthClient.scope | quote }}
+        httpGatewayAddress: {{ required "httpgateway.ui.oauth.httpGatewayAddress is required" ( .ui.oauthClient.httpGatewayAddress | default $.Values.global.dnsName ) | quote }}
+        {{- else }}
+        domain: {{ .ui.oauthClient.domain | quote }}
+        clientID: {{ .ui.oauthClient.clientID | quote }}
+        audience: {{ .ui.oauthClient.audience | quote }}
+        scope: {{ .ui.oauthClient.scope | quote }}
+        httpGatewayAddress: {{ .ui.oauthClient.httpGatewayAddress | quote }}
+        {{- end }}
+  {{- end }}
+{{- end }}

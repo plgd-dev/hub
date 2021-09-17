@@ -230,6 +230,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- end }}
 {{- end }}
 
+{{- define "plgd-cloud.grpcGatewayAddress" }}
+  {{- $ := index . 0 }}
+  {{- $address := index . 1 }}
+  {{- if $address }}
+  {{- printf "%s" $address }}
+  {{- else }}
+  {{- $raServer := include "plgd-cloud.grpcgateway.fullname" $ }}
+  {{- printf "%s.%s.svc.%s:%v" $raServer $.Release.Namespace $.Values.cluster.dns $.Values.grpcgateway.port }}
+  {{- end }}
+{{- end }}
+
 {{- define  "plgd-cloud.globalDomain" }}
   {{- $ := index . 0 }}
   {{- $address := index . 1 }}
@@ -237,6 +248,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
   {{- if $address }}
   {{- printf "%s" $address }}
   {{- else }}
-  {{- printf "%s%s" $subDomainPrefix $.Values.global.dnsName }}
+  {{- printf "%s%s" $subDomainPrefix $.Values.global.domain }}
   {{- end }}
 {{- end }}

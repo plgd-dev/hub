@@ -131,9 +131,9 @@ stringData:
       tokenURL: {{ required "resourcedirectory.publicConfiguration.tokenURL is required" .publicConfiguration.tokenURL | quote }}
       authorizationURL: {{ required "resourcedirectory.publicConfiguration.authorizationURL is required" .publicConfiguration.authorizationURL | quote }}
       ownerClaim: {{ .publicConfiguration.ownerClaim | default "sub" | quote }}
-      signingServerAddress: {{ .publicConfiguration.signingServerAddress | default ( printf "api.%s:443" $.Values.global.dnsName ) | quote }}
-      cloudID: {{ .publicConfiguration.cloudID | default $.Values.coapgateway.cloudId | quote }}
-      cloudURL: {{ .publicConfiguration.cloudURL | default (printf "coaps+tcp://%s:%v" $.Values.global.dnsName $.Values.coapgateway.port ) | quote }}
+      signingServerAddress: {{ .publicConfiguration.signingServerAddress | default ( printf "api.%s:443" $.Values.global.domain ) | quote }}
+      cloudID: {{ required "resourcedirectory.publicConfiguration.cloudID or coapgateway.cloudId or global.cloudId is required" ( .publicConfiguration.cloudID | default ( $.Values.coapgateway.cloudId | default $.Values.global.cloudId)) | quote }}
+      cloudURL: {{ .publicConfiguration.cloudURL | default (printf "coaps+tcp://%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
       cloudAuthorizationProvider: {{ .publicConfiguration.cloudAuthorizationProvider | default "plgd" | quote }}
   {{- end }}
 {{- end }}

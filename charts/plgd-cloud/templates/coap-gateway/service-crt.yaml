@@ -18,7 +18,7 @@ metadata:
   {{- end }}
 spec:
   secretName: {{ $serviceCertName }}
-  commonName: {{ printf "uuid:%s" (required "coapgateway.cloudId is required parameter" .Values.coapgateway.cloudId ) | quote }}
+  commonName: {{ printf "uuid:%s" (required "coapgateway.cloudId is required parameter" ( .Values.coapgateway.cloudId | default .Values.global.cloudId ) ) | quote }}
   privateKey:
     algorithm: {{ .Values.certmanager.coap.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
     size: {{ .Values.certmanager.coap.cert.key.size | default .Values.certmanager.default.cert.key.size }}

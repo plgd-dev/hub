@@ -13,6 +13,7 @@ stringData:
     apis:
       grpc:
         address: {{ printf "0.0.0.0:%v" .port | quote }}
+        ownerCacheExpiration: {{ .apis.grpc.ownerCacheExpiration | quote }}
         enforcementPolicy:
           minTime: {{ .apis.grpc.enforcementPolicy.minTime | quote }}
           permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}

@@ -14,7 +14,7 @@ stringData:
     apis:
       coap:
         address: {{ printf "0.0.0.0:%v" .port | quote }}
-        externalAddress: {{ .apis.coap.externalAddress  | default (printf "%s:%v" $.Values.global.dnsName $.Values.coapgateway.port ) | quote }}
+        externalAddress: {{ .apis.coap.externalAddress  | default (printf "%s:%v" $.Values.global.domain $.Values.coapgateway.port ) | quote }}
         maxMessageSize: {{ .apis.coap.maxMessageSize }}
         ownerCacheExpiration: {{ .apis.coap.ownerCacheExpiration }}
         goroutineSocketHeartbeat: {{ .apis.coap.goroutineSocketHeartbeat | quote }}

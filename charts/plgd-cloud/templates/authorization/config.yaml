@@ -27,8 +27,8 @@ stringData:
           {{- include "plgd-cloud.certificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
-          authority:{{ printf " " }}{{ .apis.grpc.authorization.authority | default ( printf "https://auth.%s" $.Values.global.dnsName ) | quote }}
-          audience:{{ printf " " }}{{ .apis.grpc.authorization.audience | default ( printf "%s" $.Values.global.dnsName ) | quote }}
+          authority:{{ printf " " }}{{ .apis.grpc.authorization.authority | default ( printf "https://auth.%s" $.Values.global.domain ) | quote }}
+          audience:{{ printf " " }}{{ .apis.grpc.authorization.audience | default ( printf "%s" $.Values.global.domain ) | quote }}
           http:
             maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
             maxConnsPerHost:  {{ .apis.grpc.authorization.http.maxConnsPerHost }}

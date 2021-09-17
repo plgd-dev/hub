@@ -7,8 +7,7 @@ global:
   mongoUri:
   # Override nats uri for every plgd-cloud services
   natsUri:
-  # Create new secret with ca chain and map chain into services mouth path
-  dnsName:
+  domain:
   cloudId:
   authority:
   audience:
@@ -71,7 +70,7 @@ mongodb:
     enabled: false
   extraEnvVars:
     - name: MONGODB_EXTRA_FLAGS
-      value: "--tlsMode=allowTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
+      value: "--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
     - name: MONGODB_CLIENT_EXTRA_FLAGS
       value: "--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
   extraVolumeMounts:
@@ -152,7 +151,7 @@ certmanager:
       # Name of default issuer
       name: selfsigned-issuer
       # Kind of default issuer
-      kind: ClusterIssuer
+      kind: Issuer
       # Default issuer specification.
       spec:
         selfSigned: {}
@@ -194,6 +193,23 @@ certmanager:
       key:
         algorithm:
         size:
+  external:
+    issuer:
+      # In case you want to create your own coap-gateway service issuer
+#      labels: {}
+#      annotations: {}
+      name:
+      kind:
+      spec:
+    cert:
+#      labels: { }
+#      annotations: { }
+      duration:
+      renewBefore:
+      key:
+        algorithm:
+        size:
+
 
 resourcedirectory:
   # Enable resource-directory service
@@ -470,6 +486,7 @@ resourceaggregate:
       enforcementPolicy:
         minTime: 5s
         permitWithoutStream: true
+      ownerCacheExpiration: 1m
       keepAlive:
         # 0s - means infinity
         maxConnectionIdle: 0s
@@ -692,7 +709,7 @@ coapgateway:
           certFile:
           useSystemCAPool: false
     authorizationServer:
-      ownerClaim: sub
+      ownerClaim: "sub"
       grpc:
         address: ""
         keepAlive:
@@ -864,3 +881,441 @@ authorization:
           keyFile:
           certFile:
           useSystemCAPool: false
+
+httpgateway:
+  # Enable http-gateway service
+  enabled: true
+  # Name of component. Used in label selectors
+  name: http-gateway
+  # Full name to override
+  fullnameOverride:
+  # Number of replicas
+  replicas: 1
+  # Additional labels for http-gateway deployment
+  deploymentLabels: {}
+  # Additional annotations for http-gateway deployment
+  deploymentAnnotations: {}
+  # Pod security context
+  podSecurityContext: {}
+  # Labels for http-gateway pod
+  podLabels: {}
+  # Annotations for http-gateway pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # Labels for http-gateway service
+    labels: {}
+    # Annotations for http-gateway service
+    annotations: {}
+  # RBAC configuration
+  rbac:
+    # Create RBAC config
+    enabled: false
+    # Name of http-gateway SA
+    serviceAccountName: http-gateway
+    # template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+  # Security context for pod
+  securityContext: {}
+  # Image pull secrets
+  imagePullSecrets: {}
+  # Restart policy for pod
+  restartPolicy: Always
+  # Init containers definition
+  initContainersTpl: {}
+  image:
+    # Image registry
+    registry:
+    # Image repository
+    repository: plgd/http-gateway
+    # Image tag.
+    tag:
+    # Image pull policy
+    pullPolicy: Always
+    # Image pull secrets
+    imagePullSecrets: {}
+  # Liveness probe. resource-directory doesn't have any default liveness probe
+  livenessProbe: {}
+  # Readiness probe. resource-directory doesn't have aby default readiness probe
+  readinessProbe: {}
+  # Resources limit
+  resources: {}
+  # Node selector
+  nodeSelector: {}
+  # Affinity definition
+  affinity: {}
+  # Toleration definition
+  tolerations: {}
+  # Optional extra volumes
+  extraVolumes: {}
+  # Optional extra volume mounts
+  extraVolumeMounts: {}
+  domain:
+  ingress:
+    enabled: true
+    annotations: {}
+    paths:
+      - /api
+      - /.well-known/
+  config:
+    fileName: service.yaml
+    volume: config
+    mountPath: /config
+  port: 9100
+  log:
+    debug: false
+  apis:
+    http:
+      address:
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: true
+      webSocket:
+        streamBodyLimit: 262144
+        pingFrequency: 10s
+      authorization:
+        authority: ""
+        audience: ""
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: false
+  clients:
+    grpcGateway:
+      grpc:
+        address: ""
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+  ui:
+    enabled: false
+    directory: "/usr/local/var/www"
+    oauthClient:
+      domain: ""
+      clientID: ""
+      audience: ""
+      scope: ""
+      httpGatewayAddress: ""
+
+
+grpcgateway:
+  # Enable grpc-gateway service
+  enabled: true
+  # Name of component. Used in label selectors
+  name: grpc-gateway
+  # Full name to override
+  fullnameOverride:
+  # Number of replicas
+  replicas: 1
+  # Additional labels for grpc-gateway deployment
+  deploymentLabels: {}
+  # Additional annotations for grpc-gateway deployment
+  deploymentAnnotations: {}
+  # Pod security context
+  podSecurityContext: {}
+  # Labels for grpc-gateway pod
+  podLabels: {}
+  # Annotations for grpc-gateway pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # Labels for grpc-gateway service
+    labels: {}
+    # Annotations for grpc-gateway service
+    annotations: {}
+  # RBAC configuration
+  rbac:
+    # Create RBAC config
+    enabled: false
+    # Name of grpc-gateway SA
+    serviceAccountName: grpc-gateway
+    # template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+  # Security context for pod
+  securityContext: {}
+  # Image pull secrets
+  imagePullSecrets: {}
+  # Restart policy for pod
+  restartPolicy: Always
+  # Init containers definition
+  initContainersTpl: {}
+  image:
+    # Image registry
+    registry:
+    # Image repository
+    repository: plgd/grpc-gateway
+    # Image tag.
+    tag:
+    # Image pull policy
+    pullPolicy: Always
+    # Image pull secrets
+    imagePullSecrets: {}
+  # Liveness probe. grpc-gateway doesn't have any default liveness probe
+  livenessProbe: {}
+  # Readiness probe. grpc-gateway doesn't have aby default readiness probe
+  readinessProbe: {}
+  # Resources limit
+  resources: {}
+  # Node selector
+  nodeSelector: {}
+  # Affinity definition
+  affinity: {}
+  # Toleration definition
+  tolerations: {}
+  # Optional extra volumes
+  extraVolumes: {}
+  # Optional extra volume mounts
+  extraVolumeMounts: {}
+  # External domain for grpc-gateway
+  domain:
+  ingress:
+    enabled: true
+    annotations: {}
+    paths:
+      - /ocf.cloud.grpcgateway.pb.GrpcGateway
+  config:
+    fileName: service.yaml
+    volume: config
+    mountPath: /config
+  port: 9100
+  log:
+    debug: false
+  apis:
+    grpc:
+      address:
+      ownerCacheExpiration: 1m
+      enforcementPolicy:
+        minTime: 5s
+        permitWithoutStream: true
+      keepAlive:
+        # 0s - means infinity
+        maxConnectionIdle: 0s
+        # 0s - means infinity
+        maxConnectionAge: 0s
+        # 0s - means infinity
+        maxConnectionAgeGrace: 0s
+        time: 2h
+        timeout: 20s
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: true
+      authorization:
+        authority: ""
+        audience: ""
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: false
+  clients:
+    authorizationServer:
+      ownerClaim: "sub"
+      grpc:
+        address: ""
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+    eventBus:
+      # number of routines to process events in projection
+      goPoolSize: 16
+      nats:
+        url:
+        pendingLimits:
+          msgLimit: 524288
+          bytesLimit: 67108864
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+    resourceAggregate:
+      grpc:
+        address: ""
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+    resourceDirectory:
+      grpc:
+        address: ""
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+
+
+certificateauthority:
+  # Enable certificate-authority service
+  enabled: true
+  # Name of component. Used in label selectors
+  name: certificate-authority
+  # Full name to override
+  fullnameOverride:
+  # Number of replicas
+  replicas: 1
+  # Additional labels for certificate-authority deployment
+  deploymentLabels: {}
+  # Additional annotations for certificate-authority deployment
+  deploymentAnnotations: {}
+  # Pod security context
+  podSecurityContext: {}
+  # Labels for certificate-authority pod
+  podLabels: {}
+  # Annotations for certificate-authority pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # Labels for certificate-authority service
+    labels: {}
+    # Annotations for certificate-authority service
+    annotations: {}
+  # RBAC configuration
+  rbac:
+    # Create RBAC config
+    enabled: false
+    # Name of certificate-authority SA
+    serviceAccountName: certificate-authority
+    # template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+  # Security context for pod
+  securityContext:
+  # Image pull secrets
+  imagePullSecrets:
+  # Restart policy for pod
+  restartPolicy: Always
+  # Init containers definition
+  initContainersTpl:
+  image:
+    # Image registry
+    registry:
+    # Image repository
+    repository: plgd/certificate-authority
+    # Image tag.
+    tag:
+    # Image pull policy
+    pullPolicy: Always
+    # Image pull secrets
+    imagePullSecrets:
+  # Liveness probe. certificate-authority doesn't have any default liveness probe
+  livenessProbe:
+  # Readiness probe. certificate-authority doesn't have aby default readiness probe
+  readinessProbe:
+  # Resources limit
+  resources:
+  # Node selector
+  nodeSelector:
+  # Affinity definition
+  affinity:
+  # Toleration definition
+  tolerations:
+  # Optional extra volumes
+  extraVolumes:
+  # Optional extra volume mounts
+  extraVolumeMounts:
+  # External domain for certificate-authority
+  domain:
+  ingress:
+    enabled: true
+    annotations: {}
+    paths:
+      - /ocf.cloud.certificateauthority.pb.CertificateAuthority
+  config:
+    fileName: service.yaml
+    volume: config
+    mountPath: /config
+  ca:
+    default:
+      commonName: coap-device-ca
+      secret:
+        name: coap-device-ca
+      duration: 87600h
+      renewBefore: 360h
+    secret:
+      name:
+    cert: tls.crt
+    key: tls.key
+    volume:
+      name: coap-device-ca
+      mountPath: /certs/coap-device-ca
+  port: 9100
+  log:
+    debug: false
+  apis:
+    grpc:
+      address:
+      enforcementPolicy:
+        minTime: 5s
+        permitWithoutStream: true
+      keepAlive:
+        # 0s - means infinity
+        maxConnectionIdle: 0s
+        # 0s - means infinity
+        maxConnectionAge: 0s
+        # 0s - means infinity
+        maxConnectionAgeGrace: 0s
+        time: 2h
+        timeout: 20s
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: true
+      authorization:
+        authority: ""
+        audience: ""
+        ownerClaim: "sub"
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: "30s"
+          timeout: "10s"
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: false
+  signer:
+    keyFile:
+    certFile:
+    validFrom: "now-1h"
+    expiresIn: "87600h"

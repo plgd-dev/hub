@@ -1,0 +1,36 @@
+{{- if .Values.httpgateway.enabled }}
+{{- $fullname := include "plgd-cloud.httpgateway.fullname" . }}
+{{- $domainCrt := include "plgd-cloud.httpgateway.domainCertName" . }}
+{{- $port := .Values.httpgateway.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.org/grpc-services: {{ $fullname | quote }}
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  {{- with .Values.httpgateway.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-cloud.httpgateway.domain" . | quote }}
+      secretName: {{ include "plgd-cloud.httpgateway.domainCertName" . | quote }}
+  rules:
+  - host: {{ include "plgd-cloud.httpgateway.domain" . | quote }}
+    http:
+      paths:
+      {{- range  .Values.httpgateway.ingress.paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullname }}
+            port:
+              number: {{ $port }}
+      {{- end }}
+{{- end }}
