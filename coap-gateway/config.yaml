@@ -12,7 +12,7 @@ apis:
     keepAlive:
       timeout: 20s
     blockwiseTransfer:
-      enabled: true
+      enabled: false
       blockSize: "1024"
     tls:
       enabled: true

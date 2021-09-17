@@ -25,7 +25,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.APIs.COAP.SubscriptionBufferSize = 1000
 	cfg.APIs.COAP.GoroutineSocketHeartbeat = time.Millisecond * 300
 	cfg.APIs.COAP.KeepAlive.Timeout = time.Second * 20
-	cfg.APIs.COAP.BlockwiseTransfer.Enabled = true
+	cfg.APIs.COAP.BlockwiseTransfer.Enabled = false
 	cfg.APIs.COAP.BlockwiseTransfer.SZX = "1024"
 	cfg.APIs.COAP.TLS.Embedded = config.MakeTLSServerConfig()
 	cfg.APIs.COAP.TLS.Enabled = true

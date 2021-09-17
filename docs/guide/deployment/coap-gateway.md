@@ -140,7 +140,7 @@ CoAP API as specified in the [Open Connectivity Foundation - Device to Cloud Ser
 | `api.coap.subscriptionBufferSize` | int | `The maximum buffer size for one events subscription.` | `1000` |
 | `api.coap.goroutineSocketHeartbeat` | string | `Interval time to check live service.` | `4s` |
 | `api.coap.keepAlive.timeout` | string | `Time limit to close inactive connection.` | `20s` |
-| `api.coap.blockwiseTransfer.enabled` | bool | `If true, enable blockwise transfer of coap message.` | `true` |
+| `api.coap.blockwiseTransfer.enabled` | bool | `If true, enable blockwise transfer of coap message.` | `false` |
 | `api.coap.blockwiseTransfer.blockSize` | int | `Size of blockwise transfer block.` | `1024` |
 | `api.coap.tls.enabled` | bool | `If true, require server certificate for ssl connection.` | `true` |
 | `api.coap.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |

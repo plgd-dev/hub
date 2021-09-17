@@ -22,7 +22,7 @@ require (
 	github.com/nats-io/nats.go v1.12.1
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210908091506-4a904cb48337
+	github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210917095946-231b8cdcfcc3
 	github.com/plgd-dev/kit v0.0.0-20210614190235-99984a49de48
 	github.com/plgd-dev/sdk v0.0.0-20210830094304-889b5b108b02
 	github.com/sirupsen/logrus v1.8.1
