@@ -9,56 +9,54 @@ import (
 
 func TestValid(t *testing.T) {
 	c := testClaims()
-	require.NoError(t, c.Valid())
+	require.NoError(t, c.ValidTimes(time.Now()))
 }
 
 func TestExpired(t *testing.T) {
 	c := testClaims()
-	c.StandardClaims.ExpiresAt = now.Add(-time.Hour).Unix()
-	require.Error(t, c.Valid())
+	c[ClaimExpiresAt] = now.Add(-time.Hour).Unix()
+	require.Error(t, c.ValidTimes(time.Now()))
 }
 
 func TestIssuedLater(t *testing.T) {
 	c := testClaims()
-	c.StandardClaims.IssuedAt = now.Add(time.Hour).Unix()
-	require.Error(t, c.Valid())
+	c[ClaimIssuedAt] = now.Add(time.Hour).Unix()
+	require.Error(t, c.ValidTimes(time.Now()))
 }
 
 func TestNotBefore(t *testing.T) {
 	c := testClaims()
-	c.StandardClaims.NotBefore = now.Add(time.Hour).Unix()
-	require.Error(t, c.Valid())
+	c[ClaimNotBefore] = now.Add(time.Hour).Unix()
+	require.Error(t, c.ValidTimes(time.Now()))
 }
 
 func TestEmptyAudience(t *testing.T) {
 	c := testClaims()
-	require.Nil(t, c.GetAudience())
+	require.Nil(t, c.Audience())
 }
 
 func TestAudienceOfOne(t *testing.T) {
 	aud := "test"
 	c := testClaims()
-	c.Audience = aud
-	require.Equal(t, []string{aud}, c.GetAudience())
+	c[ClaimAudience] = aud
+	require.Equal(t, []string{aud}, c.Audience())
 }
 
 func TestAudienceOfTwo(t *testing.T) {
 	c := testClaims()
-	c.Audience = []interface{}{"test1", "test2"}
-	require.Equal(t, []string{"test1", "test2"}, c.GetAudience())
+	c[ClaimAudience] = []interface{}{"test1", "test2"}
+	require.Equal(t, []string{"test1", "test2"}, c.Audience())
 }
 
 var now = time.Now()
 
 func testClaims() Claims {
 	return Claims{
-		ClientID: "testClientID",
-		Email:    "testEmail",
-		Scope:    []string{"testScope"},
-		StandardClaims: StandardClaims{
-			ExpiresAt: now.Add(time.Hour).Unix(),
-			IssuedAt:  now.Unix(),
-			NotBefore: now.Unix(),
-		},
+		ClaimClientID:  "testClientID",
+		ClaimEmail:     "testEmail",
+		ClaimScope:     []string{"testScope"},
+		ClaimExpiresAt: now.Add(time.Hour).Unix(),
+		ClaimIssuedAt:  now.Unix(),
+		ClaimNotBefore: now.Unix(),
 	}
 }

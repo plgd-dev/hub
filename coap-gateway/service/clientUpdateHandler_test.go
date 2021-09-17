@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	testCfg "github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -16,10 +17,12 @@ import (
 )
 
 func Test_clientUpdateHandler(t *testing.T) {
-	shutdown := setUp(t, true)
+	coapgwCfg := coapgwTest.MakeConfig(t)
+	coapgwCfg.APIs.COAP.TLS.Enabled = false
+	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST, true)
+	co := testCoapDial(t, testCfg.GW_HOST, "", true)
 	if co == nil {
 		return
 	}

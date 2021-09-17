@@ -7,5 +7,5 @@ import (
 )
 
 func (r *RequestHandler) GetCloudConfiguration(context.Context, *pb.CloudConfigurationRequest) (*pb.CloudConfigurationResponse, error) {
-	return r.publicConfiguration.ToProto(r.authURL), nil
+	return r.publicConfiguration.ToProto(), nil
 }

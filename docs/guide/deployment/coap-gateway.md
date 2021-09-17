@@ -140,7 +140,7 @@ CoAP API as specified in the [Open Connectivity Foundation - Device to Cloud Ser
 | `api.coap.subscriptionBufferSize` | int | `The maximum buffer size for one events subscription.` | `1000` |
 | `api.coap.goroutineSocketHeartbeat` | string | `Interval time to check live service.` | `4s` |
 | `api.coap.keepAlive.timeout` | string | `Time limit to close inactive connection.` | `20s` |
-| `api.coap.blockwiseTransfer.enabled` | bool | `If true, enable blockwise transfer of coap message.` | `true` |
+| `api.coap.blockwiseTransfer.enabled` | bool | `If true, enable blockwise transfer of coap message.` | `false` |
 | `api.coap.blockwiseTransfer.blockSize` | int | `Size of blockwise transfer block.` | `1024` |
 | `api.coap.tls.enabled` | bool | `If true, require server certificate for ssl connection.` | `true` |
 | `api.coap.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
@@ -156,8 +156,9 @@ OAuth2.0 Client is used to issuing an authorization code used by the Onboarding 
 | ---------- | -------- | -------------- | ------- |
 | `api.coap.authorization.clientID` | string | `Client ID to exchange an authorization code for an access token.` | `""` |
 | `api.coap.authorization.clientSecret` | string | `Client secret to exchange an authorization code for an access token.` |  `""` |
+| `api.coap.authorization.deviceIdClaim` | string | `Claim used to identify device id of the device. Empty means that JWT doesn't contain it.` | `""` |
 | `api.coap.authorization.scopes` | string | `Comma separated list of required scopes.` | `""` |
-| `api.coap.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `api.coap.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.coap.authorization.audience` | string | `Audience of OAuth provider.` | `""` |
 | `api.coap.authorization.redirectURL` | string | `Redirect url used to obtain device access token.` | `""` |
 | `api.coap.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |

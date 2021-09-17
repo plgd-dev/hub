@@ -112,7 +112,7 @@ func TestResourceDirectoryPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
+	co := testCoapDial(t, testCfg.GW_HOST, "")
 	if co == nil {
 		return
 	}
@@ -144,7 +144,7 @@ func TestResourceDirectoryDeleteHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
+	co := testCoapDial(t, testCfg.GW_HOST, "")
 	if co == nil {
 		return
 	}
@@ -194,7 +194,7 @@ func TestResourceDirectoryGetSelector(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
+	co := testCoapDial(t, testCfg.GW_HOST, "")
 	if co == nil {
 		return
 	}

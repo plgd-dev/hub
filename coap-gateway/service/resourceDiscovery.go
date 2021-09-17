@@ -15,8 +15,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/sdk/schema"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func makeListDevicesCommand(msg *mux.Message) (*pbGRPC.GetResourceLinksRequest, error) {
@@ -48,7 +46,7 @@ func makeHref(deviceID, href string) string {
 	return fixHref("/" + uri.ResourceRoute + "/" + deviceID + "/" + href)
 }
 
-func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksClient pbGRPC.GrpcGateway_GetResourceLinksClient) ([]*wkRd, codes.Code, error) {
+func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksClient pbGRPC.GrpcGateway_GetResourceLinksClient) ([]*wkRd, error) {
 	deviceRes := make(map[string]*wkRd)
 	ep := "coap"
 	if isTLSListener {
@@ -62,7 +60,7 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 			break
 		}
 		if err != nil {
-			return nil, status.Convert(err).Code(), fmt.Errorf("cannot create discovery response: %w", err)
+			return nil, fmt.Errorf("cannot create discovery response: %w", err)
 		}
 		d, ok := deviceRes[snapshot.GetDeviceId()]
 		if !ok {
@@ -97,7 +95,7 @@ func makeDiscoveryResp(isTLSListener bool, serverAddr string, getResourceLinksCl
 		resp = append(resp, rd)
 	}
 
-	return resp, codes.OK, nil
+	return resp, nil
 }
 
 func resourceDirectoryFind(req *mux.Message, client *Client) {
@@ -120,13 +118,13 @@ func resourceDirectoryFind(req *mux.Message, client *Client) {
 
 	getResourceLinksClient, err := client.server.rdClient.GetResourceLinks(req.Context, request)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Retrieve), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), req.Token)
 		return
 	}
 
-	discoveryResp, code, err := makeDiscoveryResp(client.server.tlsEnabled(), client.server.config.APIs.COAP.ExternalAddress, getResourceLinksClient)
+	discoveryResp, err := makeDiscoveryResp(client.server.tlsEnabled(), client.server.config.APIs.COAP.ExternalAddress, getResourceLinksClient)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcCode2CoapCode(code, coapconv.Retrieve), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: handle resource discovery: %w", authCtx.GetDeviceID(), err), coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), req.Token)
 		return
 	}
 

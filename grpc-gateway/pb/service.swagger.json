@@ -1225,10 +1225,10 @@
           "format": "int64",
           "description": "provides a current time of server in nanoseconds."
         },
-        "deviceOnboardingCodeUrl": {
+        "jwtOwnerClaim": {
           "type": "string"
         },
-        "jwtClaimOwnerId": {
+        "jwtDeviceIdClaim": {
           "type": "string"
         },
         "signingServerAddress": {
@@ -1244,6 +1244,9 @@
           "type": "string"
         },
         "cloudCertificateAuthorities": {
+          "type": "string"
+        },
+        "authorizationServer": {
           "type": "string"
         },
         "defaultCommandTimeToLive": {

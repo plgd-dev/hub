@@ -46,3 +46,11 @@ func ForwardErrorf(code codes.Code, formatter string, args ...interface{}) error
 	sProto.Details = details
 	return status.FromProto(sProto).Err()
 }
+
+func ErrToStatus(err error) *status.Status {
+	var grpcErr grpcErr
+	if errors.As(err, &grpcErr) {
+		return grpcErr.GRPCStatus()
+	}
+	return status.Convert(err)
+}

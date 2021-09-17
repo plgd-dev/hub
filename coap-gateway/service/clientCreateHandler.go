@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
-	"google.golang.org/grpc/status"
 )
 
 func clientCreateHandler(req *mux.Message, client *Client) {
@@ -26,7 +25,7 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 	code := coapCodes.Created
 	content, err := clientCreateDeviceHandler(req, client, deviceID, href)
 	if err != nil {
-		code = coapconv.GrpcCode2CoapCode(status.Convert(err).Code(), coapconv.Create)
+		code = coapconv.GrpcErr2CoapCode(err, coapconv.Create)
 		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot handle create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
 		return
 	}
@@ -36,7 +35,7 @@ func clientCreateHandler(req *mux.Message, client *Client) {
 	}
 	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
 	if err != nil {
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot encode response for create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), code, req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot encode response for create resource /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapCodes.BadRequest, req.Token)
 		return
 	}
 	client.sendResponse(code, req.Token, mediaType, content.Data)

@@ -131,7 +131,7 @@ APIs of the HTTP Gateway service as defined [uri](https://github.com/plgd-dev/cl
 | `api.http.tls.clientCertificateRequired` | bool | `If true, require client certificate.` | `true` |
 | `api.http.websocket.streamBodyLimit` | int | `Limit a size for the buffer used while reading the grpc stream.` | `262144` |
 | `api.http.websocket.pingFrequency` | string | `Ping frequency specifies the ping interval between pings.` | `10s` |
-| `api.http.authorization.authority` | string | `Endpoint of OAuth provider.` | `""` |
+| `api.http.authorization.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find and retrieve the public key that can be used to validate the token’s signature.` | `""` |
 | `api.http.authorization.audience` | string | `Identifier of the API configured in your OAuth provider.` | `""` |
 | `api.http.authorization.http.maxIdleConns` | int | `It controls the maximum number of idle (keep-alive) connections across all hosts. Zero means no limit.` | `16` |
 | `api.http.authorization.http.maxConnsPerHost` | int | `It optionally limits the total number of connections per host, including connections in the dialing, active, and idle states. On limit violation, dials will block. Zero means no limit.` | `32` |

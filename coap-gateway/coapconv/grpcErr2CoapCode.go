@@ -1,6 +1,7 @@
 package coapconv
 
 import (
+	pkgGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"google.golang.org/grpc/codes"
 )
@@ -12,7 +13,7 @@ const Retrieve Operation = 2
 const Update Operation = 3
 const Delete Operation = 4
 
-func GrpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Code {
+func grpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Code {
 	switch statusCode {
 	case codes.OK:
 		switch operation {
@@ -26,7 +27,7 @@ func GrpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Cod
 			return coapCodes.Deleted
 		}
 	case codes.Canceled:
-		return coapCodes.Empty
+		return coapCodes.ServiceUnavailable
 	case codes.Unknown:
 		return coapCodes.InternalServerError
 	case codes.InvalidArgument:
@@ -59,4 +60,12 @@ func GrpcCode2CoapCode(statusCode codes.Code, operation Operation) coapCodes.Cod
 		return coapCodes.Unauthorized
 	}
 	return coapCodes.InternalServerError
+}
+
+func GrpcErr2CoapCode(err error, operation Operation) coapCodes.Code {
+	grpcCode := codes.OK
+	if err != nil {
+		grpcCode = pkgGrpc.ErrToStatus(err).Code()
+	}
+	return grpcCode2CoapCode(grpcCode, operation)
 }

@@ -3,15 +3,20 @@ package service_test
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	authTest "github.com/plgd-dev/cloud/authorization/test"
 	"github.com/plgd-dev/cloud/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
@@ -28,7 +33,8 @@ import (
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
 	"github.com/plgd-dev/kit/codec/cbor"
 	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/security/certManager"
+	"github.com/plgd-dev/kit/security"
+	"github.com/plgd-dev/kit/security/generateCertificate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -89,7 +95,7 @@ func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 }
 
 func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignUpResponse {
-	code := oauthTest.GetDeviceAuthorizationCode(t)
+	code := oauthTest.GetDeviceAuthorizationCode(t, deviceID)
 	signUpReq := service.CoapSignUpRequest{
 		DeviceID:              deviceID,
 		AuthorizationCode:     code,
@@ -246,46 +252,70 @@ func testPrepareDevice(t *testing.T, co *tcp.ClientConn) {
 	}
 }
 
-func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn {
-	var config certManager.OcfConfig
-	err := envconfig.Process("LISTEN", &config)
-	assert.NoError(t, err)
-	listenCertManager, err := certManager.NewOcfCertManager(config)
-	require.NoError(t, err)
+func testCoapDial(t *testing.T, host, deviceID string, withoutTLS ...bool) *tcp.ClientConn {
+	var tlsConfig *tls.Config
 
-	tlsConfig := listenCertManager.GetClientTLSConfig()
-	tlsConfig.InsecureSkipVerify = true
-	tlsConfig.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-		if len(rawCerts) == 0 {
-			return fmt.Errorf("empty certificates chain")
-		}
-		intermediateCAPool := x509.NewCertPool()
-		certs := make([]*x509.Certificate, 0, len(rawCerts))
-		for _, rawCert := range rawCerts {
-			cert, err := x509.ParseCertificate(rawCert)
-			if err != nil {
-				return err
-			}
-			certs = append(certs, cert)
-		}
-		for _, cert := range certs[1:] {
-			intermediateCAPool.AddCert(cert)
-		}
-		_, err := certs[0].Verify(x509.VerifyOptions{
-			Roots:         tlsConfig.RootCAs,
-			Intermediates: intermediateCAPool,
-			CurrentTime:   time.Now(),
-			KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-		})
-		if err != nil {
-			return err
-		}
+	if len(withoutTLS) == 0 {
 
-		return nil
-	}
+		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		require.NoError(t, err)
+		signerCert, err := security.LoadX509(os.Getenv("TEST_ROOT_CA_CERT"))
+		require.NoError(t, err)
+		signerKey, err := security.LoadX509PrivateKey(os.Getenv("TEST_ROOT_CA_KEY"))
+		require.NoError(t, err)
 
-	if len(withoutTLS) > 0 {
-		tlsConfig = nil
+		certData, err := generateCertificate.GenerateIdentityCert(generateCertificate.Configuration{
+			ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
+			ValidFor:  2 * time.Hour,
+		}, deviceID, priv, signerCert, signerKey)
+		require.NoError(t, err)
+		b, err := x509.MarshalECPrivateKey(priv)
+		require.NoError(t, err)
+		key := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: b})
+		crt, err := tls.X509KeyPair(certData, key)
+		require.NoError(t, err)
+		caPool := x509.NewCertPool()
+		for _, c := range signerCert {
+			caPool.AddCert(c)
+		}
+		tlsConfig = &tls.Config{
+			Certificates: []tls.Certificate{
+				crt,
+			},
+			InsecureSkipVerify: true,
+			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+				if len(rawCerts) == 0 {
+					return fmt.Errorf("empty certificates chain")
+				}
+				intermediateCAPool := x509.NewCertPool()
+				certs := make([]*x509.Certificate, 0, len(rawCerts))
+				for _, rawCert := range rawCerts {
+					cert, err := x509.ParseCertificate(rawCert)
+					if err != nil {
+						return err
+					}
+					certs = append(certs, cert)
+				}
+				for _, cert := range certs[1:] {
+					intermediateCAPool.AddCert(cert)
+				}
+				caPool := x509.NewCertPool()
+				for _, c := range signerCert {
+					caPool.AddCert(c)
+				}
+				_, err := certs[0].Verify(x509.VerifyOptions{
+					Roots:         caPool,
+					Intermediates: intermediateCAPool,
+					CurrentTime:   time.Now(),
+					KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+				})
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+		}
 	}
 	conn, err := tcp.Dial(host, tcp.WithTLS(tlsConfig), tcp.WithHandlerFunc(func(w *tcp.ResponseWriter, r *pool.Message) {
 		var err error
@@ -305,7 +335,7 @@ func testCoapDial(t *testing.T, host string, withoutTLS ...bool) *tcp.ClientConn
 	return conn
 }
 
-func setUp(t *testing.T, withoutTLS ...bool) func() {
+func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	test.ClearDB(ctx, t)
@@ -315,8 +345,8 @@ func setUp(t *testing.T, withoutTLS ...bool) func() {
 	rdShutdown := rdTest.SetUp(t)
 	grpcShutdown := grpcgwTest.New(t, grpcgwTest.MakeConfig(t))
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	if len(withoutTLS) > 0 {
-		coapgwCfg.APIs.COAP.TLS.Enabled = false
+	if len(coapgwCfgs) > 0 {
+		coapgwCfg = coapgwCfgs[0]
 	}
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	return func() {

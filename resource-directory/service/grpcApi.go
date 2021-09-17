@@ -8,7 +8,6 @@ import (
 	"github.com/gofrs/uuid"
 	clientAS "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -52,7 +51,6 @@ type RequestHandler struct {
 	publicConfiguration           PublicConfiguration
 	userDevicesManager            *clientAS.UserDevicesManager
 	closeFunc                     closeFunc
-	authURL                       string
 }
 
 // AddCloseFunc adds a function to be called by the Close method.
@@ -159,15 +157,6 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 		return nil, fmt.Errorf("cannot create projection over resource aggregate events: %w", err)
 	}
 
-	provider, err := authorization.NewPlgdProvider(ctx, publicConfiguration.DeviceAuthorization,
-		logger, config.AuthServer.OwnerClaim, "query", "offline", "code")
-	if err != nil {
-		closeFunc.Close()
-		return nil, fmt.Errorf("cannot create device provider: %w", err)
-	}
-	authURL := provider.OpenID.AuthURL
-	provider.Close()
-
 	h := NewRequestHandler(
 		authServiceClient,
 		resourceProjection,
@@ -179,7 +168,6 @@ func NewRequestHandlerFromConfig(ctx context.Context, config ClientsConfig, publ
 		publicConfiguration,
 		userDevicesManager,
 		closeFunc,
-		authURL,
 	)
 	return h, nil
 }
@@ -196,7 +184,6 @@ func NewRequestHandler(
 	publicConfiguration PublicConfiguration,
 	userDevicesManager *clientAS.UserDevicesManager,
 	closeFunc []func(),
-	authURL string,
 ) *RequestHandler {
 	return &RequestHandler{
 		authServiceClient:             authServiceClient,
@@ -209,7 +196,6 @@ func NewRequestHandler(
 		publicConfiguration:           publicConfiguration,
 		userDevicesManager:            userDevicesManager,
 		closeFunc:                     closeFunc,
-		authURL:                       authURL,
 	}
 }
 

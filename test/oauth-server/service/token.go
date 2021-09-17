@@ -23,6 +23,7 @@ const (
 	TokenNicknameKey = "nickname"
 	TokenNameKey     = "name"
 	TokenPictureKey  = "picture"
+	TokenDeviceID    = "https://plgd.dev/deviceId"
 )
 
 // Token provides access tokens and their attributes.
@@ -33,7 +34,7 @@ type Token struct {
 	UserID       string
 }
 
-func makeAccessToken(clientID string, host string, issuedAt, expires time.Time) (jwt.Token, error) {
+func makeAccessToken(clientID, host, deviceID string, issuedAt, expires time.Time) (jwt.Token, error) {
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
@@ -57,6 +58,11 @@ func makeAccessToken(clientID string, host string, issuedAt, expires time.Time) 
 	if err := token.Set(jwt.IssuerKey, host+"/"); err != nil {
 		return nil, fmt.Errorf("failed to set %v: %w", jwt.IssuerKey, err)
 	}
+	if deviceID != "" {
+		if err := token.Set(TokenDeviceID, deviceID); err != nil {
+			return nil, fmt.Errorf("failed to set %v: %w", TokenDeviceID, err)
+		}
+	}
 
 	return token, nil
 }
@@ -79,10 +85,10 @@ func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error
 	return payload, nil
 }
 
-func generateAccessToken(clientID string, lifeTime time.Duration, host string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
+func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
 	now := time.Now()
 	expires := now.Add(lifeTime)
-	token, err := makeAccessToken(clientID, host, now, expires)
+	token, err := makeAccessToken(clientID, host, deviceID, now, expires)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to make token: %w", err)
 	}
@@ -267,7 +273,7 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		}
 	}
 	if tokenReq.tokenType == AccessTokenType_JWT {
-		accessToken, accessTokenExpires, err = generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
+		accessToken, accessTokenExpires, err = generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.deviceID, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
 		if err != nil {
 			writeError(w, err, http.StatusInternalServerError)
 			return

@@ -30,7 +30,7 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 60
 
 	cfg.ExposedCloudConfiguration.CAPool = config.CA_POOL
-	cfg.ExposedCloudConfiguration.DeviceAuthorization = config.MakeDeviceAuthorization()
+	cfg.ExposedCloudConfiguration.AuthorizationServer = "https://" + config.OAUTH_SERVER_HOST
 	cfg.ExposedCloudConfiguration.CloudID = "cloudID"
 	cfg.ExposedCloudConfiguration.CloudAuthorizationProvider = "plgd"
 	cfg.ExposedCloudConfiguration.CloudURL = "CloudUrl"

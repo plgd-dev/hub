@@ -20,8 +20,6 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
 	"github.com/plgd-dev/go-coap/v2/mux"
 	"github.com/plgd-dev/go-coap/v2/tcp/message/pool"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func clientObserveHandler(req *mux.Message, client *Client, observe uint32) {
@@ -202,12 +200,7 @@ func newResourceSubscription(req *mux.Message, client *Client, authCtx *authoriz
 func startResourceObservation(req *mux.Message, client *Client, authCtx *authorizationContext, deviceID, href string) {
 	ok, err := client.server.ownerCache.OwnsDevice(req.Context, deviceID)
 	if err != nil {
-		code := codes.InvalidArgument
-		s, ok := status.FromError(err)
-		if ok {
-			code = s.Code()
-		}
-		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapconv.GrpcCode2CoapCode(code, coapconv.Retrieve), req.Token)
+		client.logAndWriteErrorResponse(fmt.Errorf("DeviceId: %v: cannot start resource observation /%v%v: %w", authCtx.GetDeviceID(), deviceID, href, err), coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), req.Token)
 		return
 	}
 	if !ok {

@@ -13,6 +13,7 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/grpc-gateway/client"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	pkgJwt "github.com/plgd-dev/cloud/pkg/security/jwt"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	"github.com/plgd-dev/go-coap/v2/message"
@@ -93,8 +94,9 @@ func (a *authorizationContext) ToContext(ctx context.Context) context.Context {
 
 //Client a setup of connection
 type Client struct {
-	server   *Service
-	coapConn *tcp.ClientConn
+	server      *Service
+	coapConn    *tcp.ClientConn
+	tlsDeviceID string
 
 	observedResources     map[string]map[int64]*observedResource // [deviceID][instanceID]
 	observedResourcesLock sync.Mutex
@@ -109,12 +111,13 @@ type Client struct {
 }
 
 //newClient create and initialize client
-func newClient(server *Service, client *tcp.ClientConn) *Client {
+func newClient(server *Service, client *tcp.ClientConn, tlsDeviceID string) *Client {
 	return &Client{
 		server:                server,
 		coapConn:              client,
 		observedResources:     make(map[string]map[int64]*observedResource),
 		resourceSubscriptions: kitSync.NewMap(),
+		tlsDeviceID:           tlsDeviceID,
 	}
 }
 
@@ -885,7 +888,7 @@ func (client *Client) UpdateDeviceMetadata(ctx context.Context, event *events.De
 	return err
 }
 
-func (c *Client) ValidateToken(ctx context.Context, token string) (jwtClaims, error) {
+func (c *Client) ValidateToken(ctx context.Context, token string) (pkgJwt.Claims, error) {
 	return c.server.ValidateToken(ctx, token)
 }
 
@@ -909,4 +912,14 @@ func (c *Client) unsubscribeFromDeviceEvents() {
 	}
 	c.mutex.Unlock()
 	close()
+}
+
+func (c *Client) ResolveDeviceID(claim pkgJwt.Claims, paramDeviceID string) string {
+	if c.server.config.APIs.COAP.Authorization.DeviceIDClaim != "" {
+		return claim.DeviceID(c.server.config.APIs.COAP.Authorization.DeviceIDClaim)
+	}
+	if c.server.config.APIs.COAP.TLS.Enabled && c.server.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
+		return c.tlsDeviceID
+	}
+	return paramDeviceID
 }

@@ -23,7 +23,7 @@ func TestInvalidScope(t *testing.T) {
 
 func TestExpiredScope(t *testing.T) {
 	c := testScopeClaims("testScope")
-	c.Claims.StandardClaims.ExpiresAt = now.Add(-time.Hour).Unix()
+	(*c)[ClaimExpiresAt] = now.Add(-time.Hour).Unix()
 	err := c.Valid()
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "token is expired")
@@ -31,15 +31,11 @@ func TestExpiredScope(t *testing.T) {
 
 func testScopeClaims(scope ...string) *ScopeClaims {
 	c := NewScopeClaims(scope...)
-	c.Claims = Claims{
-		ClientID: "testClientID",
-		Email:    "testEmail",
-		Scope:    []string{"testScope", "otherScope"},
-		StandardClaims: StandardClaims{
-			ExpiresAt: now.Add(time.Hour).Unix(),
-			IssuedAt:  now.Unix(),
-			NotBefore: now.Unix(),
-		},
-	}
+	(*c)[ClaimClientID] = "testClientID"
+	(*c)[ClaimEmail] = "testEmail"
+	(*c)[ClaimScope] = []string{"testScope", "otherScope"}
+	(*c)[ClaimExpiresAt] = now.Add(time.Hour).Unix()
+	(*c)[ClaimIssuedAt] = now.Unix()
+	(*c)[ClaimNotBefore] = now.Unix()
 	return c
 }

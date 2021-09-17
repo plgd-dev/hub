@@ -15,11 +15,11 @@ import (
 func TestRequestHandler_authorize(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
-	getAuthorize(t, service.ClientTest, "nonse", "https://localhost:3000", http.StatusTemporaryRedirect)
-	getAuthorize(t, service.ClientTest, "", "", http.StatusOK)
+	getAuthorize(t, service.ClientTest, "nonse", "https://localhost:3000", "", http.StatusTemporaryRedirect)
+	getAuthorize(t, service.ClientTest, "", "", "", http.StatusOK)
 }
 
-func getAuthorize(t *testing.T, clientID, nonce, redirectURI string, statusCode int) string {
+func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID string, statusCode int) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
@@ -31,6 +31,9 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI string, statusCode 
 	}
 	if nonce != "" {
 		q.Add(uri.NonceKey, nonce)
+	}
+	if deviceID != "" {
+		q.Add(uri.DeviceId, deviceID)
 	}
 	u.RawQuery = q.Encode()
 	getReq := test.NewRequest(http.MethodGet, u.String(), nil).Build()

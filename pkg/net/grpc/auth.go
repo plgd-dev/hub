@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	extJwt "github.com/dgrijalva/jwt-go"
+	extJwt "github.com/golang-jwt/jwt/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

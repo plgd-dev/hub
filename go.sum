@@ -249,6 +249,8 @@ github.com/gogo/protobuf v1.2.1/go.mod h1:hp+jE20tsWTFYpLwKvXlhS1hjn+gTNwPg2I6zV
 github.com/gogo/protobuf v1.3.1/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
+github.com/golang-jwt/jwt/v4 v4.0.0 h1:RAqyYixv1p7uEnocuy8P1nru5wprCh/MH2BIlW5z5/o=
+github.com/golang-jwt/jwt/v4 v4.0.0/go.mod h1:/xlHOz8bRuivTWchD4jCa+NbatV+wEUSzwAxVc6locg=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/glog v1.0.0 h1:nfP3RFugxnNRyKgeWd4oI1nYvXpxrx8ck8ZrcizshdQ=
 github.com/golang/glog v1.0.0/go.mod h1:EWib/APOK0SL3dFbYqvxE3UYd8E6s1ouQ7iEp/0LWV4=
@@ -519,6 +521,8 @@ github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa/go.mod h1:rA
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210720210042-9b9018ae0577/go.mod h1:QbztHCPQA/S+G2tR0e7ye3eVkBKKwlHcJlUuTIldYe8=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210908091506-4a904cb48337 h1:HRxPjBZSRedDbsxYZ3FdkzWtYAz5CG1YoJvp/aH4egI=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210908091506-4a904cb48337/go.mod h1:QbztHCPQA/S+G2tR0e7ye3eVkBKKwlHcJlUuTIldYe8=
+github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210917095946-231b8cdcfcc3 h1:z8CUlRwG6aucyzVPw+5Cfou/CdG6H4IRQKqkWONGbAE=
+github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210917095946-231b8cdcfcc3/go.mod h1:QbztHCPQA/S+G2tR0e7ye3eVkBKKwlHcJlUuTIldYe8=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit v0.0.0-20200917114550-e55124608612/go.mod h1:fvVHdNe5H/mKTEt6CbupEx+DXfnIKMcnOxHpwmxC3qs=
 github.com/plgd-dev/kit v0.0.0-20210517131053-7dfd49bb6277/go.mod h1:z62VhPYDBR6kPQyHH2fu7MiPn5uo16B2mx8R336tf5Q=

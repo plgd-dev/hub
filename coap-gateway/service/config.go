@@ -56,6 +56,15 @@ func (c *APIsConfig) Validate() error {
 	return nil
 }
 
+type AuthorizationConfig struct {
+	authorization.Config `yaml:",inline"`
+	DeviceIDClaim        string `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+}
+
+func (c *AuthorizationConfig) Validate() error {
+	return c.Config.Validate()
+}
+
 type COAPConfig struct {
 	Addr                     string                  `yaml:"address" json:"address"`
 	ExternalAddress          string                  `yaml:"externalAddress" json:"externalAddress"`
@@ -66,7 +75,7 @@ type COAPConfig struct {
 	KeepAlive                KeepAlive               `yaml:"keepAlive" json:"keepAlive"`
 	BlockwiseTransfer        BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
 	TLS                      TLSConfig               `yaml:"tls" json:"tls"`
-	Authorization            authorization.Config    `yaml:"authorization" json:"authorization"`
+	Authorization            AuthorizationConfig     `yaml:"authorization" json:"authorization"`
 }
 
 func (c *COAPConfig) Validate() error {

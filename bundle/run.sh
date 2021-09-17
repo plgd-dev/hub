@@ -556,12 +556,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.authorizationServer.oauth.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
   .clients.authorizationServer.oauth.http.tls.useSystemCAPool = true |
   .clients.authorizationServer.oauth.tokenURL = \"${SERVICE_OAUTH_ENDPOINT_TOKEN_URL}\" |
-  .publicConfiguration.deviceAuthorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .publicConfiguration.deviceAuthorization.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
-  .publicConfiguration.deviceAuthorization.redirectURL = \"${DEVICE_OAUTH_REDIRECT_URL}\" |
-  .publicConfiguration.deviceAuthorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
-  .publicConfiguration.deviceAuthorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
-  .publicConfiguration.deviceAuthorization.http.tls.useSystemCAPool = true |
+  .publicConfiguration.authorizationServer = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.cloudID = \"${COAP_GATEWAY_CLOUD_ID}\" |
   .publicConfiguration.cloudURL = \"coaps+tcp://${COAP_GATEWAY_FQDN}:${COAP_GATEWAY_PORT}\" |
   .publicConfiguration.signingServerAddress = \"${FQDN_NGINX_HTTPS}\" |

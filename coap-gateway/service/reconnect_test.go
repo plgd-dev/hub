@@ -26,7 +26,7 @@ func TestReconnectNATS(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
+	co := testCoapDial(t, testCfg.GW_HOST, "")
 	if co == nil {
 		return
 	}
@@ -71,7 +71,7 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 		oauthShutdown()
 	}()
 
-	co := testCoapDial(t, testCfg.GW_HOST)
+	co := testCoapDial(t, testCfg.GW_HOST, "")
 	if co == nil {
 		return
 	}

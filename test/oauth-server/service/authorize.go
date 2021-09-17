@@ -15,6 +15,7 @@ import (
 type authorizedSession struct {
 	nonce    string
 	audience string
+	deviceID string
 }
 
 func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.Request) {
@@ -32,10 +33,12 @@ func (requestHandler *RequestHandler) authorize(w http.ResponseWriter, r *http.R
 	}
 	nonce := r.URL.Query().Get(uri.NonceKey)
 	audience := r.URL.Query().Get(uri.AudienceKey)
+	deviceId := r.URL.Query().Get(uri.DeviceId)
 	code := hex.EncodeToString(b)
 	requestHandler.cache.Set(code, authorizedSession{
 		nonce:    nonce,
 		audience: audience,
+		deviceID: deviceId,
 	}, clientCfg.AuthorizationCodeLifetime)
 	responseMode := r.URL.Query().Get(uri.ResponseMode)
 	state := r.URL.Query().Get(uri.StateKey)
