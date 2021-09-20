@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/pkg/config"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 )
@@ -53,8 +53,8 @@ func (c *APIsConfig) Validate() error {
 }
 
 type AuthorizationConfig struct {
-	authorization.Config `yaml:",inline"`
-	DeviceIDClaim        string `yaml:"deviceIdClaim" json:"deviceIdClaim"`
+	oauth2.Config `yaml:",inline"`
+	DeviceIDClaim string `yaml:"deviceIdClaim" json:"deviceIdClaim"`
 }
 
 func (c *AuthorizationConfig) Validate() error {

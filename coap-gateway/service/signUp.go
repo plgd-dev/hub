@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -45,7 +45,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 }
 
 /// Get data for sign up response
-func getSignUpContent(token *authorization.Token, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
+func getSignUpContent(token *oauth2.Token, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
 		AccessToken:  token.AccessToken,
 		UserID:       token.Owner,

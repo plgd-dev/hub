@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/coapconv"
 	"github.com/plgd-dev/cloud/pkg/log"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	pkgTime "github.com/plgd-dev/cloud/pkg/time"
 	"github.com/plgd-dev/go-coap/v2/message"
 	coapCodes "github.com/plgd-dev/go-coap/v2/message/codes"
@@ -28,7 +28,7 @@ type CoapRefreshTokenResp struct {
 }
 
 /// Get data for sign in response
-func getRefreshTokenContent(token *authorization.Token, expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
+func getRefreshTokenContent(token *oauth2.Token, expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapRefreshTokenResp{
 		RefreshToken: token.RefreshToken,
 		AccessToken:  token.AccessToken,
