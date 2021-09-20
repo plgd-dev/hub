@@ -14,7 +14,6 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	authClient "github.com/plgd-dev/cloud/authorization/client"
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
-	"github.com/plgd-dev/cloud/coap-gateway/authorization"
 	"github.com/plgd-dev/cloud/coap-gateway/uri"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -22,6 +21,7 @@ import (
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	certManagerServer "github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/pkg/sync/task/queue"
 	raClient "github.com/plgd-dev/cloud/resource-aggregate/client"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
@@ -60,7 +60,7 @@ type Service struct {
 	userDeviceSubscriptions *kitSync.Map
 	devicesStatusUpdater    *devicesStatusUpdater
 	resourceSubscriber      *subscriber.Subscriber
-	provider                *authorization.PlgdProvider
+	provider                *oauth2.PlgdProvider
 	jwtValidator            *jwt.Validator
 	sigs                    chan os.Signal
 	ownerCache              *authClient.OwnerCache
@@ -230,7 +230,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 		}
 	}
 
-	provider, err := authorization.NewPlgdProvider(ctx, config.APIs.COAP.Authorization.Config,
+	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.COAP.Authorization.Config,
 		logger, config.Clients.AuthServer.OwnerClaim, "query", "offline", "code")
 	if err != nil {
 		nats.Close()

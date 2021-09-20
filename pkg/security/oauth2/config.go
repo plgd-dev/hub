@@ -1,10 +1,10 @@
-package authorization
+package oauth2
 
 import (
 	"fmt"
 
-	"github.com/plgd-dev/cloud/coap-gateway/authorization/oauth"
 	"github.com/plgd-dev/cloud/pkg/net/http/client"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
 )
 
 // Config general configuration
