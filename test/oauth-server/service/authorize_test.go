@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	"github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
@@ -36,7 +37,7 @@ func getAuthorize(t *testing.T, clientID, nonce, redirectURI, deviceID string, s
 		q.Add(uri.DeviceId, deviceID)
 	}
 	u.RawQuery = q.Encode()
-	getReq := test.NewRequest(http.MethodGet, u.String(), nil).Build()
+	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

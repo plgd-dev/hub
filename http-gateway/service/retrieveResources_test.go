@@ -117,7 +117,7 @@ func TestRequestHandler_GetResources(t *testing.T) {
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{

@@ -20,7 +20,7 @@ type TestCoapSignUpResponse struct {
 func TestSignUpPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
-	codeEl := oauthTest.GetDeviceAuthorizationCode(t, "")
+	codeEl := oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 
 	tbl := []testEl{
 		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},

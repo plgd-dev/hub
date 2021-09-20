@@ -63,7 +63,7 @@ func initPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 	shutdownHttp := httpgwTest.SetUp(t)
 	closeFunc = append(closeFunc, shutdownHttp)
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -251,7 +251,7 @@ func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

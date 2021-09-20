@@ -39,7 +39,7 @@ func TestClient_CreateResource(t *testing.T) {
 		{
 			name: "create resource",
 			args: args{
-				token:    oauthTest.GetServiceToken(t),
+				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
 				href:     "/oic/d",
 				data: map[string]interface{}{
@@ -52,7 +52,7 @@ func TestClient_CreateResource(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				token:    oauthTest.GetServiceToken(t),
+				token:    oauthTest.GetDefaultServiceToken(t),
 				deviceID: deviceID,
 				href:     "/invalid/href",
 				data: map[string]interface{}{
@@ -64,7 +64,7 @@ func TestClient_CreateResource(t *testing.T) {
 		},
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

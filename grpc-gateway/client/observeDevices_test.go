@@ -20,7 +20,7 @@ func TestObserveDevices(t *testing.T) {
 	defer cancel()
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
 	c := NewTestClient(t)
 	defer func() {

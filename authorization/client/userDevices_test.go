@@ -103,7 +103,7 @@ func TestAddDeviceAfterRegister(t *testing.T) {
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
 
-	token := oauthService.GetServiceToken(t)
+	token := oauthService.GetDefaultServiceToken(t)
 
 	conn, err := client.New(client.Config{
 		Addr: cfg.APIs.GRPC.Addr,
@@ -239,7 +239,7 @@ func TestUserDevicesManager_Acquire(t *testing.T) {
 	oauthShutdown := oauthService.SetUp(t)
 	defer oauthShutdown()
 
-	token := oauthService.GetServiceToken(t)
+	token := oauthService.GetDefaultServiceToken(t)
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()
@@ -347,7 +347,7 @@ func TestUserDevicesManager_Release(t *testing.T) {
 	oauthShutdown := oauthService.SetUp(t)
 	defer oauthShutdown()
 
-	token := oauthService.GetServiceToken(t)
+	token := oauthService.GetDefaultServiceToken(t)
 
 	shutdown := authService.New(t, cfg)
 	defer shutdown()

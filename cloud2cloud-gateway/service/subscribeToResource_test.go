@@ -48,7 +48,7 @@ func TestRequestHandler_SubscribeToResource(t *testing.T) {
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -132,7 +132,7 @@ func TestRequestHandler_SubscribeToResourceTokenTimeout(t *testing.T) {
 	defer tearDown()
 	c2cgwShutdown := c2cTest.SetUp(t)
 
-	token := oauthTest.GetServiceTokenForClient(t, oauthService.ClientTestShortExpiration)
+	token := oauthTest.GetServiceToken(t, testCfg.OAUTH_SERVER_HOST, oauthService.ClientTestShortExpiration)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{

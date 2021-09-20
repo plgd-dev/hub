@@ -95,7 +95,7 @@ func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 }
 
 func testSignUp(t *testing.T, deviceID string, co *tcp.ClientConn) service.CoapSignUpResponse {
-	code := oauthTest.GetDeviceAuthorizationCode(t, deviceID)
+	code := oauthTest.GetDefaultDeviceAuthorizationCode(t, deviceID)
 	signUpReq := service.CoapSignUpRequest{
 		DeviceID:              deviceID,
 		AuthorizationCode:     code,

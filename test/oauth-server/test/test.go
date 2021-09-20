@@ -34,8 +34,6 @@ func MakeConfig(t *testing.T) service.Config {
 	err := cfg.Validate()
 	require.NoError(t, err)
 
-	fmt.Printf("cfg\n%v\n", cfg)
-
 	return cfg
 }
 
@@ -63,11 +61,11 @@ func New(t *testing.T, cfg service.Config) func() {
 	}
 }
 
-func NewRequest(method, url string, body io.Reader) *requestBuilder {
+func NewRequest(method, host, url string, body io.Reader) *requestBuilder {
 	b := requestBuilder{
 		method:      method,
 		body:        body,
-		uri:         fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, url),
+		uri:         fmt.Sprintf("https://%s%s", host, url),
 		uriParams:   make(map[string]interface{}),
 		header:      make(map[string]string),
 		queryParams: make(map[string]string),
@@ -124,7 +122,7 @@ func HTTPDo(t *testing.T, req *http.Request, followRedirect bool) *http.Response
 	return resp
 }
 
-func GetServiceTokenForClient(t *testing.T, clientId string) string {
+func GetServiceToken(t *testing.T, authServerHost, clientId string) string {
 	reqBody := map[string]string{
 		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
 		uri.ClientIDKey: clientId,
@@ -133,7 +131,7 @@ func GetServiceTokenForClient(t *testing.T, clientId string) string {
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
 
-	getReq := NewRequest(http.MethodPost, uri.Token, bytes.NewReader(d)).Build()
+	getReq := NewRequest(http.MethodPost, authServerHost, uri.Token, bytes.NewReader(d)).Build()
 	res := HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()
@@ -147,11 +145,11 @@ func GetServiceTokenForClient(t *testing.T, clientId string) string {
 	return token
 }
 
-func GetServiceToken(t *testing.T) string {
-	return GetServiceTokenForClient(t, service.ClientTest)
+func GetDefaultServiceToken(t *testing.T) string {
+	return GetServiceToken(t, config.OAUTH_SERVER_HOST, service.ClientTest)
 }
 
-func GetDeviceAuthorizationCodeForClient(t *testing.T, clientId, deviceID string) string {
+func GetDeviceAuthorizationCode(t *testing.T, authServerHost, clientId, deviceID string) string {
 	u, err := url.Parse(uri.Authorize)
 	require.NoError(t, err)
 	q, err := url.ParseQuery(u.RawQuery)
@@ -161,7 +159,7 @@ func GetDeviceAuthorizationCodeForClient(t *testing.T, clientId, deviceID string
 		q.Add(uri.DeviceId, deviceID)
 	}
 	u.RawQuery = q.Encode()
-	getReq := NewRequest(http.MethodGet, u.String(), nil).Build()
+	getReq := NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, u.String(), nil).Build()
 	res := HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()
@@ -176,6 +174,6 @@ func GetDeviceAuthorizationCodeForClient(t *testing.T, clientId, deviceID string
 	return code
 }
 
-func GetDeviceAuthorizationCode(t *testing.T, deviceID string) string {
-	return GetDeviceAuthorizationCodeForClient(t, service.ClientTest, deviceID)
+func GetDefaultDeviceAuthorizationCode(t *testing.T, deviceID string) string {
+	return GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, service.ClientTest, deviceID)
 }

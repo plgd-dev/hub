@@ -66,7 +66,7 @@ func TestRequestHandler_CancelPendingMetadataUpdates(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasDevicePendingMetadataUpdates, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).AddCorrelantionIdFilter(tt.args.correlationIdFilter).Build()
