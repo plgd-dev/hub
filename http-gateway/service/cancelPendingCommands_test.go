@@ -65,7 +65,7 @@ func initPendingEvents(ctx context.Context, t *testing.T) ([]resourcePendingEven
 	shutdownHttp := httpgwTest.SetUp(t)
 	closeFunc = append(closeFunc, shutdownHttp)
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -252,7 +252,7 @@ func TestRequestHandler_CancelPendingCommands(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).AddCorrelantionIdFilter(tt.args.correlationIdFilter).Build()
@@ -325,7 +325,7 @@ func TestRequestHandler_CancelResourceCommand(t *testing.T) {
 		},
 	}
 
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httpgwTest.NewRequest(http.MethodDelete, uri.AliasResourcePendingCommands+"/"+tt.args.correlationId, nil).AuthToken(token).Accept(tt.args.accept).DeviceId(tt.args.deviceID).ResourceHref(tt.args.href).Build()

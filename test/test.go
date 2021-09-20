@@ -53,6 +53,7 @@ import (
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/service"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 )
@@ -325,7 +326,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 
 	setAccessForCloud(ctx, t, client, deviceID)
 
-	code := oauthTest.GetDeviceAuthorizationCodeForClient(t, clientId, deviceID)
+	code := oauthTest.GetDeviceAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientId, deviceID)
 	err = client.OnboardDevice(ctx, deviceID, "plgd", "coaps+tcp://"+gwHost, code, "sid")
 	require.NoError(t, err)
 

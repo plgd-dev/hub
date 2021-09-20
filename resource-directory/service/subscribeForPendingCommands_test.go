@@ -327,7 +327,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 	defer authShutdown()
 	defer oauthShutdown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
 	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)

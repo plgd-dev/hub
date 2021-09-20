@@ -199,7 +199,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
 	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)
@@ -271,7 +271,7 @@ func TestRequestHandler_Issue270(t *testing.T) {
 
 	tearDown := test.SetUp(ctx, t, test.WithCOAPGWConfig(coapgwCfg), test.WithRDConfig(rdCfg), test.WithGRPCGWConfig(grpcgwCfg))
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
 	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)
@@ -403,7 +403,7 @@ func TestRequestHandler_ValidateEventsFlow(t *testing.T) {
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
 
 	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
 	require.NoError(t, err)

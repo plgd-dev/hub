@@ -72,7 +72,7 @@ func getToken(t *testing.T, clientID, audience, code string, grantType service.A
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
 
-	getReq := test.NewRequest(http.MethodPost, uri.Token, bytes.NewReader(d)).Build()
+	getReq := test.NewRequest(http.MethodPost, config.OAUTH_SERVER_HOST, uri.Token, bytes.NewReader(d)).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

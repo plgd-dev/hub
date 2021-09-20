@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/codec/json"
@@ -14,7 +15,7 @@ func TestRequestHandler_getUserInfo(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 
-	getReq := test.NewRequest(http.MethodGet, uri.UserInfo, nil).Build()
+	getReq := test.NewRequest(http.MethodGet, config.OAUTH_SERVER_HOST, uri.UserInfo, nil).Build()
 	res := test.HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

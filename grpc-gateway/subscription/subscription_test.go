@@ -214,7 +214,7 @@ func TestRequestHandler_SubscribeToEvents(t *testing.T) {
 
 	tearDown := test.SetUp(ctx, t)
 	defer tearDown()
-	token := oauthTest.GetServiceToken(t)
+	token := oauthTest.GetDefaultServiceToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
 
 	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), log.Get())
