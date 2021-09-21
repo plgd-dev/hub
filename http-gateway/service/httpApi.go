@@ -182,7 +182,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitHttp.Interceptor
 	r0.Use(loggingMiddleware)
 	r0.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, fmt.Errorf("cannot access to %v: %w", r.RequestURI, err))
-	}, true))
+	}))
 	r0.Use(makeQueryCaseInsensitive)
 	r0.Use(trailSlashSuffix)
 	r := router.NewRouter()

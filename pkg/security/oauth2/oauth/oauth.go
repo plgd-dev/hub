@@ -1,6 +1,8 @@
 package oauth
 
 import (
+	"fmt"
+
 	"golang.org/x/oauth2"
 )
 
@@ -37,6 +39,8 @@ type Config struct {
 	ClientID     string    `yaml:"clientID" json:"clientID"`
 	ClientSecret string    `yaml:"clientSecret" json:"clientSecret"`
 	Scopes       []string  `yaml:"scopes" json:"scopes"`
+	AuthURL      string    `yaml:"authorizationURL" json:"authorizationURL"`
+	TokenURL     string    `yaml:"tokenURL" json:"tokenURL"`
 	AuthStyle    AuthStyle `yaml:"authStyle" json:"authStyle"`
 	Audience     string    `yaml:"audience" json:"audience"`
 	RedirectURL  string    `yaml:"redirectURL" json:"redirectURL"`
@@ -46,6 +50,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if c.ClientID == "" {
+		return fmt.Errorf("clientID('%v')", c.ClientID)
+	}
 	return nil
 }
 
@@ -63,7 +70,11 @@ func (c Config) ToOAuth2(authURL, tokenURL string) oauth2.Config {
 	}
 }
 
-func (c Config) AuthCodeURL(csrfToken, authURL, tokenURL string) string {
+func (c Config) ToDefaultOAuth2() oauth2.Config {
+	return c.ToOAuth2(c.AuthURL, c.TokenURL)
+}
+
+func (c Config) AuthCodeURL(csrfToken string) string {
 	aud := c.Audience
 	accessType := c.AccessType
 	responseType := c.ResponseType
@@ -83,6 +94,6 @@ func (c Config) AuthCodeURL(csrfToken, authURL, tokenURL string) string {
 	if responseMode != "" {
 		opts = append(opts, oauth2.SetAuthURLParam("response_mode", responseMode))
 	}
-	auth := c.ToOAuth2(authURL, tokenURL)
+	auth := c.ToOAuth2(c.AuthURL, c.TokenURL)
 	return (&auth).AuthCodeURL(csrfToken, opts...)
 }

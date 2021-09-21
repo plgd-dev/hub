@@ -6,8 +6,7 @@ import (
 )
 
 func (rh *RequestHandler) retrieveLinkedClouds(w http.ResponseWriter, r *http.Request) (int, error) {
-	err := writeJson(w, rh.store.Dump())
-	if err != nil {
+	if err := writeJson(w, rh.store.Dump()); err != nil {
 		return http.StatusInternalServerError, err
 	}
 	return http.StatusOK, nil

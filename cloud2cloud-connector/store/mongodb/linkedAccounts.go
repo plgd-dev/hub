@@ -21,8 +21,11 @@ func validateLinkedAccount(sub store.LinkedAccount) error {
 	if sub.LinkedCloudID == "" {
 		return fmt.Errorf("invalid LinkedCloudID")
 	}
-	if sub.TargetCloud.AccessToken == "" && sub.TargetCloud.RefreshToken == "" {
-		return fmt.Errorf("invalid TargetCloud.AccessToken and TargetCloud.RefreshToken")
+	if sub.Data.OriginCloud.AccessToken == "" && sub.Data.OriginCloud.RefreshToken == "" {
+		return fmt.Errorf("invalid Data.OriginCloud.AccessToken and Data.OriginCloud.RefreshToken")
+	}
+	if sub.Data.TargetCloud.AccessToken == "" && sub.Data.TargetCloud.RefreshToken == "" {
+		return fmt.Errorf("invalid Data.TargetCloud.AccessToken and Data.TargetCloud.RefreshToken")
 	}
 	return nil
 }

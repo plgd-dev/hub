@@ -9,7 +9,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/log"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	"github.com/plgd-dev/cloud/pkg/net/listener"
-	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 )
 
@@ -47,10 +47,9 @@ func (c *APIsConfig) Validate() error {
 
 type HTTPConfig struct {
 	EventsURL     string            `yaml:"eventsURL" json:"eventsURL"`
-	OAuthCallback string            `yaml:"oauthcallback" json:"oauthcallback"`
 	PullDevices   PullDevicesConfig `yaml:"pullDevices" json:"pullDevices"`
 	Connection    listener.Config   `yaml:",inline" json:",inline"`
-	Authorization validator.Config  `yaml:"authorization" json:"authorization"`
+	Authorization oauth2.Config     `yaml:"authorization" json:"authorization"`
 }
 
 type PullDevicesConfig struct {
@@ -68,9 +67,6 @@ func (c *PullDevicesConfig) Validate() error {
 func (c *HTTPConfig) Validate() error {
 	if c.EventsURL == "" {
 		return fmt.Errorf("eventsURL('%v')", c.EventsURL)
-	}
-	if c.OAuthCallback == "" {
-		return fmt.Errorf("oauthcallback('%v')", c.OAuthCallback)
 	}
 	if err := c.PullDevices.Validate(); err != nil {
 		return fmt.Errorf("pullDevices('%w')", err)

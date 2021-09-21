@@ -5,8 +5,6 @@ import (
 	"time"
 
 	c2curi "github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
-	"github.com/plgd-dev/cloud/coap-gateway/authorization"
-	"github.com/plgd-dev/cloud/coap-gateway/authorization/oauth"
 	httpUri "github.com/plgd-dev/cloud/http-gateway/uri"
 	grpcClient "github.com/plgd-dev/cloud/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/cloud/pkg/net/grpc/server"
@@ -16,6 +14,8 @@ import (
 	"github.com/plgd-dev/cloud/pkg/security/certManager/server"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
 	"github.com/plgd-dev/cloud/pkg/security/oauth/manager"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
@@ -49,7 +49,6 @@ var OAUTH_MANAGER_ENDPOINT_AUTHURL = "https://" + OAUTH_SERVER_HOST + uri.Author
 var OAUTH_MANAGER_ENDPOINT_TOKENURL = "https://" + OAUTH_SERVER_HOST + uri.Token
 var C2C_CONNECTOR_EVENTS_URL = "https://" + C2C_CONNECTOR_HOST + c2curi.Events
 var C2C_CONNECTOR_OAUTH_CALLBACK = "https://" + C2C_CONNECTOR_HOST + "/oauthCbk"
-var JWKS_URL = "https://" + OAUTH_SERVER_HOST + uri.JWKs
 
 func MakeTLSClientConfig() client.Config {
 	return client.Config{
@@ -144,7 +143,7 @@ func MakeEventsStoreMongoDBConfig() mongodb.Config {
 func MakeAuthorizationConfig() validator.Config {
 	return validator.Config{
 		Authority: "https://" + OAUTH_SERVER_HOST,
-		Audience:  "https://localhost/",
+		Audience:  "https://" + OAUTH_MANAGER_AUDIENCE,
 		HTTP:      MakeHttpClientConfig(),
 	}
 }
@@ -160,8 +159,8 @@ func MakeOAuthConfig() manager.ConfigV2 {
 	}
 }
 
-func MakeDeviceAuthorization() authorization.Config {
-	return authorization.Config{
+func MakeDeviceAuthorization() oauth2.Config {
+	return oauth2.Config{
 		Authority: "https://" + OAUTH_SERVER_HOST,
 		Config: oauth.Config{
 			ClientID:    OAUTH_MANAGER_CLIENT_ID,

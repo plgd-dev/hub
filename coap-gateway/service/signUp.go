@@ -18,7 +18,6 @@ import (
 type CoapSignUpRequest struct {
 	DeviceID                string `json:"di"`
 	AuthorizationCode       string `json:"accesstoken"`
-	AuthorizationProvider   string `json:"authprovider"`
 	AuthorizationCodeLegacy string `json:"authcode"`
 }
 
@@ -37,9 +36,6 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 	}
 	if request.AuthorizationCode == "" {
 		return fmt.Errorf("invalid authorization code")
-	}
-	if request.AuthorizationProvider == "" {
-		return fmt.Errorf("invalid authorization provider")
 	}
 	return nil
 }
@@ -89,7 +85,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	token, err := client.server.provider.Exchange(r.Context, signUp.AuthorizationProvider, signUp.AuthorizationCode)
+	token, err := client.server.provider.Exchange(r.Context, signUp.AuthorizationCode)
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
 		return

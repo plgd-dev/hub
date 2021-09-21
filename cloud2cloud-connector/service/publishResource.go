@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
@@ -19,7 +18,7 @@ func publishResource(ctx context.Context, raClient raService.ResourceAggregateCl
 		})
 	}
 	href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-	_, err := raClient.PublishResourceLinks(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.PublishResourceLinksRequest{
+	_, err := raClient.PublishResourceLinks(ctx, &commands.PublishResourceLinksRequest{
 		DeviceId: link.DeviceID,
 		Resources: []*commands.Resource{{
 			Href:                  href,

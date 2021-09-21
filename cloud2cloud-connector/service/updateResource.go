@@ -33,7 +33,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	}
 	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, contentType)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
+	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 

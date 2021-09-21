@@ -76,7 +76,7 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
+	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Connection", "close")
 	req.Close = true
@@ -104,6 +104,7 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger) error {
 	var errors []error
 	userID := linkedAccount.UserID
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
 	for _, link := range dev.Links {
 		link.DeviceID = deviceID
 		href := removeDeviceIDFromHref(link.Href)
@@ -134,16 +135,15 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 }
 
 func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	var errors []error
-	userID := linkedAccount.UserID
-
 	var devices []RetrieveDeviceWithLinksResponse
 	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices", linkedAccount, linkedCloud, &devices)
 	if err != nil {
 		return err
 	}
 
-	ctx = kitNetGrpc.CtxWithOwner(ctx, userID)
+	var errors []error
+	userID := linkedAccount.UserID
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		registeredDevices, err := getUsersDevices(ctx, p.asClient)
 		if err != nil {
@@ -170,7 +170,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			}
 			delete(registeredDevices, deviceID)
 			if strings.ToLower(dev.Status) == "online" {
-				_, err = p.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.UpdateDeviceMetadataRequest{
+				_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 					DeviceId: deviceID,
 					Update: &commands.UpdateDeviceMetadataRequest_Status{
 						Status: &commands.ConnectionStatus{
@@ -183,7 +183,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 					},
 				})
 			} else {
-				_, err = p.raClient.UpdateDeviceMetadata(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.UpdateDeviceMetadataRequest{
+				_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 					DeviceId: deviceID,
 					Update: &commands.UpdateDeviceMetadataRequest_Status{
 						Status: &commands.ConnectionStatus{
@@ -267,16 +267,15 @@ func removeDeviceIDFromHref(href string) string {
 }
 
 func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	var errors []error
-	userID := linkedAccount.UserID
-
 	var devices []RetrieveDeviceContentAllResponse
 	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices?content=all", linkedAccount, linkedCloud, &devices)
 	if err != nil {
 		return err
 	}
 
-	ctx = kitNetGrpc.CtxWithOwner(ctx, userID)
+	var errors []error
+	userID := linkedAccount.UserID
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		for _, link := range dev.Links {
@@ -313,16 +312,17 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 }
 
 func RefreshToken(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, oauthCallback string, s *Store) (store.LinkedAccount, error) {
+	// TODO: refresh both origin and target
 	ctx = linkedCloud.CtxWithHTTPClient(ctx)
 	oauthCfg := linkedCloud.OAuth
 	if oauthCfg.RedirectURL == "" {
 		oauthCfg.RedirectURL = oauthCallback
 	}
-	token, refreshed, err := linkedAccount.TargetCloud.Refresh(ctx, linkedCloud.OAuth.ToOAuth2())
+	token, refreshed, err := linkedAccount.Data.TargetCloud.Refresh(ctx, linkedCloud.OAuth.ToOAuth2("", ""))
 	if err != nil {
 		return store.LinkedAccount{}, err
 	}
-	linkedAccount.TargetCloud = token
+	linkedAccount.Data.TargetCloud = token
 	if refreshed {
 		err = s.UpdateLinkedAccount(ctx, linkedAccount)
 		if err != nil {

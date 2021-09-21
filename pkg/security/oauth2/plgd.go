@@ -12,10 +12,10 @@ import (
 )
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, ownerClaim, responseMode, accessType, responseType string) (*PlgdProvider, error) {
-	config.ResponseMode = responseMode
-	config.AccessType = accessType
-	config.ResponseType = responseType
+func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, ownerClaim string) (*PlgdProvider, error) {
+	config.ResponseMode = "query"
+	config.AccessType = "offline"
+	config.ResponseType = "code"
 	httpClient, err := client.New(config.HTTP, logger)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func NewPlgdProvider(ctx context.Context, config Config, logger log.Logger, owne
 		return nil, err
 	}
 
-	oauth2 := config.Config.ToOAuth2(oidcfg.AuthURL, oidcfg.TokenURL)
+	oauth2 := config.ToOAuth2(oidcfg.AuthURL, oidcfg.TokenURL)
 
 	return &PlgdProvider{
 		Config:     config,
@@ -46,7 +46,7 @@ type PlgdProvider struct {
 }
 
 // Exchange Auth Code for Access Token via OAuth
-func (p *PlgdProvider) Exchange(ctx context.Context, authorizationProvider, authorizationCode string) (*Token, error) {
+func (p *PlgdProvider) Exchange(ctx context.Context, authorizationCode string) (*Token, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 
 	token, err := p.OAuth2.Exchange(ctx, authorizationCode)

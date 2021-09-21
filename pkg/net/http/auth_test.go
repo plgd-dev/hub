@@ -2,21 +2,22 @@ package http
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestCtxWithToken(t *testing.T) {
 	ctx := context.Background()
-	token, err := TokenFromCtx(CtxWithToken(ctx, "a"))
+	token, err := tokenFromCtx(ctxWithToken(ctx, "a"))
 	require.NoError(t, err)
 	require.Equal(t, "a", token)
 
-	token, err = TokenFromCtx(CtxWithToken(ctx, bearerKey+" b"))
+	token, err = tokenFromCtx(ctxWithToken(ctx, bearerKey+" b"))
 	require.NoError(t, err)
 	require.Equal(t, "b", token)
 
-	token, err = TokenFromCtx(CtxWithToken(ctx, "Bearer c"))
+	token, err = tokenFromCtx(ctxWithToken(ctx, "Bearer c"))
 	require.NoError(t, err)
 	require.Equal(t, "c", token)
 }
