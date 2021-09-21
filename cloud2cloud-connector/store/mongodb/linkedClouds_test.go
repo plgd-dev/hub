@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/plgd-dev/cloud/authorization/oauth"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/test"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,9 +75,8 @@ func TestStore_UpdateLinkedCloud(t *testing.T) {
 			ClientID:     "testClientID",
 			ClientSecret: "testClientSecret",
 			Scopes:       []string{"testScopes"},
-
-			AuthURL:  "testAuthUrl",
-			TokenURL: "testTokenUrl",
+			AuthURL:      "testAuthUrl",
+			TokenURL:     "testTokenUrl",
 		},
 	})
 	require.NoError(t, err)

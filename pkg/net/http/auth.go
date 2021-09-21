@@ -27,14 +27,14 @@ const (
 	authorizationKey key = 0
 )
 
-func CtxWithToken(ctx context.Context, token string) context.Context {
+func ctxWithToken(ctx context.Context, token string) context.Context {
 	if !strings.HasPrefix(strings.ToLower(token), bearerKey+" ") {
 		token = fmt.Sprintf("%s %s", bearerKey, token)
 	}
 	return context.WithValue(ctx, authorizationKey, token)
 }
 
-func TokenFromCtx(ctx context.Context) (string, error) {
+func tokenFromCtx(ctx context.Context) (string, error) {
 	val := ctx.Value(authorizationKey)
 	if bearer, ok := val.(string); ok && strings.HasPrefix(strings.ToLower(bearer), bearerKey+" ") {
 		token := bearer[7:]
@@ -53,9 +53,9 @@ func ParseToken(auth string) (string, error) {
 	return "", fmt.Errorf("cannot parse bearer: prefix 'Bearer ' not found")
 }
 
-func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
+func validateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
 	return func(ctx context.Context, method, uri string) (context.Context, error) {
-		token, err := TokenFromCtx(ctx)
+		token, err := tokenFromCtx(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -67,14 +67,13 @@ func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 	}
 }
 
-func ValidateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
+func validateJWT(jwksURL string, tls *tls.Config, claims ClaimsFunc) Interceptor {
 	validator := jwt.NewValidator(jwksURL, tls)
-	return ValidateJWTWithValidator(validator, claims)
+	return validateJWTWithValidator(validator, claims)
 }
 
 // CreateAuthMiddleware creates middleware for authorization
-// TODO: get rid of appendToken parameter after c2c-connector is reworked
-func CreateAuthMiddleware(authInterceptor Interceptor, onUnauthorizedAccessFunc OnUnauthorizedAccessFunc, appendToken bool) func(next netHttp.Handler) netHttp.Handler {
+func CreateAuthMiddleware(authInterceptor Interceptor, onUnauthorizedAccessFunc OnUnauthorizedAccessFunc) func(next netHttp.Handler) netHttp.Handler {
 	return func(next netHttp.Handler) netHttp.Handler {
 		return netHttp.HandlerFunc(func(w netHttp.ResponseWriter, r *netHttp.Request) {
 			switch r.RequestURI {
@@ -82,17 +81,15 @@ func CreateAuthMiddleware(authInterceptor Interceptor, onUnauthorizedAccessFunc 
 				next.ServeHTTP(w, r)
 			default:
 				token := r.Header.Get("Authorization")
-				ctx := CtxWithToken(r.Context(), token)
+				ctx := ctxWithToken(r.Context(), token)
 				_, err := authInterceptor(ctx, r.Method, r.RequestURI)
 				if err != nil {
 					onUnauthorizedAccessFunc(ctx, w, r, err)
 					return
 				}
 
-				if appendToken {
-					if rawToken, err := ParseToken(token); err == nil {
-						r = r.WithContext(grpc.CtxWithToken(r.Context(), rawToken))
-					}
+				if rawToken, err := ParseToken(token); err == nil {
+					r = r.WithContext(grpc.CtxWithToken(r.Context(), rawToken))
 				}
 				next.ServeHTTP(w, r)
 			}

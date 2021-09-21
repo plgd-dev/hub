@@ -231,7 +231,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Service, error
 	}
 
 	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.COAP.Authorization.Config,
-		logger, config.Clients.AuthServer.OwnerClaim, "query", "offline", "code")
+		logger, config.Clients.AuthServer.OwnerClaim)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)

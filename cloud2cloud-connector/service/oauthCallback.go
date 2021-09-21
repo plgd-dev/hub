@@ -6,64 +6,94 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 )
 
-func (rh *RequestHandler) HandleLinkedAccount(ctx context.Context, linkedCloud store.LinkedCloud, authCode string) (store.Token, error) {
-	oauth := linkedCloud.OAuth.ToOAuth2()
-	ctx = linkedCloud.CtxWithHTTPClient(ctx)
-	token, err := oauth.Exchange(ctx, authCode)
-	if err != nil {
-		return store.Token{}, fmt.Errorf("cannot exchange target cloud authorization code for access token: %w", err)
+func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCacheData, authCode string) (provisionCacheData, error) {
+	if !data.linkedAccount.Data.HasOrigin() {
+		token, err := rh.provider.Exchange(ctx, authCode)
+		if err != nil {
+			return data, fmt.Errorf("cannot exchange origin cloud authorization code for access token: %w", err)
+		}
+		newData := data.linkedAccount.Data.SetOrigin(store.Token{
+			AccessToken:  store.AccessToken(token.AccessToken),
+			Expiry:       token.Expiry,
+			RefreshToken: token.RefreshToken,
+		})
+		data.linkedAccount.Data = newData
+		return data, nil
 	}
-	return store.Token{
-		AccessToken:  store.AccessToken(token.AccessToken),
-		Expiry:       token.Expiry,
-		RefreshToken: token.RefreshToken,
-	}, nil
+
+	if !data.linkedAccount.Data.HasTarget() {
+		oauth := data.linkedCloud.OAuth.ToDefaultOAuth2()
+		ctx = data.linkedCloud.CtxWithHTTPClient(ctx)
+		token, err := oauth.Exchange(ctx, authCode)
+		if err != nil {
+			return data, fmt.Errorf("cannot exchange target cloud authorization code for access token: %w", err)
+		}
+		newData := data.linkedAccount.Data.SetTarget(store.Token{
+			AccessToken:  store.AccessToken(token.AccessToken),
+			Expiry:       token.Expiry,
+			RefreshToken: token.RefreshToken,
+		})
+		data.linkedAccount.Data = newData
+		return data, nil
+	}
+
+	return data, nil
 }
 
 func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) (int, error) {
 	authCode := r.FormValue("code")
 	state := r.FormValue("state")
 
-	provisionCacheDataI, ok := rh.provisionCache.Get(string(state))
+	cacheData, ok := rh.provisionCache.Get(state)
 	if !ok {
 		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
 	}
-	rh.provisionCache.Delete(string(state))
-	provisionCacheData := provisionCacheDataI.(provisionCacheData)
-	linkedAccount := provisionCacheData.linkedAccount
-	token, err := rh.HandleLinkedAccount(r.Context(), provisionCacheData.linkedCloud, authCode)
+	rh.provisionCache.Delete(state)
+
+	data, ok := cacheData.(provisionCacheData)
+	if !ok {
+		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
+	}
+
+	newData, err := rh.handleLinkedData(r.Context(), data, authCode)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	linkedAccount.TargetCloud = token
+
+	if !newData.linkedAccount.Data.HasOrigin() {
+		return http.StatusInternalServerError, fmt.Errorf("invalid linked data state(%v)", newData.linkedAccount.Data.State())
+	}
+
+	if !newData.linkedAccount.Data.HasTarget() {
+		return rh.handleOAuth(w, r, newData.linkedAccount, newData.linkedCloud)
+	}
+
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	linkedAccount.ID = id.String()
-	_, _, err = rh.store.LoadOrCreateLinkedAccount(r.Context(), linkedAccount)
+	newData.linkedAccount.ID = id.String()
+	_, _, err = rh.store.LoadOrCreateLinkedAccount(r.Context(), newData.linkedAccount)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %w", linkedAccount, err)
+		return http.StatusBadRequest, fmt.Errorf("cannot store linked account %+v: %w", newData.linkedAccount, err)
 	}
-	if provisionCacheData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
+	if newData.linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		return http.StatusOK, nil
 	}
 	rh.triggerTask(Task{
 		taskType:      TaskType_SubscribeToDevices,
-		linkedAccount: linkedAccount,
-		linkedCloud:   provisionCacheData.linkedCloud,
+		linkedAccount: newData.linkedAccount,
+		linkedCloud:   newData.linkedCloud,
 	})
 
 	return http.StatusOK, nil
 }
 
 func (rh *RequestHandler) OAuthCallback(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := rh.oAuthCallback(w, r)
-	if err != nil {
+	if statusCode, err := rh.oAuthCallback(w, r); err != nil {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process oauth callback: %w", err), statusCode, w)
 	}
 }

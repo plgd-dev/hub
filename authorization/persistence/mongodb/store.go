@@ -41,10 +41,12 @@ func NewStore(ctx context.Context, cfg Config, logger log.Logger) (*Store, error
 	}
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.URI).SetTLSConfig(certManager.GetTLSConfig()))
 	if err != nil {
+		certManager.Close()
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
+		certManager.Close()
 		return nil, fmt.Errorf("could not dial database: %w", err)
 	}
 	s, err := NewStoreWithSession(ctx, client, cfg.Database)

@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/patrickmn/go-cache"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 )
 
@@ -35,14 +35,14 @@ func generateRandomString(n int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (int, error) {
+func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (int, error) {
 	linkedCloud, ok := rh.store.LoadCloud(linkedAccount.LinkedCloudID)
 	if !ok {
 		return http.StatusBadRequest, fmt.Errorf("cannot find linked cloud with ID %v: not found", linkedAccount.LinkedCloudID)
 	}
 	t, err := generateRandomString(32)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("cannot generate random token")
+		return http.StatusInternalServerError, fmt.Errorf("cannot generate token")
 	}
 	err = rh.provisionCache.Add(t, provisionCacheData{
 		linkedAccount: linkedAccount,
@@ -53,7 +53,7 @@ func (rh *RequestHandler) HandleOAuth(w http.ResponseWriter, r *http.Request, li
 	}
 	oauthCfg := linkedCloud.OAuth
 	if oauthCfg.RedirectURL == "" {
-		oauthCfg.RedirectURL = rh.oauthCallback
+		oauthCfg.RedirectURL = rh.oauth.RedirectURL
 	}
 	url := oauthCfg.AuthCodeURL(t)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
@@ -78,7 +78,7 @@ func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Reques
 	if linkedAccount.LinkedCloudID == "" {
 		return http.StatusBadRequest, fmt.Errorf("invalid cloud_id")
 	}
-	return rh.HandleOAuth(w, r, linkedAccount, linkedCloud)
+	return rh.handleOAuth(w, r, linkedAccount, linkedCloud)
 }
 
 func (rh *RequestHandler) AddLinkedAccount(w http.ResponseWriter, r *http.Request) {

@@ -102,11 +102,59 @@ func (t AccessToken) GetSubject() (string, error) {
 	return parseSubFromJwtToken(string(t))
 }
 
+type LinkedAccountDataFlags uint8
+
+const (
+	// OAuth Access Token of the origin cloud has been obtained
+	linkedAccountState_PROVISIONED_ORIGIN_CLOUD LinkedAccountDataFlags = 1 << iota
+	// OAuth Access Token of the target cloud has been obtained
+	linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT
+)
+
+type LinkedAccountData struct {
+	OriginCloud Token
+	TargetCloud Token
+	state       LinkedAccountDataFlags
+}
+
+// Create linked data with existing origin cloud and target cloud account
+func MakeLinkedAccountData(originCloud, targetCloud Token) LinkedAccountData {
+	return LinkedAccountData{
+		OriginCloud: originCloud,
+		TargetCloud: targetCloud,
+		state:       linkedAccountState_PROVISIONED_ORIGIN_CLOUD | linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT,
+	}
+}
+
+func (d LinkedAccountData) SetOrigin(originCloud Token) LinkedAccountData {
+	d.OriginCloud = originCloud
+	d.state |= linkedAccountState_PROVISIONED_ORIGIN_CLOUD
+	return d
+}
+
+func (d LinkedAccountData) HasOrigin() bool {
+	return d.state&linkedAccountState_PROVISIONED_ORIGIN_CLOUD != 0
+}
+
+func (d LinkedAccountData) SetTarget(targetCloud Token) LinkedAccountData {
+	d.TargetCloud = targetCloud
+	d.state |= linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT
+	return d
+}
+
+func (d LinkedAccountData) HasTarget() bool {
+	return d.state&linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT != 0
+}
+
+func (d LinkedAccountData) State() LinkedAccountDataFlags {
+	return d.state
+}
+
 type LinkedAccount struct {
 	ID            string `json:"Id" bson:"_id"`
 	LinkedCloudID string `bson:"linkedcloudid"`
 	UserID        string
-	TargetCloud   Token
+	Data          LinkedAccountData
 }
 
 /*
@@ -119,7 +167,7 @@ func (l LinkedAccount) RefreshToken(ctx context.Context, cfg oauth2.Config) (Lin
 	if !t.IsValidAccessToken() {
 		t, err = t.Refresh(ctx, cfg)
 		if err != nil {
-			return l, fmt.Errorf("cannot refreash target cloud access token: %w", err)
+			return l, fmt.Errorf("cannot refresh target cloud access token: %w", err)
 		}
 	}
 	l.TargetCloud = t

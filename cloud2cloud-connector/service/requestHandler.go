@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 
 	router "github.com/gorilla/mux"
@@ -13,7 +12,9 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	pkgOAuth2 "github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/kit/log"
+	"golang.org/x/oauth2"
 )
 
 const cloudIDKey = "CloudId"
@@ -26,7 +27,8 @@ type provisionCacheData struct {
 
 // RequestHandler handles incoming requests
 type RequestHandler struct {
-	oauthCallback  string
+	oauth          oauth2.Config
+	provider       *pkgOAuth2.PlgdProvider
 	store          *Store
 	ownerClaim     string
 	provisionCache *cache.Cache
@@ -44,13 +46,15 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 }
 
 func NewRequestHandler(
-	oauthCallback string,
+	oauth oauth2.Config,
+	provider *pkgOAuth2.PlgdProvider,
 	subManager *SubscriptionManager,
 	store *Store,
 	triggerTask OnTaskTrigger,
 ) *RequestHandler {
 	return &RequestHandler{
-		oauthCallback:  oauthCallback,
+		oauth:          oauth,
+		provider:       provider,
 		subManager:     subManager,
 		store:          store,
 		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
@@ -78,7 +82,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	r.Use(loggingMiddleware)
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
-	}, false))
+	}))
 
 	// health check
 	r.HandleFunc("/", healthCheck).Methods("GET")
@@ -96,8 +100,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// notify linked cloud
 	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods("POST")
 
-	// OAuthCallback
-	oauthURL, _ := url.Parse(requestHandler.oauthCallback)
+	oauthURL, _, _ := parseOAuthPaths(requestHandler.oauth.RedirectURL)
 	r.HandleFunc(oauthURL.Path, requestHandler.OAuthCallback).Methods("GET")
 
 	return &http.Server{Handler: r}

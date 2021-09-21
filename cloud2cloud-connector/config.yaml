@@ -14,8 +14,13 @@ apis:
       disabled: false
       interval: 5s
     authorization:
+      clientID: ""
+      clientSecret: ""
+      deviceIdClaim: ""
+      scopes: []
       authority: ""
       audience: ""
+      redirectURL: ""
       http:
         maxIdleConns: 16
         maxConnsPerHost: 32

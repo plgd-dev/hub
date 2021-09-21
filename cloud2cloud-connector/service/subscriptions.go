@@ -88,7 +88,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	req.Header.Set(events.CorrelationIDKey, correlationID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, events.ContentType_JSON)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
+	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
@@ -131,7 +131,7 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	}
 	req.Header.Set("Token", linkedAccount.ID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.TargetCloud.AccessToken))
+	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
@@ -184,7 +184,7 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	if header.EventSignature != calcEventSignature {
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v(%+v != %+v, %s): not match", header.ID, subData.subscription, header, body)
 	}
-	ctx = kitNetGrpc.CtxWithOwner(ctx, subData.linkedAccount.UserID)
+	ctx = kitNetGrpc.CtxWithToken(ctx, subData.linkedAccount.Data.OriginCloud.AccessToken.String())
 	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot refresh token: %w", err)

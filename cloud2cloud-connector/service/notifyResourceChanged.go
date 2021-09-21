@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
@@ -21,7 +20,7 @@ func notifyResourceChanged(ctx context.Context, raClient raService.ResourceAggre
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err := raClient.NotifyResourceChanged(kitNetGrpc.CtxWithOwner(ctx, userID), &commands.NotifyResourceChangedRequest{
+	_, err := raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 		ResourceId:      commands.NewResourceID(deviceID, kitHttp.CanonicalHref(href)),
 		CommandMetadata: cmdMetadata,
 		Content: &commands.Content{

@@ -11,9 +11,23 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/stretchr/testify/require"
 )
+
+func MakeAuthorizationConfig() oauth2.Config {
+	return oauth2.Config{
+		Authority: "https://" + config.OAUTH_SERVER_HOST,
+		Config: oauth.Config{
+			ClientID:    OAUTH_MANAGER_CLIENT_ID,
+			Audience:    OAUTH_MANAGER_AUDIENCE,
+			RedirectURL: config.C2C_CONNECTOR_OAUTH_CALLBACK,
+		},
+		HTTP: config.MakeHttpClientConfig(),
+	}
+}
 
 func MakeStorageConfig() service.StorageConfig {
 	return service.StorageConfig{
@@ -31,12 +45,11 @@ func MakeConfig(t *testing.T) service.Config {
 	cfg.Log.Debug = true
 
 	cfg.APIs.HTTP.EventsURL = config.C2C_CONNECTOR_EVENTS_URL
-	cfg.APIs.HTTP.OAuthCallback = config.C2C_CONNECTOR_OAUTH_CALLBACK
 	cfg.APIs.HTTP.PullDevices.Disabled = false
 	cfg.APIs.HTTP.PullDevices.Interval = time.Second
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_CONNECTOR_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
-	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
 
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
@@ -54,12 +67,13 @@ func MakeConfig(t *testing.T) service.Config {
 	err := cfg.Validate()
 	require.NoError(t, err)
 
-	fmt.Printf("cfg\n%v\n", cfg.String())
 	return cfg
 }
 
 func SetUp(t *testing.T) (TearDown func()) {
-	return New(t, MakeConfig(t))
+	cfg := MakeConfig(t)
+	fmt.Printf("cfg\n%v\n", cfg.String())
+	return New(t, cfg)
 }
 
 // func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {

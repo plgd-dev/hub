@@ -18,44 +18,41 @@ import (
 	"time"
 
 	"github.com/jtacoma/uritemplates"
-	"github.com/kelseyhightower/envconfig"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.uber.org/atomic"
-
-	"github.com/plgd-dev/cloud/grpc-gateway/client"
-	"github.com/plgd-dev/cloud/grpc-gateway/pb"
-	"github.com/plgd-dev/cloud/pkg/fn"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
-	"github.com/plgd-dev/cloud/resource-aggregate/commands"
-	"github.com/plgd-dev/cloud/resource-aggregate/events"
-	"github.com/plgd-dev/go-coap/v2/message"
-	"github.com/plgd-dev/kit/codec/cbor"
-	"github.com/plgd-dev/kit/codec/json"
-	"github.com/plgd-dev/kit/security"
-	"github.com/plgd-dev/kit/security/certManager"
-	"github.com/plgd-dev/sdk/local"
-	"github.com/plgd-dev/sdk/schema"
-	"github.com/plgd-dev/sdk/schema/acl"
-
-	"github.com/plgd-dev/sdk/local/core"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	authService "github.com/plgd-dev/cloud/authorization/test"
 	caService "github.com/plgd-dev/cloud/certificate-authority/test"
 	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	coapgw "github.com/plgd-dev/cloud/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/cloud/coap-gateway/test"
+	"github.com/plgd-dev/cloud/grpc-gateway/client"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	grpcgwConfig "github.com/plgd-dev/cloud/grpc-gateway/service"
 	grpcgwTest "github.com/plgd-dev/cloud/grpc-gateway/test"
+	"github.com/plgd-dev/cloud/pkg/fn"
+	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
+	"github.com/plgd-dev/cloud/resource-aggregate/commands"
+	"github.com/plgd-dev/cloud/resource-aggregate/events"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/service"
 	rdTest "github.com/plgd-dev/cloud/resource-directory/test"
 	"github.com/plgd-dev/cloud/test/config"
 	"github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/go-coap/v2/message"
+	"github.com/plgd-dev/kit/codec/cbor"
+	"github.com/plgd-dev/kit/codec/json"
+	"github.com/plgd-dev/kit/security"
+	"github.com/plgd-dev/sdk/local"
+	"github.com/plgd-dev/sdk/local/core"
+	"github.com/plgd-dev/sdk/schema"
+	"github.com/plgd-dev/sdk/schema/acl"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/atomic"
 )
 
 var (
@@ -131,14 +128,14 @@ func FindResourceLink(href string) schema.ResourceLink {
 }
 
 func ClearDB(ctx context.Context, t *testing.T) {
-	var cmconfig certManager.Config
-	err := envconfig.Process("DIAL", &cmconfig)
-	assert.NoError(t, err)
-	dialCertManager, err := certManager.NewCertManager(cmconfig)
+	logger, err := log.NewLogger(log.Config{Debug: true})
 	require.NoError(t, err)
-	tlsConfig := dialCertManager.GetClientTLSConfig()
+	tlsConfig := config.MakeTLSClientConfig()
+	certManager, err := cmClient.New(tlsConfig, logger)
+	require.NoError(t, err)
+	defer certManager.Close()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(tlsConfig))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(certManager.GetTLSConfig()))
 	require.NoError(t, err)
 	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
 	if mongo.ErrNilDocument == err {

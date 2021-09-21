@@ -21,6 +21,7 @@ import (
 	"github.com/plgd-dev/cloud/pkg/net/listener"
 	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
 	"github.com/plgd-dev/cloud/pkg/security/jwt/validator"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	natsClient "github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/cloud/resource-aggregate/cqrs/utils"
@@ -33,6 +34,14 @@ type Server struct {
 	listener *listener.Server
 	doneWg   *sync.WaitGroup
 	cancel   context.CancelFunc
+}
+
+func toValidator(c oauth2.Config) validator.Config {
+	return validator.Config{
+		Authority: c.Authority,
+		Audience:  c.Audience,
+		HTTP:      c.HTTP,
+	}
 }
 
 func newAuthInterceptor(ctx context.Context, config validator.Config, oauthCallbackPath string, logger log.Logger) (kitNetHttp.Interceptor, func(), error) {
@@ -190,70 +199,75 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http server: %w", err)
 	}
-	closeListener := func() {
+	var cleanUp fn.FuncList
+	cleanUp.AddFunc(func() {
 		if err := listener.Close(); err != nil {
 			logger.Errorf("cannot create http server: %w", err)
 		}
-	}
+	})
 
 	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, logger)
 	if err != nil {
-		closeListener()
+		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create to resource aggregate client: %w", err)
 	}
 	listener.AddCloseFunc(closeRaClient)
 
 	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
 	if err != nil {
-		closeListener()
+		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create to resource directory client: %w", err)
 	}
 	listener.AddCloseFunc(closeRdClient)
 
 	sub, closeSub, err := newSubscriber(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
-		closeListener()
+		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create subscriber: %w", err)
 	}
 	listener.AddCloseFunc(closeSub)
 
 	ctx, cancel := context.WithCancel(ctx)
+	cleanUp.AddFunc(cancel)
 	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 
 	asClient, closeAsClient, err := newAuthorizationServiceClient(config.Clients.AuthServer, logger)
 	if err != nil {
-		cancel()
-		closeListener()
+		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create authorization service client: %w", err)
 	}
 	listener.AddCloseFunc(closeAsClient)
 
 	store, closeStore, err := newStore(ctx, config.Clients.Storage.MongoDB, logger)
 	if err != nil {
-		cancel()
-		closeListener()
+		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create store: %w", err)
 	}
 	listener.AddCloseFunc(closeStore)
 
-	oauthURL, oauthCallback, err := parseOAuthPaths(config.APIs.HTTP.OAuthCallback)
+	oauthURL, oauthCallback, err := parseOAuthPaths(config.APIs.HTTP.Authorization.RedirectURL)
 	if err != nil {
-		cancel()
-		closeListener()
+		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot parse OAuth paths: %w", err)
 	}
 
 	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, asClient, raClient, store, devicesSubscription,
 		oauthCallback, taskProcessor.Trigger, config.Clients.Subscription.HTTP.ResubscribeInterval)
 
-	requestHandler := NewRequestHandler(oauthCallback, subMgr, store, taskProcessor.Trigger)
-
-	auth, closeAuth, err := newAuthInterceptor(ctx, config.APIs.HTTP.Authorization, oauthURL.Path, logger)
+	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization, logger, "sub")
 	if err != nil {
-		cancel()
-		closeListener()
+		cleanUp.Execute()
+		return nil, fmt.Errorf("cannot create device provider: %w", err)
+	}
+	listener.AddCloseFunc(provider.Close)
+
+	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.ToDefaultOAuth2(), provider, subMgr, store, taskProcessor.Trigger)
+
+	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization), oauthURL.Path, logger)
+	if err != nil {
+		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create auth interceptor: %w", err)
 	}
 	listener.AddCloseFunc(closeAuth)

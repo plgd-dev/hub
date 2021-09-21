@@ -9,7 +9,6 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/events"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
-	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/log"
@@ -110,7 +109,7 @@ func (s *SubscriptionManager) HandleResourcesPublished(ctx context.Context, d su
 			})
 		}
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-		_, err := s.raClient.PublishResourceLinks(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &commands.PublishResourceLinksRequest{
+		_, err := s.raClient.PublishResourceLinks(ctx, &commands.PublishResourceLinksRequest{
 			DeviceId: link.DeviceID,
 			Resources: []*commands.Resource{{
 				Href:                  href,
@@ -155,7 +154,7 @@ func (s *SubscriptionManager) HandleResourcesUnpublished(ctx context.Context, d 
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
 		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
-		_, err := s.raClient.UnpublishResourceLinks(kitNetGrpc.CtxWithToken(ctx, d.linkedAccount.TargetCloud.AccessToken.String()), &commands.UnpublishResourceLinksRequest{
+		_, err := s.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
 			DeviceId: link.GetDeviceID(),
 			Hrefs:    []string{href},
 			CommandMetadata: &commands.CommandMetadata{

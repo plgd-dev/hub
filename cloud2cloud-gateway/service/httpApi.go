@@ -179,7 +179,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	r.Use(loggingMiddleware)
 	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
-	}, true))
+	}))
 
 	// health check
 	r.HandleFunc("/", healthCheck).Methods("GET")
