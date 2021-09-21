@@ -4,6 +4,8 @@ export const pendingCommandsApiEndpoints = {
 
 export const PENDING_COMMANDS_DEFAULT_PAGE_SIZE = 10
 
+export const EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE = 5
+
 export const commandTypes = {
   RESOURCE_CREATE_PENDING: 'resourceCreatePending',
   RESOURCE_RETRIEVE_PENDING: 'resourceRetrievePending',

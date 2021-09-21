@@ -10,23 +10,26 @@ export const Footer = memo(() => {
 
   return (
     <footer id="footer">
-      <a
-        href="https://github.com/plgd-dev/cloud/raw/master/http-gateway/swagger.yaml"
-        target="_blank"
-        rel="noopener"
-      >
-        {_(t.API)}
-      </a>
-      <a href="https://plgd.dev/documentation" target="_blank" rel="noopener">
-        {_(t.docs)}
-      </a>
-      <a
-        href="https://github.com/plgd-dev/cloud"
-        target="_blank"
-        rel="noopener"
-      >
-        {_(t.contribute)}
-      </a>
+      <div className="left" />
+      <div className="right">
+        <a
+          href="https://github.com/plgd-dev/cloud/raw/master/http-gateway/swagger.yaml"
+          target="_blank"
+          rel="noopener"
+        >
+          {_(t.API)}
+        </a>
+        <a href="https://plgd.dev/documentation" target="_blank" rel="noopener">
+          {_(t.docs)}
+        </a>
+        <a
+          href="https://github.com/plgd-dev/cloud"
+          target="_blank"
+          rel="noopener"
+        >
+          {_(t.contribute)}
+        </a>
+      </div>
     </footer>
   )
 })

@@ -55,7 +55,9 @@ export const ThingsResourcesList = ({
         Cell: ({ value }) => {
           return (
             <div className="badges-box-horizontal">
-              {value?.map?.(type => <Badge key={type}>{type}</Badge>)}
+              {value?.map?.(type => (
+                <Badge key={type}>{type}</Badge>
+              ))}
             </div>
           )
         },
@@ -80,6 +82,7 @@ export const ThingsResourcesList = ({
             />
           )
         },
+        className: 'actions',
       },
     ],
     [onUpdate, onCreate, onDelete, isUnregistered, loading] //eslint-disable-line

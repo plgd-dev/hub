@@ -8,6 +8,7 @@ import { Layout } from '@/components/layout'
 import { getApiErrorMessage } from '@/common/utils'
 import { useIsMounted } from '@/common/hooks'
 import { Emitter } from '@/common/services/emitter'
+import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 
 import {
@@ -118,6 +119,8 @@ export const ThingsListPage = () => {
         onDeleteClick={handleOpenDeleteModal}
         unselectRowsToken={unselectRowsToken}
       />
+
+      <PendingCommandsExpandableList />
 
       <ConfirmModal
         onConfirm={deleteDevices}

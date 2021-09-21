@@ -22,6 +22,7 @@ export const Table = ({
   getColumnProps = defaultPropGetter,
   getCellProps = defaultPropGetter,
   paginationProps,
+  enablePagination,
   bottomControls,
   unselectRowsToken,
 }) => {
@@ -169,7 +170,7 @@ export const Table = ({
 
       <div className="table-bottom-controls">
         {bottomControls || <div />}
-        {pageCount > 0 && (
+        {pageCount > 0 && enablePagination && (
           <Pagination
             {...paginationProps}
             canPreviousPage={canPreviousPage}
@@ -228,6 +229,7 @@ Table.propTypes = {
   primaryAttribute: PropTypes.string,
   bottomControls: PropTypes.node,
   unselectRowsToken: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  enablePagination: PropTypes.bool,
 }
 
 Table.defaultProps = {
@@ -240,4 +242,5 @@ Table.defaultProps = {
   primaryAttribute: null,
   bottomControls: null,
   unselectRowsToken: null,
+  enablePagination: true,
 }

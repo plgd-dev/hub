@@ -4,18 +4,25 @@
 #footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   box-sizing: border-box;
-  padding: 0 40px;
-  width: 100%;
+  padding: 0 40px 0 20px;
+  width: calc(100% - 200px);
   height: $footer_height;
   border-top: 1px solid $secondary_20;
   background: $light_100;
-  position: absolute;
+  position: fixed;
   bottom: 0;
-  left: 0;
+  right: 0;
+  z-index: 3;
 
   a {
     margin-left: 20px;
+  }
+}
+
+#app.collapsed {
+  #footer {
+    width: calc(100% - 55px);
   }
 }
