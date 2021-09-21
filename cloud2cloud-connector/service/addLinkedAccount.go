@@ -53,7 +53,7 @@ func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, li
 	}
 	oauthCfg := linkedCloud.OAuth
 	if oauthCfg.RedirectURL == "" {
-		oauthCfg.RedirectURL = rh.oauth.RedirectURL
+		oauthCfg.RedirectURL = rh.provider.Config.RedirectURL
 	}
 	url := oauthCfg.AuthCodeURL(t)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)

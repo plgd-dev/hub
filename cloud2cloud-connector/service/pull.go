@@ -103,13 +103,12 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 
 func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger) error {
 	var errors []error
-	userID := linkedAccount.UserID
 	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
 	for _, link := range dev.Links {
 		link.DeviceID = deviceID
 		href := removeDeviceIDFromHref(link.Href)
 		link.Href = href
-		err := publishResource(ctx, raClient, userID, link, &commands.CommandMetadata{
+		err := publishResource(ctx, raClient, link, &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
 			Sequence:     uint64(time.Now().UnixNano()),
 		})

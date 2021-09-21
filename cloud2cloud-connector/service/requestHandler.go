@@ -14,7 +14,6 @@ import (
 	kitNetHttp "github.com/plgd-dev/cloud/pkg/net/http"
 	pkgOAuth2 "github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/kit/log"
-	"golang.org/x/oauth2"
 )
 
 const cloudIDKey = "CloudId"
@@ -27,7 +26,6 @@ type provisionCacheData struct {
 
 // RequestHandler handles incoming requests
 type RequestHandler struct {
-	oauth          oauth2.Config
 	provider       *pkgOAuth2.PlgdProvider
 	store          *Store
 	ownerClaim     string
@@ -46,14 +44,12 @@ func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) 
 }
 
 func NewRequestHandler(
-	oauth oauth2.Config,
 	provider *pkgOAuth2.PlgdProvider,
 	subManager *SubscriptionManager,
 	store *Store,
 	triggerTask OnTaskTrigger,
 ) *RequestHandler {
 	return &RequestHandler{
-		oauth:          oauth,
 		provider:       provider,
 		subManager:     subManager,
 		store:          store,
@@ -100,7 +96,7 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// notify linked cloud
 	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods("POST")
 
-	oauthURL, _, _ := parseOAuthPaths(requestHandler.oauth.RedirectURL)
+	oauthURL, _, _ := parseOAuthPaths(requestHandler.provider.Config.RedirectURL)
 	r.HandleFunc(oauthURL.Path, requestHandler.OAuthCallback).Methods("GET")
 
 	return &http.Server{Handler: r}

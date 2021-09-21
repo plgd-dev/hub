@@ -70,7 +70,8 @@ func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateC
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err = raClient.ConfirmResourceRetrieve(kitNetGrpc.CtxWithOwner(ctx, linkedAccount.UserID), &commands.ConfirmResourceRetrieveRequest{
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
+	_, err = raClient.ConfirmResourceRetrieve(ctx, &commands.ConfirmResourceRetrieveRequest{
 		ResourceId:    commands.NewResourceID(deviceID, href),
 		CorrelationId: e.GetAuditContext().GetCorrelationId(),
 		CommandMetadata: &commands.CommandMetadata{
