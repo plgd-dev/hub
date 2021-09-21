@@ -1,110 +1,132 @@
 package test
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
+	"encoding/pem"
 	"fmt"
-	"sync"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"os/exec"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/service"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
+	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	c2cGwUri "github.com/plgd-dev/cloud/cloud2cloud-gateway/uri"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	cmClient "github.com/plgd-dev/cloud/pkg/security/certManager/client"
-	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/pkg/security/oauth2/oauth"
-	"github.com/plgd-dev/cloud/test/config"
+	"github.com/plgd-dev/cloud/test"
+	testCfg "github.com/plgd-dev/cloud/test/config"
+	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
+	"github.com/plgd-dev/kit/codec/json"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func MakeAuthorizationConfig() oauth2.Config {
-	return oauth2.Config{
-		Authority: "https://" + config.OAUTH_SERVER_HOST,
-		Config: oauth.Config{
-			ClientID:    OAUTH_MANAGER_CLIENT_ID,
-			Audience:    OAUTH_MANAGER_AUDIENCE,
-			RedirectURL: config.C2C_CONNECTOR_OAUTH_CALLBACK,
-		},
-		HTTP: config.MakeHttpClientConfig(),
+func countOpenFiles() int64 {
+	out, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("lsof -p %v", os.Getpid())).Output()
+	if err != nil {
+		fmt.Println(err.Error())
 	}
+	lines := strings.Split(string(out), "\n")
+	return int64(len(lines) - 1)
 }
 
-func MakeStorageConfig() service.StorageConfig {
-	return service.StorageConfig{
-		MongoDB: mongodb.Config{
-			URI:      config.MONGODB_URI,
-			Database: config.C2C_CONNECTOR_DB,
-			TLS:      config.MakeTLSClientConfig(),
-		},
+func SetUpClouds(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
+	cloud1 := test.SetUp(ctx, t)
+	cloud2 := SetUpCloudWithConnector(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultServiceToken(t))
+
+	cloud1Conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
+
+	rootCAs := make([]string, 0, 1)
+	certs := test.GetRootCertificateAuthorities(t)
+	for _, c := range certs {
+		rootCAs = append(rootCAs, string(pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: c.Raw,
+		})))
 	}
-}
 
-func MakeConfig(t *testing.T) service.Config {
-	var cfg service.Config
-
-	cfg.Log.Debug = true
-
-	cfg.APIs.HTTP.EventsURL = config.C2C_CONNECTOR_EVENTS_URL
-	cfg.APIs.HTTP.PullDevices.Disabled = false
-	cfg.APIs.HTTP.PullDevices.Interval = time.Second
-	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.C2C_CONNECTOR_HOST)
-	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
-	cfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
-
-	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
-	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
-	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
-	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
-	cfg.Clients.Storage = MakeStorageConfig()
-	cfg.Clients.Subscription.HTTP.ReconnectInterval = time.Second * 10
-	cfg.Clients.Subscription.HTTP.ResubscribeInterval = time.Second
-
-	cfg.TaskProcessor.CacheSize = 2048
-	cfg.TaskProcessor.Timeout = time.Second * 5
-	cfg.TaskProcessor.MaxParallel = 128
-	cfg.TaskProcessor.Delay = 0
-
-	err := cfg.Validate()
+	linkedCloud := store.LinkedCloud{
+		Name: t.Name(),
+		Endpoint: store.Endpoint{
+			URL:     "https://" + testCfg.C2C_GW_HOST + c2cGwUri.Version,
+			RootCAs: rootCAs,
+		},
+		OAuth: oauth.Config{
+			ClientID:     oauthService.ClientTest,
+			Audience:     testCfg.C2C_GW_HOST,
+			ClientSecret: "testClientSecret",
+			AuthURL:      testCfg.OAUTH_MANAGER_ENDPOINT_AUTHURL,
+			TokenURL:     testCfg.OAUTH_MANAGER_ENDPOINT_TOKENURL,
+		},
+		SupportedSubscriptionsEvents: supportedEvents,
+	}
+	data, err := json.Encode(linkedCloud)
 	require.NoError(t, err)
 
-	return cfg
-}
-
-func SetUp(t *testing.T) (TearDown func()) {
-	cfg := MakeConfig(t)
-	fmt.Printf("cfg\n%v\n", cfg.String())
-	return New(t, cfg)
-}
-
-// func setUp(ctx context.Context, t *testing.T, deviceID string, supportedEvents store.Events) func() {
-// 	cloud1 := test.SetUp(ctx, t)
-// 	cloud2 := c2cConnectorTest.SetUpCloudWithConnector(t)
-// 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetServiceToken(t))
-
-// 	cloud1Conn, err := grpc.Dial(testCfg.GRPC_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-// 		RootCAs: test.GetRootCertificatePool(t),
-// 	})))
-// 	require.NoError(t, err)
-// 	c1 := pb.NewGrpcGatewayClient(cloud1Conn)
-// 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c1, deviceID, testCfg.GW_HOST, test.GetAllBackendResourceLinks())
-
-func New(t *testing.T, cfg service.Config) func() {
-	logger, err := log.NewLogger(cfg.Log)
+	token := oauthTest.GetServiceToken(t, OAUTH_HOST, oauthService.ClientTest)
+	req := test.NewHTTPRequest(http.MethodPost, "https://"+C2C_CONNECTOR_HOST+uri.LinkedClouds, bytes.NewBuffer(data)).AuthToken(token).Build(ctx, t)
+	resp := test.DoHTTPRequest(t, req)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer func(r *http.Response) {
+		_ = r.Body.Close()
+	}(resp)
+	var linkCloud store.LinkedCloud
+	err = json.ReadFrom(resp.Body, &linkCloud)
 	require.NoError(t, err)
+	req = test.NewHTTPRequest(http.MethodGet, "https://"+C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID+"/accounts", nil).AuthToken(token).Build(ctx, t)
+	resp = test.DoHTTPRequest(t, req)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	defer func(r *http.Response) {
+		_ = r.Body.Close()
+	}(resp)
 
-	s, err := service.New(context.Background(), cfg, logger)
+	// for pulling
+	time.Sleep(time.Second * 10)
+
+	req = test.NewHTTPRequest(http.MethodGet, "https://"+C2C_CONNECTOR_HOST+uri.Version+"/clouds", nil).AuthToken(token).Build(ctx, t)
+	resp = test.DoHTTPRequest(t, req)
+	defer func(r *http.Response) {
+		_ = r.Body.Close()
+	}(resp)
+	b, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_ = s.Serve()
-	}()
+	fmt.Println(string(b))
 
 	return func() {
-		_ = s.Shutdown()
-		wg.Wait()
+		req := test.NewHTTPRequest(http.MethodDelete, "https://"+C2C_CONNECTOR_HOST+uri.Version+"/clouds/"+linkCloud.ID, nil).AuthToken(token).Build(ctx, t)
+		resp := test.DoHTTPRequest(t, req)
+		defer func(r *http.Response) {
+			_ = r.Body.Close()
+		}(resp)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		cloud2()
+		shutdownDevSim()
+		err := cloud1Conn.Close()
+		require.NoError(t, err)
+		cloud1()
+		runtime.GC()
+
+		fmt.Printf("NUM FDS used %v\n", countOpenFiles())
 	}
 }
 

@@ -89,7 +89,8 @@ func updateResource(ctx context.Context, raClient raService.ResourceAggregateCli
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	_, err = raClient.ConfirmResourceUpdate(kitNetGrpc.CtxWithOwner(ctx, linkedAccount.UserID), &commands.ConfirmResourceUpdateRequest{
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
+	_, err = raClient.ConfirmResourceUpdate(ctx, &commands.ConfirmResourceUpdateRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,

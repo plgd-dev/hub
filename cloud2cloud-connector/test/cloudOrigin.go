@@ -8,7 +8,6 @@ import (
 	grpcService "github.com/plgd-dev/cloud/grpc-gateway/test"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/test"
 	rdService "github.com/plgd-dev/cloud/resource-directory/test"
-	oauthService "github.com/plgd-dev/cloud/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/cloud/test/oauth-server/test"
 	"github.com/plgd-dev/cloud/test/oauth-server/uri"
 )
@@ -20,8 +19,6 @@ const (
 	C2C_CONNECTOR_HOST      = "localhost:30006"
 	OAUTH_HOST              = "localhost:30007"
 	GRPC_GATEWAY_HOST       = "localhost:30008"
-	OAUTH_MANAGER_CLIENT_ID = oauthService.ClientTest
-	OAUTH_MANAGER_AUDIENCE  = "localhost"
 	C2C_CONNECTOR_DB        = "cloudConnectorDB"
 	C2C_CONNECTOR_NATS_URL  = "nats://localhost:34222"
 )
@@ -90,7 +87,6 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 		c2cConnectorShutdown()
 		grpcShutdown()
 		rdShutdown()
-
 		raShutdown()
 		authShutdown()
 		oauthShutdown()

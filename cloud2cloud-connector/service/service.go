@@ -263,7 +263,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(provider.Close)
 
-	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.ToDefaultOAuth2(), provider, subMgr, store, taskProcessor.Trigger)
+	requestHandler := NewRequestHandler(provider, subMgr, store, taskProcessor.Trigger)
 
 	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization), oauthURL.Path, logger)
 	if err != nil {
