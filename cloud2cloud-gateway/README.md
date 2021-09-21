@@ -1,1 +1,0 @@
-../docs/guide/architecture/6-cloud2cloud-gateway.md

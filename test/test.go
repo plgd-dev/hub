@@ -44,7 +44,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	authService "github.com/plgd-dev/cloud/authorization/test"
-	c2cgwService "github.com/plgd-dev/cloud/cloud2cloud-gateway/test"
 	grpcgwService "github.com/plgd-dev/cloud/grpc-gateway/test"
 )
 
@@ -174,11 +173,9 @@ func SetUp(ctx context.Context, t *testing.T) (TearDown func()) {
 	rdShutdown := rdService.SetUp(t)
 	gwShutdown := coapgwService.SetUp(t, true)
 	grpcShutdown := grpcgwService.SetUp(t)
-	c2cgwShutdown := c2cgwService.SetUp(t)
 	secureGWShutdown := coapgwService.SetUp(t)
 
 	return func() {
-		c2cgwShutdown()
 		grpcShutdown()
 		gwShutdown()
 		secureGWShutdown()
