@@ -16,17 +16,14 @@ func (rh *RequestHandler) unsubscribe(w http.ResponseWriter, r *http.Request) (i
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	w.WriteHeader(http.StatusAccepted)
 
 	err = cancelSubscription(r.Context(), rh.emitEvent, sub)
 	if err != nil {
-		log.Errorf("cannot emit event: %v", err)
-	}
-
-	if err != nil {
+		log.Errorf("cannot emit event: %w", err)
 		return http.StatusBadRequest, fmt.Errorf("cannot write response: %w", err)
 	}
 
+	w.WriteHeader(http.StatusAccepted)
 	return http.StatusOK, nil
 }
 
