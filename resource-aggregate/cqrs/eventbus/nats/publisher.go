@@ -36,6 +36,7 @@ func NewPublisher(config Config, opts ...Option) (*Publisher, error) {
 
 // NewPublisher creates a publisher.
 func newPublisher(url string, eventMarshaler MarshalerFunc, options ...nats.Option) (*Publisher, error) {
+	options = append(options, nats.MaxReconnects(-1))
 	conn, err := nats.Connect(url, options...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to server: %w", err)

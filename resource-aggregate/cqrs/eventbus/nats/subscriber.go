@@ -58,6 +58,7 @@ func newSubscriber(url string, eventUnmarshaler UnmarshalerFunc, goroutinePoolGo
 		return nil, fmt.Errorf("invalid errFunc")
 	}
 
+	options = append(options, nats.MaxReconnects(-1))
 	conn, err := nats.Connect(url, options...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create client: %w", err)
