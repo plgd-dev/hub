@@ -43,7 +43,7 @@ func (request CoapSignUpRequest) checkOAuthRequest() error {
 /// Get data for sign up response
 func getSignUpContent(token *oauth2.Token, validUntil int64, options message.Options) (message.MediaType, []byte, error) {
 	resp := CoapSignUpResponse{
-		AccessToken:  token.AccessToken,
+		AccessToken:  token.AccessToken.String(),
 		UserID:       token.Owner,
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    validUntilToExpiresIn(pkgTime.Unix(0, validUntil)),
@@ -91,7 +91,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 		return
 	}
 
-	claim, err := client.ValidateToken(r.Context, token.AccessToken)
+	claim, err := client.ValidateToken(r.Context, token.AccessToken.String())
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign up: %w", err), coapCodes.Unauthorized)
 		return
@@ -111,7 +111,7 @@ func signUpPostHandler(r *mux.Message, client *Client) {
 
 	deviceID := client.ResolveDeviceID(claim, signUp.DeviceID)
 
-	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken)
+	ctx := kitNetGrpc.CtxWithToken(r.Context, token.AccessToken.String())
 	if _, err := client.server.asClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 		UserId:   token.Owner,

@@ -60,7 +60,7 @@ func (p *PlgdProvider) Exchange(ctx context.Context, authorizationCode string) (
 	}
 
 	t := Token{
-		AccessToken:  token.AccessToken,
+		AccessToken:  AccessToken(token.AccessToken),
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
 		Owner:        owner,
@@ -86,7 +86,7 @@ func (p *PlgdProvider) Refresh(ctx context.Context, refreshToken string) (*Token
 	}
 
 	return &Token{
-		AccessToken:  token.AccessToken,
+		AccessToken:  AccessToken(token.AccessToken),
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
 		Owner:        owner,
