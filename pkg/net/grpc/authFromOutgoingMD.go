@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var (
+const (
 	headerAuthorize = "authorization"
 )
 
@@ -35,4 +35,17 @@ func TokenFromOutgoingMD(ctx context.Context) (string, error) {
 // TokenFromMD is a helper function for extracting the :authorization header from the gRPC metadata of the request.
 func TokenFromMD(ctx context.Context) (string, error) {
 	return grpc_auth.AuthFromMD(ctx, "bearer")
+}
+
+// OwnerFromOutgoingTokenMD extracts ownerClaim from token stored by CtxWithToken.
+func OwnerFromOutgoingTokenMD(ctx context.Context, ownerClaim string) (string, error) {
+	accessToken, err := TokenFromOutgoingMD(ctx)
+	if err != nil {
+		return "", err
+	}
+	owner, err := ParseOwnerFromJwtToken(ownerClaim, accessToken)
+	if err != nil {
+		return "", ForwardFromError(codes.InvalidArgument, err)
+	}
+	return owner, err
 }

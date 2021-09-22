@@ -28,7 +28,6 @@ type provisionCacheData struct {
 type RequestHandler struct {
 	provider       *pkgOAuth2.PlgdProvider
 	store          *Store
-	ownerClaim     string
 	provisionCache *cache.Cache
 	subManager     *SubscriptionManager
 	triggerTask    OnTaskTrigger
@@ -55,7 +54,6 @@ func NewRequestHandler(
 		store:          store,
 		provisionCache: cache.New(5*time.Minute, 10*time.Minute),
 		triggerTask:    triggerTask,
-		ownerClaim:     "sub",
 	}
 }
 

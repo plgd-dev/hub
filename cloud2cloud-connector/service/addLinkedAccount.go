@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	cache "github.com/patrickmn/go-cache"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 )
 
 type LinkedCloudHandler struct {
@@ -61,7 +62,7 @@ func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, li
 }
 
 func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Request) (int, error) {
-	_, userID, err := ParseAuth(rh.ownerClaim, r.Header.Get("Authorization"))
+	userID, err := grpc.OwnerFromOutgoingTokenMD(r.Context(), "sub")
 	if err != nil {
 		return http.StatusUnauthorized, fmt.Errorf("cannot get usedID from Authorization header: %w", err)
 	}
