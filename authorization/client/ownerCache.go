@@ -19,6 +19,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type ErrFunc func(err error)
+
 type ownerSubject struct {
 	handlers      map[uint64]func(e *events.Event)
 	subscription  *nats.Subscription

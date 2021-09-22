@@ -5,19 +5,16 @@ package ocf.cloud.auth.pb;
 option go_package = "github.com/plgd-dev/cloud/authorization/pb;pb";
 
 message GetUserDevicesRequest {
-    repeated string user_ids_filter = 1;
     repeated string device_ids_filter = 2;
 }
 
 message UserDevice {
     string device_id = 1;
-    string user_id = 2;
 }
 
 
 message AddDeviceRequest {
     string device_id = 1;
-    string user_id = 2;
 }
 
 message AddDeviceResponse {
@@ -26,7 +23,6 @@ message AddDeviceResponse {
 
 message DeleteDevicesRequest {
     repeated string device_ids = 1;
-    string user_id = 2;
 }
 
 message DeleteDevicesResponse {

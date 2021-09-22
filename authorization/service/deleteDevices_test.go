@@ -6,9 +6,13 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/stretchr/testify/require"
 )
+
+const jwtWithSubTestUser = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlcklEIn0.6EZJidMCJ5UMwyttpwUNer-GdsBmPH1_ckH8ZU-SRpo`
+const jwtWithSubTestUser2 = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlcjIifQ.LfeMsf6VObU3BcT0PmsO_ryDd_V2B712gBdlKed_2no`
 
 func TestService_DeleteDevices(t *testing.T) {
 	const testDevID1 = "testDeviceID1"
@@ -31,24 +35,17 @@ func TestService_DeleteDevices(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "invalid userId",
-			args: args{
-				request: &pb.DeleteDevicesRequest{},
-			},
-			wantErr: true,
-		},
-		{
 			name: "invalid deviceId",
 			args: args{
-				request: &pb.DeleteDevicesRequest{
-					UserId: "userId",
-				},
+				ctx:     grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				request: &pb.DeleteDevicesRequest{},
 			},
 			want: &pb.DeleteDevicesResponse{},
 		},
 		{
 			name: "invalid accesstoken",
 			args: args{
+				ctx: context.Background(),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{"deviceId"},
 				},
@@ -58,11 +55,10 @@ func TestService_DeleteDevices(t *testing.T) {
 		{
 			name: "not belongs to user",
 			args: args{
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubAaa),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID1},
-					UserId:    "aaa",
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
 			want: &pb.DeleteDevicesResponse{},
 		},
@@ -71,31 +67,28 @@ func TestService_DeleteDevices(t *testing.T) {
 			args: args{
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID1},
-					UserId:    testUserID,
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
 			},
 			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID1}},
 		},
 		{
 			name: "multiple",
 			args: args{
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID2, testDevID3},
-					UserId:    testUserID,
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
 			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID2, testDevID3}},
 		},
 		{
 			name: "duplicit",
 			args: args{
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID1},
-					UserId:    testUserID,
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
 			want: &pb.DeleteDevicesResponse{},
 		},
@@ -104,20 +97,18 @@ func TestService_DeleteDevices(t *testing.T) {
 			args: args{
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: []string{testDevID4, testUser2DevID1},
-					UserId:    testUserID,
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser),
 			},
 			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testDevID4}},
 		},
 		{
 			name: "all owned by testUser2",
 			args: args{
+				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUser2),
 				request: &pb.DeleteDevicesRequest{
 					DeviceIds: nil,
-					UserId:    testUser2,
 				},
-				ctx: kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken),
 			},
 			want: &pb.DeleteDevicesResponse{DeviceIds: []string{testUser2DevID1, testUser2DevID2, testUser2DevID3}},
 		},
@@ -138,7 +129,7 @@ func TestService_DeleteDevices(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.service.DeleteDevices(context.Background(), tt.args.request)
+			got, err := s.service.DeleteDevices(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

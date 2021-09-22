@@ -215,7 +215,6 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 			if !ok {
 				_, err := p.asClient.AddDevice(ctx, &pbAS.AddDeviceRequest{
 					DeviceId: deviceID,
-					UserId:   userID,
 				})
 				if err != nil {
 					errors = append(errors, fmt.Errorf("cannot addDevice %v: %w", deviceID, err))

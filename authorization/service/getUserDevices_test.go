@@ -13,7 +13,7 @@ import (
 )
 
 func TestUserDevicesList(t *testing.T) {
-	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
+	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID))
 	s, shutdown := newTestService(t)
 	defer shutdown()
 	defer func() {
@@ -26,14 +26,13 @@ func TestUserDevicesList(t *testing.T) {
 	r := map[string]*pb.UserDevice{
 		testDeviceID: {
 			DeviceId: testDeviceID,
-			UserId:   testUserID,
 		},
 	}
 	assert.Equal(t, r, srv.resourceValues)
 }
 
 func TestListingMoreDevices(t *testing.T) {
-	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), testAccessToken))
+	srv := newMockRetrieveResources(kitNetGrpc.CtxWithIncomingToken(context.Background(), jwtWithSubTestUserID))
 	s, shutdown := newTestService(t)
 	defer shutdown()
 	defer func() {
@@ -51,20 +50,16 @@ func TestListingMoreDevices(t *testing.T) {
 	r := map[string]*pb.UserDevice{
 		testDeviceID: {
 			DeviceId: testDeviceID,
-			UserId:   testUserID,
 		},
 		d.DeviceID: {
 			DeviceId: d.DeviceID,
-			UserId:   testUserID,
 		},
 	}
 	assert.Equal(r, srv.resourceValues)
 }
 
 func newGetUserDevicesRequest() *pb.GetUserDevicesRequest {
-	return &pb.GetUserDevicesRequest{
-		UserIdsFilter: []string{testUserID},
-	}
+	return &pb.GetUserDevicesRequest{}
 }
 
 type mockGetUserDevicesServer struct {

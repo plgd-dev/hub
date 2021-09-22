@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/cloud/authorization/events"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/authorization/persistence"
@@ -39,17 +38,14 @@ func getUserDevices(tx persistence.PersistenceTx, owner string) ([]string, error
 	return deviceIds, nil
 }
 
-func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, sub string, deviceIDs []string) error {
+func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID string, deviceIDs []string) error {
 	v := events.Event{
-		// TODO: verify that s.ownerClaim and sub are filled in JWToken
-		//	- use s.ownerClaim value from JWT for DevicesUnregistered.Owner
-		//	- use 'sub' from JWT for AuditContext
 		Type: &events.Event_DevicesUnregistered{
 			DevicesUnregistered: &events.DevicesUnregistered{
 				Owner:     owner,
 				DeviceIds: deviceIDs,
 				AuditContext: &events.AuditContext{
-					UserId: owner,
+					UserId: userID,
 				},
 				Timestamp: pkgTime.UnixNano(time.Now()),
 			},
@@ -77,30 +73,9 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	owner := request.UserId
-	sub := owner
-	// TODO: always use value from JWT, remove UserId from pb.AddDeviceRequest
-	if token, err := grpc_auth.AuthFromMD(ctx, "bearer"); err == nil {
-		// TODO: add mechanism to add token with correct data to tests, then uncomment the following line
-		// return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot delete devices: %v", err))
-
-		// TODO: check that both s.ownerClaim and "sub" are set in token
-		if owner == "" {
-			uid, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
-			if err == nil && uid != serviceOwner {
-				owner = uid
-			}
-		}
-		if sub == "" {
-			uid, err := grpc.ParseOwnerFromJwtToken("sub", token)
-			if err == nil {
-				sub = uid
-			}
-		}
-	}
-
-	if owner == "" {
-		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid UserId"))
+	owner, userID, err := s.parseTokenMD(ctx)
+	if err != nil {
+		return nil, log.LogAndReturnError(grpc.ForwardFromError(codes.InvalidArgument, fmt.Errorf("cannot delete devices: %w", err)))
 	}
 
 	var deviceIds []string
@@ -138,7 +113,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		deletedDeviceIds = append(deletedDeviceIds, deviceId)
 	}
 
-	if err := s.publishDevicesUnregistered(ctx, owner, sub, deletedDeviceIds); err != nil {
+	if err := s.publishDevicesUnregistered(ctx, owner, userID, deletedDeviceIds); err != nil {
 		log.Errorf("cannot publish devices unregistered event with devices('%v') and owner('%v'): %w", deletedDeviceIds, owner, err)
 	}
 

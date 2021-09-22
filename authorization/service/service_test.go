@@ -21,6 +21,8 @@ const (
 	testAccessToken = "testAccessToken"
 )
 
+const jwtWithSubTestUserID = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlcklEIn0.6EZJidMCJ5UMwyttpwUNer-GdsBmPH1_ckH8ZU-SRpo`
+
 func makeConfig(t *testing.T) Config {
 	var cfg Config
 

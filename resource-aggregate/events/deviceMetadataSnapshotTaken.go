@@ -155,13 +155,13 @@ func timeToLive2ValidUntil(timeToLive int64) int64 {
 	return pkgTime.UnixNano(time.Now().Add(time.Duration(timeToLive)))
 }
 
-func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, owner string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
+func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Context, userID string, req *commands.ConfirmDeviceMetadataUpdateRequest, newVersion uint64, cancel bool) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
 
 	em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-	ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+	ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 	switch {
 	case cancel:
 		ev := DeviceMetadataUpdated{
@@ -195,7 +195,7 @@ func (e *DeviceMetadataSnapshotTaken) ConfirmDeviceMetadataUpdate(ctx context.Co
 	}
 }
 
-func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, owner string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
+func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.Context, userID string, req *commands.CancelPendingMetadataUpdatesRequest, newVersion uint64) ([]eventstore.Event, error) {
 	if req.GetCommandMetadata() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 	}
@@ -205,7 +205,7 @@ func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.C
 		if len(correlationIdFilter) != 0 && !correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
 			continue
 		}
-		ev, err := e.ConfirmDeviceMetadataUpdate(ctx, owner, &commands.ConfirmDeviceMetadataUpdateRequest{
+		ev, err := e.ConfirmDeviceMetadataUpdate(ctx, userID, &commands.ConfirmDeviceMetadataUpdateRequest{
 			DeviceId:        req.GetDeviceId(),
 			CorrelationId:   event.GetAuditContext().GetCorrelationId(),
 			Status:          commands.Status_CANCELED,
@@ -223,10 +223,11 @@ func (e *DeviceMetadataSnapshotTaken) CancelPendingMetadataUpdates(ctx context.C
 }
 
 func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
-	owner, err := grpc.OwnerFromMD(ctx)
+	userID, err := grpc.SubjectFromTokenMD(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid owner: %v", err)
+		return nil, err
 	}
+
 	switch req := cmd.(type) {
 	case *commands.UpdateDeviceMetadataRequest:
 		if req.GetCommandMetadata() == nil {
@@ -234,7 +235,7 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, req.GetCorrelationId())
+		ac := commands.NewAuditContext(userID, req.GetCorrelationId())
 
 		switch {
 		case req.GetStatus() != nil:
@@ -270,9 +271,9 @@ func (e *DeviceMetadataSnapshotTaken) HandleCommand(ctx context.Context, cmd agg
 			return nil, status.Errorf(codes.InvalidArgument, "unknown update type(%T)", req.GetUpdate())
 		}
 	case *commands.ConfirmDeviceMetadataUpdateRequest:
-		return e.ConfirmDeviceMetadataUpdate(ctx, owner, req, newVersion, false)
+		return e.ConfirmDeviceMetadataUpdate(ctx, userID, req, newVersion, false)
 	case *commands.CancelPendingMetadataUpdatesRequest:
-		return e.CancelPendingMetadataUpdates(ctx, owner, req, newVersion)
+		return e.CancelPendingMetadataUpdates(ctx, userID, req, newVersion)
 	}
 
 	return nil, fmt.Errorf("unknown command (%T)", cmd)

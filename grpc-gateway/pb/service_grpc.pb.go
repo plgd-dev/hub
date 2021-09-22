@@ -31,7 +31,7 @@ type GrpcGatewayClient interface {
 	GetResources(ctx context.Context, in *GetResourcesRequest, opts ...grpc.CallOption) (GrpcGateway_GetResourcesClient, error)
 	// Update resource at the device.
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*UpdateResourceResponse, error)
-	// When the client creates a subscription, with include_current_state=true it can send duplicate events.
+	// When the client creates a subscription.
 	// Subscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronize events.
 	SubscribeToEvents(ctx context.Context, opts ...grpc.CallOption) (GrpcGateway_SubscribeToEventsClient, error)
 	// Get cloud configuration
@@ -382,7 +382,7 @@ type GrpcGatewayServer interface {
 	GetResources(*GetResourcesRequest, GrpcGateway_GetResourcesServer) error
 	// Update resource at the device.
 	UpdateResource(context.Context, *UpdateResourceRequest) (*UpdateResourceResponse, error)
-	// When the client creates a subscription, with include_current_state=true it can send duplicate events.
+	// When the client creates a subscription.
 	// Subscription doesn't guarantee that all events will be sent to the client. The client is responsible for synchronize events.
 	SubscribeToEvents(GrpcGateway_SubscribeToEventsServer) error
 	// Get cloud configuration

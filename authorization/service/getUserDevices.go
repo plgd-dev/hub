@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/plgd-dev/cloud/authorization/persistence"
 
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/pkg/log"
 	"github.com/plgd-dev/cloud/pkg/net/grpc"
@@ -42,7 +41,7 @@ func sendUserDevices(request *pb.GetUserDevicesRequest, srv pb.AuthorizationServ
 	}
 
 	for _, deviceID := range ids {
-		err := srv.Send(&pb.UserDevice{DeviceId: deviceID, UserId: d.Owner})
+		err := srv.Send(&pb.UserDevice{DeviceId: deviceID})
 		if err != nil {
 			return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get user devices: %v", err))
 		}
@@ -55,35 +54,12 @@ func (s *Service) GetUserDevices(request *pb.GetUserDevicesRequest, srv pb.Autho
 	tx := s.persistence.NewTransaction(srv.Context())
 	defer tx.Close()
 
-	userIdsFilter := request.GetUserIdsFilter()
-	if len(userIdsFilter) == 0 {
-		token, err := grpc_auth.AuthFromMD(srv.Context(), "bearer")
-		if err != nil {
-			return log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: %v", err))
-		}
-		owner, err := grpc.ParseOwnerFromJwtToken(s.ownerClaim, token)
-		if err != nil {
-			log.Debugf("cannot parse '%v' from jwt token: %v", s.ownerClaim, err)
-		}
-		if owner == "" {
-			return log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot get user devices: invalid userIdsFilter"))
-		}
-		if owner == serviceOwner {
-			return sendUserDevices(request, srv, tx.RetrieveAll)
-		} else {
-			userIdsFilter = []string{owner}
-		}
+	owner, err := grpc.OwnerFromTokenMD(srv.Context(), s.ownerClaim)
+	if err != nil {
+		return log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot get owner devices: %v", err))
 	}
 
-	// auth0 ->
-
-	for _, owner := range userIdsFilter {
-		err := sendUserDevices(request, srv, func() persistence.Iterator {
-			return tx.RetrieveByOwner(owner)
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return sendUserDevices(request, srv, func() persistence.Iterator {
+		return tx.RetrieveByOwner(owner)
+	})
 }

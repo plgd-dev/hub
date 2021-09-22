@@ -143,7 +143,6 @@ func signOffHandler(req *mux.Message, client *Client) {
 	client.unsubscribeFromDeviceEvents()
 	respAS, err := client.server.asClient.DeleteDevices(ctx, &pb.DeleteDevicesRequest{
 		DeviceIds: deviceIds,
-		UserId:    signOffData.userID,
 	})
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle sign off: %w", err), coapconv.GrpcErr2CoapCode(err, coapconv.Delete))

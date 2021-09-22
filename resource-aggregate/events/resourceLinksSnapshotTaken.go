@@ -160,9 +160,9 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 }
 
 func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
-	owner, err := grpc.OwnerFromMD(ctx)
+	userID, err := grpc.SubjectFromTokenMD(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid owner: %v", err)
+		return nil, err
 	}
 	switch req := cmd.(type) {
 	case *commands.PublishResourceLinksRequest:
@@ -171,7 +171,7 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, "")
+		ac := commands.NewAuditContext(userID, "")
 
 		rlp := ResourceLinksPublished{
 			Resources:     req.GetResources(),
@@ -197,7 +197,7 @@ func (e *ResourceLinksSnapshotTaken) HandleCommand(ctx context.Context, cmd aggr
 		}
 
 		em := MakeEventMeta(req.GetCommandMetadata().GetConnectionId(), req.GetCommandMetadata().GetSequence(), newVersion)
-		ac := commands.NewAuditContext(owner, "")
+		ac := commands.NewAuditContext(userID, "")
 		rlu := ResourceLinksUnpublished{
 			Hrefs:         req.GetHrefs(),
 			DeviceId:      req.GetDeviceId(),

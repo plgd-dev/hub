@@ -5,8 +5,12 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/cloud/authorization/pb"
+	"github.com/plgd-dev/cloud/pkg/net/grpc"
 	"github.com/stretchr/testify/require"
 )
+
+const jwtWithSubUserId = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQifQ.sK7h3M0UhwXqc_vgkjl9MKIR41me7Np2-YUIHOijcSA`
+const jwtWithSubAaa = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWEifQ.QDa8-bP8MvjX8I2QQMYVVQ5utSMRMdgHOVoE2hUWlos`
 
 func TestService_AddDevice(t *testing.T) {
 	type args struct {
@@ -30,19 +34,17 @@ func TestService_AddDevice(t *testing.T) {
 		{
 			name: "invalid deviceId",
 			args: args{
-				ctx: context.Background(),
-				request: &pb.AddDeviceRequest{
-					UserId: "userId",
-				},
+				ctx:     grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
+				request: &pb.AddDeviceRequest{},
 			},
 			wantErr: true,
 		},
 		{
 			name: "not belongs to user",
 			args: args{
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubAaa),
 				request: &pb.AddDeviceRequest{
 					DeviceId: testDeviceID,
-					UserId:   "aaa",
 				},
 			},
 			wantErr: true,
@@ -50,8 +52,8 @@ func TestService_AddDevice(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
 				request: &pb.AddDeviceRequest{
-					UserId:   "userId",
 					DeviceId: "deviceId",
 				},
 			},
@@ -60,8 +62,8 @@ func TestService_AddDevice(t *testing.T) {
 		{
 			name: "duplicit",
 			args: args{
+				ctx: grpc.CtxWithIncomingToken(context.Background(), jwtWithSubUserId),
 				request: &pb.AddDeviceRequest{
-					UserId:   "userId",
 					DeviceId: "deviceId",
 				},
 			},
@@ -80,7 +82,7 @@ func TestService_AddDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.service.AddDevice(context.Background(), tt.args.request)
+			got, err := s.service.AddDevice(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
