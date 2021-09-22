@@ -1,22 +1,28 @@
-# Extra deploy
+# -- Extra deploy. Resolved as template
 extraDeploy:
 
-# Global config variables
+# -- Global config variables
 global:
-  # Override mongodb uri for every plgd-cloud services
+  # -- Override mongodb uri for every plgd-cloud services
   mongoUri:
-  # Override nats uri for every plgd-cloud services
+  # -- Override nats uri for every plgd-cloud services
   natsUri:
+  # -- Global domain
   domain:
+  # -- CloudID. Used by coap-gateway. It must be unique
   cloudId:
+  # -- OAuth authority
   authority:
+  # -- OAuth audience
   audience:
+  # -- OAuth configuration for internal oAuth client
   authorizationServer:
     oauth:
       clientID:
       clientSecret:
       scopes: []
       tokenURL:
+  # -- OAuth configuration for internal oAuth device client
   device:
     oauth:
       clientID:
@@ -26,7 +32,7 @@ global:
       redirectURL:
 
 
-# External nats dependency
+# -- External nats dependency setup
 nats:
   enabled: true
   nats:
@@ -49,7 +55,7 @@ nats:
     enabled: false
 
 
-# External mongodb-replica dependency
+# -- External mongodb-replica dependency setup
 mongodb:
   enabled: true
   fullnameOverride: mongodb
@@ -133,83 +139,114 @@ mongodb:
     successThreshold: 1
     failureThreshold: 6
 
-
 cluster:
+  # -- Cluster internal DNS prefix
   dns: cluster.local
 
+# -- Cert-manager integration section
 certmanager:
-  # Enable cert-manager integration
+  # -- Enable cert-manager integration
   enabled: true
+  # -- Default cert-manager section
   default:
+    # -- Default cert-manager issuer
     issuer:
-      # Default issuer enabled/disabled
+      # -- Enable Default issuer
       enabled: true
-      # Labels for default issuer
+      # -- Labels for default issuer
       labels: {}
-      # Annotation for default issuer
+      # -- Annotation for default issuer
       annotations: {}
-      # Name of default issuer
+      # -- Name of default issuer
       name: selfsigned-issuer
-      # Kind of default issuer
+      # --Kind of default issuer
       kind: Issuer
-      # Default issuer specification.
+      # -- Default issuer specification.
       spec:
         selfSigned: {}
+    # -- Default certificate specification
     cert:
+      # -- Certificate labels
       labels: {}
+      # -- Certificate annotations
       annotations: {}
+      # -- Certificate duration
       duration: 8760h
+      # -- Certificate renew before
       renewBefore: 360h
+      # -- Certificate key spec
       key:
+        # -- Algorithm
         algorithm: ECDSA
+        # -- Key size
         size: 256
   internal:
-    # In case you want to create your own issuer for internal certs
+    # -- Internal issuer. In case you want to create your own issuer for internal certs
     issuer:
+      # -- Labels
       labels: {}
+      # -- Annotations
       annotations: {}
+      # -- Name
       name:
+      # -- Kind
       kind:
+      # -- cert-manager issuer spec
       spec:
     cert:
+      # -- Certificate duration
       duration:
+      # -- Certificate renew before
       renewBefore:
       key:
+        # -- Certificate key algorithm
         algorithm:
+        # -- Certificate key size
         size:
   coap:
     issuer:
-      # In case you want to create your own coap-gateway service issuer
-#      labels: {}
-#      annotations: {}
+      # -- Labels
+      labels: {}
+      # -- Annotations
+      annotations: {}
+      # -- Name
       name:
+      # -- Kind
       kind:
+      # -- cert-manager issuer spec
       spec:
     cert:
-#      labels: { }
-#      annotations: { }
+      # -- Certificate duration
       duration:
+      # -- Certificate renew before
       renewBefore:
       key:
+        # -- Certificate key algorithm
         algorithm:
+        # -- Certificate key size
         size:
   external:
     issuer:
-      # In case you want to create your own coap-gateway service issuer
-#      labels: {}
-#      annotations: {}
+      # -- Labels
+      labels: {}
+      # -- Annotations
+      annotations: {}
+      # -- Name
       name:
+      # -- Kind
       kind:
+      # -- cert-manager issuer spec
       spec:
     cert:
-#      labels: { }
-#      annotations: { }
+      # -- Certificate duration
       duration:
+      # -- Certificate renew before
       renewBefore:
       key:
+        # -- Certificate key algorithm
         algorithm:
+        # -- Certificate key size
         size:
-
 
 resourcedirectory:
   # Enable resource-directory service
@@ -754,82 +791,90 @@ coapgateway:
     maxIdleTime: "10m"
 
 authorization:
-  # Enable authorization service
+  # -- Enable authorization service
   enabled: true
-  # Name of component. Used in label selectors
+  # -- Name of component. Used in label selectors
   name: authorization
-  # Full name to override
+  # -- Full name to override
   fullnameOverride:
-  # Number of replicas
+  # -- Number of replicas
   replicas: 1
-  # Additional labels for authorization deployment
+  # -- Additional labels for authorization deployment
   deploymentLabels: {}
-  # Additional annotations for authorization deployment
+  # -- Additional annotations for authorization deployment
   deploymentAnnotations: {}
-  # Pod security context
+  # -- Pod security context
   podSecurityContext: {}
-  # Labels for authorization pod
+  # -- Labels for authorization pod
   podLabels: {}
-  # Annotations for authorization pod
+  # -- Annotations for authorization pod
   podAnnotations: {}
+  # -- Service configuration
   service:
+    # -- Service type
     type: ClusterIP
-    # Labels for authorization service
+    # -- Service labels
     labels: {}
-    # Annotations for authorization service
+    # -- Service annotations
     annotations: {}
-  # RBAC configuration
+  # -- RBAC configuration
   rbac:
-    # Create RBAC config
+    # -- Enable RBAC setup
     enabled: false
-    # Name of authorization SA
+    # -- Name of authorization SA
     serviceAccountName: authorization
-    # template definition for Role/binding etc..
+    # -- Template definition for Role/binding etc.. Resolved as template
     roleBindingDefitionTpl:
-
-  # Security context for pod
+  # -- Security context for pod
   securityContext: {}
-  # Image pull secrets
+  # -- Image pull secrets
   imagePullSecrets: {}
-  # Restart policy for pod
+  # -- Restart policy for pod
   restartPolicy: Always
-  # Init containers definition
+  # -- Init containers definition. Resolved as template
   initContainersTpl: {}
+  # -- Authorization service image section
   image:
-    # Image registry
+    # -- Image registry
     registry:
-    # Image repository
+    # -- Image repository
     repository: plgd/authorization
-    # Image tag.
+    # -- Image tag.
     tag:
-    # Image pull policy
+    # -- Image pull policy
     pullPolicy: IfNotPresent
-    # Image pull secrets
+    # -- Image pull secrets
     imagePullSecrets: {}
-  # Liveness probe. authorization doesn't have any default liveness probe
+  # -- Liveness probe. authorization doesn't have any default liveness probe
   livenessProbe: {}
-  # Readiness probe. authorization doesn't have aby default readiness probe
+  # -- Readiness probe. authorization doesn't have aby default readiness probe
   readinessProbe: {}
-  # Resources limit
+  # -- Resources limit
   resources: {}
-  # Node selector
+  # -- Node selector
   nodeSelector: {}
-  # Affinity definition
+  # -- Affinity definition
   affinity: {}
-  # Toleration definition
+  # -- Toleration definition
   tolerations: {}
-  # Optional extra volumes
+  # -- Extra volumes
   extraVolumes: {}
-  # Optional extra volume mounts
+  # -- Extra volume mounts
   extraVolumeMounts: {}
+  # -- Service and POD port
   port: 9100
+  # -- yaml configuration
   config:
+    # -- File name
     fileName: service.yaml
+    # -- Volume name
     volume: config
+    # -- Service configuration mount path
     mountPath: /config
-  # for more information follow: https://github.com/plgd-dev/cloud/tree/v2/authorization
   log:
+    # -- Enable extended log messages
     debug: false
+  # -- For complete authorization service configuration see [plgd/authorization](https://github.com/plgd-dev/cloud/tree/v2/authorization)
   apis:
     grpc:
       address:
@@ -864,6 +909,7 @@ authorization:
             keyFile:
             certFile:
             useSystemCAPool: false
+  # -- For complete authorization service configuration see [plgd/authorization](https://github.com/plgd-dev/cloud/tree/v2/authorization)
   clients:
     eventBus:
       nats:
@@ -883,87 +929,98 @@ authorization:
           useSystemCAPool: false
 
 httpgateway:
-  # Enable http-gateway service
+  # -- Enable http-gateway service
   enabled: true
-  # Name of component. Used in label selectors
+  # -- Name of component. Used in label selectors
   name: http-gateway
-  # Full name to override
+  # -- Full name to override
   fullnameOverride:
-  # Number of replicas
+  # -- Number of replicas
   replicas: 1
-  # Additional labels for http-gateway deployment
+  # -- Additional labels for http-gateway deployment
   deploymentLabels: {}
-  # Additional annotations for http-gateway deployment
+  # -- Additional annotations for http-gateway deployment
   deploymentAnnotations: {}
-  # Pod security context
+  # -- Pod security context
   podSecurityContext: {}
-  # Labels for http-gateway pod
+  # -- Labels for http-gateway pod
   podLabels: {}
-  # Annotations for http-gateway pod
+  # -- Annotations for http-gateway pod
   podAnnotations: {}
   service:
     type: ClusterIP
-    # Labels for http-gateway service
+    # -- Labels for http-gateway service
     labels: {}
-    # Annotations for http-gateway service
+    # -- Annotations for http-gateway service
     annotations: {}
-  # RBAC configuration
+  # -- RBAC configuration
   rbac:
-    # Create RBAC config
+    # -- Enable RBAC setup
     enabled: false
-    # Name of http-gateway SA
+    # -- Name of http-gateway SA
     serviceAccountName: http-gateway
-    # template definition for Role/binding etc..
+    # -- Definition for Role/binding etc.. Render as template
     roleBindingDefitionTpl:
-  # Security context for pod
+  # -- Security context for pod
   securityContext: {}
-  # Image pull secrets
+  # -- Image pull secrets
   imagePullSecrets: {}
-  # Restart policy for pod
+  # -- Restart policy for pod
   restartPolicy: Always
-  # Init containers definition
+  # -- Init containers definition. Render as template
   initContainersTpl: {}
   image:
-    # Image registry
+    # -- Image registry
     registry:
-    # Image repository
+    # -- Image repository
     repository: plgd/http-gateway
-    # Image tag.
+    # -- Image tag.
     tag:
-    # Image pull policy
+    # -- Image pull policy
     pullPolicy: Always
-    # Image pull secrets
+    # -- Image pull secrets
     imagePullSecrets: {}
-  # Liveness probe. resource-directory doesn't have any default liveness probe
+  # -- Liveness probe. http-gateway doesn't have any default liveness probe
   livenessProbe: {}
-  # Readiness probe. resource-directory doesn't have aby default readiness probe
+  # -- Readiness probe. http-gateway doesn't have aby default readiness probe
   readinessProbe: {}
-  # Resources limit
+  # -- Resources limit
   resources: {}
-  # Node selector
+  # -- Node selector
   nodeSelector: {}
-  # Affinity definition
+  # -- Affinity definition
   affinity: {}
-  # Toleration definition
+  # -- Toleration definition
   tolerations: {}
-  # Optional extra volumes
+  # -- Optional extra volumes
   extraVolumes: {}
-  # Optional extra volume mounts
+  # -- Optional extra volume mounts
   extraVolumeMounts: {}
+  # -- Http-gateway domain. Default: api.{{ global.domain }}
   domain:
   ingress:
+    # -- Enable ingress
     enabled: true
+    # -- Ingress annotation
     annotations: {}
+    # -- Ingress path
     paths:
       - /api
       - /.well-known/
+  # -- Http-gateway service yaml config section
   config:
+    # -- Name of configuration file
     fileName: service.yaml
+    # -- Volume for configuration file
     volume: config
+    # -- Mount path
     mountPath: /config
+  # -- Port for service and POD
   port: 9100
   log:
+    # -- Enable extended debug messages
     debug: false
+  # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/cloud/tree/v2/http-gateway)
   apis:
     http:
       address:
@@ -989,6 +1046,7 @@ httpgateway:
             keyFile:
             certFile:
             useSystemCAPool: false
+  # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/cloud/tree/v2/http-gateway)
   clients:
     grpcGateway:
       grpc:
@@ -1002,6 +1060,7 @@ httpgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+  # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/cloud/tree/v2/http-gateway)
   ui:
     enabled: false
     directory: "/usr/local/var/www"
@@ -1014,87 +1073,98 @@ httpgateway:
 
 
 grpcgateway:
-  # Enable grpc-gateway service
+  # -- Enable grpc-gateway service
   enabled: true
-  # Name of component. Used in label selectors
+  # -- Name of component. Used in label selectors
   name: grpc-gateway
-  # Full name to override
+  # -- Full name to override
   fullnameOverride:
-  # Number of replicas
+  # -- Number of replicas
   replicas: 1
-  # Additional labels for grpc-gateway deployment
+  # -- Additional labels for grpc-gateway deployment
   deploymentLabels: {}
-  # Additional annotations for grpc-gateway deployment
+  # -- Additional annotations for grpc-gateway deployment
   deploymentAnnotations: {}
-  # Pod security context
+  # -- Pod security context
   podSecurityContext: {}
-  # Labels for grpc-gateway pod
+  # -- Labels for grpc-gateway pod
   podLabels: {}
-  # Annotations for grpc-gateway pod
+  # -- Annotations for grpc-gateway pod
   podAnnotations: {}
   service:
+    # -- Service type
     type: ClusterIP
-    # Labels for grpc-gateway service
+    # -- Labels for grpc-gateway service
     labels: {}
-    # Annotations for grpc-gateway service
+    # -- Annotations for grpc-gateway service
     annotations: {}
-  # RBAC configuration
+  # -- RBAC configuration
   rbac:
-    # Create RBAC config
+    # Enable RBAC
     enabled: false
-    # Name of grpc-gateway SA
+    # -- Name of grpc-gateway SA
     serviceAccountName: grpc-gateway
-    # template definition for Role/binding etc..
+    # -- Template definition for Role/binding etc..
     roleBindingDefitionTpl:
-  # Security context for pod
+  # -- Security context for pod
   securityContext: {}
-  # Image pull secrets
+  # -- Image pull secrets
   imagePullSecrets: {}
-  # Restart policy for pod
+  # -- Restart policy for pod
   restartPolicy: Always
-  # Init containers definition
+  # -- Init containers definition
   initContainersTpl: {}
   image:
-    # Image registry
+    # -- Image registry
     registry:
-    # Image repository
+    # -- Image repository
     repository: plgd/grpc-gateway
-    # Image tag.
+    # -- Image tag.
     tag:
-    # Image pull policy
+    # -- Image pull policy
     pullPolicy: Always
-    # Image pull secrets
+    # -- Image pull secrets
     imagePullSecrets: {}
-  # Liveness probe. grpc-gateway doesn't have any default liveness probe
+  # -- Liveness probe. grpc-gateway doesn't have any default liveness probe
   livenessProbe: {}
-  # Readiness probe. grpc-gateway doesn't have aby default readiness probe
+  # -- Readiness probe. grpc-gateway doesn't have aby default readiness probe
   readinessProbe: {}
-  # Resources limit
+  # -- Resources limit
   resources: {}
-  # Node selector
+  # -- Node selector
   nodeSelector: {}
-  # Affinity definition
+  # -- Affinity definition
   affinity: {}
-  # Toleration definition
+  # -- Toleration definition
   tolerations: {}
-  # Optional extra volumes
+  # -- Optional extra volumes
   extraVolumes: {}
-  # Optional extra volume mounts
+  # -- Optional extra volume mounts
   extraVolumeMounts: {}
-  # External domain for grpc-gateway
+  # -- External domain for grpc-gateway. Default: api.{{ global.domain }}
   domain:
   ingress:
+    # -- Enable ingress
     enabled: true
+    # -- Ingress annotations
     annotations: {}
+    # -- Default ingress paths
     paths:
       - /ocf.cloud.grpcgateway.pb.GrpcGateway
+  # -- Service yaml configuration section
   config:
+    # -- Service configuration file name
     fileName: service.yaml
+    # -- Service configuration volume name
     volume: config
+    # -- Service configuration mount path
     mountPath: /config
+  # -- Service and POD port
   port: 9100
   log:
+    # -- Enable extended log messages
     debug: false
+  # -- For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/cloud/tree/v2/grpc-gateway)
   apis:
     grpc:
       address:
@@ -1130,6 +1200,7 @@ grpcgateway:
             keyFile:
             certFile:
             useSystemCAPool: false
+  # -- For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/cloud/tree/v2/grpc-gateway)
   clients:
     authorizationServer:
       ownerClaim: "sub"
@@ -1184,101 +1255,123 @@ grpcgateway:
 
 
 certificateauthority:
-  # Enable certificate-authority service
+  # -- Enable certificate-authority service
   enabled: true
-  # Name of component. Used in label selectors
+  # -- Name of component. Used in label selectors
   name: certificate-authority
-  # Full name to override
+  # -- Full name to override
   fullnameOverride:
-  # Number of replicas
+  # -- Number of replicas
   replicas: 1
-  # Additional labels for certificate-authority deployment
+  # -- Additional labels for certificate-authority deployment
   deploymentLabels: {}
-  # Additional annotations for certificate-authority deployment
+  # -- Additional annotations for certificate-authority deployment
   deploymentAnnotations: {}
-  # Pod security context
+  # -- Pod security context
   podSecurityContext: {}
-  # Labels for certificate-authority pod
+  # -- Labels for certificate-authority pod
   podLabels: {}
-  # Annotations for certificate-authority pod
+  # -- Annotations for certificate-authority pod
   podAnnotations: {}
   service:
+    # -- Service type
     type: ClusterIP
-    # Labels for certificate-authority service
+    # -- Labels for certificate-authority service
     labels: {}
-    # Annotations for certificate-authority service
+    # -- Annotations for certificate-authority service
     annotations: {}
-  # RBAC configuration
+  # -- RBAC configuration
   rbac:
-    # Create RBAC config
+    # -- Enable RBAC
     enabled: false
-    # Name of certificate-authority SA
+    # -- Name of certificate-authority SA
     serviceAccountName: certificate-authority
-    # template definition for Role/binding etc..
+    # -- Template definition for Role/binding etc..
     roleBindingDefitionTpl:
-  # Security context for pod
+  # -- Security context for pod
   securityContext:
-  # Image pull secrets
+  # -- Image pull secrets
   imagePullSecrets:
-  # Restart policy for pod
+  # -- Restart policy for pod
   restartPolicy: Always
-  # Init containers definition
+  # -- Init containers definition
   initContainersTpl:
   image:
-    # Image registry
+    # -- Image registry
     registry:
-    # Image repository
+    # -- Image repository
     repository: plgd/certificate-authority
-    # Image tag.
+    # -- Image tag.
     tag:
-    # Image pull policy
+    # -- Image pull policy
     pullPolicy: Always
-    # Image pull secrets
+    # -- Image pull secrets
     imagePullSecrets:
-  # Liveness probe. certificate-authority doesn't have any default liveness probe
+  # -- Liveness probe. certificate-authority doesn't have any default liveness probe
   livenessProbe:
-  # Readiness probe. certificate-authority doesn't have aby default readiness probe
+  # -- Readiness probe. certificate-authority doesn't have aby default readiness probe
   readinessProbe:
-  # Resources limit
+  # -- Resources limit
   resources:
-  # Node selector
+  # -- Node selector
   nodeSelector:
-  # Affinity definition
+  # -- Affinity definition
   affinity:
-  # Toleration definition
+  # -- Toleration definition
   tolerations:
-  # Optional extra volumes
+  # -- Optional extra volumes
   extraVolumes:
-  # Optional extra volume mounts
+  # -- Optional extra volume mounts
   extraVolumeMounts:
-  # External domain for certificate-authority
+  # -- External domain for certificate-authority. Default: api.{{ global.domain }}
   domain:
   ingress:
+    # -- Enable ingress
     enabled: true
+    # -- Ingress annotations
     annotations: {}
+    # -- Paths
     paths:
       - /ocf.cloud.certificateauthority.pb.CertificateAuthority
+  # -- Service configuration
   config:
+    # -- File name for config file
     fileName: service.yaml
+    # -- Config file volume name
     volume: config
+    # -- Mount path
     mountPath: /config
+  # -- CA section
   ca:
+    # -- Default configuration for cert/key CA used for signing device/identity certificates
     default:
+      # -- Common name for CA created as default issuer
       commonName: coap-device-ca
       secret:
+        # -- Name of secret
         name: coap-device-ca
+        # -- Duration for default CA
       duration: 87600h
+      # -- Renew before for default CA
       renewBefore: 360h
     secret:
+      # -- Custom CA secret name
       name:
+    # -- Cert file name
     cert: tls.crt
+    # -- Cert key file name
     key: tls.key
     volume:
+      # -- CA certificate volume name
       name: coap-device-ca
+      # -- CA certificate mount path
       mountPath: /certs/coap-device-ca
+  # -- Service and POD port
   port: 9100
   log:
+    # -- Enable extended debug messages
     debug: false
+  # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/cloud/tree/v2/certificate-authority)
   apis:
     grpc:
       address:
@@ -1314,6 +1407,7 @@ certificateauthority:
             keyFile:
             certFile:
             useSystemCAPool: false
+  # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/cloud/tree/v2/certificate-authority)
   signer:
     keyFile:
     certFile:
