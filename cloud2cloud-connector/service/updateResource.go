@@ -33,7 +33,7 @@ func updateDeviceResource(ctx context.Context, deviceID, href, contentType strin
 	}
 	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, contentType)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
+	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
@@ -89,7 +89,7 @@ func updateResource(ctx context.Context, raClient raService.ResourceAggregateCli
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	_, err = raClient.ConfirmResourceUpdate(ctx, &commands.ConfirmResourceUpdateRequest{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,

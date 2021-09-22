@@ -31,7 +31,7 @@ type CoapRefreshTokenResp struct {
 func getRefreshTokenContent(token *oauth2.Token, expiresIn int64, options message.Options) (message.MediaType, []byte, error) {
 	coapResp := CoapRefreshTokenResp{
 		RefreshToken: token.RefreshToken,
-		AccessToken:  token.AccessToken,
+		AccessToken:  token.AccessToken.String(),
 		ExpiresIn:    expiresIn,
 	}
 
@@ -95,7 +95,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		return
 	}
 
-	claim, err := client.ValidateToken(req.Context, token.AccessToken)
+	claim, err := client.ValidateToken(req.Context, token.AccessToken.String())
 	if err != nil {
 		logErrorAndCloseClient(fmt.Errorf("cannot handle refresh token: %w", err), coapCodes.Unauthorized)
 		return
@@ -135,7 +135,7 @@ func refreshTokenPostHandler(req *mux.Message, client *Client) {
 		authCtx := authorizationContext{
 			DeviceID:    deviceID,
 			UserID:      owner,
-			AccessToken: token.AccessToken,
+			AccessToken: token.AccessToken.String(),
 			Expire:      validUntil,
 		}
 		client.SetAuthorizationContext(&authCtx)

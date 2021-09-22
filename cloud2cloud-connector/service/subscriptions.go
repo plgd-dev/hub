@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
 	kitHttp "github.com/plgd-dev/cloud/pkg/net/http"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/codec/json"
 	"github.com/plgd-dev/kit/log"
@@ -47,7 +48,7 @@ type SubscriptionManager struct {
 	asClient            pbAS.AuthorizationServiceClient
 	cache               *cache.Cache
 	devicesSubscription *DevicesSubscription
-	oauthCallback       string
+	provider            *oauth2.PlgdProvider
 	triggerTask         OnTaskTrigger
 	interval            time.Duration
 }
@@ -58,7 +59,7 @@ func NewSubscriptionManager(
 	raClient raService.ResourceAggregateClient,
 	store *Store,
 	devicesSubscription *DevicesSubscription,
-	oauthCallback string,
+	provider *oauth2.PlgdProvider,
 	triggerTask OnTaskTrigger,
 	interval time.Duration,
 ) *SubscriptionManager {
@@ -69,7 +70,7 @@ func NewSubscriptionManager(
 		asClient:            asClient,
 		devicesSubscription: devicesSubscription,
 		cache:               cache.New(time.Minute*10, time.Minute*5),
-		oauthCallback:       oauthCallback,
+		provider:            provider,
 		triggerTask:         triggerTask,
 		interval:            interval,
 	}
@@ -88,7 +89,7 @@ func subscribe(ctx context.Context, href, correlationID string, reqBody events.S
 	req.Header.Set(events.CorrelationIDKey, correlationID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
 	req.Header.Set(events.ContentTypeKey, events.ContentType_JSON)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
+	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
@@ -131,7 +132,7 @@ func cancelSubscription(ctx context.Context, href string, linkedAccount store.Li
 	}
 	req.Header.Set("Token", linkedAccount.ID)
 	req.Header.Set("Accept", events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
+	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
@@ -184,12 +185,13 @@ func (s *SubscriptionManager) HandleEvent(ctx context.Context, header events.Eve
 	if header.EventSignature != calcEventSignature {
 		return http.StatusBadRequest, fmt.Errorf("invalid event signature %v(%+v != %+v, %s): not match", header.ID, subData.subscription, header, body)
 	}
-	ctx = kitNetGrpc.CtxWithToken(ctx, subData.linkedAccount.Data.OriginCloud.AccessToken.String())
-	subData.linkedAccount, err = RefreshToken(ctx, subData.linkedAccount, subData.linkedCloud, s.oauthCallback, s.store)
+
+	subData.linkedAccount, err = refreshTokens(ctx, subData.linkedAccount, subData.linkedCloud, s.provider, s.store)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("cannot refresh token: %w", err)
 	}
 
+	ctx = kitNetGrpc.CtxWithToken(ctx, subData.linkedAccount.Data.Origin().AccessToken.String())
 	if header.EventType == events.EventType_SubscriptionCanceled {
 		err := s.HandleCancelEvent(ctx, header, subData.linkedAccount)
 		if err != nil {

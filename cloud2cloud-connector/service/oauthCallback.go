@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 )
 
 func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCacheData, authCode string) (provisionCacheData, error) {
@@ -15,12 +15,7 @@ func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCa
 		if err != nil {
 			return data, fmt.Errorf("cannot exchange origin cloud authorization code for access token: %w", err)
 		}
-		newData := data.linkedAccount.Data.SetOrigin(store.Token{
-			AccessToken:  store.AccessToken(token.AccessToken),
-			Expiry:       token.Expiry,
-			RefreshToken: token.RefreshToken,
-		})
-		data.linkedAccount.Data = newData
+		data.linkedAccount.Data = data.linkedAccount.Data.SetOrigin(*token)
 		return data, nil
 	}
 
@@ -31,12 +26,12 @@ func (rh *RequestHandler) handleLinkedData(ctx context.Context, data provisionCa
 		if err != nil {
 			return data, fmt.Errorf("cannot exchange target cloud authorization code for access token: %w", err)
 		}
-		newData := data.linkedAccount.Data.SetTarget(store.Token{
-			AccessToken:  store.AccessToken(token.AccessToken),
+		data.linkedAccount.Data = data.linkedAccount.Data.SetTarget(oauth2.Token{
+			AccessToken:  oauth2.AccessToken(token.AccessToken),
 			Expiry:       token.Expiry,
 			RefreshToken: token.RefreshToken,
+			Owner:        "",
 		})
-		data.linkedAccount.Data = newData
 		return data, nil
 	}
 

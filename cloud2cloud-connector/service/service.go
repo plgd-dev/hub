@@ -185,12 +185,12 @@ func newResourceDirectoryClient(config ResourceDirectoryConfig, logger log.Logge
 	return rdClient, fl.ToFunction(), nil
 }
 
-func parseOAuthPaths(OAuthCallback string) (*url.URL, string, error) {
-	oauthURL, err := url.Parse(OAuthCallback)
+func parseOAuthPaths(oauthCallback string) (*url.URL, error) {
+	oauthURL, err := url.Parse(oauthCallback)
 	if err != nil {
-		return nil, "", fmt.Errorf("cannot parse oauth url: %w", err)
+		return nil, fmt.Errorf("cannot parse oauth url: %w", err)
 	}
-	return oauthURL, OAuthCallback, nil
+	return oauthURL, nil
 }
 
 // New parses configuration and creates new Server with provided store and bus
@@ -247,14 +247,11 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeStore)
 
-	oauthURL, oauthCallback, err := parseOAuthPaths(config.APIs.HTTP.Authorization.RedirectURL)
+	oauthURL, err := parseOAuthPaths(config.APIs.HTTP.Authorization.RedirectURL)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot parse OAuth paths: %w", err)
 	}
-
-	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, asClient, raClient, store, devicesSubscription,
-		oauthCallback, taskProcessor.Trigger, config.Clients.Subscription.HTTP.ResubscribeInterval)
 
 	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization, logger, "sub")
 	if err != nil {
@@ -262,6 +259,9 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
 	}
 	listener.AddCloseFunc(provider.Close)
+
+	subMgr := NewSubscriptionManager(config.APIs.HTTP.EventsURL, asClient, raClient, store, devicesSubscription,
+		provider, taskProcessor.Trigger, config.Clients.Subscription.HTTP.ResubscribeInterval)
 
 	requestHandler := NewRequestHandler(provider, subMgr, store, taskProcessor.Trigger)
 
@@ -272,12 +272,18 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeAuth)
 
+	server, err := NewHTTP(requestHandler, auth)
+	if err != nil {
+		cleanUp.Execute()
+		return nil, fmt.Errorf("cannot create http server interceptor: %w", err)
+	}
+
 	var wg sync.WaitGroup
 	if !config.APIs.HTTP.PullDevices.Disabled {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for runDevicePulling(ctx, oauthCallback, config.APIs.HTTP.PullDevices.Interval, store, asClient, raClient, devicesSubscription, subMgr, taskProcessor.Trigger) {
+			for runDevicePulling(ctx, provider, config.APIs.HTTP.PullDevices.Interval, store, asClient, raClient, devicesSubscription, subMgr, taskProcessor.Trigger) {
 			}
 		}()
 	}
@@ -297,14 +303,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 		subMgr.Run(ctx)
 	}()
 
-	server := Server{
-		server:   NewHTTP(requestHandler, auth),
+	return &Server{
+		server:   server,
 		listener: listener,
 		doneWg:   &wg,
 		cancel:   cancel,
-	}
-
-	return &server, nil
+	}, nil
 }
 
 // Serve starts the service's HTTP server and blocks
@@ -320,7 +324,7 @@ func (s *Server) Shutdown() error {
 }
 
 func runDevicePulling(ctx context.Context,
-	oauthCallback string,
+	provider *oauth2.PlgdProvider,
 	timeout time.Duration,
 	s *Store,
 	asClient pbAS.AuthorizationServiceClient,
@@ -331,7 +335,7 @@ func runDevicePulling(ctx context.Context,
 ) bool {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, oauthCallback, triggerTask)
+	err := pullDevices(ctx, s, asClient, raClient, devicesSubscription, subscriptionManager, provider, triggerTask)
 	if err != nil {
 		log.Errorf("cannot pull devices: %v", err)
 	}

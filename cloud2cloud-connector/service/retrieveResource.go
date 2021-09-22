@@ -25,7 +25,7 @@ func retrieveDeviceResource(ctx context.Context, deviceID, href string, linkedAc
 		return "", nil, commands.Status_BAD_REQUEST, fmt.Errorf("cannot create post request: %w", err)
 	}
 	req.Header.Set(AcceptHeader, events.ContentType_JSON+","+events.ContentType_VNDOCFCBOR)
-	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
+	req.Header.Set(AuthorizationHeader, "Bearer "+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Connection", "close")
 	req.Close = true
 
@@ -70,7 +70,7 @@ func retrieveResource(ctx context.Context, raClient raService.ResourceAggregateC
 		coapContentFormat = int32(message.AppJSON)
 	}
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	_, err = raClient.ConfirmResourceRetrieve(ctx, &commands.ConfirmResourceRetrieveRequest{
 		ResourceId:    commands.NewResourceID(deviceID, href),
 		CorrelationId: e.GetAuditContext().GetCorrelationId(),

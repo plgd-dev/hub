@@ -70,7 +70,7 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHTTP returns HTTP server
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) *http.Server {
+func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor) (*http.Server, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
 	r.Use(loggingMiddleware)
@@ -94,8 +94,11 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	// notify linked cloud
 	r.HandleFunc(uri.Events, requestHandler.ProcessEvent).Methods("POST")
 
-	oauthURL, _, _ := parseOAuthPaths(requestHandler.provider.Config.RedirectURL)
+	oauthURL, err := parseOAuthPaths(requestHandler.provider.Config.RedirectURL)
+	if err != nil {
+		return nil, err
+	}
 	r.HandleFunc(oauthURL.Path, requestHandler.OAuthCallback).Methods("GET")
 
-	return &http.Server{Handler: r}
+	return &http.Server{Handler: r}, nil
 }

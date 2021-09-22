@@ -13,6 +13,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store"
 	kitNetGrpc "github.com/plgd-dev/cloud/pkg/net/grpc"
+	"github.com/plgd-dev/cloud/pkg/security/oauth2"
 	"github.com/plgd-dev/cloud/resource-aggregate/commands"
 	raService "github.com/plgd-dev/cloud/resource-aggregate/service"
 	"github.com/plgd-dev/kit/codec/json"
@@ -36,7 +37,7 @@ type pullDevicesHandler struct {
 	raClient            raService.ResourceAggregateClient
 	devicesSubscription *DevicesSubscription
 	subscriptionManager *SubscriptionManager
-	oauthCallback       string
+	provider            *oauth2.PlgdProvider
 	triggerTask         OnTaskTrigger
 }
 
@@ -76,7 +77,7 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.Data.TargetCloud.AccessToken))
+	req.Header.Set("Authorization", "Bearer "+string(linkedAccount.Data.Target().AccessToken))
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Connection", "close")
 	req.Close = true
@@ -103,7 +104,7 @@ func Get(ctx context.Context, url string, linkedAccount store.LinkedAccount, lin
 
 func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggregateClient, deviceID string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, subscriptionManager *SubscriptionManager, dev RetrieveDeviceWithLinksResponse, triggerTask OnTaskTrigger) error {
 	var errors []error
-	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	for _, link := range dev.Links {
 		link.DeviceID = deviceID
 		href := removeDeviceIDFromHref(link.Href)
@@ -142,7 +143,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 
 	var errors []error
 	userID := linkedAccount.UserID
-	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevices() {
 		registeredDevices, err := getUsersDevices(ctx, p.asClient)
 		if err != nil {
@@ -274,7 +275,7 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 
 	var errors []error
 	userID := linkedAccount.UserID
-	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.OriginCloud.AccessToken.String())
+	ctx = kitNetGrpc.CtxWithToken(ctx, linkedAccount.Data.Origin().AccessToken.String())
 	for _, dev := range devices {
 		deviceID := dev.Device.Device.ID
 		for _, link := range dev.Links {
@@ -310,21 +311,28 @@ func (p *pullDevicesHandler) getDevicesWithResourceValues(ctx context.Context, l
 	return nil
 }
 
-func RefreshToken(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, oauthCallback string, s *Store) (store.LinkedAccount, error) {
-	// TODO: refresh both origin and target
+func refreshTokens(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, provider *oauth2.PlgdProvider, s *Store) (store.LinkedAccount, error) {
+	if !linkedAccount.Data.Origin().IsValidAccessToken() {
+		originToken, err := provider.Refresh(ctx, linkedAccount.Data.Origin().RefreshToken)
+		if err != nil {
+			return store.LinkedAccount{}, fmt.Errorf("cannot refresh origin cloud token: %w", err)
+		}
+		linkedAccount.Data = linkedAccount.Data.SetOrigin(*originToken)
+	}
+
 	ctx = linkedCloud.CtxWithHTTPClient(ctx)
 	oauthCfg := linkedCloud.OAuth
 	if oauthCfg.RedirectURL == "" {
-		oauthCfg.RedirectURL = oauthCallback
+		oauthCfg.RedirectURL = provider.Config.RedirectURL
 	}
-	token, refreshed, err := linkedAccount.Data.TargetCloud.Refresh(ctx, linkedCloud.OAuth.ToOAuth2("", ""))
+	targetToken, targetRefreshed, err := linkedAccount.Data.Target().Refresh(ctx, linkedCloud.OAuth.ToDefaultOAuth2())
 	if err != nil {
-		return store.LinkedAccount{}, err
+		return store.LinkedAccount{}, fmt.Errorf("cannot refresh target cloud token: %w", err)
 	}
-	linkedAccount.Data.TargetCloud = token
-	if refreshed {
-		err = s.UpdateLinkedAccount(ctx, linkedAccount)
-		if err != nil {
+
+	linkedAccount.Data = linkedAccount.Data.SetTarget(targetToken)
+	if targetRefreshed {
+		if err = s.UpdateLinkedAccount(ctx, linkedAccount); err != nil {
 			return store.LinkedAccount{}, fmt.Errorf("cannot store updated linked linkedAccount: %w", err)
 		}
 	}
@@ -332,7 +340,7 @@ func RefreshToken(ctx context.Context, linkedAccount store.LinkedAccount, linked
 }
 
 func (p *pullDevicesHandler) pullDevicesFromAccount(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
-	linkedAccount, err := RefreshToken(ctx, linkedAccount, linkedCloud, p.oauthCallback, p.s)
+	linkedAccount, err := refreshTokens(ctx, linkedAccount, linkedCloud, p.provider, p.s)
 	if err != nil {
 		return err
 	}
@@ -360,7 +368,7 @@ func pullDevices(ctx context.Context, s *Store,
 	raClient raService.ResourceAggregateClient,
 	devicesSubscription *DevicesSubscription,
 	subscriptionManager *SubscriptionManager,
-	oauthCallback string,
+	provider *oauth2.PlgdProvider,
 	triggerTask OnTaskTrigger) error {
 
 	data := s.DumpLinkedAccounts()
@@ -373,7 +381,7 @@ func pullDevices(ctx context.Context, s *Store,
 			raClient:            raClient,
 			devicesSubscription: devicesSubscription,
 			subscriptionManager: subscriptionManager,
-			oauthCallback:       oauthCallback,
+			provider:            provider,
 			triggerTask:         triggerTask,
 		}
 		wg.Add(1)
