@@ -59,7 +59,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if !newData.linkedAccount.Data.HasOrigin() {
-		return http.StatusInternalServerError, fmt.Errorf("invalid linked data state(%v)", newData.linkedAccount.Data.State())
+		return http.StatusInternalServerError, fmt.Errorf("invalid linked data state(%v)", newData.linkedAccount.Data.State)
 	}
 
 	if !newData.linkedAccount.Data.HasTarget() {

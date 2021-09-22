@@ -57,9 +57,6 @@ func (o Token) Refresh(ctx context.Context, cfg oauth2.Config) (Token, bool, err
 	if o.IsValidAccessToken() {
 		return o, false, nil
 	}
-	if o.Expiry.IsZero() {
-		return o, false, nil
-	}
 	restoredToken := oauth2.Token{
 		RefreshToken: o.RefreshToken,
 	}
