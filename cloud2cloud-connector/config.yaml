@@ -9,7 +9,6 @@ apis:
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: false
     eventsURL: ""
-    oauthcallback: ""
     pullDevices:
       disabled: false
       interval: 5s
