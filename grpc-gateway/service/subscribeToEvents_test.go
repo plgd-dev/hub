@@ -689,7 +689,7 @@ func TestRequestHandler_SubscribeForPendingCommands(t *testing.T) {
 
 func TestRequestHandler_Issue270(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
 	coapgwCfg := coapgwTest.MakeConfig(t)

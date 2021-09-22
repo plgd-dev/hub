@@ -31,50 +31,46 @@ const (
 )
 
 type LinkedAccountData struct {
-	originCloud oauth2.Token
-	targetCloud oauth2.Token
-	state       LinkedAccountDataFlags
+	OriginCloud oauth2.Token
+	TargetCloud oauth2.Token
+	State       LinkedAccountDataFlags
 }
 
 // Create linked data with existing origin cloud and target cloud account
 func MakeLinkedAccountData(originCloud, targetCloud oauth2.Token) LinkedAccountData {
 	return LinkedAccountData{
-		originCloud: originCloud,
-		targetCloud: targetCloud,
-		state:       linkedAccountState_PROVISIONED_ORIGIN_CLOUD | linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT,
+		OriginCloud: originCloud,
+		TargetCloud: targetCloud,
+		State:       linkedAccountState_PROVISIONED_ORIGIN_CLOUD | linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT,
 	}
 }
 
 func (d LinkedAccountData) HasOrigin() bool {
-	return d.state&linkedAccountState_PROVISIONED_ORIGIN_CLOUD != 0
+	return d.State&linkedAccountState_PROVISIONED_ORIGIN_CLOUD != 0
 }
 
 func (d LinkedAccountData) SetOrigin(originCloud oauth2.Token) LinkedAccountData {
-	d.originCloud = originCloud
-	d.state |= linkedAccountState_PROVISIONED_ORIGIN_CLOUD
+	d.OriginCloud = originCloud
+	d.State |= linkedAccountState_PROVISIONED_ORIGIN_CLOUD
 	return d
 }
 
 func (d LinkedAccountData) Origin() oauth2.Token {
-	return d.originCloud
+	return d.OriginCloud
 }
 
 func (d LinkedAccountData) HasTarget() bool {
-	return d.state&linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT != 0
+	return d.State&linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT != 0
 }
 
 func (d LinkedAccountData) SetTarget(targetCloud oauth2.Token) LinkedAccountData {
-	d.targetCloud = targetCloud
-	d.state |= linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT
+	d.TargetCloud = targetCloud
+	d.State |= linkedAccountState_PROVISIONED_TARGET_CLOUD_ACCOUNT
 	return d
 }
 
 func (d LinkedAccountData) Target() oauth2.Token {
-	return d.targetCloud
-}
-
-func (d LinkedAccountData) State() LinkedAccountDataFlags {
-	return d.state
+	return d.TargetCloud
 }
 
 type LinkedAccount struct {
