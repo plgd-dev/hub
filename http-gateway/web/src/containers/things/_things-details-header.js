@@ -15,6 +15,7 @@ import {
   getThingNotificationKey,
   getResourceRegistrationNotificationKey,
   handleDeleteDevicesErrors,
+  sleep,
 } from './utils'
 import { isNotificationActive, toggleActiveNotification } from './slice'
 import { deviceResourceRegistrationListener } from './websockets'
@@ -79,11 +80,15 @@ export const ThingsDetailsHeader = ({
   }, [isUnregistered, resourceRegistrationObservationWSKey])
 
   const handleOpenDeleteDeviceModal = () => {
-    setDeleteModalOpen(true)
+    if (isMounted.current) {
+      setDeleteModalOpen(true)
+    }
   }
 
   const handleCloseDeleteDeviceModal = () => {
-    setDeleteModalOpen(false)
+    if (isMounted.current) {
+      setDeleteModalOpen(false)
+    }
   }
 
   const handleDeleteDevice = async () => {
@@ -91,6 +96,7 @@ export const ThingsDetailsHeader = ({
     try {
       setDeleting(true)
       await deleteThingsApi([deviceId])
+      await sleep(200)
 
       if (isMounted.current) {
         showSuccessToast({
@@ -100,14 +106,14 @@ export const ThingsDetailsHeader = ({
 
         // Unregister the WS when the device is deleted
         WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
-        setDeleting(false)
-        setDeleteModalOpen(false)
 
         // Redirect to the things page after a deletion
         history.push(`/things`)
       }
     } catch (error) {
-      setDeleting(false)
+      if (isMounted.current) {
+        setDeleting(false)
+      }
       handleDeleteDevicesErrors(error, _, true)
     }
   }

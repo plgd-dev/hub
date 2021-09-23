@@ -1,5 +1,5 @@
 import { hot } from 'react-hot-loader/root'
-import { createContext, useContext, useState, useEffect } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import classNames from 'classnames'
 import { Router } from 'react-router-dom'
@@ -24,9 +24,8 @@ import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
 import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
+import { AppContext } from './app-context'
 import './app.scss'
-
-const AppContext = createContext()
 
 const App = ({ config }) => {
   const {
@@ -44,8 +43,12 @@ const App = ({ config }) => {
 
   // Set the getAccessTokenSilently method to the security singleton
   security.setAccessTokenSilently(getAccessTokenSilently)
-  security.setDefaultAudience(config.audience)
-  security.setHttpGatewayAddress(config.httpGatewayAddress)
+
+  // Set the auth configurations
+  const { webOAuthClient, deviceOAuthClient, ...generalConfig } = config
+  security.setGeneralConfig(generalConfig)
+  security.setWebOAuthConfig(webOAuthClient)
+  security.setDeviceOAuthConfig(deviceOAuthClient)
 
   useEffect(() => {
     if (

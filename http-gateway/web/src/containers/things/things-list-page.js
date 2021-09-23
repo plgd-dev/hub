@@ -19,7 +19,7 @@ import { useThingsList } from './hooks'
 import { ThingsList } from './_things-list'
 import { ThingsListHeader } from './_things-list-header'
 import { deleteThingsApi } from './rest'
-import { handleDeleteDevicesErrors } from './utils'
+import { handleDeleteDevicesErrors, sleep } from './utils'
 import { messages as t } from './things-i18n'
 
 export const ThingsListPage = () => {
@@ -68,6 +68,7 @@ export const ThingsListPage = () => {
     try {
       setDeleting(true)
       await deleteThingsApi(combinedSelectedDevices)
+      await sleep(200)
 
       if (isMounted.current) {
         showSuccessToast({

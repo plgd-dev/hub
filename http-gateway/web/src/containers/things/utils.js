@@ -200,6 +200,9 @@ export const updateThingsDataStatus = (
   })
 }
 
+// Async function for waiting
+export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
 /** Tree Structure utilities **/
 // Shout out to @oskarbauer for creating this script :)
 

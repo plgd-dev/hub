@@ -35,7 +35,7 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
         >
           {_(t.pendingCommands)}
         </MenuItem>
-        <MenuItem
+        {/* <MenuItem
           to="/notifications"
           icon="fa-bell"
           tooltip={collapsed && _(t.notifications)}
@@ -48,7 +48,7 @@ export const Menu = memo(({ collapsed, toggleCollapsed }) => {
           tooltip={collapsed && _(t.configuration)}
         >
           {_(t.configuration)}
-        </MenuItem>
+        </MenuItem> */}
       </div>
       {/* Collapse menu item */}
       <MenuItem

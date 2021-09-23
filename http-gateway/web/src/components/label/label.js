@@ -27,7 +27,7 @@ export const Label = props => {
     ...rest
   } = props
   const dataAttributes = pickBy(props, (_, key) => startsWith(key, 'data-'))
-  const titleClassName = classNames('label-title', {
+  const titleClassName = classNames('label-title', 'no-wrap-text', {
     'has-error': !isEmpty(errorMessage),
   })
   return (
