@@ -80,9 +80,8 @@ export const ThingsList = ({
         Header: _(t.shadowSynchronization),
         accessor: 'metadata.shadowSynchronization',
         Cell: ({ value }) => {
-          const isShadowSynchronizationEnabled = shadowSynchronizationEnabled(
-            value
-          )
+          const isShadowSynchronizationEnabled =
+            shadowSynchronizationEnabled(value)
           return (
             <Badge className={isShadowSynchronizationEnabled ? 'green' : 'red'}>
               {isShadowSynchronizationEnabled ? _(t.enabled) : _(t.disabled)}
@@ -119,6 +118,7 @@ export const ThingsList = ({
             />
           )
         },
+        className: 'actions',
       },
     ],
     [] // eslint-disable-line

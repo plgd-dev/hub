@@ -16,6 +16,7 @@ import { WebSocketEventClient, eventFilters } from '@/common/services'
 import { PendingCommandDetailsModal } from './_pending-command-details-modal'
 import {
   PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
+  EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
   PENDING_COMMANDS_LIST_REFRESH_INTERVAL_MS,
   NEW_PENDING_COMMAND_WS_KEY,
   UPDATE_PENDING_COMMANDS_WS_KEY,
@@ -37,15 +38,19 @@ import './pending-commands.scss'
 
 // This component contains also all the modals and websocket connections, used for
 // interacting with pending commands because it is reused on three different places.
-export const PendingCommandsList = ({ onLoading }) => {
+export const PendingCommandsList = ({ onLoading, embedded, deviceId }) => {
   const { formatMessage: _, formatDate, formatTime } = useIntl()
   const [currentTime, setCurrentTime] = useState(Date.now())
 
-  const { data, loading, error } = usePendingCommandsList()
+  const { data, loading, error } = usePendingCommandsList(deviceId)
   const [canceling, setCanceling] = useState(false)
   const [confirmModalData, setConfirmModalData] = useState(null)
   const [detailsModalData, setDetailsModalData] = useState(null)
   const isMounted = useIsMounted()
+  const deviceIdWsFilters = useMemo(
+    () => (deviceId ? { deviceIdFilter: [deviceId] } : {}),
+    [deviceId]
+  )
 
   useEffect(() => {
     if (error) {
@@ -64,6 +69,7 @@ export const PendingCommandsList = ({ onLoading }) => {
           eventFilters.RESOURCE_RETRIEVE_PENDING,
           eventFilters.DEVICE_METADATA_UPDATE_PENDING,
         ],
+        ...deviceIdWsFilters,
       },
       NEW_PENDING_COMMAND_WS_KEY,
       handleEmitNewPendingCommand
@@ -79,6 +85,7 @@ export const PendingCommandsList = ({ onLoading }) => {
           eventFilters.RESOURCE_RETRIEVED,
           eventFilters.DEVICE_METADATA_UPDATED,
         ],
+        ...deviceIdWsFilters,
       },
       UPDATE_PENDING_COMMANDS_WS_KEY,
       handleEmitUpdatedCommandEvents
@@ -88,7 +95,7 @@ export const PendingCommandsList = ({ onLoading }) => {
       WebSocketEventClient.unsubscribe(NEW_PENDING_COMMAND_WS_KEY)
       WebSocketEventClient.unsubscribe(UPDATE_PENDING_COMMANDS_WS_KEY)
     }
-  }, [])
+  }, [deviceIdWsFilters])
 
   const onViewClick = ({ content, commandType }) => {
     setDetailsModalData({ content, commandType })
@@ -124,7 +131,9 @@ export const PendingCommandsList = ({ onLoading }) => {
   const loadingPendingCommands = loading || canceling
 
   useEffect(() => {
-    onLoading(loadingPendingCommands)
+    if (onLoading) {
+      onLoading(loadingPendingCommands)
+    }
   }, [loadingPendingCommands]) // eslint-disable-line
 
   useEffect(() => {
@@ -138,149 +147,156 @@ export const PendingCommandsList = ({ onLoading }) => {
   }, [])
 
   const columns = useMemo(
-    () => [
-      {
-        Header: _(t.type),
-        accessor: 'commandType',
-        disableSortBy: true,
-        Cell: ({ value, row }) => {
-          const {
-            original: {
-              auditContext: { correlationId },
-              resourceId: { deviceId, href },
-              content,
-            },
-          } = row
+    () => {
+      const cols = [
+        {
+          Header: _(t.type),
+          accessor: 'commandType',
+          disableSortBy: true,
+          Cell: ({ value, row }) => {
+            const {
+              original: {
+                auditContext: { correlationId },
+                resourceId: { deviceId, href },
+                content,
+              },
+            } = row
 
-          if (!content) {
-            return <span className="no-wrap-text">{_(t[value])}</span>
-          }
+            if (!content) {
+              return <span className="no-wrap-text">{_(t[value])}</span>
+            }
 
-          return (
-            <span
-              className="no-wrap-text link"
-              onClick={() =>
-                onViewClick({
-                  deviceId,
-                  href,
-                  correlationId,
-                  content,
-                  commandType: value,
-                })
-              }
-            >
-              {_(t[value])}
-            </span>
-          )
+            return (
+              <span
+                className="no-wrap-text link"
+                onClick={() =>
+                  onViewClick({
+                    deviceId,
+                    href,
+                    correlationId,
+                    content,
+                    commandType: value,
+                  })
+                }
+              >
+                {_(t[value])}
+              </span>
+            )
+          },
         },
-      },
-      {
-        Header: _(t.deviceId),
-        accessor: 'resourceId.deviceId',
-        disableSortBy: true,
-        Cell: ({ value }) => {
-          return <span className="no-wrap-text">{value}</span>
+        {
+          Header: _(t.resourceHref),
+          accessor: 'resourceId.href',
+          disableSortBy: true,
+          Cell: ({ value }) => {
+            return <span className="no-wrap-text">{value}</span>
+          },
         },
-      },
-      {
-        Header: _(t.resourceHref),
-        accessor: 'resourceId.href',
-        disableSortBy: true,
-        Cell: ({ value }) => {
-          return <span className="no-wrap-text">{value}</span>
-        },
-      },
-      {
-        Header: _(t.status),
-        accessor: 'status',
-        disableSortBy: true,
-        Cell: ({ value, row }) => {
-          const { validUntil } = row.original
-          const { color, label } = getPendingCommandStatusColorAndLabel(
-            value,
-            validUntil,
-            currentTime
-          )
-
-          if (!value) {
-            return <Badge className={color}>{_(label)}</Badge>
-          }
-
-          return (
-            <OverlayTrigger
-              placement="top"
-              overlay={<Tooltip className="plgd-tooltip">{value}</Tooltip>}
-            >
-              <Badge className={color}>{_(label)}</Badge>
-            </OverlayTrigger>
-          )
-        },
-      },
-      {
-        Header: _(t.validUntil),
-        accessor: 'validUntil',
-        disableSortBy: true,
-        Cell: ({ value }) => {
-          if (value === '0') return _(t.forever)
-
-          const date = new Date(
-            time(value)
-              .from('ns')
-              .to('ms').value
-          )
-          const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
-            date,
-            timeFormat
-          )}`
-          const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
-            date,
-            timeFormatLong
-          )}`
-
-          return (
-            <OverlayTrigger
-              placement="top"
-              overlay={
-                <Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>
-              }
-            >
-              <span className="no-wrap-text tooltiped-text">{visibleDate}</span>
-            </OverlayTrigger>
-          )
-        },
-      },
-      {
-        Header: _(t.actions),
-        accessor: 'actions',
-        disableSortBy: true,
-        Cell: ({ row }) => {
-          const {
-            original: {
-              auditContext: { correlationId },
-              resourceId: { deviceId, href },
-              status,
+        {
+          Header: _(t.status),
+          accessor: 'status',
+          disableSortBy: true,
+          Cell: ({ value, row }) => {
+            const { validUntil } = row.original
+            const { color, label } = getPendingCommandStatusColorAndLabel(
+              value,
               validUntil,
-            },
-          } = row
+              currentTime
+            )
 
-          if (status || hasCommandExpired(validUntil, currentTime)) {
-            return <div className="no-action" />
-          }
+            if (!value) {
+              return <Badge className={color}>{_(label)}</Badge>
+            }
 
-          return (
-            <div
-              className="dropdown action-button"
-              onClick={() => onCancelClick({ deviceId, href, correlationId })}
-              title={_(t.cancel)}
-            >
-              <button className="dropdown-toggle btn btn-empty">
-                <i className="fas fa-times" />
-              </button>
-            </div>
-          )
+            return (
+              <OverlayTrigger
+                placement="top"
+                overlay={<Tooltip className="plgd-tooltip">{value}</Tooltip>}
+              >
+                <Badge className={color}>{_(label)}</Badge>
+              </OverlayTrigger>
+            )
+          },
         },
-      },
-    ],
+        {
+          Header: _(t.validUntil),
+          accessor: 'validUntil',
+          disableSortBy: true,
+          Cell: ({ value }) => {
+            if (value === '0') return _(t.forever)
+
+            const date = new Date(time(value).from('ns').to('ms').value)
+            const visibleDate = `${formatDate(date, dateFormat)} ${formatTime(
+              date,
+              timeFormat
+            )}`
+            const tooltipDate = `${formatDate(date, dateFormat)} ${formatTime(
+              date,
+              timeFormatLong
+            )}`
+
+            return (
+              <OverlayTrigger
+                placement="top"
+                overlay={
+                  <Tooltip className="plgd-tooltip">{tooltipDate}</Tooltip>
+                }
+              >
+                <span className="no-wrap-text tooltiped-text">
+                  {visibleDate}
+                </span>
+              </OverlayTrigger>
+            )
+          },
+        },
+        {
+          Header: _(t.actions),
+          accessor: 'actions',
+          disableSortBy: true,
+          Cell: ({ row }) => {
+            const {
+              original: {
+                auditContext: { correlationId },
+                resourceId: { deviceId, href },
+                status,
+                validUntil,
+              },
+            } = row
+
+            if (status || hasCommandExpired(validUntil, currentTime)) {
+              return <div className="no-action" />
+            }
+
+            return (
+              <div
+                className="dropdown action-button"
+                onClick={() => onCancelClick({ deviceId, href, correlationId })}
+                title={_(t.cancel)}
+              >
+                <button className="dropdown-toggle btn btn-empty">
+                  <i className="fas fa-times" />
+                </button>
+              </div>
+            )
+          },
+          className: 'actions',
+        },
+      ]
+
+      // Only show device id column when not on the device details
+      if (!deviceId) {
+        cols.splice(1, 0, {
+          Header: _(t.deviceId),
+          accessor: 'resourceId.deviceId',
+          disableSortBy: true,
+          Cell: ({ value }) => {
+            return <span className="no-wrap-text">{value}</span>
+          },
+        })
+      }
+
+      return cols
+    },
     [currentTime] // eslint-disable-line
   )
 
@@ -296,7 +312,11 @@ export const PendingCommandsList = ({ onLoading }) => {
           },
         ]}
         autoFillEmptyRows
-        defaultPageSize={PENDING_COMMANDS_DEFAULT_PAGE_SIZE}
+        defaultPageSize={
+          embedded
+            ? EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE
+            : PENDING_COMMANDS_DEFAULT_PAGE_SIZE
+        }
         getColumnProps={column => {
           if (column.id === 'actions') {
             return { style: { textAlign: 'center' } }
@@ -304,6 +324,7 @@ export const PendingCommandsList = ({ onLoading }) => {
 
           return {}
         }}
+        enablePagination={!embedded}
       />
 
       <PendingCommandDetailsModal
@@ -331,5 +352,13 @@ export const PendingCommandsList = ({ onLoading }) => {
 }
 
 PendingCommandsList.propTypes = {
-  onLoading: PropTypes.func.isRequired,
+  onLoading: PropTypes.func,
+  embedded: PropTypes.bool,
+  deviceId: PropTypes.string,
+}
+
+PendingCommandsList.defaultProps = {
+  onLoading: null,
+  embedded: false,
+  deviceId: null,
 }

@@ -16,3 +16,35 @@
     margin: 0;
   }
 }
+
+#pending-commands-expandable-box {
+  position: fixed;
+  bottom: 50px;
+  right: 0;
+  width: calc(100% - 200px);
+  height: 230px;
+  overflow: hidden;
+  z-index: 3;
+  background-color: $light_100;
+
+  .plgd-table table.table thead th {
+    height: 30px;
+  }
+
+  .plgd-table table.table tbody tr, .plgd-table table.table tbody tr td {
+    height: 40px;
+  }
+}
+
+#app.collapsed {
+  #pending-commands-expandable-box {
+    width: calc(100% - 55px);
+  }
+}
+
+.expander-button {
+  i {
+    margin-left: 12px;
+    font-size: 10px;
+  }
+}

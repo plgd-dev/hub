@@ -51,6 +51,12 @@ $table_row_height: 60px;
             }
           }
         }
+
+        &.actions {
+          .th-div {
+            justify-content: center;
+          }
+        }
       }
     }
 
@@ -66,11 +72,13 @@ $table_row_height: 60px;
 
     &.table-striped {
       tbody {
-        tr:nth-of-type(odd), tr.odd {
+        tr:nth-of-type(odd),
+        tr.odd {
           background-color: $light_100;
         }
 
-        tr:nth-of-type(even), tr.even {
+        tr:nth-of-type(even),
+        tr.even {
           background-color: rgba($secondary_20, 0.4);
         }
       }

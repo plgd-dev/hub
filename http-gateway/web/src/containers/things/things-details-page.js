@@ -11,6 +11,7 @@ import { useIsMounted } from '@/common/hooks'
 import { messages as menuT } from '@/components/menu/menu-i18n'
 import { showSuccessToast } from '@/components/toast'
 import { useAppConfig } from '@/containers/app'
+import { PendingCommandsExpandableList } from '@/containers/pending-commands'
 
 import { ThingsDetails } from './_things-details'
 import { ThingsResources } from './_things-resources'
@@ -371,6 +372,8 @@ export const ThingsDetailsPage = () => {
         shadowSyncLoading={shadowSyncLoading}
         setShadowSynchronization={setShadowSynchronization}
       />
+
+      <PendingCommandsExpandableList deviceId={id} />
 
       <ThingsResources
         data={resources}
