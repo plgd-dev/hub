@@ -8,19 +8,21 @@ import { store } from '@/store'
 import { history } from '@/store/history'
 import { IntlProvider } from '@/components/intl-provider'
 
+import { DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'
 
-fetch('/auth_config.json')
+fetch('/web_configuration.json')
   .then(response => response.json())
   .then(config => {
-    if (
-      !config.clientID ||
-      !config.domain ||
-      !config.audience ||
-      !config.httpGatewayAddress
-    ) {
+    const clientID = config?.webOAuthClient?.clientID
+    const audience = config?.webOAuthClient?.audience
+    const scopes = config?.webOAuthClient?.scopes?.join?.(',') || ''
+    const httpGatewayAddress = config.httpGatewayAddress
+    const domain = config.domain
+
+    if (!clientID || !domain || !audience || !httpGatewayAddress) {
       throw new Error(
-        'clientID, domain, audience and httpGatewayAddress must be set in auth_config.json'
+        'clientID, domain, audience and httpGatewayAddress must be set in webOAuthClient of web_configuration.json'
       )
     }
 
@@ -30,16 +32,26 @@ fetch('/auth_config.json')
         history.replace(appState?.returnTo || '/')
       }
 
+      // When the URL contains a get parameter called `code` and the pathname is set to `/things`,
+      // that means we were redirected from the get auth code endpoint and we must not render the app,
+      // only set the code to the session storage, so that the caller can process it.
+      const urlParams = new URLSearchParams(window.location.search)
+      const code = urlParams.get('code')
+      if (window.location.pathname === '/things' && code) {
+        sessionStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
+        return null
+      }
+
       return (
         <Provider store={store}>
           <IntlProvider>
             <Auth0Provider
-              domain={config.domain}
-              clientId={config.clientID}
+              domain={domain}
+              clientId={clientID}
               redirectUri={window.location.origin}
               onRedirectCallback={onRedirectCallback}
-              audience={config.audience}
-              scope={config.scope}
+              audience={audience}
+              scope={scopes}
             >
               <App config={config} />
             </Auth0Provider>
@@ -62,7 +74,5 @@ fetch('/auth_config.json')
   .catch(error => {
     const rootDiv = document.getElementById('root')
 
-    rootDiv.innerHTML = `<div class="client-error-message">${
-      error.message
-    }</div>`
+    rootDiv.innerHTML = `<div class="client-error-message">${error.message}</div>`
   })
