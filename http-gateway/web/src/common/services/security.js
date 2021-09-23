@@ -1,6 +1,7 @@
 let getAccessTokenSilently = null
 let defaultAudience = null
 let httpGatewayAddress = null
+let deviceOauthConfig = {}
 
 // This singleton contains the method getAccessTokenSilently exposed globally, so that we can use this in our interceptors.
 export const security = {
@@ -10,4 +11,6 @@ export const security = {
   setDefaultAudience: audience => (defaultAudience = audience),
   getHttpGatewayAddress: () => httpGatewayAddress,
   setHttpGatewayAddress: address => (httpGatewayAddress = address),
+  getDeviceOauthConfig: () => deviceOauthConfig,
+  setDeviceOauthConfig: config => (deviceOauthConfig = config),
 }

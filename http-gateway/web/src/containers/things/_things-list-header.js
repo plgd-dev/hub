@@ -6,6 +6,7 @@ import PropTypes from 'prop-types'
 import { useEmitter } from '@/common/hooks'
 import { Button } from '@/components/button'
 import { Switch } from '@/components/switch'
+import { ProvisionNewDevice } from './provision-new-device'
 import {
   THINGS_STATUS_WS_KEY,
   THINGS_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY,
@@ -38,6 +39,7 @@ export const ThingsListHeader = ({ loading, refresh }) => {
 
   return (
     <div className="d-flex align-items-center">
+      <ProvisionNewDevice />
       <Button
         disabled={numberOfChanges <= 0 || loading}
         onClick={refreshThings}

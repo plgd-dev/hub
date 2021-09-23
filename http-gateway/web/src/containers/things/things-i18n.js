@@ -9,6 +9,10 @@ export const messages = defineMessages({
     id: 'things.offline',
     defaultMessage: 'offline',
   },
+  device: {
+    id: 'things.device',
+    defaultMessage: 'Device',
+  },
   name: {
     id: 'things.name',
     defaultMessage: 'Name',
@@ -356,5 +360,41 @@ export const messages = defineMessages({
   default: {
     id: 'things.default',
     defaultMessage: 'Default',
+  },
+  cancel: {
+    id: 'things.cancel',
+    defaultMessage: 'Cancel',
+  },
+  close: {
+    id: 'things.close',
+    defaultMessage: 'Close',
+  },
+  enterDeviceId: {
+    id: 'things.enterDeviceId',
+    defaultMessage: 'Enter device ID',
+  },
+  getCode: {
+    id: 'things.getCode',
+    defaultMessage: 'Get Code',
+  },
+  back: {
+    id: 'things.back',
+    defaultMessage: 'Back',
+  },
+  provisionNewDevice: {
+    id: 'things.provisionNewDevice',
+    defaultMessage: 'Provision new device',
+  },
+  deviceAuthCodeError: {
+    id: 'things.deviceAuthCodeError',
+    defaultMessage: 'Device Authorization Code Error',
+  },
+  authorizationCode: {
+    id: 'things.authorizationCode',
+    defaultMessage: 'Authorization Code',
+  },
+  authorizationProvider: {
+    id: 'things.authorizationProvider',
+    defaultMessage: 'Authorization Provider',
   },
 })

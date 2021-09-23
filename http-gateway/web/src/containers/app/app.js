@@ -1,5 +1,5 @@
 import { hot } from 'react-hot-loader/root'
-import { createContext, useContext, useState, useEffect } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import classNames from 'classnames'
 import { Router } from 'react-router-dom'
@@ -24,9 +24,8 @@ import { InitServices } from '@/common/services/init-services'
 import appConfig from '@/config'
 import { fetchApi } from '@/common/services'
 import { messages as t } from './app-i18n'
+import { AppContext } from './app-context'
 import './app.scss'
-
-const AppContext = createContext()
 
 const App = ({ config }) => {
   const {
@@ -46,6 +45,10 @@ const App = ({ config }) => {
   security.setAccessTokenSilently(getAccessTokenSilently)
   security.setDefaultAudience(config.audience)
   security.setHttpGatewayAddress(config.httpGatewayAddress)
+  security.setDeviceOauthConfig({
+    ...config.deviceOauthClient,
+    domain: config.domain,
+  })
 
   useEffect(() => {
     if (
