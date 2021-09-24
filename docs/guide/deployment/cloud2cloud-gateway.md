@@ -109,13 +109,13 @@ clients:
 
 ### Run docker image
 
-You can run the plgd/cloud2cloud image using certificates and configuration file in the folder you made certificates in.
+You can run the plgd/cloud2cloud-gateway image using certificates and configuration file in the folder you made certificates in.
 
 ```bash
 docker run -d --network=host \
-  --name=cloud2cloud \
+  --name=cloud2cloud-gateway \
   -v $(pwd)/.tmp/certs:/data/certs \
-  -v $(pwd)/cloud2cloud.yaml:/data/cloud2cloud.yaml \
+  -v $(pwd)/cloud2cloud-gateway.yaml:/data/cloud2cloud-gateway.yaml \
   plgd/cloud2cloud-gateway:latest --config=/data/cloud2cloud-gateway.yaml
 ```
 
