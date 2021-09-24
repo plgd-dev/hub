@@ -186,6 +186,26 @@ func newResourceAggregateClient(config ResourceAggregateConfig, logger log.Logge
 	return raClient, fl.ToFunction(), nil
 }
 
+func newDevicesSubscription(ctx context.Context, config Config, raClient raService.ResourceAggregateClient, logger log.Logger) (*DevicesSubscription, func(), error) {
+	var fl fn.FuncList
+
+	grpcClient, closeGrpcClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create to grpc-gateway client: %w", err)
+	}
+	fl.AddFunc(closeGrpcClient)
+
+	sub, closeSub, err := newSubscriber(config.Clients.Eventbus.NATS, logger)
+	if err != nil {
+		fl.Execute()
+		return nil, nil, fmt.Errorf("cannot create subscriber: %w", err)
+	}
+	fl.AddFunc(closeSub)
+
+	devicesSubscription := NewDevicesSubscription(ctx, grpcClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
+	return devicesSubscription, fl.ToFunction(), nil
+}
+
 func parseOAuthPaths(oauthCallback string) (*url.URL, error) {
 	oauthURL, err := url.Parse(oauthCallback)
 	if err != nil {
@@ -214,23 +234,15 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeRaClient)
 
-	grpcClient, closeGrpcClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger)
-	if err != nil {
-		cleanUp.Execute()
-		return nil, fmt.Errorf("cannot create to resource directory client: %w", err)
-	}
-	listener.AddCloseFunc(closeGrpcClient)
-
-	sub, closeSub, err := newSubscriber(config.Clients.Eventbus.NATS, logger)
-	if err != nil {
-		cleanUp.Execute()
-		return nil, fmt.Errorf("cannot create subscriber: %w", err)
-	}
-	listener.AddCloseFunc(closeSub)
-
 	ctx, cancel := context.WithCancel(ctx)
 	cleanUp.AddFunc(cancel)
-	devicesSubscription := NewDevicesSubscription(ctx, grpcClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
+	devicesSubscription, closeDevSub, err := newDevicesSubscription(ctx, config, raClient, logger)
+	if err != nil {
+		cleanUp.Execute()
+		return nil, fmt.Errorf("cannot create devices subscription subscriber: %w", err)
+	}
+	listener.AddCloseFunc(closeDevSub)
+
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 
