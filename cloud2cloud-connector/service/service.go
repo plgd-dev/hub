@@ -12,6 +12,7 @@ import (
 	pbAS "github.com/plgd-dev/cloud/authorization/pb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/store/mongodb"
 	"github.com/plgd-dev/cloud/cloud2cloud-connector/uri"
+	"github.com/plgd-dev/cloud/grpc-gateway/pb"
 	pbGRPC "github.com/plgd-dev/cloud/grpc-gateway/pb"
 	"github.com/plgd-dev/cloud/pkg/fn"
 	"github.com/plgd-dev/cloud/pkg/log"
@@ -155,6 +156,21 @@ func newStore(ctx context.Context, config mongodb.Config, logger log.Logger) (*S
 	return store, fl.ToFunction(), nil
 }
 
+func newGrpcGatewayClient(config GrpcGatewayConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
+	var fl fn.FuncList
+	grpcConn, err := grpcClient.New(config.Connection, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
+	}
+	fl.AddFunc(func() {
+		if err := grpcConn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
+			logger.Errorf("error occurs during closing of the connection to resource-aggregate: %w", err)
+		}
+	})
+	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
+	return grpcClient, fl.ToFunction(), nil
+}
+
 func newResourceAggregateClient(config ResourceAggregateConfig, logger log.Logger) (raService.ResourceAggregateClient, func(), error) {
 	var fl fn.FuncList
 	raConn, err := grpcClient.New(config.Connection, logger)
@@ -168,21 +184,6 @@ func newResourceAggregateClient(config ResourceAggregateConfig, logger log.Logge
 	})
 	raClient := raService.NewResourceAggregateClient(raConn.GRPC())
 	return raClient, fl.ToFunction(), nil
-}
-
-func newResourceDirectoryClient(config ResourceDirectoryConfig, logger log.Logger) (pbGRPC.GrpcGatewayClient, func(), error) {
-	var fl fn.FuncList
-	rdConn, err := grpcClient.New(config.Connection, logger)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot connect to resource directory: %w", err)
-	}
-	fl.AddFunc(func() {
-		if err := rdConn.Close(); err != nil && !kitNetGrpc.IsContextCanceled(err) {
-			logger.Errorf("error occurs during closing of the connection to resource-directory: %w", err)
-		}
-	})
-	rdClient := pbGRPC.NewGrpcGatewayClient(rdConn.GRPC())
-	return rdClient, fl.ToFunction(), nil
 }
 
 func parseOAuthPaths(oauthCallback string) (*url.URL, error) {
@@ -213,12 +214,12 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(closeRaClient)
 
-	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, logger)
+	grpcClient, closeGrpcClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, logger)
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create to resource directory client: %w", err)
 	}
-	listener.AddCloseFunc(closeRdClient)
+	listener.AddCloseFunc(closeGrpcClient)
 
 	sub, closeSub, err := newSubscriber(config.Clients.Eventbus.NATS, logger)
 	if err != nil {
@@ -229,7 +230,7 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 
 	ctx, cancel := context.WithCancel(ctx)
 	cleanUp.AddFunc(cancel)
-	devicesSubscription := NewDevicesSubscription(ctx, rdClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
+	devicesSubscription := NewDevicesSubscription(ctx, grpcClient, raClient, sub, config.Clients.Subscription.HTTP.ReconnectInterval)
 	taskProcessor := NewTaskProcessor(raClient, config.TaskProcessor.MaxParallel, config.TaskProcessor.CacheSize,
 		config.TaskProcessor.Timeout, config.TaskProcessor.Delay)
 

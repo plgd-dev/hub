@@ -58,8 +58,8 @@ func MakeConfig(t *testing.T) service.Config {
 
 	cfg.Clients.AuthServer.Connection = config.MakeGrpcClientConfig(config.AUTH_HOST)
 	cfg.Clients.Eventbus.NATS = config.MakeSubscriberConfig()
+	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_HOST)
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)
-	cfg.Clients.ResourceDirectory.Connection = config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST)
 	cfg.Clients.Storage = MakeStorageConfig()
 	cfg.Clients.Subscription.HTTP.ReconnectInterval = time.Second * 10
 	cfg.Clients.Subscription.HTTP.ResubscribeInterval = time.Second

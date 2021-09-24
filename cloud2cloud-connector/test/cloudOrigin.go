@@ -78,8 +78,8 @@ func SetUpCloudWithConnector(t *testing.T) (TearDown func()) {
 	c2cConnectorCfg.APIs.HTTP.Authorization.Config.RedirectURL = C2C_CONNECTOR_OAUTH_CALLBACK
 	c2cConnectorCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
 	c2cConnectorCfg.Clients.AuthServer.Connection.Addr = AUTH_HOST
+	c2cConnectorCfg.Clients.GrpcGateway.Connection.Addr = GRPC_GATEWAY_HOST
 	c2cConnectorCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
-	c2cConnectorCfg.Clients.ResourceDirectory.Connection.Addr = RESOURCE_DIRECTORY_HOST
 	c2cConnectorCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	c2cConnectorShutdown := New(t, c2cConnectorCfg)
 

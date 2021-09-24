@@ -39,18 +39,18 @@ func New(ctx context.Context, config Config, logger log.Logger) (*Server, error)
 	}
 	listener.AddCloseFunc(validator.Close)
 
-	rdConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger)
+	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource directory: %w", err)
 	}
 	listener.AddCloseFunc(func() {
-		err := rdConn.Close()
+		err := grpcConn.Close()
 		if err != nil {
 			logger.Errorf("error occurs during close connection to resource-directory: %v", err)
 		}
 	})
-	resourceDirectoryClient := pb.NewGrpcGatewayClient(rdConn.GRPC())
-	client := client.New(resourceDirectoryClient)
+	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
+	client := client.New(grpcClient)
 
 	whiteList := []kitNetHttp.RequestMatcher{
 		{

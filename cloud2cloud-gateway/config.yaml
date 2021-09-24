@@ -7,7 +7,7 @@ apis:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
-      clientCertificateRequired: false
+      clientCertificateRequired: true
     authorization:
       authority: ""
       audience: ""
