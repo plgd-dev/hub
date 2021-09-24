@@ -134,6 +134,60 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 	return nil
 }
 
+func toConnectionStatus(status string) commands.ConnectionStatus_Status {
+	if strings.ToLower(status) == "online" {
+		return commands.ConnectionStatus_ONLINE
+	}
+	return commands.ConnectionStatus_OFFLINE
+}
+
+func (p *pullDevicesHandler) triggerTaskForDevice(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud, dev RetrieveDeviceWithLinksResponse) error {
+	deviceID := dev.Device.Device.ID
+	if linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
+		p.triggerTask(Task{
+			taskType:      TaskType_PullDevice,
+			linkedAccount: linkedAccount,
+			linkedCloud:   linkedCloud,
+			deviceID:      deviceID,
+		})
+		return nil
+	}
+
+	if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
+		return publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, p.subscriptionManager,
+			dev, p.triggerTask)
+	}
+
+	if _, ok := p.s.LoadDeviceSubscription(linkedCloud.ID, linkedAccount.ID, deviceID); ok {
+		return nil
+	}
+	p.triggerTask(Task{
+		taskType:      TaskType_SubscribeToDevice,
+		linkedAccount: linkedAccount,
+		linkedCloud:   linkedCloud,
+		deviceID:      deviceID,
+	})
+	return nil
+}
+
+func (p *pullDevicesHandler) deleteDevice(ctx context.Context, userID, deviceID string) []error {
+	var errors []error
+	err := p.devicesSubscription.Delete(userID, deviceID)
+	if err != nil {
+		errors = append(errors, fmt.Errorf("cannot delete device %v from devicesSubscription: %w", deviceID, err))
+	}
+	resp, err := p.asClient.DeleteDevices(ctx, &pbAS.DeleteDevicesRequest{
+		DeviceIds: []string{deviceID},
+	})
+	if err != nil {
+		errors = append(errors, fmt.Errorf("cannot delete device %v: %w", deviceID, err))
+	}
+	if err == nil && len(resp.DeviceIds) != 1 {
+		errors = append(errors, fmt.Errorf("cannot remove device %v", deviceID))
+	}
+	return errors
+}
+
 func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	var devices []RetrieveDeviceWithLinksResponse
 	err := Get(ctx, linkedCloud.Endpoint.URL+"/devices", linkedAccount, linkedCloud, &devices)
@@ -169,79 +223,32 @@ func (p *pullDevicesHandler) getDevicesWithResourceLinks(ctx context.Context, li
 				}
 			}
 			delete(registeredDevices, deviceID)
-			if strings.ToLower(dev.Status) == "online" {
-				_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
-					DeviceId: deviceID,
-					Update: &commands.UpdateDeviceMetadataRequest_Status{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_ONLINE,
-						},
+			_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
+				DeviceId: deviceID,
+				Update: &commands.UpdateDeviceMetadataRequest_Status{
+					Status: &commands.ConnectionStatus{
+						Value: toConnectionStatus(dev.Status),
 					},
-					CommandMetadata: &commands.CommandMetadata{
-						ConnectionId: linkedAccount.ID,
-						Sequence:     uint64(time.Now().UnixNano()),
-					},
-				})
-			} else {
-				_, err = p.raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
-					DeviceId: deviceID,
-					Update: &commands.UpdateDeviceMetadataRequest_Status{
-						Status: &commands.ConnectionStatus{
-							Value: commands.ConnectionStatus_OFFLINE,
-						},
-					},
-					CommandMetadata: &commands.CommandMetadata{
-						ConnectionId: linkedAccount.ID,
-						Sequence:     uint64(time.Now().UnixNano()),
-					},
-				})
-			}
+				},
+				CommandMetadata: &commands.CommandMetadata{
+					ConnectionId: linkedAccount.ID,
+					Sequence:     uint64(time.Now().UnixNano()),
+				},
+			})
 			if err != nil {
 				errors = append(errors, fmt.Errorf("cannot update cloud status: %v: %w", deviceID, err))
 			}
 		}
 		for deviceID := range registeredDevices {
-			err := p.devicesSubscription.Delete(userID, deviceID)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot delete device %v from devicesSubscription: %w", deviceID, err))
-			}
-			resp, err := p.asClient.DeleteDevices(ctx, &pbAS.DeleteDevicesRequest{
-				DeviceIds: []string{deviceID},
-			})
-			if err != nil {
-				errors = append(errors, fmt.Errorf("cannot delete device %v: %w", deviceID, err))
-			}
-			if err == nil && len(resp.DeviceIds) != 1 {
-				errors = append(errors, fmt.Errorf("cannot remove device %v", deviceID))
+			if err := p.deleteDevice(ctx, deviceID, userID); err != nil {
+				errors = append(errors, err...)
 			}
 		}
 	}
 
 	for _, dev := range devices {
-		deviceID := dev.Device.Device.ID
-		if linkedCloud.SupportedSubscriptionsEvents.StaticDeviceEvents {
-			p.triggerTask(Task{
-				taskType:      TaskType_PullDevice,
-				linkedAccount: linkedAccount,
-				linkedCloud:   linkedCloud,
-				deviceID:      deviceID,
-			})
-		} else if linkedCloud.SupportedSubscriptionsEvents.NeedPullDevice() {
-			err := publishDeviceResources(ctx, p.raClient, deviceID, linkedAccount, linkedCloud, p.subscriptionManager, dev, p.triggerTask)
-			if err != nil {
-				errors = append(errors, err)
-				continue
-			}
-		} else {
-			if _, ok := p.s.LoadDeviceSubscription(linkedCloud.ID, linkedAccount.ID, deviceID); ok {
-				continue
-			}
-			p.triggerTask(Task{
-				taskType:      TaskType_SubscribeToDevice,
-				linkedAccount: linkedAccount,
-				linkedCloud:   linkedCloud,
-				deviceID:      deviceID,
-			})
+		if err := p.triggerTaskForDevice(ctx, linkedAccount, linkedCloud, dev); err != nil {
+			errors = append(errors, err)
 		}
 	}
 	if len(errors) > 0 {
