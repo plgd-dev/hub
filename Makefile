@@ -83,7 +83,7 @@ env: clean certificates nats mongo privateKeys
 		sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'; \
 	fi
 	docker build ./device-simulator --network=host -t device-simulator --target service
-	docker run -d --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
+	docker run -d --privileged --name=devsim --network=host -t device-simulator devsim-$(SIMULATOR_NAME_SUFFIX)
 
 define RUN-TESTS-IN-DIRECTORY
 	echo "Executing tests from $(1) directory"; \
