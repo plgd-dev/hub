@@ -77,7 +77,7 @@ paths:
         - $ref: '#/components/parameters/cloudId'
       responses:
         307:
-          description: redirect to get autorization code
+          description: redirect to get authorization code
       security:
       - c2c_connector_auth:
         - empty
