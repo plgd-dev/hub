@@ -15,7 +15,8 @@ import (
 
 func MakeConfig(t *testing.T) service.Config {
 	var cfg service.Config
-	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.RESOURCE_DIRECTORY_HOST)
+	cfg.APIs.GRPC.Config = config.MakeGrpcServerConfig(config.RESOURCE_DIRECTORY_HOST)
+	cfg.APIs.GRPC.OwnerCacheExpiration = time.Minute
 
 	cfg.Clients.AuthServer.CacheExpiration = time.Millisecond * 50
 	cfg.Clients.AuthServer.PullFrequency = time.Millisecond * 200

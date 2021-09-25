@@ -255,7 +255,6 @@ func (c *OwnerCache) Update(ctx context.Context) (added []string, removed []stri
 }
 
 // GetDevices provides the owner of the cached device. If the cache does not expire, the cache expiration is extended.
-// When ok == false you need to Update to refresh cache.
 func (c *OwnerCache) GetDevices(ctx context.Context) (devices []string, err error) {
 	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, c.ownerClaim)
 	if err != nil {

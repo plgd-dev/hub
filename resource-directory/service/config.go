@@ -37,7 +37,7 @@ func (c *Config) Validate() error {
 
 // Config represent application configuration
 type APIsConfig struct {
-	GRPC server.Config `yaml:"grpc" json:"grpc"`
+	GRPC GRPCConfig `yaml:"grpc" json:"grpc"`
 }
 
 func (c *APIsConfig) Validate() error {
@@ -45,6 +45,18 @@ func (c *APIsConfig) Validate() error {
 		return fmt.Errorf("grpc.%w", err)
 	}
 	return nil
+}
+
+type GRPCConfig struct {
+	OwnerCacheExpiration time.Duration `yaml:"ownerCacheExpiration" json:"ownerCacheExpiration"`
+	server.Config        `yaml:",inline" json:",inline"`
+}
+
+func (c *GRPCConfig) Validate() error {
+	if c.OwnerCacheExpiration <= 0 {
+		return fmt.Errorf("ownerCacheExpiration('%v')", c.OwnerCacheExpiration)
+	}
+	return c.Config.Validate()
 }
 
 type ClientsConfig struct {
