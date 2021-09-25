@@ -452,49 +452,34 @@ func (s *Sub) DropDeduplicateEvents() {
 
 func (s *Sub) ProcessEvent(e *pb.Event) error {
 	s.dropExpiredDeduplicateEvents(time.Now())
+	var evToCheck event
 	switch ev := e.GetType().(type) {
 	case (*pb.Event_DeviceRegistered_):
 		return s.onRegisteredEvent(ev.DeviceRegistered)
 	case (*pb.Event_DeviceUnregistered_):
 		return s.onUnregisteredEvent(ev.DeviceUnregistered)
 	case (*pb.Event_ResourcePublished):
-		if s.isDuplicatedEvent(ev.ResourcePublished) {
-			return nil
-		}
-		return s.send(e)
+		evToCheck = ev.ResourcePublished
 	case (*pb.Event_ResourceChanged):
-		if s.isDuplicatedEvent(ev.ResourceChanged) {
-			return nil
-		}
-		return s.send(e)
+		evToCheck = ev.ResourceChanged
 	case (*pb.Event_ResourceUpdatePending):
-		if s.isDuplicatedEvent(ev.ResourceUpdatePending) {
-			return nil
-		}
-		return s.send(e)
+		evToCheck = ev.ResourceUpdatePending
 	case (*pb.Event_ResourceRetrievePending):
-		if s.isDuplicatedEvent(ev.ResourceRetrievePending) {
-			return nil
-		}
-		return s.send(e)
+		evToCheck = ev.ResourceRetrievePending
 	case (*pb.Event_ResourceDeletePending):
-		if s.isDuplicatedEvent(ev.ResourceDeletePending) {
-			return nil
-		}
-		return s.send(e)
+		evToCheck = ev.ResourceDeletePending
 	case (*pb.Event_ResourceCreatePending):
-		if s.isDuplicatedEvent(ev.ResourceCreatePending) {
-			return nil
-		}
-		return s.send(e)
+		evToCheck = ev.ResourceCreatePending
 	case (*pb.Event_DeviceMetadataUpdatePending):
-		if s.isDuplicatedEvent(ev.DeviceMetadataUpdatePending) {
-			return nil
-		}
-		return s.send(e)
+		evToCheck = ev.DeviceMetadataUpdatePending
 	default:
 		return s.send(e)
 	}
+
+	if evToCheck != nil && s.isDuplicatedEvent(evToCheck) {
+		return nil
+	}
+	return s.send(e)
 }
 
 func NewSub(ctx context.Context, grpcClient pb.GrpcGatewayClient, send SendEventFunc, correlationID string, expiration time.Duration, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
