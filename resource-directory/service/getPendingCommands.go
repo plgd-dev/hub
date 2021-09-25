@@ -11,15 +11,9 @@ import (
 )
 
 func (r *RequestHandler) GetUserDevices(ctx context.Context, owner string) ([]string, error) {
-	deviceIDs, err := r.userDevicesManager.GetUserDevices(ctx, owner)
+	deviceIDs, err := r.ownerCache.GetDevices(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if len(deviceIDs) == 0 {
-		deviceIDs, err = r.userDevicesManager.UpdateUserDevices(ctx, owner)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return deviceIDs, err
 }
