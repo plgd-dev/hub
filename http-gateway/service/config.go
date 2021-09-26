@@ -130,8 +130,8 @@ func (c *OAuthClientConfig) Validate() error {
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
-	if c.Scope == "" {
-		return fmt.Errorf("scope('%v')", c.Scope)
+	if c.Audience == "" {
+		return fmt.Errorf("audience('%v')", c.Audience)
 	}
 	if c.HTTPGatewayAddress == "" {
 		return fmt.Errorf("httpGatewayAddress('%v')", c.HTTPGatewayAddress)
