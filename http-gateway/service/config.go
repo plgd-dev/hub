@@ -133,9 +133,6 @@ func (c *OAuthClientConfig) Validate() error {
 	if c.Audience == "" {
 		return fmt.Errorf("audience('%v')", c.Audience)
 	}
-	if c.Scope == "" {
-		return fmt.Errorf("scope('%v')", c.Scope)
-	}
 	if c.HTTPGatewayAddress == "" {
 		return fmt.Errorf("httpGatewayAddress('%v')", c.HTTPGatewayAddress)
 	}
